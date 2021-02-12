@@ -15,16 +15,20 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
+import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
-import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -33,6 +37,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -145,16 +150,6 @@ public class BeaconStateUtil {
     return state.getRandao_mixes().get(index);
   }
 
-  public static Bytes uintToBytes(long value, int numBytes) {
-    int longBytes = Long.SIZE / 8;
-    Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
-    if (numBytes <= longBytes) {
-      return valueBytes.slice(0, numBytes);
-    } else {
-      return Bytes.wrap(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
-    }
-  }
-
   public int getBeaconProposerIndex(BeaconState state) {
     return getBeaconProposerIndex(state, state.getSlot());
   }
@@ -172,7 +167,7 @@ public class BeaconStateUtil {
                       Bytes.concatenate(
                           getSeed(state, epoch, specConstants.getDomainBeaconProposer()),
                           uintToBytes(slot.longValue(), 8)));
-              List<Integer> indices = get_active_validator_indices(state, epoch);
+              List<Integer> indices = getActiveValidatorIndices(state, epoch);
               return committeeUtil.computeProposerIndex(state, indices, seed);
             });
   }
@@ -223,6 +218,51 @@ public class BeaconStateUtil {
     return sum.max(specConstants.getEffectiveBalanceIncrement());
   }
 
+  public UInt64 getTotalActiveBalance(BeaconState state) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getTotalActiveBalance()
+        .get(
+            getCurrentEpoch(state),
+            epoch -> getTotalBalance(state, getActiveValidatorIndices(state, epoch)));
+  }
+
+  public void initiateValidatorExit(MutableBeaconState state, int index) {
+    Validator validator = state.getValidators().get(index);
+    // Return if validator already initiated exit
+    if (!validator.getExit_epoch().equals(specConstants.getFarFutureEpoch())) {
+      return;
+    }
+
+    // Compute exit queue epoch
+    List<UInt64> exit_epochs =
+        state.getValidators().stream()
+            .map(Validator::getExit_epoch)
+            .filter(exitEpoch -> !exitEpoch.equals(specConstants.getFarFutureEpoch()))
+            .collect(Collectors.toList());
+    exit_epochs.add(computeActivationExitEpoch(getCurrentEpoch(state)));
+    UInt64 exit_queue_epoch = Collections.max(exit_epochs);
+    final UInt64 final_exit_queue_epoch = exit_queue_epoch;
+    UInt64 exit_queue_churn =
+        UInt64.valueOf(
+            state.getValidators().stream()
+                .filter(v -> v.getExit_epoch().equals(final_exit_queue_epoch))
+                .count());
+
+    if (exit_queue_churn.compareTo(getValidatorChurnLimit(state)) >= 0) {
+      exit_queue_epoch = exit_queue_epoch.plus(UInt64.ONE);
+    }
+
+    // Set validator exit epoch and withdrawable epoch
+    state
+        .getValidators()
+        .set(
+            index,
+            validator
+                .withExit_epoch(exit_queue_epoch)
+                .withWithdrawable_epoch(
+                    exit_queue_epoch.plus(specConstants.getMinValidatorWithdrawabilityDelay())));
+  }
+
   public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
     return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
@@ -235,7 +275,7 @@ public class BeaconStateUtil {
 
   public UInt64 getValidatorChurnLimit(BeaconState state) {
     final int activeValidatorCount =
-        get_active_validator_indices(state, getCurrentEpoch(state)).size();
+        getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
     return getValidatorChurnLimit(activeValidatorCount);
   }
 
@@ -258,7 +298,7 @@ public class BeaconStateUtil {
   }
 
   public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
+    List<Integer> active_validator_indices = getActiveValidatorIndices(state, epoch);
     return UInt64.valueOf(
         Math.max(
             1,
@@ -267,6 +307,17 @@ public class BeaconStateUtil {
                 Math.floorDiv(
                     Math.floorDiv(
                         active_validator_indices.size(), specConstants.getSlotsPerEpoch()),
+                    specConstants.getTargetCommitteeSize()))));
+  }
+
+  public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
+    return UInt64.valueOf(
+        Math.max(
+            1,
+            Math.min(
+                specConstants.getMaxCommitteesPerSlot(),
+                Math.floorDiv(
+                    Math.floorDiv(activeValidatorCount, specConstants.getSlotsPerEpoch()),
                     specConstants.getTargetCommitteeSize()))));
   }
 
@@ -280,6 +331,95 @@ public class BeaconStateUtil {
       y = x.plus(n.dividedBy(x)).dividedBy(2);
     }
     return x;
+  }
+
+  public void slashValidator(MutableBeaconState state, int slashed_index) {
+    slashValidator(state, slashed_index, -1);
+  }
+
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    // Make sure state is within range of the slot being queried
+    validateStateForCommitteeQuery(state, slot);
+
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBeaconCommittee()
+        .get(
+            Pair.of(slot, index),
+            p -> {
+              UInt64 epoch = computeEpochAtSlot(slot);
+              UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
+              int committeeIndex =
+                  slot.mod(specConstants.getSlotsPerEpoch())
+                      .times(committees_per_slot)
+                      .plus(index)
+                      .intValue();
+              int count = committees_per_slot.times(specConstants.getSlotsPerEpoch()).intValue();
+              return committeeUtil.computeCommittee(
+                  state,
+                  getActiveValidatorIndices(state, epoch),
+                  getSeed(state, epoch, specConstants.getDomainBeaconAttester()),
+                  committeeIndex,
+                  count);
+            });
+  }
+
+  public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
+    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    return computeStartSlotAtEpoch(previousEpoch);
+  }
+
+  private void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+    final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
+    checkArgument(
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
+  }
+
+  private UInt64 getEarliestQueryableSlotForTargetSlot(final UInt64 slot) {
+    final UInt64 epoch = computeEpochAtSlot(slot);
+    return getEarliestQueryableSlotForTargetEpoch(epoch);
+  }
+
+  private void slashValidator(MutableBeaconState state, int slashedIndex, int whistleblowerIndex) {
+    UInt64 epoch = getCurrentEpoch(state);
+    initiateValidatorExit(state, slashedIndex);
+
+    Validator validator = state.getValidators().get(slashedIndex);
+
+    state
+        .getValidators()
+        .set(
+            slashedIndex,
+            validator
+                .withSlashed(true)
+                .withWithdrawable_epoch(
+                    validator
+                        .getWithdrawable_epoch()
+                        .max(epoch.plus(specConstants.getEpochsPerSlashingsVector()))));
+
+    int index = epoch.mod(specConstants.getEpochsPerSlashingsVector()).intValue();
+    state
+        .getSlashings()
+        .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
+    decrease_balance(
+        state,
+        slashedIndex,
+        validator.getEffective_balance().dividedBy(specConstants.getMinSlashingPenaltyQuotient()));
+
+    // Apply proposer and whistleblower rewards
+    int proposer_index = getBeaconProposerIndex(state);
+    if (whistleblowerIndex == -1) {
+      whistleblowerIndex = proposer_index;
+    }
+
+    UInt64 whistleblower_reward =
+        validator.getEffective_balance().dividedBy(specConstants.getWhistleblowerRewardQuotient());
+    UInt64 proposer_reward =
+        whistleblower_reward.dividedBy(specConstants.getProposerRewardQuotient());
+    increase_balance(state, proposer_index, proposer_reward);
+    increase_balance(state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
   }
 
   private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
@@ -318,6 +458,60 @@ public class BeaconStateUtil {
     final UInt64 blockEpoch = computeEpochAtSlot(blockSlot);
     final UInt64 parentEpoch = computeEpochAtSlot(parentSlot);
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+  }
+
+  public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
+    checkArgument(
+        epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
+        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
+        epoch,
+        stateEpoch);
+    return BeaconStateCache.getTransitionCaches(state)
+        .getActiveValidators()
+        .get(
+            epoch,
+            e -> {
+              SSZList<Validator> validators = state.getValidators();
+              return IntStream.range(0, validators.size())
+                  .filter(index -> ValidatorsUtil.is_active_validator(validators.get(index), epoch))
+                  .boxed()
+                  .collect(Collectors.toList());
+            });
+  }
+
+  public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
+    return getMaxLookaheadEpoch(getCurrentEpoch(state));
+  }
+
+  public boolean isEligibleForActivation(BeaconState state, Validator validator) {
+    return validator
+                .getActivation_eligibility_epoch()
+                .compareTo(state.getFinalized_checkpoint().getEpoch())
+            <= 0
+        && validator.getActivation_epoch().equals(specConstants.getFarFutureEpoch());
+  }
+
+  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    final UInt64 attestationSlot = attestation.getData().getSlot();
+    final UInt64 committeeIndex = attestation.getData().getIndex();
+    return computeSubnetForCommittee(state, attestationSlot, committeeIndex);
+  }
+
+  public int computeSubnetForCommittee(
+      final UInt64 attestationSlot, final UInt64 committeeIndex, final UInt64 committeesPerSlot) {
+    final UInt64 slotsSinceEpochStart = attestationSlot.mod(specConstants.getSlotsPerEpoch());
+    final UInt64 committeesSinceEpochStart = committeesPerSlot.times(slotsSinceEpochStart);
+    return committeesSinceEpochStart.plus(committeeIndex).mod(ATTESTATION_SUBNET_COUNT).intValue();
+  }
+
+  private int computeSubnetForCommittee(
+      final BeaconState state, final UInt64 attestationSlot, final UInt64 committeeIndex) {
+    return computeSubnetForCommittee(
+        attestationSlot,
+        committeeIndex,
+        getCommitteeCountPerSlot(state, computeEpochAtSlot(attestationSlot)));
   }
 
   private void processDeposit(MutableBeaconState state, Deposit deposit) {
@@ -396,6 +590,10 @@ public class BeaconStateUtil {
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
     }
+  }
+
+  private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
+    return stateEpoch.plus(specConstants.getMaxSeedLookahead());
   }
 
   private Validator getValidatorFromDeposit(Deposit deposit) {
