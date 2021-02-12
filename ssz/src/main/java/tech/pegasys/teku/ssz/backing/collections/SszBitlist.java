@@ -34,7 +34,7 @@ public interface SszBitlist extends SszList<SszBit> {
   }
 
   @Override
-  SszBitlistSchema<SszBitlist> getSchema();
+  SszBitlistSchema<? extends SszBitlist> getSchema();
 
   // Bitlist methods
 
@@ -46,13 +46,11 @@ public interface SszBitlist extends SszList<SszBit> {
 
   boolean intersects(SszBitlist other);
 
-  boolean isSuperSetOf(final SszBitlist other);
+  boolean isSuperSetOf(SszBitlist other);
 
   List<Integer> getAllSetBits();
 
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }
-
-  int getSize();
 }

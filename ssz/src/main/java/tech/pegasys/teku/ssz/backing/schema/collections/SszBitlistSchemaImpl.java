@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlistImpl;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
@@ -43,7 +42,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
 
   @Override
   public SszBitlist ofBits(int size, int... setBitIndexes) {
-    return new SszBitlistImpl(this, new Bitlist(size, getMaxLength(), setBitIndexes));
+    return SszBitlistImpl.ofBits(this, size, setBitIndexes);
   }
 
   @Override
@@ -62,15 +61,20 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
     checkSsz(
         (availableBytes - 1) * 8 <= getMaxLength(), "SSZ sequence length exceeds max type length");
     Bytes bytes = reader.read(availableBytes);
-    int length = Bitlist.sszGetLengthAndValidate(bytes);
+    int length = SszBitlistImpl.sszGetLengthAndValidate(bytes);
     if (length > getMaxLength()) {
       throw new SszDeserializeException("Too long bitlist");
     }
-    Bytes treeBytes = Bitlist.sszTruncateLeadingBit(bytes, length);
+    Bytes treeBytes = SszBitlistImpl.sszTruncateLeadingBit(bytes, length);
     try (SszReader sszReader = SszReader.fromBytes(treeBytes)) {
       DeserializedData data = sszDeserializeVector(sszReader);
       return createTree(data.getDataTree(), length);
     }
+  }
+
+  @Override
+  public String toString() {
+    return "Bitlist[" + getMaxLength() + "]";
   }
 
   private static class BytesCollector implements SszWriter {

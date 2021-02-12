@@ -66,7 +66,7 @@ class JsonProviderTest {
     final SszBitlist asData = jsonProvider.jsonToObject(asJson, SszBitlist.class);
 
     assertThat(data.getAllSetBits()).containsExactlyElementsOf(asData.getAllSetBits());
-    assertThat(asData.getSize()).isEqualTo(BITLIST_SIZE);
+    assertThat(asData.size()).isEqualTo(BITLIST_SIZE);
   }
 
   @Test

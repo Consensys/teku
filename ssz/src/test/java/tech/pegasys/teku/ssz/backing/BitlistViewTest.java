@@ -18,9 +18,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class BitlistViewTest {
 
@@ -34,10 +34,10 @@ public class BitlistViewTest {
       int[] bitIndexes =
           IntStream.concat(IntStream.range(0, size).filter(i -> i % 2 == 0), IntStream.of(0))
               .toArray();
-      Bitlist bitlist = new Bitlist(size, size, bitIndexes);
 
-      SszList<SszBit> bitlistView = SszUtils.toSszBitList(bitlist);
-      Bitlist bitlist1 = SszUtils.getBitlist(bitlistView);
+      SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(size);
+      SszList<SszBit> bitlist = schema.ofBits(size, bitIndexes);
+      SszBitlist bitlist1 = schema.sszDeserialize(bitlist.sszSerialize());
 
       Assertions.assertThat(bitlist1).isEqualTo(bitlist);
     }

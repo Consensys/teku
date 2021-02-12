@@ -18,7 +18,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchem
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -87,23 +85,6 @@ public class SszUtils {
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
   public static Bytes getAllBytes(SszCollection<SszByte> vector) {
     return vector.sszSerialize();
-  }
-
-  /**
-   * Creates immutable list of bits with size `bitlist.size()` and maxSize = `bitlist.getMaxSize()`
-   * from {@link Bitlist} value
-   */
-  public static SszList<SszBit> toSszBitList(Bitlist bitlist) {
-    return toSszBitList(SszBitlistSchema.create(bitlist.getMaxSize()), bitlist);
-  }
-
-  public static SszList<SszBit> toSszBitList(SszListSchema<SszBit, ?> type, Bitlist bitlist) {
-    return type.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
-  }
-
-  /** Converts list of bits to {@link Bitlist} value */
-  public static Bitlist getBitlist(SszList<SszBit> bitlistView) {
-    return Bitlist.fromSszBytes(bitlistView.sszSerialize(), bitlistView.getSchema().getMaxLength());
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */

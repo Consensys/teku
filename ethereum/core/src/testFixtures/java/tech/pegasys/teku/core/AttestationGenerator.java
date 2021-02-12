@@ -88,7 +88,7 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().getSize()).max().getAsInt();
+        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().size()).max().getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
             .map(Attestation::getAggregation_bits)

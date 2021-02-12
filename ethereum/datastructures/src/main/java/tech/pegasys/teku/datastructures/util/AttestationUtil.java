@@ -110,9 +110,9 @@ public class AttestationUtil {
       BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
     checkArgument(
-        bits.getSize() == committee.size(),
+        bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
-        bits.getSize(),
+        bits.size(),
         committee.size());
     return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
   }
@@ -193,7 +193,7 @@ public class AttestationUtil {
   // Returns the index of the first attester in the Attestation
   public static int getAttesterIndexIntoCommittee(Attestation attestation) {
     SszBitlist aggregationBits = attestation.getAggregation_bits();
-    for (int i = 0; i < aggregationBits.getSize(); i++) {
+    for (int i = 0; i < aggregationBits.size(); i++) {
       if (aggregationBits.getBit(i)) {
         return i;
       }

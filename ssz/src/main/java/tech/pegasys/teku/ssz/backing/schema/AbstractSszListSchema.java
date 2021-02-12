@@ -80,7 +80,7 @@ public abstract class AbstractSszListSchema<
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
       if (elementSchema.getBitsSize() == 1) {
-        // Bitlist is handled specially
+        // BitlistImpl is handled specially
         return length / 8 + 1;
       } else {
         return length * elementSchema.getFixedPartSize();
@@ -101,7 +101,7 @@ public abstract class AbstractSszListSchema<
     int elementsCount = getLength(node);
     if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
       throw new UnsupportedOperationException(
-          "Bitlist serialization is only supported by SszBitlistSchema");
+          "BitlistImpl serialization is only supported by SszBitlistSchema");
     } else {
       return getCompatibleVectorSchema()
           .sszSerializeVector(getVectorNode(node), writer, elementsCount);
@@ -112,7 +112,7 @@ public abstract class AbstractSszListSchema<
   public TreeNode sszDeserializeTree(SszReader reader) {
     if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
       throw new UnsupportedOperationException(
-          "Bitlist deserialization is only supported by SszBitlistSchema");
+          "BitlistImpl deserialization is only supported by SszBitlistSchema");
     } else {
       DeserializedData data = sszDeserializeVector(reader);
       return createTree(data.getDataTree(), data.getChildrenCount());
@@ -148,7 +148,7 @@ public abstract class AbstractSszListSchema<
         elementLengthBounds.addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
     SszLengthBounds maxLenBounds =
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
-    // adding 1 boundary bit for Bitlist
+    // adding 1 boundary bit for BitlistImpl
     return maxLenBounds.addBits(getElementSchema().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
   }
 

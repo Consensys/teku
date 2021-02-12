@@ -348,7 +348,7 @@ public final class BlockProcessorUtil {
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
-            attestation.getAggregation_bits().getSize() == committee.size(),
+            attestation.getAggregation_bits().size() == committee.size(),
             "process_attestations: Attestation aggregation bits and committee don't have the same length");
 
         PendingAttestation pendingAttestation =
