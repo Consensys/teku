@@ -474,6 +474,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -492,6 +493,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -510,6 +512,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-rw
       - publishAPISpec:
@@ -527,5 +530,6 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
