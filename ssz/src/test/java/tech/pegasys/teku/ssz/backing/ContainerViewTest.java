@@ -220,7 +220,7 @@ public class ContainerViewTest {
     }
 
     @Override
-    public ContainerWrite createWritableCopy( ) {
+    public ContainerWrite createWritableCopy() {
       return new ContainerWriteImpl(this);
     }
   }
