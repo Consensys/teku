@@ -406,7 +406,6 @@ workflows:
       - referenceTestsPrep:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -415,7 +414,6 @@ workflows:
       - referenceTests:
           requires:
             - assemble
-            - spotless
             - referenceTestsPrep
           filters:
             tags:
@@ -425,7 +423,6 @@ workflows:
       - unitTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -434,7 +431,6 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -443,7 +439,6 @@ workflows:
       - acceptanceTests:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -452,7 +447,6 @@ workflows:
       - docker:
           requires:
             - assemble
-            - spotless
           filters:
             tags:
               <<: *filters-release-tags
@@ -480,6 +474,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -498,6 +493,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
             - quorum-gradle
@@ -516,6 +512,7 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-rw
       - publishAPISpec:
@@ -533,5 +530,6 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+            - spotless
           context:
             - dockerhub-quorumengineering-ro
