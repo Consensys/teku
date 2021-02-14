@@ -182,7 +182,7 @@ public class SyncController {
     }
 
     public boolean isFailed() {
-      return result.isDone() && result.join() == SyncResult.FAILED;
+      return result.isCompletedExceptionally() || result.getNow(null) == SyncResult.FAILED;
     }
 
     public boolean isActivePrimarySync() {
