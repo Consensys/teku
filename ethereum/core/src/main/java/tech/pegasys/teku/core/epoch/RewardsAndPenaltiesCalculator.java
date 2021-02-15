@@ -56,7 +56,7 @@ public class RewardsAndPenaltiesCalculator {
   }
 
   @Deprecated
-  public Deltas getDeltas(final Step step) throws IllegalArgumentException {
+  public Deltas getDeltas(final RewardsAndPenaltiesStep step) throws IllegalArgumentException {
     final Deltas deltas = new Deltas(validatorStatuses.getValidatorCount());
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
@@ -75,16 +75,6 @@ public class RewardsAndPenaltiesCalculator {
       step.apply(deltas, totalBalances, finalityDelay, validator, baseReward, delta);
     }
     return deltas;
-  }
-
-  public interface Step {
-    void apply(
-        final Deltas deltas,
-        final TotalBalances totalBalances,
-        final UInt64 finalityDelay,
-        final ValidatorStatus validator,
-        final UInt64 baseReward,
-        final Delta delta);
   }
 
   private void applyAllDeltas(

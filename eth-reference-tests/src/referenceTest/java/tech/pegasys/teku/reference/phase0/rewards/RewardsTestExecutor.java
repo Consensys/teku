@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
-import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator.Step;
+import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesStep;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -86,7 +86,8 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, totalBalances, finalityDelay, delta)));
   }
 
-  private Supplier<Deltas> apply(final RewardsAndPenaltiesCalculator calculator, final Step step) {
+  private Supplier<Deltas> apply(
+      final RewardsAndPenaltiesCalculator calculator, final RewardsAndPenaltiesStep step) {
     return () -> calculator.getDeltas(step);
   }
 
