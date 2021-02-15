@@ -91,19 +91,18 @@ public class SszBitlistSchemaTest {
   @Test
   void createFromElements_shouldReturnSszBitlist() {
     SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(10);
-    SszBitlist bitlist = schema
-        .createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+    SszBitlist bitlist =
+        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
     assertThat(bitlist).isInstanceOf(SszBitlist.class);
   }
 
   @Test
   void testThatListSchemaCreatesBitlistSchemaImplementation() {
-    SszListSchema<SszBit, ?> schema = SszListSchema
-        .create(SszPrimitiveSchemas.BIT_SCHEMA, 10);
+    SszListSchema<SszBit, ?> schema = SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 10);
     assertThat(schema).isInstanceOf(SszBitlistSchema.class);
     assertThat(schema.getMaxLength()).isEqualTo(10);
-    SszList<SszBit> sszList = schema
-        .createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+    SszList<SszBit> sszList =
+        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
     assertThat(sszList).isInstanceOf(SszBitlist.class);
     SszBitlist sszBitlist = (SszBitlist) sszList;
     assertThat(sszBitlist.getSchema()).isEqualTo(schema);
