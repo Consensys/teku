@@ -38,26 +38,26 @@ public class StubSpecProvider {
   }
 
   public static SpecProvider createMinimal(Consumer<SpecConstantsBuilder> builderConsumer) {
-    return create("minimal", builderConsumer);
+    return create("minimal", builderConsumer, true);
   }
 
   public static SpecProvider createMainnet() {
-    return createMainnet(__ -> {});
+    return createMainnet(__ -> {}, true);
   }
 
-  public static SpecProvider createMainnet(Consumer<SpecConstantsBuilder> builderConsumer) {
-    return create("mainnet", builderConsumer);
+  public static SpecProvider createMainnet(Consumer<SpecConstantsBuilder> builderConsumer, final boolean validateBlocks) {
+    return create("mainnet", builderConsumer, validateBlocks);
   }
 
   private static SpecProvider create(
-      final String constants, final Consumer<SpecConstantsBuilder> builderConsumer) {
+      final String constants, final Consumer<SpecConstantsBuilder> builderConsumer, final boolean validateBlocks) {
     final Bytes4 genesisFork = Bytes4.fromHexString("0x00000000");
 
     final SpecConfiguration config =
         SpecConfiguration.builder().constants(loadConstants(constants, builderConsumer)).build();
     final ForkManifest forkManifest =
         ForkManifest.create(List.of(new Fork(genesisFork, genesisFork, UInt64.ZERO)));
-    return SpecProvider.create(config, forkManifest);
+    return SpecProvider.create(config, forkManifest, validateBlocks);
   }
 
   private static SpecConstants loadConstants(

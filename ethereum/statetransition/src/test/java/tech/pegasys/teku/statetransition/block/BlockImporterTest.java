@@ -68,6 +68,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet(
+      config -> config.slotsPerEpoch(6), false);
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
@@ -90,18 +92,6 @@ public class BlockImporterTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
-
-  @BeforeAll
-  public static void init() {
-    Constants.SLOTS_PER_EPOCH = 6;
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
-  }
-
-  @AfterAll
-  public static void dispose() {
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
-    Constants.setConstants("minimal");
-  }
 
   @BeforeEach
   public void setup() {

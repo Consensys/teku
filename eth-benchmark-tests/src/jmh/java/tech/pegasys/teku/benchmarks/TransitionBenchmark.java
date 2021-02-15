@@ -56,7 +56,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @Threads(1)
 public abstract class TransitionBenchmark {
 
-  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet( __ -> {}, false);
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
   BeaconChainUtil localChain;
@@ -84,7 +84,7 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    wsValidator = WeakSubjectivityFactory.lenientValidator();
+    wsValidator = WeakSubjectivityFactory.lenientValidator(Optional.of(specProvider.getGenesisSpec().getBeaconStateUtil()));
     recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
     localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
     localChain.initializeStorage();

@@ -15,7 +15,10 @@ package tech.pegasys.teku.weaksubjectivity;
 
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
+
+import java.util.Optional;
 
 public class WeakSubjectivityFactory {
 
@@ -25,5 +28,9 @@ public class WeakSubjectivityFactory {
 
   public static WeakSubjectivityValidator lenientValidator() {
     return WeakSubjectivityValidator.lenient(wsConfig);
+  }
+
+  public static WeakSubjectivityValidator lenientValidator(final Optional<BeaconStateUtil> beaconStateUtil) {
+    return WeakSubjectivityValidator.lenient(wsConfig, beaconStateUtil);
   }
 }

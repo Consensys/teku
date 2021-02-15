@@ -23,9 +23,13 @@ public class Spec {
   private final BeaconStateUtil beaconStateUtil;
 
   Spec(final SpecConstants constants) {
+    this(constants, true);
+  }
+
+  Spec(final SpecConstants constants, final boolean validateBlocks) {
     this.constants = constants;
     this.committeeUtil = new CommitteeUtil(this.constants);
-    this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil);
+    this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil, validateBlocks);
   }
 
   public SpecConstants getConstants() {

@@ -44,8 +44,10 @@ public class SpecProvider {
   }
 
   public static SpecProvider create(
-      final SpecConfiguration config, final ForkManifest forkManifest) {
-    final Spec initialSpec = new Spec(config.constants());
+      final SpecConfiguration config,
+      final ForkManifest forkManifest,
+      final boolean validateBlocks) {
+    final Spec initialSpec = new Spec(config.constants(), validateBlocks);
     return new SpecProvider(initialSpec, forkManifest);
   }
 
