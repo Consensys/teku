@@ -87,7 +87,7 @@ class BitlistImpl {
   }
 
   public boolean isSuperSetOf(final BitlistImpl other) {
-    return other.streamAllSetBits().allMatch(this::getBit);
+    return other.streamAllSetBits().allMatch(idx -> idx < getCurrentSize() && getBit(idx));
   }
 
   public List<Integer> getAllSetBits() {
