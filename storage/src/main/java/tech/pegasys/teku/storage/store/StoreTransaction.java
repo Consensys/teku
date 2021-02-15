@@ -16,13 +16,11 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
 
-import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -121,41 +119,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
     this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
-  }
-
-  @Override
-  public VoteTracker getVote(UInt64 validatorIndex) {
-    VoteTracker txVote = votes.get(validatorIndex);
-    if (txVote != null) {
-      return txVote;
-    } else {
-      VoteTracker storeVote = store.getVote(validatorIndex);
-      return storeVote != null ? storeVote : VoteTracker.DEFAULT;
-    }
-  }
-
-  @Override
-  public void putVote(UInt64 validatorIndex, VoteTracker vote) {
-    votes.put(validatorIndex, vote);
-  }
-
-  @Override
-  public Bytes32 applyForkChoiceScoreChanges(
-      final Checkpoint finalizedCheckpoint,
-      final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
-
-    // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
-    // protoArray lock first, and may deadlock when it later needs to get votes which requires the
-    // store lock.
-    lock.writeLock().lock();
-    try {
-      return store
-          .getForkChoiceStrategy()
-          .findHead(this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
-    } finally {
-      lock.writeLock().unlock();
-    }
   }
 
   @CheckReturnValue
@@ -400,10 +363,5 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockAndStates.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
         .or(() -> store.getBlockIfAvailable(blockRoot));
-  }
-
-  @Override
-  public Set<UInt64> getVotedValidatorIndices() {
-    return Sets.union(votes.keySet(), store.getVotedValidatorIndices());
   }
 }

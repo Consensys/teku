@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
@@ -27,6 +28,8 @@ public interface UpdatableStore extends ReadOnlyStore {
 
   StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler);
+
+  VoteUpdater startVoteUpdate(final StorageUpdateChannel storageUpdateChannel);
 
   void startMetrics();
 

@@ -31,7 +31,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class TestStoreImpl implements MutableStore {
+public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected UInt64 time;
   protected UInt64 genesis_time;
   protected final Optional<Checkpoint> initialCheckpoint;
@@ -264,6 +264,11 @@ class TestStoreImpl implements MutableStore {
   @Override
   public void putVote(UInt64 validatorIndex, VoteTracker vote) {
     votes.put(validatorIndex, vote);
+  }
+
+  @Override
+  public SafeFuture<Void> commit() {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

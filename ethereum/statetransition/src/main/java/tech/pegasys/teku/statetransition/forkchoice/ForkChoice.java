@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -100,7 +101,7 @@ public class ForkChoice {
                             justifiedCheckpoint.getRoot());
                         return SafeFuture.COMPLETE;
                       }
-                      final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                      final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
@@ -157,15 +158,22 @@ public class ForkChoice {
           if (!result.isSuccessful()) {
             return SafeFuture.completedFuture(result);
           }
-          indexedAttestationProvider.getIndexedAttestations().stream()
-              .filter(
-                  attestation ->
-                      forkChoiceStrategy.contains(attestation.getData().getBeacon_block_root()))
-              .forEach(
-                  indexedAttestation ->
-                      forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
+              .thenCompose(
+                  __ -> {
+                    final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
+                    indexedAttestationProvider.getIndexedAttestations().stream()
+                        .filter(
+                            attestation ->
+                                forkChoiceStrategy.contains(
+                                    attestation.getData().getBeacon_block_root()))
+                        .forEach(
+                            indexedAttestation ->
+                                forkChoiceStrategy.onAttestation(voteUpdater, indexedAttestation));
+                    // TODO: Do we actually have to wait for this or could it be async?
+                    return voteUpdater.commit();
+                  })
               .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
               .thenApply(__ -> result);
         });
@@ -205,8 +213,7 @@ public class ForkChoice {
               }
               return onForkChoiceThread(
                       () -> {
-                        final StoreTransaction transaction =
-                            recentChainData.startStoreTransaction();
+                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
                         getForkChoiceStrategy()
                             .onAttestation(transaction, getIndexedAttestation(attestation));
                         return transaction.commit();
@@ -227,7 +234,7 @@ public class ForkChoice {
   public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
     onForkChoiceThread(
             () -> {
-              final StoreTransaction transaction = recentChainData.startStoreTransaction();
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
                   .map(this::getIndexedAttestation)

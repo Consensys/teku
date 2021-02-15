@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,22 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.datastructures.forkchoice;
 
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ForkChoiceStrategy extends ReadOnlyForkChoiceStrategy {
+public interface VoteUpdater {
 
-  Bytes32 findHead(
-      final VoteUpdater store,
-      final Checkpoint finalizedCheckpoint,
-      final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState);
+  VoteTracker getVote(final UInt64 validatorIndex);
 
-  void onAttestation(final VoteUpdater store, final IndexedAttestation attestation);
+  Set<UInt64> getVotedValidatorIndices();
+
+  void putVote(UInt64 validatorIndex, VoteTracker vote);
+
+  Bytes32 applyForkChoiceScoreChanges(
+      Checkpoint finalizedCheckpoint,
+      Checkpoint justifiedCheckpoint,
+      BeaconState justifiedCheckpointState);
+
+  SafeFuture<Void> commit();
 }

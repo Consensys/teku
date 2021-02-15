@@ -48,6 +48,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -309,6 +310,11 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public VoteUpdater startVoteUpdate(final StorageUpdateChannel storageUpdateChannel) {
+    return new StoreVoteUpdater(this, lock, storageUpdateChannel);
+  }
+
+  @Override
   public UInt64 getTime() {
     readLock.lock();
     try {
@@ -500,8 +506,7 @@ class Store implements UpdatableStore {
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
-  @Override
-  public Set<UInt64> getVotedValidatorIndices() {
+  Set<UInt64> getVotedValidatorIndices() {
     readLock.lock();
     try {
       return new HashSet<>(votes.keySet());
@@ -510,8 +515,7 @@ class Store implements UpdatableStore {
     }
   }
 
-  @Override
-  public VoteTracker getVote(UInt64 validatorIndex) {
+  VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
       return votes.get(validatorIndex);

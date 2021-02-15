@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -207,6 +208,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public StoreTransaction startStoreTransaction() {
     return store.startTransaction(storageUpdateChannel, this);
+  }
+
+  public VoteUpdater startVoteUpdate() {
+    return store.startVoteUpdate(storageUpdateChannel);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
