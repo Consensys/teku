@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 
 import java.util.Map;
 import java.util.Optional;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
-  private final UInt64 farFutureEpoch = specProvider.getGenesisSpecConstants().getFarFutureEpoch();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GetStateValidator handler = new GetStateValidator(chainDataProvider, jsonProvider);
   private final Validator validator = new Validator(dataStructureUtil.randomValidator());
@@ -49,8 +49,8 @@ public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
               false,
               ZERO,
               ZERO,
-              farFutureEpoch,
-              farFutureEpoch));
+              FAR_FUTURE_EPOCH,
+              FAR_FUTURE_EPOCH));
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {

@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
+import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
@@ -106,9 +108,7 @@ public class BeaconStateUtil {
 
   public UInt64 getPreviousEpoch(BeaconState state) {
     UInt64 currentEpoch = getCurrentEpoch(state);
-    return currentEpoch.equals(UInt64.valueOf(specConstants.getGenesisEpoch()))
-        ? UInt64.valueOf(specConstants.getGenesisEpoch())
-        : currentEpoch.minus(UInt64.ONE);
+    return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
   }
 
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
@@ -229,7 +229,7 @@ public class BeaconStateUtil {
   public void initiateValidatorExit(MutableBeaconState state, int index) {
     Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
-    if (!validator.getExit_epoch().equals(specConstants.getFarFutureEpoch())) {
+    if (!validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
       return;
     }
 
@@ -237,7 +237,7 @@ public class BeaconStateUtil {
     List<UInt64> exit_epochs =
         state.getValidators().stream()
             .map(Validator::getExit_epoch)
-            .filter(exitEpoch -> !exitEpoch.equals(specConstants.getFarFutureEpoch()))
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
             .collect(Collectors.toList());
     exit_epochs.add(computeActivationExitEpoch(getCurrentEpoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
@@ -490,7 +490,7 @@ public class BeaconStateUtil {
                 .getActivation_eligibility_epoch()
                 .compareTo(state.getFinalized_checkpoint().getEpoch())
             <= 0
-        && validator.getActivation_epoch().equals(specConstants.getFarFutureEpoch());
+        && validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH);
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
@@ -607,10 +607,10 @@ public class BeaconStateUtil {
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,
-        specConstants.getFarFutureEpoch(),
-        specConstants.getFarFutureEpoch(),
-        specConstants.getFarFutureEpoch(),
-        specConstants.getFarFutureEpoch());
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 
   private Bytes32 computeDomain(

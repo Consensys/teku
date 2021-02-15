@@ -29,18 +29,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlockSelectorFactoryTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final DataStructureUtil data = new DataStructureUtil();
   final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
-  private final SpecProvider specProvider = StubSpecProvider.create();
 
-  private final BlockSelectorFactory blockSelectorFactory =
-      new BlockSelectorFactory(client, specProvider);
+  private final BlockSelectorFactory blockSelectorFactory = new BlockSelectorFactory(client);
 
   @Test
   public void headSelector_shouldGetBestBlock() throws ExecutionException, InterruptedException {
