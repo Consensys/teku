@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
@@ -46,7 +45,11 @@ public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldGetCommitteesFromState() throws Exception {
     final UInt64 slot = dataStructureUtil.randomUInt64();
-    final UInt64 epoch = compute_epoch_at_slot(dataStructureUtil.randomUInt64());
+    final UInt64 epoch =
+        specProvider
+            .getGenesisSpec()
+            .getBeaconStateUtil()
+            .computeEpochAtSlot(dataStructureUtil.randomUInt64());
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap())
         .thenReturn(

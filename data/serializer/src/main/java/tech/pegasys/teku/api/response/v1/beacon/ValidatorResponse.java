@@ -14,8 +14,6 @@
 package tech.pegasys.teku.api.response.v1.beacon;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -64,39 +62,45 @@ public class ValidatorResponse {
   }
 
   public static Optional<ValidatorResponse> fromState(
-      final BeaconState state, final Integer index) {
+      final BeaconState state,
+      final Integer index,
+      final UInt64 epoch,
+      final UInt64 farFutureEpoch) {
     if (index >= state.getValidators().size()) {
       return Optional.empty();
     }
     tech.pegasys.teku.datastructures.state.Validator validatorInternal =
         state.getValidators().get(index);
-    final UInt64 current_epoch = compute_epoch_at_slot(state.getSlot());
     return Optional.of(
         new ValidatorResponse(
             UInt64.valueOf(index),
             state.getBalances().get(index),
-            getValidatorStatus(current_epoch, validatorInternal),
+            getValidatorStatus(epoch, validatorInternal, farFutureEpoch),
             new Validator(validatorInternal)));
   }
 
   public static ValidatorStatus getValidatorStatus(
-      final BeaconState state, final Integer validatorIndex) {
-    return getValidatorStatus(
-        compute_epoch_at_slot(state.getSlot()), state.getValidators().get(validatorIndex));
+      final BeaconState state,
+      final Integer validatorIndex,
+      final UInt64 epoch,
+      final UInt64 farFutureEpoch) {
+    return getValidatorStatus(epoch, state.getValidators().get(validatorIndex), farFutureEpoch);
   }
 
   public static ValidatorStatus getValidatorStatus(
-      final UInt64 epoch, final tech.pegasys.teku.datastructures.state.Validator validator) {
+      final UInt64 epoch,
+      final tech.pegasys.teku.datastructures.state.Validator validator,
+      final UInt64 farFutureEpoch) {
     // pending
     if (validator.getActivation_epoch().isGreaterThan(epoch)) {
-      return validator.getActivation_eligibility_epoch().equals(FAR_FUTURE_EPOCH)
+      return validator.getActivation_eligibility_epoch().equals(farFutureEpoch)
           ? ValidatorStatus.pending_initialized
           : ValidatorStatus.pending_queued;
     }
     // active
     if (validator.getActivation_epoch().isLessThanOrEqualTo(epoch)
         && epoch.isLessThan(validator.getExit_epoch())) {
-      if (validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
+      if (validator.getExit_epoch().equals(farFutureEpoch)) {
         return ValidatorStatus.active_ongoing;
       }
       return validator.isSlashed()

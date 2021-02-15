@@ -16,7 +16,7 @@ package tech.pegasys.teku.api.response.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -24,76 +24,81 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 public class ValidatorResponseTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   final Bytes48 key = dataStructureUtil.randomPublicKeyBytes();
   final Bytes32 creds = dataStructureUtil.randomBytes32();
+  final SpecProvider specProvider = StubSpecProvider.create();
   final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
   final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
 
   @Test
   void status_shouldBePendingInitialised() {
     final Validator validator = pendingValidator(TWO_HUNDRED, FAR_FUTURE_EPOCH);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.pending_initialized);
   }
 
   @Test
   void status_shouldBePendingQueued() {
     final Validator validator = pendingValidator(TWO_HUNDRED, TWO_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.pending_queued);
   }
 
   @Test
   void status_shouldBeActiveOngoing() {
     final Validator validator = activeValidator(FAR_FUTURE_EPOCH, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ZERO, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ZERO, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_ongoing);
   }
 
   @Test
   void status_shouldBeActiveExiting() {
     final Validator validator = activeValidator(TWO_HUNDRED, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_exiting);
   }
 
   @Test
   void status_shouldBeActiveSlashed() {
     final Validator validator = activeValidator(TWO_HUNDRED, true);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_slashed);
   }
 
   @Test
   void status_shouldBeExitedUnslashed() {
     final Validator validator = exitedValidator(ONE_HUNDRED, TWO_HUNDRED, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_unslashed);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED.plus(ONE), validator))
+    assertThat(
+            ValidatorResponse.getValidatorStatus(
+                ONE_HUNDRED.plus(ONE), validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_unslashed);
   }
 
   @Test
   void status_shouldBeExitedSlashed() {
     final Validator validator = exitedValidator(ONE_HUNDRED, TWO_HUNDRED, true);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_slashed);
   }
 
   @Test
   void status_shouldBeWithdrawalPossible() {
     final Validator validator = withdrawalValidator(UInt64.valueOf("32000000000"), ONE_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.withdrawal_possible);
   }
 
   @Test
   void status_shouldBeWithdrawalDone() {
     final Validator validator = withdrawalValidator(ZERO, ONE_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator))
+    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.withdrawal_done);
   }
 

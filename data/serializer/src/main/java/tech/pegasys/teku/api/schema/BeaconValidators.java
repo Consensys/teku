@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -36,8 +33,9 @@ public class BeaconValidators {
   }
 
   @VisibleForTesting
-  public BeaconValidators(tech.pegasys.teku.datastructures.state.BeaconState state) {
-    this(state, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
+  public BeaconValidators(
+      tech.pegasys.teku.datastructures.state.BeaconState state, final UInt64 farFutureEpoch) {
+    this(state, false, farFutureEpoch, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
   @VisibleForTesting
@@ -77,17 +75,6 @@ public class BeaconValidators {
             .collect(Collectors.toList());
     this.total_size = null;
     this.next_page_token = null;
-  }
-
-  public BeaconValidators(
-      final BeaconState state, final boolean activeOnly, final int pageSize, final int pageToken) {
-    this(
-        state.validators,
-        state.balances,
-        activeOnly,
-        compute_epoch_at_slot(state.slot),
-        pageSize,
-        pageToken);
   }
 
   BeaconValidators(

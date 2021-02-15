@@ -31,7 +31,6 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -60,8 +59,9 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     data.forEach(
         committee -> {
           assertThat(committee.slot)
-              .isGreaterThanOrEqualTo(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
-          assertThat(committee.slot).isLessThan(UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 2));
+              .isGreaterThanOrEqualTo(UInt64.valueOf(specConstants.getSlotsPerEpoch()));
+          assertThat(committee.slot)
+              .isLessThan(UInt64.valueOf(specConstants.getSlotsPerEpoch() * 2L));
         });
     assertThat(data.size()).isEqualTo(8);
   }

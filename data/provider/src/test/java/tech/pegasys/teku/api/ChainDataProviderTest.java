@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +54,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -62,7 +62,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
@@ -79,11 +78,12 @@ public class ChainDataProviderTest {
   private UInt64 actualBalance;
   private final DataStructureUtil data = new DataStructureUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecConstants specConstants = specProvider.getGenesisSpecConstants();
 
   @BeforeEach
   public void setup() {
-    slot = UInt64.valueOf(SLOTS_PER_EPOCH * 3);
-    actualBalance = Constants.MAX_EFFECTIVE_BALANCE.plus(100000);
+    slot = UInt64.valueOf(specConstants.getSlotsPerEpoch() * 3);
+    actualBalance = specConstants.getMaxEffectiveBalance().plus(100000);
     storageSystem.chainUpdater().initializeGenesis(true, actualBalance);
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
@@ -396,7 +396,7 @@ public class ChainDataProviderTest {
                 .getCommitteesFromState(
                     internalState, Optional.empty(), Optional.empty(), Optional.empty())
                 .size())
-        .isEqualTo(SLOTS_PER_EPOCH);
+        .isEqualTo(specConstants.getSlotsPerEpoch());
   }
 
   @Test
