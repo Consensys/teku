@@ -32,6 +32,7 @@ import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
+@Deprecated
 public class RewardsAndPenaltiesCalculator {
 
   private final BeaconState state;
@@ -49,10 +50,12 @@ public class RewardsAndPenaltiesCalculator {
    * @return
    * @throws IllegalArgumentException
    */
+  @Deprecated
   public Deltas getAttestationDeltas() throws IllegalArgumentException {
     return getDeltas(this::applyAllDeltas);
   }
 
+  @Deprecated
   public Deltas getDeltas(final Step step) throws IllegalArgumentException {
     final Deltas deltas = new Deltas(validatorStatuses.getValidatorCount());
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
@@ -98,6 +101,7 @@ public class RewardsAndPenaltiesCalculator {
     applyInactivityPenaltyDelta(validator, baseReward, finalityDelay, delta);
   }
 
+  @Deprecated
   public void applySourceDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
@@ -113,6 +117,7 @@ public class RewardsAndPenaltiesCalculator {
         delta);
   }
 
+  @Deprecated
   public void applyTargetDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
@@ -128,6 +133,7 @@ public class RewardsAndPenaltiesCalculator {
         delta);
   }
 
+  @Deprecated
   public void applyHeadDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
@@ -143,6 +149,7 @@ public class RewardsAndPenaltiesCalculator {
         delta);
   }
 
+  @Deprecated
   public void applyInclusionDelayDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
@@ -164,6 +171,7 @@ public class RewardsAndPenaltiesCalculator {
     }
   }
 
+  @Deprecated
   public void applyInactivityPenaltyDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
@@ -188,6 +196,7 @@ public class RewardsAndPenaltiesCalculator {
     return baseReward.dividedBy(PROPOSER_REWARD_QUOTIENT);
   }
 
+  @Deprecated
   public void applyAttestationComponentDelta(
       final boolean indexInUnslashedAttestingIndices,
       final UInt64 attestingBalance,

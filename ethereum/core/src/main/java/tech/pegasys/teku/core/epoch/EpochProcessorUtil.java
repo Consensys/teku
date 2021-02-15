@@ -58,6 +58,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
 
+@Deprecated
 public final class EpochProcessorUtil {
 
   // State Transition Helper Functions
@@ -69,6 +70,7 @@ public final class EpochProcessorUtil {
    * @param totalBalances
    * @throws EpochProcessingException
    */
+  @Deprecated
   public static void process_justification_and_finalization(
       MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
     try {
@@ -136,6 +138,7 @@ public final class EpochProcessorUtil {
   }
 
   /** Processes rewards and penalties */
+  @Deprecated
   public static void process_rewards_and_penalties(
       MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException {
@@ -169,6 +172,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#registry-updates</a>
    */
+  @Deprecated
   public static void process_registry_updates(
       MutableBeaconState state, List<ValidatorStatus> statuses) throws EpochProcessingException {
     try {
@@ -252,6 +256,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slashings</a>
    */
+  @Deprecated
   public static void process_slashings(MutableBeaconState state, final UInt64 total_balance) {
     UInt64 epoch = get_current_epoch(state);
     UInt64 adjusted_total_slashing_balance =
@@ -286,6 +291,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#final-updates</a>
    */
+  @Deprecated
   public static void process_final_updates(MutableBeaconState state) {
     UInt64 current_epoch = get_current_epoch(state);
     UInt64 next_epoch = current_epoch.plus(UInt64.ONE);
