@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlistImpl;
@@ -45,6 +46,12 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   public SszBitlist ofBits(int size, int... setBitIndexes) {
     Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
     return SszBitlistImpl.ofBits(this, size, setBitIndexes);
+  }
+
+  @Override
+  public SszBitlist createFromElements(List<SszBit> elements) {
+    return ofBits(elements.size(),
+        IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());
   }
 
   @Override
