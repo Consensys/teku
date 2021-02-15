@@ -14,25 +14,37 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class TestDefinition {
-  private final String spec;
+  private final String specName;
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
+  private Spec spec;
 
   public TestDefinition(
-      final String spec,
+      final String specName,
       final String testType,
       final String testName,
       final Path pathFromPhaseTestDir) {
-    this.spec = spec;
+    this.specName = specName;
     this.testType = testType.replace("\\", "/");
     this.testName = testName.replace("\\", "/");
     this.pathFromPhaseTestDir = pathFromPhaseTestDir;
   }
 
-  public String getSpec() {
+  public String getSpecName() {
+    return specName;
+  }
+
+  public Spec getSpec() {
+    if (spec == null) {
+      final SpecConstants constants = ConstantsLoader.loadConstants(specName);
+      spec = new Spec(constants);
+    }
     return spec;
   }
 
@@ -46,7 +58,7 @@ public class TestDefinition {
 
   @Override
   public String toString() {
-    return spec + " - " + testType + " - " + testName;
+    return specName + " - " + testType + " - " + testName;
   }
 
   public String getDisplayName() {
@@ -59,7 +71,7 @@ public class TestDefinition {
 
   public Path getTestDirectory() {
     return ReferenceTestFinder.findReferenceTestRootDirectory()
-        .resolve(Path.of(spec, ReferenceTestFinder.PHASE_TEST_DIR))
+        .resolve(Path.of(specName, ReferenceTestFinder.PHASE_TEST_DIR))
         .resolve(pathFromPhaseTestDir);
   }
 }

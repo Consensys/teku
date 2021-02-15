@@ -42,7 +42,7 @@ public abstract class Eth2ReferenceTestCase {
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
-    setConstants(testDefinition.getSpec());
+    setConstants(testDefinition.getSpecName());
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
 

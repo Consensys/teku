@@ -17,13 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
-import tech.pegasys.teku.core.epoch.EpochProcessorUtil;
-import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 
 public class EpochProcessingTestExecutor implements TestExecutor {
 
@@ -62,58 +61,51 @@ public class EpochProcessingTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final BeaconState pre = loadStateFromSsz(testDefinition, "pre.ssz");
-    final BeaconState expected = loadStateFromSsz(testDefinition, "post.ssz");
-    final BeaconState result = pre.updated(this::executeOperation);
-    assertThat(result).isEqualTo(expected);
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz");
+    runStandardTest(testDefinition, preState, expectedPostState);
+    runDeprecatedTest(preState, expectedPostState);
   }
 
-  private void executeOperation(MutableBeaconState preState) throws EpochProcessingException {
+  private void runStandardTest(
+      final TestDefinition testDefinition,
+      final BeaconState preState,
+      final BeaconState expectedPostState)
+      throws EpochProcessingException {
+    final EpochProcessor epochProcessor = testDefinition.getSpec().getEpochProcessor();
+    final EpochProcessingExecutor processor = new DefaultEpochProcessingExecutor(epochProcessor);
+    final BeaconState result = preState.updated(state -> executeOperation(processor, state));
+    assertThat(result).isEqualTo(expectedPostState);
+  }
+
+  private void runDeprecatedTest(BeaconState preState, BeaconState expectedPostState)
+      throws EpochProcessingException {
+    final EpochProcessingExecutor processor = new DeprecatedEpochProcessingExecutor();
+    final BeaconState result = preState.updated(state -> executeOperation(processor, state));
+    assertThat(result).isEqualTo(expectedPostState);
+  }
+
+  private void executeOperation(EpochProcessingExecutor processor, MutableBeaconState preState)
+      throws EpochProcessingException {
     switch (operation) {
       case PROCESS_SLASHINGS:
-        processSlashings(preState);
+        processor.processSlashings(preState);
         break;
       case PROCESS_REGISTRY_UPDATES:
-        processRegistryUpdates(preState);
+        processor.processRegistryUpdates(preState);
         break;
       case PROCESS_FINAL_UPDATES:
-        processFinalUpdates(preState);
+        processor.processFinalUpdates(preState);
         break;
       case PROCESS_REWARDS_AND_PENALTIES:
-        processRewardsAndPenalties(preState);
+        processor.processRewardsAndPenalties(preState);
         break;
       case PROCESS_JUSTIFICATION_AND_FINALIZATION:
-        processJustificationAndFinalization(preState);
+        processor.processJustificationAndFinalization(preState);
         break;
       default:
         throw new UnsupportedOperationException(
             "Attempted to execute unknown operation type: " + operation);
     }
-  }
-
-  private void processSlashings(final MutableBeaconState state) {
-    EpochProcessorUtil.process_slashings(
-        state, ValidatorStatuses.create(state).getTotalBalances().getCurrentEpoch());
-  }
-
-  private void processRegistryUpdates(final MutableBeaconState state)
-      throws EpochProcessingException {
-    EpochProcessorUtil.process_registry_updates(
-        state, ValidatorStatuses.create(state).getStatuses());
-  }
-
-  private void processFinalUpdates(final MutableBeaconState state) {
-    EpochProcessorUtil.process_final_updates(state);
-  }
-
-  private void processRewardsAndPenalties(final MutableBeaconState state)
-      throws EpochProcessingException {
-    EpochProcessorUtil.process_rewards_and_penalties(state, ValidatorStatuses.create(state));
-  }
-
-  private void processJustificationAndFinalization(final MutableBeaconState state)
-      throws EpochProcessingException {
-    EpochProcessorUtil.process_justification_and_finalization(
-        state, ValidatorStatuses.create(state).getTotalBalances());
   }
 }
