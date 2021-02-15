@@ -41,7 +41,7 @@ public interface SszBitlist extends SszList<SszBit> {
   /**
    * Performs a logical OR of this bit list with the bit list argument.
    *
-   * @throws IllegalArgumentException if <code>other.getSize() > this.getSize()</code>
+   * @throws IllegalArgumentException if {@code other.getSize() > this.getSize()}
    */
   SszBitlist or(SszBitlist other);
 
