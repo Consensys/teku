@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszComposite;

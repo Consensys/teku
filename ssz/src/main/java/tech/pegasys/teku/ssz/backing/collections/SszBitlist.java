@@ -38,18 +38,35 @@ public interface SszBitlist extends SszList<SszBit> {
 
   // Bitlist methods
 
+  /**
+   * Performs a logical OR of this bit list with the bit list argument.
+   *
+   * @throws IllegalArgumentException if <code>other.getSize() > this.getSize()</code>
+   */
   SszBitlist or(SszBitlist other);
 
+  /** Returns individual bit value */
   boolean getBit(int i);
 
+  /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
 
+  /**
+   * Returns {@code true} if the specified {@link SszBitlist} has any bits set to true that are also
+   * set to true in this {@link SszBitlist}.
+   */
   boolean intersects(SszBitlist other);
 
+  /**
+   * Returns {@code true} if this {@link SszBitlist} has all bits set to true that are set to true
+   * in the {@link SszBitlist} argument.
+   */
   boolean isSuperSetOf(SszBitlist other);
 
+  /** Returns indexes of all bits set in this {@link SszBitlist} */
   List<Integer> getAllSetBits();
 
+  /** Streams indexes of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }
