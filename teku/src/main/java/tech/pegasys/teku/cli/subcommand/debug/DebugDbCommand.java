@@ -207,12 +207,9 @@ public class DebugDbCommand implements Runnable {
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
       final Optional<ProtoArraySnapshot> snapshot = database.getProtoArraySnapshot();
-      if (snapshot.isEmpty()) {
-        System.err.println("No fork choice snapshot available.");
-        return 2;
-      }
+
       final Map<UInt64, VoteTracker> votes = database.getVotes();
-      final String report = ForkChoiceDataWriter.writeForkChoiceData(snapshot.get(), votes);
+      final String report = ForkChoiceDataWriter.writeForkChoiceData(snapshot, votes);
       if (outputFile != null) {
         Files.writeString(outputFile, report, StandardCharsets.UTF_8);
       } else {
