@@ -18,7 +18,6 @@ import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenes
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -182,7 +181,7 @@ public class DepositProcessingController {
         err);
 
     asyncRunner
-        .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+        .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT)
         .finish(
             this::fetchLatestSubscriptionDeposits,
             (error) -> LOG.warn("Unable to execute delayed request. Dropping request", error));

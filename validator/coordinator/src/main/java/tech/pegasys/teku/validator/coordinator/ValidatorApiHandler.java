@@ -73,7 +73,6 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -453,14 +452,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @VisibleForTesting
   boolean isSyncActive() {
-    final SyncState syncState = syncStateProvider.getCurrentSyncState();
-    return syncState.isStartingUp() || (syncState.isSyncing() && headBlockIsTooFarBehind());
-  }
-
-  private boolean headBlockIsTooFarBehind() {
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 headEpoch = combinedChainDataClient.getHeadEpoch();
-    return headEpoch.plus(1).isLessThan(currentEpoch);
+    return !syncStateProvider.getCurrentSyncState().isInSync();
   }
 
   private ProposerDuties getProposerDutiesFromIndexesAndState(

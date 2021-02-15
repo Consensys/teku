@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import java.net.URL;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
 public class ExternalSignerStatusLogger {
   private static final Logger LOG = LogManager.getLogger();
-  private static final long DELAY_SECONDS = 30;
+  private static final Duration FIXED_DELAY = Duration.ofSeconds(30);
   private final StatusLogger statusLogger;
   private final BooleanSupplier upcheckSupplier;
   private final URL signingServiceUrl;
@@ -45,8 +45,7 @@ public class ExternalSignerStatusLogger {
   public void logWithFixedDelay() {
     asyncRunner.runWithFixedDelay(
         this::log,
-        DELAY_SECONDS,
-        TimeUnit.SECONDS,
+        FIXED_DELAY,
         err -> LOG.debug("Unexpected error calling external signer upcheck", err));
   }
 

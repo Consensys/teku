@@ -136,7 +136,8 @@ public class ChainDataProviderTest {
   public void getGenesisData_shouldReturnValueIfStoreAvailable() {
     final UInt64 genesisTime = beaconStateInternal.getGenesis_time();
     final Bytes32 genesisValidatorsRoot = beaconStateInternal.getGenesis_validators_root();
-    final Bytes4 genesisForkVersion = specProvider.get(ZERO).getConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion =
+        specProvider.atEpoch(ZERO).getConstants().getGenesisForkVersion();
 
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);

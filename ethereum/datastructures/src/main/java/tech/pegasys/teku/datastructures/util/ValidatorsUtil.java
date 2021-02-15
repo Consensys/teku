@@ -52,6 +52,7 @@ public class ValidatorsUtil {
    * @param validator the validator
    * @return true if the validator is eligible for activation
    */
+  @Deprecated
   public static boolean is_eligible_for_activation(BeaconState state, Validator validator) {
     return validator
                 .getActivation_eligibility_epoch()
@@ -91,12 +92,18 @@ public class ValidatorsUtil {
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
    * @see
+   * @deprecated moved to stateful BeaconStateUtil
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
+  /*
+   * note: moved to BeaconStateUtil
+   */
+  @Deprecated
   public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
+    final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
-        epoch.isLessThanOrEqualTo(stateEpoch.plus(MAX_SEED_LOOKAHEAD)),
+        epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
         "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
         epoch,
         stateEpoch);
@@ -111,6 +118,22 @@ public class ValidatorsUtil {
                   .boxed()
                   .collect(Collectors.toList());
             });
+  }
+
+  /*
+   * note: moved to BeaconStateUtil
+   */
+  @Deprecated
+  public static UInt64 getMaxLookaheadEpoch(final BeaconState state) {
+    return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
+  }
+
+  /*
+   * note: moved to BeaconStateUtil
+   */
+  @Deprecated
+  private static UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
+    return stateEpoch.plus(MAX_SEED_LOOKAHEAD);
   }
 
   @SuppressWarnings("DoNotReturnNullOptionals")

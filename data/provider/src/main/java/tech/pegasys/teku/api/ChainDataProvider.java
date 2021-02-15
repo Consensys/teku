@@ -96,7 +96,7 @@ public class ChainDataProvider {
     return new GenesisData(
         genesisData.getGenesisTime(),
         genesisData.getGenesisValidatorsRoot(),
-        specProvider.get(ZERO).getConstants().getGenesisForkVersion());
+        specProvider.atEpoch(ZERO).getConstants().getGenesisForkVersion());
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {

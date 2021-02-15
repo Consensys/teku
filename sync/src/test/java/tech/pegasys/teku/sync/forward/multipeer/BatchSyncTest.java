@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
 import static tech.pegasys.teku.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
@@ -608,6 +609,24 @@ class BatchSyncTest {
     assertThatBatch(batch2).isNotComplete();
     assertThatBatch(batch3).isNotComplete();
     assertThatBatch(batch4).isNotComplete();
+  }
+
+  @Test
+  void shouldConfirmFirstBlockOfFirstBatchWhenParentIsBeforeCommonAncestorSlot() {
+    // The common ancestor slot may be an empty slot if the finalized checkpoint was used
+    final SignedBeaconBlock firstBlock = chainBuilder.generateBlockAtSlot(5).getBlock();
+
+    assertThat(recentChainData.getSlotForBlockRoot(firstBlock.getParentRoot())).contains(ZERO);
+
+    when(commonAncestor.findCommonAncestor(targetChain))
+        .thenReturn(SafeFuture.completedFuture(ONE));
+
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    final Batch batch0 = batches.get(0);
+    batches.receiveBlocks(batch0, firstBlock);
+
+    assertThatBatch(batch0).hasConfirmedFirstBlock();
   }
 
   @Test

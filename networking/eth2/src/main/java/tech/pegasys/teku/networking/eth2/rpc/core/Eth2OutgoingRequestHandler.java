@@ -25,7 +25,6 @@ import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -232,15 +231,15 @@ public class Eth2OutgoingRequestHandler<
   }
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
-    final Duration timeout = RpcTimeouts.TTFB_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(RpcTimeouts.TTFB_TIMEOUT)
         .thenAccept(
             (__) -> {
               if (!hasReceivedInitialBytes.get()) {
                 abortRequest(
                     stream,
-                    new RpcTimeoutException("Timed out waiting for initial response", timeout));
+                    new RpcTimeoutException(
+                        "Timed out waiting for initial response", RpcTimeouts.TTFB_TIMEOUT));
               }
             })
         .reportExceptions();
@@ -252,7 +251,7 @@ public class Eth2OutgoingRequestHandler<
       final AtomicInteger currentResponseCount) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (previousResponseCount == currentResponseCount.get()) {
@@ -268,7 +267,7 @@ public class Eth2OutgoingRequestHandler<
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     timeoutRunner
-        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {

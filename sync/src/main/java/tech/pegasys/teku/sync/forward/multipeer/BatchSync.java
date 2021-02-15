@@ -225,7 +225,7 @@ public class BatchSync implements Sync {
     final NavigableSet<Batch> previousBatches = activeBatches.batchesBeforeExclusive(batch);
     if (isChildOfStartingPoint(firstBlock)) {
       LOG.debug(
-          "Marking {} batches complete because block at slot {} connects to our chain",
+          "Marking {} batches complete because block at slot {} is child of starting point",
           previousBatches.size(),
           firstBlock.getSlot());
       // We found where this chain connects to ours so all prior empty batches are
@@ -251,8 +251,8 @@ public class BatchSync implements Sync {
   /**
    * Returns true if firstBlock is the first block in the chain we're trying to download.
    *
-   * <p>Specifically, it's parent block must exist in our Store and be from the same slot as the
-   * common ancestor. If we accept the child of any block we have, we may incorrectly mark batches
+   * <p>Specifically, it's parent block must exist in our Store and be at or before the common
+   * ancestor slot. If we accept the child of any block we have, we may incorrectly mark batches
    * between the common ancestor and this block as empty, then later contest that when we received
    * blocks from those batches.
    *
@@ -262,7 +262,9 @@ public class BatchSync implements Sync {
   private boolean isChildOfStartingPoint(final SignedBeaconBlock firstBlock) {
     return recentChainData
         .getSlotForBlockRoot(firstBlock.getParentRoot())
-        .map(parentSlot -> commonAncestorSlot.join().equals(parentSlot))
+        // Parent might be before the common ancestor slot if common ancestor slot is empty.
+        // Typically that's when we use the finalized checkpoint as the common ancestor
+        .map(parentSlot -> commonAncestorSlot.join().isGreaterThanOrEqualTo(parentSlot))
         .orElse(false);
   }
 

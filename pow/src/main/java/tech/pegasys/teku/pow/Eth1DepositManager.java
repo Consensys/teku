@@ -20,7 +20,6 @@ import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenes
 import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -175,11 +174,11 @@ public class Eth1DepositManager {
               LOG.debug(
                   "Eth1DepositManager failed to get the head of Eth1: {}. Retrying in {} seconds.",
                   err.getMessage(),
-                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT.toSeconds(),
                   err);
 
               return asyncRunner
-                  .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+                  .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT)
                   .thenCompose((__) -> getHead());
             });
   }
@@ -194,8 +193,7 @@ public class Eth1DepositManager {
   private SafeFuture<UInt64> waitForEth1ChainToReachFollowDistanceIfNecessary(UInt64 number) {
     if (number.isLessThan(Constants.ETH1_FOLLOW_DISTANCE)) {
       return asyncRunner
-          .getDelayedFuture(
-              Constants.ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT, TimeUnit.SECONDS)
+          .getDelayedFuture(Constants.ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT)
           .thenCompose(__ -> getLatestEth1BlockNumber())
           .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary);
     } else {
