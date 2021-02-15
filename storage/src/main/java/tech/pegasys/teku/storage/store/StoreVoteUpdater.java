@@ -14,9 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import com.google.common.collect.Sets;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -25,25 +23,21 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 public class StoreVoteUpdater implements VoteUpdater {
 
   private final Store store;
   private final ReadWriteLock lock;
-  private final StorageUpdateChannel storageUpdateChannel;
+  private final VoteUpdateChannel voteUpdateChannel;
   Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
 
   StoreVoteUpdater(
-      final Store store,
-      final ReadWriteLock lock,
-      final StorageUpdateChannel storageUpdateChannel) {
+      final Store store, final ReadWriteLock lock, final VoteUpdateChannel voteUpdateChannel) {
     this.store = store;
     this.lock = lock;
-    this.storageUpdateChannel = storageUpdateChannel;
+    this.voteUpdateChannel = voteUpdateChannel;
   }
 
   @Override
@@ -87,20 +81,10 @@ public class StoreVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Void> commit() {
+  public void commit() {
     // Votes are applied to the store immediately since the changes to the in-memory ProtoArray
     // can't be rolled back.
     store.votes.putAll(votes);
-    return storageUpdateChannel.onStorageUpdate(
-        new StorageUpdate(
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptySet(),
-            votes,
-            Collections.emptyMap()));
+    voteUpdateChannel.onVotesUpdated(votes);
   }
 }

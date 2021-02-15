@@ -119,7 +119,8 @@ public class ForkChoice {
                                           new IllegalStateException(
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
-                      return transaction.commit();
+                      transaction.commit();
+                      return SafeFuture.COMPLETE;
                     }))
         .join();
   }
@@ -160,23 +161,24 @@ public class ForkChoice {
           }
           return transaction
               .commit()
-              .thenCompose(
-                  __ -> {
-                    final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
-                    indexedAttestationProvider.getIndexedAttestations().stream()
-                        .filter(
-                            attestation ->
-                                forkChoiceStrategy.contains(
-                                    attestation.getData().getBeacon_block_root()))
-                        .forEach(
-                            indexedAttestation ->
-                                forkChoiceStrategy.onAttestation(voteUpdater, indexedAttestation));
-                    // TODO: Do we actually have to wait for this or could it be async?
-                    return voteUpdater.commit();
-                  })
               .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
+              .thenRun(() -> applyVotesFromBlock(forkChoiceStrategy, indexedAttestationProvider))
               .thenApply(__ -> result);
         });
+  }
+
+  private void applyVotesFromBlock(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final CapturingIndexedAttestationProvider indexedAttestationProvider) {
+    final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
+    indexedAttestationProvider.getIndexedAttestations().stream()
+        .filter(
+            attestation ->
+                forkChoiceStrategy.contains(attestation.getData().getBeacon_block_root()))
+        .forEach(
+            indexedAttestation ->
+                forkChoiceStrategy.onAttestation(voteUpdater, indexedAttestation));
+    voteUpdater.commit();
   }
 
   private void updateForkChoiceForImportedBlock(
@@ -216,7 +218,8 @@ public class ForkChoice {
                         final VoteUpdater transaction = recentChainData.startVoteUpdate();
                         getForkChoiceStrategy()
                             .onAttestation(transaction, getIndexedAttestation(attestation));
-                        return transaction.commit();
+                        transaction.commit();
+                        return SafeFuture.COMPLETE;
                       })
                   .thenApply(__ -> validationResult);
             })
@@ -240,7 +243,8 @@ public class ForkChoice {
                   .map(this::getIndexedAttestation)
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
-              return transaction.commit();
+              transaction.commit();
+              return SafeFuture.COMPLETE;
             })
         .reportExceptions();
   }

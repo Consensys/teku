@@ -70,6 +70,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -310,8 +311,8 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public VoteUpdater startVoteUpdate(final StorageUpdateChannel storageUpdateChannel) {
-    return new StoreVoteUpdater(this, lock, storageUpdateChannel);
+  public VoteUpdater startVoteUpdate(final VoteUpdateChannel voteUpdateChannel) {
+    return new StoreVoteUpdater(this, lock, voteUpdateChannel);
   }
 
   @Override

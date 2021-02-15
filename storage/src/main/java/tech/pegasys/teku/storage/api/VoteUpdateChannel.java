@@ -15,9 +15,10 @@ package tech.pegasys.teku.storage.api;
 
 import java.util.Map;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface VoteUpdateChannel {
+public interface VoteUpdateChannel extends VoidReturningChannelInterface {
 
   void onVotesUpdated(Map<UInt64, VoteTracker> votes);
 }

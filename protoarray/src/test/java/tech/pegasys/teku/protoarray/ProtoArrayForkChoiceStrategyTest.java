@@ -274,7 +274,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             block3State);
-    assertThat(transaction.commit()).isCompleted();
+    transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
   }

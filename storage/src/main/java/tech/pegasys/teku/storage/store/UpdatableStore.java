@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 public interface UpdatableStore extends ReadOnlyStore {
 
@@ -29,7 +30,7 @@ public interface UpdatableStore extends ReadOnlyStore {
   StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler);
 
-  VoteUpdater startVoteUpdate(final StorageUpdateChannel storageUpdateChannel);
+  VoteUpdater startVoteUpdate(VoteUpdateChannel voteUpdateChannel);
 
   void startMetrics();
 

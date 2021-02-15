@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import javax.annotation.CheckReturnValue;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -58,7 +56,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
-  Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(

@@ -267,9 +267,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Void> commit() {
-    return SafeFuture.COMPLETE;
-  }
+  public void commit() {}
 
   @Override
   public Bytes32 applyForkChoiceScoreChanges(

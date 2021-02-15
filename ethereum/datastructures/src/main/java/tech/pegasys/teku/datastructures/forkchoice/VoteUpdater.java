@@ -17,7 +17,6 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface VoteUpdater {
@@ -33,5 +32,5 @@ public interface VoteUpdater {
       Checkpoint justifiedCheckpoint,
       BeaconState justifiedCheckpointState);
 
-  SafeFuture<Void> commit();
+  void commit();
 }
