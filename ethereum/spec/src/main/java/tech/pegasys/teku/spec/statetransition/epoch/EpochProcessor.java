@@ -254,7 +254,7 @@ public class EpochProcessor {
             .update(
                 index,
                 validator ->
-                    validator.withActivation_eligibility_epoch(
+                    validator.withActivation_epoch(
                         beaconStateUtil.computeActivationExitEpoch(currentEpoch)));
       }
     } catch (IllegalArgumentException e) {
