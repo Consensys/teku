@@ -24,9 +24,10 @@ public class SpecConstants {
   private final String configName;
 
   // Non-configurable constants
-  private final long genesisSlot = 0;
-  private final long genesisEpoch = 0;
-  private final UInt64 farFutureEpoch = UInt64.MAX_VALUE;
+  public static final UInt64 GENESIS_SLOT = UInt64.ZERO;
+  public static final UInt64 GENESIS_EPOCH = UInt64.ZERO;
+  public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
+
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
   private final int justificationBitsLength = 4;
@@ -247,18 +248,6 @@ public class SpecConstants {
 
   public String getConfigName() {
     return configName;
-  }
-
-  public long getGenesisSlot() {
-    return genesisSlot;
-  }
-
-  public long getGenesisEpoch() {
-    return genesisEpoch;
-  }
-
-  public UInt64 getFarFutureEpoch() {
-    return farFutureEpoch;
   }
 
   public UInt64 getBaseRewardsPerEpoch() {
@@ -514,9 +503,7 @@ public class SpecConstants {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final SpecConstants that = (SpecConstants) o;
-    return genesisSlot == that.genesisSlot
-        && genesisEpoch == that.genesisEpoch
-        && depositContractTreeDepth == that.depositContractTreeDepth
+    return depositContractTreeDepth == that.depositContractTreeDepth
         && justificationBitsLength == that.justificationBitsLength
         && maxCommitteesPerSlot == that.maxCommitteesPerSlot
         && targetCommitteeSize == that.targetCommitteeSize
@@ -552,7 +539,6 @@ public class SpecConstants {
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && Objects.equals(farFutureEpoch, that.farFutureEpoch)
         && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
         && Objects.equals(configName, that.configName)
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
@@ -585,9 +571,6 @@ public class SpecConstants {
   @Override
   public int hashCode() {
     return Objects.hash(
-        genesisSlot,
-        genesisEpoch,
-        farFutureEpoch,
         baseRewardsPerEpoch,
         depositContractTreeDepth,
         justificationBitsLength,

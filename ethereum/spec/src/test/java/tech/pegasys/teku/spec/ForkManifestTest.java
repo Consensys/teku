@@ -42,7 +42,6 @@ class ForkManifestTest {
   @BeforeEach
   public void setup() {
     when(constants.getGenesisForkVersion()).thenReturn(genesisForkVersion);
-    when(constants.getGenesisEpoch()).thenReturn(0L);
     forkManifest = ForkManifest.create(List.of(genesisFork, secondFork, thirdFork));
   }
 

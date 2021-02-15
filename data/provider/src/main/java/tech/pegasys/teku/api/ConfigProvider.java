@@ -22,6 +22,7 @@ import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class ConfigProvider {
   final SpecProvider specProvider;
@@ -50,6 +51,10 @@ public class ConfigProvider {
             .map(Fork::new)
             .collect(Collectors.toList());
     return new GetForkScheduleResponse(forkList);
+  }
+
+  public SpecConstants getGenesisSpecConstants() {
+    return specProvider.getGenesisSpecConstants();
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {

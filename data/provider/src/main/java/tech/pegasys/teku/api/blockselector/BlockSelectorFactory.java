@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.blockselector;
 
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +24,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
 
 public class BlockSelectorFactory {
   private final CombinedChainDataClient client;
@@ -72,7 +73,7 @@ public class BlockSelectorFactory {
   }
 
   public BlockSelector genesisSelector() {
-    return () -> optionalToList(client.getBlockAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT)));
+    return () -> optionalToList(client.getBlockAtSlotExact(GENESIS_SLOT));
   }
 
   public BlockSelector forSlot(final UInt64 slot) {
