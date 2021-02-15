@@ -31,9 +31,9 @@ import tech.pegasys.teku.util.config.Constants;
 
 class BeaconValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final BeaconStateUtil beaconStateUtil =
-      StubSpecProvider.create().getGenesisSpec().getBeaconStateUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
+  private final BeaconStateUtil beaconStateUtil =
+      specProvider.getGenesisSpec().getBeaconStateUtil();
   private final UInt64 farFutureEpoch = specProvider.getGenesisSpecConstants().getFarFutureEpoch();
 
   @Test
