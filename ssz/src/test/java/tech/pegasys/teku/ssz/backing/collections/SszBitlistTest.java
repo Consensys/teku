@@ -291,4 +291,11 @@ public class SszBitlistTest {
     assertThat(SszBitlist.nullableOr(bitlist, SszTestUtils.not(bitlist)).getBitCount())
         .isEqualTo(bitlist.size());
   }
+
+  @ParameterizedTest
+  @MethodSource("bitlistArgs")
+  void createWritableCopy_shouldThrow(SszBitlist bitlist) {
+    assertThatThrownBy(bitlist::createWritableCopy)
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
 }
