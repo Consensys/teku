@@ -15,7 +15,8 @@ package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
 import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class TestDefinition {
@@ -23,7 +24,7 @@ public class TestDefinition {
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
-  private Spec spec;
+  private SpecProvider specProvider;
 
   public TestDefinition(
       final String specName,
@@ -40,12 +41,13 @@ public class TestDefinition {
     return specName;
   }
 
-  public Spec getSpec() {
-    if (spec == null) {
+  public SpecProvider getSpecProvider() {
+    if (specProvider == null) {
       final SpecConstants constants = ConstantsLoader.loadConstants(specName);
-      spec = new Spec(constants);
+      final SpecConfiguration config = SpecConfiguration.builder().constants(constants).build();
+      specProvider = SpecProvider.create(config);
     }
-    return spec;
+    return specProvider;
   }
 
   public String getTestType() {

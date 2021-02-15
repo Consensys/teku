@@ -72,7 +72,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
       final BeaconState preState,
       final BeaconState expectedPostState)
       throws EpochProcessingException {
-    final EpochProcessor epochProcessor = testDefinition.getSpec().getEpochProcessor();
+    final EpochProcessor epochProcessor =
+        testDefinition.getSpecProvider().getGenesisSpec().getEpochProcessor();
     final EpochProcessingExecutor processor = new DefaultEpochProcessingExecutor(epochProcessor);
     final BeaconState result = preState.updated(state -> executeOperation(processor, state));
     assertThat(result).isEqualTo(expectedPostState);

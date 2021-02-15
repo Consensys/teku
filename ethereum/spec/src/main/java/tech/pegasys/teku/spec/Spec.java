@@ -24,7 +24,7 @@ public class Spec {
   private final BeaconStateUtil beaconStateUtil;
   private final EpochProcessor epochProcessor;
 
-  public Spec(final SpecConstants constants) {
+  Spec(final SpecConstants constants) {
     this.constants = constants;
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil);
