@@ -405,6 +405,8 @@ public class SszListTest {
               SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
               assertThat(SszTestUtils.equalsByGetters(list, list1)).isTrue();
               assertThat(list1.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
+              assertThat(list1).isEqualTo(list);
+              assertThat(list1.hashCode()).isEqualTo(list.hashCode());
               Bytes ssz1 = list1.sszSerialize();
               assertThat(ssz1).isEqualTo(ssz);
             });

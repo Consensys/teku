@@ -16,6 +16,8 @@ package tech.pegasys.teku.ssz.backing;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
@@ -52,6 +54,12 @@ public class SszTestUtils {
     } else {
       return v1.equals(v2);
     }
+  }
+
+  public static SszBitlist not(SszBitlist bitlist) {
+    List<Boolean> notList = bitlist.stream().map(b -> !b.get()).collect(Collectors.toList());
+    int[] notBitIndexes = IntStream.range(0, notList.size()).filter(notList::get).toArray();
+    return bitlist.getSchema().ofBits(bitlist.size(), notBitIndexes);
   }
 
   /** Estimates the number of 'non-default' tree nodes */
