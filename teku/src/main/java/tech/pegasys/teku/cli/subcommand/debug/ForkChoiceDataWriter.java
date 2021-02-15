@@ -18,7 +18,9 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import tech.pegasys.teku.data.yaml.YamlProvider;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,13 +30,17 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 public class ForkChoiceDataWriter {
 
   public static String writeForkChoiceData(
-      final ProtoArraySnapshot snapshot, final Map<UInt64, VoteTracker> votes) throws IOException {
+      final Optional<ProtoArraySnapshot> snapshot, final Map<UInt64, VoteTracker> votes)
+      throws IOException {
     final SimpleModule forkChoiceModule =
         new SimpleModule()
             .addSerializer(ProtoArraySnapshot.class, new ProtoArraySnapshotSerializer())
             .addSerializer(VoteTracker.class, new VoteSerializer());
     final YamlProvider mapper = new YamlProvider(forkChoiceModule);
-    return mapper.writeString(Map.of("snapshot", snapshot, "votes", votes));
+    final Map<String, Object> data = new HashMap<>();
+    data.put("votes", votes);
+    snapshot.ifPresent(value -> data.put("snapshot", value));
+    return mapper.writeString(data);
   }
 
   private static class VoteSerializer extends JsonSerializer<VoteTracker> {
