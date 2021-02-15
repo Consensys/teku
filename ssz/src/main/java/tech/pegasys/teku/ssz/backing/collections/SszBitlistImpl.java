@@ -19,6 +19,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -144,6 +145,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   private static BitlistImpl getBitlist(SszList<SszBit> bitlistView) {
     return BitlistImpl.fromSszBytes(
         bitlistView.sszSerialize(), bitlistView.getSchema().getMaxLength());
+  }
+
+  @Override
+  public SszMutableList<SszBit> createWritableCopy() {
+    throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 
   @Override
