@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -31,8 +33,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 class BeaconValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  private final SpecProvider specProvider = StubSpecProvider.create();
   private final BeaconStateUtil beaconStateUtil =
-      StubSpecProvider.create().getGenesisSpec().getBeaconStateUtil();
+      specProvider.getGenesisSpec().getBeaconStateUtil();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
@@ -80,11 +84,7 @@ class BeaconValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconState,
-            false,
-            Constants.FAR_FUTURE_EPOCH,
-            suppliedPageSizeParam,
-            PAGE_TOKEN_DEFAULT);
+            beaconState, false, FAR_FUTURE_EPOCH, suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
     assertThat(beaconValidators.total_size).isEqualTo(beaconState.getValidators().size());
     assertThat(beaconValidators.validators.size()).isEqualTo(suppliedPageSizeParam);
     assertThat(beaconValidators.next_page_token).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
@@ -174,7 +174,7 @@ class BeaconValidatorsTest {
         dataStructureUtil
             .randomValidator()
             .withActivation_eligibility_epoch(UInt64.ZERO)
-            .withActivation_epoch(UInt64.valueOf(Constants.GENESIS_EPOCH));
+            .withActivation_epoch(GENESIS_EPOCH);
 
     BeaconState beaconStateW = beaconState.updated(state -> state.getValidators().add(v));
 
