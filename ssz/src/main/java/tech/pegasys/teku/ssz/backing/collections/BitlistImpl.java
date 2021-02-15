@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
 import java.util.ArrayList;
@@ -39,6 +40,8 @@ class BitlistImpl {
   private final long maxSize;
 
   public BitlistImpl(int size, long maxSize, int... bitIndexes) {
+    checkArgument(size >= 0, "Negative size");
+    checkArgument(maxSize >= size, "maxSize should be >= size");
     this.size = size;
     this.data = new BitSet(size);
     this.maxSize = maxSize;

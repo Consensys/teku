@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
 import com.google.common.base.Supplier;
@@ -50,6 +51,7 @@ public abstract class AbstractSszCollectionSchema<
 
   protected AbstractSszCollectionSchema(
       long maxLength, SszSchema<SszElementT> elementSchema, SszSchemaHints hints) {
+    checkArgument(maxLength >= 0);
     this.maxLength = maxLength;
     this.elementSchema = elementSchema;
     this.hints = hints;
