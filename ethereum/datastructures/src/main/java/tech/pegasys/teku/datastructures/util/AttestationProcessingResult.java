@@ -63,6 +63,10 @@ public class AttestationProcessingResult {
     return status == Status.SUCCESSFUL;
   }
 
+  public boolean isInvalid() {
+    return status == Status.INVALID;
+  }
+
   public Status getStatus() {
     return status;
   }
