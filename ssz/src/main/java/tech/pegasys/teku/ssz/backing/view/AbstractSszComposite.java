@@ -139,7 +139,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public int hashCode() {
-    return Objects.hash(childrenViewCache, sizeCache, getSchema(), getBackingNode());
+    return hashTreeRoot().slice(28).toInt();
   }
 
   private interface IntSupplier {
