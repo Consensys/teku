@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
+import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -148,14 +149,18 @@ public class EpochProcessor {
       }
 
       Deltas attestationDeltas =
-          new RewardsAndPenaltiesCalculator(
-                  specConstants, beaconStateUtil, state, validatorStatuses)
-              .getAttestationDeltas();
+          createRewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
 
       applyDeltas(state, attestationDeltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
+  }
+
+  public RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
+      final BeaconState state, final ValidatorStatuses validatorStatuses) {
+    return new DefaultRewardsAndPenaltiesCalculator(
+        specConstants, beaconStateUtil, state, validatorStatuses);
   }
 
   private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {

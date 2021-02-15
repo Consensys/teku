@@ -148,7 +148,7 @@ public final class EpochProcessorUtil {
       }
 
       Deltas attestation_deltas =
-          new RewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
+          new RewardsAndPenaltiesCalculatorImpl(state, validatorStatuses).getAttestationDeltas();
 
       applyDeltas(state, attestation_deltas);
     } catch (IllegalArgumentException e) {
