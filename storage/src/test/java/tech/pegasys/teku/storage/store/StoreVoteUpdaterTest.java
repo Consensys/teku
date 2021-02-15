@@ -56,6 +56,24 @@ class StoreVoteUpdaterTest extends AbstractStoreTest {
     assertVote(UInt64.ZERO, updatedVote);
   }
 
+  @Test
+  void shouldIncludeUncommittedVotesInVotedValidatorIndices() {
+    setVote(UInt64.ZERO, dataStructureUtil.randomVoteTracker());
+    setVote(UInt64.ONE, dataStructureUtil.randomVoteTracker());
+
+    final VoteUpdater voteUpdater = store.startVoteUpdate(voteUpdateChannel);
+    voteUpdater.putVote(UInt64.valueOf(2), dataStructureUtil.randomVoteTracker());
+
+    assertThat(voteUpdater.getVotedValidatorIndices())
+        .containsExactlyInAnyOrder(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2));
+  }
+
+  private void setVote(final UInt64 validatorIndex, final VoteTracker vote) {
+    final VoteUpdater voteUpdater = store.startVoteUpdate(voteUpdateChannel);
+    voteUpdater.putVote(validatorIndex, vote);
+    voteUpdater.commit();
+  }
+
   private void assertVote(final UInt64 validatorIndex, final VoteTracker expectedVote) {
     final VoteTracker actualVote = store.startVoteUpdate(voteUpdateChannel).getVote(validatorIndex);
     assertThat(actualVote).isEqualTo(expectedVote);
