@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Disabled;
@@ -41,25 +42,26 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
 
   @Disabled
   @Test
   public void importBlocks() throws Exception {
 
-    Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
@@ -67,7 +69,7 @@ public class ProfilingRun {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -137,14 +139,13 @@ public class ProfilingRun {
   @Test
   public void importBlocksMemProfiling() throws Exception {
 
-    Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -217,7 +218,9 @@ public class ProfilingRun {
     BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
     System.out.println("Generating state...");
     BeaconState beaconState =
-        new DataStructureUtil(1).withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
+        new DataStructureUtil(1, Optional.of(specProvider.getGenesisSpec()))
+            .withPubKeyGenerator(() -> publicKey)
+            .randomBeaconState(100_000);
     System.out.println("Serializing...");
     Bytes bytes = beaconState.sszSerialize();
 

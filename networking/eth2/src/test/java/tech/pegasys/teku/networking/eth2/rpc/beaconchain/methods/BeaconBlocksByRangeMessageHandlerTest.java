@@ -45,14 +45,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class BeaconBlocksByRangeMessageHandlerTest {
 
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private static final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(0, Optional.of(specProvider.getGenesisSpec()));
   private static final UInt64 MAX_REQUEST_SIZE = UInt64.valueOf(8);
   private static final List<StateAndBlockSummary> BLOCKS_W_STATE =
       IntStream.rangeClosed(0, 10)
-          .mapToObj(slot -> new DataStructureUtil(slot).randomSignedBlockAndState(slot))
+          .mapToObj(slot -> dataStructureUtil.randomSignedBlockAndState(slot))
           .collect(Collectors.toList());
   private static final List<SignedBeaconBlock> BLOCKS =
       BLOCKS_W_STATE.stream()

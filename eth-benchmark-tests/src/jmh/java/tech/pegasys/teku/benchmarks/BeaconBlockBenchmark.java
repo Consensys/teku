@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.benchmarks;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -26,25 +27,23 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class BeaconBlockBenchmark {
-
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
   private static final BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(0);
   private static final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
+      new DataStructureUtil(0, Optional.of(specProvider.getGenesisSpec()))
+          .withPubKeyGenerator(() -> pubkey);
   private static final BeaconBlock fullBeaconBlock =
       dataStructureUtil.randomBeaconBlock(100, Bytes32.random(), true);
   private static final BeaconBlock sparseBeaconBlock =
       dataStructureUtil.randomBeaconBlock(100, Bytes32.random(), false);
-
-  public BeaconBlockBenchmark() {
-    Constants.setConstants("mainnet");
-  }
 
   @Benchmark
   public void hashFullBlocks(Blackhole bh) {

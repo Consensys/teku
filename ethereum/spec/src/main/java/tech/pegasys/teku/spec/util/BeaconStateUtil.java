@@ -68,14 +68,22 @@ public class BeaconStateUtil {
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
    */
-  public final boolean BLS_VERIFY_DEPOSIT = true;
-
   private final SpecConstants specConstants;
+
   private final CommitteeUtil committeeUtil;
+  private final boolean verifyDeposits;
 
   public BeaconStateUtil(final SpecConstants specConstants, final CommitteeUtil committeeUtil) {
+    this(specConstants, committeeUtil, true);
+  }
+
+  public BeaconStateUtil(
+      final SpecConstants specConstants,
+      final CommitteeUtil committeeUtil,
+      final boolean verifyDeposits) {
     this.specConstants = specConstants;
     this.committeeUtil = committeeUtil;
+    this.verifyDeposits = verifyDeposits;
   }
 
   public boolean isValidGenesisState(UInt64 genesisTime, int activeValidatorCount) {
@@ -557,14 +565,13 @@ public class BeaconStateUtil {
 
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
-      if (BLS_VERIFY_DEPOSIT) {
+      if (verifyDeposits) {
         final DepositMessage deposit_message =
             new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
         final Bytes32 domain = computeDomain(specConstants.getDomainDeposit());
         final Bytes signing_root = computeSigningRoot(deposit_message, domain);
         boolean proof_is_valid =
-            !BLS_VERIFY_DEPOSIT
-                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
+            !verifyDeposits || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
         if (!proof_is_valid) {
           if (deposit instanceof DepositWithIndex) {
             LOG.debug(

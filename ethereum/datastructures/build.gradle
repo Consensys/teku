@@ -33,6 +33,7 @@ dependencies {
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'com.google.guava:guava'
   testFixturesApi project(':infrastructure:unsigned')
+  testFixturesApi project(':ethereum:spec')
 
   testFixturesImplementation project(':bls')
   testFixturesImplementation testFixtures(project(':bls'))

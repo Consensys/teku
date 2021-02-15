@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.benchmarks.util.backing;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
@@ -26,19 +27,17 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
-
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
   private static final BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(0);
   private static final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
+      new DataStructureUtil(0, Optional.of(specProvider.getGenesisSpec()))
+          .withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
-
-  public BeaconStateBenchmark() {
-    Constants.setConstants("mainnet");
-  }
 
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.benchmarks;
 
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -27,30 +28,21 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.StubSpecProvider;
 
 @Fork(3)
 @BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
 public class ShuffleBenchmark {
+  private SpecProvider specProvider = StubSpecProvider.createMainnet();
 
   @Param({"16384", "32768"})
   int indexCount;
 
   Bytes32 seed = Bytes32.ZERO;
-  private final SpecConstants specConstants = SpecConstants.builder().configName("mainnet").build();
-  private final SpecConfiguration specConfiguration =
-      SpecConfiguration.builder().constants(specConstants).build();
-  private final SpecProvider specProvider = SpecProvider.create(specConfiguration);
   private final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
       specProvider.atSlot(UInt64.ZERO).getCommitteeUtil();
-
-  public ShuffleBenchmark() {
-    Constants.setConstants("mainnet");
-  }
 
   @Benchmark
   @Warmup(iterations = 2)

@@ -14,9 +14,6 @@
 package tech.pegasys.teku.benchmarks.gen;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 
 import com.google.common.eventbus.EventBus;
 import java.io.File;
@@ -37,26 +34,26 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * Utility class for generating BLS keypairs and blocks files Test methods need to be run manually
  */
 public class Generator {
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
+  // beaconStateUtil without verifyDeposits
+  final BeaconStateUtil beaconStateUtil = new BeaconStateUtil( specProvider.getGenesisSpecConstants(), specProvider.getGenesisSpec().getCommitteeUtil(), false);
 
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-
-    Constants.setConstants("mainnet");
-
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
-
     System.out.println("Generating keypairs...");
     int validatorsCount = 32 * 1024;
 
@@ -76,12 +73,16 @@ public class Generator {
     List<Attestation> attestations = Collections.emptyList();
 
     String blocksFile =
-        "blocks_epoch_" + Constants.SLOTS_PER_EPOCH + "_validators_" + validatorsCount + ".ssz";
+        "blocks_epoch_"
+            + specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
+            + "_validators_"
+            + validatorsCount
+            + ".ssz";
 
     try (Writer writer = BlockIO.createFileWriter(blocksFile)) {
 
       for (int j = 0; j < 50; j++) {
-        for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
+        for (int i = 0; i < specProvider.getGenesisSpecConstants().getSlotsPerEpoch(); i++) {
           long s = System.currentTimeMillis();
           currentSlot = currentSlot.plus(UInt64.ONE);
 
@@ -147,11 +148,12 @@ public class Generator {
   }
 
   String getCommittees(BeaconState state) {
-    UInt64 cnt = get_committee_count_per_slot(state, get_current_epoch(state));
+    final UInt64 epoch = beaconStateUtil.getCurrentEpoch(state);
+    final UInt64 cnt = beaconStateUtil.getCommitteeCountPerSlot(state, epoch);
     List<List<Integer>> committees = new ArrayList<>();
     for (UInt64 index = UInt64.ZERO; index.compareTo(cnt) < 0; index = index.plus(UInt64.ONE)) {
 
-      committees.add(get_beacon_committee(state, state.getSlot(), index));
+      committees.add(beaconStateUtil.getBeaconCommittee(state, state.getSlot(), index));
     }
 
     return "["

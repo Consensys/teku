@@ -13,18 +13,22 @@
 
 package tech.pegasys.teku.benchmarks.ssz;
 
+import java.util.Optional;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszPendingAttestationBenchmark
     extends SszAbstractContainerBenchmark<PendingAttestation> {
-
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private static final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(1, Optional.of(specProvider.getGenesisSpec()));
   private static final PendingAttestation aPendingAttestation =
       dataStructureUtil.randomPendingAttestation();
 

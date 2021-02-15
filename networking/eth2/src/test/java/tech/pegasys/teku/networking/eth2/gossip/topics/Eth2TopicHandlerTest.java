@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,11 +30,16 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class Eth2TopicHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0);
+
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private static final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(0, Optional.of(specProvider.getGenesisSpec()));
   private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
   private final Bytes blockBytes = GossipEncoding.SSZ_SNAPPY.encode(block);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -68,6 +69,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -81,13 +83,25 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
+  private final Optional<Spec> maybeSpec;
 
+  @Deprecated
   public DataStructureUtil() {
-    this(92892824);
+    this(92892824, Optional.empty());
   }
 
+  @Deprecated
   public DataStructureUtil(final int seed) {
+    this(seed, Optional.empty());
+  }
+
+  public DataStructureUtil(final Spec spec) {
+    this(92892824, Optional.of(spec));
+  }
+
+  public DataStructureUtil(final int seed, final Optional<Spec> maybeSpec) {
     this.seed = seed;
+    this.maybeSpec = maybeSpec;
   }
 
   public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
@@ -156,7 +170,11 @@ public final class DataStructureUtil {
   }
 
   public Bitlist randomBitlist() {
-    return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    final int maxValidatorsPerCommittee =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxValidatorsPerCommittee())
+            .orElse(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return randomBitlist(maxValidatorsPerCommittee);
   }
 
   public Bitlist randomBitlist(int n) {
@@ -401,44 +419,69 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
+    final int maxProposerSlashings =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxProposerSlashings())
+            .orElse(Constants.MAX_PROPOSER_SLASHINGS);
+    final int maxAttesterSlashings =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxAttesterSlashings())
+            .orElse(Constants.MAX_ATTESTER_SLASHINGS);
+    final int maxAttestations =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxAttestations())
+            .orElse(Constants.MAX_ATTESTATIONS);
+    final int maxDeposits =
+        maybeSpec.map(spec -> spec.getConstants().getMaxDeposits()).orElse(Constants.MAX_DEPOSITS);
+    final int maxVoluntaryExits =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxVoluntaryExits())
+            .orElse(Constants.MAX_VOLUNTARY_EXITS);
     return new BeaconBlockBody(
         randomSignature(),
         randomEth1Data(),
         Bytes32.ZERO,
         randomSSZList(
-            ProposerSlashing.class,
-            Constants.MAX_PROPOSER_SLASHINGS,
-            this::randomProposerSlashing,
-            1),
+            ProposerSlashing.class, maxProposerSlashings, this::randomProposerSlashing, 1),
         randomSSZList(
-            AttesterSlashing.class,
-            Constants.MAX_ATTESTER_SLASHINGS,
-            this::randomAttesterSlashing,
-            1),
-        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation, 3),
-        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex, 1),
+            AttesterSlashing.class, maxAttesterSlashings, this::randomAttesterSlashing, 1),
+        randomSSZList(Attestation.class, maxAttestations, this::randomAttestation, 3),
+        randomSSZList(Deposit.class, maxDeposits, this::randomDepositWithoutIndex, 1),
         randomSSZList(
-            SignedVoluntaryExit.class,
-            Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit,
-            1));
+            SignedVoluntaryExit.class, maxVoluntaryExits, this::randomSignedVoluntaryExit, 1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
+    final int maxProposerSlashings =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxProposerSlashings())
+            .orElse(Constants.MAX_PROPOSER_SLASHINGS);
+    final int maxAttesterSlashings =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxAttesterSlashings())
+            .orElse(Constants.MAX_ATTESTER_SLASHINGS);
+    final int maxAttestations =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxAttestations())
+            .orElse(Constants.MAX_ATTESTATIONS);
+    final int maxDeposits =
+        maybeSpec.map(spec -> spec.getConstants().getMaxDeposits()).orElse(Constants.MAX_DEPOSITS);
+    final int maxVoluntaryExits =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxVoluntaryExits())
+            .orElse(Constants.MAX_VOLUNTARY_EXITS);
     return new BeaconBlockBody(
         randomSignature(),
         randomEth1Data(),
         Bytes32.ZERO,
         randomFullSSZList(
-            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
+            ProposerSlashing.class, maxProposerSlashings, this::randomProposerSlashing),
         randomFullSSZList(
-            AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS, this::randomAttesterSlashing),
-        randomFullSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
-        randomFullSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
+            AttesterSlashing.class, maxAttesterSlashings, this::randomAttesterSlashing),
+        randomFullSSZList(Attestation.class, maxAttestations, this::randomAttestation),
+        randomFullSSZList(Deposit.class, maxDeposits, this::randomDepositWithoutIndex),
         randomFullSSZList(
-            SignedVoluntaryExit.class,
-            Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit));
+            SignedVoluntaryExit.class, maxVoluntaryExits, this::randomSignedVoluntaryExit));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -446,8 +489,12 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation() {
+    final int maxValidatorsPerCommittee =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxValidatorsPerCommittee())
+            .orElse(Constants.MAX_VALIDATORS_PER_COMMITTEE);
     SSZMutableList<UInt64> attesting_indices =
-        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.createMutable(UInt64.class, maxValidatorsPerCommittee);
     attesting_indices.add(randomUInt64());
     attesting_indices.add(randomUInt64());
     attesting_indices.add(randomUInt64());
@@ -455,15 +502,31 @@ public final class DataStructureUtil {
   }
 
   public DepositData randomDepositData() {
+    final UInt64 maxEffectiveBalance =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxEffectiveBalance())
+            .orElse(Constants.MAX_EFFECTIVE_BALANCE);
+    final Bytes4 domainDeposit =
+        maybeSpec
+            .map(spec -> spec.getConstants().getDomainDeposit())
+            .orElse(Constants.DOMAIN_DEPOSIT);
     BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
     BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawal_credentials = randomBytes32();
 
     DepositMessage proof_of_possession_data =
-        new DepositMessage(pubkey, withdrawal_credentials, Constants.MAX_EFFECTIVE_BALANCE);
+        new DepositMessage(pubkey, withdrawal_credentials, maxEffectiveBalance);
 
-    final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
-    final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
+    final Bytes32 domain =
+        maybeSpec
+            .map(spec -> spec.getBeaconStateUtil().computeDomain(domainDeposit))
+            .orElse(compute_domain(DOMAIN_DEPOSIT));
+    final Bytes signing_root =
+        maybeSpec
+            .map(
+                spec ->
+                    spec.getBeaconStateUtil().computeSigningRoot(proof_of_possession_data, domain))
+            .orElse(compute_signing_root(proof_of_possession_data, domain));
 
     BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
 
@@ -503,14 +566,22 @@ public final class DataStructureUtil {
   }
 
   public Deposit randomDepositWithoutIndex() {
+    final int depositContractTreeDepth =
+        maybeSpec
+            .map(spec -> spec.getConstants().getDepositContractTreeDepth())
+            .orElse(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
     return new Deposit(
-        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
+        SSZVector.createMutable(depositContractTreeDepth + 1, randomBytes32()),
         randomDepositData());
   }
 
   public Deposit randomDeposit() {
+    final int depositContractTreeDepth =
+        maybeSpec
+            .map(spec -> spec.getConstants().getDepositContractTreeDepth())
+            .orElse(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
     return new Deposit(
-        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
+        SSZVector.createMutable(depositContractTreeDepth + 1, randomBytes32()),
         randomDepositData());
   }
 
@@ -550,18 +621,27 @@ public final class DataStructureUtil {
   }
 
   public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
+    final int maxDeposits =
+        maybeSpec.map(spec -> spec.getConstants().getMaxDeposits()).orElse(Constants.MAX_DEPOSITS);
+    final UInt64 maxEffectiveBalance =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxEffectiveBalance())
+            .orElse(Constants.MAX_EFFECTIVE_BALANCE);
+    final int depositContractTreeDepth =
+        maybeSpec
+            .map(spec -> spec.getConstants().getDepositContractTreeDepth())
+            .orElse(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
     SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
+        SSZList.createMutable(DepositWithIndex.class, maxDeposits);
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
       BLSKeyPair keypair = BLSTestUtil.randomKeyPair(i);
       DepositData depositData =
-          depositGenerator.createDepositData(
-              keypair, Constants.MAX_EFFECTIVE_BALANCE, keypair.getPublicKey());
+          depositGenerator.createDepositData(keypair, maxEffectiveBalance, keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
-          SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+          SSZVector.createMutable(depositContractTreeDepth + 1, Bytes32.ZERO);
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UInt64.valueOf(i));
       deposits.add(deposit);
     }
@@ -569,15 +649,23 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator() {
+    final UInt64 maxEffectiveBalance =
+        maybeSpec
+            .map(spec -> spec.getConstants().getMaxEffectiveBalance())
+            .orElse(Constants.MAX_EFFECTIVE_BALANCE);
+    final UInt64 farFutureEpoch =
+        maybeSpec
+            .map(spec -> spec.getConstants().getFarFutureEpoch())
+            .orElse(Constants.FAR_FUTURE_EPOCH);
     return new Validator(
         randomPublicKeyBytes(),
         randomBytes32(),
-        Constants.MAX_EFFECTIVE_BALANCE,
+        maxEffectiveBalance,
         false,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH);
+        farFutureEpoch,
+        farFutureEpoch,
+        farFutureEpoch,
+        farFutureEpoch);
   }
 
   public Fork randomFork() {
@@ -621,8 +709,11 @@ public final class DataStructureUtil {
   }
 
   public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
-    final SignedBlockAndState anchorBlockAndState =
-        randomSignedBlockAndState(compute_start_slot_at_epoch(epoch));
+    final UInt64 slot =
+        maybeSpec
+            .map(spec -> spec.getBeaconStateUtil().computeStartSlotAtEpoch(epoch))
+            .orElse(compute_start_slot_at_epoch(epoch));
+    final SignedBlockAndState anchorBlockAndState = randomSignedBlockAndState(slot);
     return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
   }
 
@@ -639,7 +730,10 @@ public final class DataStructureUtil {
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
-    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    final UInt64 anchorEpoch =
+        maybeSpec
+            .map(spec -> spec.getBeaconStateUtil().getCurrentEpoch(anchorState))
+            .orElse(BeaconStateUtil.get_current_epoch(anchorState));
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);

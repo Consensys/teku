@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import com.google.common.eventbus.EventBus;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -38,14 +39,14 @@ import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -54,6 +55,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
+
+  private static SpecProvider specProvider = StubSpecProvider.createMainnet();
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
   BeaconChainUtil localChain;
@@ -67,12 +70,10 @@ public abstract class TransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    Constants.setConstants("mainnet");
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -131,7 +132,9 @@ public abstract class TransitionBenchmark {
     @Setup(Level.Iteration)
     public void skipAndPrefetch() throws Exception {
       if (lastResult != null
-          && (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH == 0) {
+          && (lastResult.getBlock().getSlot().longValue() + 1)
+                  % specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
+              == 0) {
 
         // import block with epoch transition
         importNextBlock();
@@ -157,7 +160,9 @@ public abstract class TransitionBenchmark {
     public void skipAndPrefetch() throws Exception {
       // import all blocks without epoch transition
       while (lastResult == null
-          || (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH != 0) {
+          || (lastResult.getBlock().getSlot().longValue() + 1)
+                  % specProvider.getGenesisSpecConstants().getSlotsPerEpoch()
+              != 0) {
         importNextBlock();
       }
       prefetchBlock();
