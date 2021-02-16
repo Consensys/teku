@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.Optional;
-import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
+import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;

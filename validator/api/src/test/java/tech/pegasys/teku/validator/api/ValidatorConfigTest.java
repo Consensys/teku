@@ -29,8 +29,8 @@ class ValidatorConfigTest {
   @Test
   public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
     final ValidatorConfig.Builder builder =
-        configBuilder.validatorExternalSignerPublicKeys(
-            List.of(BLSTestUtil.randomKeyPair(0).getPublicKey()));
+        configBuilder.validatorExternalSignerPublicKeySources(
+            List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
@@ -50,7 +50,8 @@ class ValidatorConfigTest {
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
-            .validatorExternalSignerPublicKeys(List.of(BLSTestUtil.randomKeyPair(0).getPublicKey()))
+            .validatorExternalSignerPublicKeySources(
+                List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()))
             .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
 
     Assertions.assertThatCode(builder::build).doesNotThrowAnyException();

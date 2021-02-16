@@ -28,7 +28,7 @@ public interface TestExecutor {
       };
 
   default SpecProvider specProviderFromSpec(final TestDefinition testDefinition) {
-    final SpecConstants specConstants = ConstantsLoader.loadConstants(testDefinition.getSpec());
+    final SpecConstants specConstants = ConstantsLoader.loadConstants(testDefinition.getSpecName());
     final SpecConfiguration specConfiguration =
         SpecConfiguration.builder().constants(specConstants).build();
     return SpecProvider.create(specConfiguration);

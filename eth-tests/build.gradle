@@ -2,6 +2,8 @@ dependencies {
   implementation project(':bls')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:spec')
+  implementation project(':ethereum:networks')
   implementation project(':infrastructure:async')
   implementation project(':ssz')
   implementation project(':storage')
