@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.api.stateselector;
 
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
 
 public class StateSelectorFactory {
   private final CombinedChainDataClient client;
@@ -80,7 +81,7 @@ public class StateSelectorFactory {
   }
 
   public StateSelector genesisSelector() {
-    return () -> client.getStateAtSlotExact(UInt64.valueOf(Constants.GENESIS_SLOT));
+    return () -> client.getStateAtSlotExact(GENESIS_SLOT);
   }
 
   public StateSelector forSlot(final UInt64 slot) {

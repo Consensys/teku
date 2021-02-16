@@ -9,6 +9,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:spec')
   implementation project(':networking:eth2')
   implementation project(':util')
   implementation project(':infrastructure:logging')

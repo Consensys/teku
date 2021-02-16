@@ -25,20 +25,24 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetDepositContractResponse;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetDepositContract implements Handler {
   public static final String ROUTE = "/eth/v1/config/deposit_contract";
   private Optional<String> depositContractResponse;
   private final String depositContractAddress;
   private final JsonProvider jsonProvider;
+  private final ConfigProvider configProvider;
 
   public GetDepositContract(
-      final Optional<Eth1Address> depositContractAddress, final JsonProvider jsonProvider) {
+      final Optional<Eth1Address> depositContractAddress,
+      final JsonProvider jsonProvider,
+      final ConfigProvider configProvider) {
     this.jsonProvider = jsonProvider;
+    this.configProvider = configProvider;
     this.depositContractResponse = Optional.empty();
     this.depositContractAddress =
         depositContractAddress
@@ -60,12 +64,12 @@ public class GetDepositContract implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
+    final int depositChainId = configProvider.getGenesisSpecConstants().getDepositChainId();
     if (depositContractResponse.isEmpty()) {
       this.depositContractResponse =
           Optional.of(
               jsonProvider.objectToJSON(
-                  new GetDepositContractResponse(
-                      Constants.DEPOSIT_CHAIN_ID, depositContractAddress)));
+                  new GetDepositContractResponse(depositChainId, depositContractAddress)));
     }
     ctx.status(SC_OK);
     ctx.result(this.depositContractResponse.orElse(""));

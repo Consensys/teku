@@ -81,7 +81,7 @@ public class ExternalSignerUpcheckTLSIntegrationTest {
   private static ExternalSignerUpcheck buildExternalSignerUpcheck(final URL serverUrl) {
     final ValidatorConfig config =
         ValidatorConfig.builder()
-            .validatorExternalSignerPublicKeys(List.of(KEYPAIR.getPublicKey()))
+            .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
             .validatorExternalSignerUrl(serverUrl)
             .validatorExternalSignerTimeout(TIMEOUT)
             .validatorExternalSignerKeystore(TEKU_KEYSTORE)

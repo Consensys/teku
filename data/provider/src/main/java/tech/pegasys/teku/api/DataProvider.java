@@ -62,7 +62,7 @@ public class DataProvider {
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
-        new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
+        new ValidatorDataProvider(specProvider, validatorApiChannel, combinedChainDataClient);
   }
 
   public ConfigProvider getConfigProvider() {

@@ -55,7 +55,8 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @MustBeClosed
   static Stream<Arguments> loadReferenceTests() throws IOException {
     return ReferenceTestFinder.findReferenceTests()
-        .filter(testDefinition -> SPEC.isBlank() || testDefinition.getSpec().equalsIgnoreCase(SPEC))
+        .filter(
+            testDefinition -> SPEC.isBlank() || testDefinition.getSpecName().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }

@@ -19,14 +19,12 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecConstantsReaderTest {
   private final SpecConstantsReader reader = new SpecConstantsReader();
@@ -246,15 +244,9 @@ public class SpecConstantsReaderTest {
   }
 
   private void assertAllFieldsSet(final SpecConstants constants) throws Exception {
-    final List<String> zeroFields = List.of("genesisSlot", "genesisEpoch");
     for (Field field : SpecConstants.class.getFields()) {
       final Object value = field.get(constants);
       Assertions.assertThat(value).describedAs(field.getName()).isNotNull();
-      if (!zeroFields.contains(field.getName())) {
-        Assertions.assertThat(value).describedAs(field.getName()).isNotEqualTo(0);
-        Assertions.assertThat(value).describedAs(field.getName()).isNotEqualTo(0L);
-        Assertions.assertThat(value).describedAs(field.getName()).isNotEqualTo(UInt64.ZERO);
-      }
     }
   }
 }
