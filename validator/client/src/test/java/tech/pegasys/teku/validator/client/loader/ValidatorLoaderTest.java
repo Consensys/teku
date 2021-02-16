@@ -78,7 +78,7 @@ class ValidatorLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
-  private final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+  private final PublicKeyLoader publicKeyLoader = new PublicKeyLoader();
 
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
@@ -90,6 +90,40 @@ class ValidatorLoaderTest {
   void initUpcheckMockResponse() throws IOException, InterruptedException {
     when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
         .thenReturn(upcheckResponse);
+  }
+
+  @Test
+  void shouldLoadPublicKeysFromUrls() {
+    final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+    final List<BLSPublicKey> expectedKeys = List.of(PUBLIC_KEY1, PUBLIC_KEY2);
+    final String publicKeysUrl = "http://example.com";
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(expectedKeys);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
+            .build();
+
+    final Map<BLSPublicKey, Validator> validators =
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+
+    assertThat(validators).hasSize(2);
+
+    final Validator validator1 = validators.get(PUBLIC_KEY1);
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.getSigner().isLocal()).isFalse();
+
+    final Validator validator2 = validators.get(PUBLIC_KEY2);
+    assertThat(validator2).isNotNull();
+    assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
+    assertThat(validator2.getSigner().isLocal()).isFalse();
   }
 
   @Test
