@@ -168,12 +168,6 @@ public final class DataStructureUtil {
     return SszBitlistSchema.create(n).ofBits(n, bits);
   }
 
-  public Bitvector randomBitvector(int n) {
-    Random random = new Random(nextSeed());
-    int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return new Bitvector(n, bits);
-  }
-
   public SszBitvector randomSszBitvector(int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
