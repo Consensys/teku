@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -71,6 +72,7 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -653,51 +655,37 @@ public final class DataStructureUtil {
   }
 
   private int getMaxProposerSlashings() {
-    return maybeSpecProvider
-        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxProposerSlashings())
-        .orElse(Constants.MAX_PROPOSER_SLASHINGS);
+    return getConstant(SpecConstants::getMaxProposerSlashings, Constants.MAX_PROPOSER_SLASHINGS);
   }
 
   private int getMaxAttesterSlashings() {
-    return maybeSpecProvider
-        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxAttesterSlashings())
-        .orElse(Constants.MAX_ATTESTER_SLASHINGS);
+    return getConstant(SpecConstants::getMaxAttesterSlashings, Constants.MAX_ATTESTER_SLASHINGS);
   }
 
   private int getMaxAttestations() {
-    return maybeSpecProvider
-        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxAttestations())
-        .orElse(Constants.MAX_ATTESTATIONS);
+    return getConstant(SpecConstants::getMaxAttestations, Constants.MAX_ATTESTATIONS);
   }
 
   private int getMaxDeposits() {
-    return maybeSpecProvider
-        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxDeposits())
-        .orElse(Constants.MAX_DEPOSITS);
+    return getConstant(SpecConstants::getMaxDeposits, Constants.MAX_DEPOSITS);
   }
 
   private int getMaxVoluntaryExits() {
-    return maybeSpecProvider
-        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxVoluntaryExits())
-        .orElse(Constants.MAX_VOLUNTARY_EXITS);
+    return getConstant(SpecConstants::getMaxVoluntaryExits, Constants.MAX_VOLUNTARY_EXITS);
   }
 
   private int getMaxValidatorsPerCommittee() {
-    return maybeSpecProvider
-        .map(spec -> spec.getGenesisSpecConstants().getMaxValidatorsPerCommittee())
-        .orElse(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return getConstant(
+        SpecConstants::getMaxValidatorsPerCommittee, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
   private UInt64 getMaxEffectiveBalance() {
-    return maybeSpecProvider
-        .map(spec -> spec.getGenesisSpecConstants().getMaxEffectiveBalance())
-        .orElse(Constants.MAX_EFFECTIVE_BALANCE);
+    return getConstant(SpecConstants::getMaxEffectiveBalance, Constants.MAX_EFFECTIVE_BALANCE);
   }
 
   private int getDepositContractTreeDepth() {
-    return maybeSpecProvider
-        .map(spec -> spec.getGenesisSpecConstants().getDepositContractTreeDepth())
-        .orElse(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+    return getConstant(
+        SpecConstants::getDepositContractTreeDepth, Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
   }
 
   private Bytes32 computeDomain() {
@@ -728,5 +716,11 @@ public final class DataStructureUtil {
             specProvider ->
                 specProvider.getGenesisSpec().getBeaconStateUtil().computeStartSlotAtEpoch(epoch))
         .orElse(compute_start_slot_at_epoch(epoch));
+  }
+
+  private <T> T getConstant(final Function<SpecConstants, T> getter, final T defaultValue) {
+    return maybeSpecProvider
+        .map(specProvider -> getter.apply(specProvider.getGenesisSpec().getConstants()))
+        .orElse(defaultValue);
   }
 }
