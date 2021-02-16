@@ -55,15 +55,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.util.config.Constants;
 
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil();
-  SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecConstants specConstants = specProvider.getGenesisSpecConstants();
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -355,7 +356,7 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.slot,
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
-        chainReorgEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
+        chainReorgEvent.slot.mod(specConstants.getSlotsPerEpoch()).equals(UInt64.ZERO),
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.of(

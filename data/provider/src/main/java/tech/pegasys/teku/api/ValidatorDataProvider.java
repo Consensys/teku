@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +32,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -42,8 +42,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
 
-  public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
-      "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future.";
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
       "Cannot produce a block for a historic slot.";
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
@@ -54,12 +52,15 @@ public class ValidatorDataProvider {
   private static final int SC_INTERNAL_ERROR = 500;
   private static final int SC_ACCEPTED = 202;
   private static final int SC_OK = 200;
+  private final SpecProvider specProvider;
 
   public ValidatorDataProvider(
+      final SpecProvider specProvider,
       final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.specProvider = specProvider;
   }
 
   public boolean isStoreAvailable() {
@@ -74,9 +75,11 @@ public class ValidatorDataProvider {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
-    if (currentSlot.plus(SLOTS_PER_EPOCH).isLessThan(slot)) {
-      throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
+    final int slotsPerEpoch = specProvider.atSlot(slot).getConstants().getSlotsPerEpoch();
+    final UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
+    if (currentSlot.plus(slotsPerEpoch).isLessThan(slot)) {
+      throw new IllegalArgumentException(
+          "Cannot produce a block more than " + slotsPerEpoch + " slots in the future.");
     }
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
