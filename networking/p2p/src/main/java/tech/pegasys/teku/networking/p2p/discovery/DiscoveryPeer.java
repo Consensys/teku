@@ -20,18 +20,19 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
   private final Optional<EnrForkId> enrForkId;
-  private final Bitvector persistentSubnets;
+  private final SszBitvector persistentSubnets;
 
   public DiscoveryPeer(
       final Bytes publicKey,
       final InetSocketAddress nodeAddress,
       final Optional<EnrForkId> enrForkId,
-      final Bitvector persistentSubnets) {
+      final SszBitvector persistentSubnets) {
     this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
@@ -50,7 +51,7 @@ public class DiscoveryPeer {
     return enrForkId;
   }
 
-  public Bitvector getPersistentSubnets() {
+  public SszBitvector getPersistentSubnets() {
     return persistentSubnets;
   }
 

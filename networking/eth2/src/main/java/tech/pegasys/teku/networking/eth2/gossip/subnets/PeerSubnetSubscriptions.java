@@ -25,17 +25,23 @@ import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSubnetSubscriptions {
 
+  public static final SszBitvectorSchema<?> SUBNET_SUBSCRIPTIONS_SCHEMA = SszBitvectorSchema
+      .create(ATTESTATION_SUBNET_COUNT);
+
   private final Map<Integer, Integer> subscriberCountBySubnetId;
-  private final Map<NodeId, Bitvector> subscriptionsByPeer;
+  private final Map<NodeId, SszBitvector> subscriptionsByPeer;
   private final int targetSubnetSubscriberCount;
 
   private PeerSubnetSubscriptions(
       final Map<Integer, Integer> subscriberCountBySubnetId,
-      final Map<NodeId, Bitvector> subscriptionsByPeer,
+      final Map<NodeId, SszBitvector> subscriptionsByPeer,
       final int targetSubnetSubscriberCount) {
     this.subscriberCountBySubnetId = subscriberCountBySubnetId;
     this.subscriptionsByPeer = subscriptionsByPeer;
@@ -61,8 +67,8 @@ public class PeerSubnetSubscriptions {
     return subscriberCountBySubnetId.getOrDefault(subnetId, 0);
   }
 
-  public Bitvector getSubscriptionsForPeer(final NodeId peerId) {
-    return subscriptionsByPeer.getOrDefault(peerId, new Bitvector(ATTESTATION_SUBNET_COUNT));
+  public SszBitvector getSubscriptionsForPeer(final NodeId peerId) {
+    return subscriptionsByPeer.getOrDefault(peerId, SUBNET_SUBSCRIPTIONS_SCHEMA.getDefault());
   }
 
   public PeerScorer createScorer() {
@@ -82,7 +88,7 @@ public class PeerSubnetSubscriptions {
   static class Builder {
     private final Map<Integer, Integer> subscriberCountBySubnetId = new HashMap<>();
 
-    private final Map<NodeId, Bitvector> subscriptionsByPeer = new HashMap<>();
+    private final Map<NodeId, SszBitvector> subscriptionsByPeer = new HashMap<>();
     private int targetSubnetSubscriberCount = 2;
 
     public Builder addSubscriber(final int subnetId, final NodeId peer) {
@@ -92,7 +98,7 @@ public class PeerSubnetSubscriptions {
           peer,
           (__, existingVector) ->
               existingVector == null
-                  ? new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, subnetId)
+                  ? SUBNET_SUBSCRIPTIONS_SCHEMA.ofBits(subnetId)
                   : existingVector.withBit(subnetId));
       return this;
     }

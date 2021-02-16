@@ -28,6 +28,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,13 +45,12 @@ public class NodeRecordConverter {
     final Optional<EnrForkId> enrForkId =
         parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
 
-    final Bitvector persistentSubnets =
+    final SszBitvector persistentSubnets =
         parseField(
                 nodeRecord,
                 ATTESTATION_SUBNET_ENR_FIELD,
-                attestionSubnetsField ->
-                    Bitvector.fromBytes(attestionSubnetsField, ATTESTATION_SUBNET_COUNT))
-            .orElse(new Bitvector(ATTESTATION_SUBNET_COUNT));
+            DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA::fromBytes)
+            .orElse(DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA.getDefault());
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);

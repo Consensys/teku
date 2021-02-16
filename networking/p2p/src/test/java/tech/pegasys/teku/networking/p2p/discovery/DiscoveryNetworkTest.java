@@ -53,6 +53,7 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
@@ -270,6 +271,7 @@ class DiscoveryNetworkTest {
         BLSPublicKey.empty().toSSZBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
-        new Bitvector(ATTESTATION_SUBNET_COUNT));
+        SszBitvectorSchema
+            .create(ATTESTATION_SUBNET_COUNT).getDefault());
   }
 }

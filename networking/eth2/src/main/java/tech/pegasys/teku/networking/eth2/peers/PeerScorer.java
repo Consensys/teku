@@ -17,6 +17,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public interface PeerScorer {
 
@@ -26,7 +27,7 @@ public interface PeerScorer {
     return scoreExistingPeer(peer.getId());
   }
 
-  int scoreCandidatePeer(Bitvector subscriptions);
+  int scoreCandidatePeer(SszBitvector subscriptions);
 
   default int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return scoreCandidatePeer(candidate.getPersistentSubnets());
