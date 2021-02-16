@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -24,6 +26,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszVector<SszElementT> {
+
+  public SszVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+    super(schema, lazyBackingNode);
+  }
 
   public SszVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);
@@ -40,7 +46,7 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszColle
   }
 
   @Override
-  public SszMutableVectorImpl<SszElementT, ?> createWritableCopy() {
+  public SszMutableVector<SszElementT> createWritableCopy() {
     return new SszMutableVectorImpl<>(this);
   }
 

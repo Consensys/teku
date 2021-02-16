@@ -135,17 +135,14 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
+    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA) {
+      throw new UnsupportedOperationException(
+          "Bitvector deserialization is only supported by SszBitvectorSchema");
+    }
+
     DeserializedData data = sszDeserializeVector(reader);
-    if (getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA && getLength() % 8 > 0) {
-      // for BitVector we need to check that all 'unused' bits in the last byte are 0
-      int usedBitCount = getLength() % 8;
-      if (data.getLastSszByte().orElseThrow() >>> usedBitCount != 0) {
-        throw new SszDeserializeException("Invalid Bitvector ssz: trailing bits are not 0");
-      }
-    } else {
-      if (data.getChildrenCount() != getLength()) {
-        throw new SszDeserializeException("Invalid Vector ssz");
-      }
+    if (data.getChildrenCount() != getLength()) {
+      throw new SszDeserializeException("Invalid Vector ssz");
     }
     return data.getDataTree();
   }
