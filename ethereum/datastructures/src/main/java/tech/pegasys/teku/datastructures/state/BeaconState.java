@@ -20,24 +20,23 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
@@ -133,7 +132,7 @@ public interface BeaconState extends SszContainer {
       new SszField(
           17,
           "justification_bits",
-          () -> new SszBitVectorSchema(Constants.JUSTIFICATION_BITS_LENGTH));
+          () -> SszBitvectorSchema.create(Constants.JUSTIFICATION_BITS_LENGTH));
   SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
       new SszField(18, "previous_justified_checkpoint", Checkpoint.SSZ_SCHEMA);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
@@ -223,7 +222,7 @@ public interface BeaconState extends SszContainer {
       SSZList<PendingAttestation> current_epoch_attestations,
 
       // Finality
-      Bitvector justification_bits,
+      SszBitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
@@ -371,8 +370,8 @@ public interface BeaconState extends SszContainer {
   }
 
   // Finality
-  default Bitvector getJustification_bits() {
-    return SszUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getIndex()));
+  default SszBitvector getJustification_bits() {
+    return getAny(JUSTIFICATION_BITS_FIELD.getIndex());
   }
 
   default Checkpoint getPrevious_justified_checkpoint() {

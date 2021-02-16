@@ -16,11 +16,9 @@ package tech.pegasys.teku.ssz.backing.collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -74,6 +72,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   @Override
   public int getBitCount() {
     return value.getBitCount();
+  }
+
+  @Override
+  public SszBitvector rightShift(int n) {
+    return new SszBitvectorImpl(getSchema(), value.rightShift(n));
   }
 
   @Override

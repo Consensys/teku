@@ -55,11 +55,11 @@ import tech.pegasys.teku.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
@@ -288,7 +288,7 @@ public class BeaconStateUtil {
     return epoch.plus(UInt64.ONE).plus(specConstants.getMaxSeedLookahead());
   }
 
-  public boolean all(Bitvector bitvector, int start, int end) {
+  public boolean all(SszBitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
       if (!bitvector.getBit(i)) {
         return false;

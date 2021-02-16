@@ -47,4 +47,6 @@ public interface SszBitvector extends SszVector<SszBit> {
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }
+
+  SszBitvector rightShift(int n);
 }
