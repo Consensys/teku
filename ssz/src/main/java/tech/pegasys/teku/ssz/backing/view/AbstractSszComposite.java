@@ -92,8 +92,12 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
 
   @Override
   public final SszChildT get(int index) {
+    return childrenViewCache.getInt(index, this::getImplWithIndexCheck);
+  }
+
+  private SszChildT getImplWithIndexCheck(int index) {
     checkIndex(index);
-    return childrenViewCache.getInt(index, this::getImpl);
+    return getImpl(index);
   }
 
   /** Cache miss fallback child getter. This is where child is created from the backing tree node */
