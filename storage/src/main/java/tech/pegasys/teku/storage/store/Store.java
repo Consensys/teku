@@ -14,9 +14,9 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
-import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromAnchor;
+import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -37,12 +37,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
-import tech.pegasys.teku.core.stategenerator.StateAtSlotTask;
-import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
-import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
+import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
+import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
+import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;

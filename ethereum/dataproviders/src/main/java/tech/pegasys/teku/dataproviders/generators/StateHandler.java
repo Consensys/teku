@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.dataproviders.generators;
 
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 

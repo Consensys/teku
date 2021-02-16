@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
@@ -31,7 +31,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.stategenerator.StateAtSlotTask;
+import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;

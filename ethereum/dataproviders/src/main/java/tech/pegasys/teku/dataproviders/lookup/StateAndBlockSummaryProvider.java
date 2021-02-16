@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-@FunctionalInterface
-interface StateProvider {
-  Optional<BeaconState> getState(final Bytes32 blockRoot);
+public interface StateAndBlockSummaryProvider {
+  StateAndBlockSummaryProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());
+
+  SafeFuture<Optional<StateAndBlockSummary>> getStateAndBlock(final Bytes32 blockRoot);
 }
