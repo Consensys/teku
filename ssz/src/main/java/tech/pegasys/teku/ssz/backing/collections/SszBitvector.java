@@ -15,13 +15,8 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
+import java.util.stream.StreamSupport;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
@@ -25,4 +26,10 @@ public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
   }
 
   SszBitvectorT ofBits(int... setBitIndexes);
+
+  default SszBitvectorT ofBits(Iterable<Integer> setBitIndexes) {
+    int[] indexesArray =
+        StreamSupport.stream(setBitIndexes.spliterator(), false).mapToInt(i -> i).toArray();
+    return ofBits(indexesArray);
+  }
 }

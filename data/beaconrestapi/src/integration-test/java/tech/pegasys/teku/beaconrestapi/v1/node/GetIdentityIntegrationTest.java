@@ -31,7 +31,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -46,7 +46,8 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     String discoveryAddress = "discoveryaddress";
     final MockNodeId node1 = new MockNodeId(0);
     final UInt64 seqnr = dataStructureUtil.randomUInt64();
-    final Bitvector attnets = dataStructureUtil.randomBitvector(Constants.ATTESTATION_SUBNET_COUNT);
+    final SszBitvector attnets =
+        dataStructureUtil.randomSszBitvector(Constants.ATTESTATION_SUBNET_COUNT);
     final MetadataMessage metadataMessage = new MetadataMessage(seqnr, attnets);
 
     when(eth2Network.getNodeId()).thenReturn(node1);

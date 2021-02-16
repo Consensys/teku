@@ -75,7 +75,9 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public final class DataStructureUtil {
@@ -170,6 +172,12 @@ public final class DataStructureUtil {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
     return new Bitvector(n, bits);
+  }
+
+  public SszBitvector randomSszBitvector(int n) {
+    Random random = new Random(nextSeed());
+    int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
+    return SszBitvectorSchema.create(n).ofBits(bits);
   }
 
   public BLSPublicKey randomPublicKey() {

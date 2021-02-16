@@ -13,18 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlistImpl;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvectorImpl;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
