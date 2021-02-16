@@ -17,6 +17,7 @@ import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
+@Deprecated
 public class EpochProcessor {
 
   /**
@@ -25,6 +26,7 @@ public class EpochProcessor {
    * @param preState state prior to epoch transition
    * @throws EpochProcessingException if processing fails
    */
+  @Deprecated
   public static BeaconState processEpoch(final BeaconState preState)
       throws EpochProcessingException {
     final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);

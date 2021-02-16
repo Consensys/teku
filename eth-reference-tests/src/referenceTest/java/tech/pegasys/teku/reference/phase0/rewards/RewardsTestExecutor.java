@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
-import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator.Step;
+import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculatorImpl;
 import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -41,10 +41,34 @@ public class RewardsTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    final BeaconState state = loadStateFromSsz(testDefinition, "pre.ssz");
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(state);
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    runStandardTests(testDefinition, preState);
+    runDeprecatedTests(testDefinition, preState);
+  }
+
+  private void runStandardTests(final TestDefinition testDefinition, final BeaconState preState)
+      throws Throwable {
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     final RewardsAndPenaltiesCalculator calculator =
-        new RewardsAndPenaltiesCalculator(state, validatorStatuses);
+        testDefinition
+            .getSpecProvider()
+            .getGenesisSpec()
+            .getEpochProcessor()
+            .createRewardsAndPenaltiesCalculator(preState, validatorStatuses);
+    runTest(testDefinition, calculator);
+  }
+
+  private void runDeprecatedTests(final TestDefinition testDefinition, final BeaconState preState)
+      throws Throwable {
+    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
+    final RewardsAndPenaltiesCalculator calculator =
+        new RewardsAndPenaltiesCalculatorImpl(preState, validatorStatuses);
+    runTest(testDefinition, calculator);
+  }
+
+  private void runTest(
+      final TestDefinition testDefinition, final RewardsAndPenaltiesCalculator calculator)
+      throws Throwable {
     assertDeltas(
         testDefinition,
         "head_deltas.yaml",
@@ -86,7 +110,9 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, totalBalances, finalityDelay, delta)));
   }
 
-  private Supplier<Deltas> apply(final RewardsAndPenaltiesCalculator calculator, final Step step) {
+  private Supplier<Deltas> apply(
+      final RewardsAndPenaltiesCalculator calculator,
+      final RewardsAndPenaltiesCalculator.Step step) {
     return () -> calculator.getDeltas(step);
   }
 
