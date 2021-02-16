@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 
@@ -21,11 +22,13 @@ public class Spec {
   private final SpecConstants constants;
   private final CommitteeUtil committeeUtil;
   private final BeaconStateUtil beaconStateUtil;
+  private final EpochProcessor epochProcessor;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil);
+    this.epochProcessor = new EpochProcessor(constants, this.beaconStateUtil);
   }
 
   public SpecConstants getConstants() {
@@ -38,5 +41,9 @@ public class Spec {
 
   public BeaconStateUtil getBeaconStateUtil() {
     return beaconStateUtil;
+  }
+
+  public EpochProcessor getEpochProcessor() {
+    return epochProcessor;
   }
 }
