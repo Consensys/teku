@@ -14,9 +14,9 @@
 package tech.pegasys.teku.storage.store;
 
 import com.google.common.collect.Sets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -31,7 +31,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   private final Store store;
   private final ReadWriteLock lock;
   private final VoteUpdateChannel voteUpdateChannel;
-  Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
+  private final Map<UInt64, VoteTracker> votes = new HashMap<>();
 
   StoreVoteUpdater(
       final Store store, final ReadWriteLock lock, final VoteUpdateChannel voteUpdateChannel) {
