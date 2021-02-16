@@ -78,12 +78,13 @@ class ValidatorLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
 
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
 
   private final ValidatorLoader validatorLoader =
-      ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
+      ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
 
   @BeforeEach
   void initUpcheckMockResponse() throws IOException, InterruptedException {
@@ -97,7 +98,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
@@ -128,7 +130,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
 
@@ -162,7 +165,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY2))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY2.toString()))
             .validatorKeys(
                 List.of(
                     tempDir.toAbsolutePath().toString()
@@ -195,7 +199,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorKeys(
                 List.of(
                     tempDir.toAbsolutePath().toString()

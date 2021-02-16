@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import com.google.common.base.Throwables;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import picocli.CommandLine.Command;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -83,11 +83,11 @@ public class ValidatorClientCommand implements Callable<Integer> {
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       parentCommand.reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
-        parentCommand.reportUserError(Throwables.getRootCause(e));
-      } else {
-        parentCommand.reportUnexpectedError(e);
-      }
+
+      ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
+          .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class))
+          .ifPresentOrElse(
+              parentCommand::reportUserError, () -> parentCommand.reportUnexpectedError(e));
     } catch (Throwable t) {
       parentCommand.reportUnexpectedError(t);
     }
