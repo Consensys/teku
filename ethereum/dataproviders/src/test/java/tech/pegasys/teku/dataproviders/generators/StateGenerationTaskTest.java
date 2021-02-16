@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.dataproviders.generators;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -28,7 +28,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -46,7 +47,7 @@ class StateGenerationTaskTest {
   @BeforeEach
   void setUp() {
     chainBuilder.generateGenesis();
-    blockProvider = new TrackingBlockProvider(chainBuilder.getBlockProvider());
+    blockProvider = new TrackingBlockProvider(getBlockProvider());
   }
 
   @Test
@@ -141,7 +142,7 @@ class StateGenerationTaskTest {
                 Optional.of(
                     new BlockRootAndState(
                         startBlockAndState.getRoot(), startBlockAndState.getState())),
-            chainBuilder.getStateAndBlockProvider(),
+            getStateAndBlockProvider(),
             Optional.empty(),
             REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
   }
@@ -163,5 +164,20 @@ class StateGenerationTaskTest {
     public Set<Bytes32> getRequestedBlocks() {
       return requestedBlocks;
     }
+  }
+
+  public BlockProvider getBlockProvider() {
+    return BlockProvider.fromDynamicMap(
+        () ->
+            chainBuilder
+                .streamBlocksAndStates()
+                .collect(
+                    Collectors.toMap(
+                        StateAndBlockSummary::getRoot, SignedBlockAndState::getBlock)));
+  }
+
+  public StateAndBlockSummaryProvider getStateAndBlockProvider() {
+    return blockRoot ->
+        SafeFuture.completedFuture(chainBuilder.getBlockAndState(blockRoot).map(a -> a));
   }
 }
