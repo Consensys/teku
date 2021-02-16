@@ -22,18 +22,10 @@ public class Spec {
   private final CommitteeUtil committeeUtil;
   private final BeaconStateUtil beaconStateUtil;
 
-  static Spec create(final SpecConstants constants) {
-    final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
-    return new Spec(constants, committeeUtil, new BeaconStateUtil(constants, committeeUtil));
-  }
-
-  Spec(
-      final SpecConstants specConstants,
-      final CommitteeUtil committeeUtil,
-      final BeaconStateUtil beaconStateUtil) {
-    this.constants = specConstants;
-    this.committeeUtil = committeeUtil;
-    this.beaconStateUtil = beaconStateUtil;
+  Spec(final SpecConstants constants) {
+    this.constants = constants;
+    this.committeeUtil = new CommitteeUtil(this.constants);
+    this.beaconStateUtil = new BeaconStateUtil(this.constants, this.committeeUtil);
   }
 
   public SpecConstants getConstants() {

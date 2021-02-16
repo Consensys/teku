@@ -554,6 +554,7 @@ public class BeaconStateUtil {
     }
 
     if (existingIndex.isEmpty()) {
+
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (BLS_VERIFY_DEPOSIT) {
