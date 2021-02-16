@@ -11,12 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.util;
+package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -30,7 +27,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
@@ -109,54 +105,63 @@ public class BeaconStateBuilder {
     latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     blockRoots =
         dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, dataStructureUtil::randomBytes32);
+            Bytes32.ZERO,
+            dataStructureUtil.getSlotsPerHistoricalRoot(),
+            dataStructureUtil::randomBytes32);
     stateRoots =
         dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, dataStructureUtil::randomBytes32);
+            Bytes32.ZERO,
+            dataStructureUtil.getSlotsPerHistoricalRoot(),
+            dataStructureUtil::randomBytes32);
     historicalRoots =
         dataStructureUtil.randomSSZList(
             Bytes32.class,
             defaultItemsInSSZLists,
-            Constants.HISTORICAL_ROOTS_LIMIT,
+            dataStructureUtil.getHistoricalRootsLimit(),
             dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
     eth1DataVotes =
         dataStructureUtil.randomSSZList(
             Eth1Data.class,
-            EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH,
+            dataStructureUtil.getEpochsPerEth1VotingPeriod() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
     validators =
         dataStructureUtil.randomSSZList(
             Validator.class,
             defaultValidatorCount,
-            Constants.VALIDATOR_REGISTRY_LIMIT,
+            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomValidator);
     balances =
         dataStructureUtil.randomSSZList(
             UInt64.class,
             defaultValidatorCount,
-            Constants.VALIDATOR_REGISTRY_LIMIT,
+            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomUInt64);
     randaoMixes =
         dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, dataStructureUtil::randomBytes32);
+            Bytes32.ZERO,
+            dataStructureUtil.getEpochsPerHistoricalVector(),
+            dataStructureUtil::randomBytes32);
     slashings =
         dataStructureUtil.randomSSZVector(
-            UInt64.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, dataStructureUtil::randomUInt64);
+            UInt64.ZERO,
+            dataStructureUtil.getEpochsPerSlashingsVector(),
+            dataStructureUtil::randomUInt64);
     previousEpochAttestations =
         dataStructureUtil.randomSSZList(
             PendingAttestation.class,
             defaultItemsInSSZLists,
-            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
     currentEpochAttestations =
         dataStructureUtil.randomSSZList(
             PendingAttestation.class,
             defaultItemsInSSZLists,
-            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
-    justificationBits = dataStructureUtil.randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH);
+    justificationBits =
+        dataStructureUtil.randomBitvector(dataStructureUtil.getJustificationBitsLength());
     previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
     currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
     finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
@@ -182,7 +187,7 @@ public class BeaconStateBuilder {
 
   public BeaconStateBuilder setSlotToStartOfEpoch(final UInt64 epoch) {
     checkNotNull(epoch);
-    return slot(compute_start_slot_at_epoch(epoch));
+    return slot(dataStructureUtil.computeStartSlotAtEpoch(epoch));
   }
 
   public BeaconStateBuilder fork(final Fork fork) {

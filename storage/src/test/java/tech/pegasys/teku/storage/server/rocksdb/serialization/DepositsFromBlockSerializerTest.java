@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockSerializerTest {
   private final DepositsFromBlockEventSerializer serializer =

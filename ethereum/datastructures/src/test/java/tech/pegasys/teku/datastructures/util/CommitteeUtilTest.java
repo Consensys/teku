@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class CommitteeUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
