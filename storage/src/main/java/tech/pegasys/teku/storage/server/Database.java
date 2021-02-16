@@ -123,4 +123,6 @@ public interface Database extends AutoCloseable {
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
   void putProtoArraySnapshot(final ProtoArraySnapshot protoArray);
+
+  void storeVotes(Map<UInt64, VoteTracker> votes);
 }

@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,7 +34,6 @@ public class StorageUpdate {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
-  private final Map<UInt64, VoteTracker> votes;
   private final Set<Bytes32> deletedHotBlocks;
 
   public StorageUpdate(
@@ -46,7 +44,6 @@ public class StorageUpdate {
       final Map<Bytes32, BlockAndCheckpointEpochs> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
@@ -55,7 +52,6 @@ public class StorageUpdate {
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
     this.deletedHotBlocks = deletedHotBlocks;
-    this.votes = votes;
     this.stateRoots = stateRoots;
   }
 
@@ -66,7 +62,6 @@ public class StorageUpdate {
         && bestJustifiedCheckpoint.isEmpty()
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
-        && votes.isEmpty()
         && stateRoots.isEmpty();
   }
 
@@ -114,10 +109,6 @@ public class StorageUpdate {
 
   public Optional<BeaconState> getLatestFinalizedState() {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
-  }
-
-  public Map<UInt64, VoteTracker> getVotes() {
-    return votes;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

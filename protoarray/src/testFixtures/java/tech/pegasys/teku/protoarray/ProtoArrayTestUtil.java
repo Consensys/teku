@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -55,7 +56,7 @@ public class ProtoArrayTestUtil {
     return forkChoice;
   }
 
-  public static MutableStore createStoreToManipulateVotes() {
+  public static VoteUpdater createStoreToManipulateVotes() {
     return STORE_FACTORY.createGenesisStore();
   }
 
