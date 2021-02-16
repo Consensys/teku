@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.lookup;
+package tech.pegasys.teku.dataproviders.lookup;
 
 import com.google.common.collect.Sets;
 import java.util.Collections;

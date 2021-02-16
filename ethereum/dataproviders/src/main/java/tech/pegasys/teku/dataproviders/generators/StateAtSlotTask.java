@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
+import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;

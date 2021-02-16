@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.dataproviders.generators;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,8 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
-import tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
@@ -42,7 +41,8 @@ class StateAtSlotTaskTest {
   private static final UInt64 EPOCH = UInt64.valueOf(2);
   private static final UInt64 SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
 
-  private final AsyncStateProvider stateProvider = mock(AsyncStateProvider.class);
+  private final StateAtSlotTask.AsyncStateProvider stateProvider =
+      mock(StateAtSlotTask.AsyncStateProvider.class);
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
   @BeforeEach
@@ -136,7 +136,7 @@ class StateAtSlotTaskTest {
     final StateAtSlotTask task =
         createTask(realCheckpoint.getEpochStartSlot(), Bytes32.fromHexStringLenient("0x12"));
 
-    final CacheableTask<SlotAndBlockRoot, BeaconState> rebasedTask =
+    final CachingTaskQueue.CacheableTask<SlotAndBlockRoot, BeaconState> rebasedTask =
         task.rebase(newBase.getState());
     assertThatSafeFuture(rebasedTask.performTask())
         .isCompletedWithOptionalContaining(expectedState);
