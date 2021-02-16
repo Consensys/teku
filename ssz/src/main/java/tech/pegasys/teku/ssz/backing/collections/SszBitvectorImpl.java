@@ -91,16 +91,6 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
     return getSchema().getLength();
   }
 
-  private static SszList<SszBit> toSszBitList(
-      SszListSchema<SszBit, ?> schema, BitlistImpl bitlist) {
-    return schema.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
-  }
-
-  private static BitlistImpl getBitvector(SszList<SszBit> bitlistView) {
-    return BitlistImpl.fromSszBytes(
-        bitlistView.sszSerialize(), bitlistView.getSchema().getMaxLength());
-  }
-
   @Override
   public SszMutableVector<SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
