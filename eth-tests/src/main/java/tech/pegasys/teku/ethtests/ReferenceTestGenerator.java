@@ -54,7 +54,7 @@ public class ReferenceTestGenerator {
               .replace("$TEST_PACKAGE$", testPackage)
               .replace("$TEST_CLASS_NAME$", testClassName)
               .replace("$TEST_METHOD_NAME$", testMethodName)
-              .replace("$SPEC$", testDefinition.getSpec())
+              .replace("$SPEC$", testDefinition.getSpecName())
               .replace("$TEST_TYPE$", testDefinition.getTestType())
               .replace("$TEST_NAME$", testDefinition.getTestName())
               .replace(
@@ -79,7 +79,7 @@ public class ReferenceTestGenerator {
   }
 
   private static String getTestClassName(final TestDefinition testDefinition) {
-    return toCamelCase(testDefinition.getSpec())
+    return toCamelCase(testDefinition.getSpecName())
         + toCamelCase(testDefinition.getTestType())
         + toCamelCase(testDefinition.getTestName())
         + "ReferenceTest";

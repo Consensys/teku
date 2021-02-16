@@ -1,6 +1,9 @@
 dependencies {
     implementation project(':ssz')
+    // TODO(#3356) - Remove dependencies on core, datastructures, independent
+    implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:independent')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
