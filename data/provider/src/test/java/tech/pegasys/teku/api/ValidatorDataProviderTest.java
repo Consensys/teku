@@ -49,6 +49,8 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -62,11 +64,12 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.teku.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = StubSpecProvider.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDataProvider provider =
-      new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
+      new ValidatorDataProvider(specProvider, validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -175,11 +178,14 @@ public class ValidatorDataProviderTest {
   @Test
   public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final int maxValidatorsPerCommittee =
+        specProvider
+            .atSlot(attestationData.getSlot())
+            .getConstants()
+            .getMaxValidatorsPerCommittee();
     final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         new tech.pegasys.teku.datastructures.operations.Attestation(
-            tech.pegasys.teku.datastructures.operations.Attestation.SSZ_SCHEMA
-                .getAggregationBitsSchema()
-                .ofBits(4),
+            new Bitlist(4, maxValidatorsPerCommittee),
             attestationData,
             tech.pegasys.teku.bls.BLSSignature.empty());
 

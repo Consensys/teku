@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,9 +63,8 @@ public class ForkManifest {
 
   public static ForkManifest create(final SpecConstants genesisConstants) {
     final Bytes4 genesisForkVersion = genesisConstants.getGenesisForkVersion();
-    final UInt64 genesisEpoch = UInt64.valueOf(genesisConstants.getGenesisEpoch());
     return new ForkManifest(
-        List.of(new Fork(genesisForkVersion, genesisForkVersion, genesisEpoch)));
+        List.of(new Fork(genesisForkVersion, genesisForkVersion, GENESIS_EPOCH)));
   }
 
   public static ForkManifest create(final List<Fork> forkList) {

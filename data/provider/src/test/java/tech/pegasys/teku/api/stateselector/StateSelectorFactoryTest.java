@@ -36,6 +36,7 @@ public class StateSelectorFactoryTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final DataStructureUtil data = new DataStructureUtil();
   private final BeaconState state = data.randomBeaconState();
+
   private final StateSelectorFactory factory = new StateSelectorFactory(client);
 
   @Test
