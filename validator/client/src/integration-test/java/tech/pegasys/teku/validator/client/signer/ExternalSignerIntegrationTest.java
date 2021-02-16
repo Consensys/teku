@@ -85,7 +85,7 @@ public class ExternalSignerIntegrationTest {
     this.client = client;
     final ValidatorConfig config =
         ValidatorConfig.builder()
-            .validatorExternalSignerPublicKeys(List.of(KEYPAIR.getPublicKey()))
+            .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
             .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
             .validatorExternalSignerTimeout(TIMEOUT)
             .build();
@@ -96,7 +96,7 @@ public class ExternalSignerIntegrationTest {
         new ExternalSigner(
             httpClientExternalSignerFactory.get(),
             config.getValidatorExternalSignerUrl(),
-            config.getValidatorExternalSignerPublicKeys().get(0),
+            KEYPAIR.getPublicKey(),
             TIMEOUT,
             queue);
   }

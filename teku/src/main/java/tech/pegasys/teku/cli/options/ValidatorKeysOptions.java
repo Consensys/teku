@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -105,7 +104,7 @@ public class ValidatorKeysOptions {
         config ->
             config
                 .validatorKeys(validatorKeys)
-                .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
+                .validatorExternalSignerPublicKeySources(validatorExternalSignerPublicKeys)
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)
@@ -116,11 +115,6 @@ public class ValidatorKeysOptions {
                 .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
                 .validatorExternalSignerTruststorePasswordFile(
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
-  }
-
-  private List<BLSPublicKey> parseExternalSignerPublicKeys() {
-    PublicKeyLoader loader = new PublicKeyLoader();
-    return loader.getPublicKeys(validatorExternalSignerPublicKeys);
   }
 
   private URL parseValidatorExternalSignerUrl() {

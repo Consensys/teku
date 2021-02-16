@@ -11,20 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class PublicKeyLoaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -73,5 +76,14 @@ public class PublicKeyLoaderTest {
     final String[] values = {};
     when(mapper.readValue(new URL(urlSource), String[].class)).thenReturn(values);
     assertThat(loader.getPublicKeys(List.of(urlSource, secondKeyStr))).containsExactly(secondKey);
+  }
+
+  @Test
+  void shouldThrowInvalidConfigurationExceptionWhenUrlFailsToLoad() throws Exception {
+    final UnknownHostException exception = new UnknownHostException("Unknown host");
+    when(mapper.readValue(new URL(urlSource), String[].class)).thenThrow(exception);
+    assertThatThrownBy(() -> loader.getPublicKeys(List.of(urlSource)))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasRootCause(exception);
   }
 }
