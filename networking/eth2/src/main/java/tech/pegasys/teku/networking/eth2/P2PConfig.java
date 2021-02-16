@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class P2PConfig {
@@ -97,7 +98,7 @@ public class P2PConfig {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
-    private SpecConstants specConstants;
+    private SpecProvider specProvider;
     private Boolean isGossipScoringEnabled = false;
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = 2;
@@ -110,13 +111,14 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
+      final SpecConstants genesisConstants = specProvider.getGenesisSpecConstants();
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
-              ? GossipConfigurator.scoringEnabled(specConstants)
+              ? GossipConfigurator.scoringEnabled(genesisConstants)
               : GossipConfigurator.NOOP;
       final Eth2Context eth2Context =
           Eth2Context.builder()
-              .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())
+              .activeValidatorCount(genesisConstants.getMinGenesisActiveValidatorCount())
               .gossipEncoding(gossipEncoding)
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
@@ -133,7 +135,7 @@ public class P2PConfig {
     }
 
     private void validate() {
-      checkNotNull(specConstants);
+      checkNotNull(specProvider);
     }
 
     public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
@@ -146,9 +148,9 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder specConstants(final SpecConstants specConstants) {
-      checkNotNull(specConstants);
-      this.specConstants = specConstants;
+    public Builder specProvider(final SpecProvider specProvider) {
+      checkNotNull(specProvider);
+      this.specProvider = specProvider;
       return this;
     }
 

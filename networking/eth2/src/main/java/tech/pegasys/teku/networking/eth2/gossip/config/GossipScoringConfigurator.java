@@ -40,8 +40,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
   private static final int GOSSIP_D = 8;
   private final ScoringConfig scoringConfig;
 
-  public GossipScoringConfigurator(final SpecConstants specConstants) {
-    this.scoringConfig = ScoringConfig.create(specConstants, GOSSIP_D);
+  public GossipScoringConfigurator(final SpecConstants genesisConstants) {
+    this.scoringConfig = ScoringConfig.create(genesisConstants, GOSSIP_D);
   }
 
   @Override

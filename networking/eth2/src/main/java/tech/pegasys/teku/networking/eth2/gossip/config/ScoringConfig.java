@@ -52,18 +52,18 @@ class ScoringConfig {
   private final Duration decayInterval;
   private final Duration targetScoringDuration;
 
-  private ScoringConfig(final SpecConstants constants, final int d) {
-    this.constants = constants;
+  private ScoringConfig(final SpecConstants genesisConstants, final int d) {
+    this.constants = genesisConstants;
     this.d = d;
 
-    this.slotDuration = Duration.ofSeconds(constants.getSecondsPerSlot());
-    this.epochDuration = slotDuration.multipliedBy(constants.getSlotsPerEpoch());
+    this.slotDuration = Duration.ofSeconds(genesisConstants.getSecondsPerSlot());
+    this.epochDuration = slotDuration.multipliedBy(genesisConstants.getSlotsPerEpoch());
     this.decayInterval = slotDuration;
     this.targetScoringDuration = epochDuration.multipliedBy(100);
   }
 
-  public static ScoringConfig create(final SpecConstants constants, final int gossipDParam) {
-    return new ScoringConfig(constants, gossipDParam);
+  public static ScoringConfig create(final SpecConstants genesisConstants, final int gossipDParam) {
+    return new ScoringConfig(genesisConstants, gossipDParam);
   }
 
   public double getMaxInMeshScore() {
