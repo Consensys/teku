@@ -26,6 +26,7 @@ dependencies {
 
   testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
+  testFixturesApi project(':ethereum:spec')
   testFixturesApi project(':pow')
   testFixturesApi project(':ssz')
   testFixturesApi project(':storage:api')

@@ -17,10 +17,11 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -68,6 +69,8 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -81,13 +84,28 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
+  private Optional<SpecProvider> maybeSpecProvider;
 
+  @Deprecated
   public DataStructureUtil() {
-    this(92892824);
+    this(92892824, Optional.empty());
   }
 
   public DataStructureUtil(final int seed) {
+    this(seed, Optional.empty());
+  }
+
+  public DataStructureUtil(final SpecProvider specProvider) {
+    this(92892824, Optional.of(specProvider));
+  }
+
+  public DataStructureUtil(final int seed, final SpecProvider specProvider) {
+    this(seed, Optional.of(specProvider));
+  }
+
+  private DataStructureUtil(final int seed, final Optional<SpecProvider> maybeSpecProvider) {
     this.seed = seed;
+    this.maybeSpecProvider = maybeSpecProvider;
   }
 
   public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
@@ -156,7 +174,7 @@ public final class DataStructureUtil {
   }
 
   public Bitlist randomBitlist() {
-    return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return randomBitlist(getMaxValidatorsPerCommittee());
   }
 
   public Bitlist randomBitlist(int n) {
@@ -406,22 +424,13 @@ public final class DataStructureUtil {
         randomEth1Data(),
         Bytes32.ZERO,
         randomSSZList(
-            ProposerSlashing.class,
-            Constants.MAX_PROPOSER_SLASHINGS,
-            this::randomProposerSlashing,
-            1),
+            ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing, 1),
         randomSSZList(
-            AttesterSlashing.class,
-            Constants.MAX_ATTESTER_SLASHINGS,
-            this::randomAttesterSlashing,
-            1),
-        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation, 3),
-        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex, 1),
+            AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing, 1),
+        randomSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation, 3),
+        randomSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex, 1),
         randomSSZList(
-            SignedVoluntaryExit.class,
-            Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit,
-            1));
+            SignedVoluntaryExit.class, getMaxVoluntaryExits(), this::randomSignedVoluntaryExit, 1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
@@ -430,15 +439,13 @@ public final class DataStructureUtil {
         randomEth1Data(),
         Bytes32.ZERO,
         randomFullSSZList(
-            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
+            ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing),
         randomFullSSZList(
-            AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS, this::randomAttesterSlashing),
-        randomFullSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
-        randomFullSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
+            AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing),
+        randomFullSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation),
+        randomFullSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex),
         randomFullSSZList(
-            SignedVoluntaryExit.class,
-            Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit));
+            SignedVoluntaryExit.class, getMaxVoluntaryExits(), this::randomSignedVoluntaryExit));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -447,7 +454,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation() {
     SSZMutableList<UInt64> attesting_indices =
-        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.createMutable(UInt64.class, getMaxValidatorsPerCommittee());
     attesting_indices.add(randomUInt64());
     attesting_indices.add(randomUInt64());
     attesting_indices.add(randomUInt64());
@@ -460,10 +467,10 @@ public final class DataStructureUtil {
     Bytes32 withdrawal_credentials = randomBytes32();
 
     DepositMessage proof_of_possession_data =
-        new DepositMessage(pubkey, withdrawal_credentials, Constants.MAX_EFFECTIVE_BALANCE);
+        new DepositMessage(pubkey, withdrawal_credentials, getMaxEffectiveBalance());
 
-    final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
-    final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
+    final Bytes32 domain = computeDomain();
+    final Bytes signing_root = getSigningRoot(proof_of_possession_data, domain);
 
     BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
 
@@ -504,13 +511,13 @@ public final class DataStructureUtil {
 
   public Deposit randomDepositWithoutIndex() {
     return new Deposit(
-        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
+        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
         randomDepositData());
   }
 
   public Deposit randomDeposit() {
     return new Deposit(
-        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
+        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
         randomDepositData());
   }
 
@@ -551,17 +558,17 @@ public final class DataStructureUtil {
 
   public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
     SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
+        SSZList.createMutable(DepositWithIndex.class, getMaxDeposits());
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
       BLSKeyPair keypair = BLSTestUtil.randomKeyPair(i);
       DepositData depositData =
           depositGenerator.createDepositData(
-              keypair, Constants.MAX_EFFECTIVE_BALANCE, keypair.getPublicKey());
+              keypair, getMaxEffectiveBalance(), keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
-          SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+          SSZVector.createMutable(getDepositContractTreeDepth() + 1, Bytes32.ZERO);
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UInt64.valueOf(i));
       deposits.add(deposit);
     }
@@ -572,12 +579,12 @@ public final class DataStructureUtil {
     return new Validator(
         randomPublicKeyBytes(),
         randomBytes32(),
-        Constants.MAX_EFFECTIVE_BALANCE,
+        getMaxEffectiveBalance(),
         false,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH,
-        Constants.FAR_FUTURE_EPOCH);
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 
   public Fork randomFork() {
@@ -622,7 +629,7 @@ public final class DataStructureUtil {
 
   public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
     final SignedBlockAndState anchorBlockAndState =
-        randomSignedBlockAndState(compute_start_slot_at_epoch(epoch));
+        randomSignedBlockAndState(computeStartSlotAtEpoch(epoch));
     return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
   }
 
@@ -643,5 +650,83 @@ public final class DataStructureUtil {
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
+  }
+
+  private int getMaxProposerSlashings() {
+    return maybeSpecProvider
+        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxProposerSlashings())
+        .orElse(Constants.MAX_PROPOSER_SLASHINGS);
+  }
+
+  private int getMaxAttesterSlashings() {
+    return maybeSpecProvider
+        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxAttesterSlashings())
+        .orElse(Constants.MAX_ATTESTER_SLASHINGS);
+  }
+
+  private int getMaxAttestations() {
+    return maybeSpecProvider
+        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxAttestations())
+        .orElse(Constants.MAX_ATTESTATIONS);
+  }
+
+  private int getMaxDeposits() {
+    return maybeSpecProvider
+        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxDeposits())
+        .orElse(Constants.MAX_DEPOSITS);
+  }
+
+  private int getMaxVoluntaryExits() {
+    return maybeSpecProvider
+        .map(specProvider -> specProvider.getGenesisSpecConstants().getMaxVoluntaryExits())
+        .orElse(Constants.MAX_VOLUNTARY_EXITS);
+  }
+
+  private int getMaxValidatorsPerCommittee() {
+    return maybeSpecProvider
+        .map(spec -> spec.getGenesisSpecConstants().getMaxValidatorsPerCommittee())
+        .orElse(Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  private UInt64 getMaxEffectiveBalance() {
+    return maybeSpecProvider
+        .map(spec -> spec.getGenesisSpecConstants().getMaxEffectiveBalance())
+        .orElse(Constants.MAX_EFFECTIVE_BALANCE);
+  }
+
+  private int getDepositContractTreeDepth() {
+    return maybeSpecProvider
+        .map(spec -> spec.getGenesisSpecConstants().getDepositContractTreeDepth())
+        .orElse(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+  }
+
+  private Bytes32 computeDomain() {
+    return maybeSpecProvider
+        .map(
+            specProvider -> {
+              final Spec spec = specProvider.getGenesisSpec();
+              final Bytes4 domain = spec.getConstants().getDomainDeposit();
+              return spec.getBeaconStateUtil().computeDomain(domain);
+            })
+        .orElse(compute_domain(Constants.DOMAIN_DEPOSIT));
+  }
+
+  private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
+    return maybeSpecProvider
+        .map(
+            specProvider ->
+                specProvider
+                    .getGenesisSpec()
+                    .getBeaconStateUtil()
+                    .computeSigningRoot(proofOfPossessionData, domain))
+        .orElse(compute_signing_root(proofOfPossessionData, domain));
+  }
+
+  private UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
+    return maybeSpecProvider
+        .map(
+            specProvider ->
+                specProvider.getGenesisSpec().getBeaconStateUtil().computeStartSlotAtEpoch(epoch))
+        .orElse(compute_start_slot_at_epoch(epoch));
   }
 }

@@ -41,7 +41,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -66,11 +65,6 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
   private static final Logger LOG = LogManager.getLogger();
-  /**
-   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
-   * Setting to <code>false</code> significantly speeds up state initialization
-   */
-  public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConstants specConstants;
   private final CommitteeUtil committeeUtil;
@@ -554,32 +548,10 @@ public class BeaconStateUtil {
     }
 
     if (existingIndex.isEmpty()) {
-
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
-      if (BLS_VERIFY_DEPOSIT) {
-        final DepositMessage deposit_message =
-            new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-        final Bytes32 domain = computeDomain(specConstants.getDomainDeposit());
-        final Bytes signing_root = computeSigningRoot(deposit_message, domain);
-        boolean proof_is_valid =
-            !BLS_VERIFY_DEPOSIT
-                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
-        if (!proof_is_valid) {
-          if (deposit instanceof DepositWithIndex) {
-            LOG.debug(
-                "Skipping invalid deposit with index {} and pubkey {}",
-                ((DepositWithIndex) deposit).getIndex(),
-                pubkey);
-          } else {
-            LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-          }
-          if (pubKeyToIndexMap != null) {
-            // The validator won't be created so the calculated index won't be correct
-            pubKeyToIndexMap.remove(pubkey);
-          }
-          return;
-        }
+      if (!verifyDeposits(pubkey, deposit, amount, pubKeyToIndexMap)) {
+        return;
       }
 
       if (pubKeyToIndexMap == null) {
@@ -590,6 +562,34 @@ public class BeaconStateUtil {
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
     }
+  }
+
+  protected boolean verifyDeposits(
+      final BLSPublicKey pubkey,
+      final Deposit deposit,
+      final UInt64 amount,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+    final DepositMessage deposit_message =
+        new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+    final Bytes32 domain = computeDomain(specConstants.getDomainDeposit());
+    final Bytes signing_root = computeSigningRoot(deposit_message, domain);
+    boolean proof_is_valid = BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
+    if (!proof_is_valid) {
+      if (deposit instanceof DepositWithIndex) {
+        LOG.debug(
+            "Skipping invalid deposit with index {} and pubkey {}",
+            ((DepositWithIndex) deposit).getIndex(),
+            pubkey);
+      } else {
+        LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
+      }
+      if (pubKeyToIndexMap != null) {
+        // The validator won't be created so the calculated index won't be correct
+        pubKeyToIndexMap.remove(pubkey);
+      }
+      return false;
+    }
+    return true;
   }
 
   private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {

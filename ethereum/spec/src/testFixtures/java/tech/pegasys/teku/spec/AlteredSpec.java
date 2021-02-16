@@ -17,34 +17,20 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 
-public class Spec {
-  private final SpecConstants constants;
-  private final CommitteeUtil committeeUtil;
-  private final BeaconStateUtil beaconStateUtil;
+public class AlteredSpec extends Spec {
 
-  static Spec create(final SpecConstants constants) {
-    final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
-    return new Spec(constants, committeeUtil, new BeaconStateUtil(constants, committeeUtil));
+  public static Spec createAlteredSpec(
+      final SpecConstants specConstants, final boolean verifyDeposits) {
+    final CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
+    final AlteredBeaconStateUtil alteredBeaconStateUtil =
+        new AlteredBeaconStateUtil(specConstants, committeeUtil, verifyDeposits);
+    return new Spec(specConstants, committeeUtil, alteredBeaconStateUtil);
   }
 
-  Spec(
+  AlteredSpec(
       final SpecConstants specConstants,
       final CommitteeUtil committeeUtil,
       final BeaconStateUtil beaconStateUtil) {
-    this.constants = specConstants;
-    this.committeeUtil = committeeUtil;
-    this.beaconStateUtil = beaconStateUtil;
-  }
-
-  public SpecConstants getConstants() {
-    return constants;
-  }
-
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
-  }
-
-  public BeaconStateUtil getBeaconStateUtil() {
-    return beaconStateUtil;
+    super(specConstants, committeeUtil, beaconStateUtil);
   }
 }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
@@ -46,14 +47,24 @@ public class WeakSubjectivityValidator {
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
   private final Throttler<WeakSubjectivityLogger> wsChecksSuppressedLogger;
   private final Throttler<WeakSubjectivityLogger> deferValidationLogger;
+  private final Optional<BeaconStateUtil> maybeBeaconStateUtil;
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
       WeakSubjectivityCalculator calculator,
       WeakSubjectivityViolationPolicy violationPolicy) {
+    this(config, calculator, violationPolicy, Optional.empty());
+  }
+
+  WeakSubjectivityValidator(
+      final WeakSubjectivityConfig config,
+      WeakSubjectivityCalculator calculator,
+      WeakSubjectivityViolationPolicy violationPolicy,
+      final Optional<BeaconStateUtil> maybeBeaconStateUtil) {
     this.calculator = calculator;
     this.violationPolicy = violationPolicy;
     this.config = config;
+    this.maybeBeaconStateUtil = maybeBeaconStateUtil;
 
     final int throttlingPeriod = 20;
     final WeakSubjectivityLogger wsLogger = WeakSubjectivityLogger.createFileLogger();
@@ -64,19 +75,26 @@ public class WeakSubjectivityValidator {
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.strict());
+        config, calculator, WeakSubjectivityViolationPolicy.strict(), Optional.empty());
   }
 
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate());
+        config, calculator, WeakSubjectivityViolationPolicy.moderate(), Optional.empty());
   }
 
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.lenient());
+        config, calculator, WeakSubjectivityViolationPolicy.lenient(), Optional.empty());
+  }
+
+  public static WeakSubjectivityValidator lenient(
+      final WeakSubjectivityConfig config, final Optional<BeaconStateUtil> beaconStateUtil) {
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.lenient(), beaconStateUtil);
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {
@@ -151,7 +169,7 @@ public class WeakSubjectivityValidator {
     }
 
     // Determine whether we should suppress ws period errors
-    UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    UInt64 currentEpoch = computeEpochAtSlot(currentSlot);
     final Optional<UInt64> suppressionEpoch = getSuppressWSPeriodChecksUntilEpoch(currentSlot);
     final boolean shouldSuppressErrors =
         suppressionEpoch.map(e -> e.isGreaterThan(currentEpoch)).orElse(false);
@@ -173,8 +191,8 @@ public class WeakSubjectivityValidator {
     }
     final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().get();
 
-    UInt64 blockEpoch = compute_epoch_at_slot(block.getSlot());
-    boolean blockAtEpochBoundary = compute_start_slot_at_epoch(blockEpoch).equals(block.getSlot());
+    UInt64 blockEpoch = computeEpochAtSlot(block.getSlot());
+    boolean blockAtEpochBoundary = computeStartSlotAtEpoch(blockEpoch).equals(block.getSlot());
     if (isWSCheckpointEpoch(blockEpoch) && blockAtEpochBoundary) {
       // Block is at ws checkpoint slot - so it must match the ws checkpoint block
       return isWSCheckpointBlock(block);
@@ -227,7 +245,7 @@ public class WeakSubjectivityValidator {
         && config.getSuppressWSPeriodChecksUntilEpoch().isPresent()) {
       // Initialize the suppression logic
       final UInt64 configuredSuppressionEpoch = config.getSuppressWSPeriodChecksUntilEpoch().get();
-      final UInt64 startupEpoch = compute_epoch_at_slot(currentSlot);
+      final UInt64 startupEpoch = computeEpochAtSlot(currentSlot);
       final UInt64 maxSuppressedEpoch = startupEpoch.plus(MAX_SUPPRESSED_EPOCHS);
       final UInt64 suppressionEpoch = configuredSuppressionEpoch.min(maxSuppressedEpoch);
       if (suppressionEpoch.isLessThan(configuredSuppressionEpoch)) {
@@ -282,5 +300,17 @@ public class WeakSubjectivityValidator {
         .getWeakSubjectivityCheckpoint()
         .map(c -> checkpoint.getEpoch().equals(c.getEpoch()))
         .orElse(false);
+  }
+
+  private UInt64 computeEpochAtSlot(final UInt64 slot) {
+    return maybeBeaconStateUtil
+        .map(beaconStateUtil -> beaconStateUtil.computeEpochAtSlot(slot))
+        .orElse(compute_epoch_at_slot(slot));
+  }
+
+  private UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
+    return maybeBeaconStateUtil
+        .map(beaconStateUtil -> beaconStateUtil.computeEpochAtSlot(epoch))
+        .orElse(compute_start_slot_at_epoch(epoch));
   }
 }

@@ -39,13 +39,13 @@ public class SpecProvider {
   }
 
   public static SpecProvider create(final SpecConfiguration config) {
-    final Spec initialSpec = new Spec(config.constants());
+    final Spec initialSpec = Spec.create(config.constants());
     return new SpecProvider(initialSpec);
   }
 
   public static SpecProvider create(
       final SpecConfiguration config, final ForkManifest forkManifest) {
-    final Spec initialSpec = new Spec(config.constants());
+    final Spec initialSpec = Spec.create(config.constants());
     return new SpecProvider(initialSpec, forkManifest);
   }
 
