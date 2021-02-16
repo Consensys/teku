@@ -26,8 +26,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ValidatorStatusTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

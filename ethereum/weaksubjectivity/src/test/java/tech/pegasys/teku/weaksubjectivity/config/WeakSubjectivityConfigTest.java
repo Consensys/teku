@@ -18,10 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class WeakSubjectivityConfigTest {
   private final SpecProvider specProvider = StubSpecProvider.create();

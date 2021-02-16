@@ -18,9 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockEventTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();

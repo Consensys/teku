@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 /** Note: Most tests should be added to the integration-test directory */
