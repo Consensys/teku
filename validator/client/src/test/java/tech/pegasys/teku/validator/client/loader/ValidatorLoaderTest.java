@@ -105,8 +105,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeySources(
-                Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
