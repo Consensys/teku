@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,7 +37,7 @@ public class LibP2PPrivateKeyLoaderTest {
     // check that new key is generated
     final PrivKey generatedPK = loader.get();
     assertThat(generatedPK).isNotNull();
-    assertThat(generatedPK.raw().length).isGreaterThanOrEqualTo(32);
+    assertRoundTrip(generatedPK);
 
     // check the same key loaded next time
     PrivKey loadedPK = loader.get();
@@ -48,7 +49,7 @@ public class LibP2PPrivateKeyLoaderTest {
     // check that another key is generated after old key is deleted
     PrivKey generatedAnotherPK = loader.get();
     assertThat(generatedAnotherPK).isNotNull();
-    assertThat(generatedAnotherPK.raw().length).isGreaterThanOrEqualTo(32);
+    assertRoundTrip(generatedAnotherPK);
     assertThat(generatedAnotherPK).isNotEqualTo(generatedPK);
   }
 
@@ -63,5 +64,10 @@ public class LibP2PPrivateKeyLoaderTest {
     final LibP2PPrivateKeyLoader loader =
         new LibP2PPrivateKeyLoader(store, Optional.of(customPKFile.toAbsolutePath().toString()));
     assertThat(loader.get()).isEqualTo(privKey);
+  }
+
+  private void assertRoundTrip(final PrivKey generatedPK) {
+    final PrivKey reparsed = KeyKt.unmarshalPrivateKey(generatedPK.bytes());
+    assertThat(reparsed).isEqualTo(generatedPK);
   }
 }
