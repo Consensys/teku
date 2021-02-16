@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -221,7 +222,8 @@ public class VoluntaryExitCommand implements Runnable {
     genesisRoot = maybeRoot.get();
 
     final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(new RejectingSlashingProtector(), asyncRunner, metricsSystem);
+        ValidatorLoader.create(
+            new RejectingSlashingProtector(), new PublicKeyLoader(), asyncRunner, metricsSystem);
 
     try {
       blsPublicKeyValidatorMap =

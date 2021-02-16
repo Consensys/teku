@@ -14,16 +14,13 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
@@ -35,10 +32,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() throws MalformedURLException {
-    final BLSPublicKey publicKey =
-        BLSPublicKey.fromBytesCompressed(
-            Bytes48.fromHexString(
-                "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"));
     final ValidatorConfig config =
         getTekuConfigurationFromFile("validatorOptions_config.yaml")
             .validatorClient()
@@ -46,7 +39,9 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(config.getValidatorKeys())
         .containsExactlyInAnyOrder("a.key:a.password", "b.json:b.txt");
-    assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);
+    assertThat(config.getValidatorExternalSignerPublicKeySources())
+        .containsExactly(
+            "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009");
     assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
     assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(Duration.ofMillis(1234));
     assertThat(config.getGraffitiProvider().get()).isEqualTo(Optional.of(graffiti));
@@ -83,15 +78,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.isValidatorExternalSignerSlashingProtectionEnabled()).isFalse();
-  }
-
-  @Test
-  void shouldDisplayReasonableErrorMessageIfKeysUrlInvalid() {
-    assertThatThrownBy(
-            () ->
-                getTekuConfigurationFromArguments(
-                    "--validators-external-signer-public-keys=http://local.missing/"))
-        .hasMessageContaining("Failed to load public keys from URL http://local.missing/");
   }
 
   @Test

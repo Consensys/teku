@@ -38,3 +38,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reject validator related REST API requests when syncing, even if the head block is close to the current slot.  `head` and `chain_reorg` events do not fire while sync is active so the validator client is unable to detect when it should invalidate duties.
 - Increase the default limit for the queue for delivering events to REST API subscribers. When subscribing to attestations, they are often received in bursts which would exceed the previous limit even when the client was keeping up.
   The default limit is now 250 and can now be configured with `--Xrest-api-max-pending-events`.
+- Fixed `ProtoNode: Delta to be subtracted is greater than node weight` exception which may occur after an issue writing data to disk storage.

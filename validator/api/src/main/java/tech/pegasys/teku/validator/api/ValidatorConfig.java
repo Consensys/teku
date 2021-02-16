@@ -22,13 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class ValidatorConfig {
 
   private final List<String> validatorKeys;
-  private final List<BLSPublicKey> validatorExternalSignerPublicKeys;
+  private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
   private final Duration validatorExternalSignerTimeout;
@@ -45,7 +44,7 @@ public class ValidatorConfig {
 
   private ValidatorConfig(
       final List<String> validatorKeys,
-      final List<BLSPublicKey> validatorExternalSignerPublicKeys,
+      final List<String> validatorExternalSignerPublicKeySources,
       final URL validatorExternalSignerUrl,
       final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
@@ -60,7 +59,7 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots) {
     this.validatorKeys = validatorKeys;
-    this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
+    this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
@@ -91,8 +90,8 @@ public class ValidatorConfig {
     return validatorKeystoreLockingEnabled;
   }
 
-  public List<BLSPublicKey> getValidatorExternalSignerPublicKeys() {
-    return validatorExternalSignerPublicKeys;
+  public List<String> getValidatorExternalSignerPublicKeySources() {
+    return validatorExternalSignerPublicKeySources;
   }
 
   public boolean isValidatorExternalSignerSlashingProtectionEnabled() {
@@ -147,7 +146,7 @@ public class ValidatorConfig {
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
-    private List<BLSPublicKey> validatorExternalSignerPublicKeys = new ArrayList<>();
+    private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerConcurrentRequestLimit;
     private Duration validatorExternalSignerTimeout = Duration.ofSeconds(5);
@@ -169,9 +168,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorExternalSignerPublicKeys(
-        List<BLSPublicKey> validatorExternalSignerPublicKeys) {
-      this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
+    public Builder validatorExternalSignerPublicKeySources(
+        List<String> validatorExternalSignerPublicKeys) {
+      this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeys;
       return this;
     }
 
@@ -256,7 +255,7 @@ public class ValidatorConfig {
       validateExternalSignerURLScheme();
       return new ValidatorConfig(
           validatorKeys,
-          validatorExternalSignerPublicKeys,
+          validatorExternalSignerPublicKeySources,
           validatorExternalSignerUrl,
           validatorExternalSignerTimeout,
           validatorExternalSignerKeystore,
@@ -319,8 +318,8 @@ public class ValidatorConfig {
     }
 
     private boolean externalPublicKeysNotDefined() {
-      return validatorExternalSignerPublicKeys == null
-          || validatorExternalSignerPublicKeys.isEmpty();
+      return validatorExternalSignerPublicKeySources == null
+          || validatorExternalSignerPublicKeySources.isEmpty();
     }
 
     private static boolean isURLSchemeHttps(final URL url) {
