@@ -45,7 +45,8 @@ class NodeRecordConverterTest {
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final SszBitvectorSchema<?> ATT_SUBNET_SCHEMA = SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
+  private static final SszBitvectorSchema<?> ATT_SUBNET_SCHEMA =
+      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
   private static final SszBitvector PERSISTENT_SUBNETS = ATT_SUBNET_SCHEMA.getDefault();
 
   @Test

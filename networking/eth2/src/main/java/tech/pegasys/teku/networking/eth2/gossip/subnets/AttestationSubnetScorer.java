@@ -17,7 +17,6 @@ import java.util.function.IntUnaryOperator;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class AttestationSubnetScorer implements PeerScorer {

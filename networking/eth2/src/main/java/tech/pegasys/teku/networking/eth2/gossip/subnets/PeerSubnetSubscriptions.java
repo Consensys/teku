@@ -24,16 +24,13 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSubnetSubscriptions {
 
-  public static final SszBitvectorSchema<?> SUBNET_SUBSCRIPTIONS_SCHEMA = SszBitvectorSchema
-      .create(ATTESTATION_SUBNET_COUNT);
+  public static final SszBitvectorSchema<?> SUBNET_SUBSCRIPTIONS_SCHEMA =
+      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
 
   private final Map<Integer, Integer> subscriberCountBySubnetId;
   private final Map<NodeId, SszBitvector> subscriptionsByPeer;

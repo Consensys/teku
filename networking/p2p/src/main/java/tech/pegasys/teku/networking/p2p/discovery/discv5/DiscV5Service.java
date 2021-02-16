@@ -35,15 +35,14 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
-  static final SszBitvectorSchema<SszBitvector> SUBNET_SUBSCRIPTIONS_SCHEMA = SszBitvectorSchema
-      .create(ATTESTATION_SUBNET_COUNT);
+  static final SszBitvectorSchema<SszBitvector> SUBNET_SUBSCRIPTIONS_SCHEMA =
+      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
 
   public static DiscoveryService create(
       final DiscoveryConfig discoConfig,

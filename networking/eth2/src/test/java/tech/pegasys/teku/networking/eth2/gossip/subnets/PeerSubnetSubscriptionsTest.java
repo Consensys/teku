@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
@@ -127,7 +126,6 @@ class PeerSubnetSubscriptionsTest {
   }
 
   private SszBitvector createBitvector(final int... subnets) {
-    return SszBitvectorSchema
-        .create(ATTESTATION_SUBNET_COUNT).ofBits(subnets);
+    return SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnets);
   }
 }
