@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli;
 
-import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
@@ -62,6 +61,7 @@ import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -284,12 +284,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
-          || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
-        reportUserError(Throwables.getRootCause(e));
-      } else {
-        reportUnexpectedError(e);
-      }
+      ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
+          .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class))
+          .ifPresentOrElse(this::reportUserError, () -> reportUnexpectedError(e));
     } catch (Throwable t) {
       reportUnexpectedError(t);
     }
@@ -298,7 +295,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   public void reportUnexpectedError(final Throwable t) {
     getLogger().fatal("Teku failed to start", t);
-    errorWriter.println("Teku failed to start");
+    errorWriter.println("Teku failed to start: " + t.getMessage());
     printUsage(errorWriter);
   }
 

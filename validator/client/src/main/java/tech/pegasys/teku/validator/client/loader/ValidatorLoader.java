@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -48,23 +49,27 @@ import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
+  private final PublicKeyLoader publicKeyLoader;
   private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
 
   private ValidatorLoader(
       final SlashingProtector slashingProtector,
+      final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem) {
     this.slashingProtector = slashingProtector;
+    this.publicKeyLoader = publicKeyLoader;
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
   }
 
   public static ValidatorLoader create(
       final SlashingProtector slashingProtector,
+      final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem) {
-    return new ValidatorLoader(slashingProtector, asyncRunner, metricsSystem);
+    return new ValidatorLoader(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(
@@ -109,7 +114,7 @@ public class ValidatorLoader {
 
   private Map<BLSPublicKey, Validator> createExternalSignerValidator(
       final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
-    if (config.getValidatorExternalSignerPublicKeys().isEmpty()) {
+    if (config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
       return Collections.emptyMap();
     }
     final ThrottlingTaskQueue externalSignerTaskQueue =
@@ -121,7 +126,9 @@ public class ValidatorLoader {
 
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory);
 
-    return config.getValidatorExternalSignerPublicKeys().stream()
+    final List<BLSPublicKey> publicKeys =
+        publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
+    return publicKeys.stream()
         .map(
             publicKey -> {
               final ExternalSigner externalSigner =

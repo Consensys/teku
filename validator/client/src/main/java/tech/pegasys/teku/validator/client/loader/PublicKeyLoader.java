@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.validator.client.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
-class PublicKeyLoader {
+public class PublicKeyLoader {
   final ObjectMapper objectMapper;
 
   public PublicKeyLoader() {
@@ -37,14 +37,14 @@ class PublicKeyLoader {
     this.objectMapper = objectMapper;
   }
 
-  public List<BLSPublicKey> getPublicKeys(final List<String> publicKeys) {
-    if (publicKeys == null || publicKeys.isEmpty()) {
+  public List<BLSPublicKey> getPublicKeys(final List<String> sources) {
+    if (sources == null || sources.isEmpty()) {
       return Collections.emptyList();
     }
 
     try {
       final Set<BLSPublicKey> blsPublicKeySet =
-          publicKeys.stream()
+          sources.stream()
               .flatMap(
                   key ->
                       key.contains(":")
