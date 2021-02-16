@@ -16,8 +16,8 @@ package tech.pegasys.teku.benchmarks.ssz;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 

@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test

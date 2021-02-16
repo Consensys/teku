@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AggregateAndProofTest {
 

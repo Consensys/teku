@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorIndexCacheTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
