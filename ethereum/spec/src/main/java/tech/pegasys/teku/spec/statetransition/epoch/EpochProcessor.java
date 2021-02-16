@@ -75,7 +75,7 @@ public class EpochProcessor {
       MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
     try {
       UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
-      if (currentEpoch.isLessThanOrEqualTo(UInt64.valueOf(specConstants.getGenesisEpoch() + 1))) {
+      if (currentEpoch.isLessThanOrEqualTo(SpecConstants.GENESIS_EPOCH.plus(1))) {
         return;
       }
 
@@ -142,9 +142,7 @@ public class EpochProcessor {
       MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException {
     try {
-      if (beaconStateUtil
-          .getCurrentEpoch(state)
-          .equals(UInt64.valueOf(specConstants.getGenesisEpoch()))) {
+      if (beaconStateUtil.getCurrentEpoch(state).equals(SpecConstants.GENESIS_EPOCH)) {
         return;
       }
 
@@ -198,9 +196,7 @@ public class EpochProcessor {
                 .getCurrentEpochEffectiveBalance()
                 .equals(specConstants.getMaxEffectiveBalance())) {
           final Validator validator = validators.get(index);
-          if (validator
-              .getActivation_eligibility_epoch()
-              .equals(specConstants.getFarFutureEpoch())) {
+          if (validator.getActivation_eligibility_epoch().equals(SpecConstants.FAR_FUTURE_EPOCH)) {
             validators.set(
                 index, validator.withActivation_eligibility_epoch(currentEpoch.plus(UInt64.ONE)));
           }
