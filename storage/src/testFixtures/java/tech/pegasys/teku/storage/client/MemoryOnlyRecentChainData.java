@@ -29,6 +29,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
@@ -39,6 +40,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
+      final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel) {
@@ -49,6 +51,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         BlockProvider.NOOP,
         StateAndBlockSummaryProvider.NOOP,
         storageUpdateChannel,
+        voteUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
@@ -84,6 +87,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storeConfig,
           eventBus,
           storageUpdateChannel,
+          votes -> {},
           ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
           chainHeadChannel);

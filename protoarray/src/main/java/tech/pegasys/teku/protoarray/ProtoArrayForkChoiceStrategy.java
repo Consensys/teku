@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -92,12 +92,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
 
   @Override
   public Bytes32 findHead(
-      final MutableStore store,
+      final VoteUpdater voteUpdater,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final BeaconState justifiedCheckpointState) {
     return findHead(
-        store,
+        voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
@@ -105,7 +105,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   @Override
-  public void onAttestation(final MutableStore store, final IndexedAttestation attestation) {
+  public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
       attestation
@@ -113,7 +113,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
           .forEach(
               validatorIndex ->
                   processAttestation(
-                      store,
+                      voteUpdater,
                       validatorIndex,
                       attestation.getData().getBeacon_block_root(),
                       attestation.getData().getTarget().getEpoch()));
@@ -178,17 +178,17 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   void processAttestation(
-      MutableStore store, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
-    VoteTracker vote = store.getVote(validatorIndex);
+      VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
+    VoteTracker vote = voteUpdater.getVote(validatorIndex);
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
       VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
-      store.putVote(validatorIndex, newVote);
+      voteUpdater.putVote(validatorIndex, newVote);
     }
   }
 
   Bytes32 findHead(
-      MutableStore store,
+      VoteUpdater voteUpdater,
       UInt64 justifiedEpoch,
       Bytes32 justifiedRoot,
       UInt64 finalizedEpoch,
@@ -202,7 +202,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
 
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
-              store, getTotalTrackedNodeCount(), protoArray.getIndices(), oldBalances, newBalances);
+              voteUpdater,
+              getTotalTrackedNodeCount(),
+              protoArray.getIndices(),
+              oldBalances,
+              newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);

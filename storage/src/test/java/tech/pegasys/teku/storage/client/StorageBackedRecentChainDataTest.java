@@ -48,6 +48,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -60,6 +61,7 @@ public class StorageBackedRecentChainDataTest {
 
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+  private final VoteUpdateChannel voteUpdateChannel = mock(VoteUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
@@ -81,6 +83,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
@@ -132,6 +135,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
@@ -193,6 +197,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
@@ -242,6 +247,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
@@ -286,6 +292,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
