@@ -18,13 +18,12 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisValidityTestExecutor implements TestExecutor {
 
@@ -35,8 +34,7 @@ public class GenesisValidityTestExecutor implements TestExecutor {
     final BeaconStateUtil beaconStateUtil = specProvider.atEpoch(UInt64.ZERO).getBeaconStateUtil();
     final boolean expectedValidity = loadYaml(testDefinition, "is_valid.yaml", Boolean.class);
     final int activeValidatorCount =
-        ValidatorsUtil.get_active_validator_indices(state, UInt64.valueOf(Constants.GENESIS_EPOCH))
-            .size();
+        testDefinition.getSpecProvider().countActiveValidators(state, SpecConstants.GENESIS_EPOCH);
     final boolean result =
         beaconStateUtil.isValidGenesisState(state.getGenesis_time(), activeValidatorCount);
     assertThat(result).isEqualTo(expectedValidity);

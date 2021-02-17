@@ -126,6 +126,7 @@ public class Eth2NetworkBuilder {
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
     return new ActiveEth2Network(
+        config.getSpecProvider(),
         asyncRunner,
         metricsSystem,
         network,
