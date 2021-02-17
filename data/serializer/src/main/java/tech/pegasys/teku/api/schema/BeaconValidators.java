@@ -61,22 +61,6 @@ public class BeaconValidators {
         pageToken);
   }
 
-  public BeaconValidators(
-      tech.pegasys.teku.datastructures.state.BeaconState state, List<BLSPubKey> filter) {
-    this.validators =
-        filter.stream()
-            .map(
-                pubkey ->
-                    state.getValidators().stream()
-                        .filter(val -> new BLSPubKey(val.getPubkey()).equals(pubkey))
-                        .map(validator -> new ValidatorWithIndex(validator, state))
-                        .findFirst()
-                        .orElse(new ValidatorWithIndex(pubkey)))
-            .collect(Collectors.toList());
-    this.total_size = null;
-    this.next_page_token = null;
-  }
-
   BeaconValidators(
       final List<Validator> list,
       final List<UInt64> balances,
