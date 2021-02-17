@@ -475,7 +475,7 @@ public class SszContainerTest {
 
     ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
-    assertThatSszData(c1r).isEqualByAllMeansTo(c4r);
+    assertThatSszData(c1r).isEqualTo(c4r).isEqualByGettersTo(c4r).isEqualByHashTreeRootTo(c4r);
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -489,8 +489,14 @@ public class SszContainerTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThatSszData(c4r).isEqualByAllMeansTo(c1r);
+    assertThatSszData(c4r).isEqualTo(c1r).isEqualByGettersTo(c1r).isEqualByHashTreeRootTo(c1r);
 
-    assertThat(modified).allSatisfy(c -> assertThatSszData(c).isEqualByAllMeansTo(c3r));
+    assertThat(modified)
+        .allSatisfy(
+            c ->
+                assertThatSszData(c)
+                    .isEqualTo(c3r)
+                    .isEqualByGettersTo(c3r)
+                    .isEqualByHashTreeRootTo(c3r));
   }
 }
