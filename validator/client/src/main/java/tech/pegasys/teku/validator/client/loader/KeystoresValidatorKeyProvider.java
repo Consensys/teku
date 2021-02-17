@@ -44,7 +44,7 @@ import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
-public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
+public class KeystoresValidatorKeyProvider {
   private final KeystoreLocker keystoreLocker;
   private final ValidatorConfig config;
 
@@ -54,7 +54,6 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     this.config = config;
   }
 
-  @Override
   public List<BLSKeyPair> loadValidatorKeys() {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         config.getValidatorKeystorePasswordFilePairs();
