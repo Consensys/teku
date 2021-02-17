@@ -2,4 +2,6 @@ dependencies {
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:io')
+
+    testFixturesImplementation project(':ethereum:spec')
 }
