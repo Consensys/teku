@@ -243,11 +243,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
-        SafeFuture.fromRunnable(forkChoiceExecutor::stop),
         syncService.stop(),
         blockManager.stop(),
         attestationManager.stop(),
-        p2pNetwork.stop());
+        p2pNetwork.stop())
+        .thenRun(forkChoiceExecutor::stop);
   }
 
   private SafeFuture<?> initialize() {

@@ -73,17 +73,24 @@ public class AsyncRunnerEventThread implements EventThread {
     if (!started.get()) {
       return SafeFuture.failedFuture(new IllegalStateException("EventThread not started"));
     }
+    return doExecute(callable);
+  }
+
+  @Override
+  public void execute(final Runnable task) {
+    if (!started.get()) {
+      return;
+    }
+    doExecute(asSupplier(task)).reportExceptions();
+  }
+
+  private <T> SafeFuture<T> doExecute(final ExceptionThrowingSupplier<T> callable) {
     // Execute immediately if we're already on the event thread.
     if (isEventThread()) {
       return SafeFuture.of(callable);
     } else {
       return thread.runAsync(() -> recordEventThreadIdAndExecute(callable));
     }
-  }
-
-  @Override
-  public void execute(final Runnable task) {
-    execute(asSupplier(task)).reportExceptions();
   }
 
   /**
