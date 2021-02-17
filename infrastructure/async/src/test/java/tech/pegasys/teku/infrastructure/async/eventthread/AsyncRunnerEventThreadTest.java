@@ -40,33 +40,55 @@ class AsyncRunnerEventThreadTest {
   }
 
   @Test
-  void shouldNotBeOnEventThreadWhenNotStarted() {
+  void checkOnEventThread_shouldNotBeOnEventThreadWhenNotStarted() {
     assertThatThrownBy(eventThread::checkOnEventThread).isInstanceOf(IllegalStateException.class);
   }
 
   @Test
-  void shouldNotBeOnEventThreadWhenStartedButNotUsingExecute() {
+  void checkOnEventThread_shouldNotBeOnEventThreadWhenStartedButNotUsingExecute() {
     eventThread.start();
     assertThatThrownBy(eventThread::checkOnEventThread).isInstanceOf(IllegalStateException.class);
   }
 
   @Test
-  void shouldBeOnEventThreadWhenUsingExecute() throws Exception {
+  void checkOnEventThread_shouldBeOnEventThreadWhenUsingExecute() throws Exception {
     eventThread.start();
     waitForOnEventThread(eventThread::checkOnEventThread);
   }
 
   @Test
-  void shouldExecuteImmediatelyIfAlreadyOnEventThread() throws Exception {
+  void runnable_shouldExecuteImmediatelyIfAlreadyOnEventThread() throws Exception {
     eventThread.start();
     waitForOnEventThread(
         () -> {
           final AtomicBoolean actionRun = new AtomicBoolean(false);
           eventThread.execute(() -> actionRun.set(true));
           // Should have happened synchronously because we're already on the event thread
-          //noinspection ConstantConditions
           assertThat(actionRun).isTrue();
         });
+  }
+
+  @Test
+  void supplier_shouldExecuteImmediatelyIfAlreadyOnEventThread() throws Exception {
+    eventThread.start();
+    waitForOnEventThread(
+        () -> {
+          final SafeFuture<String> result = eventThread.execute(() -> "Yay");
+          // Should have happened synchronously because we're already on the event thread
+          assertThat(result).isCompletedWithValue("Yay");
+        });
+  }
+
+  @Test
+  void supplier_shouldExecuteSupplierOnEventThread() throws Exception {
+    eventThread.start();
+    final SafeFuture<String> result =
+        eventThread.execute(
+            () -> {
+              eventThread.checkOnEventThread();
+              return "Yay";
+            });
+    assertThat(Waiter.waitFor(result)).isEqualTo("Yay");
   }
 
   private void waitForOnEventThread(final Runnable action) throws Exception {

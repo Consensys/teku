@@ -39,10 +39,10 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -92,7 +92,7 @@ public abstract class TransitionBenchmark {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             recentChainData,
             new StateTransition());
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);

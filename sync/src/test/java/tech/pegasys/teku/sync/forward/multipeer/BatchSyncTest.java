@@ -835,9 +835,10 @@ class BatchSyncTest {
     timeProvider.advanceTimeBySeconds(100);
     assertThat(sync.syncToChain(targetChain)).isNotDone();
     eventThread.execute(
-        () ->
-            assertThat(sync.getLastImportTimerStartPointSeconds())
-                .isEqualTo(timeProvider.getTimeInSeconds()));
+        (Runnable)
+            () ->
+                assertThat(sync.getLastImportTimerStartPointSeconds())
+                    .isEqualTo(timeProvider.getTimeInSeconds()));
   }
 
   @Test
@@ -865,13 +866,15 @@ class BatchSyncTest {
   private void assertBatchNotActive(final Batch batch) {
     // Need to use the wrapped batch which enforces usage of event thread
     eventThread.execute(
-        () -> assertThat(sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch))).isFalse());
+        (Runnable)
+            () -> assertThat(sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch))).isFalse());
   }
 
   private void assertBatchActive(final Batch batch) {
     // Need to use the wrapped batch which enforces usage of event thread
     eventThread.execute(
-        () -> assertThat(sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch))).isTrue());
+        (Runnable)
+            () -> assertThat(sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch))).isTrue());
   }
 
   private void assertBatchImported(final Batch batch) {
