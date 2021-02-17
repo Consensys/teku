@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import com.google.common.base.Preconditions;
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -54,7 +56,9 @@ public class SpecProvider {
   }
 
   public Spec atSlot(final UInt64 slot) {
-    return atEpoch(compute_epoch_at_slot(slot));
+    // Calculate using the latest spec
+    final UInt64 epoch = getLatestSpec().getBeaconStateUtil().computeEpochAtSlot(slot);
+    return atEpoch(epoch);
   }
 
   public Spec getGenesisSpec() {
@@ -81,7 +85,39 @@ public class SpecProvider {
     return atEpoch(epoch).getConstants().getDomainBeaconProposer();
   }
 
+  public UInt64 computeEpochAtSlot(final UInt64 slot) {
+    return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  }
+
   public Fork fork(final UInt64 epoch) {
     return forkManifest.get(epoch);
+  }
+
+  // Validator Utils
+  public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
+    return atState(state).getValidatorsUtil().getMaxLookaheadEpoch(state);
+  }
+
+  public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getActiveValidatorIndices(state, epoch);
+  }
+
+  public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
+    return getActiveValidatorIndices(state, epoch).size();
+  }
+
+  public Optional<BLSPublicKey> getValidatorPubKey(
+      final BeaconState state, final UInt64 proposerIndex) {
+    return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
+  }
+
+  // Private helpers
+  private Spec atState(final BeaconState state) {
+    return atSlot(state.getSlot());
+  }
+
+  private Spec getLatestSpec() {
+    // When fork manifest is non-empty, we should pull the newest spec here
+    return genesisSpec;
   }
 }
