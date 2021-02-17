@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class SszTestUtils {
 
   public static List<Integer> getVectorLengths(AbstractSszContainerSchema<?> sszContainerSchema) {
-    return sszContainerSchema.getChildSchemas().stream()
+    return sszContainerSchema.getFieldSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
         .map(t -> (SszVectorSchema<?, ?>) t)
         .map(SszVectorSchema::getLength)

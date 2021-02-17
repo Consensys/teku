@@ -142,10 +142,10 @@ public class SszListTest {
       return Stream.generate(
           () -> {
             List<SszData> children =
-                containerSchema.getChildSchemas().stream()
+                containerSchema.getFieldSchemas().stream()
                     .map(SszListTest::randomData)
                     .collect(Collectors.toList());
-            return (T) containerSchema.createFromFields(children);
+            return (T) containerSchema.createFromFieldValues(children);
           });
     } else if (schema instanceof SszCollectionSchema) {
       return Stream.generate(
