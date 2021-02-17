@@ -36,10 +36,12 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -48,7 +50,7 @@ public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ForkChoiceAttestationValidator attestationValidator;
-  private final ForkChoiceExecutor forkChoiceExecutor;
+  private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
   private final ForkChoiceBlockTasks forkChoiceBlockTasks;
@@ -56,7 +58,7 @@ public class ForkChoice {
   public ForkChoice(
       final ForkChoiceAttestationValidator attestationValidator,
       final ForkChoiceBlockTasks forkChoiceBlockTasks,
-      final ForkChoiceExecutor forkChoiceExecutor,
+      final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final StateTransition stateTransition) {
     this.attestationValidator = attestationValidator;
@@ -99,7 +101,7 @@ public class ForkChoice {
                             retrievedJustifiedCheckpoint.getRoot(),
                             justifiedCheckpoint.getEpoch(),
                             justifiedCheckpoint.getRoot());
-                        return SafeFuture.COMPLETE;
+                        return;
                       }
                       final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -120,7 +122,6 @@ public class ForkChoice {
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
                       transaction.commit();
-                      return SafeFuture.COMPLETE;
                     }))
         .join();
   }
@@ -157,13 +158,13 @@ public class ForkChoice {
                   indexedAttestationProvider);
 
           if (!result.isSuccessful()) {
-            return SafeFuture.completedFuture(result);
+            return result;
           }
-          return transaction
-              .commit()
-              .thenRun(() -> updateForkChoiceForImportedBlock(block, result))
-              .thenRun(() -> applyVotesFromBlock(forkChoiceStrategy, indexedAttestationProvider))
-              .thenApply(__ -> result);
+          // Note: not using thenRun here because we want to ensure each step is on the event thread
+          transaction.commit().join();
+          updateForkChoiceForImportedBlock(block, result);
+          applyVotesFromBlock(forkChoiceStrategy, indexedAttestationProvider);
+          return result;
         });
   }
 
@@ -219,7 +220,6 @@ public class ForkChoice {
                         getForkChoiceStrategy()
                             .onAttestation(transaction, getIndexedAttestation(attestation));
                         transaction.commit();
-                        return SafeFuture.COMPLETE;
                       })
                   .thenApply(__ -> validationResult);
             })
@@ -244,7 +244,6 @@ public class ForkChoice {
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               transaction.commit();
-              return SafeFuture.COMPLETE;
             })
         .reportExceptions();
   }
@@ -267,7 +266,15 @@ public class ForkChoice {
                     "ValidateableAttestation does not have an IndexedAttestation."));
   }
 
-  private <T> SafeFuture<T> onForkChoiceThread(final ForkChoiceTask<T> task) {
-    return forkChoiceExecutor.performTask(task);
+  private SafeFuture<Void> onForkChoiceThread(final ExceptionThrowingRunnable task) {
+    return onForkChoiceThread(
+        () -> {
+          task.run();
+          return null;
+        });
+  }
+
+  private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
+    return forkChoiceExecutor.execute(task);
   }
 }

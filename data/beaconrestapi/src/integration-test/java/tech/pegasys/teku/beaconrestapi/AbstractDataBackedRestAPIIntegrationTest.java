@@ -49,6 +49,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -62,7 +63,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -144,7 +144,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             : new ForkChoice(
                 new ForkChoiceAttestationValidator(),
                 new ForkChoiceBlockTasks(),
-                new SyncForkChoiceExecutor(),
+                new InlineEventThread(),
                 recentChainData,
                 stateTransition);
     beaconChainUtil =

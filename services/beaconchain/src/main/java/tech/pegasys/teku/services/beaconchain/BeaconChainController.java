@@ -56,6 +56,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -81,8 +82,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor;
-import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -145,6 +144,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunner eventAsyncRunner;
   private final Path beaconDataDirectory;
   private final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
+  private final AsyncRunnerEventThread forkChoiceExecutor;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -177,7 +177,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
 
   private UInt64 genesisTimeTracker = ZERO;
-  private ForkChoiceExecutor forkChoiceExecutor;
   private BlockManager blockManager;
 
   public BeaconChainController(
@@ -194,12 +193,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
+    this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    this.eventBus.register(this);
     LOG.debug("Starting {}", this.getClass().getSimpleName());
+    forkChoiceExecutor.start();
+    this.eventBus.register(this);
     return initialize()
         .thenCompose(
             (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
@@ -240,13 +241,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-        SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
-        SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
-        SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
-        syncService.stop(),
-        blockManager.stop(),
-        attestationManager.stop(),
-        p2pNetwork.stop());
+            SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
+            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+            syncService.stop(),
+            blockManager.stop(),
+            attestationManager.stop(),
+            p2pNetwork.stop())
+        .thenRun(forkChoiceExecutor::stop);
   }
 
   private SafeFuture<?> initialize() {
@@ -404,7 +405,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoiceExecutor = SingleThreadedForkChoiceExecutor.create();
     forkChoice =
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
