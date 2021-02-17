@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
@@ -155,8 +154,8 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldUseEmptySubnetListWhenFieldValueIsInvalid() {
-    Bitvector persistentSubnets = new Bitvector(4, 1, 2); // Incorrect length
-    Bytes encodedPersistentSubnets = persistentSubnets.serialize();
+    SszBitvector persistentSubnets = SszBitvectorSchema.create(4).ofBits(1, 2); // Incorrect length
+    Bytes encodedPersistentSubnets = persistentSubnets.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
