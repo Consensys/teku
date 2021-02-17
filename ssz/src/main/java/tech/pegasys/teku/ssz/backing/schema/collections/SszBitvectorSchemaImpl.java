@@ -54,6 +54,10 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
+    checkSsz(
+        reader.getAvailableBytes() == (getLength() + 7) / 8,
+        "SSZ length doesn't match Bitvector size");
+
     DeserializedData data = sszDeserializeVector(reader);
     if (getLength() % 8 > 0) {
       // for BitVector we need to check that all 'unused' bits in the last byte are 0

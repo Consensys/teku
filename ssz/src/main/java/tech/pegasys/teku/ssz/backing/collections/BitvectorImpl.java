@@ -63,6 +63,7 @@ class BitvectorImpl {
   public BitvectorImpl(int size, Iterable<Integer> indicesToSet) {
     this(size);
     for (int i : indicesToSet) {
+      checkElementIndex(i, size);
       data.set(i);
     }
   }
