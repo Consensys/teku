@@ -14,8 +14,8 @@
 package tech.pegasys.teku.protoarray;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -23,10 +23,10 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 public interface ForkChoiceStrategy extends ReadOnlyForkChoiceStrategy {
 
   Bytes32 findHead(
-      final MutableStore store,
+      final VoteUpdater store,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final BeaconState justifiedCheckpointState);
 
-  void onAttestation(final MutableStore store, final IndexedAttestation attestation);
+  void onAttestation(final VoteUpdater store, final IndexedAttestation attestation);
 }

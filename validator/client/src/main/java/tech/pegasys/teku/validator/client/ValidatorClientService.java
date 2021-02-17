@@ -36,6 +36,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
@@ -112,7 +113,8 @@ public class ValidatorClientService extends Service {
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
+        ValidatorLoader.create(
+            slashingProtector, new PublicKeyLoader(), asyncRunner, metricsSystem);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getInteropConfig());

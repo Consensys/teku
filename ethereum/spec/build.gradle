@@ -14,8 +14,10 @@ dependencies {
     testFixturesImplementation project(':infrastructure:unsigned')
     testFixturesImplementation testFixtures(project(':bls'))
 
+    testFixturesApi project(':pow')
+    testFixturesApi 'com.google.guava:guava'
+
     testImplementation testFixtures(project(':bls'))
-    testImplementation testFixtures(project(':ethereum:datastructures'))
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'

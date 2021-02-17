@@ -15,10 +15,6 @@ package tech.pegasys.teku.reference.phase0;
 
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public interface TestExecutor {
   TestExecutor IGNORE_TESTS =
@@ -26,13 +22,6 @@ public interface TestExecutor {
         throw new TestAbortedException(
             "Test " + testDefinition.getDisplayName() + " has been ignored");
       };
-
-  default SpecProvider specProviderFromSpec(final TestDefinition testDefinition) {
-    final SpecConstants specConstants = ConstantsLoader.loadConstants(testDefinition.getSpecName());
-    final SpecConfiguration specConfiguration =
-        SpecConfiguration.builder().constants(specConstants).build();
-    return SpecProvider.create(specConfiguration);
-  }
 
   void runTest(TestDefinition testDefinition) throws Throwable;
 }

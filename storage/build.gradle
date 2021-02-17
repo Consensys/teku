@@ -2,6 +2,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
@@ -45,6 +46,7 @@ dependencies {
   testFixturesApi project(':storage:api')
   testFixturesApi project(':ethereum:datastructures')
 
+  testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':bls'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))

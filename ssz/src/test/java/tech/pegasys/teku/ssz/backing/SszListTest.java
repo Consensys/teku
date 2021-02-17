@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing;
 import static java.lang.Integer.max;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.Random;
@@ -142,10 +143,10 @@ public class SszListTest {
       return Stream.generate(
           () -> {
             List<SszData> children =
-                containerSchema.getChildSchemas().stream()
+                containerSchema.getFieldSchemas().stream()
                     .map(SszListTest::randomData)
                     .collect(Collectors.toList());
-            return (T) containerSchema.createFromFields(children);
+            return (T) containerSchema.createFromFieldValues(children);
           });
     } else if (schema instanceof SszCollectionSchema) {
       return Stream.generate(
@@ -400,12 +401,7 @@ public class SszListTest {
                       randomDataStream(listElementType).limit(size).collect(Collectors.toList()));
               Bytes ssz = list.sszSerialize();
               SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
-              assertThat(SszTestUtils.equalsByGetters(list, list1)).isTrue();
-              assertThat(list1.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
-              assertThat(list1).isEqualTo(list);
-              assertThat(list1.hashCode()).isEqualTo(list.hashCode());
-              Bytes ssz1 = list1.sszSerialize();
-              assertThat(ssz1).isEqualTo(ssz);
+              assertThatSszData(list1).isEqualByAllMeansTo(list);
             });
   }
 }

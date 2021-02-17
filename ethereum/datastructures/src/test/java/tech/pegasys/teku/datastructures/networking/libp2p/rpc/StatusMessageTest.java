@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 class StatusMessageTest {
@@ -35,7 +34,6 @@ class StatusMessageTest {
 
     final Bytes data = message.sszSerialize();
     final StatusMessage result = StatusMessage.SSZ_SCHEMA.sszDeserialize(data);
-    assertThat(SszTestUtils.equalsByGetters(result, message)).isTrue();
-    assertThat(result).isEqualTo(message);
+    assertThatSszData(result).isEqualByAllMeansTo(message);
   }
 }

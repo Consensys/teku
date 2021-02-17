@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.forkchoice;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -68,10 +67,6 @@ public interface ReadOnlyStore {
    *     earlier than child roots
    */
   Collection<Bytes32> getOrderedBlockRoots();
-
-  Set<UInt64> getVotedValidatorIndices();
-
-  VoteTracker getVote(UInt64 validatorIndex);
 
   /**
    * Returns a block state only if it is immediately available (not pruned).

@@ -27,6 +27,7 @@ import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,12 +46,11 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -173,7 +173,7 @@ public class ValidatorDataProviderTest {
     provider.submitAttestation(attestation);
 
     verify(validatorApiChannel).sendSignedAttestation(args.capture());
-    assertThat(SszTestUtils.equalsByGetters(args.getValue(), internalAttestation)).isTrue();
+    assertThatSszData(args.getValue()).isEqualByAllMeansTo(internalAttestation);
   }
 
   @Test

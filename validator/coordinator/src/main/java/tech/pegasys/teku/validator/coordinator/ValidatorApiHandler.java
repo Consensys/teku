@@ -383,12 +383,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .onAttestation(ValidateableAttestation.fromValidator(attestation))
         .finish(
             result -> {
-              result.ifInvalid(
-                  reason ->
-                      VALIDATOR_LOGGER.producedInvalidAttestation(
-                          attestation.getData().getSlot(), reason));
-              dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
-              performanceTracker.saveProducedAttestation(attestation);
+              if (!result.isInvalid()) {
+                dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
+                performanceTracker.saveProducedAttestation(attestation);
+              } else {
+                VALIDATOR_LOGGER.producedInvalidAttestation(
+                    attestation.getData().getSlot(), result.getInvalidReason());
+              }
             },
             err ->
                 LOG.error(
