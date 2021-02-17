@@ -23,15 +23,19 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 public class SszBitlistTest {
 
@@ -297,5 +301,39 @@ public class SszBitlistTest {
   void createWritableCopy_shouldThrow(SszBitlist bitlist) {
     assertThatThrownBy(bitlist::createWritableCopy)
         .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  public void basicTest() {
+    for (int size :
+        new int[] {
+          /*100, 255, 256, */
+          300, 1000, 1023
+        }) {
+      int[] bitIndexes =
+          IntStream.concat(IntStream.range(0, size).filter(i -> i % 2 == 0), IntStream.of(0))
+              .toArray();
+
+      SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(size);
+      SszList<SszBit> bitlist = schema.ofBits(size, bitIndexes);
+      SszBitlist bitlist1 = schema.sszDeserialize(bitlist.sszSerialize());
+
+      Assertions.assertThat(bitlist1).isEqualTo(bitlist);
+    }
+  }
+
+  @Disabled("the Tuweni Bytes issue: https://github.com/apache/incubator-tuweni/issues/186")
+  @Test
+  public void tuweniBytesIssue() {
+    Bytes slicedBytes = Bytes.wrap(Bytes.wrap(new byte[32]), Bytes.wrap(new byte[6])).slice(0, 37);
+
+    Assertions.assertThatCode(slicedBytes::copy).doesNotThrowAnyException();
+
+    Bytes wrappedBytes = Bytes.wrap(slicedBytes, Bytes.wrap(new byte[1]));
+
+    Assertions.assertThatCode(wrappedBytes::toArrayUnsafe).doesNotThrowAnyException();
+    Assertions.assertThatCode(wrappedBytes::toArray).doesNotThrowAnyException();
+    Assertions.assertThatCode(() -> Bytes.concatenate(slicedBytes, Bytes.wrap(new byte[1])))
+        .doesNotThrowAnyException();
   }
 }

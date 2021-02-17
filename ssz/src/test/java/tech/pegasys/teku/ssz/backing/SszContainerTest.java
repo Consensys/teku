@@ -40,7 +40,7 @@ import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class ContainerViewTest {
+public class SszContainerTest {
   private static final Logger LOG = LogManager.getLogger();
 
   public interface ImmutableSubContainer extends SszContainer {
