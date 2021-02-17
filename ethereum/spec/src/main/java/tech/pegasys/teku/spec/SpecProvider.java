@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -97,8 +98,12 @@ public class SpecProvider {
     return atState(state).getValidatorsUtil().getMaxLookaheadEpoch(state);
   }
 
+  public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getActiveValidatorIndices(state, epoch);
+  }
+
   public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).getValidatorsUtil().getActiveValidatorIndices(state, epoch).size();
+    return getActiveValidatorIndices(state, epoch).size();
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(
