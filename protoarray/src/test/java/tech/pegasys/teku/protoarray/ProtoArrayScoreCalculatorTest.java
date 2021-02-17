@@ -27,8 +27,8 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoArrayScoreCalculatorTest {
@@ -36,7 +36,7 @@ public class ProtoArrayScoreCalculatorTest {
   private Map<Bytes32, Integer> indices;
   private List<UInt64> oldBalances;
   private List<UInt64> newBalances;
-  private MutableStore store;
+  private VoteUpdater store;
 
   @BeforeEach
   void setUp() {
@@ -288,7 +288,7 @@ public class ProtoArrayScoreCalculatorTest {
     votesShouldBeUpdated(store);
   }
 
-  private void votesShouldBeUpdated(MutableStore store) {
+  private void votesShouldBeUpdated(VoteUpdater store) {
     for (UInt64 i : store.getVotedValidatorIndices()) {
       VoteTracker vote = store.getVote(i);
       assertThat(vote.getCurrentRoot()).isEqualTo(vote.getNextRoot());

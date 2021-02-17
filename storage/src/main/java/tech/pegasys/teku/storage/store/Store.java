@@ -14,9 +14,9 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
-import static tech.pegasys.teku.core.stategenerator.StateAtSlotTask.AsyncStateProvider.fromAnchor;
+import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -37,17 +37,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
-import tech.pegasys.teku.core.stategenerator.StateAtSlotTask;
-import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
-import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
+import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
+import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
+import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -69,6 +70,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -309,6 +311,11 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public VoteUpdater startVoteUpdate(final VoteUpdateChannel voteUpdateChannel) {
+    return new StoreVoteUpdater(this, lock, voteUpdateChannel);
+  }
+
+  @Override
   public UInt64 getTime() {
     readLock.lock();
     try {
@@ -500,8 +507,7 @@ class Store implements UpdatableStore {
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
-  @Override
-  public Set<UInt64> getVotedValidatorIndices() {
+  Set<UInt64> getVotedValidatorIndices() {
     readLock.lock();
     try {
       return new HashSet<>(votes.keySet());
@@ -510,8 +516,7 @@ class Store implements UpdatableStore {
     }
   }
 
-  @Override
-  public VoteTracker getVote(UInt64 validatorIndex) {
+  VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
       return votes.get(validatorIndex);

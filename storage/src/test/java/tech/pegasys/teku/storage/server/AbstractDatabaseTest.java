@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +48,13 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -696,6 +698,32 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void startupFromNonGenesisStateAndFinalizeNewCheckpoint_archive() {
     testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  void shouldStoreAndRetrieveVotes() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    createStorage(StateStorageMode.PRUNE);
+    assertThat(database.getVotes()).isEmpty();
+
+    final Map<UInt64, VoteTracker> voteBatch1 =
+        Map.of(
+            UInt64.valueOf(10), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(11), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(12), dataStructureUtil.randomVoteTracker());
+    database.storeVotes(voteBatch1);
+
+    assertThat(database.getVotes()).isEqualTo(voteBatch1);
+
+    final Map<UInt64, VoteTracker> voteBatch2 =
+        Map.of(
+            UInt64.valueOf(10), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(13), dataStructureUtil.randomVoteTracker());
+    database.storeVotes(voteBatch2);
+
+    final Map<UInt64, VoteTracker> expected = new HashMap<>(voteBatch1);
+    expected.putAll(voteBatch2);
+    assertThat(database.getVotes()).isEqualTo(expected);
   }
 
   public void testStartupFromNonGenesisStateAndFinalizeNewCheckpoint(

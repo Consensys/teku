@@ -43,10 +43,10 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
@@ -78,12 +78,13 @@ class ValidatorLoaderTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final PublicKeyLoader publicKeyLoader = new PublicKeyLoader();
 
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
 
   private final ValidatorLoader validatorLoader =
-      ValidatorLoader.create(slashingProtector, asyncRunner, metricsSystem);
+      ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
 
   @BeforeEach
   void initUpcheckMockResponse() throws IOException, InterruptedException {
@@ -92,12 +93,46 @@ class ValidatorLoaderTest {
   }
 
   @Test
+  void shouldLoadPublicKeysFromUrls() {
+    final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+    final List<BLSPublicKey> expectedKeys = List.of(PUBLIC_KEY1, PUBLIC_KEY2);
+    final String publicKeysUrl = "http://example.com";
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(expectedKeys);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
+            .build();
+
+    final Map<BLSPublicKey, Validator> validators =
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+
+    assertThat(validators).hasSize(2);
+
+    final Validator validator1 = validators.get(PUBLIC_KEY1);
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.getSigner().isLocal()).isFalse();
+
+    final Validator validator2 = validators.get(PUBLIC_KEY2);
+    assertThat(validator2).isNotNull();
+    assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
+    assertThat(validator2.getSigner().isLocal()).isFalse();
+  }
+
+  @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {
     final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
@@ -128,7 +163,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
 
@@ -162,7 +198,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY2))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY2.toString()))
             .validatorKeys(
                 List.of(
                     tempDir.toAbsolutePath().toString()
@@ -195,7 +232,8 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
-            .validatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
+            .validatorExternalSignerPublicKeySources(
+                Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorKeys(
                 List.of(
                     tempDir.toAbsolutePath().toString()

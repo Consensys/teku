@@ -16,8 +16,8 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class MinGenesisTimeBlockEventSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

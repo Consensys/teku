@@ -168,5 +168,8 @@ public class NoOpDatabase implements Database {
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}
 
   @Override
+  public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
+
+  @Override
   public void close() {}
 }

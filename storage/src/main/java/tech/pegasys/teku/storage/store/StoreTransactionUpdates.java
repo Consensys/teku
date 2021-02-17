@@ -73,7 +73,6 @@ class StoreTransactionUpdates {
         hotBlocks,
         hotStatesToPersist,
         prunedHotBlockRoots,
-        tx.votes,
         stateRoots);
   }
 
@@ -85,7 +84,6 @@ class StoreTransactionUpdates {
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
-    store.votes.putAll(tx.votes);
 
     // Update finalized data
     finalizedChainData.ifPresent(

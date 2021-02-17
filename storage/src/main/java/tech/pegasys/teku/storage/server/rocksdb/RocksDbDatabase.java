@@ -48,7 +48,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ForkChoiceUtil;
-import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
@@ -653,6 +653,14 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public void storeVotes(final Map<UInt64, VoteTracker> votes) {
+    try (final RocksDbHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
+      hotUpdater.addVotes(votes);
+      hotUpdater.commit();
+    }
+  }
+
+  @Override
   public void close() throws Exception {
     hotDao.close();
     eth1Dao.close();
@@ -692,7 +700,6 @@ public class RocksDbDatabase implements Database {
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
-      updater.addVotes(update.getVotes());
 
       // Delete finalized data from hot db
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
