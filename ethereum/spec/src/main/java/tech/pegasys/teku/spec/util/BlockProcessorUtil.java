@@ -11,26 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_deposit;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_validator;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
-import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,14 +51,29 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-@Deprecated
 public final class BlockProcessorUtil {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final SpecConstants specConstants;
+  private final BeaconStateUtil beaconStateUtil;
+  private final AttestationUtil attestationUtil;
+  private final ValidatorsUtil validatorsUtil;
+
+  public BlockProcessorUtil(
+      final SpecConstants specConstants,
+      final BeaconStateUtil beaconStateUtil,
+      final AttestationUtil attestationUtil,
+      final ValidatorsUtil validatorsUtil) {
+    this.specConstants = specConstants;
+    this.beaconStateUtil = beaconStateUtil;
+    this.attestationUtil = attestationUtil;
+    this.validatorsUtil = validatorsUtil;
+  }
 
   /**
    * Processes block header
@@ -85,15 +84,14 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  @Deprecated
-  public static void process_block_header(MutableBeaconState state, BeaconBlock block)
+  public void processBlockHeader(MutableBeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
           block.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
       checkArgument(
-          block.getProposerIndex().longValue() == get_beacon_proposer_index(state),
+          block.getProposerIndex().longValue() == beaconStateUtil.getBeaconProposerIndex(state),
           "process_block_header: Verify that proposer index is the correct index");
       checkArgument(
           block.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
@@ -122,15 +120,16 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
+  public void processRandaoNoValidation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
-      UInt64 epoch = get_current_epoch(state);
+      UInt64 epoch = beaconStateUtil.getCurrentEpoch(state);
 
       Bytes32 mix =
-          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
+          beaconStateUtil
+              .getRandaoMix(state, epoch)
+              .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
+      int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -138,15 +137,14 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static void verify_randao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
+  public void verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
       throws InvalidSignatureException {
-    UInt64 epoch = compute_epoch_at_slot(block.getSlot());
+    UInt64 epoch = beaconStateUtil.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
-        ValidatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes signing_root =
-        compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
+        validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
+    final Bytes32 domain = beaconStateUtil.getDomain(state, specConstants.getDomainRandao());
+    final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
     bls.verifyAndThrow(
         proposerPublicKey,
         signing_root,
@@ -162,8 +160,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#eth1-data</a>
    */
-  @Deprecated
-  public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
+  public void processEth1Data(MutableBeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
     long vote_count = getVoteCount(state, body.getEth1_data());
     if (isEnoughVotesToUpdateEth1Data(vote_count)) {
@@ -171,13 +168,12 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
-    return voteCount * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH;
+  public boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
+    return voteCount * 2
+        > (long) specConstants.getEpochsPerEth1VotingPeriod() * specConstants.getSlotsPerEpoch();
   }
 
-  @Deprecated
-  public static long getVoteCount(BeaconState state, Eth1Data eth1Data) {
+  public long getVoteCount(BeaconState state, Eth1Data eth1Data) {
     return state.getEth1_data_votes().stream().filter(item -> item.equals(eth1Data)).count();
   }
 
@@ -190,15 +186,14 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  @Deprecated
-  public static void process_operations_no_validation(
-      MutableBeaconState state, BeaconBlockBody body) throws BlockProcessingException {
+  public void processOperationsNoValidation(MutableBeaconState state, BeaconBlockBody body)
+      throws BlockProcessingException {
     try {
 
       checkArgument(
           body.getDeposits().size()
               == Math.min(
-                  MAX_DEPOSITS,
+                  specConstants.getMaxDeposits(),
                   toIntExact(
                       state
                           .getEth1_data()
@@ -207,11 +202,11 @@ public final class BlockProcessorUtil {
                           .longValue())),
           "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-      process_proposer_slashings_no_validation(state, body.getProposer_slashings());
-      process_attester_slashings(state, body.getAttester_slashings());
-      process_attestations_no_validation(state, body.getAttestations());
-      process_deposits(state, body.getDeposits());
-      process_voluntary_exits_no_validation(state, body.getVoluntary_exits());
+      processProposerSlashingsNoValidation(state, body.getProposer_slashings());
+      processAttesterSlashings(state, body.getAttester_slashings());
+      processAttestationsNoValidation(state, body.getAttestations());
+      processDeposits(state, body.getDeposits());
+      processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -228,20 +223,18 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
-  @Deprecated
-  public static void process_proposer_slashings(
+  public void processProposerSlashings(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    process_proposer_slashings_no_validation(state, proposerSlashings);
+    processProposerSlashingsNoValidation(state, proposerSlashings);
     boolean signaturesValid =
-        verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
+        verifyProposerSlashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
     if (!signaturesValid) {
       throw new BlockProcessingException("Slashing signature is invalid");
     }
   }
 
-  @Deprecated
-  public static void process_proposer_slashings_no_validation(
+  public void processProposerSlashingsNoValidation(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     ProposerSlashingStateTransitionValidator validator =
@@ -257,7 +250,7 @@ public final class BlockProcessorUtil {
             "process_proposer_slashings: %s",
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        slash_validator(
+        beaconStateUtil.slashValidator(
             state,
             toIntExact(proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
       }
@@ -267,8 +260,7 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static boolean verify_proposer_slashings(
+  public boolean verifyProposerSlashings(
       BeaconState state,
       SSZList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
@@ -297,8 +289,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
-  @Deprecated
-  public static void process_attester_slashings(
+  public void processAttesterSlashings(
       MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
@@ -317,7 +308,8 @@ public final class BlockProcessorUtil {
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
         indicesToSlash.forEach(
-            indexToSlash -> slash_validator(state, toIntExact(indexToSlash.longValue())));
+            indexToSlash ->
+                beaconStateUtil.slashValidator(state, toIntExact(indexToSlash.longValue())));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -334,19 +326,17 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
-  @Deprecated
-  public static void process_attestations(
+  public void processAttestations(
       MutableBeaconState state,
       SSZList<Attestation> attestations,
       IndexedAttestationProvider indexedAttestationProvider)
       throws BlockProcessingException {
-    process_attestations_no_validation(state, attestations);
-    verify_attestations(
+    processAttestationsNoValidation(state, attestations);
+    verifyAttestations(
         state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
   }
 
-  @Deprecated
-  public static void process_attestations_no_validation(
+  public void processAttestationsNoValidation(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
       final AttestationDataStateTransitionValidator validator =
@@ -360,7 +350,8 @@ public final class BlockProcessorUtil {
             "process_attestations: %s",
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
+        List<Integer> committee =
+            beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
         checkArgument(
             attestation.getAggregation_bits().size() == committee.size(),
             "process_attestations: Attestation aggregation bits and committee don't have the same length");
@@ -370,9 +361,9 @@ public final class BlockProcessorUtil {
                 attestation.getAggregation_bits(),
                 data,
                 state.getSlot().minus(data.getSlot()),
-                UInt64.valueOf(get_beacon_proposer_index(state)));
+                UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
-        if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
+        if (data.getTarget().getEpoch().equals(beaconStateUtil.getCurrentEpoch(state))) {
           state.getCurrent_epoch_attestations().add(pendingAttestation);
         } else {
           state.getPrevious_epoch_attestations().add(pendingAttestation);
@@ -384,8 +375,7 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static void verify_attestations(
+  public void verifyAttestations(
       BeaconState state,
       SSZList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
@@ -395,7 +385,10 @@ public final class BlockProcessorUtil {
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
             .map(attesation -> indexedAttestationProvider.getIndexedAttestation(state, attesation))
-            .map(attestation -> is_valid_indexed_attestation(state, attestation, signatureVerifier))
+            .map(
+                attestation ->
+                    attestationUtil.isValidIndexedAttestation(
+                        state, attestation, signatureVerifier))
             .filter(result -> !result.isSuccessful())
             .findAny();
     if (processResult.isPresent()) {
@@ -413,12 +406,11 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  @Deprecated
-  public static void process_deposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
-        process_deposit(state, deposit);
+        beaconStateUtil.processDeposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -435,20 +427,17 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  @Deprecated
-  public static void process_voluntary_exits(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
 
-    process_voluntary_exits_no_validation(state, exits);
-    boolean signaturesValid = verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
+    processVoluntaryExitsNoValidation(state, exits);
+    boolean signaturesValid = verifyVoluntaryExits(state, exits, BLSSignatureVerifier.SIMPLE);
     if (!signaturesValid) {
       throw new BlockProcessingException("Exit signature is invalid");
     }
   }
 
-  @Deprecated
-  public static void process_voluntary_exits_no_validation(
+  public void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
@@ -463,7 +452,7 @@ public final class BlockProcessorUtil {
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(
+        beaconStateUtil.initiateValidatorExit(
             state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
@@ -472,8 +461,7 @@ public final class BlockProcessorUtil {
     }
   }
 
-  @Deprecated
-  public static boolean verify_voluntary_exits(
+  public boolean verifyVoluntaryExits(
       BeaconState state,
       SSZList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
