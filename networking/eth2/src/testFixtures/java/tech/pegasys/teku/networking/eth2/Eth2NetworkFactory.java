@@ -236,6 +236,7 @@ public class Eth2NetworkFactory {
                 config.getNetworkConfig());
 
         return new ActiveEth2Network(
+            specProvider,
             asyncRunner,
             metricsSystem,
             network,

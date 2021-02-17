@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.time.Duration;
@@ -36,7 +33,6 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,12 +58,14 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecProvider specProvider;
   private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
@@ -106,6 +104,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private volatile Cancellable gossipUpdateTask;
 
   public ActiveEth2Network(
+      final SpecProvider specProvider,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -126,6 +125,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
+    this.specProvider = specProvider;
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
@@ -272,12 +272,12 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest();
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
-    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    final UInt64 currentEpoch = specProvider.computeEpochAtSlot(currentSlot);
 
     final UInt64 activeValidatorsEpoch =
-        ValidatorsUtil.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
+        specProvider.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
     final int activeValidators =
-        get_active_validator_indices(chainHead.getState(), activeValidatorsEpoch).size();
+        specProvider.countActiveValidators(chainHead.getState(), activeValidatorsEpoch);
 
     return Eth2Context.builder()
         .currentSlot(currentSlot)

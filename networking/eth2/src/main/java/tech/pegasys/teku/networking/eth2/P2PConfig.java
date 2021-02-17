@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class P2PConfig {
 
+  private final SpecProvider specProvider;
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
   private final GossipConfigurator gossipConfigurator;
@@ -37,6 +38,7 @@ public class P2PConfig {
   private final int peerRequestLimit;
 
   private P2PConfig(
+      final SpecProvider specProvider,
       final NetworkConfig networkConfig,
       final DiscoveryConfig discoveryConfig,
       final GossipConfigurator gossipConfigurator,
@@ -45,6 +47,7 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit) {
+    this.specProvider = specProvider;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
     this.gossipConfigurator = gossipConfigurator;
@@ -57,6 +60,10 @@ public class P2PConfig {
 
   public static Builder builder() {
     return new Builder();
+  }
+
+  public SpecProvider getSpecProvider() {
+    return specProvider;
   }
 
   public NetworkConfig getNetworkConfig() {
@@ -124,6 +131,7 @@ public class P2PConfig {
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
 
       return new P2PConfig(
+          specProvider,
           networkConfig.build(),
           discoveryConfig.build(),
           gossipConfigurator,
