@@ -59,15 +59,4 @@ public interface SszComplexSchemas {
       return "Bytes" + getLength();
     }
   }
-
-  class SszBitVectorSchema extends SszVectorSchemaImpl<SszBit> {
-    public SszBitVectorSchema(long maxLength) {
-      super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
-    }
-
-    @Override
-    public String toString() {
-      return "BitVector[" + getLength() + "]";
-    }
-  }
 }
