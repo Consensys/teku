@@ -33,9 +33,9 @@ class BitvectorImplImplTest {
 
   @Test
   void initTest() {
-    BitvectorImpl BitvectorImpl = new BitvectorImpl(10);
-    Assertions.assertEquals(BitvectorImpl.getBit(0), false);
-    Assertions.assertEquals(BitvectorImpl.getBit(9), false);
+    BitvectorImpl bitvector = new BitvectorImpl(10);
+    Assertions.assertEquals(bitvector.getBit(0), false);
+    Assertions.assertEquals(bitvector.getBit(9), false);
   }
 
   @Test
