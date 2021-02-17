@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class SignedBeaconBlockTest {
 
@@ -28,7 +27,6 @@ class SignedBeaconBlockTest {
     final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock internalBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock apiBlock = new SignedBeaconBlock(internalBlock);
-    assertThat(SszTestUtils.equalsByGetters(apiBlock.asInternalSignedBeaconBlock(), internalBlock))
-        .isTrue();
+    assertThatSszData(apiBlock.asInternalSignedBeaconBlock()).isEqualByAllMeansTo(internalBlock);
   }
 }

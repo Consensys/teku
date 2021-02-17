@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
@@ -61,7 +62,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -349,7 +349,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
 
-    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation)).isTrue();
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }
 
   @Test
@@ -372,7 +372,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
 
-    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation.getData())).isTrue();
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
   }
 
   @Test
@@ -435,7 +435,7 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<BeaconBlock>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti);
 
-    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), beaconBlock)).isTrue();
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }
 
   @Test
@@ -487,7 +487,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
-    assertThat(SszTestUtils.equalsByGetters(unwrapToValue(future), attestation)).isTrue();
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }
 
   @SuppressWarnings("unchecked")

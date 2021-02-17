@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -436,18 +437,19 @@ public class ContainerViewTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThat(SszTestUtils.equalsByGetters(c1r, c1w)).isTrue();
+    assertThatSszData(c1r).isEqualByAllMeansTo(c1w);
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThat(SszTestUtils.equalsByGetters(c1r, c2w)).isFalse();
-    assertThat(SszTestUtils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+    assertThatSszData(c1r).isEqualByAllMeansTo(c1w);
+    assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w);
+    assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w.commitChanges());
 
     // new container from backing tree without any cached views
     ContainerRead c2r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
-        TestUtil.executeParallel(() -> SszTestUtils.equalsByGetters(c2r, c1r), 512);
+        TestUtil.executeParallel(() -> SszDataAssert.isEqualByGetters(c2r, c1r), 512);
 
     assertThat(TestUtil.waitAll(futures)).containsOnly(true);
 
@@ -473,7 +475,7 @@ public class ContainerViewTest {
 
     ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
-    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThatSszData(c1r).isEqualByAllMeansTo(c4r);
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -487,13 +489,8 @@ public class ContainerViewTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
-    assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
+    assertThatSszData(c4r).isEqualByAllMeansTo(c1r);
 
-    assertThat(modified)
-        .allMatch(
-            c ->
-                SszTestUtils.equalsByGetters(c, c3r)
-                    && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+    assertThat(modified).allSatisfy(c -> assertThatSszData(c).isEqualByAllMeansTo(c3r));
   }
 }
