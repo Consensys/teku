@@ -22,7 +22,6 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class P2PConfig {
 
@@ -118,14 +117,14 @@ public class P2PConfig {
     public P2PConfig build() {
       validate();
 
-      final SpecConstants genesisConstants = specProvider.getGenesisSpecConstants();
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
-              ? GossipConfigurator.scoringEnabled(genesisConstants)
+              ? GossipConfigurator.scoringEnabled(specProvider)
               : GossipConfigurator.NOOP;
       final Eth2Context eth2Context =
           Eth2Context.builder()
-              .activeValidatorCount(genesisConstants.getMinGenesisActiveValidatorCount())
+              .activeValidatorCount(
+                  specProvider.getGenesisSpecConstants().getMinGenesisActiveValidatorCount())
               .gossipEncoding(gossipEncoding)
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
