@@ -40,11 +40,11 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -91,7 +91,7 @@ public class ProfilingRun {
           new ForkChoice(
               new ForkChoiceAttestationValidator(),
               new ForkChoiceBlockTasks(),
-              new SyncForkChoiceExecutor(),
+              new InlineEventThread(),
               recentChainData,
               new StateTransition());
       BlockImporter blockImporter =
@@ -169,7 +169,7 @@ public class ProfilingRun {
           new ForkChoice(
               new ForkChoiceAttestationValidator(),
               new ForkChoiceBlockTasks(),
-              new SyncForkChoiceExecutor(),
+              new InlineEventThread(),
               recentChainData,
               new StateTransition());
       BlockImporter blockImporter =

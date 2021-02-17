@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncRunnerEventThread implements EventThread {
   private final AtomicBoolean started = new AtomicBoolean(false);
@@ -61,22 +63,27 @@ public class AsyncRunnerEventThread implements EventThread {
 
   @Override
   public void executeLater(final Runnable task) {
-    thread.runAsync(() -> recordEventThreadIdAndExecute(task)).reportExceptions();
+    thread.runAsync(() -> recordEventThreadIdAndExecute(asSupplier(task))).reportExceptions();
+  }
+
+  @Override
+  public <T> SafeFuture<T> execute(final ExceptionThrowingSupplier<T> callable) {
+    // Note: started is only set to true after thread has been initialized so if it is true, thread
+    // must be initialized.
+    if (!started.get()) {
+      return SafeFuture.failedFuture(new IllegalStateException("EventThread not started"));
+    }
+    // Execute immediately if we're already on the event thread.
+    if (isEventThread()) {
+      return SafeFuture.of(callable);
+    } else {
+      return thread.runAsync(() -> recordEventThreadIdAndExecute(callable));
+    }
   }
 
   @Override
   public void execute(final Runnable task) {
-    // Note: started is only set to true after thread has been initialized so if it is true, thread
-    // must be initialized.
-    if (!started.get()) {
-      return;
-    }
-    // Execute immediately if we're already on the event thread.
-    if (isEventThread()) {
-      task.run();
-    } else {
-      executeLater(task);
-    }
+    execute(asSupplier(task)).reportExceptions();
   }
 
   /**
@@ -88,10 +95,21 @@ public class AsyncRunnerEventThread implements EventThread {
    *
    * @param task the task to execute.
    */
-  private void recordEventThreadIdAndExecute(final Runnable task) {
+  private <T> T recordEventThreadIdAndExecute(final ExceptionThrowingSupplier<T> task)
+      throws Throwable {
     eventThreadId = Thread.currentThread().getId();
-    task.run();
-    // Reset again to avoid problems if the thread exits and its ID is reused.
-    eventThreadId = -1;
+    try {
+      return task.get();
+    } finally {
+      // Reset again to avoid problems if the thread exits and its ID is reused.
+      eventThreadId = -1;
+    }
+  }
+
+  private ExceptionThrowingSupplier<Object> asSupplier(final Runnable task) {
+    return () -> {
+      task.run();
+      return null;
+    };
   }
 }
