@@ -52,12 +52,12 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -77,7 +77,7 @@ public class BlockImporterTest {
       new ForkChoice(
           new ForkChoiceAttestationValidator(),
           new ForkChoiceBlockTasks(),
-          new SyncForkChoiceExecutor(),
+          new InlineEventThread(),
           recentChainData,
           new StateTransition());
   private final BeaconChainUtil localChain =
@@ -405,7 +405,7 @@ public class BlockImporterTest {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageSystem.recentChainData(),
             new StateTransition());
     final BlockImporter blockImporter =
@@ -443,7 +443,7 @@ public class BlockImporterTest {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageSystem.recentChainData(),
             new StateTransition());
     final BlockImporter blockImporter =
@@ -489,7 +489,7 @@ public class BlockImporterTest {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageSystem.recentChainData(),
             new StateTransition());
     final BlockImporter blockImporter =
@@ -530,7 +530,7 @@ public class BlockImporterTest {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageSystem.recentChainData(),
             new StateTransition());
     final BlockImporter blockImporter =
@@ -559,7 +559,7 @@ public class BlockImporterTest {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageSystem.recentChainData(),
             new StateTransition());
     final BlockImporter blockImporter =

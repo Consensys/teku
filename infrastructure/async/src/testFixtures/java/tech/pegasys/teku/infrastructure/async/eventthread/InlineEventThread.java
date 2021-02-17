@@ -16,6 +16,8 @@ package tech.pegasys.teku.infrastructure.async.eventthread;
 import com.google.common.base.Preconditions;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
  * An EventThread implementation that immediately executes commands given to it. Useful for tests
@@ -49,6 +51,17 @@ public class InlineEventThread implements EventThread {
   @Override
   public void executeLater(final Runnable task) {
     pendingTasks.add(task);
+  }
+
+  @Override
+  public <T> SafeFuture<T> execute(final ExceptionThrowingSupplier<T> callable) {
+    final SafeFuture<T> result = new SafeFuture<>();
+    withEventThreadMarkerSet(() -> SafeFuture.of(callable).propagateTo(result));
+
+    // Execute any tasks run with executeLater before returning.
+    executePendingTasks();
+
+    return result;
   }
 
   public void executePendingTasks() {
