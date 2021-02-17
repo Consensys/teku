@@ -54,8 +54,8 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final SpecProvider specProvider = StubSpecProvider.create();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final BeaconStateUtil beaconStateUtil =
       specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
   private final SpecConstants specConstants = specProvider.atSlot(UInt64.ZERO).getConstants();
