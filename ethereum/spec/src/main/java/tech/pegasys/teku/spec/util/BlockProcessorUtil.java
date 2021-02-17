@@ -39,6 +39,7 @@ import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionVa
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -79,39 +80,40 @@ public final class BlockProcessorUtil {
    * Processes block header
    *
    * @param state
-   * @param block
+   * @param blockHeader
    * @throws BlockProcessingException
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public void processBlockHeader(MutableBeaconState state, BeaconBlock block)
+  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
     try {
       checkArgument(
-          block.getSlot().equals(state.getSlot()),
+          blockHeader.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
       checkArgument(
-          block.getProposerIndex().longValue() == beaconStateUtil.getBeaconProposerIndex(state),
+          blockHeader.getProposerIndex().longValue()
+              == beaconStateUtil.getBeaconProposerIndex(state),
           "process_block_header: Verify that proposer index is the correct index");
       checkArgument(
-          block.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
+          blockHeader.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
           "process_block_header: Verify that the parent matches");
       checkArgument(
-          block.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
+          blockHeader.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
           "process_block_header: Verify that the block is newer than latest block header");
 
       // Cache the current block as the new latest block
       state.setLatest_block_header(
           new BeaconBlockHeader(
-              block.getSlot(),
-              block.getProposerIndex(),
-              block.getParentRoot(),
+              blockHeader.getSlot(),
+              blockHeader.getProposerIndex(),
+              blockHeader.getParentRoot(),
               Bytes32.ZERO, // Overwritten in the next `process_slot` call
-              block.getBody().hashTreeRoot()));
+              blockHeader.getBodyRoot()));
 
       // Only if we are processing blocks (not proposing them)
       Validator proposer =
-          state.getValidators().get(toIntExact(block.getProposerIndex().longValue()));
+          state.getValidators().get(toIntExact(blockHeader.getProposerIndex().longValue()));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
