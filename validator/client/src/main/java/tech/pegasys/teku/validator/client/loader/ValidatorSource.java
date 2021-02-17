@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,8 +14,15 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import java.util.List;
-import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
 
-public interface ValidatorKeyProvider {
-  List<BLSKeyPair> loadValidatorKeys();
+public interface ValidatorSource {
+  List<ValidatorProvider> getAvailableValidators();
+
+  interface ValidatorProvider {
+    BLSPublicKey getPublicKey();
+
+    Signer createSigner();
+  }
 }

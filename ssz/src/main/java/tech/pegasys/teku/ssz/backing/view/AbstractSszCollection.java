@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -23,6 +24,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public abstract class AbstractSszCollection<SszElementT extends SszData>
     extends AbstractSszComposite<SszElementT> implements SszCollection<SszElementT> {
+
+  protected AbstractSszCollection(
+      SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+    super(schema, lazyBackingNode);
+  }
 
   protected AbstractSszCollection(SszCompositeSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);

@@ -63,7 +63,6 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -397,7 +396,8 @@ public class RocksDbDatabase implements Database {
           signatures.add(signedBlock.getSignature());
           signingRoots.add(compute_signing_root(block, domain));
           BLSPublicKey proposerPublicKey =
-              ValidatorsUtil.getValidatorPubKey(finalizedState, block.getProposerIndex())
+              specProvider
+                  .getValidatorPubKey(finalizedState, block.getProposerIndex())
                   .orElseThrow(
                       () ->
                           new IllegalStateException(

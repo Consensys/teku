@@ -18,9 +18,6 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Optional;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorWithIndex {
@@ -52,22 +49,6 @@ public class ValidatorWithIndex {
     this.validator_index = validator_index;
     this.balance = balance;
     this.pubkey = validator.pubkey;
-  }
-
-  public ValidatorWithIndex(
-      final tech.pegasys.teku.datastructures.state.Validator validator,
-      tech.pegasys.teku.datastructures.state.BeaconState state) {
-    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytesCompressed(validator.getPubkey());
-    Optional<Integer> optionalInteger = ValidatorsUtil.getValidatorIndex(state, blsPublicKey);
-    if (optionalInteger.isPresent()) {
-      this.validator_index = optionalInteger.get();
-      this.balance = state.getBalances().get(this.validator_index);
-    } else {
-      this.validator_index = null;
-      this.balance = null;
-    }
-    this.validator = new Validator(validator);
-    this.pubkey = new BLSPubKey(validator.getPubkey());
   }
 
   public ValidatorWithIndex(BLSPubKey pubkey) {

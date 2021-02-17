@@ -26,8 +26,8 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 class JsonProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -61,12 +61,12 @@ class JsonProviderTest {
   @Test
   public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
     final int BITLIST_SIZE = 40;
-    final Bitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
+    final SszBitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
     final String asJson = jsonProvider.objectToJSON(data);
-    final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
+    final SszBitlist asData = jsonProvider.jsonToObject(asJson, SszBitlist.class);
 
-    assertThat(data).isEqualToIgnoringGivenFields(asData, "maxSize");
-    assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
+    assertThat(data.getAllSetBits()).containsExactlyElementsOf(asData.getAllSetBits());
+    assertThat(asData.size()).isEqualTo(BITLIST_SIZE);
   }
 
   @Test

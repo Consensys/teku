@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
@@ -192,7 +191,8 @@ class MatchingDataAttestationGroupTest {
   }
 
   private ValidateableAttestation createAttestation(final int... validators) {
-    final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE, validators);
+    final SszBitlist aggregationBits =
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(10, validators);
     return ValidateableAttestation.from(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }

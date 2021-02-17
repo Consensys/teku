@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.SSZTypes;
+package tech.pegasys.teku.ssz.backing.collections;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
@@ -21,67 +21,27 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Bitlist {
+class BitlistImpl {
 
   public static int sszSerializationLength(final int size) {
     return (size / 8) + 1;
   }
 
-  public static Bitlist fromSszBytes(Bytes bytes, long maxSize) {
-    int bitlistSize = sszGetLengthAndValidate(bytes);
+  public static BitlistImpl fromSszBytes(Bytes bytes, long maxSize) {
+    int bitlistSize = SszBitlistImpl.sszGetLengthAndValidate(bytes);
     BitSet bitSet = BitSet.valueOf(bytes.toArrayUnsafe()).get(0, bitlistSize);
-    return new Bitlist(bitlistSize, bitSet, maxSize);
-  }
-
-  public static Bytes sszTruncateLeadingBit(Bytes bytes, int length) {
-    Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
-    if (length % 8 == 0) {
-      return bytesWithoutLast;
-    } else {
-      int lastByte = 0xFF & bytes.get(bytes.size() - 1);
-      int leadingBit = 1 << (length % 8);
-      int lastByteWithoutLeadingBit = lastByte ^ leadingBit;
-      return Bytes.concatenate(bytesWithoutLast, Bytes.of(lastByteWithoutLeadingBit));
-    }
-  }
-
-  public static int sszGetLengthAndValidate(Bytes bytes) {
-    int numBytes = bytes.size();
-    checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
-    checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
-    int lastByte = 0xFF & bytes.get(bytes.size() - 1);
-    int leadingBitIndex = Integer.bitCount(Integer.highestOneBit(lastByte) - 1);
-    return leadingBitIndex + 8 * (numBytes - 1);
-  }
-
-  public static Bitlist nullableOr(
-      @Nullable Bitlist bitlist1OrNull, @Nullable Bitlist bitlist2OrNull) {
-    checkArgument(
-        bitlist1OrNull != null || bitlist2OrNull != null,
-        "At least one argument should be non-null");
-    if (bitlist1OrNull == null) {
-      return bitlist2OrNull;
-    } else if (bitlist2OrNull == null) {
-      return bitlist1OrNull;
-    } else {
-      return bitlist1OrNull.or(bitlist2OrNull);
-    }
+    return new BitlistImpl(bitlistSize, bitSet, maxSize);
   }
 
   private final BitSet data;
   private final int size;
   private final long maxSize;
 
-  public Bitlist(int arraySize, long maxSize) {
-    this.size = arraySize;
-    this.data = new BitSet(arraySize);
-    this.maxSize = maxSize;
-  }
-
-  public Bitlist(int size, long maxSize, int... bitIndexes) {
+  public BitlistImpl(int size, long maxSize, int... bitIndexes) {
+    checkArgument(size >= 0, "Negative size");
+    checkArgument(maxSize >= size, "maxSize should be >= size");
     this.size = size;
     this.data = new BitSet(size);
     this.maxSize = maxSize;
@@ -91,19 +51,19 @@ public class Bitlist {
     }
   }
 
-  private Bitlist(int size, BitSet data, long maxSize) {
+  private BitlistImpl(int size, BitSet data, long maxSize) {
     this.size = size;
     this.data = data;
     this.maxSize = maxSize;
   }
 
   /**
-   * Returns new instance of this Bitlist with set bits from the other Bitlist
+   * Returns new instance of this BitlistImpl with set bits from the other BitlistImpl
    *
-   * @throws IllegalArgumentException if the size of the other Bitlist is greater than the size of
-   *     this Bitlist
+   * @throws IllegalArgumentException if the size of the other BitlistImpl is greater than the size
+   *     of this BitlistImpl
    */
-  public Bitlist or(Bitlist other) {
+  public BitlistImpl or(BitlistImpl other) {
     if (other.getCurrentSize() > getCurrentSize()) {
       throw new IllegalArgumentException(
           "Argument bitfield size is greater: "
@@ -113,7 +73,7 @@ public class Bitlist {
     }
     BitSet newData = (BitSet) this.data.clone();
     newData.or(other.data);
-    return new Bitlist(size, newData, maxSize);
+    return new BitlistImpl(size, newData, maxSize);
   }
 
   public boolean getBit(int i) {
@@ -125,12 +85,12 @@ public class Bitlist {
     return data.cardinality();
   }
 
-  public boolean intersects(Bitlist other) {
+  public boolean intersects(BitlistImpl other) {
     return data.intersects(other.data);
   }
 
-  public boolean isSuperSetOf(final Bitlist other) {
-    return other.streamAllSetBits().allMatch(this::getBit);
+  public boolean isSuperSetOf(final BitlistImpl other) {
+    return other.streamAllSetBits().allMatch(idx -> idx < getCurrentSize() && getBit(idx));
   }
 
   public List<Integer> getAllSetBits() {
@@ -170,7 +130,7 @@ public class Bitlist {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final Bitlist bitlist = (Bitlist) o;
+    final BitlistImpl bitlist = (BitlistImpl) o;
     return size == bitlist.size && maxSize == bitlist.maxSize && Objects.equals(data, bitlist.data);
   }
 
