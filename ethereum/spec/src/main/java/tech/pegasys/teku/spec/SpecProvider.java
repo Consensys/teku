@@ -137,4 +137,8 @@ public class SpecProvider {
   public int getSlotsPerEpoch(final UInt64 slot) {
     return atSlot(slot).getConstants().getSlotsPerEpoch();
   }
+
+  public int getSecondsPerSlot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSecondsPerSlot();
+  }
 }

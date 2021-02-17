@@ -107,7 +107,7 @@ public class StorageBackedRecentChainDataTest {
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
             UInt64.ZERO,
-            specProvider.secondsPerSlot(UInt64.ZERO));
+            specProvider);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -229,7 +229,7 @@ public class StorageBackedRecentChainDataTest {
                 StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE),
                 UInt64.ZERO,
-                specProvider.secondsPerSlot(UInt64.ZERO))
+                specProvider)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
@@ -278,7 +278,7 @@ public class StorageBackedRecentChainDataTest {
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
             UInt64.ZERO,
-            specProvider.secondsPerSlot(UInt64.ZERO));
+            specProvider);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

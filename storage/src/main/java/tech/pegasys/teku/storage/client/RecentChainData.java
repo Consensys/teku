@@ -145,7 +145,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 stateProvider,
                 anchorPoint,
                 currentTime,
-                specProvider.atSlot(anchorPoint.getSlot()).getConstants().getSecondsPerSlot())
+                specProvider)
             .storeConfig(storeConfig)
             .build();
 
