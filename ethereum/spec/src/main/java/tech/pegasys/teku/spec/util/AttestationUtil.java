@@ -44,17 +44,14 @@ public class AttestationUtil {
 
   private final SpecConstants specConstants;
   private final BeaconStateUtil beaconStateUtil;
-  private final CommitteeUtil committeeUtil;
   private final ValidatorsUtil validatorsUtil;
 
   public AttestationUtil(
       final SpecConstants specConstants,
       final BeaconStateUtil beaconStateUtil,
-      final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil) {
     this.specConstants = specConstants;
     this.beaconStateUtil = beaconStateUtil;
-    this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
   }
 

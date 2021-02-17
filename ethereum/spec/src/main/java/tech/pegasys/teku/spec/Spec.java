@@ -33,8 +33,7 @@ public class Spec {
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.validatorsUtil = new ValidatorsUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
-    this.attestationUtil =
-        new AttestationUtil(constants, beaconStateUtil, committeeUtil, validatorsUtil);
+    this.attestationUtil = new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor = new EpochProcessor(constants, validatorsUtil, this.beaconStateUtil);
   }
 
