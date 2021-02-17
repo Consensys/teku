@@ -124,4 +124,12 @@ public class SpecProvider {
     // When fork manifest is non-empty, we should pull the newest spec here
     return genesisSpec;
   }
+
+  public long getSlotsPerHistoricalRoot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
+  }
+
+  public int getSlotsPerEpoch(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerEpoch();
+  }
 }

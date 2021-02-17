@@ -758,10 +758,8 @@ public class RocksDbDatabase implements Database {
     while (i < finalizedRoots.size()) {
       final int start = i;
       try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-        final int slotsPerHistoricalRoot =
-            specProvider.atSlot(lastSlot).getConstants().getSlotsPerHistoricalRoot();
         final StateRootRecorder recorder =
-            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot, slotsPerHistoricalRoot);
+            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot, specProvider);
 
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 blockRoot = finalizedRoots.get(i);

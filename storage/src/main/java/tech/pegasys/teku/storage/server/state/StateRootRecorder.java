@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateRootRecorder {
   private static final Logger LOG = LogManager.getLogger();
@@ -29,10 +30,10 @@ public class StateRootRecorder {
   public StateRootRecorder(
       final UInt64 slot,
       final BiConsumer<Bytes32, UInt64> stateRootConsumer,
-      final int slotsPerHistoricalRoot) {
+      final SpecProvider specProvider) {
     this.stateRootConsumer = stateRootConsumer;
     this.slot = slot;
-    this.slotsPerHistoricalRoot = UInt64.valueOf(slotsPerHistoricalRoot);
+    this.slotsPerHistoricalRoot = UInt64.valueOf(specProvider.getSlotsPerHistoricalRoot(slot));
   }
 
   public void acceptNextState(final BeaconState state) {

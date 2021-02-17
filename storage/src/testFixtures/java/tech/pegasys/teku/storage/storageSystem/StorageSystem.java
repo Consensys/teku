@@ -83,9 +83,7 @@ public class StorageSystem implements AutoCloseable {
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer =
-        ChainStorage.create(
-            eventBus, database, specProvider.getGenesisSpecConstants().getSlotsPerEpoch());
+    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database, specProvider);
     chainStorageServer.start();
 
     // Create recent chain data

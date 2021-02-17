@@ -37,9 +37,7 @@ public class StateRootRecorderTest {
   public void shouldHandleSingleStep() {
     final StateRootRecorder stateRootRecorder =
         new StateRootRecorder(
-            slot,
-            (stateRoot, slot) -> stateRoots.put(slot, stateRoot),
-            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot());
+            slot, (stateRoot, slot) -> stateRoots.put(slot, stateRoot), specProvider);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots).containsOnlyKeys(slot);
   }
@@ -48,9 +46,7 @@ public class StateRootRecorderTest {
   public void shouldHandleMultipleSteps() {
     final StateRootRecorder stateRootRecorder =
         new StateRootRecorder(
-            slot.minus(2),
-            (stateRoot, slot) -> stateRoots.put(slot, stateRoot),
-            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot());
+            slot.minus(2), (stateRoot, slot) -> stateRoots.put(slot, stateRoot), specProvider);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots).containsOnlyKeys(slot.minus(2), slot.minus(ONE), slot);
   }
@@ -63,7 +59,7 @@ public class StateRootRecorderTest {
         new StateRootRecorder(
             slot.minus(history),
             (stateRoot, slot) -> stateRoots.put(slot, stateRoot),
-            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot());
+            specProvider);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots.size())
         .isEqualTo(specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 1);

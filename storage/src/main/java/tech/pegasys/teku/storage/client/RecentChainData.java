@@ -244,7 +244,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
-                    .map(head -> ChainHead.create(head, newForkChoiceSlot))
+                    .map(head -> ChainHead.create(head, newForkChoiceSlot, specProvider))
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
@@ -276,10 +276,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final ChainHead previousChainHead = originalHead.get();
 
-        final UInt64 commonAncestorSlot =
-            previousChainHead.findCommonAncestor(
-                newChainHead,
-                specProvider.atSlot(newChainHead.getSlot()).getConstants().getSlotsPerEpoch());
+        final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
         reorgCounter.inc();
         optionalReorgContext =
@@ -292,15 +289,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           originalHead
               .map(
                   previousChainHead ->
-                      specProvider
-                          .atSlot(previousChainHead.getForkChoiceSlot())
-                          .getBeaconStateUtil()
-                          .computeEpochAtSlot(previousChainHead.getForkChoiceSlot())
-                          .isLessThan(
-                              specProvider
-                                  .atSlot(newChainHead.getForkChoiceSlot())
-                                  .getBeaconStateUtil()
-                                  .computeEpochAtSlot(newChainHead.getForkChoiceSlot())))
+                      previousChainHead
+                          .getForkChoiceEpoch()
+                          .isLessThan(newChainHead.getForkChoiceEpoch()))
               .orElse(false);
       final BeaconStateUtil beaconStateUtil =
           specProvider.atSlot(newChainHead.getForkChoiceSlot()).getBeaconStateUtil();
@@ -398,12 +389,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getCurrentSlot()
         .map(
             currentSlot ->
-                specProvider
-                        .atEpoch(fork.getEpoch())
-                        .getBeaconStateUtil()
-                        .computeEpochAtSlot(currentSlot)
-                        .compareTo(fork.getEpoch())
-                    >= 0)
+                specProvider.computeEpochAtSlot(currentSlot).compareTo(fork.getEpoch()) >= 0)
         .orElse(false);
   }
 
