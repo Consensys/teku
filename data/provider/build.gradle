@@ -26,4 +26,5 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':ssz'))
 }

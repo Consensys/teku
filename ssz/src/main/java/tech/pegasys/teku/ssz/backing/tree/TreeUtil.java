@@ -147,22 +147,6 @@ public class TreeUtil {
     return Long.bitCount(nextPowerOf2(maxChunks) - 1);
   }
 
-  /** Estimates the number of 'non-default' tree nodes */
-  public static int estimateNonDefaultNodes(TreeNode node) {
-    if (node instanceof LeafNode) {
-      return 1;
-    } else {
-      BranchNode branchNode = (BranchNode) node;
-      if (branchNode.left() == branchNode.right()) {
-        return 0;
-      } else {
-        return estimateNonDefaultNodes(branchNode.left())
-            + estimateNonDefaultNodes(branchNode.right())
-            + 1;
-      }
-    }
-  }
-
   /**
    * Iterate all leaf tree nodes starting from the node with general index {@code fromGeneralIndex}
    * (including all node descendants if this is a branch node) and ending with the node with general
@@ -194,38 +178,5 @@ public class TreeUtil {
           }
           return true;
         });
-  }
-
-  /** Dumps the tree to stdout */
-  public static String dumpBinaryTree(TreeNode node) {
-    StringBuilder ret = new StringBuilder();
-    dumpBinaryTreeRec(node, "", false, s -> ret.append(s).append('\n'));
-    return ret.toString();
-  }
-
-  private static void dumpBinaryTreeRec(
-      TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
-    if (node instanceof LeafNode) {
-      LeafNode leafNode = (LeafNode) node;
-      linesConsumer.accept(prefix + leafNode);
-    } else {
-      BranchNode branchNode = (BranchNode) node;
-      String s = "├─┐";
-      if (printCommit) {
-        s += " " + branchNode;
-      }
-      if (branchNode.left() instanceof LeafNode) {
-        linesConsumer.accept(prefix + "├─" + branchNode.left());
-      } else {
-        linesConsumer.accept(prefix + s);
-        dumpBinaryTreeRec(branchNode.left(), prefix + "│ ", printCommit, linesConsumer);
-      }
-      if (branchNode.right() instanceof LeafNode) {
-        linesConsumer.accept(prefix + "└─" + branchNode.right());
-      } else {
-        linesConsumer.accept(prefix + "└─┐");
-        dumpBinaryTreeRec(branchNode.right(), prefix + "  ", printCommit, linesConsumer);
-      }
-    }
   }
 }

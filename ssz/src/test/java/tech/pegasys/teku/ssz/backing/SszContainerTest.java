@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.concurrent.Future;
@@ -27,20 +28,19 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class ContainerViewTest {
+public class SszContainerTest {
   private static final Logger LOG = LogManager.getLogger();
 
   public interface ImmutableSubContainer extends SszContainer {
@@ -52,8 +52,8 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends SszContainer {
 
-    AbstractSszContainerSchema<SubContainerRead> SSZ_SCHEMA =
-        AbstractSszContainerSchema.create(
+    SszContainerSchema<SubContainerRead> SSZ_SCHEMA =
+        SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
             SubContainerReadImpl::new);
 
@@ -79,8 +79,8 @@ public class ContainerViewTest {
 
   public interface ContainerRead extends SszContainer {
 
-    AbstractSszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
-        AbstractSszContainerSchema.create(
+    SszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
+        SszContainerSchema.create(
             List.of(
                 SszPrimitiveSchemas.UINT64_SCHEMA,
                 SszPrimitiveSchemas.UINT64_SCHEMA,
@@ -147,13 +147,13 @@ public class ContainerViewTest {
   public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
       implements ImmutableSubContainer {
 
-    public static final AbstractSszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
-        AbstractSszContainerSchema.create(
+    public static final SszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
+        SszContainerSchema.create(
             List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
             ImmutableSubContainerImpl::new);
 
     private ImmutableSubContainerImpl(
-        AbstractSszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
+        SszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -178,8 +178,7 @@ public class ContainerViewTest {
       super(SSZ_SCHEMA, backingNode, cache);
     }
 
-    private SubContainerReadImpl(
-        AbstractSszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
+    private SubContainerReadImpl(SszContainerSchema<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -210,7 +209,7 @@ public class ContainerViewTest {
 
   public static class ContainerReadImpl extends SszContainerImpl implements ContainerRead {
 
-    public ContainerReadImpl(AbstractSszContainerSchema<?> type, TreeNode backingNode) {
+    public ContainerReadImpl(SszContainerSchema<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -360,7 +359,7 @@ public class ContainerViewTest {
     }
 
     ContainerRead c1r = c1w.commitChanges();
-    LOG.error("\n" + TreeUtil.dumpBinaryTree(c1r.getBackingNode()));
+    LOG.error("\n" + SszTestUtils.dumpBinaryTree(c1r.getBackingNode()));
 
     {
       assertThat(c1.getSub1().getLong1()).isEqualTo(UInt64.ZERO);
@@ -438,18 +437,19 @@ public class ContainerViewTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThat(SszTestUtils.equalsByGetters(c1r, c1w)).isTrue();
+    assertThatSszData(c1r).isEqualTo(c1w).isEqualByGettersTo(c1w).isEqualByHashTreeRootTo(c1w);
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThat(SszTestUtils.equalsByGetters(c1r, c2w)).isFalse();
-    assertThat(SszTestUtils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+    assertThatSszData(c1r).isEqualTo(c1w).isEqualByGettersTo(c1w).isEqualByHashTreeRootTo(c1w);
+    assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w);
+    assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w.commitChanges());
 
     // new container from backing tree without any cached views
     ContainerRead c2r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
-        TestUtil.executeParallel(() -> SszTestUtils.equalsByGetters(c2r, c1r), 512);
+        TestUtil.executeParallel(() -> SszDataAssert.isEqualByGetters(c2r, c1r), 512);
 
     assertThat(TestUtil.waitAll(futures)).containsOnly(true);
 
@@ -475,7 +475,7 @@ public class ContainerViewTest {
 
     ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
-    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThatSszData(c1r).isEqualTo(c4r).isEqualByGettersTo(c4r).isEqualByHashTreeRootTo(c4r);
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -489,13 +489,14 @@ public class ContainerViewTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThat(SszTestUtils.equalsByGetters(c1r, c4r)).isTrue();
-    assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
+    assertThatSszData(c4r).isEqualTo(c1r).isEqualByGettersTo(c1r).isEqualByHashTreeRootTo(c1r);
 
     assertThat(modified)
-        .allMatch(
+        .allSatisfy(
             c ->
-                SszTestUtils.equalsByGetters(c, c3r)
-                    && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+                assertThatSszData(c)
+                    .isEqualTo(c3r)
+                    .isEqualByGettersTo(c3r)
+                    .isEqualByHashTreeRootTo(c3r));
   }
 }

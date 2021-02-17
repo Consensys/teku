@@ -44,8 +44,7 @@ import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -89,17 +88,14 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
-        srcAttestations.stream()
-            .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
-            .max()
-            .getAsInt();
-    Bitlist targetBitlist =
+        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().size()).max().getAsInt();
+    SszBitlist targetBitlist =
         srcAttestations.stream()
             .map(Attestation::getAggregation_bits)
             .reduce(
-                new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE),
-                Bitlist::or,
-                Bitlist::or);
+                Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(targetBitlistSize),
+                SszBitlist::or,
+                SszBitlist::or);
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
@@ -315,14 +311,20 @@ public class AttestationGenerator {
         Committee committee,
         AttestationData attestationData) {
       int committeSize = committee.getCommitteeSize();
-      Bitlist aggregationBitfield =
-          AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
+      SszBitlist aggregationBitfield = getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
           new LocalSigner(attesterKeyPair, SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);
+    }
+
+    public static SszBitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
+      // Create aggregation bitfield
+      return Attestation.SSZ_SCHEMA
+          .getAggregationBitsSchema()
+          .ofBits(committeeSize, indexIntoCommittee);
     }
   }
 }

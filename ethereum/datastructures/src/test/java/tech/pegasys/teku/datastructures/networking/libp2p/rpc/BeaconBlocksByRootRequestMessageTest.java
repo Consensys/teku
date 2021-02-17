@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class BeaconBlocksByRootRequestMessageTest {
 
@@ -35,7 +34,6 @@ class BeaconBlocksByRootRequestMessageTest {
     final Bytes data = request.sszSerialize();
     final BeaconBlocksByRootRequestMessage result =
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
-    assertThat(SszTestUtils.equalsByGetters(result, request)).isTrue();
-    assertThat(result).isEqualTo(request);
+    assertThatSszData(result).isEqualByAllMeansTo(request);
   }
 }
