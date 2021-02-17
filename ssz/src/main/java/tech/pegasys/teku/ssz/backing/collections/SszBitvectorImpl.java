@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;

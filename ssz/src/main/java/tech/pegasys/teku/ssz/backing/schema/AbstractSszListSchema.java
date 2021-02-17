@@ -17,7 +17,6 @@ import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;

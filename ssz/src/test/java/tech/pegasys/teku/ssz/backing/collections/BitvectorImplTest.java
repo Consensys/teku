@@ -62,8 +62,8 @@ class BitvectorImplImplTest {
     BitvectorImpl BitvectorImpl = createBitvector();
 
     Bytes BitvectorImplSerialized = BitvectorImpl.serialize();
-    BitvectorImpl newBitvectorImpl = BitvectorImpl.fromBytes(BitvectorImplSerialized,
-        testBitvectorLength);
+    BitvectorImpl newBitvectorImpl =
+        BitvectorImpl.fromBytes(BitvectorImplSerialized, testBitvectorLength);
     Assertions.assertEquals(BitvectorImpl, newBitvectorImpl);
   }
 
