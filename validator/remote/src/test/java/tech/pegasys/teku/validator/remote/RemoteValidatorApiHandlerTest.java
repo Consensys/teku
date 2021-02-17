@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
@@ -348,7 +349,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }
 
   @Test
@@ -371,7 +372,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation.getData());
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
   }
 
   @Test
@@ -434,7 +435,7 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<BeaconBlock>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(beaconBlock);
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }
 
   @Test
@@ -486,7 +487,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }
 
   @SuppressWarnings("unchecked")

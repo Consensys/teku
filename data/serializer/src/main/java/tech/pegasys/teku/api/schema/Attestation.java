@@ -20,11 +20,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bitlist aggregation_bits;
+  public final SszBitlist aggregation_bits;
 
   public final AttestationData data;
 
@@ -39,7 +39,7 @@ public class Attestation {
 
   @JsonCreator
   public Attestation(
-      @JsonProperty("aggregation_bits") final Bitlist aggregation_bits,
+      @JsonProperty("aggregation_bits") final SszBitlist aggregation_bits,
       @JsonProperty("data") final AttestationData data,
       @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;

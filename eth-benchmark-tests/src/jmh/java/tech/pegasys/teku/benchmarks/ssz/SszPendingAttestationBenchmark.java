@@ -18,7 +18,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszPendingAttestationBenchmark
@@ -28,7 +28,7 @@ public class SszPendingAttestationBenchmark
   private static final PendingAttestation aPendingAttestation =
       dataStructureUtil.randomPendingAttestation();
 
-  private static final Bitlist aggregation_bits = aPendingAttestation.getAggregation_bits();
+  private static final SszBitlist aggregation_bits = aPendingAttestation.getAggregation_bits();
   private static final AttestationData attestationData = aPendingAttestation.getData();
   private static final UInt64 inclusion_delay = aPendingAttestation.getInclusion_delay();
   private static final UInt64 proposer_index = aPendingAttestation.getProposer_index();

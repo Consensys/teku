@@ -25,11 +25,11 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 class AttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private Bitlist aggregationBitfield = dataStructureUtil.randomBitlist();
+  private SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
   private AttestationData data = dataStructureUtil.randomAttestationData();
   private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 

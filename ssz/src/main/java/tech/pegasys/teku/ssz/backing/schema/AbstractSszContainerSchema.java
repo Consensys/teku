@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.SszContainer;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 public abstract class AbstractSszContainerSchema<C extends SszContainer>
-    implements SszCompositeSchema<C> {
+    implements SszContainerSchema<C> {
 
   protected static class NamedSchema<T extends SszData> {
     private final String name;
@@ -71,7 +70,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.childrenSchemas =
         childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
-    this.treeWidth = SszCompositeSchema.super.treeWidth();
+    this.treeWidth = SszContainerSchema.super.treeWidth();
   }
 
   protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
@@ -82,28 +81,14 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
             .collect(Collectors.toList());
     this.childrenSchemas = childrenSchemas;
     this.defaultTree = createDefaultTree();
-    this.treeWidth = SszCompositeSchema.super.treeWidth();
+    this.treeWidth = SszContainerSchema.super.treeWidth();
   }
 
-  public static <C extends SszContainer> AbstractSszContainerSchema<C> create(
-      List<SszSchema<?>> childrenSchemas,
-      BiFunction<AbstractSszContainerSchema<C>, TreeNode, C> instanceCtor) {
-    return new AbstractSszContainerSchema<C>(childrenSchemas) {
-      @Override
-      public C createFromBackingNode(TreeNode node) {
-        return instanceCtor.apply(this, node);
-      }
-    };
-  }
-
+  @Override
   public TreeNode createTreeFromFieldValues(List<? extends SszData> fieldValues) {
-    checkArgument(fieldValues.size() == getChildCount(), "Wrong number of filed values");
+    checkArgument(fieldValues.size() == getFieldsCount(), "Wrong number of filed values");
     return TreeUtil.createTree(
         fieldValues.stream().map(SszData::getBackingNode).collect(Collectors.toList()));
-  }
-
-  public C createFromFields(List<? extends SszData> fieldValues) {
-    return createFromBackingNode(createTreeFromFieldValues(fieldValues));
   }
 
   @Override
@@ -123,7 +108,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   private TreeNode createDefaultTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
-    for (int i = 0; i < getChildCount(); i++) {
+    for (int i = 0; i < getFieldsCount(); i++) {
       defaultChildren.add(getChildSchema(i).getDefault().getBackingNode());
     }
     return TreeUtil.createTree(defaultChildren);
@@ -161,7 +146,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public boolean isFixedSize() {
-    for (int i = 0; i < getChildCount(); i++) {
+    for (int i = 0; i < getFieldsCount(); i++) {
       if (!getChildSchema(i).isFixedSize()) {
         return false;
       }
@@ -172,7 +157,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public int getFixedPartSize() {
     int size = 0;
-    for (int i = 0; i < getChildCount(); i++) {
+    for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
       size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
@@ -182,7 +167,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public int getVariablePartSize(TreeNode node) {
     int size = 0;
-    for (int i = 0; i < getChildCount(); i++) {
+    for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (!childType.isFixedSize()) {
         size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
@@ -191,19 +176,16 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     return size;
   }
 
-  public int getChildCount() {
-    return (int) getMaxLength();
-  }
-
-  public List<SszSchema<?>> getChildSchemas() {
+  @Override
+  public List<SszSchema<?>> getFieldSchemas() {
     return childrenSchemas;
   }
 
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
     int variableChildOffset = getFixedPartSize();
-    int[] variableSizes = new int[getChildCount()];
-    for (int i = 0; i < getChildCount(); i++) {
+    int[] variableSizes = new int[getFieldsCount()];
+    for (int i = 0; i < getFieldsCount(); i++) {
       TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
@@ -230,7 +212,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
     int endOffset = reader.getAvailableBytes();
-    int childCount = getChildCount();
+    int childCount = getFieldsCount();
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
     List<Integer> variableChildrenOffsets = new ArrayList<>(childCount);
     for (int i = 0; i < childCount; i++) {
@@ -288,7 +270,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return IntStream.range(0, getChildCount())
+    return IntStream.range(0, getFieldsCount())
         .mapToObj(this::getChildSchema)
         // dynamic sized children need 4-byte offset
         .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
@@ -297,16 +279,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
   }
 
+  @Override
   public String getContainerName() {
-    return containerName;
+    return !containerName.isEmpty() ? containerName : getClass().getName();
   }
 
-  public List<String> getChildrenNames() {
+  @Override
+  public List<String> getFieldNames() {
     return childrenNames;
   }
 
   @Override
   public String toString() {
-    return getContainerName().isEmpty() ? getClass().getName() : getContainerName();
+    return getContainerName();
   }
 }

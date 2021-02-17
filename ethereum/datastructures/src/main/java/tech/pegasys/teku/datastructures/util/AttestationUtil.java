@@ -42,17 +42,12 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
-    // Create aggregation bitfield
-    return new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE, indexIntoCommittee);
-  }
 
   /**
    * Check if ``data_1`` and ``data_2`` are slashable according to Casper FFG rules.
@@ -107,17 +102,17 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData data, Bitlist bits) {
+      BeaconState state, AttestationData data, SszBitlist bits) {
     return stream_attesting_indices(state, data, bits).boxed().collect(toList());
   }
 
   public static IntStream stream_attesting_indices(
-      BeaconState state, AttestationData data, Bitlist bits) {
+      BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
     checkArgument(
-        bits.getCurrentSize() == committee.size(),
+        bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
-        bits.getCurrentSize(),
+        bits.size(),
         committee.size());
     return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
   }
@@ -197,18 +192,13 @@ public class AttestationUtil {
 
   // Returns the index of the first attester in the Attestation
   public static int getAttesterIndexIntoCommittee(Attestation attestation) {
-    Bitlist aggregationBits = attestation.getAggregation_bits();
-    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
+    SszBitlist aggregationBits = attestation.getAggregation_bits();
+    for (int i = 0; i < aggregationBits.size(); i++) {
       if (aggregationBits.getBit(i)) {
         return i;
       }
     }
     throw new UnsupportedOperationException("Attestation doesn't have any aggregation bit set");
-  }
-
-  // Returns the indices of the attesters in the Attestation
-  public static List<Integer> getAttesterIndicesIntoCommittee(Bitlist aggregationBits) {
-    return aggregationBits.getAllSetBits();
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information

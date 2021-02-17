@@ -40,7 +40,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class ListViewHintsTest {
+public class SszListHintsTest {
 
   <TElement extends SszData> List<SszList<TElement>> createListVariants(
       SszListSchema<TElement, ?> type, SszList<TElement> list0) {
@@ -188,10 +188,11 @@ public class ListViewHintsTest {
                 .mapToObj(SszSchemaHints::sszSuperNode)
                 .map(
                     typeHints ->
-                        SszListSchema.create(
-                            originalType.getElementSchema(),
-                            originalType.getMaxLength(),
-                            typeHints)))
+                        (SszListSchema<TElement, ?>)
+                            SszListSchema.create(
+                                originalType.getElementSchema(),
+                                originalType.getMaxLength(),
+                                typeHints)))
         .collect(Collectors.toList());
   }
 

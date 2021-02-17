@@ -14,42 +14,32 @@
 package tech.pegasys.teku.benchmarks.util.backing;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 public class BitlistBenchmark {
 
-  static SszListSchema<SszBit, ?> type = SszListSchema.create(SszPrimitiveSchemas.BIT_SCHEMA, 4096);
-  static SszList<SszBit> bitlist;
-
-  static {
-    SszMutableList<SszBit> wBitlist = type.getDefault().createWritableCopy();
-    for (int i = 0; i < type.getMaxLength(); i++) {
-      wBitlist.append(SszBit.viewOf(true));
-    }
-    bitlist = wBitlist.commitChanges();
-  }
+  static SszBitlistSchema<?> type = SszBitlistSchema.create(4096);
+  static SszBitlist bitlist =
+      type.ofBits(4096, IntStream.range(0, 4096).filter(i -> i % 3 == 0).toArray());
 
   @Benchmark
   @Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void fromCachedListView(Blackhole bh) {
-    bh.consume(SszUtils.getBitlist(bitlist));
+    bh.consume(bitlist.getAllSetBits());
   }
 
   @Benchmark
   @Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void fromNewListView(Blackhole bh) {
-    SszList<SszBit> freshListView = type.createFromBackingNode(bitlist.getBackingNode());
-    bh.consume(SszUtils.getBitlist(freshListView));
+    SszBitlist freshListView = type.createFromBackingNode(bitlist.getBackingNode());
+    bh.consume(freshListView.getAllSetBits());
   }
 }
