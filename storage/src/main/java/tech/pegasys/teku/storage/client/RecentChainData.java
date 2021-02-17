@@ -345,8 +345,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<UInt64> getCurrentEpoch() {
-    return getCurrentSlot()
-        .map(slot -> specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot));
+    return getCurrentSlot().map(slot -> specProvider.computeEpochAtSlot(slot));
   }
 
   /** @return The number of slots between our chainhead and the current slot by time */

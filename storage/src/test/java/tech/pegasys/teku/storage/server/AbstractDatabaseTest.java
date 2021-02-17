@@ -537,11 +537,7 @@ public abstract class AbstractDatabaseTest {
     final int startSlot = genesisBlockAndState.getSlot().intValue();
     final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
     final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
-    final UInt64 finalizedSlot =
-        specProvider
-            .atSlot(genesisBlockAndState.getSlot())
-            .getBeaconStateUtil()
-            .computeStartSlotAtEpoch(finalizedEpoch);
+    final UInt64 finalizedSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch);
 
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
@@ -568,11 +564,7 @@ public abstract class AbstractDatabaseTest {
                 blockAndState ->
                     blockAndState
                         .getSlot()
-                        .equals(
-                            specProvider
-                                .atSlot(blockAndState.getSlot())
-                                .getBeaconStateUtil()
-                                .computeStartSlotAtEpoch(blockAndState.getSlot())))
+                        .equals(specProvider.computeStartSlotAtEpoch(blockAndState.getSlot())))
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertBlocksAvailable(expectedFinalizedBlocks);
@@ -615,11 +607,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(
-            specProvider
-                .atEpoch(anchorEpoch)
-                .getBeaconStateUtil()
-                .computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
@@ -685,11 +673,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(
-            specProvider
-                .atEpoch(anchorEpoch)
-                .getBeaconStateUtil()
-                .computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
@@ -752,11 +736,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(
-            specProvider
-                .atEpoch(anchorEpoch)
-                .getBeaconStateUtil()
-                .computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
@@ -1101,8 +1081,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {
-    final BeaconStateUtil beaconStateUtil =
-        specProvider.atSlot(block.getSlot()).getBeaconStateUtil();
+    final BeaconStateUtil beaconStateUtil = specProvider.getBeaconStateUtil(block.getSlot());
     final UInt64 blockEpoch = beaconStateUtil.computeEpochAtSlot(block.getSlot());
     final UInt64 blockEpochBoundary = beaconStateUtil.computeStartSlotAtEpoch(blockEpoch);
     final UInt64 checkpointEpoch =

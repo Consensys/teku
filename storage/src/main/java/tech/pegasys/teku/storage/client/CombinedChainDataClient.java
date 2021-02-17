@@ -185,8 +185,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UInt64 epoch) {
-    final UInt64 epochSlot =
-        specProvider.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final UInt64 epochSlot = specProvider.computeStartSlotAtEpoch(epoch);
     return getSignedBlockAndStateInEffectAtSlot(epochSlot)
         .thenCompose(
             maybeBlockAndState ->
@@ -218,11 +217,7 @@ public class CombinedChainDataClient {
 
   public boolean isFinalized(final UInt64 slot) {
     final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
-    final UInt64 finalizedSlot =
-        specProvider
-            .atEpoch(finalizedEpoch)
-            .getBeaconStateUtil()
-            .computeStartSlotAtEpoch(finalizedEpoch);
+    final UInt64 finalizedSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
@@ -398,7 +393,7 @@ public class CombinedChainDataClient {
   /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
     final UInt64 headSlot = getHeadSlot();
-    return specProvider.atSlot(headSlot).getBeaconStateUtil().computeEpochAtSlot(headSlot);
+    return specProvider.computeEpochAtSlot(headSlot);
   }
 
   public Optional<ForkInfo> getHeadForkInfo() {
@@ -413,7 +408,7 @@ public class CombinedChainDataClient {
   /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
     final UInt64 headSlot = getCurrentSlot();
-    return specProvider.atSlot(headSlot).getBeaconStateUtil().computeEpochAtSlot(headSlot);
+    return specProvider.computeEpochAtSlot(headSlot);
   }
 
   @VisibleForTesting

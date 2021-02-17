@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecProvider {
@@ -61,6 +62,10 @@ public class SpecProvider {
     return atEpoch(epoch);
   }
 
+  public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
+    return atSlot(slot).getBeaconStateUtil();
+  }
+
   public Spec getGenesisSpec() {
     return atEpoch(UInt64.ZERO);
   }
@@ -81,7 +86,7 @@ public class SpecProvider {
     return atEpoch(epoch).getConstants().getSecondsPerSlot();
   }
 
-  public UInt64 startSlotAtEpoch(final UInt64 epoch) {
+  public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
   }
 

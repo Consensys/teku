@@ -222,12 +222,10 @@ class RecentChainDataTest {
                 bestBlock.getRoot(),
                 true,
                 specProvider
-                    .getGenesisSpec()
-                    .getBeaconStateUtil()
+                    .getBeaconStateUtil(bestBlock.getSlot())
                     .getPreviousDutyDependentRoot(bestBlock.getState()),
                 specProvider
-                    .getGenesisSpec()
-                    .getBeaconStateUtil()
+                    .getBeaconStateUtil(bestBlock.getSlot())
                     .getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
@@ -569,8 +567,7 @@ class RecentChainDataTest {
   public void getLatestFinalizedBlockSlot_postGenesisFinalizedBlockOutsideOfEpochBoundary() {
     initPostGenesis();
     final UInt64 epoch = ONE;
-    final UInt64 epochBoundarySlot =
-        specProvider.getGenesisSpec().getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final UInt64 epochBoundarySlot = specProvider.computeStartSlotAtEpoch(epoch);
     final UInt64 finalizedBlockSlot = epochBoundarySlot.minus(ONE);
     final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
     saveBlock(recentChainData, finalizedBlock);
@@ -625,12 +622,7 @@ class RecentChainDataTest {
     final UInt64 historicalRoots = UInt64.valueOf(genesisSpecConstants.getSlotsPerHistoricalRoot());
     final UInt64 targetSlot = UInt64.valueOf(10);
     final UInt64 finalizedBlockSlot = targetSlot.plus(historicalRoots).plus(ONE);
-    final UInt64 finalizedEpoch =
-        specProvider
-            .getGenesisSpec()
-            .getBeaconStateUtil()
-            .computeEpochAtSlot(finalizedBlockSlot)
-            .plus(ONE);
+    final UInt64 finalizedEpoch = specProvider.computeEpochAtSlot(finalizedBlockSlot).plus(ONE);
 
     // Add a block within the finalized range
     final SignedBlockAndState historicalBlock = chainBuilder.generateBlockAtSlot(targetSlot);
@@ -700,12 +692,7 @@ class RecentChainDataTest {
     final UInt64 finalizedBlockSlot = UInt64.valueOf(10).plus(historicalRoots);
     final UInt64 finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
-    final UInt64 recentSlot =
-        specProvider
-            .getGenesisSpec()
-            .getBeaconStateUtil()
-            .computeStartSlotAtEpoch(finalizedEpoch)
-            .plus(ONE);
+    final UInt64 recentSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch).plus(ONE);
     final UInt64 chainHeight = historicalRoots.times(2).plus(recentSlot).plus(5);
     // Build historical blocks
     final SignedBlockAndState finalizedBlock;
@@ -887,11 +874,7 @@ class RecentChainDataTest {
    *     keep the blocks to be kept in the finalizing transaction @
    */
   private void testCommitPruningOfParallelBlocks(final boolean pruneNewBlocks) {
-    final UInt64 epoch2Slot =
-        specProvider
-            .getGenesisSpec()
-            .getBeaconStateUtil()
-            .computeStartSlotAtEpoch(UInt64.valueOf(2));
+    final UInt64 epoch2Slot = specProvider.computeStartSlotAtEpoch(UInt64.valueOf(2));
 
     // Create a fork by skipping the next slot on the fork chain
     ChainBuilder fork = chainBuilder.fork();
