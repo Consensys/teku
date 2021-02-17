@@ -33,16 +33,22 @@ import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 public class EpochProcessor {
   private final SpecConstants specConstants;
+  private final ValidatorsUtil validatorsUtil;
   private final BeaconStateUtil beaconStateUtil;
 
-  public EpochProcessor(final SpecConstants specConstants, final BeaconStateUtil beaconStateUtil) {
+  public EpochProcessor(
+      final SpecConstants specConstants,
+      final ValidatorsUtil validatorsUtil,
+      final BeaconStateUtil beaconStateUtil) {
     this.specConstants = specConstants;
+    this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
   }
 
@@ -218,7 +224,7 @@ public class EpochProcessor {
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
-                    return beaconStateUtil.isEligibleForActivation(state, validator);
+                    return validatorsUtil.isEligibleForActivation(state, validator);
                   })
               .boxed()
               .sorted(

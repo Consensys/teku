@@ -22,15 +22,16 @@ import tech.pegasys.teku.ssz.backing.cache.ArrayIntCache;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszContainerImpl extends AbstractSszComposite<SszData> implements SszContainer {
 
-  public SszContainerImpl(AbstractSszContainerSchema<?> type) {
+  public SszContainerImpl(SszContainerSchema<?> type) {
     this(type, type.getDefaultTree());
   }
 
-  public SszContainerImpl(AbstractSszContainerSchema<?> type, TreeNode backingNode) {
+  public SszContainerImpl(SszContainerSchema<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -78,8 +79,8 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   public String toString() {
     return this.getSchema().getContainerName()
         + "{"
-        + IntStream.range(0, this.getSchema().getChildCount())
-            .mapToObj(idx -> this.getSchema().getChildrenNames().get(idx) + "=" + get(idx))
+        + IntStream.range(0, this.getSchema().getFieldsCount())
+            .mapToObj(idx -> this.getSchema().getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
         + "}";
   }

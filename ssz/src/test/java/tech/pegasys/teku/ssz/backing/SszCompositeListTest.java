@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
-public class CompositeListViewTest {
+public class SszCompositeListTest {
 
   static SszSchema<TestView> testType =
       new SszSchema<>() {

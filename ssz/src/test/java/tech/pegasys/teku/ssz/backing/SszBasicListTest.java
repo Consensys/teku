@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class BasicListViewTest {
+public class SszBasicListTest {
 
   @Test
   public void simpleUInt64ListTest() {

@@ -73,7 +73,6 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -130,7 +129,6 @@ public class Eth2NetworkFactory {
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
     protected SpecProvider specProvider = StubSpecProvider.createMinimal();
-    protected SpecConstants specConstants = specProvider.getGenesisSpecConstants();
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -239,6 +237,7 @@ public class Eth2NetworkFactory {
                 config.getNetworkConfig());
 
         return new ActiveEth2Network(
+            specProvider,
             asyncRunner,
             metricsSystem,
             network,
@@ -269,7 +268,7 @@ public class Eth2NetworkFactory {
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return P2PConfig.builder()
-          .specConstants(specConstants)
+          .specProvider(specProvider)
           .targetSubnetSubscriberCount(2)
           .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
@@ -341,9 +340,9 @@ public class Eth2NetworkFactory {
       }
     }
 
-    public Eth2P2PNetworkBuilder specConstants(final SpecConstants specConstants) {
-      checkNotNull(specConstants);
-      this.specConstants = specConstants;
+    public Eth2P2PNetworkBuilder specProvider(final SpecProvider specProvider) {
+      checkNotNull(specProvider);
+      this.specProvider = specProvider;
       return this;
     }
 

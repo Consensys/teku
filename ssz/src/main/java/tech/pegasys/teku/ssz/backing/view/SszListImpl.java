@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
@@ -30,6 +31,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
  */
 public class SszListImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszList<SszElementT> {
+
+  protected SszListImpl(SszListSchema<SszElementT, ?> schema, Supplier<TreeNode> lazyBackingNode) {
+    super(schema, lazyBackingNode);
+  }
 
   public SszListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);

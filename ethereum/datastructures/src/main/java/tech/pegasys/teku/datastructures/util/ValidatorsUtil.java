@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
+@Deprecated
 public class ValidatorsUtil {
 
   /**
@@ -40,6 +41,7 @@ public class ValidatorsUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
    *     </a>
    */
+  @Deprecated
   public static boolean is_active_validator(Validator validator, UInt64 epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
         && epoch.compareTo(validator.getExit_epoch()) < 0;
@@ -61,6 +63,7 @@ public class ValidatorsUtil {
         && validator.getActivation_epoch().equals(Constants.FAR_FUTURE_EPOCH);
   }
 
+  @Deprecated
   public static Optional<BLSPublicKey> getValidatorPubKey(
       BeaconState state, UInt64 validatorIndex) {
     if (state.getValidators().size() <= validatorIndex.longValue()
@@ -91,12 +94,6 @@ public class ValidatorsUtil {
    * @param state - Current BeaconState
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
-   * @see
-   * @deprecated moved to stateful BeaconStateUtil
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
-   */
-  /*
-   * note: moved to BeaconStateUtil
    */
   @Deprecated
   public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
@@ -120,22 +117,16 @@ public class ValidatorsUtil {
             });
   }
 
-  /*
-   * note: moved to BeaconStateUtil
-   */
   @Deprecated
   public static UInt64 getMaxLookaheadEpoch(final BeaconState state) {
     return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
   }
 
-  /*
-   * note: moved to BeaconStateUtil
-   */
-  @Deprecated
   private static UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
     return stateEpoch.plus(MAX_SEED_LOOKAHEAD);
   }
 
+  @Deprecated
   @SuppressWarnings("DoNotReturnNullOptionals")
   public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
@@ -152,6 +143,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
+  @Deprecated
   public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
     state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
   }
@@ -165,6 +157,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
+  @Deprecated
   public static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
     state.getBalances().set(index, state.getBalances().get(index).plus(delta));
   }
@@ -178,6 +171,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
    */
+  @Deprecated
   public static boolean is_slashable_validator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()
         && (validator.getActivation_epoch().compareTo(epoch) <= 0

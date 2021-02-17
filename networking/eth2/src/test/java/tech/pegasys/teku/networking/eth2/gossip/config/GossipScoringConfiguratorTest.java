@@ -35,22 +35,23 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class GossipScoringConfiguratorTest {
 
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
-  private SpecConstants specConstants;
+  private final SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private final int genesisMinActiveValidators =
+      specProvider.getGenesisSpecConstants().getMinGenesisActiveValidatorCount();
 
   private GossipScoringConfigurator configurator;
 
   @BeforeEach
   public void setup() {
-    specConstants = ConstantsLoader.loadConstants("mainnet");
-    configurator = new GossipScoringConfigurator(specConstants);
+    configurator = new GossipScoringConfigurator(specProvider);
   }
 
   @Test
@@ -312,14 +313,14 @@ public class GossipScoringConfiguratorTest {
 
   private Eth2Context preGenesisEth2Context() {
     return Eth2Context.builder()
-        .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())
+        .activeValidatorCount(genesisMinActiveValidators)
         .gossipEncoding(GossipEncoding.SSZ_SNAPPY)
         .build();
   }
 
   private Eth2Context postGenesisEth2Context() {
     return Eth2Context.builder()
-        .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())
+        .activeValidatorCount(genesisMinActiveValidators)
         .gossipEncoding(gossipEncoding)
         .forkDigest(forkDigest)
         .currentSlot(UInt64.valueOf(10_000))
@@ -328,7 +329,7 @@ public class GossipScoringConfiguratorTest {
 
   private Eth2Context genesisEth2Context() {
     return Eth2Context.builder()
-        .activeValidatorCount(specConstants.getMinGenesisActiveValidatorCount())
+        .activeValidatorCount(genesisMinActiveValidators)
         .gossipEncoding(gossipEncoding)
         .forkDigest(forkDigest)
         .currentSlot(UInt64.ZERO)

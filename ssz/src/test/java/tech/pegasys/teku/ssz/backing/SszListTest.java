@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing;
 import static java.lang.Integer.max;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.Random;
@@ -39,7 +40,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -141,26 +142,25 @@ public class SszListTest {
           (AbstractSszContainerSchema<SszContainer>) schema;
       return Stream.generate(
           () -> {
-            List<? extends SszData> children =
-                containerSchema.getChildSchemas().stream()
+            List<SszData> children =
+                containerSchema.getFieldSchemas().stream()
                     .map(SszListTest::randomData)
                     .collect(Collectors.toList());
-            return (T) containerSchema.createFromFields(children);
+            return (T) containerSchema.createFromFieldValues(children);
           });
-    } else if (schema instanceof SszCompositeSchema) {
+    } else if (schema instanceof SszCollectionSchema) {
       return Stream.generate(
           () -> {
-            SszCompositeSchema<SszComposite<SszData>> compositeSchema =
-                (SszCompositeSchema<SszComposite<SszData>>) schema;
-            int maxChildrenToAdd = (int) Long.min(compositeSchema.getMaxLength(), 16 * 1024);
-            SszMutableComposite<SszData> writableCopy =
-                compositeSchema.getDefault().createWritableCopy();
-            for (int i = 0; i < maxChildrenToAdd; i++) {
-              SszSchema<?> childSchema = compositeSchema.getChildSchema(i);
-              SszData sszData = randomData(childSchema);
-              writableCopy.set(i, sszData);
-            }
-            return (T) writableCopy.commitChanges();
+            SszCollectionSchema<SszData, ?> collectionSchema =
+                (SszCollectionSchema<SszData, ?>) schema;
+            SszSchema<SszData> elementSchema = collectionSchema.getElementSchema();
+            int maxChildrenToAdd = (int) Long.min(collectionSchema.getMaxLength(), 16 * 1024);
+            List<SszData> children =
+                Stream.generate(() -> randomData(elementSchema))
+                    .limit(maxChildrenToAdd)
+                    .collect(Collectors.toList());
+            SszCollection<SszData> ret = collectionSchema.createFromElements(children);
+            return (T) ret;
           });
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);
@@ -280,7 +280,7 @@ public class SszListTest {
   }
 
   @ParameterizedTest
-  @MethodSource("testAllListTypeParameters")
+  @MethodSource("testAllNonBitListTypeParameters")
   <T extends SszData> void clearTest1(SszSchema<T> listElementType, long maxLength) {
     if (maxLength == 0) {
       return;
@@ -320,11 +320,10 @@ public class SszListTest {
 
     // should normally deserialize smaller lists
     for (int i = max(0, maxLength - 8); i <= maxLength; i++) {
-      SszMutableList<T> writableCopy = largerSszListSchema.getDefault().createWritableCopy();
-      for (int j = 0; j < i; j++) {
-        writableCopy.append(listElementType.getDefault());
-      }
-      Bytes ssz = writableCopy.commitChanges().sszSerialize();
+      List<T> children =
+          Stream.generate(listElementType::getDefault).limit(i).collect(Collectors.toList());
+      SszList<T> largerList = largerSszListSchema.createFromElements(children);
+      Bytes ssz = largerList.sszSerialize();
       SszList<T> resList = sszListSchema.sszDeserialize(ssz);
 
       assertThat(resList.size()).isEqualTo(i);
@@ -332,11 +331,10 @@ public class SszListTest {
 
     // should fail fast when ssz is longer than max
     for (int i = maxLength + 1; i < maxLength + 10; i++) {
-      SszMutableList<T> writableCopy = largerSszListSchema.getDefault().createWritableCopy();
-      for (int j = 0; j < i; j++) {
-        writableCopy.append(listElementType.getDefault());
-      }
-      Bytes ssz = writableCopy.commitChanges().sszSerialize();
+      List<T> children =
+          Stream.generate(listElementType::getDefault).limit(i).collect(Collectors.toList());
+      SszList<T> largerList = largerSszListSchema.createFromElements(children);
+      Bytes ssz = largerList.sszSerialize();
 
       SszReader sszReader = SszReader.fromBytes(ssz);
       assertThatThrownBy(() -> sszListSchema.sszDeserialize(sszReader))
@@ -403,10 +401,7 @@ public class SszListTest {
                       randomDataStream(listElementType).limit(size).collect(Collectors.toList()));
               Bytes ssz = list.sszSerialize();
               SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
-              assertThat(SszTestUtils.equalsByGetters(list, list1)).isTrue();
-              assertThat(list1.hashTreeRoot()).isEqualTo(list.hashTreeRoot());
-              Bytes ssz1 = list1.sszSerialize();
-              assertThat(ssz1).isEqualTo(ssz);
+              assertThatSszData(list1).isEqualByAllMeansTo(list);
             });
   }
 }
