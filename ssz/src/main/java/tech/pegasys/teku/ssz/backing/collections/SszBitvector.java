@@ -20,6 +20,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
+/** Specialized implementation of {@code SszVector<SszBit>} */
 public interface SszBitvector extends SszVector<SszBit> {
 
   @Override

@@ -54,7 +54,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
 
   @Override
   protected IntCache<SszBit> createCache() {
-    // BitlistImpl is far more effective cache than caching individual bits
+    // BitvectorImpl is far more effective cache than caching individual bits
     return new NoopIntCache<>();
   }
 
