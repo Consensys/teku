@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -47,7 +47,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
   private final AttestationData attestationData;
   private final Bytes32 committeeShufflingSeed;
-  private Bitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
+  private SszBitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
 
   public MatchingDataAttestationGroup(
       final AttestationData attestationData, final Bytes32 committeeShufflingSeed) {

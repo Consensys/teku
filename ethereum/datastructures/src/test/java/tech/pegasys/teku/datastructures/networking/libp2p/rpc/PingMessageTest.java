@@ -14,11 +14,11 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
 
 class PingMessageTest {
 
@@ -34,7 +34,6 @@ class PingMessageTest {
   @Test
   public void shouldDeserializeFromSsz() {
     PingMessage result = PingMessage.SSZ_SCHEMA.sszDeserialize(EXPECTED_SSZ);
-    assertThat(SszTestUtils.equalsByGetters(result, MESSAGE)).isTrue();
-    assertThat(result).isEqualTo(MESSAGE);
+    assertThatSszData(result).isEqualByAllMeansTo(MESSAGE);
   }
 }

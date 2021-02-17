@@ -7,4 +7,5 @@ dependencies {
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':ssz'))
 }

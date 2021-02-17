@@ -18,14 +18,14 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.util.config.Constants;
 
-public class BitlistDeserializer extends JsonDeserializer<Bitlist> {
+public class SszBitlistDeserializer extends JsonDeserializer<SszBitlist> {
   @Override
-  public Bitlist deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public SszBitlist deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
-    int length = Constants.MAX_VALIDATORS_PER_COMMITTEE;
-    return Bitlist.fromSszBytes(data, length);
+    return SszBitlistSchema.create(Constants.MAX_VALIDATORS_PER_COMMITTEE).sszDeserialize(data);
   }
 }

@@ -7,6 +7,8 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
+  testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
   jmh 'org.apache.tuweni:tuweni-ssz'
 }

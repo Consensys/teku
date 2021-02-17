@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Integer.min;
 
 import com.google.common.base.Supplier;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 
 /** Type of homogeneous collections (like List and Vector) */
-abstract class AbstractSszCollectionSchema<
+public abstract class AbstractSszCollectionSchema<
         SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
     implements SszCompositeSchema<SszCollectionT> {
 
@@ -50,6 +51,7 @@ abstract class AbstractSszCollectionSchema<
 
   protected AbstractSszCollectionSchema(
       long maxLength, SszSchema<SszElementT> elementSchema, SszSchemaHints hints) {
+    checkArgument(maxLength >= 0);
     this.maxLength = maxLength;
     this.elementSchema = elementSchema;
     this.hints = hints;
@@ -102,7 +104,7 @@ abstract class AbstractSszCollectionSchema<
    * @param vectorNode for a {@link SszVectorSchemaImpl} type - the node itself, for a {@link
    *     SszListSchemaImpl} - the left sibling node of list size node
    */
-  protected int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
+  public int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
     if (getElementSchema().isFixedSize()) {
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
@@ -293,7 +295,7 @@ abstract class AbstractSszCollectionSchema<
     return Objects.hash(maxLength, elementSchema);
   }
 
-  static class DeserializedData {
+  protected static class DeserializedData {
 
     private final TreeNode dataTree;
     private final int childrenCount;

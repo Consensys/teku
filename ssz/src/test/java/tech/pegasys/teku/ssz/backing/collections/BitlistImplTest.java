@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.ssztypes;
+package tech.pegasys.teku.ssz.backing.collections;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,21 +27,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
-class BitlistTest {
+class BitlistImplTest {
   private static final int BITLIST_MAX_SIZE = 4000;
 
   @Test
   void initTest() {
-    Bitlist bitlist = create();
+    BitlistImpl bitlist = create();
     assertFalse(bitlist.getBit(0));
     assertFalse(bitlist.getBit(9));
   }
 
   @Test
   void setTest() {
-    Bitlist bitlist = create(1, 3, 8);
+    BitlistImpl bitlist = create(1, 3, 8);
 
     assertFalse(bitlist.getBit(0));
     assertTrue(bitlist.getBit(1));
@@ -52,59 +51,59 @@ class BitlistTest {
 
   @Test
   void getAllSetBits() {
-    Bitlist bitlist = create(0, 1, 3, 8, 9);
+    BitlistImpl bitlist = create(0, 1, 3, 8, 9);
 
     assertThat(bitlist.getAllSetBits()).containsExactly(0, 1, 3, 8, 9);
   }
 
   @Test
   void getAllSetBits_noSetBits() {
-    Bitlist bitlist = create();
+    BitlistImpl bitlist = create();
 
     assertThat(bitlist.getAllSetBits()).isEmpty();
   }
 
   @Test
   void intersects_noOverlap() {
-    Bitlist bitlist1 = create(1, 3, 5);
-    Bitlist bitlist2 = create(0, 2, 4);
+    BitlistImpl bitlist1 = create(1, 3, 5);
+    BitlistImpl bitlist2 = create(0, 2, 4);
 
     assertThat(bitlist1.intersects(bitlist2)).isFalse();
   }
 
   @Test
   void intersects_withOverlap() {
-    Bitlist bitlist1 = create(1, 3, 5);
-    Bitlist bitlist2 = create(0, 3, 4);
+    BitlistImpl bitlist1 = create(1, 3, 5);
+    BitlistImpl bitlist2 = create(0, 3, 4);
 
     assertThat(bitlist1.intersects(bitlist2)).isTrue();
   }
 
   @Test
   void isSuperSetOf_sameBitsSet() {
-    Bitlist bitlist1 = create(1, 3, 5);
-    Bitlist bitlist2 = create(1, 3, 5);
+    BitlistImpl bitlist1 = create(1, 3, 5);
+    BitlistImpl bitlist2 = create(1, 3, 5);
     assertThat(bitlist1.isSuperSetOf(bitlist2)).isTrue();
   }
 
   @Test
   void isSuperSetOf_additionalBitsSet() {
-    Bitlist bitlist1 = create(1, 3, 5, 7, 9);
-    Bitlist bitlist2 = create(1, 3, 5);
+    BitlistImpl bitlist1 = create(1, 3, 5, 7, 9);
+    BitlistImpl bitlist2 = create(1, 3, 5);
     assertThat(bitlist1.isSuperSetOf(bitlist2)).isTrue();
   }
 
   @Test
   void isSuperSetOf_notAllBitsSet() {
-    Bitlist bitlist1 = create(1, 3);
-    Bitlist bitlist2 = create(1, 3, 5);
+    BitlistImpl bitlist1 = create(1, 3);
+    BitlistImpl bitlist2 = create(1, 3, 5);
     assertThat(bitlist1.isSuperSetOf(bitlist2)).isFalse();
   }
 
   @Test
   void isSuperSetOf_differentBitsSet() {
-    Bitlist bitlist1 = create(2, 5, 6);
-    Bitlist bitlist2 = create(1, 3, 5);
+    BitlistImpl bitlist1 = create(2, 5, 6);
+    BitlistImpl bitlist2 = create(1, 3, 5);
     assertThat(bitlist1.isSuperSetOf(bitlist2)).isFalse();
   }
 
@@ -115,7 +114,7 @@ class BitlistTest {
 
   @Test
   void serializationTest() {
-    Bitlist bitlist = createBitlist();
+    BitlistImpl bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
     Assertions.assertEquals(bitlistSerialized.toHexString(), "0x721806");
@@ -123,16 +122,16 @@ class BitlistTest {
 
   @Test
   void deserializationTest() {
-    Bitlist bitlist = createBitlist();
+    BitlistImpl bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.fromSszBytes(bitlistSerialized, BITLIST_MAX_SIZE);
+    BitlistImpl newBitlist = BitlistImpl.fromSszBytes(bitlistSerialized, BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void serializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
+    BitlistImpl bitlist = new BitlistImpl(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
 
     Bytes bitlistSerialized = bitlist.serialize();
     Assertions.assertEquals(Bytes.fromHexString("0xf903"), bitlistSerialized);
@@ -140,31 +139,32 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
+    BitlistImpl bitlist = new BitlistImpl(9, BITLIST_MAX_SIZE, 0, 3, 4, 5, 6, 7, 8);
 
-    Bitlist newBitlist = Bitlist.fromSszBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
+    BitlistImpl newBitlist =
+        BitlistImpl.fromSszBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void deserializationShouldRejectZeroLengthBytes() {
-    assertThatThrownBy(() -> Bitlist.fromSszBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> BitlistImpl.fromSszBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("at least one byte");
   }
 
   @Test
   void deserializationShouldRejectDataWhenEndMarkerBitNotSet() {
-    assertThatThrownBy(() -> Bitlist.fromSszBytes(Bytes.of(0), BITLIST_MAX_SIZE))
+    assertThatThrownBy(() -> BitlistImpl.fromSszBytes(Bytes.of(0), BITLIST_MAX_SIZE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("marker bit");
   }
 
-  private static Bitlist create(int... bits) {
-    return new Bitlist(18, BITLIST_MAX_SIZE, bits);
+  private static BitlistImpl create(int... bits) {
+    return new BitlistImpl(18, BITLIST_MAX_SIZE, bits);
   }
 
-  private static Bitlist createBitlist() {
+  private static BitlistImpl createBitlist() {
     return create(1, 4, 5, 6, 11, 12, 17);
   }
 
@@ -195,12 +195,12 @@ class BitlistTest {
   @ParameterizedTest
   @MethodSource("sszBitlistCases")
   void testSszMethods(Bytes bitlistSsz) {
-    int length = Bitlist.sszGetLengthAndValidate(bitlistSsz);
-    Bytes truncBytes = Bitlist.sszTruncateLeadingBit(bitlistSsz, length);
+    int length = SszBitlistImpl.sszGetLengthAndValidate(bitlistSsz);
+    Bytes truncBytes = SszBitlistImpl.sszTruncateLeadingBit(bitlistSsz, length);
     Bytes bitlistSsz1 = sszAppendLeadingBit(truncBytes, length);
     assertThat(bitlistSsz1).isEqualTo(bitlistSsz);
 
-    Bitlist bitlist = Bitlist.fromSszBytes(bitlistSsz, length);
+    BitlistImpl bitlist = BitlistImpl.fromSszBytes(bitlistSsz, length);
     Bytes bitlistSsz2 = bitlist.serialize();
     assertThat(bitlistSsz2).isEqualTo(bitlistSsz);
   }
@@ -215,9 +215,9 @@ class BitlistTest {
   @ParameterizedTest
   @MethodSource("sszInvalidBitlistCases")
   void testSszMethodsInvalid(Bytes bitlistSsz) {
-    assertThatThrownBy(() -> Bitlist.sszGetLengthAndValidate(bitlistSsz))
+    assertThatThrownBy(() -> SszBitlistImpl.sszGetLengthAndValidate(bitlistSsz))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> Bitlist.fromSszBytes(bitlistSsz, 1024))
+    assertThatThrownBy(() -> BitlistImpl.fromSszBytes(bitlistSsz, 1024))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

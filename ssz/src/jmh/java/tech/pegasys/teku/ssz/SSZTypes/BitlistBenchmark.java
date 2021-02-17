@@ -20,13 +20,17 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 @State(Scope.Thread)
 public class BitlistBenchmark {
   private static final int BITLIST_SIZE = 128; // MainNet target committee size
-  private static final Bitlist LAST_BIT_SET = createBitlist(127);
+  private static final SszBitlistSchema<SszBitlist> BITLIST_SCHEMA =
+      SszBitlistSchema.create(BITLIST_SIZE);
+  private static final SszBitlist LAST_BIT_SET = BITLIST_SCHEMA.ofBits(128, 127);
 
-  private static final Bitlist MANY_BITS_SET =
+  private static final SszBitlist MANY_BITS_SET =
       createBitlist(
           1, 2, 6, 16, 23, 33, 65, 87, 96, 100, 101, 102, 103, 104, 110, 115, 120, 121, 125);
 
@@ -41,7 +45,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void setAllBits(Blackhole bh) {
-    final Bitlist target = createBitlist().or(MANY_BITS_SET);
+    final SszBitlist target = createBitlist().or(MANY_BITS_SET);
     bh.consume(target);
   }
 
@@ -59,7 +63,7 @@ public class BitlistBenchmark {
     bh.consume(MANY_BITS_SET.getBitCount());
   }
 
-  private static Bitlist createBitlist(final int... setBits) {
-    return new Bitlist(BITLIST_SIZE, BITLIST_SIZE, setBits);
+  private static SszBitlist createBitlist(final int... setBits) {
+    return BITLIST_SCHEMA.ofBits(BITLIST_SIZE, setBits);
   }
 }

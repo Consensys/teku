@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.ssz.backing.cache;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import java.util.Optional;
+import java.util.function.IntFunction;
 
-public class BitlistSerializer extends JsonSerializer<Bitlist> {
+public class NoopIntCache<V> implements IntCache<V> {
+
   @Override
-  public void serialize(Bitlist value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.serialize().toHexString().toLowerCase());
+  public V getInt(int key, IntFunction<V> fallback) {
+    return fallback.apply(key);
+  }
+
+  @Override
+  public IntCache<V> copy() {
+    return new NoopIntCache<>();
+  }
+
+  @Override
+  public void invalidateInt(int key) {}
+
+  @Override
+  public void clear() {}
+
+  @Override
+  public Optional<V> getCached(Integer key) {
+    return Optional.empty();
   }
 }

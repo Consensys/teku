@@ -71,11 +71,12 @@ public interface SSZImmutableCollection<E> extends Iterable<E> {
   @Override
   default Iterator<E> iterator() {
     return new Iterator<E>() {
+      private final int size = size();
       int index = 0;
 
       @Override
       public boolean hasNext() {
-        return index < size();
+        return index < size;
       }
 
       @Override

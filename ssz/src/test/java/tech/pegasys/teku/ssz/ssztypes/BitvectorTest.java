@@ -21,11 +21,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 class BitvectorTest {
 
@@ -92,12 +90,12 @@ class BitvectorTest {
 
   @Test
   void bitlistHashTest() {
-    Bitlist bitlist = new Bitlist(2048, 2048, IntStream.range(0, 44).toArray());
     Bytes32 hashOld =
         Bytes32.fromHexString("0x447ac4def72d4aa09ded8e1130cbe013511d4881c3393903ada630f034e985d7");
 
-    SszList<SszBit> bitlistView = SszUtils.toSszBitList(bitlist);
-    Bytes32 hashNew = bitlistView.hashTreeRoot();
+    SszBitlist sszBitlist =
+        SszBitlistSchema.create(2048).ofBits(2048, IntStream.range(0, 44).toArray());
+    Bytes32 hashNew = sszBitlist.hashTreeRoot();
 
     Assertions.assertEquals(hashOld, hashNew);
   }
