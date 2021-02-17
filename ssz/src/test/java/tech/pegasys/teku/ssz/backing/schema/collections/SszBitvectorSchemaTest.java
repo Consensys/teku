@@ -14,17 +14,14 @@
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
@@ -42,7 +39,8 @@ public class SszBitvectorSchemaTest {
 
   @Test
   void ofBits_shouldThrowIfLengthNegative() {
-    assertThatThrownBy(() -> SszBitvectorSchema.create(-1)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> SszBitvectorSchema.create(-1))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -81,21 +79,27 @@ public class SszBitvectorSchemaTest {
   @Test
   void sszDeserialize_shouldThrowIfAligningBitsAreNotZero() {
     SszBitvectorSchema<SszBitvector> schema = SszBitvectorSchema.create(10);
-    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b111))).isInstanceOf(
-        SszDeserializeException.class);
-    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b10000011))).isInstanceOf(
-        SszDeserializeException.class);
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b111)))
+        .isInstanceOf(SszDeserializeException.class);
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b10000011)))
+        .isInstanceOf(SszDeserializeException.class);
   }
 
   @Test
   void sszDeserialize_shouldThrowIfSszLengthDoesntMatch() {
     SszBitvectorSchema<SszBitvector> schema = SszBitvectorSchema.create(10);
-    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.EMPTY)).isInstanceOf(
-        SszDeserializeException.class);
-    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF))).isInstanceOf(
-        SszDeserializeException.class);
-    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b00000011, 0))).isInstanceOf(
-        SszDeserializeException.class);
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.EMPTY))
+        .isInstanceOf(SszDeserializeException.class);
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF)))
+        .isInstanceOf(SszDeserializeException.class);
+    assertThatThrownBy(() -> schema.sszDeserialize(Bytes.of(0xFF, 0b00000011, 0)))
+        .isInstanceOf(SszDeserializeException.class);
+  }
+
+  @Test
+  void create_throwIfZeroLength() {
+    assertThatThrownBy(() -> SszBitvectorSchema.create(0))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
