@@ -241,12 +241,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-        SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
-        SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
-        syncService.stop(),
-        blockManager.stop(),
-        attestationManager.stop(),
-        p2pNetwork.stop())
+            SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
+            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+            syncService.stop(),
+            blockManager.stop(),
+            attestationManager.stop(),
+            p2pNetwork.stop())
         .thenRun(forkChoiceExecutor::stop);
   }
 
