@@ -95,6 +95,6 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
 
   @Override
   public String toString() {
-    return "SszBitlist{size=" + this.size() + ", " + value.toString() + "}";
+    return "SszBitvector{size=" + this.size() + ", " + value.toString() + "}";
   }
 }

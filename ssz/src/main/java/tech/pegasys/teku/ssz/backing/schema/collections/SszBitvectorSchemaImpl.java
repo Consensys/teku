@@ -28,8 +28,8 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszBitvector>
     implements SszBitvectorSchema<SszBitvector> {
 
-  public SszBitvectorSchemaImpl(long maxLength) {
-    super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
+  public SszBitvectorSchemaImpl(long length) {
+    super(SszPrimitiveSchemas.BIT_SCHEMA, length);
   }
 
   @Override
@@ -71,6 +71,6 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
 
   @Override
   public String toString() {
-    return "Bitlist[" + getMaxLength() + "]";
+    return "Bitvector[" + getMaxLength() + "]";
   }
 }

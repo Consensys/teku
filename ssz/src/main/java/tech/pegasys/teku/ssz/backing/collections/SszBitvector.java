@@ -40,6 +40,9 @@ public interface SszBitvector extends SszVector<SszBit> {
   /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
 
+  /** Returns new vector with bits shifted to the right by {@code n} positions */
+  SszBitvector rightShift(int n);
+
   /** Returns indexes of all bits set in this {@link SszBitvector} */
   List<Integer> getAllSetBits();
 
@@ -47,6 +50,4 @@ public interface SszBitvector extends SszVector<SszBit> {
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }
-
-  SszBitvector rightShift(int n);
 }

@@ -133,6 +133,10 @@ class BitvectorImpl {
 
   @Override
   public String toString() {
-    return "Bitvector{" + "data=" + data + ", size=" + size + '}';
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < size; i++) {
+      sb.append(getBit(i) ? 1 : 0);
+    }
+    return sb.toString();
   }
 }
