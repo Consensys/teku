@@ -24,11 +24,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
 

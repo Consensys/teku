@@ -38,15 +38,16 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.datastructures.forkchoice.TestStoreImpl;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -124,7 +125,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
             .setSlotToStartOfEpoch(initialEpoch)
             .build();
     AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
-    MutableStore store = new TestStoreFactory().createAnchorStore(anchor);
+    TestStoreImpl store = new TestStoreFactory().createAnchorStore(anchor);
 
     final SafeFuture<ProtoArrayForkChoiceStrategy> future =
         ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
@@ -263,7 +264,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     assertThat(strategy.contains(block3.getRoot())).isTrue();
     assertThat(strategy.contains(block4.getRoot())).isTrue();
 
-    final StoreTransaction transaction = storageSystem.recentChainData().startStoreTransaction();
+    final VoteUpdater transaction = storageSystem.recentChainData().startVoteUpdate();
     strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
 
     final BeaconState block3State = block3.getState();
@@ -273,7 +274,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             block3State);
-    assertThat(transaction.commit()).isCompleted();
+    transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
   }

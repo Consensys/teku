@@ -18,11 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatingEth1EventsPublisherTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

@@ -32,6 +32,7 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -50,6 +51,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
@@ -61,6 +63,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storageQueryChannel::getHotBlocksByRoot,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageUpdateChannel,
+        voteUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
@@ -78,6 +81,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
@@ -89,6 +93,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
@@ -104,6 +109,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
@@ -115,6 +121,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
+            voteUpdateChannel,
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,

@@ -48,6 +48,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -69,6 +70,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -309,6 +311,11 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public VoteUpdater startVoteUpdate(final VoteUpdateChannel voteUpdateChannel) {
+    return new StoreVoteUpdater(this, lock, voteUpdateChannel);
+  }
+
+  @Override
   public UInt64 getTime() {
     readLock.lock();
     try {
@@ -500,8 +507,7 @@ class Store implements UpdatableStore {
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
-  @Override
-  public Set<UInt64> getVotedValidatorIndices() {
+  Set<UInt64> getVotedValidatorIndices() {
     readLock.lock();
     try {
       return new HashSet<>(votes.keySet());
@@ -510,8 +516,7 @@ class Store implements UpdatableStore {
     }
   }
 
-  @Override
-  public VoteTracker getVote(UInt64 validatorIndex) {
+  VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
       return votes.get(validatorIndex);

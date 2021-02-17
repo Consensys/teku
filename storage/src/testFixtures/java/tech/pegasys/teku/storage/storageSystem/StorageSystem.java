@@ -95,6 +95,7 @@ public class StorageSystem implements AutoCloseable {
             storeConfig,
             chainStorageServer,
             chainStorageServer,
+            chainStorageServer,
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
