@@ -437,10 +437,16 @@ public class ContainerViewTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThatSszData(c1r).isEqualByAllMeansTo(c1w);
+    assertThatSszData(c1r).isEqualTo(c1w)
+        .isEqualByGettersTo(c1w)
+        .isEqualByHashTreeRootTo(c1w)
+        .isEqualBySszTo(c1w);
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThatSszData(c1r).isEqualByAllMeansTo(c1w);
+    assertThatSszData(c1r).isEqualTo(c1w)
+        .isEqualByGettersTo(c1w)
+        .isEqualByHashTreeRootTo(c1w)
+        .isEqualBySszTo(c1w);
     assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w);
     assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w.commitChanges());
 
