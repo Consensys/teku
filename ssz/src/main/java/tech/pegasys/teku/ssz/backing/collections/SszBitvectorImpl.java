@@ -58,14 +58,6 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
     return new NoopIntCache<>();
   }
 
-  private BitvectorImpl toBitvectorImpl(SszBitvector bv) {
-    if (bv instanceof SszBitvectorImpl) {
-      return ((SszBitvectorImpl) bv).value;
-    } else {
-      return BitvectorImpl.fromBytes(bv.sszSerialize(), bv.size());
-    }
-  }
-
   @Override
   public boolean getBit(int i) {
     return value.getBit(i);
