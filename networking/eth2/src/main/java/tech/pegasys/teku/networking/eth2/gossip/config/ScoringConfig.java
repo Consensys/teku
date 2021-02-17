@@ -19,6 +19,7 @@ import com.google.common.base.Suppliers;
 import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -52,18 +53,19 @@ class ScoringConfig {
   private final Duration decayInterval;
   private final Duration targetScoringDuration;
 
-  private ScoringConfig(final SpecConstants constants, final int d) {
-    this.constants = constants;
+  private ScoringConfig(final SpecProvider specProvider, final int d) {
+    // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants
+    this.constants = specProvider.getGenesisSpecConstants();
     this.d = d;
 
-    this.slotDuration = Duration.ofSeconds(constants.getSecondsPerSlot());
-    this.epochDuration = slotDuration.multipliedBy(constants.getSlotsPerEpoch());
+    this.slotDuration = Duration.ofSeconds(this.constants.getSecondsPerSlot());
+    this.epochDuration = slotDuration.multipliedBy(this.constants.getSlotsPerEpoch());
     this.decayInterval = slotDuration;
     this.targetScoringDuration = epochDuration.multipliedBy(100);
   }
 
-  public static ScoringConfig create(final SpecConstants constants, final int gossipDParam) {
-    return new ScoringConfig(constants, gossipDParam);
+  public static ScoringConfig create(final SpecProvider specProvider, final int gossipDParam) {
+    return new ScoringConfig(specProvider, gossipDParam);
   }
 
   public double getMaxInMeshScore() {

@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public interface GossipConfigurator {
   GossipConfigurator NOOP =
@@ -35,8 +35,8 @@ public interface GossipConfigurator {
             final Eth2Context eth2Context) {}
       };
 
-  static GossipConfigurator scoringEnabled(SpecConstants specConstants) {
-    return new GossipScoringConfigurator(specConstants);
+  static GossipConfigurator scoringEnabled(SpecProvider specProvider) {
+    return new GossipScoringConfigurator(specProvider);
   }
 
   /**
