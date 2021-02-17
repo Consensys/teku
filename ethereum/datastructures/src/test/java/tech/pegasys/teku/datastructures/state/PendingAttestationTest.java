@@ -21,9 +21,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 class PendingAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
