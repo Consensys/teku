@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
@@ -29,17 +28,17 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvector {
 
   public static SszBitvectorImpl ofBits(SszBitvectorSchema<?> schema, int... bits) {
-    return new SszBitvectorImpl(schema, new Bitvector(schema.getLength(), bits));
+    return new SszBitvectorImpl(schema, new BitvectorImpl(schema.getLength(), bits));
   }
 
-  private final Bitvector value;
+  private final BitvectorImpl value;
 
   public SszBitvectorImpl(SszVectorSchema<SszBit, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
     value = toBitvectorImpl(this);
   }
 
-  public SszBitvectorImpl(SszBitvectorSchema<?> schema, Bitvector value) {
+  public SszBitvectorImpl(SszBitvectorSchema<?> schema, BitvectorImpl value) {
     super(schema, () -> schema.sszDeserializeTree(SszReader.fromBytes(value.serialize())));
     this.value = value;
   }
@@ -56,11 +55,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
     return new NoopIntCache<>();
   }
 
-  private Bitvector toBitvectorImpl(SszBitvector bv) {
+  private BitvectorImpl toBitvectorImpl(SszBitvector bv) {
     if (bv instanceof SszBitvectorImpl) {
       return ((SszBitvectorImpl) bv).value;
     } else {
-      return Bitvector.fromBytes(bv.sszSerialize(), bv.size());
+      return BitvectorImpl.fromBytes(bv.sszSerialize(), bv.size());
     }
   }
 

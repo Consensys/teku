@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.SSZTypes;
+package tech.pegasys.teku.ssz.backing.collections;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Bitvector {
+class BitvectorImpl {
 
-  public static Bitvector fromBytes(Bytes bytes, int size) {
+  public static BitvectorImpl fromBytes(Bytes bytes, int size) {
     checkArgument(
         bytes.size() == sszSerializationLength(size),
         "Incorrect data size (%s) for Bitvector of size %s",
@@ -40,7 +40,7 @@ public class Bitvector {
       }
     }
 
-    return new Bitvector(bitset, size);
+    return new BitvectorImpl(bitset, size);
   }
 
   public static int sszSerializationLength(final int size) {
@@ -50,24 +50,24 @@ public class Bitvector {
   private final BitSet data;
   private final int size;
 
-  private Bitvector(BitSet bitSet, int size) {
+  private BitvectorImpl(BitSet bitSet, int size) {
     this.data = bitSet;
     this.size = size;
   }
 
-  public Bitvector(int size) {
+  public BitvectorImpl(int size) {
     this.data = new BitSet(size);
     this.size = size;
   }
 
-  public Bitvector(int size, Iterable<Integer> indicesToSet) {
+  public BitvectorImpl(int size, Iterable<Integer> indicesToSet) {
     this(size);
     for (int i : indicesToSet) {
       data.set(i);
     }
   }
 
-  public Bitvector(int size, int... indicesToSet) {
+  public BitvectorImpl(int size, int... indicesToSet) {
     this(size, Arrays.stream(indicesToSet).boxed().collect(toList()));
   }
 
@@ -75,11 +75,11 @@ public class Bitvector {
     return data.stream().boxed().collect(toList());
   }
 
-  public Bitvector withBit(int i) {
+  public BitvectorImpl withBit(int i) {
     checkElementIndex(i, size);
     BitSet newSet = (BitSet) data.clone();
     newSet.set(i);
-    return new Bitvector(newSet, size);
+    return new BitvectorImpl(newSet, size);
   }
 
   public int getBitCount() {
@@ -106,7 +106,7 @@ public class Bitvector {
     return Bytes.wrap(array);
   }
 
-  public Bitvector rightShift(int i) {
+  public BitvectorImpl rightShift(int i) {
     int length = this.getSize();
     BitSet newData = new BitSet(getSize());
     for (int j = 0; j < length - i; j++) {
@@ -114,14 +114,14 @@ public class Bitvector {
         newData.set(j + i);
       }
     }
-    return new Bitvector(newData, getSize());
+    return new BitvectorImpl(newData, getSize());
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof Bitvector)) return false;
-    Bitvector bitvector = (Bitvector) o;
+    if (!(o instanceof BitvectorImpl)) return false;
+    BitvectorImpl bitvector = (BitvectorImpl) o;
     return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
   }
 

@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 
-public class SszVectorSchemaImpl<SszElementT extends SszData>
+class SszVectorSchemaImpl<SszElementT extends SszData>
     extends AbstractSszVectorSchema<SszElementT, SszVector<SszElementT>> {
 
   SszVectorSchemaImpl(SszSchema<SszElementT> elementType, long vectorLength) {
