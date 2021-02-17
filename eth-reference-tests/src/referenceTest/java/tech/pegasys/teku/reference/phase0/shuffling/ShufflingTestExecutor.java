@@ -35,7 +35,7 @@ public class ShufflingTestExecutor implements TestExecutor {
     final ShufflingData shufflingData =
         loadYaml(testDefinition, "mapping.yaml", ShufflingData.class);
     final CommitteeUtil committeeUtil =
-        specProviderFromSpec(testDefinition).atSlot(UInt64.ZERO).getCommitteeUtil();
+        testDefinition.getSpecProvider().atSlot(UInt64.ZERO).getCommitteeUtil();
     final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
     IntStream.range(0, shufflingData.getCount())
         .forEach(
