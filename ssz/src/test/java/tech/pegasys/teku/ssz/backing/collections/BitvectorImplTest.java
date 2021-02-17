@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 class BitvectorImplImplTest {
 
-  private static int testBitvectorLength = 4;
+  private static final int testBitvectorLength = 4;
 
   private static BitvectorImpl createBitvector() {
     return new BitvectorImpl(testBitvectorLength, 0, 3);
@@ -40,31 +40,31 @@ class BitvectorImplImplTest {
 
   @Test
   void setTest() {
-    BitvectorImpl BitvectorImpl = new BitvectorImpl(10, 1, 3, 8);
+    BitvectorImpl bitvector = new BitvectorImpl(10, 1, 3, 8);
 
-    Assertions.assertEquals(BitvectorImpl.getBit(0), false);
-    Assertions.assertEquals(BitvectorImpl.getBit(1), true);
-    Assertions.assertEquals(BitvectorImpl.getBit(3), true);
-    Assertions.assertEquals(BitvectorImpl.getBit(4), false);
-    Assertions.assertEquals(BitvectorImpl.getBit(8), true);
+    Assertions.assertEquals(bitvector.getBit(0), false);
+    Assertions.assertEquals(bitvector.getBit(1), true);
+    Assertions.assertEquals(bitvector.getBit(3), true);
+    Assertions.assertEquals(bitvector.getBit(4), false);
+    Assertions.assertEquals(bitvector.getBit(8), true);
   }
 
   @Test
   void serializationTest() {
-    BitvectorImpl BitvectorImpl = createBitvector();
+    BitvectorImpl bitvector = createBitvector();
 
-    Bytes BitvectorImplSerialized = BitvectorImpl.serialize();
-    Assertions.assertEquals(BitvectorImplSerialized.toHexString(), "0x09");
+    Bytes ssz = bitvector.serialize();
+    Assertions.assertEquals(ssz.toHexString(), "0x09");
   }
 
   @Test
   void deserializationTest() {
-    BitvectorImpl BitvectorImpl = createBitvector();
+    BitvectorImpl bitvector = createBitvector();
 
-    Bytes BitvectorImplSerialized = BitvectorImpl.serialize();
-    BitvectorImpl newBitvectorImpl =
-        BitvectorImpl.fromBytes(BitvectorImplSerialized, testBitvectorLength);
-    Assertions.assertEquals(BitvectorImpl, newBitvectorImpl);
+    Bytes ssz = bitvector.serialize();
+    BitvectorImpl bitvector1 =
+        BitvectorImpl.fromBytes(ssz, testBitvectorLength);
+    Assertions.assertEquals(bitvector, bitvector1);
   }
 
   @Test
