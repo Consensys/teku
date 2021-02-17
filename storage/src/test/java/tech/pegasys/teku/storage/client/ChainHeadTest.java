@@ -117,13 +117,12 @@ public class ChainHeadTest {
 
     final SignedBlockAndState chainHead =
         chainBuilder.generateBlockAtSlot(
-            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 2);
+            specProvider.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
 
     // Fork skips slot 1 so the chains are different
     fork.generateBlockAtSlot(1);
     final SignedBlockAndState forkHead =
-        fork.generateBlockAtSlot(
-            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 2);
+        fork.generateBlockAtSlot(specProvider.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
 
     final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot(), specProvider);
     final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot(), specProvider);

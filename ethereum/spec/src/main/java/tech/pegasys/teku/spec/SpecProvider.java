@@ -141,4 +141,8 @@ public class SpecProvider {
   public int getSecondsPerSlot(final UInt64 slot) {
     return atSlot(slot).getConstants().getSecondsPerSlot();
   }
+
+  public UInt64 getCurrentEpoch(final BeaconState state) {
+    return atSlot(state.getSlot()).getBeaconStateUtil().getCurrentEpoch(state);
+  }
 }

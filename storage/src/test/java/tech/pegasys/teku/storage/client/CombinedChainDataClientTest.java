@@ -41,9 +41,7 @@ class CombinedChainDataClientTest {
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
     BeaconState state = dataStructureUtil.randomBeaconState();
     List<CommitteeAssignment> data =
-        client.getCommitteesFromState(
-            state,
-            specProvider.atSlot(state.getSlot()).getBeaconStateUtil().getCurrentEpoch(state));
-    assertThat(data.size()).isEqualTo(specProvider.getGenesisSpecConstants().getSlotsPerEpoch());
+        client.getCommitteesFromState(state, specProvider.getCurrentEpoch(state));
+    assertThat(data.size()).isEqualTo(specProvider.getSlotsPerEpoch(state.getSlot()));
   }
 }
