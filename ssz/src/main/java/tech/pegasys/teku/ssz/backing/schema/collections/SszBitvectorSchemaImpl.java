@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -30,6 +32,7 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
 
   public SszBitvectorSchemaImpl(long length) {
     super(SszPrimitiveSchemas.BIT_SCHEMA, length);
+    checkArgument(length > 0, "Invalid Bitlist length");
   }
 
   @Override

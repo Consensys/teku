@@ -30,14 +30,6 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 public class SszBitvectorSchemaTest {
 
   @Test
-  void create_shouldCreateEmptySchema() {
-    SszBitvectorSchema<SszBitvector> schema = SszBitvectorSchema.create(0);
-    assertThat(schema.getMaxLength()).isZero();
-    SszBitvector empty = schema.ofBits();
-    assertThat(empty.size()).isZero();
-  }
-
-  @Test
   void ofBits_shouldThrowIfLengthNegative() {
     assertThatThrownBy(() -> SszBitvectorSchema.create(-1))
         .isInstanceOf(IllegalArgumentException.class);
