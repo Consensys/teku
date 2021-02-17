@@ -2,7 +2,7 @@ dependencies {
     implementation project(':bls')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
-    implementation project(':ethereum:networks')
+    implementation testFixtures(project(':ethereum:networks'))
     implementation project(':ethereum:spec')
     implementation project(':ssz')
     implementation project(':util')

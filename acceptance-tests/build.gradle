@@ -6,7 +6,7 @@ dependencies {
   testFixturesImplementation project(':data:serializer')
   testFixturesImplementation project(':ethereum:datastructures')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
-  testFixturesImplementation project(':ethereum:networks')
+  testFixturesImplementation testFixtures(project(':ethereum:networks'))
   testFixturesImplementation project(':pow')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
