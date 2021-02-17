@@ -33,9 +33,9 @@ import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class NodeRecordConverterTest {
 
