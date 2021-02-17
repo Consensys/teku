@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -35,8 +34,6 @@ public class JsonProvider {
     module.addDeserializer(SszBitlist.class, new SszBitlistDeserializer());
     module.addDeserializer(SszBitvector.class, new SszBitvectorDeserializer());
     module.addSerializer(SszBitvector.class, new SszBitvectorSerializer());
-    module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
-    module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
     module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
     module.addDeserializer(BLSPubKey.class, new BLSPubKeyDeserializer());
