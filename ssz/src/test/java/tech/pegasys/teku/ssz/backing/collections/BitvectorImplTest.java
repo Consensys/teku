@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
-class BitvectorImplImplTest {
+class BitvectorImplTest {
 
   private static final int testBitvectorLength = 4;
 
