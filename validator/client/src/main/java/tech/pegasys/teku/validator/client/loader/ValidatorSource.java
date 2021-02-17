@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.validator.client.loader;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import java.util.List;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
 
-public interface ForkChoiceExecutor {
+public interface ValidatorSource {
+  List<ValidatorProvider> getAvailableValidators();
 
-  <T> SafeFuture<T> performTask(ForkChoiceTask<T> task);
+  interface ValidatorProvider {
+    BLSPublicKey getPublicKey();
 
-  void stop();
-
-  @FunctionalInterface
-  interface ForkChoiceTask<T> {
-    SafeFuture<T> performTask();
+    Signer createSigner();
   }
 }

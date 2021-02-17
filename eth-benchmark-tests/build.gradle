@@ -30,6 +30,7 @@ dependencies {
   jmh 'org.apache.tuweni:tuweni-ssz'
   jmh project(':bls')
   jmh testFixtures(project(':ethereum:weaksubjectivity'))
+  jmh testFixtures(project(':infrastructure:async'))
 }
 
 jmh {
