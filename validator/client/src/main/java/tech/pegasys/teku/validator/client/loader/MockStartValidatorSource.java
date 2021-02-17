@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,29 +13,56 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalSigner;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.api.InteropConfig;
 
-class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
-
+public class MockStartValidatorSource implements ValidatorSource {
   private static final Logger LOG = LogManager.getLogger();
-
   private final InteropConfig config;
+  private final AsyncRunner asyncRunner;
 
-  public MockStartValidatorKeyProvider(final InteropConfig config) {
+  public MockStartValidatorSource(final InteropConfig config, final AsyncRunner asyncRunner) {
     this.config = config;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys() {
+  public List<ValidatorProvider> getAvailableValidators() {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
-    return new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
+    return new MockStartValidatorKeyPairFactory()
+        .generateKeyPairs(startIndex, endIndex).stream()
+            .map(MockStartValidatorProvider::new)
+            .collect(toList());
+  }
+
+  private class MockStartValidatorProvider implements ValidatorProvider {
+    private final BLSKeyPair keyPair;
+
+    private MockStartValidatorProvider(final BLSKeyPair keyPair) {
+      this.keyPair = keyPair;
+    }
+
+    @Override
+    public BLSPublicKey getPublicKey() {
+      return keyPair.getPublicKey();
+    }
+
+    @Override
+    public Signer createSigner() {
+      return new LocalSigner(keyPair, asyncRunner);
+    }
   }
 }
