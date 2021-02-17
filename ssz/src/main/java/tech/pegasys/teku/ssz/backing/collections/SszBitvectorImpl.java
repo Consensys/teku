@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
@@ -35,11 +38,12 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
 
   public SszBitvectorImpl(SszVectorSchema<SszBit, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
-    value = toBitvectorImpl(this);
+    value = BitvectorImpl.fromBytes(sszSerialize(), size());
   }
 
   public SszBitvectorImpl(SszBitvectorSchema<?> schema, BitvectorImpl value) {
     super(schema, () -> schema.sszDeserializeTree(SszReader.fromBytes(value.serialize())));
+    checkNotNull(value);
     this.value = value;
   }
 
