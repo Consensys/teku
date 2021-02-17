@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
@@ -42,7 +41,6 @@ import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.config.Constants;
 
 class StoreTest extends AbstractStoreTest {
 
@@ -194,8 +192,11 @@ class StoreTest extends AbstractStoreTest {
   @Test
   public void retrieveCheckpointState_invalidState() {
     final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState futureBlockAndState =
-        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
+
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 startSlot =
+        specProvider.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final SignedBlockAndState futureBlockAndState = chainBuilder.generateBlockAtSlot(startSlot);
 
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureBlockAndState.getRoot());
 
@@ -207,7 +208,7 @@ class StoreTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(UInt64.ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
@@ -229,8 +230,10 @@ class StoreTest extends AbstractStoreTest {
   public void
       retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot() {
     final UpdatableStore store = createGenesisStore();
-    final Bytes32 futureRoot =
-        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2))).getRoot();
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 startSlot =
+        specProvider.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final Bytes32 futureRoot = chainBuilder.generateBlockAtSlot(startSlot).getRoot();
 
     // Add blocks
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
@@ -245,7 +248,9 @@ class StoreTest extends AbstractStoreTest {
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
     final UpdatableStore store = createGenesisStore();
-    final UInt64 epoch3Slot = compute_start_slot_at_epoch(UInt64.valueOf(4));
+    final UInt64 epoch3 = UInt64.valueOf(4);
+    final UInt64 epoch3Slot =
+        specProvider.atEpoch(epoch3).getBeaconStateUtil().computeStartSlotAtEpoch(epoch3);
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
 
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();

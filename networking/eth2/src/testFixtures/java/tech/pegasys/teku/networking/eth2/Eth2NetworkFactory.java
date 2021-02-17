@@ -71,7 +71,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
@@ -128,7 +129,8 @@ public class Eth2NetworkFactory {
     protected Duration eth2RpcPingInterval;
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
-    protected SpecConstants specConstants = ConstantsLoader.loadConstants("minimal");
+    protected SpecProvider specProvider = StubSpecProvider.createMinimal();
+    protected SpecConstants specConstants = specProvider.getGenesisSpecConstants();
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -182,7 +184,8 @@ public class Eth2NetworkFactory {
                 eth2StatusUpdateInterval,
                 StubTimeProvider.withTimeInSeconds(1000),
                 500,
-                50);
+                50,
+                specProvider);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()

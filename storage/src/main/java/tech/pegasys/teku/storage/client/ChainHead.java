@@ -21,7 +21,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 class ChainHead extends StateAndBlockSummary {
   private final UInt64 forkChoiceSlot;
@@ -40,7 +39,7 @@ class ChainHead extends StateAndBlockSummary {
     return forkChoiceSlot;
   }
 
-  public UInt64 findCommonAncestor(final ChainHead other) {
+  public UInt64 findCommonAncestor(final ChainHead other, final int slotsPerHistoricalRoot) {
     if (getSlot().equals(UInt64.ZERO) || other.getSlot().equals(UInt64.ZERO)) {
       // One fork has no blocks so the only possible common ancestor is genesis.
       return UInt64.ZERO;
@@ -49,8 +48,8 @@ class ChainHead extends StateAndBlockSummary {
     final UInt64 longestChainSlot = getSlot().max(other.getSlot());
     UInt64 minSlotWithHistoricRoot =
         longestChainSlot
-            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // Avoid underflow
-            .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
+            .max(slotsPerHistoricalRoot) // Avoid underflow
+            .minus(slotsPerHistoricalRoot);
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
       if (getBlockRootAtSlot(slot).equals(other.getBlockRootAtSlot(slot))) {
         return slot;

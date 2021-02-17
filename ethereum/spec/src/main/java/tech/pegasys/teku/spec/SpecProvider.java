@@ -77,6 +77,10 @@ public class SpecProvider {
     return atEpoch(epoch).getConstants().getSecondsPerSlot();
   }
 
+  public UInt64 startSlotAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+  }
+
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
     return atEpoch(epoch).getConstants().getDomainBeaconProposer();
   }

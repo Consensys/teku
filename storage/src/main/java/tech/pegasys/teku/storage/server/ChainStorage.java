@@ -38,12 +38,8 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel {
-
-  private static final int FINALIZED_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 3;
-
   private final EventBus eventBus;
 
   private final Database database;
@@ -59,9 +55,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
     this.finalizedStateCache = finalizedStateCache;
   }
 
-  public static ChainStorage create(final EventBus eventBus, final Database database) {
+  public static ChainStorage create(
+      final EventBus eventBus, final Database database, final int slotsPerEpoch) {
+    final int finalizedStateCacheSize = slotsPerEpoch * 3;
     return new ChainStorage(
-        eventBus, database, new FinalizedStateCache(database, FINALIZED_STATE_CACHE_SIZE, true));
+        eventBus, database, new FinalizedStateCache(database, finalizedStateCacheSize, true));
   }
 
   public void start() {

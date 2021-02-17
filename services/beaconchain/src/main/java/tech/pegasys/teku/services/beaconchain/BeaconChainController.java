@@ -272,7 +272,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    eventBus))
+                    eventBus,
+                    specProvider))
         .thenCompose(
             client -> {
               // Setup chain storage
@@ -383,7 +384,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CombinedChainDataClient(
             recentChainData,
             eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
-            stateTransition);
+            stateTransition,
+            specProvider);
   }
 
   @VisibleForTesting
@@ -584,6 +586,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .asyncRunner(networkAsyncRunner)
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
+            .specProvider(specProvider)
             .build();
   }
 

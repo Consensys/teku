@@ -22,13 +22,17 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainHeadTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final int slotsPerHistoricalRoot =
+      specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot();
 
   @Test
   public void equals_shouldBeEqualToCopy() {
@@ -70,8 +74,10 @@ public class ChainHeadTest {
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10));
     final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12));
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ZERO);
   }
 
   @Test
@@ -82,8 +88,10 @@ public class ChainHeadTest {
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2));
     final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(2));
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ONE);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ONE);
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ONE);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ONE);
   }
 
   @Test
@@ -102,8 +110,10 @@ public class ChainHeadTest {
 
     final ChainHead chainHeadA = ChainHead.create(chainHead, UInt64.valueOf(8));
     final ChainHead chainHeadB = ChainHead.create(forkHead, UInt64.valueOf(9));
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.valueOf(2));
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.valueOf(2));
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.valueOf(2));
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.valueOf(2));
   }
 
   @Test
@@ -113,17 +123,21 @@ public class ChainHeadTest {
     final ChainBuilder fork = chainBuilder.fork();
 
     final SignedBlockAndState chainHead =
-        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_HISTORICAL_ROOT + 2);
+        chainBuilder.generateBlockAtSlot(
+            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 2);
 
     // Fork skips slot 1 so the chains are different
     fork.generateBlockAtSlot(1);
     final SignedBlockAndState forkHead =
-        fork.generateBlockAtSlot(Constants.SLOTS_PER_HISTORICAL_ROOT + 2);
+        fork.generateBlockAtSlot(
+            specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 2);
 
     final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot());
     final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot());
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA, slotsPerHistoricalRoot))
+        .isEqualTo(UInt64.ZERO);
   }
 
   private ChainHead copy(ChainHead original) {

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.state;
 
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
-
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,10 +26,13 @@ public class StateRootRecorder {
   private UInt64 slot;
   private final BiConsumer<Bytes32, UInt64> stateRootConsumer;
 
-  public StateRootRecorder(final UInt64 slot, final BiConsumer<Bytes32, UInt64> stateRootConsumer) {
+  public StateRootRecorder(
+      final UInt64 slot,
+      final BiConsumer<Bytes32, UInt64> stateRootConsumer,
+      final int slotsPerHistoricalRoot) {
     this.stateRootConsumer = stateRootConsumer;
     this.slot = slot;
-    this.slotsPerHistoricalRoot = UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT);
+    this.slotsPerHistoricalRoot = UInt64.valueOf(slotsPerHistoricalRoot);
   }
 
   public void acceptNextState(final BeaconState state) {

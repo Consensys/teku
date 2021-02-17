@@ -79,7 +79,8 @@ public class InMemoryStorageSystemBuilder {
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
 
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig);
+    return StorageSystem.create(
+        database, createRestartSupplier(), storageMode, storeConfig, specProvider);
   }
 
   public InMemoryStorageSystemBuilder specProvider(final SpecProvider specProvider) {

@@ -20,6 +20,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -76,12 +77,15 @@ public class StorageSystem implements AutoCloseable {
       final Database database,
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode,
-      final StoreConfig storeConfig) {
+      final StoreConfig storeConfig,
+      final SpecProvider specProvider) {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
+    final ChainStorage chainStorageServer =
+        ChainStorage.create(
+            eventBus, database, specProvider.getGenesisSpecConstants().getSlotsPerEpoch());
     chainStorageServer.start();
 
     // Create recent chain data
@@ -99,11 +103,12 @@ public class StorageSystem implements AutoCloseable {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
-            eventBus);
+            eventBus,
+            specProvider);
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, chainStorageServer);
+        new CombinedChainDataClient(recentChainData, chainStorageServer, specProvider);
 
     // Return storage system
     return new StorageSystem(

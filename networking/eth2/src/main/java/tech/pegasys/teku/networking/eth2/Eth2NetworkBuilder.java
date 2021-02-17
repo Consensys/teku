@@ -55,6 +55,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -89,6 +90,7 @@ public class Eth2NetworkBuilder {
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
   private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
+  private SpecProvider specProvider;
 
   private Eth2NetworkBuilder() {}
 
@@ -116,7 +118,8 @@ public class Eth2NetworkBuilder {
             eth2StatusUpdateInterval,
             timeProvider,
             config.getPeerRateLimit(),
-            config.getPeerRequestLimit());
+            config.getPeerRequestLimit(),
+            specProvider);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -356,6 +359,12 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder requiredCheckpoint(final Optional<Checkpoint> requiredCheckpoint) {
     checkNotNull(requiredCheckpoint);
     this.requiredCheckpoint = requiredCheckpoint;
+    return this;
+  }
+
+  public Eth2NetworkBuilder specProvider(final SpecProvider specProvider) {
+    checkNotNull(specProvider);
+    this.specProvider = specProvider;
     return this;
   }
 }
