@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

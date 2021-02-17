@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ValidatorsUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

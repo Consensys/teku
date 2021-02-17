@@ -21,8 +21,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

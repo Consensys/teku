@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.util;
+package tech.pegasys.teku.spec.util;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
@@ -67,6 +67,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -654,15 +656,57 @@ public final class DataStructureUtil {
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
+  public Optional<SpecProvider> getSpecProvider() {
+    return maybeSpecProvider;
+  }
+
+  int getSlotsPerHistoricalRoot() {
+    return getConstant(
+        SpecConstants::getSlotsPerHistoricalRoot, Constants.SLOTS_PER_HISTORICAL_ROOT);
+  }
+
+  int getHistoricalRootsLimit() {
+    return getConstant(SpecConstants::getHistoricalRootsLimit, Constants.HISTORICAL_ROOTS_LIMIT);
+  }
+
+  int getEpochsPerEth1VotingPeriod() {
+    return getConstant(
+        SpecConstants::getEpochsPerEth1VotingPeriod, Constants.EPOCHS_PER_ETH1_VOTING_PERIOD);
+  }
+
+  int getSlotsPerEpoch() {
+    return getConstant(SpecConstants::getSlotsPerEpoch, Constants.SLOTS_PER_EPOCH);
+  }
+
+  long getValidatorRegistryLimit() {
+    return getConstant(
+        SpecConstants::getValidatorRegistryLimit, Constants.VALIDATOR_REGISTRY_LIMIT);
+  }
+
+  long getEpochsPerHistoricalVector() {
+    return getConstant(
+        SpecConstants::getEpochsPerHistoricalVector, Constants.EPOCHS_PER_HISTORICAL_VECTOR);
+  }
+
+  long getEpochsPerSlashingsVector() {
+    return getConstant(
+        SpecConstants::getEpochsPerSlashingsVector, Constants.EPOCHS_PER_SLASHINGS_VECTOR);
+  }
+
   private int getMaxProposerSlashings() {
     return getConstant(SpecConstants::getMaxProposerSlashings, Constants.MAX_PROPOSER_SLASHINGS);
+  }
+
+  int getJustificationBitsLength() {
+    return getConstant(
+        SpecConstants::getJustificationBitsLength, Constants.JUSTIFICATION_BITS_LENGTH);
   }
 
   private int getMaxAttesterSlashings() {
     return getConstant(SpecConstants::getMaxAttesterSlashings, Constants.MAX_ATTESTER_SLASHINGS);
   }
 
-  private int getMaxAttestations() {
+  int getMaxAttestations() {
     return getConstant(SpecConstants::getMaxAttestations, Constants.MAX_ATTESTATIONS);
   }
 
@@ -710,7 +754,7 @@ public final class DataStructureUtil {
         .orElse(compute_signing_root(proofOfPossessionData, domain));
   }
 
-  private UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
+  UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return maybeSpecProvider
         .map(
             specProvider ->

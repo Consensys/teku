@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class PublicKeyLoaderTest {

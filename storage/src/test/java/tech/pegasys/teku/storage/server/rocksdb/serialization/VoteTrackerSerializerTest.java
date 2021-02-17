@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class VoteTrackerSerializerTest {
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
