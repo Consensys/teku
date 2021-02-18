@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -113,9 +112,8 @@ public class MikuliSignature implements Signature {
   }
 
   @Override
-  public boolean verify(PublicKey publicKey, Bytes message, String dst) {
-    Bytes dstBytes = Bytes.wrap(dst.getBytes(StandardCharsets.US_ASCII));
-    G2Point hashInGroup2 = new G2Point(hashToG2(message, dstBytes));
+  public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
     return verify(MikuliPublicKey.fromPublicKey(publicKey), hashInGroup2);
   }
 
