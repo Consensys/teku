@@ -8,7 +8,6 @@
   chain head block is imported. The `--Xvalidators-dependent-root-enabled` option can be used to switch to the new behaviour now for testing.
   Note: this should be applied to both the beacon node and validator client if running separately.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
-- Upgraded to use BLS implementation BLST version 0.3.2. 
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -30,6 +29,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated the ENRs for MainNet bootnodes run by the Nimbus team.
 - Added a `is_syncing` field to the `/eth/v1/node/syncing` endpoint to explicitly indicate if the node is in sync or not. 
 - Teku will now exit when database writes fail (e.g. due to disk failure) to enable systems like kubernetes to better identify and respond to the failure.
+- Reduced time required to load local validator keys at startup.
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
