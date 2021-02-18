@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -45,7 +45,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class GossipMessageHandlerIntegrationTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -185,11 +185,11 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
-    final Eth2Network network1 = node1.network();
+    final Eth2P2PNetwork network1 = node1.network();
 
     // Setup network 2
     final NodeManager node2 = createNodeManager(networkBuilder2);
-    final Eth2Network network2 = node2.network();
+    final Eth2P2PNetwork network2 = node2.network();
 
     // Connect networks 1 -> 2
     waitFor(node1.connect(node2));
@@ -236,11 +236,11 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
-    final Eth2Network network1 = node1.network();
+    final Eth2P2PNetwork network1 = node1.network();
 
     // Setup network 2
     final NodeManager node2 = createNodeManager(networkBuilder2);
-    final Eth2Network network2 = node2.network();
+    final Eth2P2PNetwork network2 = node2.network();
 
     // Connect networks 1 -> 2
     waitFor(node1.connect(node2));
@@ -302,11 +302,11 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
-    final Eth2Network network1 = node1.network();
+    final Eth2P2PNetwork network1 = node1.network();
 
     // Setup network 2
     final NodeManager node2 = createNodeManager(networkBuilder2);
-    final Eth2Network network2 = node2.network();
+    final Eth2P2PNetwork network2 = node2.network();
 
     // Connect networks 1 -> 2
     waitFor(node1.connect(node2));

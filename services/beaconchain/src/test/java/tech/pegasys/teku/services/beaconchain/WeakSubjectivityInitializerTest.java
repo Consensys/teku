@@ -29,8 +29,8 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -41,7 +41,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class WeakSubjectivityInitializerTest {
   private final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final WeakSubjectivityConfig defaultConfig =
       WeakSubjectivityConfig.builder().specProvider(specProvider).build();
   private final WeakSubjectivityInitializer initializer = new WeakSubjectivityInitializer();

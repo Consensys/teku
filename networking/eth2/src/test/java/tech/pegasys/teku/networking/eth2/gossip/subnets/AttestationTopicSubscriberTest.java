@@ -28,14 +28,15 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 
 class AttestationTopicSubscriberTest {
 
   private static final UInt64 COMMITTEES_AT_SLOT = UInt64.valueOf(20);
-  private final Eth2Network eth2Network = mock(Eth2Network.class);
+  private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
 
-  private final AttestationTopicSubscriber subscriber = new AttestationTopicSubscriber(eth2Network);
+  private final AttestationTopicSubscriber subscriber =
+      new AttestationTopicSubscriber(eth2P2PNetwork);
 
   @Test
   public void shouldSubscribeToSubnet() {
@@ -44,7 +45,7 @@ class AttestationTopicSubscriberTest {
         computeSubnetForCommittee(ONE, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, ONE);
 
-    verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -57,7 +58,7 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, aggregationSlot);
     subscriber.onSlot(aggregationSlot.plus(ONE));
 
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -70,7 +71,7 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(subnetId, COMMITTEES_AT_SLOT, aggregationSlot);
     subscriber.onSlot(aggregationSlot);
 
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -89,10 +90,10 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, secondSlot);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(anyInt());
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(anyInt());
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -111,10 +112,10 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, firstSlot);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(anyInt());
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(anyInt());
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -126,10 +127,10 @@ class AttestationTopicSubscriberTest {
 
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
-    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(1, 2));
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(1, 2));
 
-    verify(eth2Network).subscribeToAttestationSubnetId(1);
-    verify(eth2Network).subscribeToAttestationSubnetId(2);
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(1);
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(2);
   }
 
   @Test
@@ -140,18 +141,18 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(1, COMMITTEES_AT_SLOT, someSlot);
     subscriber.subscribeToCommitteeForAggregation(2, COMMITTEES_AT_SLOT, someSlot);
 
-    verify(eth2Network)
+    verify(eth2P2PNetwork)
         .subscribeToAttestationSubnetId(
             computeSubnetForCommittee(someSlot, UInt64.valueOf(1), COMMITTEES_AT_SLOT));
-    verify(eth2Network)
+    verify(eth2P2PNetwork)
         .subscribeToAttestationSubnetId(
             computeSubnetForCommittee(someSlot, UInt64.valueOf(2), COMMITTEES_AT_SLOT));
 
     subscriber.subscribeToPersistentSubnets(subnetSubscription);
 
-    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(2));
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(2));
 
-    verify(eth2Network).subscribeToAttestationSubnetId(2);
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(2);
   }
 
   @Test
@@ -166,10 +167,10 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -185,10 +186,10 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
@@ -201,18 +202,19 @@ class AttestationTopicSubscriberTest {
         Set.of(new SubnetSubscription(subnetId, firstSlot));
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions1);
 
-    verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
-    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(subnetId));
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(Set.of(subnetId));
 
     Set<SubnetSubscription> subnetSubscriptions2 =
         Set.of(new SubnetSubscription(subnetId, secondSlot));
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions2);
 
-    verifyNoMoreInteractions(eth2Network);
+    verifyNoMoreInteractions(eth2P2PNetwork);
 
     subscriber.onSlot(secondSlot.plus(ONE));
 
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
-    verify(eth2Network, times(2)).setLongTermAttestationSubnetSubscriptions(Collections.emptySet());
+    verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2P2PNetwork, times(2))
+        .setLongTermAttestationSubnetSubscriptions(Collections.emptySet());
   }
 }

@@ -33,7 +33,7 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -45,7 +45,7 @@ import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFact
 public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Eth2Network eth2Network = mock(Eth2Network.class);
+  private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
@@ -68,7 +68,7 @@ public class FetchRecentBlocksServiceTest {
     recentBlockFetcher =
         new FetchRecentBlocksService(
             asyncRunner,
-            eth2Network,
+            eth2P2PNetwork,
             pendingBlocksPool,
             forwardSync,
             fetchBlockTaskFactory,

@@ -22,12 +22,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class StateRootRecorderTest {
-  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   final Map<UInt64, Bytes32> stateRoots = new HashMap<>();
   final BeaconState state = dataStructureUtil.randomBeaconState();

@@ -21,13 +21,13 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class NetworkDataProviderTest {
 
   @SuppressWarnings("unchecked")
-  private final Eth2Network p2pNetwork = mock(Eth2Network.class);
+  private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
 
   @Test
   void getPeerCount_shouldReturnTotalPeers() {

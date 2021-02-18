@@ -24,8 +24,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.pegasys.teku.compatibility.multiclient.clients.Prysm;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.util.config.Constants;
@@ -35,8 +35,8 @@ class StatusMessageCompatibilityTest {
 
   @Container private static final Prysm PRYSM_NODE = new Prysm();
 
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private Eth2Network teku;
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private Eth2P2PNetwork teku;
 
   @BeforeEach
   public void setUp() throws Exception {

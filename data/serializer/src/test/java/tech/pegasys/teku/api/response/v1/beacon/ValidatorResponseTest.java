@@ -23,15 +23,15 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorResponseTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   final Bytes48 key = dataStructureUtil.randomPublicKeyBytes();
   final Bytes32 creds = dataStructureUtil.randomBytes32();
-  final SpecProvider specProvider = StubSpecProvider.create();
+  final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
   final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
 
