@@ -18,7 +18,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -55,7 +54,10 @@ import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.ConstantsLoader;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
@@ -65,6 +67,7 @@ public class TekuNode extends Node {
   private final SimpleHttpClient httpClient;
   private final Config config;
   private final JsonProvider jsonProvider = new JsonProvider();
+  private final SpecProvider specProvider;
 
   private boolean started = false;
   private Set<File> configFiles;
@@ -73,6 +76,11 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
+    final SpecConfiguration specConfig =
+        SpecConfiguration.builder()
+            .constants(ConstantsLoader.loadConstants(config.getNetworkName()))
+            .build();
+    this.specProvider = SpecProvider.create(specConfig);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -277,7 +285,7 @@ public class TekuNode extends Node {
               block.message.body.attestations.stream()
                   .map(
                       a ->
-                          get_attesting_indices(
+                          specProvider.getAttestingIndices(
                               internalBeaconState,
                               a.asInternalAttestation().getData(),
                               a.asInternalAttestation().getAggregation_bits()))
@@ -367,13 +375,14 @@ public class TekuNode extends Node {
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
+    private String networkName = "swift";
     private Map<String, Object> configMap = new HashMap<>();
 
     private Optional<String> validatorKeys = Optional.empty();
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
 
     public Config() {
-      configMap.put("network", "swift");
+      configMap.put("network", networkName);
       configMap.put("p2p-enabled", false);
       configMap.put("p2p-discovery-enabled", false);
       configMap.put("p2p-port", P2P_PORT);
@@ -419,6 +428,7 @@ public class TekuNode extends Node {
     }
 
     public Config withNetwork(String networkName) {
+      this.networkName = networkName;
       configMap.put("network", networkName);
       return this;
     }
@@ -458,6 +468,10 @@ public class TekuNode extends Node {
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
       return configFiles;
+    }
+
+    public String getNetworkName() {
+      return networkName;
     }
 
     private void writeTo(final File configFile) throws Exception {
