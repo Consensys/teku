@@ -45,7 +45,7 @@ public class BatchBlockValidator implements BlockValidator {
         return new SimpleBlockValidator()
             .validatePreState(preState, block, indexedAttestationProvider);
       } else {
-        return new BlockValidationResult(true);
+        return BlockValidationResult.SUCCESSFUL;
       }
     }
   }

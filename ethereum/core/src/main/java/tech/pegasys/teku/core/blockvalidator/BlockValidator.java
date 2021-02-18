@@ -27,18 +27,23 @@ public interface BlockValidator {
   /** Represents block validation result which may contain reason exception in case of a failure */
   class BlockValidationResult {
     public static BlockValidationResult SUCCESSFUL = new BlockValidationResult(true);
+    public static BlockValidationResult FAILED = new BlockValidationResult(false);
 
     private final boolean isValid;
     private final Exception reason;
 
-    public BlockValidationResult(Exception reason) {
+    private BlockValidationResult(Exception reason) {
       this.isValid = false;
       this.reason = reason;
     }
 
-    public BlockValidationResult(boolean isValid) {
+    private BlockValidationResult(boolean isValid) {
       this.isValid = isValid;
       reason = null;
+    }
+
+    public static BlockValidationResult failedExceptionally(final Exception reason) {
+      return new BlockValidationResult(reason);
     }
 
     public boolean isValid() {

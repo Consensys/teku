@@ -85,17 +85,17 @@ public class SimpleBlockValidator implements BlockValidator {
 
         if (!BlockProcessorUtil.verify_proposer_slashings(
             preState, blockBody.getProposer_slashings(), signatureVerifier)) {
-          return new BlockValidationResult(false);
+          return BlockValidationResult.FAILED;
         }
 
         if (!BlockProcessorUtil.verify_voluntary_exits(
             preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
-          return new BlockValidationResult(false);
+          return BlockValidationResult.FAILED;
         }
       }
-      return new BlockValidationResult(true);
+      return BlockValidationResult.SUCCESSFUL;
     } catch (BlockProcessingException | InvalidSignatureException e) {
-      return new BlockValidationResult(e);
+      return BlockValidationResult.failedExceptionally(e);
     }
   }
 
@@ -103,7 +103,7 @@ public class SimpleBlockValidator implements BlockValidator {
   public BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
     if (verifyPostStateRoot
         && !block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
-      return new BlockValidationResult(
+      return BlockValidationResult.failedExceptionally(
           new StateTransitionException(
               "Block state root does NOT match the calculated state root!\n"
                   + "Block state root: "
@@ -111,7 +111,7 @@ public class SimpleBlockValidator implements BlockValidator {
                   + "New state root: "
                   + postState.hashTreeRoot().toHexString()));
     } else {
-      return new BlockValidationResult(true);
+      return BlockValidationResult.SUCCESSFUL;
     }
   }
 
