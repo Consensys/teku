@@ -17,22 +17,18 @@ import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
 public interface SszBitlist extends SszList<SszBit>, SszPrimitiveList<Boolean, SszBit> {
 
-
-
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
     return SszBitlistImpl.nullableOr(bitlist1OrNull, bitlist2OrNull);
   }
 
-    @Override
-
+  @Override
   default SszMutablePrimitiveList<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }

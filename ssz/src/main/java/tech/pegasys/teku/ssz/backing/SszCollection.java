@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 
 public interface SszCollection<ElementT extends SszData>
     extends SszComposite<ElementT>, Iterable<ElementT> {

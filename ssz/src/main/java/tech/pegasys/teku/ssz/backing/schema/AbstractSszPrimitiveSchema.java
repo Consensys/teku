@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -27,10 +28,11 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 /**
  * Represents primitive view type
  *
- * @param <SszType> Class of the basic view of this type
+ * @param <SszDataT> Class of the basic view of this type
  */
-public abstract class AbstractSszPrimitiveSchema<RawType, SszType extends SszData>
-    implements SszPrimitiveSchema<RawType, SszType> {
+public abstract class AbstractSszPrimitiveSchema<
+        DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
+    implements SszPrimitiveSchema<DataT, SszDataT> {
 
   private final int bitsSize;
 
@@ -46,19 +48,19 @@ public abstract class AbstractSszPrimitiveSchema<RawType, SszType extends SszDat
   }
 
   @Override
-  public SszType createFromBackingNode(TreeNode node) {
+  public SszDataT createFromBackingNode(TreeNode node) {
     return createFromBackingNode(node, 0);
   }
 
   @Override
-  public final SszType createFromBackingNode(TreeNode node, int internalIndex) {
+  public final SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
 
-  public abstract SszType createFromLeafBackingNode(LeafDataNode node, int internalIndex);
+  public abstract SszDataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
-  public TreeNode createBackingNode(SszType newValue) {
+  public TreeNode createBackingNode(SszDataT newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 

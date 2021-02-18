@@ -19,7 +19,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
