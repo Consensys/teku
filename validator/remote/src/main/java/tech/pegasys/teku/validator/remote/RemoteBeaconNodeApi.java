@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import okhttp3.OkHttpClient.Builder;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -90,7 +89,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
   }
 
-  private static void addAuthenticator(final HttpUrl apiEndpoint, final Builder httpClientBuilder) {
+  private static void addAuthenticator(
+      final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
     final String username = apiEndpoint.username();
     final String password = apiEndpoint.password();
     if (!Strings.isNullOrEmpty(apiEndpoint.password())) {
