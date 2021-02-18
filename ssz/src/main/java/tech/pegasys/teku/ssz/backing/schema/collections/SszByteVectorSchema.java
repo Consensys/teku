@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public interface SszByteVectorSchema<SszVectorT extends SszByteVector>

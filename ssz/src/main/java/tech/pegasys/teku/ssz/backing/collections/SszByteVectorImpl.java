@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
