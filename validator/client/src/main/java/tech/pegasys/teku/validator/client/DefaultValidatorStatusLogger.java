@@ -52,6 +52,10 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   @Override
   public SafeFuture<Void> printInitialValidatorStatuses() {
+    if (validators.hasNoValidators()) {
+      return SafeFuture.COMPLETE;
+    }
+
     return validatorApiChannel
         .getValidatorStatuses(validators.getPublicKeys())
         .thenCompose(
@@ -62,7 +66,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
               latestValidatorStatuses.set(validatorStatuses);
-              if (validators.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
+              if (validators.getValidatorCount() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {
                 printValidatorStatusSummary(validatorStatuses);
@@ -118,7 +122,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   @Override
   public void checkValidatorStatusChanges() {
-    if (!startupComplete.get()) {
+    if (!startupComplete.get() || validators.hasNoValidators()) {
       return;
     }
 

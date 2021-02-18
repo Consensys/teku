@@ -31,15 +31,15 @@ public class OwnedValidators {
     return unmodifiableSet(validators.keySet());
   }
 
-  public boolean isEmpty() {
+  public boolean hasNoValidators() {
     return validators.isEmpty();
   }
 
-  public int size() {
+  public int getValidatorCount() {
     return validators.size();
   }
 
-  public Validator get(final BLSPublicKey publicKey) {
+  public Validator getValidator(final BLSPublicKey publicKey) {
     return validators.get(publicKey);
   }
 }

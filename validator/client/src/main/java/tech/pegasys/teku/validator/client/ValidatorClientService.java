@@ -146,12 +146,8 @@ public class ValidatorClientService extends Service {
     this.blockProductionTimingChannel =
         new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots);
     addValidatorCountMetric(metricsSystem, validators);
-    if (!validators.isEmpty()) {
-      this.validatorStatusLogger =
-          new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);
-    } else {
-      this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
-    }
+    this.validatorStatusLogger =
+        new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -164,7 +160,7 @@ public class ValidatorClientService extends Service {
         TekuMetricCategory.VALIDATOR,
         "local_validator_count",
         "Current number of validators running in this validator client",
-        validators::size);
+        validators::getValidatorCount);
   }
 
   @Override

@@ -158,7 +158,11 @@ public class VoluntaryExitCommand implements Runnable {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
       final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
       final BLSSignature signature =
-          validators.get(publicKey).getSigner().signVoluntaryExit(message, forkInfo).join();
+          validators
+              .getValidator(publicKey)
+              .getSigner()
+              .signVoluntaryExit(message, forkInfo)
+              .join();
       apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
       SUB_COMMAND_LOG.display(
           "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
@@ -229,7 +233,7 @@ public class VoluntaryExitCommand implements Runnable {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
     }
-    if (validators.isEmpty()) {
+    if (validators.hasNoValidators()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
     }

@@ -75,7 +75,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
 
   private SafeFuture<Void> scheduleDuties(
       final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
-    final Validator validator = validators.get(duty.getPublicKey());
+    final Validator validator = validators.getValidator(duty.getPublicKey());
     final int aggregatorModulo =
         specProvider
             .atSlot(duty.getSlot())
