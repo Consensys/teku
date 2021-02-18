@@ -270,9 +270,9 @@ public class BeaconStateUtil {
     return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
 
-  public Bytes computeSigningRoot(long number, Bytes32 domain) {
+  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
     SigningData domainWrappedObject =
-        new SigningData(new SszPrimitives.SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
+        new SigningData(new SszPrimitives.SszUInt64(number).hashTreeRoot(), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
@@ -485,7 +485,7 @@ public class BeaconStateUtil {
         getCommitteeCountPerSlot(state, computeEpochAtSlot(attestationSlot)));
   }
 
-  private void processDeposit(MutableBeaconState state, Deposit deposit) {
+  public void processDeposit(MutableBeaconState state, Deposit deposit) {
     checkArgument(
         isValidMerkleBranch(
             deposit.getData().hashTreeRoot(),
