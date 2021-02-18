@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.datastructures.types;
 
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -31,6 +32,14 @@ public class SszPublicKey extends SszByteVectorImpl {
   }
 
   public BLSPublicKey getBLSPublicKey() {
+    if (publicKey == null) {
+      publicKey = BLSPublicKey.fromBytesCompressed(getBytes());
+    }
     return publicKey;
+  }
+
+  @Override
+  public Bytes48 getBytes() {
+    return Bytes48.wrap(super.getBytes());
   }
 }
