@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -151,14 +151,19 @@ public class SpecProvider {
     atState(state).getBlockProcessorUtil().processAttesterSlashings(state, attesterSlashings);
   }
 
+  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processAttestations(state, attestations);
+  }
+
   public void processAttestations(
       MutableBeaconState state,
       SSZList<Attestation> attestations,
-      IndexedAttestationProvider indexedAttestationProvider)
+      BlockProcessorUtil.IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
         .getBlockProcessorUtil()
-        .processAttestations(state, attestations, indexedAttestationProvider);
+        .processAttestations(state, attestations, indexedAttestationCache);
   }
 
   public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
