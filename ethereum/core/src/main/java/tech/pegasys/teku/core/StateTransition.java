@@ -112,9 +112,8 @@ public class StateTransition {
       BeaconState postState = process_block(blockSlotState, signedBlock.getMessage());
 
       BlockValidationResult blockValidationResult =
-          blockValidator
-              .validate(blockSlotState, signedBlock, postState, indexedAttestationProvider)
-              .join();
+          blockValidator.validate(
+              blockSlotState, signedBlock, postState, indexedAttestationProvider);
 
       if (!blockValidationResult.isValid()) {
         throw new BlockProcessingException(blockValidationResult.getReason());
