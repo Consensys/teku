@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -82,7 +83,7 @@ class ValidatorIndexProviderTest {
     assertThat(provider.getValidatorIndex(key2)).contains(20);
     assertThat(provider.getValidatorIndex(key3)).isEmpty();
 
-    when(validatorApiChannel.getValidatorIndices(List.of(key1, key3)))
+    when(validatorApiChannel.getValidatorIndices(Set.of(key1, key3)))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key3, 300)));
     provider.lookupValidators();
 
@@ -94,13 +95,13 @@ class ValidatorIndexProviderTest {
   @Test
   void shouldNotMakeConcurrentRequests() {
     final SafeFuture<Map<BLSPublicKey, Integer>> result = new SafeFuture<>();
-    when(validatorApiChannel.getValidatorIndices(List.of(key1))).thenReturn(result);
+    when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(result);
 
     final ValidatorIndexProvider provider =
         new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
 
     provider.lookupValidators();
-    verify(validatorApiChannel).getValidatorIndices(List.of(key1));
+    verify(validatorApiChannel).getValidatorIndices(Set.of(key1));
 
     provider.lookupValidators();
     verifyNoMoreInteractions(validatorApiChannel);
@@ -108,7 +109,7 @@ class ValidatorIndexProviderTest {
     // Can request again once the request completes.
     result.complete(Collections.emptyMap());
     provider.lookupValidators();
-    verify(validatorApiChannel, times(2)).getValidatorIndices(List.of(key1));
+    verify(validatorApiChannel, times(2)).getValidatorIndices(Set.of(key1));
   }
 
   @Test
@@ -116,7 +117,7 @@ class ValidatorIndexProviderTest {
     final ValidatorIndexProvider provider =
         new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
 
-    when(validatorApiChannel.getValidatorIndices(List.of(key1)))
+    when(validatorApiChannel.getValidatorIndices(Set.of(key1)))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1)));
     provider.lookupValidators();
 
@@ -133,7 +134,7 @@ class ValidatorIndexProviderTest {
         new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
 
     final SafeFuture<Map<BLSPublicKey, Integer>> requestResult = new SafeFuture<>();
-    when(validatorApiChannel.getValidatorIndices(List.of(key1))).thenReturn(requestResult);
+    when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(requestResult);
 
     final SafeFuture<Collection<Integer>> result = provider.getValidatorIndices(List.of(key1));
     assertThat(result).isNotDone();

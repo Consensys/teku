@@ -61,7 +61,6 @@ public class ValidatorIndexProvider {
             knownValidators -> {
               logNewValidatorIndices(knownValidators);
               validatorIndexesByPublicKey.putAll(knownValidators);
-              unknownValidators.removeAll(knownValidators.keySet());
               firstSuccessfulRequest.complete(null);
             })
         .orTimeout(30, TimeUnit.SECONDS)

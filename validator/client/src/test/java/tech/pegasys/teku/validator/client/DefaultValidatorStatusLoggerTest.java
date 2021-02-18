@@ -19,10 +19,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -35,7 +36,7 @@ public class DefaultValidatorStatusLoggerTest {
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final BLSPublicKey validatorKey = BLSTestUtil.randomPublicKey(0);
-  private final List<BLSPublicKey> validatorKeys = List.of(validatorKey);
+  private final Collection<BLSPublicKey> validatorKeys = Set.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DefaultValidatorStatusLogger logger =
