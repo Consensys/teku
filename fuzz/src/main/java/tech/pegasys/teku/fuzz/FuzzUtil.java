@@ -34,8 +34,10 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.ConstantsLoader;
+import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -46,6 +48,8 @@ public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
+  private final SpecConfiguration specConfiguration;
+  private final SpecConstants specConstants;
   private final SpecProvider specProvider;
 
   // Size of ValidatorIndex returned by shuffle
@@ -55,8 +59,9 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
-    final String networkName = useMainnetConfig ? "mainnet" : "minimal";
-    specProvider = NetworkSpecProviderFactory.create(networkName);
+    this.specConstants = ConstantsLoader.loadConstants(useMainnetConfig ? "mainnet" : "minimal");
+    this.specConfiguration = SpecConfiguration.builder().constants(specConstants).build();
+    specProvider = SpecProvider.create(specConfiguration);
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;

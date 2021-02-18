@@ -54,8 +54,9 @@ import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.ConstantsLoader;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
@@ -75,7 +76,11 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
-    this.specProvider = NetworkSpecProviderFactory.create(config.getNetworkName());
+    final SpecConfiguration specConfig =
+        SpecConfiguration.builder()
+            .constants(ConstantsLoader.loadConstants(config.getNetworkName()))
+            .build();
+    this.specProvider = SpecProvider.create(specConfig);
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
