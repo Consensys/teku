@@ -24,9 +24,9 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
@@ -50,7 +50,7 @@ public class BeaconStateBuilder {
   private SSZVector<UInt64> slashings;
   private SSZList<PendingAttestation> previousEpochAttestations;
   private SSZList<PendingAttestation> currentEpochAttestations;
-  private Bitvector justificationBits;
+  private SszBitvector justificationBits;
   private Checkpoint previousJustifiedCheckpoint;
   private Checkpoint currentJustifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
@@ -161,7 +161,7 @@ public class BeaconStateBuilder {
             dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
     justificationBits =
-        dataStructureUtil.randomBitvector(dataStructureUtil.getJustificationBitsLength());
+        dataStructureUtil.randomSszBitvector(dataStructureUtil.getJustificationBitsLength());
     previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
     currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
     finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
@@ -276,7 +276,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder justificationBits(final Bitvector justificationBits) {
+  public BeaconStateBuilder justificationBits(final SszBitvector justificationBits) {
     checkNotNull(justificationBits);
     this.justificationBits = justificationBits;
     return this;

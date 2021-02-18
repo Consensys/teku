@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconState {
@@ -80,7 +80,7 @@ public class BeaconState {
   public final List<PendingAttestation> current_epoch_attestations;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bitvector justification_bits;
+  public final SszBitvector justification_bits;
 
   public final Checkpoint previous_justified_checkpoint;
   public final Checkpoint current_justified_checkpoint;
@@ -107,7 +107,7 @@ public class BeaconState {
           final List<PendingAttestation> previous_epoch_attestations,
       @JsonProperty("current_epoch_attestations")
           final List<PendingAttestation> current_epoch_attestations,
-      @JsonProperty("justification_bits") final Bitvector justification_bits,
+      @JsonProperty("justification_bits") final SszBitvector justification_bits,
       @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
       @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
       @JsonProperty("finalized_checkpoint") final Checkpoint finalized_checkpoint) {

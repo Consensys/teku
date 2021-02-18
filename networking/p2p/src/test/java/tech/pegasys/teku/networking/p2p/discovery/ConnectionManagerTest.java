@@ -49,7 +49,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
 class ConnectionManagerTest {
 
@@ -422,6 +422,6 @@ class ConnectionManagerTest {
         peerId,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
-        new Bitvector(ATTESTATION_SUBNET_COUNT, subnetIds));
+        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
   }
 }

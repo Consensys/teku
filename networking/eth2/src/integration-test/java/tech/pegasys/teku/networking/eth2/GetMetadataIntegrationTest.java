@@ -22,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetMetadataIntegrationTest {
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
@@ -48,7 +47,6 @@ public class GetMetadataIntegrationTest {
     MetadataMessage md2 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
 
     assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
-    assertThat(md1.getAttnets().getSize()).isEqualTo(Constants.ATTESTATION_SUBNET_COUNT);
     assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
 

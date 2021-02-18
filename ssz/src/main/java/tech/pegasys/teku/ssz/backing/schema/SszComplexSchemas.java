@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
@@ -57,17 +56,6 @@ public interface SszComplexSchemas {
     @Override
     public String toString() {
       return "Bytes" + getLength();
-    }
-  }
-
-  class SszBitVectorSchema extends SszVectorSchemaImpl<SszBit> {
-    public SszBitVectorSchema(long maxLength) {
-      super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
-    }
-
-    @Override
-    public String toString() {
-      return "BitVector[" + getLength() + "]";
     }
   }
 }

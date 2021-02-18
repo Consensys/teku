@@ -54,7 +54,7 @@ public class Metadata {
   public Metadata(final MetadataMessage metadataMessage) {
     this.sequenceNumber = metadataMessage.getSeqNumber().toString();
     this.attestationSubnetSubscriptions =
-        metadataMessage.getAttnets().serialize().toHexString().toLowerCase();
+        metadataMessage.getAttnets().sszSerialize().toHexString().toLowerCase();
   }
 
   @Override

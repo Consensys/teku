@@ -19,13 +19,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -87,7 +87,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       SSZList<PendingAttestation> current_epoch_attestations,
 
       // Finality
-      Bitvector justification_bits,
+      SszBitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
