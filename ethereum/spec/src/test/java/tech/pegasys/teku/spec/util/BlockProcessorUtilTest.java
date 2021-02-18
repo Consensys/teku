@@ -37,14 +37,14 @@ import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {
-  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final SpecProvider specProvider = StubSpecProvider.create();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
 
   private final Spec spec = specProvider.getGenesisSpec();
