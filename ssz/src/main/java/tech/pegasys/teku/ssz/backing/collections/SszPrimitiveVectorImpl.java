@@ -13,33 +13,22 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.SszCollection;
+import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 
-public interface SszPrimitiveCollection<
+public class SszPrimitiveVectorImpl<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszCollection<SszElementT> {
+    extends SszVectorImpl<SszElementT> implements SszPrimitiveVector<ElementT, SszElementT> {
 
-  default ElementT getElement(int index) {
-    return get(index).get();
+  public SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+    super(schema, lazyBackingNode);
   }
 
   @Override
-  SszCollectionSchema<SszElementT, ?> getSchema();
-
-  @Override
-  SszMutablePrimitiveCollection<ElementT, SszElementT> createWritableCopy();
-
-  default Stream<ElementT> streamElements() {
-    return IntStream.range(0, size()).mapToObj(this::getElement);
-  }
-
-  default Collection<ElementT> allElements() {
-    return streamElements().collect(Collectors.toList());
+  public SszMutablePrimitiveVector<ElementT, SszElementT> createWritableCopy() {
+    throw new UnsupportedOperationException("TODO");
   }
 }
