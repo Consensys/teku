@@ -16,7 +16,6 @@ package tech.pegasys.teku.core.blockvalidator;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
  * Advanced block validator which uses {@link BatchSignatureVerifier} to verify all the BLS
@@ -25,18 +24,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public class BatchBlockValidator implements BlockValidator {
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePreState(
+  public BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
       IndexedAttestationProvider indexedAttestationProvider) {
     BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     SimpleBlockValidator blockValidator =
         new SimpleBlockValidator(true, true, true, signatureVerifier);
-    SafeFuture<BlockValidationResult> noBLSValidationResultFut =
+    BlockValidationResult noBLSValidationResultFut =
         blockValidator.validatePreState(preState, block, indexedAttestationProvider);
     // during the above validatePreState() call BatchSignatureVerifier just collected
     // a bunch of signatures to be verified in optimized batched way on the following step
-    if (!noBLSValidationResultFut.join().isValid()) {
+    if (!noBLSValidationResultFut.isValid()) {
       // something went wrong aside of signatures verification
       return noBLSValidationResultFut;
     } else {
@@ -46,14 +45,13 @@ public class BatchBlockValidator implements BlockValidator {
         return new SimpleBlockValidator()
             .validatePreState(preState, block, indexedAttestationProvider);
       } else {
-        return SafeFuture.completedFuture(new BlockValidationResult(true));
+        return BlockValidationResult.SUCCESSFUL;
       }
     }
   }
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePostState(
-      BeaconState postState, SignedBeaconBlock block) {
+  public BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
     return new SimpleBlockValidator().validatePostState(postState, block);
   }
 }
