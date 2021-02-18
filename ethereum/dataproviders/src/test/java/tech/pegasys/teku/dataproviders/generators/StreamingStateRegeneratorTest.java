@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.dataproviders.generators;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

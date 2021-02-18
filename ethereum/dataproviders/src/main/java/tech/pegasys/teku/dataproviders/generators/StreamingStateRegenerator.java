@@ -11,9 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.stream.Stream;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 

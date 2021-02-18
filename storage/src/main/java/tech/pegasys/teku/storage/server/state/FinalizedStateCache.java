@@ -26,7 +26,7 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
-import tech.pegasys.teku.core.StreamingStateRegenerator;
+import tech.pegasys.teku.dataproviders.generators.StreamingStateRegenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
