@@ -22,14 +22,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class FuzzRegressionTest {
-  private final SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private final SpecProvider specProvider = SpecProviderFactory.createMainnet();
 
   @Test
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {
