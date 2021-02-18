@@ -17,9 +17,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -27,15 +29,21 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class DefaultValidatorStatusLoggerTest {
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final List<BLSPublicKey> validatorKeys = List.of(BLSTestUtil.randomPublicKey(0));
+  private final BLSPublicKey validatorKey = BLSTestUtil.randomPublicKey(0);
+  private final List<BLSPublicKey> validatorKeys = List.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DefaultValidatorStatusLogger logger =
-      new DefaultValidatorStatusLogger(validatorKeys, validatorApiChannel, asyncRunner);
+      new DefaultValidatorStatusLogger(
+          new OwnedValidators(
+              Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty))),
+          validatorApiChannel,
+          asyncRunner);
 
   @Test
   @SuppressWarnings("unchecked")

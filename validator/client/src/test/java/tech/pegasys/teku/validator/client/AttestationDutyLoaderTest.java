@@ -41,6 +41,7 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class AttestationDutyLoaderTest {
 
@@ -66,7 +67,7 @@ class AttestationDutyLoaderTest {
           validatorApiChannel,
           forkProvider,
           dependentRoot -> scheduledDuties,
-          validators,
+          new OwnedValidators(validators),
           validatorIndexProvider,
           beaconCommitteeSubscriptions,
           specProvider);

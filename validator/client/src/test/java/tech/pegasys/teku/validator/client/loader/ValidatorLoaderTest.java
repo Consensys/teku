@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,10 +108,10 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(2);
+    assertThat(validators.size()).isEqualTo(2);
 
     final Validator validator1 = validators.get(PUBLIC_KEY1);
     assertThat(validator1).isNotNull();
@@ -136,10 +135,10 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(1);
+    assertThat(validators.size()).isEqualTo(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
@@ -168,10 +167,10 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(1);
+    assertThat(validators.size()).isEqualTo(1);
     final Validator validator = validators.get(PUBLIC_KEY1);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
@@ -207,10 +206,10 @@ class ValidatorLoaderTest {
                         + tempDir.toAbsolutePath().toString()))
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(2);
+    assertThat(validators.size()).isEqualTo(2);
 
     final Validator validator1 = validators.get(PUBLIC_KEY1);
     assertThat(validator1).isNotNull();
@@ -241,11 +240,11 @@ class ValidatorLoaderTest {
                         + tempDir.toAbsolutePath().toString()))
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     // Both local and external validators get loaded.
-    assertThat(validators).hasSize(1);
+    assertThat(validators.size()).isEqualTo(1);
 
     // Local validators are listed first
     final Validator validator = validators.get(PUBLIC_KEY1);
@@ -269,10 +268,10 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(ownedValidatorCount);
+    assertThat(validators.size()).isEqualTo(ownedValidatorCount);
   }
 
   @Test
@@ -284,9 +283,9 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).isEmpty();
+    assertThat(validators.isEmpty()).isTrue();
   }
 }

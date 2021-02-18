@@ -16,12 +16,11 @@ package tech.pegasys.teku.validator.client;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.collect.Sets;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -29,10 +28,11 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class ValidatorIndexProvider {
   private static final Logger LOG = LogManager.getLogger();
-  private final List<BLSPublicKey> unknownValidators;
+  private final OwnedValidators validators;
   private final ValidatorApiChannel validatorApiChannel;
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
@@ -40,12 +40,13 @@ public class ValidatorIndexProvider {
   private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
 
   public ValidatorIndexProvider(
-      final Collection<BLSPublicKey> validators, final ValidatorApiChannel validatorApiChannel) {
-    this.unknownValidators = new CopyOnWriteArrayList<>(validators);
+      final OwnedValidators validators, final ValidatorApiChannel validatorApiChannel) {
+    this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
   }
 
   public void lookupValidators() {
+    final Collection<BLSPublicKey> unknownValidators = getUnknownValidators();
     if (unknownValidators.isEmpty()) {
       return;
     }
@@ -66,6 +67,10 @@ public class ValidatorIndexProvider {
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
         .finish(error -> LOG.debug("Failed to load validator indexes.", error));
+  }
+
+  private Collection<BLSPublicKey> getUnknownValidators() {
+    return Sets.difference(validators.getPublicKeys(), validatorIndexesByPublicKey.keySet());
   }
 
   private void logNewValidatorIndices(final Map<BLSPublicKey, Integer> knownValidators) {
