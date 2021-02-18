@@ -13,15 +13,12 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -81,18 +78,8 @@ public class ValidatorLoader {
       addNewLocalSigners(config, validatorProviders);
     }
 
-    // Get validator connection info and create a new Validator object and put it into the
-    // Validators map
-    final Map<BLSPublicKey, Validator> validators =
-        MultithreadedValidatorLoader.loadValidators(
-            validatorProviders, config.getGraffitiProvider());
-
-    STATUS_LOG.validatorsInitialised(
-        validators.values().stream()
-            .map(Validator::getPublicKey)
-            .map(BLSPublicKey::toAbbreviatedString)
-            .collect(Collectors.toList()));
-    return validators;
+    return MultithreadedValidatorLoader.loadValidators(
+        validatorProviders, config.getGraffitiProvider());
   }
 
   private void addNewLocalSigners(

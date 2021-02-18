@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,19 +24,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
+/**
+ * Loads validators in parallel while also limiting the number of keystores being decrypted
+ * simultaneously. This is required because decrypting scrypt keystores uses a significant amount of
+ * memory. If a simple `parallelStream` was used and the machine had a large number of CPUs the
+ * available memory would be exhausted resulting in a crash with `OutOfMemoryError`.
+ *
+ * <p>Progress is reported to the logs to keep the user informed as loading a large number of keys
+ * can be slow.
+ */
 public class MultithreadedValidatorLoader {
 
   public static Map<BLSPublicKey, Validator> loadValidators(
       final Map<BLSPublicKey, ValidatorProvider> providers,
       final GraffitiProvider graffitiProvider) {
     final int totalValidatorCount = providers.size();
-    StatusLogger.STATUS_LOG.loadingValidators(totalValidatorCount);
+    STATUS_LOG.loadingValidators(totalValidatorCount);
 
     final ExecutorService executorService =
         Executors.newFixedThreadPool(Math.min(4, Runtime.getRuntime().availableProcessors()));
@@ -54,7 +64,7 @@ public class MultithreadedValidatorLoader {
                                     graffitiProvider);
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
                             if (loadedValidatorCount % 10 == 0) {
-                              StatusLogger.STATUS_LOG.atLoadedValidatorNumber(
+                              STATUS_LOG.atLoadedValidatorNumber(
                                   loadedValidatorCount, totalValidatorCount);
                             }
                             return validator;
@@ -66,6 +76,13 @@ public class MultithreadedValidatorLoader {
         final Validator validator = future.get();
         validators.put(validator.getPublicKey(), validator);
       }
+
+      STATUS_LOG.validatorsInitialised(
+          validators.values().stream()
+              .map(Validator::getPublicKey)
+              .map(BLSPublicKey::toAbbreviatedString)
+              .collect(Collectors.toList()));
+
       return validators;
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);
