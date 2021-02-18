@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference.phase0.operations;
 
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -69,7 +68,6 @@ public class DefaultOperationProcessor implements OperationProcessor {
   @Override
   public void processAttestation(final MutableBeaconState state, final Attestation attestation)
       throws BlockProcessingException {
-    specProvider.processAttestations(
-        state, SSZList.singleton(attestation), IndexedAttestationProvider.DIRECT_PROVIDER);
+    specProvider.processAttestations(state, SSZList.singleton(attestation));
   }
 }
