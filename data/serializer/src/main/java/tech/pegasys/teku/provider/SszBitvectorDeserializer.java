@@ -18,13 +18,14 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
-public class BitvectorDeserializer extends JsonDeserializer<Bitvector> {
+public class SszBitvectorDeserializer extends JsonDeserializer<SszBitvector> {
   @Override
-  public Bitvector deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public SszBitvector deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
     int length = data.bitLength() + 1;
-    return Bitvector.fromBytes(data, length);
+    return SszBitvectorSchema.create(length).sszDeserialize(data);
   }
 }

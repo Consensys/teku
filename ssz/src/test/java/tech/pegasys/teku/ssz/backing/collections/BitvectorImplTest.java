@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.ssztypes;
+package tech.pegasys.teku.ssz.backing.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,28 +21,26 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
-class BitvectorTest {
+class BitvectorImplTest {
 
-  private static int testBitvectorLength = 4;
+  private static final int testBitvectorLength = 4;
 
-  private static Bitvector createBitvector() {
-    return new Bitvector(testBitvectorLength, 0, 3);
+  private static BitvectorImpl createBitvector() {
+    return new BitvectorImpl(testBitvectorLength, 0, 3);
   }
 
   @Test
   void initTest() {
-    Bitvector bitvector = new Bitvector(10);
+    BitvectorImpl bitvector = new BitvectorImpl(10);
     Assertions.assertEquals(bitvector.getBit(0), false);
     Assertions.assertEquals(bitvector.getBit(9), false);
   }
 
   @Test
   void setTest() {
-    Bitvector bitvector = new Bitvector(10, 1, 3, 8);
+    BitvectorImpl bitvector = new BitvectorImpl(10, 1, 3, 8);
 
     Assertions.assertEquals(bitvector.getBit(0), false);
     Assertions.assertEquals(bitvector.getBit(1), true);
@@ -53,37 +51,37 @@ class BitvectorTest {
 
   @Test
   void serializationTest() {
-    Bitvector bitvector = createBitvector();
+    BitvectorImpl bitvector = createBitvector();
 
-    Bytes bitvectorSerialized = bitvector.serialize();
-    Assertions.assertEquals(bitvectorSerialized.toHexString(), "0x09");
+    Bytes ssz = bitvector.serialize();
+    Assertions.assertEquals(ssz.toHexString(), "0x09");
   }
 
   @Test
   void deserializationTest() {
-    Bitvector bitvector = createBitvector();
+    BitvectorImpl bitvector = createBitvector();
 
-    Bytes bitvectorSerialized = bitvector.serialize();
-    Bitvector newBitvector = Bitvector.fromBytes(bitvectorSerialized, testBitvectorLength);
-    Assertions.assertEquals(bitvector, newBitvector);
+    Bytes ssz = bitvector.serialize();
+    BitvectorImpl bitvector1 = BitvectorImpl.fromBytes(ssz, testBitvectorLength);
+    Assertions.assertEquals(bitvector, bitvector1);
   }
 
   @Test
   public void deserializationEmptyBytesTest() {
-    final Bitvector result = Bitvector.fromBytes(Bytes.EMPTY, 0);
+    final BitvectorImpl result = BitvectorImpl.fromBytes(Bytes.EMPTY, 0);
     assertThat(result.getSize()).isZero();
   }
 
   @Test
   public void deserializationNotEnoughBytes() {
-    assertThatThrownBy(() -> Bitvector.fromBytes(Bytes.of(1, 2, 3), 50))
+    assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(1, 2, 3), 50))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Incorrect data size");
   }
 
   @Test
   public void deserializationTooManyBytes() {
-    assertThatThrownBy(() -> Bitvector.fromBytes(Bytes.of(1, 2, 3), 1))
+    assertThatThrownBy(() -> BitvectorImpl.fromBytes(Bytes.of(1, 2, 3), 1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Incorrect data size");
   }

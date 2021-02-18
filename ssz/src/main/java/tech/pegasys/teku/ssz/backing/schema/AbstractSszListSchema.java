@@ -44,7 +44,7 @@ public abstract class AbstractSszListSchema<
 
   @Override
   protected TreeNode createDefaultTree() {
-    return createTree(getCompatibleVectorSchema().createDefaultTree(), 0);
+    return createTree(getCompatibleVectorSchema().getDefaultTree(), 0);
   }
 
   protected TreeNode createTree(TreeNode dataNode, int length) {
@@ -59,7 +59,7 @@ public abstract class AbstractSszListSchema<
   @Override
   public abstract SszListT createFromBackingNode(TreeNode node);
 
-  protected SszVectorSchemaImpl<ElementDataT> getCompatibleVectorSchema() {
+  protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;
   }
 

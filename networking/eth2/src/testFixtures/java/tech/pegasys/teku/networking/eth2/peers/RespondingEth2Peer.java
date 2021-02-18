@@ -48,9 +48,9 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class RespondingEth2Peer implements Eth2Peer {
   private static final MockNodeIdGenerator idGenerator = new MockNodeIdGenerator();
@@ -153,7 +153,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<Bitvector> getRemoteAttestationSubnets() {
+  public Optional<SszBitvector> getRemoteAttestationSubnets() {
     return Optional.empty();
   }
 

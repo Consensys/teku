@@ -16,21 +16,17 @@ package tech.pegasys.teku.ssz.backing.view;
 import com.google.common.collect.Streams;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
@@ -85,22 +81,5 @@ public class SszUtils {
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
   public static Bytes getAllBytes(SszCollection<SszByte> vector) {
     return vector.sszSerialize();
-  }
-
-  /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
-  public static SszVector<SszBit> toSszBitVector(Bitvector bitvector) {
-    SszMutableVector<SszBit> viewWrite =
-        new SszBitVectorSchema(bitvector.getSize()).getDefault().createWritableCopy();
-    for (int i = 0; i < bitvector.getSize(); i++) {
-      viewWrite.set(i, SszBit.viewOf(bitvector.getBit(i)));
-    }
-    return viewWrite.commitChanges();
-  }
-
-  /** Converts vector of bits to {@link Bitvector} value */
-  public static Bitvector getBitvector(SszVector<SszBit> vectorView) {
-    int[] bitIndexes =
-        IntStream.range(0, vectorView.size()).filter(i -> vectorView.get(i).get()).toArray();
-    return new Bitvector(vectorView.size(), bitIndexes);
   }
 }
