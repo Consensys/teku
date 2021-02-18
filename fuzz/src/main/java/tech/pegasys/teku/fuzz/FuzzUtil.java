@@ -34,7 +34,7 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -56,7 +56,7 @@ public class FuzzUtil {
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
     final String networkName = useMainnetConfig ? "mainnet" : "minimal";
-    specProvider = NetworkSpecProviderFactory.create(networkName);
+    specProvider = SpecProviderFactory.create(networkName);
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;

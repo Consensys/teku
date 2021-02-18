@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 
 public class TestDefinition {
@@ -41,7 +41,7 @@ public class TestDefinition {
 
   public SpecProvider getSpecProvider() {
     if (specProvider == null) {
-      specProvider = NetworkSpecProviderFactory.create(specName);
+      specProvider = SpecProviderFactory.create(specName);
     }
     return specProvider;
   }

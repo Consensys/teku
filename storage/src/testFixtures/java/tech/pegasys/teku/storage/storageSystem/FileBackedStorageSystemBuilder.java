@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.nio.file.Path;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -35,7 +35,7 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-  private SpecProvider specProvider = NetworkSpecProviderFactory.create("minimal");
+  private SpecProvider specProvider = SpecProviderFactory.create("minimal");
 
   // Version-dependent fields
   private Path dataDir;

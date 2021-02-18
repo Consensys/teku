@@ -23,8 +23,7 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class Eth2NetworkConfiguration {
   public static final String MAINNET = "mainnet";
@@ -36,7 +35,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  private final SpecConfiguration specConfig;
+  private final SpecProvider specProvider;
   private final String constants;
   private final Optional<String> initialState;
   private final boolean usingCustomInitialState;
@@ -47,7 +46,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   private Eth2NetworkConfiguration(
-      final SpecConfiguration specConfig,
+      final SpecProvider specProvider,
       final String constants,
       final Optional<String> initialState,
       final boolean usingCustomInitialState,
@@ -56,7 +55,7 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock) {
-    this.specConfig = specConfig;
+    this.specProvider = specProvider;
     this.constants = constants;
     this.initialState = initialState;
     this.usingCustomInitialState = usingCustomInitialState;
@@ -75,8 +74,8 @@ public class Eth2NetworkConfiguration {
     return new Builder();
   }
 
-  public SpecConfiguration getSpecConfig() {
-    return specConfig;
+  public SpecProvider getSpecProvider() {
+    return specProvider;
   }
 
   /**
@@ -134,12 +133,8 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
-      final SpecConstants specConstants = ConstantsLoader.loadConstants(constants);
-      final SpecConfiguration specConfig =
-          SpecConfiguration.builder().constants(specConstants).build();
-
       return new Eth2NetworkConfiguration(
-          specConfig,
+          SpecProviderFactory.create(constants),
           constants,
           initialState,
           usingCustomInitialState,

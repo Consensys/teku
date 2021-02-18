@@ -178,8 +178,7 @@ public class TekuConfiguration {
       // Create spec, and pass spec to other builders that require it
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
-      final SpecProvider specProvider =
-          SpecProvider.create(eth2NetworkConfiguration.getSpecConfig());
+      final SpecProvider specProvider = eth2NetworkConfiguration.getSpecProvider();
       // Update storage config
       storageConfigurationBuilder.specProvider(specProvider);
       // Update weak subjectivity

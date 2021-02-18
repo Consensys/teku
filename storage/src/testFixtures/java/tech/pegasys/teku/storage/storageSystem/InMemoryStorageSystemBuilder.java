@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import tech.pegasys.teku.networks.NetworkSpecProviderFactory;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -37,7 +37,7 @@ public class InMemoryStorageSystemBuilder {
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
 
-  private SpecProvider specProvider = NetworkSpecProviderFactory.create("minimal");
+  private SpecProvider specProvider = SpecProviderFactory.create("minimal");
 
   // Internal variables
   MockRocksDbInstance unifiedDb;

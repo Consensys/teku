@@ -15,12 +15,13 @@ package tech.pegasys.teku.networks;
 
 import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
-public class NetworkSpecProviderFactory {
+public class SpecProviderFactory {
 
   public static SpecProvider create(final String networkName) {
-    final SpecConfiguration specConfig =
-        SpecConfiguration.builder().constants(ConstantsLoader.loadConstants(networkName)).build();
+    final SpecConstants constants = ConstantsLoader.loadConstants(networkName);
+    final SpecConfiguration specConfig = SpecConfiguration.builder().constants(constants).build();
     return SpecProvider.create(specConfig);
   }
 }
