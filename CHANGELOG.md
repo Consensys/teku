@@ -30,6 +30,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated the ENRs for MainNet bootnodes run by the Nimbus team.
 - Added a `is_syncing` field to the `/eth/v1/node/syncing` endpoint to explicitly indicate if the node is in sync or not. 
 - Teku will now exit when database writes fail (e.g. due to disk failure) to enable systems like kubernetes to better identify and respond to the failure.
+- Reduced time required to load local validator keys at startup.
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.

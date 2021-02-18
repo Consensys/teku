@@ -83,15 +83,9 @@ public class ValidatorLoader {
 
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
-    final Map<BLSPublicKey, Validator> validators = new HashMap<>();
-    validatorProviders.forEach(
-        (key, provider) ->
-            validators.put(
-                key,
-                new Validator(
-                    provider.getPublicKey(),
-                    provider.createSigner(),
-                    config.getGraffitiProvider())));
+    final Map<BLSPublicKey, Validator> validators =
+        MultithreadedValidatorLoader.loadValidators(
+            validatorProviders, config.getGraffitiProvider());
 
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
@@ -105,9 +99,7 @@ public class ValidatorLoader {
       final ValidatorConfig config, final Map<BLSPublicKey, ValidatorProvider> validatorProviders) {
     if (config.getValidatorKeystorePasswordFilePairs() != null) {
       addValidatorsFromSource(
-          validatorProviders,
-          new LocalValidatorSource(
-              new KeystoresValidatorKeyProvider(new KeystoreLocker(), config), asyncRunner));
+          validatorProviders, new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner));
     }
   }
 
