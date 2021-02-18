@@ -50,11 +50,11 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
         dataStructureUtil.randomSszBitvector(Constants.ATTESTATION_SUBNET_COUNT);
     final MetadataMessage metadataMessage = new MetadataMessage(seqnr, attnets);
 
-    when(eth2Network.getNodeId()).thenReturn(node1);
-    when(eth2Network.getEnr()).thenReturn(Optional.of(enr));
-    when(eth2Network.getNodeAddress()).thenReturn(address);
-    when(eth2Network.getDiscoveryAddress()).thenReturn(Optional.of(discoveryAddress));
-    when(eth2Network.getMetadata()).thenReturn(metadataMessage);
+    when(eth2P2PNetwork.getNodeId()).thenReturn(node1);
+    when(eth2P2PNetwork.getEnr()).thenReturn(Optional.of(enr));
+    when(eth2P2PNetwork.getNodeAddress()).thenReturn(address);
+    when(eth2P2PNetwork.getDiscoveryAddress()).thenReturn(Optional.of(discoveryAddress));
+    when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);

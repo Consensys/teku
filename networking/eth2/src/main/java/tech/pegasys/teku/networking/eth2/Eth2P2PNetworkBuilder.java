@@ -61,7 +61,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Eth2NetworkBuilder {
+public class Eth2P2PNetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
@@ -92,13 +92,13 @@ public class Eth2NetworkBuilder {
   private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
   private SpecProvider specProvider;
 
-  private Eth2NetworkBuilder() {}
+  private Eth2P2PNetworkBuilder() {}
 
-  public static Eth2NetworkBuilder create() {
-    return new Eth2NetworkBuilder();
+  public static Eth2P2PNetworkBuilder create() {
+    return new Eth2P2PNetworkBuilder();
   }
 
-  public Eth2Network build() {
+  public Eth2P2PNetwork build() {
     validate();
 
     // Setup eth2 handlers
@@ -128,7 +128,7 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
-    return new ActiveEth2Network(
+    return new ActiveEth2P2PNetwork(
         config.getSpecProvider(),
         asyncRunner,
         metricsSystem,
@@ -215,155 +215,155 @@ public class Eth2NetworkBuilder {
     checkState(fieldValue != null, "Field " + fieldName + " must be set.");
   }
 
-  public Eth2NetworkBuilder config(final P2PConfig config) {
+  public Eth2P2PNetworkBuilder config(final P2PConfig config) {
     checkNotNull(config);
     this.config = config;
     return this;
   }
 
-  public Eth2NetworkBuilder eventBus(final EventBus eventBus) {
+  public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
     checkNotNull(eventBus);
     this.eventBus = eventBus;
     return this;
   }
 
-  public Eth2NetworkBuilder historicalChainData(final StorageQueryChannel historicalChainData) {
+  public Eth2P2PNetworkBuilder historicalChainData(final StorageQueryChannel historicalChainData) {
     checkNotNull(historicalChainData);
     this.historicalChainData = historicalChainData;
     return this;
   }
 
-  public Eth2NetworkBuilder recentChainData(final RecentChainData recentChainData) {
+  public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
     checkNotNull(recentChainData);
     this.recentChainData = recentChainData;
     return this;
   }
 
-  public Eth2NetworkBuilder keyValueStore(final KeyValueStore<String, Bytes> kvStore) {
+  public Eth2P2PNetworkBuilder keyValueStore(final KeyValueStore<String, Bytes> kvStore) {
     checkNotNull(kvStore);
     this.keyValueStore = kvStore;
     return this;
   }
 
-  public Eth2NetworkBuilder processedAttestationSubscriptionProvider(
+  public Eth2P2PNetworkBuilder processedAttestationSubscriptionProvider(
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     checkNotNull(processedAttestationSubscriptionProvider);
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
     return this;
   }
 
-  public Eth2NetworkBuilder voluntaryExitGossipPublisher(
+  public Eth2P2PNetworkBuilder voluntaryExitGossipPublisher(
       final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher) {
     checkNotNull(voluntaryExitGossipPublisher);
     this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
     return this;
   }
 
-  public Eth2NetworkBuilder attesterSlashingGossipPublisher(
+  public Eth2P2PNetworkBuilder attesterSlashingGossipPublisher(
       final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
     checkNotNull(attesterSlashingGossipPublisher);
     this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
     return this;
   }
 
-  public Eth2NetworkBuilder proposerSlashingGossipPublisher(
+  public Eth2P2PNetworkBuilder proposerSlashingGossipPublisher(
       final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
     checkNotNull(proposerSlashingGossipPublisher);
     this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedBlockProcessor(
+  public Eth2P2PNetworkBuilder gossipedBlockProcessor(
       final OperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedAttestationProcessor(
+  public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
       final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
     checkNotNull(gossipedAttestationProcessor);
     this.gossipedAttestationConsumer = gossipedAttestationProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedAggregateProcessor(
+  public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
       final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
     checkNotNull(gossipedAggregateProcessor);
     this.gossipedAggregateProcessor = gossipedAggregateProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedAttesterSlashingProcessor(
+  public Eth2P2PNetworkBuilder gossipedAttesterSlashingProcessor(
       final OperationProcessor<AttesterSlashing> gossipedAttesterSlashingProcessor) {
     checkNotNull(gossipedAttesterSlashingProcessor);
     this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedProposerSlashingProcessor(
+  public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
       final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
     checkNotNull(gossipedProposerSlashingProcessor);
     this.gossipedProposerSlashingConsumer = gossipedProposerSlashingProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder gossipedVoluntaryExitProcessor(
+  public Eth2P2PNetworkBuilder gossipedVoluntaryExitProcessor(
       final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
     checkNotNull(gossipedVoluntaryExitProcessor);
     this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitProcessor;
     return this;
   }
 
-  public Eth2NetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
+  public Eth2P2PNetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
     return this;
   }
 
-  public Eth2NetworkBuilder timeProvider(final TimeProvider timeProvider) {
+  public Eth2P2PNetworkBuilder timeProvider(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
     return this;
   }
 
-  public Eth2NetworkBuilder rpcMethod(final RpcMethod rpcMethod) {
+  public Eth2P2PNetworkBuilder rpcMethod(final RpcMethod rpcMethod) {
     checkNotNull(rpcMethod);
     rpcMethods.add(rpcMethod);
     return this;
   }
 
-  public Eth2NetworkBuilder peerHandler(final PeerHandler peerHandler) {
+  public Eth2P2PNetworkBuilder peerHandler(final PeerHandler peerHandler) {
     checkNotNull(peerHandler);
     peerHandlers.add(peerHandler);
     return this;
   }
 
-  public Eth2NetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
+  public Eth2P2PNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
     checkNotNull(asyncRunner);
     this.asyncRunner = asyncRunner;
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
+  public Eth2P2PNetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
     checkNotNull(eth2RpcPingInterval);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(
+  public Eth2P2PNetworkBuilder eth2RpcOutstandingPingThreshold(
       final int eth2RpcOutstandingPingThreshold) {
     checkArgument(eth2RpcOutstandingPingThreshold > 0);
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     return this;
   }
 
-  public Eth2NetworkBuilder requiredCheckpoint(final Optional<Checkpoint> requiredCheckpoint) {
+  public Eth2P2PNetworkBuilder requiredCheckpoint(final Optional<Checkpoint> requiredCheckpoint) {
     checkNotNull(requiredCheckpoint);
     this.requiredCheckpoint = requiredCheckpoint;
     return this;
   }
 
-  public Eth2NetworkBuilder specProvider(final SpecProvider specProvider) {
+  public Eth2P2PNetworkBuilder specProvider(final SpecProvider specProvider) {
     checkNotNull(specProvider);
     this.specProvider = specProvider;
     return this;

@@ -6,6 +6,6 @@ dependencies {
   implementation project(':ethereum:datastructures')
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ssz'))
 }

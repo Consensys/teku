@@ -55,7 +55,7 @@ public class BeaconBlocksByRootIntegrationTest {
   protected final StorageSystem storageSystem2 =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
 
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private Eth2Peer peer1;
   private RecentChainData storageClient1;
 
@@ -67,7 +67,7 @@ public class BeaconBlocksByRootIntegrationTest {
     storageSystem2.chainUpdater().initializeGenesis();
 
     storageClient1 = storageSystem1.recentChainData();
-    final Eth2Network network1 =
+    final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .rpcEncoding(rpcEncoding)
@@ -75,7 +75,7 @@ public class BeaconBlocksByRootIntegrationTest {
             .recentChainData(storageClient1)
             .startNetwork();
 
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .rpcEncoding(rpcEncoding)

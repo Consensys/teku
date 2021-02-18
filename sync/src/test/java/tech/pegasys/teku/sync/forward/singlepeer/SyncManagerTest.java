@@ -33,7 +33,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
@@ -58,7 +58,7 @@ public class SyncManagerTest {
               PEER_HEAD_SLOT));
 
   private RecentChainData storageClient = mock(RecentChainData.class);
-  private Eth2Network network = mock(Eth2Network.class);
+  private Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);

@@ -33,7 +33,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class ErrorConditionsIntegrationTest {
 
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -43,14 +43,14 @@ public class ErrorConditionsIntegrationTest {
   @Test
   public void shouldRejectInvalidRequests() throws Exception {
     final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
-    final Eth2Network network1 = networkFactory.builder().rpcEncoding(encoding).startNetwork();
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network1 = networkFactory.builder().rpcEncoding(encoding).startNetwork();
+    final Eth2P2PNetwork network2 =
         networkFactory.builder().rpcEncoding(encoding).peer(network1).startNetwork();
 
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
     final Eth2RpcMethod<StatusMessage, StatusMessage> status =
-        ((ActiveEth2Network) network1).getBeaconChainMethods().status();
+        ((ActiveEth2P2PNetwork) network1).getBeaconChainMethods().status();
     final SafeFuture<StatusMessage> response =
         peer.requestSingleItem(status, new InvalidStatusMessage());
 

@@ -39,7 +39,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -61,7 +61,7 @@ public class SlotProcessorTest {
 
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
-  private final Eth2Network p2pNetwork = mock(Eth2Network.class);
+  private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(

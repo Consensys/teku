@@ -33,7 +33,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -45,7 +45,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final ForwardSync syncService;
   private final ForkChoice forkChoice;
-  private final Eth2Network p2pNetwork;
+  private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
   private final EventLogger eventLog;
@@ -60,7 +60,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final ForwardSync syncService,
       final ForkChoice forkChoice,
-      final Eth2Network p2pNetwork,
+      final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EventLogger eventLogger) {
     this.recentChainData = recentChainData;
@@ -75,7 +75,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final ForwardSync syncService,
       final ForkChoice forkChoice,
-      final Eth2Network p2pNetwork,
+      final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher) {
     this(
         recentChainData,

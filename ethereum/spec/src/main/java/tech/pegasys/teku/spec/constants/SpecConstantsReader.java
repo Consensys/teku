@@ -55,7 +55,7 @@ public class SpecConstantsReader {
     return readToBuilder(source).build();
   }
 
-  protected SpecConstantsBuilder readToBuilder(final InputStream source) throws IOException {
+  public SpecConstantsBuilder readToBuilder(final InputStream source) throws IOException {
     final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
     final Map<String, Object> rawValues = readValues(source);
     final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);

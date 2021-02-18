@@ -29,9 +29,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -58,7 +58,7 @@ public class SyncingNodeManager {
   private final EventChannels eventChannels;
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
-  private final Eth2Network eth2Network;
+  private final Eth2P2PNetwork eth2P2PNetwork;
   private final ForwardSync syncService;
 
   private SyncingNodeManager(
@@ -66,20 +66,20 @@ public class SyncingNodeManager {
       final EventChannels eventChannels,
       final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
-      final Eth2Network eth2Network,
+      final Eth2P2PNetwork eth2P2PNetwork,
       final ForwardSync syncService) {
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
     this.storageClient = storageClient;
     this.chainUtil = chainUtil;
-    this.eth2Network = eth2Network;
+    this.eth2P2PNetwork = eth2P2PNetwork;
     this.syncService = syncService;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public static SyncingNodeManager create(
       final AsyncRunner asyncRunner,
-      Eth2NetworkFactory networkFactory,
+      Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
@@ -124,15 +124,15 @@ public class SyncingNodeManager {
 
     configureNetwork.accept(networkBuilder);
 
-    final Eth2Network eth2Network = networkBuilder.startNetwork();
+    final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
 
     SyncManager syncManager =
         SyncManager.create(
-            asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
+            asyncRunner, eth2P2PNetwork, recentChainData, blockImporter, new NoOpMetricsSystem());
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks, syncService);
+        FetchRecentBlocksService.create(asyncRunner, eth2P2PNetwork, pendingBlocks, syncService);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
@@ -142,12 +142,13 @@ public class SyncingNodeManager {
     syncService.start().join();
 
     return new SyncingNodeManager(
-        eventBus, eventChannels, recentChainData, chainUtil, eth2Network, syncService);
+        eventBus, eventChannels, recentChainData, chainUtil, eth2P2PNetwork, syncService);
   }
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
-    final PeerAddress peerAddress = eth2Network.createPeerAddress(peer.network().getNodeAddress());
-    return eth2Network.connect(peerAddress);
+    final PeerAddress peerAddress =
+        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddress());
+    return eth2P2PNetwork.connect(peerAddress);
   }
 
   public EventChannels eventChannels() {
@@ -162,8 +163,8 @@ public class SyncingNodeManager {
     return chainUtil;
   }
 
-  public Eth2Network network() {
-    return eth2Network;
+  public Eth2P2PNetwork network() {
+    return eth2P2PNetwork;
   }
 
   public RecentChainData recentChainData() {

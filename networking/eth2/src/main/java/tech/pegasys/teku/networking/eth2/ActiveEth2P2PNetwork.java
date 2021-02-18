@@ -62,7 +62,7 @@ import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecProvider specProvider;
@@ -103,7 +103,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   private volatile Cancellable gossipUpdateTask;
 
-  public ActiveEth2Network(
+  public ActiveEth2P2PNetwork(
       final SpecProvider specProvider,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,

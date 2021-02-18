@@ -31,10 +31,10 @@ public class GetIdentityTest extends AbstractBeaconHandlerTest {
     GetIdentity handler = new GetIdentity(network, jsonProvider);
     NodeId nodeid = mock(NodeId.class);
 
-    when(eth2Network.getMetadata()).thenReturn(MetadataMessage.DEFAULT);
-    when(eth2Network.getNodeId()).thenReturn(nodeid);
+    when(eth2P2PNetwork.getMetadata()).thenReturn(MetadataMessage.DEFAULT);
+    when(eth2P2PNetwork.getNodeId()).thenReturn(nodeid);
     when(nodeid.toBase58()).thenReturn("aeiou");
-    when(eth2Network.getNodeAddress()).thenReturn("address");
+    when(eth2P2PNetwork.getNodeAddress()).thenReturn("address");
 
     handler.handle(context);
     verifyCacheStatus(CACHE_NONE);

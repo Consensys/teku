@@ -14,11 +14,11 @@
 package tech.pegasys.teku.networking.eth2.mock;
 
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockP2PNetwork;
 
-public class NoOpEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Network {
+public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
 
   @Override
   public void subscribeToAttestationSubnetId(final int subnetId) {}

@@ -14,10 +14,8 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class TestDefinition {
   private final String specName;
@@ -43,9 +41,7 @@ public class TestDefinition {
 
   public SpecProvider getSpecProvider() {
     if (specProvider == null) {
-      final SpecConstants constants = ConstantsLoader.loadConstants(specName);
-      final SpecConfiguration config = SpecConfiguration.builder().constants(constants).build();
-      specProvider = SpecProvider.create(config);
+      specProvider = SpecProviderFactory.create(specName);
     }
     return specProvider;
   }

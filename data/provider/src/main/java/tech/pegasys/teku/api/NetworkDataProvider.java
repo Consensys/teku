@@ -19,14 +19,14 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.api.schema.Metadata;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class NetworkDataProvider {
-  private final Eth2Network network;
+  private final Eth2P2PNetwork network;
 
-  public NetworkDataProvider(final Eth2Network network) {
+  public NetworkDataProvider(final Eth2P2PNetwork network) {
     this.network = network;
   }
 
