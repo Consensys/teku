@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
-public interface SszBitlist extends SszList<SszBit> {
+public interface SszBitlist extends SszList<SszBit>, SszPrimitiveCollection<Boolean, SszBit> {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
@@ -70,5 +70,10 @@ public interface SszBitlist extends SszList<SszBit> {
   /** Streams indexes of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
+  }
+
+  @Override
+  default Boolean getElement(int index) {
+    return getBit(index);
   }
 }

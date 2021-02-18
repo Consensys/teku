@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszVector<SszBit>} */
-public interface SszBitvector extends SszVector<SszBit> {
+public interface SszBitvector extends SszVector<SszBit>, SszPrimitiveCollection<Boolean, SszBit> {
 
   @Override
   default SszMutableVector<SszBit> createWritableCopy() {
@@ -50,5 +50,10 @@ public interface SszBitvector extends SszVector<SszBit> {
   /** Streams indexes of all bits set in this {@link SszBitvector} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
+  }
+
+  @Override
+  default Boolean getElement(int index) {
+    return getBit(index);
   }
 }
