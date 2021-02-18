@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -58,7 +59,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
 
   public static ChainStorage create(
       final EventBus eventBus, final Database database, final SpecProvider specProvider) {
-    final int finalizedStateCacheSize = specProvider.getSlotsPerEpoch(SpecConstants.GENESIS_EPOCH) * 3;
+    final int finalizedStateCacheSize =
+        specProvider.getSlotsPerEpoch(SpecConstants.GENESIS_EPOCH) * 3;
     return new ChainStorage(
         eventBus, database, new FinalizedStateCache(database, finalizedStateCacheSize, true));
   }
