@@ -81,7 +81,20 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final Path dataPath = testDefinition.getTestDirectory().resolve(dataFileName);
 
-    final DeprecatedOperationProcessor processor = new DeprecatedOperationProcessor();
+    final DefaultOperationProcessor standardProcessor =
+        new DefaultOperationProcessor(testDefinition.getSpecProvider());
+    runProcessor(standardProcessor, testDefinition, preState, dataPath);
+
+    final DeprecatedOperationProcessor deprecatedProcessor = new DeprecatedOperationProcessor();
+    runProcessor(deprecatedProcessor, testDefinition, preState, dataPath);
+  }
+
+  private void runProcessor(
+      final OperationProcessor processor,
+      final TestDefinition testDefinition,
+      final BeaconState preState,
+      final Path dataPath)
+      throws Exception {
     if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
       assertOperationSuccessful(processor, testDefinition, preState, dataPath);
     } else {

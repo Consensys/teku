@@ -27,16 +27,15 @@ public interface OperationProcessor {
   void processAttesterSlashing(MutableBeaconState state, AttesterSlashing attesterSlashings)
       throws BlockProcessingException;
 
-  void processProposerSlashing(MutableBeaconState state, ProposerSlashing attesterSlashings)
+  void processProposerSlashing(MutableBeaconState state, ProposerSlashing proposerSlashing)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
 
-  void processDeposit(MutableBeaconState state, Deposit blockHeader)
-      throws BlockProcessingException;
+  void processDeposit(MutableBeaconState state, Deposit deposit) throws BlockProcessingException;
 
-  void processVoluntaryExit(MutableBeaconState state, SignedVoluntaryExit blockHeader)
+  void processVoluntaryExit(MutableBeaconState state, SignedVoluntaryExit voluntaryExit)
       throws BlockProcessingException;
 
   void processAttestation(MutableBeaconState state, final Attestation attestation)
