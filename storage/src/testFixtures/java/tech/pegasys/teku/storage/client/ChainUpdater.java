@@ -20,13 +20,15 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
+  public final SpecProvider specProvider = StubSpecProvider.createMinimal();
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
@@ -61,7 +63,8 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(signDeposits, Constants.MAX_EFFECTIVE_BALANCE);
+    return initializeGenesis(
+        signDeposits, specProvider.getGenesisSpecConstants().getMaxEffectiveBalance());
   }
 
   public SignedBlockAndState initializeGenesis(
@@ -137,7 +140,8 @@ public class ChainUpdater {
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {
-    final UInt64 secPerSlot = UInt64.valueOf(Constants.SECONDS_PER_SLOT);
+    final UInt64 secPerSlot =
+        UInt64.valueOf(specProvider.atSlot(slot).getConstants().getSecondsPerSlot());
     return recentChainData.getGenesisTime().plus(slot.times(secPerSlot));
   }
 }

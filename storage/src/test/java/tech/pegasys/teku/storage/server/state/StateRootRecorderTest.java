@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.server.state;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,10 +22,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class StateRootRecorderTest {
-  DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   final Map<UInt64, Bytes32> stateRoots = new HashMap<>();
   final BeaconState state = dataStructureUtil.randomBeaconState();
   final UInt64 slot = state.getSlot();
@@ -34,7 +36,8 @@ public class StateRootRecorderTest {
   @Test
   public void shouldHandleSingleStep() {
     final StateRootRecorder stateRootRecorder =
-        new StateRootRecorder(slot, (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
+        new StateRootRecorder(
+            slot, (stateRoot, slot) -> stateRoots.put(slot, stateRoot), specProvider);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots).containsOnlyKeys(slot);
   }
@@ -42,18 +45,23 @@ public class StateRootRecorderTest {
   @Test
   public void shouldHandleMultipleSteps() {
     final StateRootRecorder stateRootRecorder =
-        new StateRootRecorder(slot.minus(2), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
+        new StateRootRecorder(
+            slot.minus(2), (stateRoot, slot) -> stateRoots.put(slot, stateRoot), specProvider);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots).containsOnlyKeys(slot.minus(2), slot.minus(ONE), slot);
   }
 
   @Test
   public void shouldLimitToSlotsPerHistoricalRoot() {
-    final UInt64 history = UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT).plus(10);
+    final UInt64 history =
+        UInt64.valueOf(specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot()).plus(10);
     final StateRootRecorder stateRootRecorder =
         new StateRootRecorder(
-            slot.minus(history), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
+            slot.minus(history),
+            (stateRoot, slot) -> stateRoots.put(slot, stateRoot),
+            specProvider);
     stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots.size()).isEqualTo(SLOTS_PER_HISTORICAL_ROOT + 1);
+    assertThat(stateRoots.size())
+        .isEqualTo(specProvider.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 1);
   }
 }

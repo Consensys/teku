@@ -34,7 +34,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
 class NodeRecordConverterTest {
 
@@ -43,7 +44,9 @@ class NodeRecordConverterTest {
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final Bitvector PERSISTENT_SUBNETS = new Bitvector(ATTESTATION_SUBNET_COUNT);
+  private static final SszBitvectorSchema<?> ATT_SUBNET_SCHEMA =
+      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
+  private static final SszBitvector PERSISTENT_SUBNETS = ATT_SUBNET_SCHEMA.getDefault();
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -136,8 +139,8 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldConvertPersistentSubnetsList() {
-    Bitvector persistentSubnets = new Bitvector(ATTESTATION_SUBNET_COUNT, 1, 8, 14, 32);
-    Bytes encodedPersistentSubnets = persistentSubnets.serialize();
+    SszBitvector persistentSubnets = ATT_SUBNET_SCHEMA.ofBits(1, 8, 14, 32);
+    Bytes encodedPersistentSubnets = persistentSubnets.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
@@ -151,8 +154,8 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldUseEmptySubnetListWhenFieldValueIsInvalid() {
-    Bitvector persistentSubnets = new Bitvector(4, 1, 2); // Incorrect length
-    Bytes encodedPersistentSubnets = persistentSubnets.serialize();
+    SszBitvector persistentSubnets = SszBitvectorSchema.create(4).ofBits(1, 2); // Incorrect length
+    Bytes encodedPersistentSubnets = persistentSubnets.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
@@ -164,7 +167,7 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
-                new Bitvector(ATTESTATION_SUBNET_COUNT)));
+                ATT_SUBNET_SCHEMA.getDefault()));
   }
 
   @Test

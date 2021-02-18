@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
@@ -63,6 +64,10 @@ public class SpecProvider {
     return atEpoch(epoch);
   }
 
+  public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
+    return atSlot(slot).getBeaconStateUtil();
+  }
+
   public Spec getGenesisSpec() {
     return atEpoch(UInt64.ZERO);
   }
@@ -81,6 +86,10 @@ public class SpecProvider {
 
   public int secondsPerSlot(final UInt64 epoch) {
     return atEpoch(epoch).getConstants().getSecondsPerSlot();
+  }
+
+  public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
   }
 
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
@@ -127,5 +136,21 @@ public class SpecProvider {
   private Spec getLatestSpec() {
     // When fork manifest is non-empty, we should pull the newest spec here
     return genesisSpec;
+  }
+
+  public long getSlotsPerHistoricalRoot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
+  }
+
+  public int getSlotsPerEpoch(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerEpoch();
+  }
+
+  public int getSecondsPerSlot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSecondsPerSlot();
+  }
+
+  public UInt64 getCurrentEpoch(final BeaconState state) {
+    return atSlot(state.getSlot()).getBeaconStateUtil().getCurrentEpoch(state);
   }
 }

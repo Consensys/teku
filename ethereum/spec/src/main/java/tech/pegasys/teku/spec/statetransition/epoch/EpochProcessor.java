@@ -34,9 +34,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class EpochProcessor {
   private final SpecConstants specConstants;
@@ -90,7 +90,7 @@ public class EpochProcessor {
 
       // Process justifications
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      Bitvector justificationBits = state.getJustification_bits().rightShift(1);
+      SszBitvector justificationBits = state.getJustification_bits().rightShift(1);
 
       if (totalBalances
           .getPreviousEpochTargetAttesters()

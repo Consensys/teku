@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
 class PeerSubnetSubscriptionsTest {
   private static final NodeId PEER1 = new MockNodeId(1);
@@ -73,7 +74,7 @@ class PeerSubnetSubscriptionsTest {
 
   @Test
   void shouldReturnEmptyBitvectorWhenPeerHasNoSubscriptions() {
-    final Bitvector subscriptions =
+    final SszBitvector subscriptions =
         PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
             .getSubscriptionsForPeer(PEER1);
     assertThat(subscriptions).isEqualTo(createBitvector());
@@ -124,7 +125,7 @@ class PeerSubnetSubscriptionsTest {
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
   }
 
-  private Bitvector createBitvector(final int... subnets) {
-    return new Bitvector(ATTESTATION_SUBNET_COUNT, subnets);
+  private SszBitvector createBitvector(final int... subnets) {
+    return SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnets);
   }
 }

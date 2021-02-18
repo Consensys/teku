@@ -23,6 +23,8 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -43,7 +45,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ChainHeadChannel chainHeadChannel) {
+      final ChainHeadChannel chainHeadChannel,
+      final SpecProvider specProvider) {
     super(
         asyncRunner,
         metricsSystem,
@@ -55,7 +58,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        eventBus);
+        eventBus,
+        specProvider);
     eventBus.register(this);
   }
 
@@ -74,6 +78,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
 
   public static class Builder {
     private StoreConfig storeConfig = StoreConfig.createDefault();
+    private SpecProvider specProvider = StubSpecProvider.createMinimal();
     private EventBus eventBus = new EventBus();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
@@ -90,12 +95,19 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           votes -> {},
           ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
-          chainHeadChannel);
+          chainHeadChannel,
+          specProvider);
     }
 
     public Builder storeConfig(final StoreConfig storeConfig) {
       checkNotNull(storeConfig);
       this.storeConfig = storeConfig;
+      return this;
+    }
+
+    public Builder specProvider(final SpecProvider specProvider) {
+      checkNotNull(specProvider);
+      this.specProvider = specProvider;
       return this;
     }
 
