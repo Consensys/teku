@@ -79,7 +79,8 @@ public class FileBackedStorageSystemBuilder {
     }
 
     validate();
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig);
+    return StorageSystem.create(
+        database, createRestartSupplier(), storageMode, storeConfig, specProvider);
   }
 
   private FileBackedStorageSystemBuilder copy() {

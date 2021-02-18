@@ -41,10 +41,10 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -83,7 +83,7 @@ public class BeaconChainUtil {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageClient,
             new StateTransition()),
         true);
@@ -99,7 +99,7 @@ public class BeaconChainUtil {
         new ForkChoice(
             new ForkChoiceAttestationValidator(),
             new ForkChoiceBlockTasks(),
-            new SyncForkChoiceExecutor(),
+            new InlineEventThread(),
             storageClient,
             new StateTransition()),
         signDeposits);

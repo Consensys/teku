@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
@@ -52,7 +50,6 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.GenesisGenerator;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -73,10 +70,15 @@ public class BeaconStateUtil {
   public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConstants specConstants;
+  private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
 
-  public BeaconStateUtil(final SpecConstants specConstants, final CommitteeUtil committeeUtil) {
+  public BeaconStateUtil(
+      final SpecConstants specConstants,
+      final ValidatorsUtil validatorsUtil,
+      final CommitteeUtil committeeUtil) {
     this.specConstants = specConstants;
+    this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
   }
 
@@ -167,7 +169,7 @@ public class BeaconStateUtil {
                       Bytes.concatenate(
                           getSeed(state, epoch, specConstants.getDomainBeaconProposer()),
                           uintToBytes(slot.longValue(), 8)));
-              List<Integer> indices = getActiveValidatorIndices(state, epoch);
+              List<Integer> indices = validatorsUtil.getActiveValidatorIndices(state, epoch);
               return committeeUtil.computeProposerIndex(state, indices, seed);
             });
   }
@@ -223,7 +225,8 @@ public class BeaconStateUtil {
         .getTotalActiveBalance()
         .get(
             getCurrentEpoch(state),
-            epoch -> getTotalBalance(state, getActiveValidatorIndices(state, epoch)));
+            epoch ->
+                getTotalBalance(state, validatorsUtil.getActiveValidatorIndices(state, epoch)));
   }
 
   public void initiateValidatorExit(MutableBeaconState state, int index) {
@@ -275,7 +278,7 @@ public class BeaconStateUtil {
 
   public UInt64 getValidatorChurnLimit(BeaconState state) {
     final int activeValidatorCount =
-        getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
+        validatorsUtil.getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
     return getValidatorChurnLimit(activeValidatorCount);
   }
 
@@ -298,7 +301,7 @@ public class BeaconStateUtil {
   }
 
   public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices = getActiveValidatorIndices(state, epoch);
+    List<Integer> active_validator_indices = validatorsUtil.getActiveValidatorIndices(state, epoch);
     return UInt64.valueOf(
         Math.max(
             1,
@@ -356,7 +359,7 @@ public class BeaconStateUtil {
               int count = committees_per_slot.times(specConstants.getSlotsPerEpoch()).intValue();
               return committeeUtil.computeCommittee(
                   state,
-                  getActiveValidatorIndices(state, epoch),
+                  validatorsUtil.getActiveValidatorIndices(state, epoch),
                   getSeed(state, epoch, specConstants.getDomainBeaconAttester()),
                   committeeIndex,
                   count);
@@ -403,7 +406,7 @@ public class BeaconStateUtil {
     state
         .getSlashings()
         .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
-    decrease_balance(
+    validatorsUtil.decreaseBalance(
         state,
         slashedIndex,
         validator.getEffective_balance().dividedBy(specConstants.getMinSlashingPenaltyQuotient()));
@@ -418,8 +421,9 @@ public class BeaconStateUtil {
         validator.getEffective_balance().dividedBy(specConstants.getWhistleblowerRewardQuotient());
     UInt64 proposer_reward =
         whistleblower_reward.dividedBy(specConstants.getProposerRewardQuotient());
-    increase_balance(state, proposer_index, proposer_reward);
-    increase_balance(state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
+    validatorsUtil.increaseBalance(state, proposer_index, proposer_reward);
+    validatorsUtil.increaseBalance(
+        state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
   }
 
   private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
@@ -458,39 +462,6 @@ public class BeaconStateUtil {
     final UInt64 blockEpoch = computeEpochAtSlot(blockSlot);
     final UInt64 parentEpoch = computeEpochAtSlot(parentSlot);
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
-  }
-
-  public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
-    final UInt64 stateEpoch = getCurrentEpoch(state);
-    final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
-    checkArgument(
-        epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
-        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
-        epoch,
-        stateEpoch);
-    return BeaconStateCache.getTransitionCaches(state)
-        .getActiveValidators()
-        .get(
-            epoch,
-            e -> {
-              SSZList<Validator> validators = state.getValidators();
-              return IntStream.range(0, validators.size())
-                  .filter(index -> ValidatorsUtil.is_active_validator(validators.get(index), epoch))
-                  .boxed()
-                  .collect(Collectors.toList());
-            });
-  }
-
-  public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return getMaxLookaheadEpoch(getCurrentEpoch(state));
-  }
-
-  public boolean isEligibleForActivation(BeaconState state, Validator validator) {
-    return validator
-                .getActivation_eligibility_epoch()
-                .compareTo(state.getFinalized_checkpoint().getEpoch())
-            <= 0
-        && validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH);
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
@@ -545,7 +516,7 @@ public class BeaconStateUtil {
       SSZList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
-          index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+          index -> validatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
 
       existingIndex =
           IntStream.range(0, validators.size())
@@ -588,12 +559,8 @@ public class BeaconStateUtil {
       state.getValidators().add(getValidatorFromDeposit(deposit));
       state.getBalances().add(amount);
     } else {
-      increase_balance(state, existingIndex.getAsInt(), amount);
+      validatorsUtil.increaseBalance(state, existingIndex.getAsInt(), amount);
     }
-  }
-
-  private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
-    return stateEpoch.plus(specConstants.getMaxSeedLookahead());
   }
 
   private Validator getValidatorFromDeposit(Deposit deposit) {

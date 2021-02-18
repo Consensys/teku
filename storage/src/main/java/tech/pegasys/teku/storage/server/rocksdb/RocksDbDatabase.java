@@ -63,7 +63,6 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -71,6 +70,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -95,7 +95,6 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.config.Constants;
 
 public class RocksDbDatabase implements Database {
   private static final Logger LOG = LogManager.getLogger();
@@ -360,7 +359,7 @@ public class RocksDbDatabase implements Database {
 
     // Check block signatures are valid for blocks except the genesis block
     boolean isGenesisBlockIncluded =
-        Iterables.getLast(sorted).getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT));
+        Iterables.getLast(sorted).getSlot().equals(SpecConstants.GENESIS_SLOT);
     checkArgument(
         batchVerifyHistoricalBlockSignatures(
             isGenesisBlockIncluded ? sorted.subList(0, sorted.size() - 1) : sorted),
@@ -397,7 +396,8 @@ public class RocksDbDatabase implements Database {
           signatures.add(signedBlock.getSignature());
           signingRoots.add(compute_signing_root(block, domain));
           BLSPublicKey proposerPublicKey =
-              ValidatorsUtil.getValidatorPubKey(finalizedState, block.getProposerIndex())
+              specProvider
+                  .getValidatorPubKey(finalizedState, block.getProposerIndex())
                   .orElseThrow(
                       () ->
                           new IllegalStateException(
@@ -759,7 +759,7 @@ public class RocksDbDatabase implements Database {
       final int start = i;
       try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
         final StateRootRecorder recorder =
-            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot);
+            new StateRootRecorder(lastSlot, updater::addFinalizedStateRoot, specProvider);
 
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 blockRoot = finalizedRoots.get(i);
