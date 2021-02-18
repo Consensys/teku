@@ -16,7 +16,6 @@ package tech.pegasys.teku.core.blockvalidator;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
  * Dedicated class which performs block validation (apart from {@link
@@ -27,6 +26,8 @@ public interface BlockValidator {
 
   /** Represents block validation result which may contain reason exception in case of a failure */
   class BlockValidationResult {
+    public static BlockValidationResult SUCCESSFUL = new BlockValidationResult(true);
+
     private final boolean isValid;
     private final Exception reason;
 
@@ -66,7 +67,7 @@ public interface BlockValidator {
    * @param indexedAttestationProvider the provider to use to calculate indexed attestations
    * @return Result promise
    */
-  SafeFuture<BlockValidationResult> validatePreState(
+  BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
       IndexedAttestationProvider indexedAttestationProvider);
@@ -81,21 +82,24 @@ public interface BlockValidator {
    * @param block Block to be validated
    * @return Result promise
    */
-  SafeFuture<BlockValidationResult> validatePostState(
-      BeaconState postState, SignedBeaconBlock block);
+  BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
 
   /**
    * Combines {@link #validatePreState(BeaconState, SignedBeaconBlock, IndexedAttestationProvider)}
    * and {@link #validatePostState(BeaconState, SignedBeaconBlock)}
+   *
+   * @return
    */
-  default SafeFuture<BlockValidationResult> validate(
+  default BlockValidationResult validate(
       BeaconState preState,
       SignedBeaconBlock block,
       BeaconState postState,
       IndexedAttestationProvider indexedAttestationProvider) {
-    SafeFuture<BlockValidationResult> preFut =
-        validatePreState(preState, block, indexedAttestationProvider);
-    SafeFuture<BlockValidationResult> postFut = validatePostState(postState, block);
-    return preFut.thenCombine(postFut, (pre, post) -> !pre.isValid() ? pre : post);
+    BlockValidationResult preResult = validatePreState(preState, block, indexedAttestationProvider);
+    if (!preResult.isValid) {
+      return preResult;
+    }
+
+    return validatePostState(postState, block);
   }
 }
