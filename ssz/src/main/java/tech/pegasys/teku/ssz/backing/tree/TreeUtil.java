@@ -183,8 +183,8 @@ public class TreeUtil {
 
   public static Bytes concatenateLeavesData(TreeNode tree) {
     List<Bytes> leavesData = new ArrayList<>();
-    iterateLeavesData(tree, GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.RIGHTMOST_G_INDEX,
-        leavesData::add);
+    iterateLeavesData(
+        tree, GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.RIGHTMOST_G_INDEX, leavesData::add);
     return Bytes.wrap(leavesData.toArray(new Bytes[0]));
   }
 }

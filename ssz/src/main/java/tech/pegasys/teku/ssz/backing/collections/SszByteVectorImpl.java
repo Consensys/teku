@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
@@ -60,6 +59,6 @@ public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
 
   @Override
   public String toString() {
-    return "SszByteVector{" +data +        '}';
+    return "SszByteVector{" + data + '}';
   }
 }
