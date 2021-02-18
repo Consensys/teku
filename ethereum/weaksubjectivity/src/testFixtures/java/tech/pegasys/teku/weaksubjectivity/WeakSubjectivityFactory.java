@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityFactory {
 
-  private static final SpecProvider specProvider = StubSpecProvider.create();
+  private static final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private static final WeakSubjectivityConfig wsConfig =
       WeakSubjectivityConfig.builder().specProvider(specProvider).build();
 

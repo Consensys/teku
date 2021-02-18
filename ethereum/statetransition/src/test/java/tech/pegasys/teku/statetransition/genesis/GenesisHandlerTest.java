@@ -31,11 +31,13 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.networks.TestConstantsLoader;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -69,9 +71,12 @@ public class GenesisHandlerTest {
 
   @BeforeEach
   public void setup() {
-    specProvider =
-        StubSpecProvider.create(
-            config -> config.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
+    final SpecConstants specConstants =
+        TestConstantsLoader.loadConstantsBuilder("minimal")
+            .minGenesisActiveValidatorCount(VALIDATOR_KEYS.size())
+            .build();
+    specProvider = SpecProviderFactory.create(specConstants);
+
     genesisHandler =
         new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);

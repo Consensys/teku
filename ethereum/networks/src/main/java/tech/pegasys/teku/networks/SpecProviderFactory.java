@@ -33,7 +33,12 @@ public class SpecProviderFactory {
 
   public static SpecProvider create(final String constantsName) {
     final SpecConstants constants = ConstantsLoader.loadConstants(constantsName);
-    final SpecConfiguration specConfig = SpecConfiguration.builder().constants(constants).build();
+    return create(constants);
+  }
+
+  public static SpecProvider create(final SpecConstants specConstants) {
+    final SpecConfiguration specConfig =
+        SpecConfiguration.builder().constants(specConstants).build();
     return SpecProvider.create(specConfig);
   }
 }
