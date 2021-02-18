@@ -30,6 +30,8 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -38,12 +40,8 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel {
-
-  private static final int FINALIZED_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 3;
-
   private final EventBus eventBus;
 
   private final Database database;
@@ -59,9 +57,12 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
     this.finalizedStateCache = finalizedStateCache;
   }
 
-  public static ChainStorage create(final EventBus eventBus, final Database database) {
+  public static ChainStorage create(
+      final EventBus eventBus, final Database database, final SpecProvider specProvider) {
+    final int finalizedStateCacheSize =
+        specProvider.getSlotsPerEpoch(SpecConstants.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        eventBus, database, new FinalizedStateCache(database, FINALIZED_STATE_CACHE_SIZE, true));
+        eventBus, database, new FinalizedStateCache(database, finalizedStateCacheSize, true));
   }
 
   public void start() {

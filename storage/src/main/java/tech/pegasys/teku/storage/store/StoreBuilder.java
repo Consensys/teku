@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
@@ -62,10 +62,12 @@ public class StoreBuilder {
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor,
-      final UInt64 currentTime) {
+      final UInt64 currentTime,
+      final SpecProvider specProvider) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT)).max(currentTime);
+    final UInt64 time =
+        genesisTime.plus(slot.times(specProvider.getSecondsPerSlot(slot))).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(

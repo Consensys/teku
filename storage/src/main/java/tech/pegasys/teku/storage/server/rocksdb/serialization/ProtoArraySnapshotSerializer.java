@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -21,7 +22,6 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArraySnapshot> {
   @Override
@@ -38,7 +38,7 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
           if (reader.isComplete()) {
             // Read earlier format which is missing an explicit initial epoch value
             // Set initial epoch to default of zero for genesis
-            initialEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
+            initialEpoch = GENESIS_EPOCH;
           } else {
             // Read initial epoch
             initialEpoch = UInt64.fromLongBits(reader.readUInt64());
