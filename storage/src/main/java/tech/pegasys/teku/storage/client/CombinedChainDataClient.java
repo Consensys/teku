@@ -14,11 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -44,9 +40,10 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -61,21 +58,24 @@ public class CombinedChainDataClient {
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
   private final StateTransition stateTransition;
+  private final SpecProvider specProvider;
 
   public CombinedChainDataClient(
-      final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
-    this.recentChainData = recentChainData;
-    this.historicalChainData = historicalChainData;
-    this.stateTransition = new StateTransition();
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final SpecProvider specProvider) {
+    this(recentChainData, historicalChainData, new StateTransition(), specProvider);
   }
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final StateTransition stateTransition) {
+      final StateTransition stateTransition,
+      final SpecProvider specProvider) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.stateTransition = stateTransition;
+    this.specProvider = specProvider;
   }
 
   /**
@@ -185,7 +185,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UInt64 epoch) {
-    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epochSlot = specProvider.computeStartSlotAtEpoch(epoch);
     return getSignedBlockAndStateInEffectAtSlot(epochSlot)
         .thenCompose(
             maybeBlockAndState ->
@@ -217,7 +217,7 @@ public class CombinedChainDataClient {
 
   public boolean isFinalized(final UInt64 slot) {
     final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
@@ -366,13 +366,15 @@ public class CombinedChainDataClient {
 
   public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
-    final UInt64 startingSlot = compute_start_slot_at_epoch(epoch);
-    int committeeCount = get_committee_count_per_slot(state, epoch).intValue();
-    for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
+    final BeaconStateUtil beaconStateUtil = specProvider.atEpoch(epoch).getBeaconStateUtil();
+    final int slotsPerEpoch = specProvider.slotsPerEpoch(epoch);
+    final UInt64 startingSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    int committeeCount = beaconStateUtil.getCommitteeCountPerSlot(state, epoch).intValue();
+    for (int i = 0; i < slotsPerEpoch; i++) {
       UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
-        List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);
+        List<Integer> committee = beaconStateUtil.getBeaconCommittee(state, slot, idx);
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }
@@ -390,7 +392,8 @@ public class CombinedChainDataClient {
 
   /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
-    return compute_epoch_at_slot(getHeadSlot());
+    final UInt64 headSlot = getHeadSlot();
+    return specProvider.computeEpochAtSlot(headSlot);
   }
 
   public Optional<ForkInfo> getHeadForkInfo() {
@@ -404,7 +407,8 @@ public class CombinedChainDataClient {
 
   /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
-    return compute_epoch_at_slot(getCurrentSlot());
+    final UInt64 headSlot = getCurrentSlot();
+    return specProvider.computeEpochAtSlot(headSlot);
   }
 
   @VisibleForTesting

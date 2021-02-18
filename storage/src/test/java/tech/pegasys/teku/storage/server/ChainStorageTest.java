@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.collect.Lists;
 import java.nio.file.Path;
@@ -33,16 +34,17 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ChainStorageTest {
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
+  private SpecProvider specProvider = StubSpecProvider.createMinimal();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
@@ -85,7 +87,7 @@ public class ChainStorageTest {
     setup(storageSystemSupplier);
 
     // Build small chain
-    chainBuilder.generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * 3);
+    chainBuilder.generateBlocksUpToSlot(specProvider.slotsPerEpoch(ZERO) * 3);
     // Retrieve anchor data
     final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
     final SignedBlockAndState anchorBlockAndState =
@@ -94,7 +96,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor point
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Now generate missing historical blocks
@@ -124,7 +126,7 @@ public class ChainStorageTest {
     setup(storageSystemSupplier);
 
     // Build small chain
-    chainBuilder.generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * 3);
+    chainBuilder.generateBlocksUpToSlot(specProvider.slotsPerEpoch(ZERO) * 3);
     // Retrieve anchor data
     final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
     final SignedBlockAndState anchorBlockAndState =
@@ -136,11 +138,11 @@ public class ChainStorageTest {
     if (initializeWithAnchorStateAlone) {
       anchorPoint =
           AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
     } else {
       anchorPoint = AnchorPoint.create(anchorCheckpoint, anchorBlockAndState);
-      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+      storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
 
@@ -185,7 +187,7 @@ public class ChainStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     setup(storageSystemSupplier);
     final int epochs = 3;
-    final int chainSize = Constants.SLOTS_PER_EPOCH * epochs;
+    final int chainSize = specProvider.slotsPerEpoch(ZERO) * epochs;
 
     // Create fork
     final ChainBuilder forkBuilder = chainBuilder.fork();
@@ -203,7 +205,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Try to save non-matching fork blocks
@@ -226,7 +228,7 @@ public class ChainStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     setup(storageSystemSupplier);
     final int epochs = 3;
-    final int chainSize = Constants.SLOTS_PER_EPOCH * epochs;
+    final int chainSize = specProvider.slotsPerEpoch(ZERO) * epochs;
 
     // Build small chain
     chainBuilder.generateBlocksUpToSlot(chainSize);
@@ -238,7 +240,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Get set of blocks to save
@@ -264,7 +266,7 @@ public class ChainStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     setup(storageSystemSupplier);
     final int epochs = 3;
-    final int chainSize = Constants.SLOTS_PER_EPOCH * epochs;
+    final int chainSize = specProvider.slotsPerEpoch(ZERO) * epochs;
 
     // Build small chain
     chainBuilder.generateBlocksUpToSlot(chainSize);
@@ -276,7 +278,7 @@ public class ChainStorageTest {
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
         AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
-    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
     // Get set of blocks to save

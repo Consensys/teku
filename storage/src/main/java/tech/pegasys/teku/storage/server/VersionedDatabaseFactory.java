@@ -33,7 +33,6 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
-import tech.pegasys.teku.util.config.Constants;
 
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -207,7 +206,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV4Database() {
     try {
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      DatabaseNetwork.init(
+          getNetworkFile(),
+          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
+          eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
@@ -229,7 +231,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     try {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      DatabaseNetwork.init(
+          getNetworkFile(),
+          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
+          eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -261,7 +266,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
                 + (defaultMetaData.isSingleDB() ? "Single" : "Separate"));
       }
 
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      DatabaseNetwork.init(
+          getNetworkFile(),
+          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
+          eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
@@ -300,7 +308,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     try {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      DatabaseNetwork.init(
+          getNetworkFile(),
+          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
+          eth1Address);
       return RocksDbDatabase.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -332,7 +343,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
                 + (defaultMetaData.isSingleDB() ? "Single" : "Separate"));
       }
 
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      DatabaseNetwork.init(
+          getNetworkFile(),
+          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
+          eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
