@@ -17,12 +17,14 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class SpecProvider {
   // Eventually we will have multiple versioned specs, where each version is active for a specific
@@ -118,6 +120,12 @@ public class SpecProvider {
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 proposerIndex) {
     return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
+  }
+
+  // Attestation helpers
+  public List<Integer> getAttestingIndices(
+      BeaconState state, AttestationData data, SszBitlist bits) {
+    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
   }
 
   // Private helpers
