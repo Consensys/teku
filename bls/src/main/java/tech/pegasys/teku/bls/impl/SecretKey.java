@@ -44,7 +44,7 @@ public interface SecretKey {
    * @param dst Domain seperation tag/cipher suite to use
    * @return The Signature, not null
    */
-  Signature sign(Bytes message, String dst);
+  Signature sign(Bytes message, Bytes dst);
 
   /** Overwrites the key with zeros so that it is no longer in memory */
   void destroy();

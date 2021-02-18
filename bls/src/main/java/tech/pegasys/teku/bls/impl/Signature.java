@@ -69,7 +69,7 @@ public interface Signature {
    * @param dst domain separation tag (DST), not null
    * @return True if the verification is successful, false otherwise
    */
-  boolean verify(PublicKey publicKey, Bytes message, String dst);
+  boolean verify(PublicKey publicKey, Bytes message, Bytes dst);
 
   /** Implementation must override */
   @Override
