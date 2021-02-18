@@ -37,7 +37,7 @@ public class InMemoryStorageSystemBuilder {
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
 
-  private SpecProvider specProvider = SpecProviderFactory.create("minimal");
+  private SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   // Internal variables
   MockRocksDbInstance unifiedDb;

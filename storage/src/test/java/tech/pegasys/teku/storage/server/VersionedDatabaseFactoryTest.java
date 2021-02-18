@@ -34,7 +34,7 @@ public class VersionedDatabaseFactoryTest {
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
   private final Optional<Eth1Address> eth1Address =
       Optional.of(Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC"));
-  private final SpecProvider specProvider = SpecProviderFactory.create("minimal");
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   @TempDir Path dataDir;
 
   @Test

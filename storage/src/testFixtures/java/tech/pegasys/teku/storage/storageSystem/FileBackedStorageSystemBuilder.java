@@ -35,7 +35,7 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-  private SpecProvider specProvider = SpecProviderFactory.create("minimal");
+  private SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   // Version-dependent fields
   private Path dataDir;

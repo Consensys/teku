@@ -55,8 +55,10 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
-    final String networkName = useMainnetConfig ? "mainnet" : "minimal";
-    specProvider = SpecProviderFactory.create(networkName);
+    specProvider =
+        useMainnetConfig
+            ? SpecProviderFactory.createMainnet()
+            : SpecProviderFactory.createMinimal();
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;

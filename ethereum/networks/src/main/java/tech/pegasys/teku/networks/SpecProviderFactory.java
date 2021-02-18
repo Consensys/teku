@@ -23,6 +23,14 @@ public class SpecProviderFactory {
     return create(network.constantsName());
   }
 
+  public static SpecProvider createMinimal() {
+    return create(Eth2Network.MINIMAL);
+  }
+
+  public static SpecProvider createMainnet() {
+    return create(Eth2Network.MAINNET);
+  }
+
   public static SpecProvider create(final String constantsName) {
     final SpecConstants constants = ConstantsLoader.loadConstants(constantsName);
     final SpecConfiguration specConfig = SpecConfiguration.builder().constants(constants).build();
