@@ -60,7 +60,8 @@ public class StorageService extends Service {
                   config.getSpecProvider());
           database = dbFactory.createDatabase();
 
-          chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
+          chainStorage =
+              ChainStorage.create(serviceConfig.getEventBus(), database, config.getSpecProvider());
           final DepositStorage depositStorage =
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);

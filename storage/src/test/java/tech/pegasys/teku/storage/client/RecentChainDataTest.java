@@ -17,12 +17,9 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
@@ -53,6 +50,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -63,10 +63,11 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
-import tech.pegasys.teku.util.config.Constants;
 
 class RecentChainDataTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final SpecConstants genesisSpecConstants = specProvider.getGenesisSpecConstants();
   private StorageSystem storageSystem;
 
   private ChainBuilder chainBuilder;
@@ -110,7 +111,7 @@ class RecentChainDataTest {
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
-    assertThat(recentChainData.getHeadSlot()).isEqualTo(UInt64.valueOf(Constants.GENESIS_SLOT));
+    assertThat(recentChainData.getHeadSlot()).isEqualTo(GENESIS_SLOT);
     assertThat(recentChainData.getBestState()).hasValue(genesisState);
     assertThat(recentChainData.getStore()).isNotNull();
   }
@@ -148,7 +149,10 @@ class RecentChainDataTest {
 
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
     final UInt64 anchorBlockTime =
-        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+        anchorPoint
+            .getBlockSlot()
+            .times(genesisSpecConstants.getSecondsPerSlot())
+            .plus(genesisTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(100));
     assertThat(recentChainData.getStore().getTime()).isEqualTo(anchorBlockTime);
   }
@@ -165,7 +169,10 @@ class RecentChainDataTest {
 
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
     final UInt64 anchorBlockTime =
-        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+        anchorPoint
+            .getBlockSlot()
+            .times(genesisSpecConstants.getSecondsPerSlot())
+            .plus(genesisTime);
     final UInt64 time = genesisTime.plus(1);
     assertThat(time).isLessThan(anchorBlockTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, time);
@@ -184,7 +191,10 @@ class RecentChainDataTest {
 
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
     final UInt64 anchorBlockTime =
-        anchorPoint.getBlockSlot().times(Constants.SECONDS_PER_SLOT).plus(genesisTime);
+        anchorPoint
+            .getBlockSlot()
+            .times(genesisSpecConstants.getSecondsPerSlot())
+            .plus(genesisTime);
     final UInt64 time = anchorBlockTime.plus(100);
     recentChainData.initializeFromAnchorPoint(anchorPoint, time);
     assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
@@ -196,8 +206,8 @@ class RecentChainDataTest {
     initPostGenesis(updateHeadForEmptySlots);
 
     // Ensure the current and previous target root blocks are different
-    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
-    chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2 - 1);
+    chainBuilder.generateBlockAtSlot(genesisSpecConstants.getSlotsPerEpoch() - 1);
+    chainBuilder.generateBlockAtSlot(genesisSpecConstants.getSlotsPerEpoch() * 2 - 1);
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
@@ -211,8 +221,12 @@ class RecentChainDataTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getRoot(),
                 true,
-                getPreviousDutyDependentRoot(bestBlock.getState()),
-                getCurrentDutyDependentRoot(bestBlock.getState())));
+                specProvider
+                    .getBeaconStateUtil(bestBlock.getSlot())
+                    .getPreviousDutyDependentRoot(bestBlock.getState()),
+                specProvider
+                    .getBeaconStateUtil(bestBlock.getSlot())
+                    .getCurrentDutyDependentRoot(bestBlock.getState())));
   }
 
   @ParameterizedTest
@@ -553,7 +567,7 @@ class RecentChainDataTest {
   public void getLatestFinalizedBlockSlot_postGenesisFinalizedBlockOutsideOfEpochBoundary() {
     initPostGenesis();
     final UInt64 epoch = ONE;
-    final UInt64 epochBoundarySlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epochBoundarySlot = specProvider.computeStartSlotAtEpoch(epoch);
     final UInt64 finalizedBlockSlot = epochBoundarySlot.minus(ONE);
     final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
     saveBlock(recentChainData, finalizedBlock);
@@ -605,10 +619,10 @@ class RecentChainDataTest {
   public void getBlockRootBySlot_forOutOfRangeSlot() {
     initPostGenesis();
     disableForkChoicePruneThreshold();
-    final UInt64 historicalRoots = UInt64.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UInt64 historicalRoots = UInt64.valueOf(genesisSpecConstants.getSlotsPerHistoricalRoot());
     final UInt64 targetSlot = UInt64.valueOf(10);
     final UInt64 finalizedBlockSlot = targetSlot.plus(historicalRoots).plus(ONE);
-    final UInt64 finalizedEpoch = compute_epoch_at_slot(finalizedBlockSlot).plus(ONE);
+    final UInt64 finalizedEpoch = specProvider.computeEpochAtSlot(finalizedBlockSlot).plus(ONE);
 
     // Add a block within the finalized range
     final SignedBlockAndState historicalBlock = chainBuilder.generateBlockAtSlot(targetSlot);
@@ -623,10 +637,10 @@ class RecentChainDataTest {
   @Test
   public void getBlockRootBySlot_forHistoricalSlotInRange() {
     initPostGenesis();
-    final UInt64 historicalRoots = UInt64.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UInt64 historicalRoots = UInt64.valueOf(genesisSpecConstants.getSlotsPerHistoricalRoot());
     final UInt64 targetSlot = UInt64.valueOf(10);
     final UInt64 finalizedBlockSlot = targetSlot.plus(historicalRoots);
-    final UInt64 finalizedEpoch = compute_epoch_at_slot(finalizedBlockSlot).plus(ONE);
+    final UInt64 finalizedEpoch = specProvider.computeEpochAtSlot(finalizedBlockSlot).plus(ONE);
 
     // Add a block within the finalized range
     final SignedBlockAndState historicalBlock = chainBuilder.generateBlockAtSlot(targetSlot);
@@ -670,7 +684,7 @@ class RecentChainDataTest {
   public void getBlockRootBySlot_queryEntireChain() {
     initPostGenesis();
     disableForkChoicePruneThreshold();
-    final UInt64 historicalRoots = UInt64.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UInt64 historicalRoots = UInt64.valueOf(genesisSpecConstants.getSlotsPerHistoricalRoot());
 
     // Build a chain that spans multiple increments of SLOTS_PER_HISTORICAL_ROOT
     final int skipBlocks = 3;
@@ -678,7 +692,7 @@ class RecentChainDataTest {
     final UInt64 finalizedBlockSlot = UInt64.valueOf(10).plus(historicalRoots);
     final UInt64 finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
-    final UInt64 recentSlot = compute_start_slot_at_epoch(finalizedEpoch).plus(ONE);
+    final UInt64 recentSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch).plus(ONE);
     final UInt64 chainHeight = historicalRoots.times(2).plus(recentSlot).plus(5);
     // Build historical blocks
     final SignedBlockAndState finalizedBlock;
@@ -860,7 +874,7 @@ class RecentChainDataTest {
    *     keep the blocks to be kept in the finalizing transaction @
    */
   private void testCommitPruningOfParallelBlocks(final boolean pruneNewBlocks) {
-    final UInt64 epoch2Slot = compute_start_slot_at_epoch(UInt64.valueOf(2));
+    final UInt64 epoch2Slot = specProvider.computeStartSlotAtEpoch(UInt64.valueOf(2));
 
     // Create a fork by skipping the next slot on the fork chain
     ChainBuilder fork = chainBuilder.fork();

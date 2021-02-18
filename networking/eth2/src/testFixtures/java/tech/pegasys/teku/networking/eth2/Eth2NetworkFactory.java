@@ -182,7 +182,8 @@ public class Eth2NetworkFactory {
                 eth2StatusUpdateInterval,
                 StubTimeProvider.withTimeInSeconds(1000),
                 500,
-                50);
+                50,
+                specProvider);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()

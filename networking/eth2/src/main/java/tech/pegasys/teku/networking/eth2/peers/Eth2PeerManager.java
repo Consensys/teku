@@ -42,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -107,13 +108,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Duration eth2StatusUpdateInterval,
       final TimeProvider timeProvider,
       final int peerRateLimit,
-      final int peerRequestLimit) {
+      final int peerRequestLimit,
+      final SpecProvider specProvider) {
 
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, historicalChainData);
+        new CombinedChainDataClient(recentChainData, historicalChainData, specProvider);
     return new Eth2PeerManager(
         asyncRunner,
         combinedChainDataClient,

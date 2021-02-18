@@ -21,23 +21,35 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.SpecProvider;
 
 class ChainHead extends StateAndBlockSummary {
   private final UInt64 forkChoiceSlot;
+  private final SpecProvider specProvider;
 
-  private ChainHead(BeaconBlockSummary block, BeaconState state, UInt64 forkChoiceSlot) {
+  private ChainHead(
+      BeaconBlockSummary block,
+      BeaconState state,
+      UInt64 forkChoiceSlot,
+      final SpecProvider specProvider) {
     super(block, state);
     this.forkChoiceSlot = forkChoiceSlot;
+    this.specProvider = specProvider;
   }
 
-  public static ChainHead create(StateAndBlockSummary blockAndState, UInt64 forkChoiceSlot) {
-    return new ChainHead(blockAndState.getBlockSummary(), blockAndState.getState(), forkChoiceSlot);
+  public static ChainHead create(
+      StateAndBlockSummary blockAndState, UInt64 forkChoiceSlot, final SpecProvider specProvider) {
+    return new ChainHead(
+        blockAndState.getBlockSummary(), blockAndState.getState(), forkChoiceSlot, specProvider);
   }
 
   /** @return The slot at which the chain head was calculated */
   public UInt64 getForkChoiceSlot() {
     return forkChoiceSlot;
+  }
+
+  public UInt64 getForkChoiceEpoch() {
+    return specProvider.computeEpochAtSlot(forkChoiceSlot);
   }
 
   public UInt64 findCommonAncestor(final ChainHead other) {
@@ -49,8 +61,8 @@ class ChainHead extends StateAndBlockSummary {
     final UInt64 longestChainSlot = getSlot().max(other.getSlot());
     UInt64 minSlotWithHistoricRoot =
         longestChainSlot
-            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // Avoid underflow
-            .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
+            .max(specProvider.getSlotsPerHistoricalRoot(slot)) // Avoid underflow
+            .minus(specProvider.getSlotsPerHistoricalRoot(slot));
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
       if (getBlockRootAtSlot(slot).equals(other.getBlockRootAtSlot(slot))) {
         return slot;

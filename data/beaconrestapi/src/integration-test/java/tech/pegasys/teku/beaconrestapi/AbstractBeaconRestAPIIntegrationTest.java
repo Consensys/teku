@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -65,7 +66,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  protected final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
@@ -82,7 +84,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
-      new CombinedChainDataClient(recentChainData, historicalChainData);
+      new CombinedChainDataClient(recentChainData, historicalChainData, specProvider);
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
