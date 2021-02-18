@@ -41,7 +41,7 @@ public class GetPeerByIdIntegrationTest extends AbstractDataBackedRestAPIIntegra
   @Test
   public void shouldGetPeerById() throws IOException {
     startRestAPIAtGenesis();
-    when(eth2Network.getPeer(any())).thenReturn(Optional.of(peer));
+    when(eth2P2PNetwork.getPeer(any())).thenReturn(Optional.of(peer));
     when(peer.getId()).thenReturn(node1);
     when(peer.getAddress()).thenReturn(peerAddress);
     when(peerAddress.toExternalForm()).thenReturn("/ip/1.2.3.4/tcp/4242/p2p/aeiou");

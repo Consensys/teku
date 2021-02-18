@@ -33,9 +33,9 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PingIntegrationTest {
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private Eth2Network network1;
-  private Eth2Network network2;
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private Eth2P2PNetwork network1;
+  private Eth2P2PNetwork network2;
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 
@@ -151,7 +151,7 @@ public class PingIntegrationTest {
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
   }
 
-  private Eth2PeerManager getPeerManager(Eth2Network eth2Network) {
-    return ((ActiveEth2Network) eth2Network).getPeerManager();
+  private Eth2PeerManager getPeerManager(Eth2P2PNetwork eth2P2PNetwork) {
+    return ((ActiveEth2P2PNetwork) eth2P2PNetwork).getPeerManager();
   }
 }

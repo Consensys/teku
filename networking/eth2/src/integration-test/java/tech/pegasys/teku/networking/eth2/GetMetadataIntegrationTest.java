@@ -24,9 +24,9 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetMetadataIntegrationTest {
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private Eth2Network network1;
-  private Eth2Network network2;
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private Eth2P2PNetwork network1;
+  private Eth2P2PNetwork network2;
   private Eth2Peer peer1;
 
   @BeforeEach

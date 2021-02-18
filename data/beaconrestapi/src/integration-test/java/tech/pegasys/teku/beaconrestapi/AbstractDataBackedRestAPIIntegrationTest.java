@@ -52,7 +52,7 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.StubSpecProvider;
@@ -96,7 +96,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final UInt64 TEN = UInt64.valueOf(10);
 
   // Mocks
-  protected final Eth2Network eth2Network = mock(Eth2Network.class);
+  protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
@@ -158,7 +158,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             StubSpecProvider.create(),
             recentChainData,
             combinedChainDataClient,
-            eth2Network,
+            eth2P2PNetwork,
             syncService,
             validatorApiChannel,
             attestationPool,

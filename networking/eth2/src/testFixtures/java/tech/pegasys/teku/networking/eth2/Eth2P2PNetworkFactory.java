@@ -83,14 +83,14 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Eth2NetworkFactory {
+public class Eth2P2PNetworkFactory {
 
   protected static final Logger LOG = LogManager.getLogger();
   protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
   private static final int MIN_PORT = 6000;
   private static final int MAX_PORT = 9000;
 
-  private final List<Eth2Network> networks = new ArrayList<>();
+  private final List<Eth2P2PNetwork> networks = new ArrayList<>();
 
   public Eth2P2PNetworkBuilder builder() {
     return new Eth2P2PNetworkBuilder();
@@ -103,7 +103,7 @@ public class Eth2NetworkFactory {
 
   public class Eth2P2PNetworkBuilder {
 
-    protected List<Eth2Network> peers = new ArrayList<>();
+    protected List<Eth2P2PNetwork> peers = new ArrayList<>();
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
@@ -130,18 +130,18 @@ public class Eth2NetworkFactory {
     protected Duration eth2StatusUpdateInterval;
     protected SpecProvider specProvider = StubSpecProvider.createMinimal();
 
-    public Eth2Network startNetwork() throws Exception {
+    public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
-      final Eth2Network network = buildAndStartNetwork();
+      final Eth2P2PNetwork network = buildAndStartNetwork();
       networks.add(network);
       return network;
     }
 
-    protected Eth2Network buildAndStartNetwork() throws Exception {
+    protected Eth2P2PNetwork buildAndStartNetwork() throws Exception {
       int attempt = 1;
       while (true) {
         final P2PConfig config = generateConfig();
-        final Eth2Network network = buildNetwork(config);
+        final Eth2P2PNetwork network = buildNetwork(config);
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);
@@ -164,7 +164,7 @@ public class Eth2NetworkFactory {
       }
     }
 
-    protected Eth2Network buildNetwork(final P2PConfig config) {
+    protected Eth2P2PNetwork buildNetwork(final P2PConfig config) {
       {
         // Setup eth2 handlers
         final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
@@ -236,7 +236,7 @@ public class Eth2NetworkFactory {
                 config.getDiscoveryConfig(),
                 config.getNetworkConfig());
 
-        return new ActiveEth2Network(
+        return new ActiveEth2P2PNetwork(
             specProvider,
             asyncRunner,
             metricsSystem,
@@ -289,14 +289,18 @@ public class Eth2NetworkFactory {
         asyncRunner = DelayedExecutorAsyncRunner.create();
       }
       if (eth2RpcPingInterval == null) {
-        eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
+        eth2RpcPingInterval =
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
       }
       if (eth2StatusUpdateInterval == null) {
-        eth2StatusUpdateInterval = Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+        eth2StatusUpdateInterval =
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
+                .DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
       }
       if (eth2RpcOutstandingPingThreshold == null) {
         eth2RpcOutstandingPingThreshold =
-            Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+            tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder
+                .DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
@@ -364,7 +368,7 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder peer(final Eth2Network peer) {
+    public Eth2P2PNetworkBuilder peer(final Eth2P2PNetwork peer) {
       this.peers.add(peer);
       return this;
     }
