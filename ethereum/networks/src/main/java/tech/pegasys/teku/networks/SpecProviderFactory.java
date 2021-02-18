@@ -20,7 +20,11 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 public class SpecProviderFactory {
 
   public static SpecProvider create(final String networkName) {
-    final SpecConstants constants = ConstantsLoader.loadConstants(networkName);
+    return create(Eth2Network.fromString(networkName));
+  }
+
+  public static SpecProvider create(final Eth2Network network) {
+    final SpecConstants constants = ConstantsLoader.loadConstants(network.constantsName());
     final SpecConfiguration specConfig = SpecConfiguration.builder().constants(constants).build();
     return SpecProvider.create(specConfig);
   }

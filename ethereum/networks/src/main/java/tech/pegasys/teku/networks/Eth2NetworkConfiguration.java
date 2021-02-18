@@ -15,10 +15,16 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.teku.networks.Eth2Network.LESS_SWIFT;
+import static tech.pegasys.teku.networks.Eth2Network.MAINNET;
+import static tech.pegasys.teku.networks.Eth2Network.MEDALLA;
+import static tech.pegasys.teku.networks.Eth2Network.MINIMAL;
+import static tech.pegasys.teku.networks.Eth2Network.PYRMONT;
+import static tech.pegasys.teku.networks.Eth2Network.SWIFT;
+import static tech.pegasys.teku.networks.Eth2Network.TOLEDO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,12 +32,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 
 public class Eth2NetworkConfiguration {
-  public static final String MAINNET = "mainnet";
-  public static final String MINIMAL = "minimal";
-  public static final String MEDALLA = "medalla";
-  public static final String TOLEDO = "toledo";
-  public static final String PYRMONT = "pyrmont";
-
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
@@ -67,6 +67,10 @@ public class Eth2NetworkConfiguration {
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
+    return builder().applyNetworkDefaults(network);
+  }
+
+  public static Eth2NetworkConfiguration.Builder builder(final Eth2Network network) {
     return builder().applyNetworkDefaults(network);
   }
 
@@ -194,9 +198,12 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder applyNetworkDefaults(final String network) {
-      final String normalizedNetwork = network.toLowerCase(Locale.US).strip();
-      switch (normalizedNetwork) {
+    public Builder applyNetworkDefaults(final String networkName) {
+      return applyNetworkDefaults(Eth2Network.fromString(networkName));
+    }
+
+    public Builder applyNetworkDefaults(final Eth2Network network) {
+      switch (network) {
         case MAINNET:
           return applyMainnetNetworkDefaults();
         case MINIMAL:
@@ -207,8 +214,12 @@ public class Eth2NetworkConfiguration {
           return applyToledoNetworkDefaults();
         case PYRMONT:
           return applyPyrmontNetworkDefaults();
+        case SWIFT:
+          return applySwiftNetworkDefaults();
+        case LESS_SWIFT:
+          return applyLessSwiftNetworkDefaults();
         default:
-          return reset().constants(normalizedNetwork);
+          return reset().constants(network.constantsName());
       }
     }
 
@@ -225,12 +236,20 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return reset().constants(MINIMAL).startupTargetPeerCount(0);
+      return reset().constants(MINIMAL.constantsName()).startupTargetPeerCount(0);
+    }
+
+    public Builder applySwiftNetworkDefaults() {
+      return reset().constants(SWIFT.constantsName()).startupTargetPeerCount(0);
+    }
+
+    public Builder applyLessSwiftNetworkDefaults() {
+      return reset().constants(LESS_SWIFT.constantsName()).startupTargetPeerCount(0);
     }
 
     public Builder applyMainnetNetworkDefaults() {
       return reset()
-          .constants(MAINNET)
+          .constants(MAINNET.constantsName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
@@ -259,7 +278,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyMedallaNetworkDefaults() {
       return reset()
-          .constants(MEDALLA)
+          .constants(MEDALLA.constantsName())
           .initialStateFromClasspath("medalla-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
@@ -291,7 +310,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyToledoNetworkDefaults() {
       return reset()
-          .constants(TOLEDO)
+          .constants(TOLEDO.constantsName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractAddress("0x47709dC7a8c18688a1f051761fc34ac253970bC0")
           .eth1DepositContractDeployBlock(3702432)
@@ -314,7 +333,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyPyrmontNetworkDefaults() {
       return reset()
-          .constants(PYRMONT)
+          .constants(PYRMONT.constantsName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
           .eth1DepositContractDeployBlock(3743587)
