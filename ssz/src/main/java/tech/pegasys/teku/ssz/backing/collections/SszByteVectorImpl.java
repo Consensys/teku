@@ -15,19 +15,51 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
     implements SszByteVector {
 
-  public SszByteVectorImpl(SszByteVectorSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
-    super(schema, lazyBackingNode);
-  }
+  private final Bytes data;
 
   public SszByteVectorImpl(SszByteVectorSchema<?> schema, Bytes bytes) {
-    super(null, null);
-    throw new UnsupportedOperationException("TODO");
+    super(schema, () -> SszByteVectorSchemaImpl.fromBytesToTree(schema, bytes));
+    this.data = bytes;
+  }
+
+  public SszByteVectorImpl(SszByteVectorSchema<?> schema, TreeNode backingTree) {
+    super(schema, () -> backingTree);
+    this.data = SszByteVectorSchemaImpl.fromTreeToBytes(schema, backingTree);
+  }
+
+  @Override
+  public byte getByte(int index) {
+    return data.get(index);
+  }
+
+  @Override
+  public Bytes getBytes() {
+    return data;
+  }
+
+  @Override
+  protected IntCache<SszByte> createCache() {
+    // caching with Bytes in this class
+    return new NoopIntCache<>();
+  }
+
+  @Override
+  public SszByteVectorSchemaImpl<?> getSchema() {
+    return (SszByteVectorSchemaImpl<?>) super.getSchema();
+  }
+
+  @Override
+  public String toString() {
+    return "SszByteVector{" +data +        '}';
   }
 }

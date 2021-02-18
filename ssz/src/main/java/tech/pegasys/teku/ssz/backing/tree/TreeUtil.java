@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
@@ -178,5 +179,12 @@ public class TreeUtil {
           }
           return true;
         });
+  }
+
+  public static Bytes concatenateLeavesData(TreeNode tree) {
+    List<Bytes> leavesData = new ArrayList<>();
+    iterateLeavesData(tree, GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.RIGHTMOST_G_INDEX,
+        leavesData::add);
+    return Bytes.wrap(leavesData.toArray(new Bytes[0]));
   }
 }

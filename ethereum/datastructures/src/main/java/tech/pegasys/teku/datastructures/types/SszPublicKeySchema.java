@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.types;
 
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
 
@@ -21,5 +22,10 @@ public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
 
   private SszPublicKeySchema() {
     super(48);
+  }
+
+  @Override
+  public SszPublicKey createFromBackingNode(TreeNode node) {
+    return new SszPublicKey(node);
   }
 }

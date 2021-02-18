@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
@@ -32,12 +36,23 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
   @Override
   @SuppressWarnings("unchecked")
   public SszVectorT createFromBackingNode(TreeNode node) {
-    return (SszVectorT) new SszByteVectorImpl(this, () -> node);
+    return (SszVectorT) new SszByteVectorImpl(this, node);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public SszVectorT fromBytes(Bytes bytes) {
     return (SszVectorT) new SszByteVectorImpl(this, bytes);
+  }
+
+  public static TreeNode fromBytesToTree(SszByteVectorSchema<?> schema, Bytes bytes) {
+    checkArgument(bytes.size() == schema.getLength(), "Bytes size doesn't match vector length");
+    return SchemaUtils.createTreeFromBytes(bytes, schema.treeDepth());
+  }
+
+  public static Bytes fromTreeToBytes(SszByteVectorSchema<?> schema, TreeNode tree) {
+    Bytes bytes = TreeUtil.concatenateLeavesData(tree);
+    checkArgument(bytes.size() == schema.getLength(), "Tree doesn't match vector schema");
+    return bytes;
   }
 }
