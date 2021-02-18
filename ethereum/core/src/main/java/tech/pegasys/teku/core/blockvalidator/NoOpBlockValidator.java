@@ -16,21 +16,19 @@ package tech.pegasys.teku.core.blockvalidator;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class NoOpBlockValidator implements BlockValidator {
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePreState(
+  public BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
       IndexedAttestationProvider indexedAttestationProvider) {
-    return SafeFuture.completedFuture(new BlockValidationResult(true));
+    return BlockValidationResult.SUCCESSFUL;
   }
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePostState(
-      BeaconState postState, SignedBeaconBlock block) {
-    return SafeFuture.completedFuture(new BlockValidationResult(true));
+  public BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
+    return BlockValidationResult.SUCCESSFUL;
   }
 }
