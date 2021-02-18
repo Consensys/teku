@@ -61,14 +61,14 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
-import tech.pegasys.teku.networking.eth2.mock.NoOpEth2Network;
+import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -150,7 +150,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile StateTransition stateTransition;
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
-  private volatile Eth2Network p2pNetwork;
+  private volatile Eth2P2PNetwork p2pNetwork;
   private volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   private volatile AggregatingAttestationPool attestationPool;
   private volatile DepositProvider depositProvider;
@@ -532,7 +532,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!beaconConfig.p2pConfig().getNetworkConfig().isEnabled()) {
-      this.p2pNetwork = new NoOpEth2Network();
+      this.p2pNetwork = new NoOpEth2P2PNetwork();
       return;
     }
 
@@ -564,7 +564,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
     this.p2pNetwork =
-        Eth2NetworkBuilder.create()
+        Eth2P2PNetworkBuilder.create()
             .config(beaconConfig.p2pConfig())
             .eventBus(eventBus)
             .recentChainData(recentChainData)

@@ -23,16 +23,16 @@ import java.util.Set;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private final Map<Integer, UInt64> subnetIdToUnsubscribeSlot = new HashMap<>();
   private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
-  private final Eth2Network eth2Network;
+  private final Eth2P2PNetwork eth2P2PNetwork;
 
-  public AttestationTopicSubscriber(final Eth2Network eth2Network) {
-    this.eth2Network = eth2Network;
+  public AttestationTopicSubscriber(final Eth2P2PNetwork eth2P2PNetwork) {
+    this.eth2P2PNetwork = eth2P2PNetwork;
   }
 
   public synchronized void subscribeToCommitteeForAggregation(
@@ -42,7 +42,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
             aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
     final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
-      eth2Network.subscribeToAttestationSubnetId(subnetId);
+      eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
     }
     subnetIdToUnsubscribeSlot.put(subnetId, currentUnsubscriptionSlot.max(aggregationSlot));
   }
@@ -59,7 +59,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           subnetIdToUnsubscribeSlot.computeIfAbsent(
               subnetId,
               (key) -> {
-                eth2Network.subscribeToAttestationSubnetId(subnetId);
+                eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
                 return ZERO;
               });
 
@@ -68,7 +68,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     }
 
     if (shouldUpdateENR) {
-      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
+      eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
     }
   }
 
@@ -83,7 +83,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
         int subnetId = entry.getKey();
-        eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
+        eth2P2PNetwork.unsubscribeFromAttestationSubnetId(subnetId);
 
         if (persistentSubnetIdSet.contains(subnetId)) {
           persistentSubnetIdSet.remove(subnetId);
@@ -93,7 +93,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     }
 
     if (shouldUpdateENR) {
-      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
+      eth2P2PNetwork.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
     }
   }
 }

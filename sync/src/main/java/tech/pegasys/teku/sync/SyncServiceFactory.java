@@ -19,7 +19,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -43,7 +43,7 @@ public class SyncServiceFactory {
   private final RecentChainData recentChainData;
   private final CombinedChainDataClient combinedChainDataClient;
   private final StorageUpdateChannel storageUpdateChannel;
-  private final Eth2Network p2pNetwork;
+  private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
@@ -58,7 +58,7 @@ public class SyncServiceFactory {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final StorageUpdateChannel storageUpdateChannel,
-      final Eth2Network p2pNetwork,
+      final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
@@ -87,7 +87,7 @@ public class SyncServiceFactory {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final StorageUpdateChannel storageUpdateChannel,
-      final Eth2Network p2pNetwork,
+      final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,

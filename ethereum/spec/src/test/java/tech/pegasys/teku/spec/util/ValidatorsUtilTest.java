@@ -21,7 +21,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 class ValidatorsUtilTest {
   private final SpecProvider specProvider = StubSpecProvider.create();

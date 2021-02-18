@@ -51,8 +51,8 @@ import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -108,7 +108,7 @@ class SignedAggregateAndProofValidatorTest {
   private final AggregateGenerator generator =
       new AggregateGenerator(chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   private final AggregateAttestationValidator validator =
       new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
