@@ -160,6 +160,7 @@ public class VoluntaryExitCommand implements Runnable {
       final BLSSignature signature =
           validators
               .getValidator(publicKey)
+              .orElseThrow()
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
               .join();

@@ -113,12 +113,12 @@ class ValidatorLoaderTest {
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
-    final Validator validator1 = validators.getValidator(PUBLIC_KEY1);
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.getSigner().isLocal()).isFalse();
 
-    final Validator validator2 = validators.getValidator(PUBLIC_KEY2);
+    final Validator validator2 = validators.getValidator(PUBLIC_KEY2).orElseThrow();
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
@@ -139,7 +139,7 @@ class ValidatorLoaderTest {
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
-    final Validator validator = validators.getValidator(PUBLIC_KEY1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
@@ -171,7 +171,7 @@ class ValidatorLoaderTest {
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
-    final Validator validator = validators.getValidator(PUBLIC_KEY1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
@@ -211,12 +211,12 @@ class ValidatorLoaderTest {
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
-    final Validator validator1 = validators.getValidator(PUBLIC_KEY1);
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.getSigner().isLocal()).isTrue();
 
-    final Validator validator2 = validators.getValidator(PUBLIC_KEY2);
+    final Validator validator2 = validators.getValidator(PUBLIC_KEY2).orElseThrow();
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
@@ -247,7 +247,7 @@ class ValidatorLoaderTest {
     assertThat(validators.getValidatorCount()).isEqualTo(1);
 
     // Local validators are listed first
-    final Validator validator = validators.getValidator(PUBLIC_KEY1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();

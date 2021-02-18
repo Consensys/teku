@@ -52,9 +52,8 @@ public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties
   }
 
   private void scheduleDuty(final ScheduledDuties scheduledDuties, final ProposerDuty duty) {
-    final Validator validator = validators.getValidator(duty.getPublicKey());
-    if (validator != null) {
-      scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator);
-    }
+    validators
+        .getValidator(duty.getPublicKey())
+        .ifPresent(validator -> scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator));
   }
 }

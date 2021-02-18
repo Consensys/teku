@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.Collections.unmodifiableSet;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.Validator;
@@ -39,7 +40,7 @@ public class OwnedValidators {
     return validators.size();
   }
 
-  public Validator getValidator(final BLSPublicKey publicKey) {
-    return validators.get(publicKey);
+  public Optional<Validator> getValidator(final BLSPublicKey publicKey) {
+    return Optional.ofNullable(validators.get(publicKey));
   }
 }
