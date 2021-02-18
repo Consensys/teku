@@ -17,8 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -28,7 +32,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
@@ -45,6 +48,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -328,14 +332,27 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
+  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+      throws BlockProcessingException {
+    processAttestations(state, attestations, IndexedAttestationCache.NOOP);
+  }
+
+  /**
+   * Processes attestations
+   *
+   * @param state
+   * @param attestations
+   * @throws BlockProcessingException
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
+   */
   public void processAttestations(
       MutableBeaconState state,
       SSZList<Attestation> attestations,
-      IndexedAttestationProvider indexedAttestationProvider)
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     processAttestationsNoValidation(state, attestations);
-    verifyAttestations(
-        state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
+    verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
   }
 
   public void processAttestationsNoValidation(
@@ -381,12 +398,16 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationProvider indexedAttestationProvider)
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .map(attesation -> indexedAttestationProvider.getIndexedAttestation(state, attesation))
+            .map(
+                attestation ->
+                    indexedAttestationCache.computeIfAbsent(
+                        attestation,
+                        () -> attestationUtil.getIndexedAttestation(state, attestation)))
             .map(
                 attestation ->
                     attestationUtil.isValidIndexedAttestation(
@@ -476,5 +497,34 @@ public final class BlockProcessorUtil {
       }
     }
     return true;
+  }
+
+  public interface IndexedAttestationCache {
+    IndexedAttestationCache NOOP = (att, supplier) -> supplier.get();
+
+    static IndexedAttestationCache noop() {
+      return NOOP;
+    }
+
+    static IndexedAttestationCache capturing() {
+      return new CapturingIndexedAttestationCache();
+    }
+
+    IndexedAttestation computeIfAbsent(
+        Attestation attestation, Supplier<IndexedAttestation> attestationProvider);
+  }
+
+  public static class CapturingIndexedAttestationCache implements IndexedAttestationCache {
+    private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();
+
+    @Override
+    public IndexedAttestation computeIfAbsent(
+        final Attestation attestation, final Supplier<IndexedAttestation> attestationProvider) {
+      return indexedAttestations.computeIfAbsent(attestation, __ -> attestationProvider.get());
+    }
+
+    public Collection<IndexedAttestation> getIndexedAttestations() {
+      return indexedAttestations.values();
+    }
   }
 }

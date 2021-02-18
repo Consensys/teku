@@ -19,10 +19,8 @@ import static com.google.common.base.Preconditions.checkState;
 import java.nio.file.Path;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -37,11 +35,7 @@ public class FileBackedStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
-
-  private final SpecConstants networkConstants = ConstantsLoader.loadConstants("minimal");
-  private final SpecConfiguration networkConfig =
-      SpecConfiguration.builder().constants(networkConstants).build();
-  private SpecProvider specProvider = SpecProvider.create(networkConfig);
+  private SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   // Version-dependent fields
   private Path dataDir;

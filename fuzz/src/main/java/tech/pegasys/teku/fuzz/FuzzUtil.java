@@ -22,7 +22,6 @@ import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
@@ -33,10 +32,8 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -47,8 +44,6 @@ public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
-  private final SpecConfiguration specConfiguration;
-  private final SpecConstants specConstants;
   private final SpecProvider specProvider;
 
   // Size of ValidatorIndex returned by shuffle
@@ -58,9 +53,10 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
-    this.specConstants = ConstantsLoader.loadConstants(useMainnetConfig ? "mainnet" : "minimal");
-    this.specConfiguration = SpecConfiguration.builder().constants(specConstants).build();
-    specProvider = SpecProvider.create(specConfiguration);
+    specProvider =
+        useMainnetConfig
+            ? SpecProviderFactory.createMainnet()
+            : SpecProviderFactory.createMinimal();
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;
@@ -92,9 +88,7 @@ public class FuzzUtil {
               .updated(
                   state ->
                       specProvider.processAttestations(
-                          state,
-                          SSZList.singleton(structuredInput.getAttestation()),
-                          IndexedAttestationProvider.DIRECT_PROVIDER));
+                          state, SSZList.singleton(structuredInput.getAttestation())));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

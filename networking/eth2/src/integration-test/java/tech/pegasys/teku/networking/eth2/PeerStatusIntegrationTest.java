@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerStatusIntegrationTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(1);
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RecentChainData recentChainData1 = MemoryOnlyRecentChainData.create(new EventBus());
   private final BeaconChainUtil beaconChainUtil1 =
       BeaconChainUtil.create(recentChainData1, VALIDATOR_KEYS);
@@ -60,13 +60,13 @@ public class PeerStatusIntegrationTest {
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
 
-    final Eth2Network network1 =
+    final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
             .recentChainData(recentChainData1)
             .startNetwork();
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
@@ -92,7 +92,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldUpdatePeerStatus() throws Exception {
     final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
-    final Eth2Network network1 =
+    final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
@@ -102,7 +102,7 @@ public class PeerStatusIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
@@ -127,7 +127,7 @@ public class PeerStatusIntegrationTest {
   public void shouldUpdatePeerStatusPeriodically() throws Exception {
     final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     Duration statusUpdateInterval = Duration.ofSeconds(2);
-    final Eth2Network network1 =
+    final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
@@ -138,7 +138,7 @@ public class PeerStatusIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)

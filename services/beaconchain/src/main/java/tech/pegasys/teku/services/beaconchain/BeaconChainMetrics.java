@@ -35,7 +35,7 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -71,7 +71,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
       final RecentChainData recentChainData,
       final NodeSlot nodeSlot,
       final MetricsSystem metricsSystem,
-      final Eth2Network p2pNetwork) {
+      final Eth2P2PNetwork p2pNetwork) {
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
 

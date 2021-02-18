@@ -31,8 +31,8 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -60,7 +60,7 @@ class AttestationDutyLoaderTest {
       new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   private final AttestationDutyLoader dutyLoader =
       new AttestationDutyLoader(

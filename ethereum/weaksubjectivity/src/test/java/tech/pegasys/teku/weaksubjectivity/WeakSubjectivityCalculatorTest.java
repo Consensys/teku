@@ -27,12 +27,12 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityCalculatorTest {
-  private static final SpecProvider specProvider = StubSpecProvider.createMainnet();
+  private static final SpecProvider specProvider = SpecProviderFactory.createMainnet();
 
   @ParameterizedTest(name = "safetyDecay: {0}, avgBalance: {1}, validatorCount: {2}")
   @MethodSource("computeWeakSubjectivityParams")

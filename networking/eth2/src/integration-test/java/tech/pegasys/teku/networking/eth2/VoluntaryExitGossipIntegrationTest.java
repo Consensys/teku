@@ -32,7 +32,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -42,7 +42,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class VoluntaryExitGossipIntegrationTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach
   public void tearDown() throws Exception {
