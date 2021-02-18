@@ -21,10 +21,10 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszVector<SszBit>} */
-public interface SszBitvector extends SszVector<SszBit>, SszPrimitiveCollection<Boolean, SszBit> {
+public interface SszBitvector extends SszVector<SszBit>, SszPrimitiveVector<Boolean, SszBit> {
 
   @Override
-  default SszMutableVector<SszBit> createWritableCopy() {
+  default SszMutablePrimitiveVector<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 

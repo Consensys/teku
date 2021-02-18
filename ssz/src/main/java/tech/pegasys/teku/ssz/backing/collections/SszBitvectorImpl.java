@@ -89,7 +89,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public SszMutableVector<SszBit> createWritableCopy() {
+  public SszMutablePrimitiveVector<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 

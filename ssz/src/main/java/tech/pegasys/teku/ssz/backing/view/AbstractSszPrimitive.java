@@ -21,11 +21,11 @@ import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
-    implements SszPrimitive<C> {
-  private final AbstractSszPrimitiveSchema<V> schema;
+    implements SszPrimitive<C, V> {
+  private final AbstractSszPrimitiveSchema<C, V> schema;
   private final C value;
 
-  protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<V> schema) {
+  protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<C, V> schema) {
     checkNotNull(value);
     this.schema = schema;
     this.value = value;
@@ -37,7 +37,7 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   }
 
   @Override
-  public AbstractSszPrimitiveSchema<V> getSchema() {
+  public AbstractSszPrimitiveSchema<C, V> getSchema() {
     return schema;
   }
 

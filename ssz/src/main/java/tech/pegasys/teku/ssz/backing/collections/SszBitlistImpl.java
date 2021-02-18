@@ -148,7 +148,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
-  public SszMutableList<SszBit> createWritableCopy() {
+  public SszMutablePrimitiveList<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 

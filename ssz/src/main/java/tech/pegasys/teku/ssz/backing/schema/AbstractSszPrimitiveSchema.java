@@ -27,9 +27,10 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 /**
  * Represents primitive view type
  *
- * @param <C> Class of the basic view of this type
+ * @param <SszType> Class of the basic view of this type
  */
-public abstract class AbstractSszPrimitiveSchema<C extends SszData> implements SszSchema<C> {
+public abstract class AbstractSszPrimitiveSchema<RawType, SszType extends SszData>
+    implements SszPrimitiveSchema<RawType, SszType> {
 
   private final int bitsSize;
 
@@ -45,19 +46,19 @@ public abstract class AbstractSszPrimitiveSchema<C extends SszData> implements S
   }
 
   @Override
-  public C createFromBackingNode(TreeNode node) {
+  public SszType createFromBackingNode(TreeNode node) {
     return createFromBackingNode(node, 0);
   }
 
   @Override
-  public final C createFromBackingNode(TreeNode node, int internalIndex) {
+  public final SszType createFromBackingNode(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
 
-  public abstract C createFromLeafBackingNode(LeafDataNode node, int internalIndex);
+  public abstract SszType createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
-  public TreeNode createBackingNode(C newValue) {
+  public TreeNode createBackingNode(SszType newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 

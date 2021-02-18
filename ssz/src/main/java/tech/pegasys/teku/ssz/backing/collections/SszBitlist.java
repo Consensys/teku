@@ -22,15 +22,18 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
-public interface SszBitlist extends SszList<SszBit>, SszPrimitiveCollection<Boolean, SszBit> {
+public interface SszBitlist extends SszList<SszBit>, SszPrimitiveList<Boolean, SszBit> {
+
+
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
     return SszBitlistImpl.nullableOr(bitlist1OrNull, bitlist2OrNull);
   }
 
-  @Override
-  default SszMutableList<SszBit> createWritableCopy() {
+    @Override
+
+  default SszMutablePrimitiveList<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
   }
 

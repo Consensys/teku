@@ -41,6 +41,12 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
 
   @SuppressWarnings("unchecked")
   @Override
+  public SszCollectionSchema<SszElementT, ?> getSchema() {
+    return (SszCollectionSchema<SszElementT, ?>) super.getSchema();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
   protected SszElementT getImpl(int index) {
     SszCollectionSchema<SszElementT, ?> type =
         (SszCollectionSchema<SszElementT, ?>) this.getSchema();
