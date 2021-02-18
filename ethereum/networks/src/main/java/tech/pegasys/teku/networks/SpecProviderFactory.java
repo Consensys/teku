@@ -19,12 +19,12 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class SpecProviderFactory {
 
-  public static SpecProvider create(final String networkName) {
-    return create(Eth2Network.fromString(networkName));
+  public static SpecProvider create(final Eth2Network network) {
+    return create(network.constantsName());
   }
 
-  public static SpecProvider create(final Eth2Network network) {
-    final SpecConstants constants = ConstantsLoader.loadConstants(network.constantsName());
+  public static SpecProvider create(final String constantsName) {
+    final SpecConstants constants = ConstantsLoader.loadConstants(constantsName);
     final SpecConfiguration specConfig = SpecConfiguration.builder().constants(constants).build();
     return SpecProvider.create(specConfig);
   }

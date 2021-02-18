@@ -103,7 +103,6 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void usingNetworkFromUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/cli/options/constants.yaml");
-    System.out.println(url);
     beaconNodeCommand.parse(new String[] {"--network", url.toString()});
 
     final TekuConfiguration config = getResultingTekuConfiguration();

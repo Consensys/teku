@@ -15,6 +15,7 @@ package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +38,28 @@ public class Eth2NetworkConfigurationTest {
 
     assertThat(networkConfig.getConstants()).isEqualTo(network.constantsName());
     assertThat(networkConfigBuilder.build()).usingRecursiveComparison().isEqualTo(networkConfig);
+  }
+
+  @Test
+  public void builder_usingConstantsUrl() {
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+    final Eth2NetworkConfiguration config =
+        Eth2NetworkConfiguration.builder(url.toString()).build();
+    assertThat(config.getConstants()).isEqualTo(url.toString());
+    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+        .isEqualTo("Custom Constants");
+  }
+
+  @Test
+  public void constants_usingConstantsUrl() {
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+    final Eth2NetworkConfiguration config =
+        Eth2NetworkConfiguration.builder().constants(url.toString()).build();
+    assertThat(config.getConstants()).isEqualTo(url.toString());
+    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+        .isEqualTo("Custom Constants");
   }
 
   @Test

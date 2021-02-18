@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networks;
 
 import java.util.Locale;
+import java.util.Optional;
 
 public enum Eth2Network {
   // Live networks
@@ -32,13 +33,18 @@ public enum Eth2Network {
   }
 
   public static Eth2Network fromString(final String networkName) {
+    return fromStringLenient(networkName)
+        .orElseThrow(() -> new IllegalArgumentException("Unknown network: " + networkName));
+  }
+
+  public static Optional<Eth2Network> fromStringLenient(final String networkName) {
     final String normalizedNetworkName =
         networkName.strip().toUpperCase(Locale.US).replace("-", "_");
     for (Eth2Network value : values()) {
       if (value.name().equals(normalizedNetworkName)) {
-        return value;
+        return Optional.of(value);
       }
     }
-    throw new IllegalArgumentException("Unknown network type: " + networkName);
+    return Optional.empty();
   }
 }

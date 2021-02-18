@@ -199,7 +199,9 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyNetworkDefaults(final String networkName) {
-      return applyNetworkDefaults(Eth2Network.fromString(networkName));
+      Eth2Network.fromStringLenient(networkName)
+          .ifPresentOrElse(this::applyNetworkDefaults, () -> reset().constants(networkName));
+      return this;
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
