@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -68,8 +67,8 @@ public class ChainUpdater {
         signDeposits, specProvider.getGenesisSpecConstants().getMaxEffectiveBalance());
   }
 
-  @VisibleForTesting
-  SignedBlockAndState initializeGenesis(final boolean signDeposits, final UInt64 depositAmount) {
+  public SignedBlockAndState initializeGenesis(
+      final boolean signDeposits, final UInt64 depositAmount) {
     final SignedBlockAndState genesis =
         chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, depositAmount);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
