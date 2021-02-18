@@ -17,7 +17,7 @@ import java.util.function.IntUnaryOperator;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class AttestationSubnetScorer implements PeerScorer {
   private static final int MAX_SUBNET_SCORE = 1000;
@@ -41,17 +41,17 @@ public class AttestationSubnetScorer implements PeerScorer {
 
   @Override
   public int scoreExistingPeer(final NodeId peerId) {
-    final Bitvector subscriptions = peerSubnetSubscriptions.getSubscriptionsForPeer(peerId);
+    final SszBitvector subscriptions = peerSubnetSubscriptions.getSubscriptionsForPeer(peerId);
     return subscriptions != null ? score(subscriptions, this::scoreSubnetForExistingPeer) : 0;
   }
 
   @Override
-  public int scoreCandidatePeer(final Bitvector subscriptions) {
+  public int scoreCandidatePeer(final SszBitvector subscriptions) {
     return score(subscriptions, this::scoreSubnetForCandidatePeer);
   }
 
   private int score(
-      final Bitvector subnetSubscriptions, final IntUnaryOperator subscriberCountToScore) {
+      final SszBitvector subnetSubscriptions, final IntUnaryOperator subscriberCountToScore) {
     return subnetSubscriptions
         .streamAllSetBits()
         .map(
