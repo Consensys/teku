@@ -17,6 +17,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
@@ -27,14 +28,17 @@ public class Spec {
   private final AttestationUtil attestationUtil;
   private final BeaconStateUtil beaconStateUtil;
   private final EpochProcessor epochProcessor;
+  private final BlockProcessorUtil blockProcessorUtil;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.validatorsUtil = new ValidatorsUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
-    this.attestationUtil = new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    this.epochProcessor = new EpochProcessor(constants, validatorsUtil, this.beaconStateUtil);
+    this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
+    this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
+    this.blockProcessorUtil =
+        new BlockProcessorUtil(this.constants, beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   public SpecConstants getConstants() {
@@ -59,5 +63,9 @@ public class Spec {
 
   public EpochProcessor getEpochProcessor() {
     return epochProcessor;
+  }
+
+  public BlockProcessorUtil getBlockProcessorUtil() {
+    return blockProcessorUtil;
   }
 }

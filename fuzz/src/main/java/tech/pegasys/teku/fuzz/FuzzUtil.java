@@ -19,7 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSConstants;
-import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
@@ -89,7 +88,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state ->
-                      BlockProcessorUtil.process_attestations(
+                      specProvider.processAttestations(
                           state,
                           SSZList.singleton(structuredInput.getAttestation()),
                           IndexedAttestationProvider.DIRECT_PROVIDER));
@@ -112,7 +111,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    BlockProcessorUtil.process_attester_slashings(
+                    specProvider.processAttesterSlashings(
                         state, SSZList.singleton(structuredInput.getAttester_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -151,7 +150,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    BlockProcessorUtil.process_block_header(state, structuredInput.getBlock());
+                    specProvider.processBlockHeader(state, structuredInput.getBlock());
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -170,7 +169,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    BlockProcessorUtil.process_deposits(
+                    specProvider.processDeposits(
                         state, SSZList.singleton(structuredInput.getDeposit()));
                   });
       Bytes output = postState.sszSerialize();
@@ -192,7 +191,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    BlockProcessorUtil.process_proposer_slashings(
+                    specProvider.processProposerSlashings(
                         state, SSZList.singleton(structuredInput.getProposer_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -241,7 +240,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    BlockProcessorUtil.process_voluntary_exits(
+                    specProvider.processVoluntaryExits(
                         state, SSZList.singleton(structuredInput.getExit()));
                   });
       Bytes output = postState.sszSerialize();
