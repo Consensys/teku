@@ -16,17 +16,17 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class StubPeerScorer implements PeerScorer {
   private final Map<NodeId, Integer> peerScores = new HashMap<>();
-  private final Map<Bitvector, Integer> candidateScores = new HashMap<>();
+  private final Map<SszBitvector, Integer> candidateScores = new HashMap<>();
 
   public void setScore(final NodeId peerId, final int score) {
     peerScores.put(peerId, score);
   }
 
-  public void setScore(final Bitvector subscriptions, final int score) {
+  public void setScore(final SszBitvector subscriptions, final int score) {
     candidateScores.put(subscriptions, score);
   }
 
@@ -36,7 +36,7 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreCandidatePeer(final Bitvector subscriptions) {
+  public int scoreCandidatePeer(final SszBitvector subscriptions) {
     return candidateScores.getOrDefault(subscriptions, 0);
   }
 }

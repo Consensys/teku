@@ -21,6 +21,7 @@ import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
+/** Specialized implementation of {@code SszList<SszBit>} */
 public interface SszBitlist extends SszList<SszBit> {
 
   static SszBitlist nullableOr(

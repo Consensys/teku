@@ -28,7 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PingIntegrationTest {
@@ -63,8 +64,8 @@ public class PingIntegrationTest {
   public void testPingUpdatesMetadata() throws Exception {
     setUp(Duration.ofDays(1));
 
-    Optional<Bitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
-    Optional<Bitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
+    Optional<SszBitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
+    Optional<SszBitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
 
     assertThat(attNets1_0.isEmpty() || attNets1_0.get().getBitCount() == 0).isTrue();
     assertThat(attNets2_0.isEmpty() || attNets2_0.get().getBitCount() == 0).isTrue();
@@ -89,7 +90,8 @@ public class PingIntegrationTest {
     UInt64 ping1_2 = peer1.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping1_2).isGreaterThan(ping1_1);
 
-    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 0, 1, 8);
+    SszBitvector expectedBitvector1 =
+        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(0, 1, 8);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
     waitFor(() -> assertThat(peer2.getRemoteAttestationSubnets()).isNotEmpty());
@@ -99,7 +101,8 @@ public class PingIntegrationTest {
     UInt64 ping2_2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping2_2).isEqualTo(ping2_1);
 
-    Bitvector expectedBitvector2 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 2, 4);
+    SszBitvector expectedBitvector2 =
+        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(2, 4);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector2));
   }
@@ -109,7 +112,8 @@ public class PingIntegrationTest {
     setUp(Duration.ofMillis(100));
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
-    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT, 0, 1, 8);
+    SszBitvector expectedBitvector1 =
+        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(0, 1, 8);
 
     // detecting that ping was automatically sent via updated att subnets of the remote peer
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
