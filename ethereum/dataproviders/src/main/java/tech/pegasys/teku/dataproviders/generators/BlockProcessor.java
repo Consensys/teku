@@ -15,17 +15,16 @@ package tech.pegasys.teku.dataproviders.generators;
 
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.blockvalidator.BlockValidator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 class BlockProcessor {
-  private final StateTransition stateTransition = new StateTransition(BlockValidator.NOOP);
+  private final StateTransition stateTransition = new StateTransition();
 
   public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
 
     try {
-      final BeaconState postState = stateTransition.initiate(preState, block);
+      final BeaconState postState = stateTransition.initiate(preState, block, false);
       assertBlockAndStateMatch(block, postState);
       return postState;
     } catch (StateTransitionException e) {

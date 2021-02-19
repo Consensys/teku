@@ -68,7 +68,7 @@ public class ForkChoiceBlockTasks {
     try {
       state =
           st.processAndValidateBlock(
-              signed_block, indexedAttestationProvider, blockSlotState, true);
+              signed_block, blockSlotState, true, indexedAttestationProvider);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
