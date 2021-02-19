@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -21,6 +21,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -51,7 +53,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     return leadingBitIndex + 8 * (numBytes - 1);
   }
 
-  static SszBitlist nullableOr(
+  public static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
     checkArgument(
         bitlist1OrNull != null || bitlist2OrNull != null,

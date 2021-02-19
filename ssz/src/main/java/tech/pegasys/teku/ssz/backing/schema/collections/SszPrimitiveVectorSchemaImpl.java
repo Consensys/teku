@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVectorImpl;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszPrimitiveVectorImpl;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;

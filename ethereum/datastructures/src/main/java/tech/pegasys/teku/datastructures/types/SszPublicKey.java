@@ -15,7 +15,7 @@ package tech.pegasys.teku.datastructures.types;
 
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ssz.backing.collections.SszByteVectorImpl;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszPublicKey extends SszByteVectorImpl {

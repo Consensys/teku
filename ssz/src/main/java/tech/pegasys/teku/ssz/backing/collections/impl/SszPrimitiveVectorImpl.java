@@ -11,10 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;

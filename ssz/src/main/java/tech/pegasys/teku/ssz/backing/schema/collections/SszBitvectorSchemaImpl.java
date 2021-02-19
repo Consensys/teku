@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvectorImpl;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszBitvectorImpl;
 import tech.pegasys.teku.ssz.backing.schema.AbstractSszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;

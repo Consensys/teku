@@ -11,37 +11,38 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.AbstractSszComposite;
-import tech.pegasys.teku.ssz.backing.view.SszMutableVectorImpl;
+import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl;
 
-public class SszMutablePrimitiveVectorImpl<
+public class SszMutablePrimitiveListImpl<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszMutableVectorImpl<SszElementT, SszElementT>
-    implements SszMutablePrimitiveVector<ElementT, SszElementT> {
+    extends SszMutableListImpl<SszElementT, SszElementT>
+    implements SszMutablePrimitiveList<ElementT, SszElementT> {
 
-  public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
+  public SszMutablePrimitiveListImpl(
+      SszPrimitiveListImpl<ElementT, SszElementT> backingImmutableData) {
     super(backingImmutableData);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszPrimitiveVectorImpl<ElementT, SszElementT> commitChanges() {
-    return (SszPrimitiveVectorImpl<ElementT, SszElementT>) super.commitChanges();
+  public SszPrimitiveListImpl<ElementT, SszElementT> commitChanges() {
+    return (SszPrimitiveListImpl<ElementT, SszElementT>) super.commitChanges();
   }
 
   @Override
-  protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
+  protected SszPrimitiveListImpl<ElementT, SszElementT> createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszElementT> childrenCache) {
-    return new SszPrimitiveVectorImpl<>(getSchema(), backingNode);
+    return new SszPrimitiveListImpl<>(getSchema(), backingNode);
   }
 
   @Override
-  public SszMutablePrimitiveVector<ElementT, SszElementT> createWritableCopy() {
+  public SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy() {
     throw new UnsupportedOperationException(
         "Creating a writable copy from writable instance is not supported");
   }

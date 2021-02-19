@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
+import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;

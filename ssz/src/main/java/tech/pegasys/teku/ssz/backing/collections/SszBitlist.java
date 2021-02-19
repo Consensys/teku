@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszBitlistImpl;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 

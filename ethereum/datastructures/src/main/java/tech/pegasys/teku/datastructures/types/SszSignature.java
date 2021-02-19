@@ -14,7 +14,7 @@
 package tech.pegasys.teku.datastructures.types;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.collections.SszByteVectorImpl;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszSignature extends SszByteVectorImpl {
