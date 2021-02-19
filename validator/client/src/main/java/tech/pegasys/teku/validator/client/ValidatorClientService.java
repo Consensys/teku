@@ -112,10 +112,13 @@ public class ValidatorClientService extends Service {
         new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
-            slashingProtector, new PublicKeyLoader(), asyncRunner, metricsSystem);
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(
-            config.getValidatorConfig(), config.getInteropConfig());
+            config.getValidatorConfig(),
+            config.getInteropConfig(),
+            slashingProtector,
+            new PublicKeyLoader(),
+            asyncRunner,
+            metricsSystem);
+    final OwnedValidators validators = validatorLoader.loadValidators();
     this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);

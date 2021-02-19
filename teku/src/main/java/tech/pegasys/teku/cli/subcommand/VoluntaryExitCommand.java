@@ -223,13 +223,15 @@ public class VoluntaryExitCommand implements Runnable {
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
-            new RejectingSlashingProtector(), new PublicKeyLoader(), asyncRunner, metricsSystem);
+            config.validatorClient().getValidatorConfig(),
+            config.validatorClient().getInteropConfig(),
+            new RejectingSlashingProtector(),
+            new PublicKeyLoader(),
+            asyncRunner,
+            metricsSystem);
 
     try {
-      validators =
-          validatorLoader.initializeValidators(
-              config.validatorClient().getValidatorConfig(),
-              config.validatorClient().getInteropConfig());
+      validators = validatorLoader.loadValidators();
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
