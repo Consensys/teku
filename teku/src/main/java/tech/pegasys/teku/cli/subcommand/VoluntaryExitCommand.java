@@ -51,7 +51,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
@@ -72,7 +72,7 @@ public class VoluntaryExitCommand implements Runnable {
   private OkHttpValidatorRestApiClient apiClient;
   private tech.pegasys.teku.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
-  private Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap;
+  private OwnedValidators validators;
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
@@ -105,7 +105,7 @@ public class VoluntaryExitCommand implements Runnable {
       if (confirmationEnabled) {
         confirmExits();
       }
-      getValidatorIndices(blsPublicKeyValidatorMap).forEach(this::submitExitForValidator);
+      getValidatorIndices(validators).forEach(this::submitExitForValidator);
     } catch (UncheckedIOException ex) {
       if (Throwables.getRootCause(ex) instanceof ConnectException) {
         SUB_COMMAND_LOG.error(getFailedToConnectMessage());
@@ -131,17 +131,16 @@ public class VoluntaryExitCommand implements Runnable {
   }
 
   private String getValidatorAbbreviatedKeys() {
-    return blsPublicKeyValidatorMap.keySet().stream()
-        .map(key -> key.toAbbreviatedString())
+    return validators.getPublicKeys().stream()
+        .map(BLSPublicKey::toAbbreviatedString)
         .collect(Collectors.joining(", "));
   }
 
-  private Map<BLSPublicKey, Integer> getValidatorIndices(
-      Map<BLSPublicKey, Validator> blsPublicKeyValidatorMap) {
+  private Map<BLSPublicKey, Integer> getValidatorIndices(OwnedValidators blsPublicKeyValidatorMap) {
     Map<BLSPublicKey, Integer> validatorIndices = new HashMap<>();
     apiClient
         .getValidators(
-            blsPublicKeyValidatorMap.keySet().stream()
+            blsPublicKeyValidatorMap.getPublicKeys().stream()
                 .map(BLSPublicKey::toString)
                 .collect(Collectors.toList()))
         .ifPresent(
@@ -159,8 +158,9 @@ public class VoluntaryExitCommand implements Runnable {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
       final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
       final BLSSignature signature =
-          blsPublicKeyValidatorMap
-              .get(publicKey)
+          validators
+              .getValidator(publicKey)
+              .orElseThrow()
               .getSigner()
               .signVoluntaryExit(message, forkInfo)
               .join();
@@ -226,7 +226,7 @@ public class VoluntaryExitCommand implements Runnable {
             new RejectingSlashingProtector(), new PublicKeyLoader(), asyncRunner, metricsSystem);
 
     try {
-      blsPublicKeyValidatorMap =
+      validators =
           validatorLoader.initializeValidators(
               config.validatorClient().getValidatorConfig(),
               config.validatorClient().getInteropConfig());
@@ -234,7 +234,7 @@ public class VoluntaryExitCommand implements Runnable {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);
     }
-    if (blsPublicKeyValidatorMap.isEmpty()) {
+    if (validators.hasNoValidators()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
     }

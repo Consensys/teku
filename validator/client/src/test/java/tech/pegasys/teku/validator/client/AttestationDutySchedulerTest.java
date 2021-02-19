@@ -48,6 +48,7 @@ import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
@@ -807,7 +808,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     validatorApiChannel,
                     forkProvider,
                     dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                    new OwnedValidators(
+                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider,
                     beaconCommitteeSubscriptions,
                     specProvider)),
@@ -824,7 +826,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     validatorApiChannel,
                     forkProvider,
                     dependentRoot -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                    new OwnedValidators(
+                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider,
                     beaconCommitteeSubscriptions,
                     specProvider)),

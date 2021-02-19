@@ -14,17 +14,16 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties> {
 
@@ -33,7 +32,7 @@ public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties
   protected BlockProductionDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
-      final Map<BLSPublicKey, Validator> validators,
+      final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider) {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
@@ -53,9 +52,8 @@ public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties
   }
 
   private void scheduleDuty(final ScheduledDuties scheduledDuties, final ProposerDuty duty) {
-    final Validator validator = validators.get(duty.getPublicKey());
-    if (validator != null) {
-      scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator);
-    }
+    validators
+        .getValidator(duty.getPublicKey())
+        .ifPresent(validator -> scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator));
   }
 }

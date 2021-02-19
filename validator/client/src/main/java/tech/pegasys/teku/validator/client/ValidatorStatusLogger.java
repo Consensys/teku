@@ -17,17 +17,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ValidatorStatusLogger {
 
-  ValidatorStatusLogger NOOP =
-      new ValidatorStatusLogger() {
-        @Override
-        public SafeFuture<Void> printInitialValidatorStatuses() {
-          return SafeFuture.COMPLETE;
-        }
-
-        @Override
-        public void checkValidatorStatusChanges() {}
-      };
-
   SafeFuture<Void> printInitialValidatorStatuses();
 
   void checkValidatorStatusChanges();

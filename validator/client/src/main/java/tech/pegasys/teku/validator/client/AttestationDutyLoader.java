@@ -16,13 +16,11 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,6 +31,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
 
@@ -46,7 +45,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
-      final Map<BLSPublicKey, Validator> validators,
+      final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
       final SpecProvider specProvider) {
@@ -76,7 +75,11 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
 
   private SafeFuture<Void> scheduleDuties(
       final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
-    final Validator validator = validators.get(duty.getPublicKey());
+    final Optional<Validator> maybeValidator = validators.getValidator(duty.getPublicKey());
+    if (maybeValidator.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    final Validator validator = maybeValidator.get();
     final int aggregatorModulo =
         specProvider
             .atSlot(duty.getSlot())
