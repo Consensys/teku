@@ -231,7 +231,8 @@ public class VoluntaryExitCommand implements Runnable {
             metricsSystem);
 
     try {
-      validators = validatorLoader.loadValidators();
+      validatorLoader.loadValidators();
+      validators = validatorLoader.getOwnedValidators();
     } catch (InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(ex.getMessage());
       System.exit(1);

@@ -25,37 +25,21 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
 public class ValidatorLoader {
 
-  private final ValidatorConfig config;
-  private final InteropConfig interopConfig;
-  private final SlashingProtector slashingProtector;
-  private final PublicKeyLoader publicKeyLoader;
-  private final AsyncRunner asyncRunner;
-  private final MetricsSystem metricsSystem;
-
   private final List<ValidatorSource> validatorSources;
   private final OwnedValidators ownedValidators = new OwnedValidators();
+  private final GraffitiProvider graffitiProvider;
 
   private ValidatorLoader(
-      final ValidatorConfig config,
-      final InteropConfig interopConfig,
-      final List<ValidatorSource> validatorSources,
-      final SlashingProtector slashingProtector,
-      final PublicKeyLoader publicKeyLoader,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem) {
-    this.config = config;
-    this.interopConfig = interopConfig;
+      final List<ValidatorSource> validatorSources, final GraffitiProvider graffitiProvider) {
     this.validatorSources = validatorSources;
-    this.slashingProtector = slashingProtector;
-    this.publicKeyLoader = publicKeyLoader;
-    this.asyncRunner = asyncRunner;
-    this.metricsSystem = metricsSystem;
+    this.graffitiProvider = graffitiProvider;
   }
 
   public static ValidatorLoader create(
@@ -103,14 +87,7 @@ public class ValidatorLoader {
       addLocalValidatorSource(config, slashingProtector, asyncRunner, validatorSources);
     }
 
-    return new ValidatorLoader(
-        config,
-        interopConfig,
-        validatorSources,
-        slashingProtector,
-        publicKeyLoader,
-        asyncRunner,
-        metricsSystem);
+    return new ValidatorLoader(validatorSources, config.getGraffitiProvider());
   }
 
   private static void addLocalValidatorSource(
@@ -145,11 +122,14 @@ public class ValidatorLoader {
     }
   }
 
-  public OwnedValidators loadValidators() {
+  public void loadValidators() {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
-        ownedValidators, validatorProviders, config.getGraffitiProvider());
+        ownedValidators, validatorProviders, graffitiProvider);
+  }
+
+  public OwnedValidators getOwnedValidators() {
     return ownedValidators;
   }
 

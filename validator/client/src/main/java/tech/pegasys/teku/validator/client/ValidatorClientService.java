@@ -118,7 +118,8 @@ public class ValidatorClientService extends Service {
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem);
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
     this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);

@@ -118,7 +118,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
@@ -153,7 +154,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
@@ -193,7 +195,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
@@ -240,7 +243,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
@@ -282,7 +286,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     // Both local and external validators get loaded.
     assertThat(validators.getValidatorCount()).isEqualTo(1);
@@ -317,7 +322,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
 
@@ -355,7 +361,8 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem);
 
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
     assertThat(validators.getPublicKeys()).containsOnly(PUBLIC_KEY1);
 
     final List<BLSPublicKey> reconfiguredKeys = List.of(PUBLIC_KEY1, PUBLIC_KEY2);
@@ -388,7 +395,8 @@ class ValidatorLoaderTest {
             metricsSystem);
 
     // No validators initially
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
     assertThat(validators.getPublicKeys()).isEmpty();
 
     // Then we add one and reload
@@ -422,7 +430,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem);
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(ownedValidatorCount);
   }
@@ -445,7 +454,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem);
-    final OwnedValidators validators = validatorLoader.loadValidators();
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.hasNoValidators()).isTrue();
   }
