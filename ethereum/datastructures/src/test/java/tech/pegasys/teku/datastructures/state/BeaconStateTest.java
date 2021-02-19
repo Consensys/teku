@@ -22,9 +22,11 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -82,6 +84,8 @@ class BeaconStateTest {
       Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
       Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
       Constants.MAX_ATTESTATIONS = 123;
+
+      SpecDependent.resetAll();
 
       // this call should reset all the memorized spec constants
       BeaconState s2 = BeaconState.createEmpty();
