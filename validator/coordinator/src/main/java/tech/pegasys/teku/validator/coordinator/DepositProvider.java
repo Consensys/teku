@@ -44,13 +44,14 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final SszListSchema<Deposit, ?> DEPOSITS_SCHEMA =
-      SszListSchema.create(Deposit.SSZ_SCHEMA, MAX_DEPOSITS);
+  private static final SpecDependent<SszListSchema<Deposit, ?>> DEPOSITS_SCHEMA =
+      SpecDependent.of(() -> SszListSchema.create(Deposit.SSZ_SCHEMA, MAX_DEPOSITS));
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
@@ -187,6 +188,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                   deposit.getData(),
                   deposit.getIndex());
             })
-        .collect(DEPOSITS_SCHEMA.collector());
+        .collect(DEPOSITS_SCHEMA.get().collector());
   }
 }
