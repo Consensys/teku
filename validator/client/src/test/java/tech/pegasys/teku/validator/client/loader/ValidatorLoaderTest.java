@@ -253,6 +253,35 @@ class ValidatorLoaderTest {
     assertThat(validator.getSigner().isLocal()).isFalse();
   }
 
+  @Test
+  void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
+    writeKeystore(tempDir);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+
+    final OwnedValidators validators =
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    when(slashingProtector.maySignBlock(any(), any(), any())).thenReturn(new SafeFuture<>());
+    assertThat(validator.getSigner().signBlock(block, forkInfo)).isNotDone();
+    verify(slashingProtector)
+        .maySignBlock(
+            validator.getPublicKey(), forkInfo.getGenesisValidatorsRoot(), block.getSlot());
+  }
+
   private void writeKeystore(final Path tempDir) throws Exception {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
