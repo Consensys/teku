@@ -22,7 +22,7 @@ public class SszSignature extends SszByteVectorImpl {
   private BLSSignature signature;
 
   public SszSignature(BLSSignature signature) {
-    super(SszPublicKeySchema.INSTANCE, signature.toBytesCompressed());
+    super(SszSignatureSchema.INSTANCE, signature.toBytesCompressed());
     this.signature = signature;
   }
 
