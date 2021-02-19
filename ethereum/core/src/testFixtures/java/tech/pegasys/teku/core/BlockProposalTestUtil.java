@@ -38,7 +38,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BlockProposalTestUtil {
 
@@ -56,10 +56,10 @@ public class BlockProposalTestUtil {
       final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> slashings,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> exits)
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> slashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> exits)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
@@ -95,9 +95,9 @@ public class BlockProposalTestUtil {
       final UInt64 newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
-      final Optional<SSZList<Attestation>> attestations,
-      final Optional<SSZList<Deposit>> deposits,
-      final Optional<SSZList<SignedVoluntaryExit>> exits,
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = compute_epoch_at_slot(newSlot);

@@ -13,34 +13,36 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BeaconBlockBodyLists {
 
-  public static SSZMutableList<ProposerSlashing> createProposerSlashings() {
-    return SSZList.createMutable(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
+  public static SszList<ProposerSlashing> createProposerSlashings(
+      ProposerSlashing... proposerSlashings) {
+    return BeaconBlockBody.getSszSchema().getProposerSlashingsSchema().of(proposerSlashings);
   }
 
-  public static SSZMutableList<AttesterSlashing> createAttesterSlashings() {
-    return SSZList.createMutable(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
+  public static SszList<AttesterSlashing> createAttesterSlashings(
+      AttesterSlashing... attesterSlashings) {
+    return BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema().of(attesterSlashings);
   }
 
-  public static SSZMutableList<Attestation> createAttestations() {
-    return SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
+  public static SszList<Attestation> createAttestations(Attestation... attestations) {
+    return BeaconBlockBody.getSszSchema().getAttestationsSchema().of(attestations);
   }
 
-  public static SSZMutableList<Deposit> createDeposits() {
-    return SSZList.createMutable(Deposit.class, Constants.MAX_DEPOSITS);
+  public static SszList<Deposit> createDeposits(Deposit... deposits) {
+    return BeaconBlockBody.getSszSchema().getDepositsSchema().of(deposits);
   }
 
-  public static SSZMutableList<SignedVoluntaryExit> createVoluntaryExits() {
-    return SSZList.createMutable(SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+  public static SszList<SignedVoluntaryExit> createVoluntaryExits(
+      SignedVoluntaryExit... voluntaryExits) {
+    return BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema().of(voluntaryExits);
   }
 }

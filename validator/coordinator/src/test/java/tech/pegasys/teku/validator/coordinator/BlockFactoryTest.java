@@ -46,7 +46,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -68,11 +68,11 @@ class BlockFactoryTest {
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final StateTransition stateTransition = new StateTransition();
-  private final SSZMutableList<Deposit> deposits = createDeposits();
-  private final SSZMutableList<Attestation> attestations = createAttestations();
-  private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
-  private final SSZMutableList<ProposerSlashing> proposerSlashings = createProposerSlashings();
-  private final SSZMutableList<SignedVoluntaryExit> voluntaryExits = createVoluntaryExits();
+  private final SszList<Deposit> deposits = createDeposits();
+  private final SszList<Attestation> attestations = createAttestations();
+  private final SszList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
+  private final SszList<ProposerSlashing> proposerSlashings = createProposerSlashings();
+  private final SszList<SignedVoluntaryExit> voluntaryExits = createVoluntaryExits();
 
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =

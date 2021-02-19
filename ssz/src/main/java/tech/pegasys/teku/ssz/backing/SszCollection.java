@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ssz.backing;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +30,10 @@ public interface SszCollection<ElementT extends SszData>
 
   default Stream<ElementT> stream() {
     return StreamSupport.stream(spliterator(), false);
+  }
+
+  default List<ElementT> toList() {
+    return stream().collect(Collectors.toList());
   }
 
   @NotNull

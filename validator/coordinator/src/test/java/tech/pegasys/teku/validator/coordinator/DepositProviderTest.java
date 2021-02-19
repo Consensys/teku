@@ -46,6 +46,7 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -80,7 +81,7 @@ public class DepositProviderTest {
     mockStateEth1DepositIndex(2);
     mockEth1DataDepositCount(2);
     mockDepositsFromEth1Block(0, 10);
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).isEmpty();
   }
 
@@ -94,7 +95,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).hasSize(15);
     checkThatDepositProofIsValid(deposits);
   }
@@ -116,7 +117,7 @@ public class DepositProviderTest {
     IntStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
     when(state.getEth1_data_votes()).thenReturn(et1hDataVotes);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
     assertThat(deposits).hasSize(25);
     checkThatDepositProofIsValid(deposits);
   }
@@ -131,7 +132,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).hasSize(10);
     checkThatDepositProofIsValid(deposits);
   }
@@ -238,7 +239,7 @@ public class DepositProviderTest {
         .hasMessageContaining("7 to 9");
   }
 
-  private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
+  private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
     deposits.forEach(
         deposit ->
             assertThat(

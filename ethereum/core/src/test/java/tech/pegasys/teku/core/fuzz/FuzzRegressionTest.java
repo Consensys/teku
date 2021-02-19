@@ -22,10 +22,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class FuzzRegressionTest {
@@ -36,13 +37,12 @@ public class FuzzRegressionTest {
     final BeaconState state = load("issue2345/state.ssz", BeaconState.getSszSchema());
     final AttesterSlashing slashing =
         load("issue2345/attester_slashing.ssz", AttesterSlashing.SSZ_SCHEMA);
+    SszList<AttesterSlashing> slashings = BeaconBlockBodyLists.createAttesterSlashings(slashing);
 
     assertThatThrownBy(
             () ->
                 state.updated(
-                    mutableState ->
-                        specProvider.processAttesterSlashings(
-                            mutableState, SSZList.singleton(slashing))))
+                    mutableState -> specProvider.processAttesterSlashings(mutableState, slashings)))
         .isInstanceOf(BlockProcessingException.class);
   }
 

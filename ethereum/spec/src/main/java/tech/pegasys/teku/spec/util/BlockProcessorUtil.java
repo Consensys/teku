@@ -58,7 +58,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public final class BlockProcessorUtil {
 
@@ -230,7 +230,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public void processProposerSlashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     processProposerSlashingsNoValidation(state, proposerSlashings);
     boolean signaturesValid =
@@ -241,7 +241,7 @@ public final class BlockProcessorUtil {
   }
 
   public void processProposerSlashingsNoValidation(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     ProposerSlashingStateTransitionValidator validator =
         new ProposerSlashingStateTransitionValidator();
@@ -268,7 +268,7 @@ public final class BlockProcessorUtil {
 
   public boolean verifyProposerSlashings(
       BeaconState state,
-      SSZList<ProposerSlashing> proposerSlashings,
+      SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
     ProposerSlashingSignatureVerifier slashingSignatureVerifier =
         new ProposerSlashingSignatureVerifier();
@@ -296,7 +296,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
   public void processAttesterSlashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
       final AttesterSlashingStateTransitionValidator validator =
@@ -332,7 +332,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
-  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     processAttestations(state, attestations, IndexedAttestationCache.NOOP);
   }
@@ -348,7 +348,7 @@ public final class BlockProcessorUtil {
    */
   public void processAttestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     processAttestationsNoValidation(state, attestations);
@@ -356,7 +356,7 @@ public final class BlockProcessorUtil {
   }
 
   public void processAttestationsNoValidation(
-      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+      MutableBeaconState state, SszList<Attestation> attestations) throws BlockProcessingException {
     try {
       final AttestationDataStateTransitionValidator validator =
           new AttestationDataStateTransitionValidator();
@@ -396,7 +396,7 @@ public final class BlockProcessorUtil {
 
   public void verifyAttestations(
       BeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
@@ -429,7 +429,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -450,7 +450,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
 
     processVoluntaryExitsNoValidation(state, exits);
@@ -461,7 +461,7 @@ public final class BlockProcessorUtil {
   }
 
   public void processVoluntaryExitsNoValidation(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     try {
@@ -486,7 +486,7 @@ public final class BlockProcessorUtil {
 
   public boolean verifyVoluntaryExits(
       BeaconState state,
-      SSZList<SignedVoluntaryExit> exits,
+      SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
     VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {

@@ -70,7 +70,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 @Deprecated
 public final class BlockProcessorUtil {
@@ -231,7 +231,7 @@ public final class BlockProcessorUtil {
    */
   @Deprecated
   public static void process_proposer_slashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     process_proposer_slashings_no_validation(state, proposerSlashings);
     boolean signaturesValid =
@@ -243,7 +243,7 @@ public final class BlockProcessorUtil {
 
   @Deprecated
   public static void process_proposer_slashings_no_validation(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     ProposerSlashingStateTransitionValidator validator =
         new ProposerSlashingStateTransitionValidator();
@@ -271,7 +271,7 @@ public final class BlockProcessorUtil {
   @Deprecated
   public static boolean verify_proposer_slashings(
       BeaconState state,
-      SSZList<ProposerSlashing> proposerSlashings,
+      SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
     ProposerSlashingSignatureVerifier slashingSignatureVerifier =
         new ProposerSlashingSignatureVerifier();
@@ -300,7 +300,7 @@ public final class BlockProcessorUtil {
    */
   @Deprecated
   public static void process_attester_slashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
       final AttesterSlashingStateTransitionValidator validator =
@@ -338,7 +338,7 @@ public final class BlockProcessorUtil {
   @Deprecated
   public static void process_attestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       IndexedAttestationProvider indexedAttestationProvider)
       throws BlockProcessingException {
     process_attestations_no_validation(state, attestations);
@@ -348,7 +348,7 @@ public final class BlockProcessorUtil {
 
   @Deprecated
   public static void process_attestations_no_validation(
-      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+      MutableBeaconState state, SszList<Attestation> attestations) throws BlockProcessingException {
     try {
       final AttestationDataStateTransitionValidator validator =
           new AttestationDataStateTransitionValidator();
@@ -388,7 +388,7 @@ public final class BlockProcessorUtil {
   @Deprecated
   public static void verify_attestations(
       BeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationProvider indexedAttestationProvider)
       throws BlockProcessingException {
@@ -415,7 +415,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   @Deprecated
-  public static void process_deposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public static void process_deposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -438,7 +438,7 @@ public final class BlockProcessorUtil {
    */
   @Deprecated
   public static void process_voluntary_exits(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
 
     process_voluntary_exits_no_validation(state, exits);
@@ -450,7 +450,7 @@ public final class BlockProcessorUtil {
 
   @Deprecated
   public static void process_voluntary_exits_no_validation(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     try {
@@ -476,7 +476,7 @@ public final class BlockProcessorUtil {
   @Deprecated
   public static boolean verify_voluntary_exits(
       BeaconState state,
-      SSZList<SignedVoluntaryExit> exits,
+      SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
     VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {

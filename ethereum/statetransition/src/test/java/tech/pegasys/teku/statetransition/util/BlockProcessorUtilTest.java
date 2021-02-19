@@ -26,7 +26,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -203,10 +206,12 @@ class BlockProcessorUtilTest {
                 state.setEth1_data(
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
-    deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositData, UInt64.valueOf(0)));
+    SszList<Deposit> deposits =
+        BeaconBlockBody.getSszSchema()
+            .getDepositsSchema()
+            .of(
+                new DepositWithIndex(
+                    depositMerkleTree.getProof(0), depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
     return beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));

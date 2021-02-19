@@ -42,7 +42,7 @@ public class GetBlockAttestationsIntegrationTest extends AbstractDataBackedRestA
         jsonProvider.jsonToObject(response.body().string(), GetBlockAttestationsResponse.class);
     final List<Attestation> data = body.data;
     final List<Attestation> attestations =
-        created.get(0).getBlock().getMessage().getBody().getAttestations().asList().stream()
+        created.get(0).getBlock().getMessage().getBody().getAttestations().stream()
             .map(Attestation::new)
             .collect(toList());
     assertThat(data).isEqualTo(attestations);

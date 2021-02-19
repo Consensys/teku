@@ -289,7 +289,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     return getBlocksInEpochs(startEpochInclusive, endEpochExclusive).stream()
         .collect(
             Collectors.toMap(
-                BeaconBlock::getSlot, block -> block.getBody().getAttestations().asList()));
+                BeaconBlock::getSlot, block -> block.getBody().getAttestations().toList()));
   }
 
   @Override

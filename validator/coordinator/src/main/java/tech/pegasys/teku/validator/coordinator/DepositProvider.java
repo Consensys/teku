@@ -19,11 +19,9 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -42,13 +40,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final SszListSchema<Deposit, ?> DEPOSITS_SCHEMA =
+      SszListSchema.create(Deposit.SSZ_SCHEMA, MAX_DEPOSITS);
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
@@ -120,7 +122,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
-  public synchronized SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+  public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UInt64 eth1DepositCount;
     if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
@@ -141,10 +143,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
 
-    return SSZList.createMutable(
-        getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount),
-        MAX_DEPOSITS,
-        Deposit.class);
+    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
   }
 
   private void checkRequiredDepositsAvailable(
@@ -170,7 +169,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    * @return
    */
-  private List<Deposit> getDepositsWithProof(
+  private SszList<Deposit> getDepositsWithProof(
       UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
@@ -188,6 +187,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                   deposit.getData(),
                   deposit.getIndex());
             })
-        .collect(Collectors.toList());
+        .collect(DEPOSITS_SCHEMA.collector());
   }
 }

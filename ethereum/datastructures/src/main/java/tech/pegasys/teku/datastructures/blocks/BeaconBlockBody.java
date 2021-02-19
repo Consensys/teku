@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -23,17 +22,13 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.types.SszSignature;
 import tech.pegasys.teku.datastructures.types.SszSignatureSchema;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
@@ -83,29 +78,29 @@ public class BeaconBlockBody
               SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
     }
 
-    @Override
-    public SszSchema<SszList<ProposerSlashing>> getFieldSchema3() {
-      return super.getFieldSchema3();
+    @SuppressWarnings("unchecked")
+    public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
+      return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
     }
 
-    public SszSchema<SszList<ProposerSlashing>> getProposerSlashingsSchema() {
-      return getFieldSchema3();
+    @SuppressWarnings("unchecked")
+    public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
+      return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
     }
 
-    public SszSchema<SszList<AttesterSlashing>> getAttesterSlashingsSchema() {
-      return getFieldSchema4();
+    @SuppressWarnings("unchecked")
+    public SszListSchema<Attestation, ?> getAttestationsSchema() {
+      return (SszListSchema<Attestation, ?>) getFieldSchema5();
     }
 
-    public SszSchema<SszList<Attestation>> getAttestationsSchema() {
-      return getFieldSchema5();
+    @SuppressWarnings("unchecked")
+    public SszListSchema<Deposit, ?> getDepositsSchema() {
+      return (SszListSchema<Deposit, ?>) getFieldSchema6();
     }
 
-    public SszSchema<SszList<Deposit>> getDepositsSchema() {
-      return getFieldSchema6();
-    }
-
-    public SszSchema<SszList<SignedVoluntaryExit>> getVoluntaryExitsSchema() {
-      return getFieldSchema7();
+    @SuppressWarnings("unchecked")
+    public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
+      return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
     }
 
     @Override
@@ -130,11 +125,11 @@ public class BeaconBlockBody
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposer_slashings,
-      SSZList<AttesterSlashing> attester_slashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntary_exits) {
+      SszList<ProposerSlashing> proposer_slashings,
+      SszList<AttesterSlashing> attester_slashings,
+      SszList<Attestation> attestations,
+      SszList<Deposit> deposits,
+      SszList<SignedVoluntaryExit> voluntary_exits) {
     this(
         SSZ_SCHEMA.get(),
         randao_reveal,
@@ -152,21 +147,21 @@ public class BeaconBlockBody
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposer_slashings,
-      SSZList<AttesterSlashing> attester_slashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntary_exits) {
+      SszList<ProposerSlashing> proposer_slashings,
+      SszList<AttesterSlashing> attester_slashings,
+      SszList<Attestation> attestations,
+      SszList<Deposit> deposits,
+      SszList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
         new SszSignature(randao_reveal),
         eth1_data,
         new SszBytes32(graffiti),
-        SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
-        SszUtils.toSszList(type.getAttesterSlashingsSchema(), attester_slashings),
-        SszUtils.toSszList(type.getAttestationsSchema(), attestations),
-        SszUtils.toSszList(type.getDepositsSchema(), deposits),
-        SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
   }
 
   public BeaconBlockBody() {
@@ -185,28 +180,23 @@ public class BeaconBlockBody
     return getField2().get();
   }
 
-  public SSZList<ProposerSlashing> getProposer_slashings() {
-    return new SSZBackingList<>(
-        ProposerSlashing.class, getField3(), Function.identity(), Function.identity());
+  public SszList<ProposerSlashing> getProposer_slashings() {
+    return getField3();
   }
 
-  public SSZList<AttesterSlashing> getAttester_slashings() {
-    return new SSZBackingList<>(
-        AttesterSlashing.class, getField4(), Function.identity(), Function.identity());
+  public SszList<AttesterSlashing> getAttester_slashings() {
+    return getField4();
   }
 
-  public SSZList<Attestation> getAttestations() {
-    return new SSZBackingList<>(
-        Attestation.class, getField5(), Function.identity(), Function.identity());
+  public SszList<Attestation> getAttestations() {
+    return getField5();
   }
 
-  public SSZList<Deposit> getDeposits() {
-    return new SSZBackingList<>(
-        Deposit.class, getField6(), Function.identity(), Function.identity());
+  public SszList<Deposit> getDeposits() {
+    return getField6();
   }
 
-  public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
-    return new SSZBackingList<>(
-        SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
+  public SszList<SignedVoluntaryExit> getVoluntary_exits() {
+    return getField7();
   }
 }

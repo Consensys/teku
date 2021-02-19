@@ -39,8 +39,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -51,6 +51,8 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
  * included.
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
+  private static final SszListSchema<Attestation, ?> ATTESTATIONS_SCHEMA =
+      SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS);
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -117,7 +119,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
-  public void removeAll(SSZList<Attestation> attestations) {
+  public void removeAll(Iterable<Attestation> attestations) {
     attestations.forEach(this::remove);
   }
 
@@ -155,22 +157,19 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return size.get();
   }
 
-  public synchronized SSZList<Attestation> getAttestationsForBlock(
+  public synchronized SszList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
-    final SSZMutableList<Attestation> attestations =
-        SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
 
-    dataHashBySlot.descendingMap().values().stream()
+    return dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .limit(attestations.getMaxSize())
+        .limit(ATTESTATIONS_SCHEMA.getMaxLength())
         .map(ValidateableAttestation::getAttestation)
-        .forEach(attestations::add);
-    return attestations;
+        .collect(ATTESTATIONS_SCHEMA.collector());
   }
 
   public Stream<Attestation> getAttestations(

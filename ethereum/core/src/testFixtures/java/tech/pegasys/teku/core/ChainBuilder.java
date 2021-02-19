@@ -51,8 +51,8 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
@@ -399,7 +399,8 @@ public class ChainBuilder {
   }
 
   public static final class BlockOptions {
-    private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+    private SszMutableList<Attestation> attestations =
+        BeaconBlockBodyLists.createAttestations().createWritableCopy();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
@@ -409,7 +410,7 @@ public class ChainBuilder {
     }
 
     public BlockOptions addAttestation(final Attestation attestation) {
-      attestations.add(attestation);
+      attestations.append(attestation);
       return this;
     }
 
@@ -418,7 +419,7 @@ public class ChainBuilder {
       return this;
     }
 
-    private SSZList<Attestation> getAttestations() {
+    private SszList<Attestation> getAttestations() {
       return attestations;
     }
 

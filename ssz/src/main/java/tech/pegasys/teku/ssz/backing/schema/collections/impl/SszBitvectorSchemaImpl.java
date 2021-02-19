@@ -47,7 +47,7 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   }
 
   @Override
-  public SszBitvector createFromElements(List<SszBit> elements) {
+  public SszBitvector createFromElements(List<? extends SszBit> elements) {
     return ofBits(IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());
   }
 

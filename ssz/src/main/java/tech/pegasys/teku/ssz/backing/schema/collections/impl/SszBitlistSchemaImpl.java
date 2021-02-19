@@ -50,7 +50,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
   }
 
   @Override
-  public SszBitlist createFromElements(List<SszBit> elements) {
+  public SszBitlist createFromElements(List<? extends SszBit> elements) {
     return ofBits(
         elements.size(),
         IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());

@@ -34,7 +34,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -100,23 +100,23 @@ public class BlockFactory {
     } else {
       blockSlotState = stateTransition.process_slots(blockPreState, newSlot);
     }
-    SSZList<Attestation> attestations =
+    SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
             blockSlotState, new AttestationForkChecker(blockSlotState));
 
     // Collect slashings to include
-    final SSZList<ProposerSlashing> proposerSlashings =
+    final SszList<ProposerSlashing> proposerSlashings =
         proposerSlashingPool.getItemsForBlock(blockSlotState);
-    final SSZList<AttesterSlashing> attesterSlashings =
+    final SszList<AttesterSlashing> attesterSlashings =
         attesterSlashingPool.getItemsForBlock(blockSlotState);
 
     // Collect exits to include
-    final SSZList<SignedVoluntaryExit> voluntaryExits =
+    final SszList<SignedVoluntaryExit> voluntaryExits =
         voluntaryExitPool.getItemsForBlock(blockSlotState);
 
     // Collect deposits
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
+    final SszList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
     final Bytes32 parentRoot = get_block_root_at_slot(blockSlotState, slotBeforeBlock);
 

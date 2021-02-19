@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -353,7 +354,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AttesterSlashingValidator validator =
         new AttesterSlashingValidator(
             recentChainData, new AttesterSlashingStateTransitionValidator());
-    attesterSlashingPool = new OperationPool<>(AttesterSlashing.class, validator);
+    attesterSlashingPool =
+        new OperationPool<>(BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema(), validator);
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
@@ -364,7 +366,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             new ProposerSlashingStateTransitionValidator(),
             new ProposerSlashingSignatureVerifier());
-    proposerSlashingPool = new OperationPool<>(ProposerSlashing.class, validator);
+    proposerSlashingPool =
+        new OperationPool<>(BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(), validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
@@ -375,7 +378,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             new VoluntaryExitStateTransitionValidator(),
             new VoluntaryExitSignatureVerifier());
-    voluntaryExitPool = new OperationPool<>(SignedVoluntaryExit.class, validator);
+    voluntaryExitPool =
+        new OperationPool<>(BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema(), validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 

@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -43,7 +44,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -159,12 +160,11 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlotWithExits(
       final UInt64 slot, List<SignedVoluntaryExit> exits) throws Exception {
-    Optional<SSZList<SignedVoluntaryExit>> exitsSSZList =
+    Optional<SszList<SignedVoluntaryExit>> exitsSSZList =
         exits.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                SSZList.createMutable(
-                    exits, Constants.MAX_VOLUNTARY_EXITS, SignedVoluntaryExit.class));
+                BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema().createFromElements(exits));
 
     return createAndImportBlockAtSlot(
         slot, Optional.empty(), Optional.empty(), exitsSSZList, Optional.empty());
@@ -172,10 +172,11 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlotWithDeposits(
       final UInt64 slot, List<Deposit> deposits) throws Exception {
-    Optional<SSZList<Deposit>> depositsSSZlist =
+    Optional<SszList<Deposit>> depositsSSZlist =
         deposits.isEmpty()
             ? Optional.empty()
-            : Optional.of(SSZList.createMutable(deposits, Constants.MAX_DEPOSITS, Deposit.class));
+            : Optional.of(
+                BeaconBlockBody.getSszSchema().getDepositsSchema().createFromElements(deposits));
 
     return createAndImportBlockAtSlot(
         slot, Optional.empty(), depositsSSZlist, Optional.empty(), Optional.empty());
@@ -183,11 +184,13 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlotWithAttestations(
       final UInt64 slot, List<Attestation> attestations) throws Exception {
-    Optional<SSZList<Attestation>> attestationsSSZList =
+    Optional<SszList<Attestation>> attestationsSSZList =
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                SSZList.createMutable(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
+                BeaconBlockBody.getSszSchema()
+                    .getAttestationsSchema()
+                    .createFromElements(attestations));
 
     return createAndImportBlockAtSlot(
         slot, attestationsSSZList, Optional.empty(), Optional.empty(), Optional.empty());
@@ -195,9 +198,9 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
       final UInt64 slot,
-      Optional<SSZList<Attestation>> attestations,
-      Optional<SSZList<Deposit>> deposits,
-      Optional<SSZList<SignedVoluntaryExit>> exits,
+      Optional<SszList<Attestation>> attestations,
+      Optional<SszList<Deposit>> deposits,
+      Optional<SszList<SignedVoluntaryExit>> exits,
       Optional<Eth1Data> eth1Data)
       throws Exception {
     final SignedBeaconBlock block =
@@ -250,9 +253,9 @@ public class BeaconChainUtil {
   private SignedBlockAndState createBlockAndStateAtSlot(
       final UInt64 slot,
       boolean withValidProposer,
-      Optional<SSZList<Attestation>> attestations,
-      Optional<SSZList<Deposit>> deposits,
-      Optional<SSZList<SignedVoluntaryExit>> exits,
+      Optional<SszList<Attestation>> attestations,
+      Optional<SszList<Deposit>> deposits,
+      Optional<SszList<SignedVoluntaryExit>> exits,
       Optional<Eth1Data> eth1Data)
       throws Exception {
     checkState(
@@ -284,11 +287,10 @@ public class BeaconChainUtil {
 
       StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
       UInt64 slot = recentChainData.getHeadSlot();
-      SSZList<Attestation> currentSlotAssignments =
-          SSZList.createMutable(
-              attestationGenerator.getAttestationsForSlot(head, slot),
-              Constants.MAX_ATTESTATIONS,
-              Attestation.class);
+      SszList<Attestation> currentSlotAssignments =
+          BeaconBlockBody.getSszSchema()
+              .getAttestationsSchema()
+              .createFromElements(attestationGenerator.getAttestationsForSlot(head, slot));
       createAndImportBlockAtSlot(
           recentChainData.getHeadSlot().plus(UInt64.ONE),
           Optional.of(currentSlotAssignments),

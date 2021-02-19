@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class SpecProvider {
@@ -140,25 +140,25 @@ public class SpecProvider {
   }
 
   public void processProposerSlashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processProposerSlashings(state, proposerSlashings);
   }
 
   public void processAttesterSlashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processAttesterSlashings(state, attesterSlashings);
   }
 
-  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processAttestations(state, attestations);
   }
 
   public void processAttestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       BlockProcessorUtil.IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
@@ -166,12 +166,12 @@ public class SpecProvider {
         .processAttestations(state, attestations, indexedAttestationCache);
   }
 
-  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processDeposits(state, deposits);
   }
 
-  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processVoluntaryExits(state, exits);
   }

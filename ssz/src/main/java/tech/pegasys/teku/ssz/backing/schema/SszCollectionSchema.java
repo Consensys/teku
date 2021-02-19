@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableComposite;
@@ -26,7 +31,13 @@ public interface SszCollectionSchema<
   SszSchema<SszElementT> getElementSchema();
 
   @SuppressWarnings("unchecked")
-  default SszCollectionT createFromElements(List<SszElementT> elements) {
+  default SszCollectionT of(SszElementT... elements) {
+    return createFromElements(Arrays.asList(elements));
+  }
+
+  @SuppressWarnings("unchecked")
+  default SszCollectionT createFromElements(List<? extends SszElementT> elements) {
+    checkArgument(elements.size() < getMaxLength(), "Too many elements for this collection type");
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {
@@ -38,5 +49,9 @@ public interface SszCollectionSchema<
   default TreeNode createTreeFromElements(List<SszElementT> elements) {
     // TODO: suboptimal
     return createFromElements(elements).getBackingNode();
+  }
+
+  default Collector<SszElementT, ?, SszCollectionT> collector() {
+    return Collectors.collectingAndThen(Collectors.<SszElementT>toList(), this::createFromElements);
   }
 }
