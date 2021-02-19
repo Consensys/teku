@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class EpochProcessor {
@@ -188,7 +190,7 @@ public class EpochProcessor {
     try {
 
       // Process activation eligibility and ejections
-      SSZMutableList<Validator> validators = state.getValidators();
+      SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
@@ -279,7 +281,7 @@ public class EpochProcessor {
             .times(specConstants.getProportionalSlashingMultiplier())
             .min(totalBalance);
 
-    SSZList<Validator> validators = state.getValidators();
+    SszList<Validator> validators = state.getValidators();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
       if (validator.isSlashed()
@@ -315,7 +317,7 @@ public class EpochProcessor {
     }
 
     // Update effective balances with hysteresis
-    SSZMutableList<Validator> validators = state.getValidators();
+    SszMutableList<Validator> validators = state.getValidators();
     SSZList<UInt64> balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);

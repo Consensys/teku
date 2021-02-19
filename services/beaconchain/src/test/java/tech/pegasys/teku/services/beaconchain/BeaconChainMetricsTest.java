@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -264,7 +265,8 @@ class BeaconChainMetricsTest {
     when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
     when(state.getPrevious_epoch_attestations())
         .thenReturn(SSZList.empty(PendingAttestation.class));
-    when(state.getValidators()).thenReturn(SSZList.createMutable(validators, 100, Validator.class));
+    when(state.getValidators())
+        .thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 100).createFromElements(validators));
     beaconChainMetrics.onSlot(slotNumber);
     assertThat(metricsSystem.getGauge(BEACON, "current_active_validators").getValue()).isEqualTo(2);
     assertThat(metricsSystem.getGauge(BEACON, "previous_active_validators").getValue())
@@ -446,7 +448,7 @@ class BeaconChainMetricsTest {
             SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
     when(state.getPrevious_epoch_attestations())
         .thenReturn(SSZList.empty(PendingAttestation.class));
-    when(state.getValidators()).thenReturn(SSZList.empty(Validator.class));
+    when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     when(state.getSlot()).thenReturn(slot);
 
     final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
@@ -462,7 +464,7 @@ class BeaconChainMetricsTest {
         .thenReturn(
             SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
     when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
-    when(state.getValidators()).thenReturn(SSZList.empty(Validator.class));
+    when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     final UInt64 slot = UInt64.valueOf(slotAsInt);
     when(state.getSlot()).thenReturn(slot);
 

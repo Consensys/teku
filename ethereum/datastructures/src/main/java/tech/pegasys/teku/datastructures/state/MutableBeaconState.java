@@ -22,6 +22,8 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -92,9 +94,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   // Registry
   @Override
-  default SSZMutableList<Validator> getValidators() {
-    return new SSZBackingList<>(
-        Validator.class, getAnyByRef(11), Function.identity(), Function.identity());
+  default SszMutableList<Validator> getValidators() {
+    return getAnyByRef(11);
+  }
+
+  default void setValidators(SszList<Validator> validators) {
+    set(VALIDATORS_FIELD.getIndex(), validators);
   }
 
   @Override

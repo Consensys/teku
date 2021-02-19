@@ -20,7 +20,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class ValidatorIndexCache {
   private final Cache<BLSPublicKey, Integer> validatorIndexes;
@@ -57,7 +57,7 @@ public class ValidatorIndexCache {
   }
 
   private Optional<Integer> findIndexFromState(
-      final SSZList<Validator> validatorList,
+      final SszList<Validator> validatorList,
       final BLSPublicKey publicKey,
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {

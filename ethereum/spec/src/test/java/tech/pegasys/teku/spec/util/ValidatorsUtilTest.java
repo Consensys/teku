@@ -57,7 +57,7 @@ class ValidatorsUtilTest {
     // more validators, if the validator isn't actually in the target state.
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Validator validator = dataStructureUtil.randomValidator();
-    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
+    final BeaconState nextState = state.updated(s -> s.getValidators().append(validator));
 
     assertThat(
             validatorsUtil.getValidatorIndex(
@@ -81,7 +81,7 @@ class ValidatorsUtilTest {
         .isEmpty();
 
     // Then add it to the list and we should be able to find the index.
-    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
+    final BeaconState nextState = state.updated(s -> s.getValidators().append(validator));
     assertThat(
             validatorsUtil.getValidatorIndex(
                 nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))

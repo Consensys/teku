@@ -23,6 +23,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -73,7 +74,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       UInt64 eth1_deposit_index,
 
       // Registry
-      SSZList<? extends Validator> validators,
+      SszList<Validator> validators,
       SSZList<UInt64> balances,
 
       // Randomness

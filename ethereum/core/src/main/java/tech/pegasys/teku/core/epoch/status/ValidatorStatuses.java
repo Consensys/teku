@@ -31,7 +31,7 @@ import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class ValidatorStatuses {
   private final List<ValidatorStatus> statuses;
@@ -44,7 +44,7 @@ public class ValidatorStatuses {
   }
 
   public static ValidatorStatuses create(final BeaconState state) {
-    final SSZList<Validator> validators = state.getValidators();
+    final SszList<Validator> validators = state.getValidators();
 
     final UInt64 currentEpoch = BeaconStateUtil.get_current_epoch(state);
     final UInt64 previousEpoch = BeaconStateUtil.get_previous_epoch(state);

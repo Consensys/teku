@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconStateBuilder {
@@ -44,7 +45,7 @@ public class BeaconStateBuilder {
   private Eth1Data eth1Data;
   private SSZList<Eth1Data> eth1DataVotes;
   private UInt64 eth1DepositIndex;
-  private SSZList<? extends Validator> validators;
+  private SszList<Validator> validators;
   private SSZList<UInt64> balances;
   private SSZVector<Bytes32> randaoMixes;
   private SSZVector<UInt64> slashings;
@@ -127,10 +128,9 @@ public class BeaconStateBuilder {
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
     validators =
-        dataStructureUtil.randomSSZList(
-            Validator.class,
+        dataStructureUtil.randomSszList(
+            BeaconState.VALIDATORS_FIELD_SCHEMA.get(),
             defaultValidatorCount,
-            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomValidator);
     balances =
         dataStructureUtil.randomSSZList(
@@ -238,7 +238,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder validators(final SSZList<? extends Validator> validators) {
+  public BeaconStateBuilder validators(final SszList<Validator> validators) {
     checkNotNull(validators);
     this.validators = validators;
     return this;

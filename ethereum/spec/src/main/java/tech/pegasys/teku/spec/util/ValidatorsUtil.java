@@ -27,7 +27,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class ValidatorsUtil {
 
@@ -108,7 +108,7 @@ public class ValidatorsUtil {
         .get(
             epoch,
             e -> {
-              SSZList<Validator> validators = state.getValidators();
+              SszList<Validator> validators = state.getValidators();
               return IntStream.range(0, validators.size())
                   .filter(index -> isActiveValidator(validators.get(index), epoch))
                   .boxed()

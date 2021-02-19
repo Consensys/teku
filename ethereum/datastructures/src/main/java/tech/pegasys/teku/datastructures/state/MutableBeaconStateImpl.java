@@ -33,7 +33,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private final TransitionCaches transitionCaches;
   private final boolean builder;
 
-  private SSZMutableList<Validator> validators;
   private SSZMutableList<UInt64> balances;
   private SSZMutableVector<Bytes32> blockRoots;
   private SSZMutableVector<Bytes32> stateRoots;
@@ -82,13 +81,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   @Override
   public MutableBeaconState createWritableCopy() {
     return (MutableBeaconState) super.createWritableCopy();
-  }
-
-  @Override
-  public SSZMutableList<Validator> getValidators() {
-    return validators != null
-        ? validators
-        : (validators = MutableBeaconState.super.getValidators());
   }
 
   @Override

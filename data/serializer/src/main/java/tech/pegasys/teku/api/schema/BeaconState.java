@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconState {
   @Schema(type = "string", format = "uint64")
@@ -188,10 +187,12 @@ public class BeaconState {
             EPOCHS_PER_ETH1_VOTING_PERIOD,
             tech.pegasys.teku.datastructures.blocks.Eth1Data.class),
         eth1_deposit_index,
-        SSZList.createMutable(
-            validators.stream().map(Validator::asInternalValidator).collect(Collectors.toList()),
-            Constants.VALIDATOR_REGISTRY_LIMIT,
-            tech.pegasys.teku.datastructures.state.Validator.class),
+        validators.stream()
+            .map(Validator::asInternalValidator)
+            .collect(
+                tech.pegasys.teku.datastructures.state.BeaconState.VALIDATORS_FIELD_SCHEMA
+                    .get()
+                    .collector()),
         SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
         SSZVector.createMutable(randao_mixes, Bytes32.class),
         SSZVector.createMutable(slashings, UInt64.class),

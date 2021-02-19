@@ -61,7 +61,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -618,7 +618,7 @@ class ValidatorApiHandlerTest {
         .updated(
             state -> {
               state.setSlot(slot);
-              final SSZMutableList<Validator> validators = state.getValidators();
+              final SszMutableList<Validator> validators = state.getValidators();
               for (int i = 0; i < validators.size(); i++) {
                 validators.update(
                     i,

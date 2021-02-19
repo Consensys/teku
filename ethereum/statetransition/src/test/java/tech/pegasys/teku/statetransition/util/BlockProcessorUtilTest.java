@@ -188,7 +188,7 @@ class BlockProcessorUtilTest {
                 balanceList.add(amount);
               }
 
-              beaconState.getValidators().addAll(validatorList);
+              beaconState.getValidators().appendAll(validatorList);
               beaconState.getBalances().addAll(balanceList);
             });
   }

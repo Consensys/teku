@@ -25,6 +25,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -82,15 +83,16 @@ public interface BeaconState extends SszContainer {
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   SszField ETH1_DEPOSIT_INDEX_FIELD =
       new SszField(10, "eth1_deposit_index", SszPrimitiveSchemas.UINT64_SCHEMA);
-  SszField VALIDATORS_FIELD =
-      new SszField(
-          11,
-          "validators",
+
+  SpecDependent<SszListSchema<Validator, ?>> VALIDATORS_FIELD_SCHEMA =
+      SpecDependent.of(
           () ->
               SszListSchema.create(
                   Validator.SSZ_SCHEMA,
                   Constants.VALIDATOR_REGISTRY_LIMIT,
                   SszSchemaHints.sszSuperNode(8)));
+
+  SszField VALIDATORS_FIELD = new SszField(11, "validators", VALIDATORS_FIELD_SCHEMA::get);
   SszField BALANCES_FIELD =
       new SszField(
           12,
@@ -208,7 +210,7 @@ public interface BeaconState extends SszContainer {
       UInt64 eth1_deposit_index,
 
       // Registry
-      SSZList<? extends Validator> validators,
+      SszList<Validator> validators,
       SSZList<UInt64> balances,
 
       // Randomness
@@ -241,7 +243,7 @@ public interface BeaconState extends SszContainer {
               state.setEth1_data(eth1_data);
               state.getEth1_data_votes().setAll(eth1_data_votes);
               state.setEth1_deposit_index(eth1_deposit_index);
-              state.getValidators().setAll(validators);
+              state.setValidators(validators);
               state.getBalances().setAll(balances);
               state.getRandao_mixes().setAll(randao_mixes);
               state.getSlashings().setAll(slashings);
@@ -322,12 +324,8 @@ public interface BeaconState extends SszContainer {
   }
 
   // Registry
-  default SSZList<Validator> getValidators() {
-    return new SSZBackingList<>(
-        Validator.class,
-        getAny(VALIDATORS_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszList<Validator> getValidators() {
+    return getAny(VALIDATORS_FIELD.getIndex());
   }
 
   default SSZList<UInt64> getBalances() {

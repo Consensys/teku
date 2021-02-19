@@ -342,7 +342,7 @@ public class BeaconStateUtilTest {
 
               beaconState
                   .getValidators()
-                  .addAll(
+                  .appendAll(
                       SSZList.createMutable(
                           validatorList,
                           specConstants.getValidatorRegistryLimit(),

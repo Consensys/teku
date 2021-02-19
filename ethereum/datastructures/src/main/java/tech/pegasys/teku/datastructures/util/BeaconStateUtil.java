@@ -73,9 +73,9 @@ import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -135,7 +135,7 @@ public class BeaconStateUtil {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SSZList<Validator> validators = state.getValidators();
+      SszList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
           index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
@@ -178,7 +178,7 @@ public class BeaconStateUtil {
       if (pubKeyToIndexMap == null) {
         LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
-      state.getValidators().add(getValidatorFromDeposit(deposit));
+      state.getValidators().append(getValidatorFromDeposit(deposit));
       state.getBalances().add(amount);
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
@@ -276,7 +276,7 @@ public class BeaconStateUtil {
   @Deprecated
   public static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
-    SSZList<Validator> validator_registry = state.getValidators();
+    SszList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }

@@ -28,7 +28,7 @@ import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
 class BeaconValidatorsTest {
@@ -41,7 +41,7 @@ class BeaconValidatorsTest {
   @Test
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    SSZList<Validator> validatorList = beaconState.getValidators();
+    SszList<Validator> validatorList = beaconState.getValidators();
     BeaconValidators response = new BeaconValidators(beaconState, FAR_FUTURE_EPOCH);
     assertThat(response.total_size).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validators.size())
@@ -131,7 +131,7 @@ class BeaconValidatorsTest {
   @Test
   public void returnRemainderIfEdgeCasePageParams() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    final SSZList<Validator> validators = beaconState.getValidators();
+    final SszList<Validator> validators = beaconState.getValidators();
     final int validatorsSize = validators.size();
     final int suppliedPageSizeParam = validatorsSize / 10 - 1;
     final int suppliedPageTokenParam = 11;
@@ -158,7 +158,7 @@ class BeaconValidatorsTest {
 
     System.out.println(beaconState.hashTreeRoot());
 
-    SSZList<Validator> allValidators = beaconState.getValidators();
+    SszList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
             getValidators(beaconState),
@@ -176,7 +176,7 @@ class BeaconValidatorsTest {
             .withActivation_eligibility_epoch(UInt64.ZERO)
             .withActivation_epoch(GENESIS_EPOCH);
 
-    BeaconState beaconStateW = beaconState.updated(state -> state.getValidators().add(v));
+    BeaconState beaconStateW = beaconState.updated(state -> state.getValidators().append(v));
 
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =
@@ -185,7 +185,7 @@ class BeaconValidatorsTest {
             true,
             beaconStateUtil.computeEpochAtSlot(beaconStateW.getSlot()));
 
-    SSZList<Validator> updatedValidators = beaconStateW.getValidators();
+    SszList<Validator> updatedValidators = beaconStateW.getValidators();
 
     assertThat(updatedValidators).contains(v);
     assertThat(beaconStateW.getValidators()).contains(v);

@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -172,14 +173,14 @@ class BlockProcessorUtilTest {
                       specConstants.getGenesisForkVersion(),
                       SpecConstants.GENESIS_EPOCH));
 
-              SSZMutableList<Validator> validatorList =
-                  SSZList.createMutable(
-                      Arrays.asList(
+              SszMutableList<Validator> validatorList =
+                  BeaconState.VALIDATORS_FIELD_SCHEMA
+                      .get()
+                      .of(
                           dataStructureUtil.randomValidator(),
                           dataStructureUtil.randomValidator(),
-                          dataStructureUtil.randomValidator()),
-                      specConstants.getValidatorRegistryLimit(),
-                      Validator.class);
+                          dataStructureUtil.randomValidator())
+                      .createWritableCopy();
               SSZMutableList<UInt64> balanceList =
                   SSZList.createMutable(
                       Arrays.asList(
@@ -190,11 +191,11 @@ class BlockProcessorUtilTest {
                       UInt64.class);
 
               if (addToList) {
-                validatorList.add(knownValidator);
+                validatorList.append(knownValidator);
                 balanceList.add(amount);
               }
 
-              beaconState.getValidators().addAll(validatorList);
+              beaconState.getValidators().appendAll(validatorList);
               beaconState.getBalances().addAll(balanceList);
             });
   }
