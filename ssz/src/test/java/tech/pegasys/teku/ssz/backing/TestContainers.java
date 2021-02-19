@@ -18,6 +18,7 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class TestContainers {
 
@@ -117,7 +117,7 @@ public class TestContainers {
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
       super(
-          SSZ_SCHEMA, SszUInt64.fromLong(l1), SszUtils.toSszByteVector(b1), SszUInt64.fromLong(l2));
+          SSZ_SCHEMA, SszUInt64.fromLong(l1), SszByteVector.fromBytes(b1), SszUInt64.fromLong(l2));
     }
   }
 

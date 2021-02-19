@@ -57,11 +57,12 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
+import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
+
   private static final Logger LOG = LogManager.getLogger();
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -428,11 +429,7 @@ public class BeaconStateUtil {
 
   private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
     SigningData domainWrappedObject =
-        new SigningData(
-            new SszComplexSchemas.SszByteVectorSchema(bytes.size())
-                .createVector(bytes)
-                .hashTreeRoot(),
-            domain);
+        new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 

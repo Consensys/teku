@@ -14,9 +14,19 @@
 package tech.pegasys.teku.ssz.backing.collections;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public interface SszByteVector extends SszPrimitiveVector<Byte, SszByte> {
+
+  static SszByteVector fromBytes(Bytes byteVector) {
+    return SszByteVectorSchema.create(byteVector.size()).fromBytes(byteVector);
+  }
+
+  static Bytes32 computeHashTreeRoot(Bytes byteVector) {
+    return fromBytes(byteVector).hashTreeRoot();
+  }
 
   default byte getByte(int index) {
     return getElement(index);
