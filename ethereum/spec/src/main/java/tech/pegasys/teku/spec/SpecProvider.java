@@ -62,6 +62,14 @@ public class SpecProvider {
     return atEpoch(epoch);
   }
 
+  public Spec at(final BeaconState state) {
+    return atSlot(state.getSlot());
+  }
+
+  public SpecConstants getSpecConstants(final UInt64 epoch) {
+    return atEpoch(epoch).getConstants();
+  }
+
   public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
     return atSlot(slot).getBeaconStateUtil();
   }
@@ -80,10 +88,6 @@ public class SpecProvider {
 
   public int slotsPerEpoch(final UInt64 epoch) {
     return atEpoch(epoch).getConstants().getSlotsPerEpoch();
-  }
-
-  public int secondsPerSlot(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants().getSecondsPerSlot();
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
@@ -144,5 +148,9 @@ public class SpecProvider {
 
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atSlot(state.getSlot()).getBeaconStateUtil().getCurrentEpoch(state);
+  }
+
+  public long getMaxDeposits(final UInt64 slot) {
+    return atSlot(slot).getConstants().getMaxDeposits();
   }
 }

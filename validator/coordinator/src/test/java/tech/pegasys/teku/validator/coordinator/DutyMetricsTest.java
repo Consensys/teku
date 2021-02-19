@@ -23,17 +23,21 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class DutyMetricsTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(100_000);
+  private final SpecProvider specProvider =
+      StubSpecProvider.createMinimal(config -> config.minGenesisTime(GENESIS_TIME));
   private final StubTimeProvider timeProvider =
       StubTimeProvider.withTimeInSeconds(GENESIS_TIME.longValue());
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final MetricsHistogram attestationHistogram = mock(MetricsHistogram.class);
   private final DutyMetrics metrics =
-      new DutyMetrics(timeProvider, recentChainData, attestationHistogram);
+      new DutyMetrics(timeProvider, recentChainData, attestationHistogram, specProvider);
 
   @BeforeEach
   void setUp() {

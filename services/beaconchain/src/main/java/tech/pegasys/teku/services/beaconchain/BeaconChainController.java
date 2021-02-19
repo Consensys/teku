@@ -341,7 +341,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               STATUS_LOG,
               new ValidatorPerformanceMetrics(metricsSystem),
               beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode(),
-              activeValidatorTracker);
+              activeValidatorTracker,
+              specProvider);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
@@ -426,7 +427,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
-    depositProvider = new DepositProvider(metricsSystem, recentChainData, eth1DataCache);
+    depositProvider =
+        new DepositProvider(metricsSystem, recentChainData, eth1DataCache, specProvider);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointChannel.class, depositProvider);
@@ -434,7 +436,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod());
+    eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod(specProvider));
   }
 
   private void initAttestationTopicSubscriber() {
@@ -478,8 +480,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationTopicSubscriber,
             activeValidatorTracker,
             eventBus,
-            DutyMetrics.create(metricsSystem, timeProvider, recentChainData),
-            performanceTracker);
+            DutyMetrics.create(metricsSystem, timeProvider, recentChainData, specProvider),
+            performanceTracker,
+            specProvider);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
