@@ -22,7 +22,6 @@ import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public interface SszComplexSchemas {
 
-  SszByteVectorSchema BYTES_48_SCHEMA = new SszByteVectorSchema(48);
   SszByteVectorSchema BYTES_96_SCHEMA = new SszByteVectorSchema(96);
 
   class SszByteListSchema extends SszListSchemaImpl<SszByte> {

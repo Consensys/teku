@@ -14,31 +14,29 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.types.SszSignature;
+import tech.pegasys.teku.datastructures.types.SszSignatureSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class IndexedAttestation
-    extends Container3<
-        IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
+    extends Container3<IndexedAttestation, SszList<SszUInt64>, AttestationData, SszSignature> {
 
   public static class IndexedAttestationSchema
       extends ContainerSchema3<
-          IndexedAttestation, SszList<SszUInt64>, AttestationData, SszVector<SszByte>> {
+          IndexedAttestation, SszList<SszUInt64>, AttestationData, SszSignature> {
 
     public IndexedAttestationSchema() {
       super(
@@ -48,7 +46,7 @@ public class IndexedAttestation
               SszListSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
-          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+          namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
 
     public SszSchema<SszList<SszUInt64>> getAttestingIndicesSchema() {
@@ -63,8 +61,6 @@ public class IndexedAttestation
 
   public static final IndexedAttestationSchema SSZ_SCHEMA = new IndexedAttestationSchema();
 
-  private BLSSignature signatureCache;
-
   private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -76,8 +72,7 @@ public class IndexedAttestation
         SszUtils.toSszList(
             SSZ_SCHEMA.getAttestingIndicesSchema(), attesting_indices, SszUInt64::new),
         data,
-        SszUtils.toSszByteVector(signature.toBytesCompressed()));
-    this.signatureCache = signature;
+        new SszSignature(signature));
   }
 
   public SSZList<UInt64> getAttesting_indices() {
@@ -90,9 +85,6 @@ public class IndexedAttestation
   }
 
   public BLSSignature getSignature() {
-    if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
-    }
-    return signatureCache;
+    return getField2().getSignature();
   }
 }

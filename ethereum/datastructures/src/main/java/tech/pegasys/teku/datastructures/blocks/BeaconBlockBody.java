@@ -21,18 +21,17 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.types.SszSignature;
+import tech.pegasys.teku.datastructures.types.SszSignatureSchema;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
@@ -42,7 +41,7 @@ import tech.pegasys.teku.util.config.SpecDependent;
 public class BeaconBlockBody
     extends Container8<
         BeaconBlockBody,
-        SszVector<SszByte>,
+        SszSignature,
         Eth1Data,
         SszBytes32,
         SszList<ProposerSlashing>,
@@ -54,7 +53,7 @@ public class BeaconBlockBody
   public static class BeaconBlockBodySchema
       extends ContainerSchema8<
           BeaconBlockBody,
-          SszVector<SszByte>,
+          SszSignature,
           Eth1Data,
           SszBytes32,
           SszList<ProposerSlashing>,
@@ -66,7 +65,7 @@ public class BeaconBlockBody
     public BeaconBlockBodySchema() {
       super(
           "BeaconBlockBody",
-          namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
+          namedSchema("randao_reveal", SszSignatureSchema.INSTANCE),
           namedSchema("eth1_data", Eth1Data.SSZ_SCHEMA),
           namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
@@ -122,8 +121,6 @@ public class BeaconBlockBody
   public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
       SpecDependent.of(BeaconBlockBodySchema::new);
 
-  private BLSSignature randaoRevealCache;
-
   private BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -148,7 +145,6 @@ public class BeaconBlockBody
         attestations,
         deposits,
         voluntary_exits);
-    this.randaoRevealCache = randao_reveal;
   }
 
   public BeaconBlockBody(
@@ -163,7 +159,7 @@ public class BeaconBlockBody
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
-        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
+        new SszSignature(randao_reveal),
         eth1_data,
         new SszBytes32(graffiti),
         SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
@@ -171,7 +167,6 @@ public class BeaconBlockBody
         SszUtils.toSszList(type.getAttestationsSchema(), attestations),
         SszUtils.toSszList(type.getDepositsSchema(), deposits),
         SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
-    this.randaoRevealCache = randao_reveal;
   }
 
   public BeaconBlockBody() {
@@ -179,10 +174,7 @@ public class BeaconBlockBody
   }
 
   public BLSSignature getRandao_reveal() {
-    if (randaoRevealCache == null) {
-      randaoRevealCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField0()));
-    }
-    return randaoRevealCache;
+    return getField0().getSignature();
   }
 
   public Eth1Data getEth1_data() {
