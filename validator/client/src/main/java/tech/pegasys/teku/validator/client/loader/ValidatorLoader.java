@@ -85,7 +85,8 @@ public class ValidatorLoader {
       final ValidatorConfig config, final Map<BLSPublicKey, ValidatorProvider> validatorProviders) {
     if (config.getValidatorKeystorePasswordFilePairs() != null) {
       addValidatorsFromSource(
-          validatorProviders, new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner));
+          validatorProviders,
+          slashingProtected(new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner)));
     }
   }
 
