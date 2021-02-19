@@ -276,7 +276,7 @@ class ValidatorLoaderTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
     when(slashingProtector.maySignBlock(any(), any(), any())).thenReturn(new SafeFuture<>());
-    validator.getSigner().signBlock(block, forkInfo);
+    assertThat(validator.getSigner().signBlock(block, forkInfo)).isNotDone();
     verify(slashingProtector)
         .maySignBlock(
             validator.getPublicKey(), forkInfo.getGenesisValidatorsRoot(), block.getSlot());
