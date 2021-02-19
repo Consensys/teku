@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.schema;
+package tech.pegasys.teku.ssz.backing.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -36,7 +37,7 @@ public abstract class AbstractSszPrimitiveSchema<
 
   private final int bitsSize;
 
-  AbstractSszPrimitiveSchema(int bitsSize) {
+  protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;

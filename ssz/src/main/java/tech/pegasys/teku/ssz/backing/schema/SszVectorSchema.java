@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.SszVectorSchemaImpl;
 
 public interface SszVectorSchema<
         ElementDataT extends SszData, SszVectorT extends SszVector<ElementDataT>>

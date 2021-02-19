@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Objects;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>

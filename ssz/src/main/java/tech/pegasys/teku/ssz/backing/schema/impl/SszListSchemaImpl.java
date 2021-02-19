@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.schema;
+package tech.pegasys.teku.ssz.backing.schema.impl;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 
-class SszListSchemaImpl<ElementDataT extends SszData>
+public class SszListSchemaImpl<ElementDataT extends SszData>
     extends AbstractSszListSchema<ElementDataT, SszList<ElementDataT>> {
 
   public SszListSchemaImpl(SszSchema<ElementDataT> elementSchema, long maxLength) {

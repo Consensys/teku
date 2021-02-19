@@ -11,10 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.schema;
+package tech.pegasys.teku.ssz.backing.schema.impl;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
 
@@ -25,7 +27,7 @@ public class SszVectorSchemaImpl<SszElementT extends SszData>
     this(elementType, vectorLength, false, SszSchemaHints.none());
   }
 
-  SszVectorSchemaImpl(
+  public SszVectorSchemaImpl(
       SszSchema<SszElementT> elementSchema,
       long vectorLength,
       boolean isListBacking,

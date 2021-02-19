@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.SszListSchemaImpl;
 
 public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
     extends SszCollectionSchema<ElementDataT, SszListT> {

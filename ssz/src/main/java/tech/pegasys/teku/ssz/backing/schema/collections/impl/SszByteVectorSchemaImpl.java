@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
