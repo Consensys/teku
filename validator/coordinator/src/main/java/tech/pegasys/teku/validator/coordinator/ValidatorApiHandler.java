@@ -53,8 +53,6 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.util.AttestationUtil;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -153,7 +151,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       final Map<BLSPublicKey, Integer> results = new HashMap<>();
                       publicKeys.forEach(
                           publicKey ->
-                              ValidatorsUtil.getValidatorIndex(state, publicKey)
+                              specProvider
+                                  .getValidatorIndex(state, publicKey)
                                   .ifPresent(index -> results.put(publicKey, index)));
                       return results;
                     })
@@ -336,7 +335,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
     final AttestationData attestationData =
-        AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+        specProvider.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
     final List<Integer> committee =
         specProvider
             .atSlot(slot)
@@ -471,7 +470,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     getProposalSlotsForEpoch(state, epoch)
         .forEach(
             (slot, publicKey) -> {
-              Optional<Integer> maybeIndex = ValidatorsUtil.getValidatorIndex(state, publicKey);
+              Optional<Integer> maybeIndex = specProvider.getValidatorIndex(state, publicKey);
               if (maybeIndex.isEmpty()) {
                 throw new IllegalStateException(
                     String.format(
@@ -489,8 +488,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     final Bytes32 dependentRoot =
         epoch.isGreaterThan(specProvider.getCurrentEpoch(state))
-            ? specProvider.at(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : specProvider.at(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+            ? specProvider.atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : specProvider.atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
         validatorIndexes.stream()
@@ -504,11 +503,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
 
     return combine(
-        ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
+        specProvider.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
         CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot =
-              specProvider.at(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot = specProvider.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,
@@ -530,16 +528,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(
       final BeaconState state, final UInt64 epoch) {
-    final UInt64 epochStartSlot =
-        specProvider.at(state).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
     final UInt64 startSlot = epochStartSlot.max(GENESIS_SLOT.increment());
     final UInt64 endSlot = epochStartSlot.plus(specProvider.slotsPerEpoch(epoch));
     final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
-      final int proposerIndex =
-          specProvider.atSlot(slot).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
+      final int proposerIndex = specProvider.getBeaconProposerIndex(state, slot);
       final BLSPublicKey publicKey =
-          ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
+          specProvider.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
       proposerSlots.put(slot, publicKey);
     }
     return proposerSlots;

@@ -232,17 +232,13 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
       // Check if the attestation had correct target
       Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
-      if (attestationTargetRoot.equals(
-          specProvider.at(state).getBeaconStateUtil().getBlockRoot(state, analyzedEpoch))) {
+      if (attestationTargetRoot.equals(specProvider.getBlockRoot(state, analyzedEpoch))) {
         correctTargetCount++;
 
         // Check if the attestation had correct head block root
         Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeacon_block_root();
         if (attestationHeadBlockRoot.equals(
-            specProvider
-                .at(state)
-                .getBeaconStateUtil()
-                .getBlockRootAtSlot(state, sentAttestationSlot))) {
+            specProvider.getBlockRootAtSlot(state, sentAttestationSlot))) {
           correctHeadBlockCount++;
         }
       }

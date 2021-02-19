@@ -16,8 +16,10 @@ package tech.pegasys.teku.spec;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -72,10 +74,6 @@ public class SpecProvider {
     // Calculate using the latest spec
     final UInt64 epoch = getLatestSpec().getBeaconStateUtil().computeEpochAtSlot(slot);
     return atEpoch(epoch);
-  }
-
-  public Spec at(final BeaconState state) {
-    return atSlot(state.getSlot());
   }
 
   public SpecConstants getSpecConstants(final UInt64 epoch) {
@@ -208,17 +206,47 @@ public class SpecProvider {
     return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
   }
 
-  // Private helpers
-  private Spec atState(final BeaconState state) {
-    return atSlot(state.getSlot());
+  public Optional<Integer> getValidatorIndex(
+      final BeaconState state, final BLSPublicKey publicKey) {
+    return atState(state).getValidatorsUtil().getValidatorIndex(state, publicKey);
   }
 
-  private Spec getLatestSpec() {
-    // When fork manifest is non-empty, we should pull the newest spec here
-    return genesisSpec;
+  public Spec atState(final BeaconState state) {
+    return atSlot(state.getSlot());
   }
 
   public long getMaxDeposits(final UInt64 slot) {
     return atSlot(slot).getConstants().getMaxDeposits();
+  }
+
+  public AttestationData getGenericAttestationData(
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlock block,
+      final UInt64 committeeIndex) {
+    return atSlot(slot)
+        .getAttestationUtil()
+        .getGenericAttestationData(slot, state, block, committeeIndex);
+  }
+
+  public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
+    return atState(state).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
+  }
+
+  public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
+    return atState(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+  }
+
+  public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
+    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+  }
+
+  public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
+    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+  }
+  // Private helpers
+  private Spec getLatestSpec() {
+    // When fork manifest is non-empty, we should pull the newest spec here
+    return genesisSpec;
   }
 }
