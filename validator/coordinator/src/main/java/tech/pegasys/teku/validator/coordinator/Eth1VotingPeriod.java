@@ -17,7 +17,6 @@ import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateE
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class Eth1VotingPeriod {
 
@@ -30,19 +29,20 @@ public class Eth1VotingPeriod {
   }
 
   public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {
-    final SpecConstants constants = specProvider.atSlot(slot).getConstants();
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        constants.getEth1FollowDistance().times(constants.getSecondsPerEth1Block()).times(2));
+        specProvider
+            .getEth1FollowDistance(slot)
+            .times(specProvider.getSecondsPerEth1Block(slot))
+            .times(2));
   }
 
   public UInt64 getSpecRangeUpperBound(final UInt64 slot, final UInt64 genesisTime) {
-    final SpecConstants constants = specProvider.atSlot(slot).getConstants();
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        constants.getEth1FollowDistance().times(constants.getSecondsPerEth1Block()));
+        specProvider.getEth1FollowDistance(slot).times(specProvider.getSecondsPerEth1Block(slot)));
   }
 
   private UInt64 secondsBeforeCurrentVotingPeriodStartTime(
@@ -56,10 +56,11 @@ public class Eth1VotingPeriod {
   }
 
   private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
-    final SpecConstants constants = specProvider.atSlot(slot).getConstants();
     final UInt64 eth1VotingPeriodStartSlot =
         slot.minus(
-            slot.mod(constants.getEpochsPerEth1VotingPeriod() * constants.getSlotsPerEpoch()));
+            slot.mod(
+                specProvider.getEpochsPerEth1VotingPeriod(slot)
+                    * specProvider.getSlotsPerEpoch(slot)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 

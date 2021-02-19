@@ -240,6 +240,18 @@ public class SpecProvider {
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
     return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
   }
+
+  public long getEpochsPerEth1VotingPeriod(final UInt64 slot) {
+    return atSlot(slot).getConstants().getEpochsPerEth1VotingPeriod();
+  }
+
+  public UInt64 getEth1FollowDistance(final UInt64 slot) {
+    return atSlot(slot).getConstants().getEth1FollowDistance();
+  }
+
+  public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSecondsPerEth1Block();
+  }
   // Private helpers
   private Spec getLatestSpec() {
     // When fork manifest is non-empty, we should pull the newest spec here
