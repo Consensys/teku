@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.datastructures.types;
 
-import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
+import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {

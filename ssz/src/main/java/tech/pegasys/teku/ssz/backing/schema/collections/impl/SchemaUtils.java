@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.schema.collections;
+package tech.pegasys.teku.ssz.backing.schema.collections.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
-public class SchemaUtils {
+class SchemaUtils {
 
   public static TreeNode createTreeFromBytes(Bytes bytes, int treeDepth) {
     return TreeUtil.createTree(

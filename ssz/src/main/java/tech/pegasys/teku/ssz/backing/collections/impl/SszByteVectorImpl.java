@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
+import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
