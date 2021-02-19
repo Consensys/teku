@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
+import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public interface SszByteVectorSchema<SszVectorT extends SszByteVector>
@@ -23,6 +24,6 @@ public interface SszByteVectorSchema<SszVectorT extends SszByteVector>
   SszVectorT fromBytes(Bytes bytes);
 
   static SszByteVectorSchema<SszByteVector> create(int length) {
-    throw new UnsupportedOperationException("TODO");
+    return new SszByteVectorSchemaImpl<>(length);
   }
 }
