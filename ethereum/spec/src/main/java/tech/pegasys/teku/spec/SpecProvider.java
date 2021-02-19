@@ -31,9 +31,9 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -161,7 +161,7 @@ public class SpecProvider {
   public void processAttestations(
       MutableBeaconState state,
       SSZList<Attestation> attestations,
-      BlockProcessorUtil.IndexedAttestationCache indexedAttestationCache)
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
         .getBlockProcessorUtil()

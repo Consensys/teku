@@ -15,12 +15,12 @@ package tech.pegasys.teku.dataproviders.generators;
 
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.blockvalidator.NoOpBlockValidator;
+import tech.pegasys.teku.core.blockvalidator.BlockValidator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 class BlockProcessor {
-  private final StateTransition stateTransition = new StateTransition(new NoOpBlockValidator());
+  private final StateTransition stateTransition = new StateTransition(BlockValidator.NOOP);
 
   public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
 

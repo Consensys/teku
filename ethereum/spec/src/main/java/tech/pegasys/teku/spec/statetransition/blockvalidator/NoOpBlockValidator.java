@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.blockvalidator;
+package tech.pegasys.teku.spec.statetransition.blockvalidator;
 
-import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 
 class NoOpBlockValidator implements BlockValidator {
 
@@ -23,7 +23,7 @@ class NoOpBlockValidator implements BlockValidator {
   public BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
-      IndexedAttestationProvider indexedAttestationProvider) {
+      IndexedAttestationCache indexedAttestationCache) {
     return BlockValidationResult.SUCCESSFUL;
   }
 
