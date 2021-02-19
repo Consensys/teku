@@ -25,8 +25,8 @@ public class Eth1VotingPeriod {
   private final SpecProvider specProvider;
 
   public Eth1VotingPeriod(final SpecProvider specProvider) {
-    cacheDuration = calculateEth1DataCacheDurationPriorToFollowDistance();
     this.specProvider = specProvider;
+    cacheDuration = calculateEth1DataCacheDurationPriorToFollowDistance();
   }
 
   public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {

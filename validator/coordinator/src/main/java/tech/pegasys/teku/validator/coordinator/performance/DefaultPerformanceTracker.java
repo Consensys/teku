@@ -93,8 +93,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       return;
     }
 
-    if (slot.mod(specProvider.getGenesisSpecConstants().getSlotsPerEpoch())
-        .isGreaterThan(UInt64.ZERO)) {
+    if (slot.mod(specProvider.getSlotsPerEpoch(slot)).isGreaterThan(UInt64.ZERO)) {
       return;
     }
 
