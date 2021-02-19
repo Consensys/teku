@@ -55,7 +55,7 @@ public class BeaconStateBenchmark {
   public void iterateValidatorsWithMethods(Blackhole bh) {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator.isSlashed());
-      bh.consume(validator.getPubkey());
+      bh.consume(validator.getPubkeyBytes());
       bh.consume(validator.getEffective_balance());
       bh.consume(validator.getActivation_epoch());
       bh.consume(validator.getExit_epoch());

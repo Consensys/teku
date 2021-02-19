@@ -114,7 +114,7 @@ public class GenesisGenerator {
 
     Validator modifiedValidator =
         new Validator(
-            validator.getPubkey(),
+            validator.getPubkeyBytes(),
             validator.getWithdrawal_credentials(),
             effective_balance,
             validator.isSlashed(),

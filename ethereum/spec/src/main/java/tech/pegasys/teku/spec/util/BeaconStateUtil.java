@@ -570,7 +570,7 @@ public class BeaconStateUtil {
             .minus(amount.mod(specConstants.getEffectiveBalanceIncrement()))
             .min(specConstants.getMaxEffectiveBalance());
     return new Validator(
-        deposit.getData().getPubkey().toBytesCompressed(),
+        deposit.getData().getPubkey(),
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,

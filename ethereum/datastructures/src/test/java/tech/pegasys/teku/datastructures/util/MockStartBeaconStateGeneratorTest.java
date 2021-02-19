@@ -49,7 +49,7 @@ class MockStartBeaconStateGeneratorTest {
 
     final List<BLSPublicKey> actualValidatorPublicKeys =
         initialBeaconState.getValidators().stream()
-            .map(Validator::getPubkey)
+            .map(Validator::getPubkeyBytes)
             .map(BLSPublicKey::fromBytesCompressed)
             .collect(Collectors.toList());
     final List<BLSPublicKey> expectedValidatorPublicKeys =

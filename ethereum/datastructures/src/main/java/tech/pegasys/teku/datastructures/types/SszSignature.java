@@ -13,37 +13,27 @@
 
 package tech.pegasys.teku.datastructures.types;
 
-import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class SszPublicKey extends SszByteVectorImpl {
+public class SszSignature extends SszByteVectorImpl {
 
-  private BLSPublicKey publicKey;
+  private BLSSignature signature;
 
-  public SszPublicKey(Bytes48 publicKeyBytes) {
-    super(SszPublicKeySchema.INSTANCE, publicKeyBytes);
+  public SszSignature(BLSSignature signature) {
+    super(SszPublicKeySchema.INSTANCE, signature.toBytesCompressed());
+    this.signature = signature;
   }
 
-  public SszPublicKey(BLSPublicKey publicKey) {
-    super(SszPublicKeySchema.INSTANCE, publicKey.toBytesCompressed());
-    this.publicKey = publicKey;
+  SszSignature(TreeNode backingNode) {
+    super(SszSignatureSchema.INSTANCE, backingNode);
   }
 
-  SszPublicKey(TreeNode backingNode) {
-    super(SszPublicKeySchema.INSTANCE, backingNode);
-  }
-
-  public BLSPublicKey getBLSPublicKey() {
-    if (publicKey == null) {
-      publicKey = BLSPublicKey.fromBytesCompressed(getBytes());
+  public BLSSignature getSignature() {
+    if (signature == null) {
+      signature = BLSSignature.fromBytesCompressed(getBytes());
     }
-    return publicKey;
-  }
-
-  @Override
-  public Bytes48 getBytes() {
-    return Bytes48.wrap(super.getBytes());
+    return signature;
   }
 }

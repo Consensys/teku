@@ -77,9 +77,7 @@ public class ValidatorsUtil {
             .get(
                 validatorIndex,
                 i -> {
-                  BLSPublicKey pubKey =
-                      BLSPublicKey.fromBytesCompressed(
-                          state.getValidators().get(i.intValue()).getPubkey());
+                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
 
                   // eagerly pre-cache pubKey => validatorIndex mapping
                   BeaconStateCache.getTransitionCaches(state)

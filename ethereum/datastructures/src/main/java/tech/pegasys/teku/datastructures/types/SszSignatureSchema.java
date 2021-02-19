@@ -16,17 +16,17 @@ package tech.pegasys.teku.datastructures.types;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
-  private static final int BLS_COMPRESSED_PUBLIC_KEY_SIZE = 48;
+public class SszSignatureSchema extends SszByteVectorSchemaImpl<SszSignature> {
+  private static final int BLS_COMPRESSED_SIGNATURE_SIZE = 96;
 
-  public static final SszPublicKeySchema INSTANCE = new SszPublicKeySchema();
+  public static final SszSignatureSchema INSTANCE = new SszSignatureSchema();
 
-  private SszPublicKeySchema() {
-    super(BLS_COMPRESSED_PUBLIC_KEY_SIZE);
+  private SszSignatureSchema() {
+    super(BLS_COMPRESSED_SIGNATURE_SIZE);
   }
 
   @Override
-  public SszPublicKey createFromBackingNode(TreeNode node) {
-    return new SszPublicKey(node);
+  public SszSignature createFromBackingNode(TreeNode node) {
+    return new SszSignature(node);
   }
 }

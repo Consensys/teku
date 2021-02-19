@@ -73,7 +73,7 @@ public class ValidatorIndexCacheTest {
   public void shouldPopulateCacheItemsFromState() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
     final BLSPublicKey foundKey =
-        BLSPublicKey.fromBytesCompressed(state.getValidators().get(10).getPubkey());
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(10).getPubkeyBytes());
 
     final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, foundKey);
     assertThat(index.get()).isEqualTo(10);

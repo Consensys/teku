@@ -16,23 +16,21 @@ package tech.pegasys.teku.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.types.SszPublicKey;
+import tech.pegasys.teku.datastructures.types.SszPublicKeySchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class Validator
     extends Container8<
         Validator,
-        SszVector<SszByte>,
+        SszPublicKey,
         SszBytes32,
         SszUInt64,
         SszBit,
@@ -44,7 +42,7 @@ public class Validator
   public static class ValidatorSchema
       extends ContainerSchema8<
           Validator,
-          SszVector<SszByte>,
+          SszPublicKey,
           SszBytes32,
           SszUInt64,
           SszBit,
@@ -56,7 +54,7 @@ public class Validator
     public ValidatorSchema() {
       super(
           "Validator",
-          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
           namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("effective_balance", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("slashed", SszPrimitiveSchemas.BIT_SCHEMA),
@@ -79,6 +77,27 @@ public class Validator
   }
 
   public Validator(
+      BLSPublicKey pubkey,
+      Bytes32 withdrawal_credentials,
+      UInt64 effective_balance,
+      boolean slashed,
+      UInt64 activation_eligibility_epoch,
+      UInt64 activation_epoch,
+      UInt64 exit_epoch,
+      UInt64 withdrawable_epoch) {
+    super(
+        SSZ_SCHEMA,
+        new SszPublicKey(pubkey),
+        new SszBytes32(withdrawal_credentials),
+        new SszUInt64(effective_balance),
+        SszBit.viewOf(slashed),
+        new SszUInt64(activation_eligibility_epoch),
+        new SszUInt64(activation_epoch),
+        new SszUInt64(exit_epoch),
+        new SszUInt64(withdrawable_epoch));
+  }
+
+  public Validator(
       Bytes48 pubkey,
       Bytes32 withdrawal_credentials,
       UInt64 effective_balance,
@@ -89,7 +108,7 @@ public class Validator
       UInt64 withdrawable_epoch) {
     super(
         SSZ_SCHEMA,
-        SszUtils.toSszByteVector(pubkey),
+        new SszPublicKey(pubkey),
         new SszBytes32(withdrawal_credentials),
         new SszUInt64(effective_balance),
         SszBit.viewOf(slashed),
@@ -108,8 +127,12 @@ public class Validator
    * tech.pegasys.teku.datastructures.util.ValidatorsUtil#getValidatorPubKey(BeaconState, UInt64)}
    * if the {@link BeaconState} instance and validator index is available
    */
-  public Bytes48 getPubkey() {
-    return Bytes48.wrap(SszUtils.getAllBytes(getField0()));
+  public Bytes48 getPubkeyBytes() {
+    return getField0().getBytes();
+  }
+
+  public BLSPublicKey getPublicKey() {
+    return getField0().getBLSPublicKey();
   }
 
   public Bytes32 getWithdrawal_credentials() {
@@ -142,7 +165,7 @@ public class Validator
 
   public Validator withEffective_balance(UInt64 effective_balance) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         effective_balance,
         isSlashed(),
@@ -154,7 +177,7 @@ public class Validator
 
   public Validator withSlashed(boolean slashed) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         getEffective_balance(),
         slashed,
@@ -166,7 +189,7 @@ public class Validator
 
   public Validator withActivation_eligibility_epoch(UInt64 activation_eligibility_epoch) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         getEffective_balance(),
         isSlashed(),
@@ -178,7 +201,7 @@ public class Validator
 
   public Validator withActivation_epoch(UInt64 activation_epoch) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         getEffective_balance(),
         isSlashed(),
@@ -190,7 +213,7 @@ public class Validator
 
   public Validator withExit_epoch(UInt64 exit_epoch) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         getEffective_balance(),
         isSlashed(),
@@ -202,7 +225,7 @@ public class Validator
 
   public Validator withWithdrawable_epoch(UInt64 withdrawable_epoch) {
     return new Validator(
-        getPubkey(),
+        getPubkeyBytes(),
         getWithdrawal_credentials(),
         getEffective_balance(),
         isSlashed(),

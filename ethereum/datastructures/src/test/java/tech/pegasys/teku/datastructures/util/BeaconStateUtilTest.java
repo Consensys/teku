@@ -435,10 +435,10 @@ class BeaconStateUtilTest {
     assertEquals(2, state.getValidators().size());
     assertEquals(
         deposits.get(0).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(0).getPubkey());
+        state.getValidators().get(0).getPubkeyBytes());
     assertEquals(
         deposits.get(2).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(1).getPubkey());
+        state.getValidators().get(1).getPubkeyBytes());
   }
 
   @Test
