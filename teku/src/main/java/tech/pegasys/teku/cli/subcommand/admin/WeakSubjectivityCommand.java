@@ -107,7 +107,7 @@ public class WeakSubjectivityCommand implements Runnable {
       final DataStorageOptions dataStorageOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final SpecProvider specProvider =
-        SpecProvider.create(eth2NetworkOptions.getNetworkConfiguration().getSpecConfig());
+        eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),

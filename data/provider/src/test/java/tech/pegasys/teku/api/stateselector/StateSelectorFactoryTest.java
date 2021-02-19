@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class StateSelectorFactoryTest {
 
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
-  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final DataStructureUtil data = new DataStructureUtil(specProvider);
   private final BeaconState state = data.randomBeaconState();
 

@@ -53,9 +53,9 @@ import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -70,7 +70,7 @@ public abstract class AbstractDatabaseTest {
 
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   protected UInt64 genesisTime = UInt64.valueOf(100);

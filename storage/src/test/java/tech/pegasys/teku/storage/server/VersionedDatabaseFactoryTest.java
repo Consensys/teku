@@ -27,19 +27,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.networks.ConstantsLoader;
-import tech.pegasys.teku.spec.SpecConfiguration;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class VersionedDatabaseFactoryTest {
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
-  private final SpecConstants networkConstants = ConstantsLoader.loadConstants("minimal");
-  private final SpecConfiguration networkConfig =
-      SpecConfiguration.builder().constants(networkConstants).build();
   private final Optional<Eth1Address> eth1Address =
       Optional.of(Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC"));
-  private final SpecProvider specProvider = SpecProvider.create(networkConfig);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   @TempDir Path dataDir;
 
   @Test

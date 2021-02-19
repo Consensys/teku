@@ -15,8 +15,10 @@ package tech.pegasys.teku.validator.remote;
 
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 
+import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -55,9 +57,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final int readTimeoutInSeconds =
         getReadTimeoutInSeconds(specProvider, useIndependentAttestationTiming);
-    final OkHttpClient okHttpClient =
-        new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS).build();
-    final HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
+    final OkHttpClient.Builder httpClientBuilder =
+        new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
+    HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
+    addAuthenticator(apiEndpoint, httpClientBuilder);
+    // Strip any authentication info from the URL to ensure it doesn't get logged.
+    apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
+    final OkHttpClient okHttpClient = httpClientBuilder.build();
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 
@@ -81,6 +87,19 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
+  }
+
+  private static void addAuthenticator(
+      final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
+    final String username = apiEndpoint.username();
+    final String password = apiEndpoint.password();
+    if (!Strings.isNullOrEmpty(apiEndpoint.password())) {
+      final String credentials = Credentials.basic(username, password);
+      httpClientBuilder.addInterceptor(
+          chain ->
+              chain.proceed(
+                  chain.request().newBuilder().header("Authorization", credentials).build()));
+    }
   }
 
   private static int getReadTimeoutInSeconds(

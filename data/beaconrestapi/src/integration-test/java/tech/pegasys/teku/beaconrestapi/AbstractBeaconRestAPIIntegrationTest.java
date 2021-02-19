@@ -38,10 +38,9 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -66,11 +65,10 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
-  protected final SpecProvider specProvider = StubSpecProvider.createMinimal();
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
-  protected final Eth2Network eth2Network = mock(Eth2Network.class);
+  protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   protected StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
@@ -93,10 +91,10 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   public void setup() {
     dataProvider =
         new DataProvider(
-            StubSpecProvider.create(),
+            specProvider,
             recentChainData,
             combinedChainDataClient,
-            eth2Network,
+            eth2P2PNetwork,
             syncService,
             validatorApiChannel,
             attestationPool,

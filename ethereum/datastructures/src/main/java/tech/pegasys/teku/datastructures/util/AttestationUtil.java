@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
+@Deprecated
 public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -58,6 +59,7 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_attestation_data</a>
    */
+  @Deprecated
   public static boolean is_slashable_attestation_data(
       AttestationData data_1, AttestationData data_2) {
     return (
@@ -76,6 +78,7 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
+  @Deprecated
   public static IndexedAttestation get_indexed_attestation(
       BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
@@ -101,11 +104,13 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
+  @Deprecated
   public static List<Integer> get_attesting_indices(
       BeaconState state, AttestationData data, SszBitlist bits) {
     return stream_attesting_indices(state, data, bits).boxed().collect(toList());
   }
 
+  @Deprecated
   public static IntStream stream_attesting_indices(
       BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
@@ -117,6 +122,7 @@ public class AttestationUtil {
     return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
   }
 
+  @Deprecated
   public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state, ValidateableAttestation attestation) {
     if (attestation.isValidIndexedAttestation()) {
@@ -148,11 +154,13 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
+  @Deprecated
   public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
     return is_valid_indexed_attestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
+  @Deprecated
   public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state,
       IndexedAttestation indexed_attestation,
@@ -184,6 +192,7 @@ public class AttestationUtil {
     return AttestationProcessingResult.SUCCESSFUL;
   }
 
+  @Deprecated
   public static boolean representsNewAttester(
       Attestation oldAttestation, Attestation newAttestation) {
     int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
@@ -191,6 +200,7 @@ public class AttestationUtil {
   }
 
   // Returns the index of the first attester in the Attestation
+  @Deprecated
   public static int getAttesterIndexIntoCommittee(Attestation attestation) {
     SszBitlist aggregationBits = attestation.getAggregation_bits();
     for (int i = 0; i < aggregationBits.size(); i++) {
@@ -202,6 +212,7 @@ public class AttestationUtil {
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information
+  @Deprecated
   public static AttestationData getGenericAttestationData(
       UInt64 slot, BeaconState state, BeaconBlockSummary block, final UInt64 committeeIndex) {
     UInt64 epoch = compute_epoch_at_slot(slot);

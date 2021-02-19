@@ -34,8 +34,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
@@ -44,7 +44,7 @@ public class ChainStorageTest {
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
-  private SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {

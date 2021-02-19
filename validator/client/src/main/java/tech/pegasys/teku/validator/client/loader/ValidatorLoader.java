@@ -13,22 +13,18 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
 public class ValidatorLoader {
@@ -57,7 +53,7 @@ public class ValidatorLoader {
     return new ValidatorLoader(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
   }
 
-  public Map<BLSPublicKey, Validator> initializeValidators(
+  public OwnedValidators initializeValidators(
       final ValidatorConfig config, final InteropConfig interopConfig) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
@@ -65,7 +61,7 @@ public class ValidatorLoader {
   }
 
   @VisibleForTesting
-  Map<BLSPublicKey, Validator> initializeValidators(
+  OwnedValidators initializeValidators(
       final ValidatorConfig config,
       final InteropConfig interopConfig,
       final Supplier<HttpClient> externalSignerHttpClientFactory) {
@@ -81,24 +77,8 @@ public class ValidatorLoader {
       addNewLocalSigners(config, validatorProviders);
     }
 
-    // Get validator connection info and create a new Validator object and put it into the
-    // Validators map
-    final Map<BLSPublicKey, Validator> validators = new HashMap<>();
-    validatorProviders.forEach(
-        (key, provider) ->
-            validators.put(
-                key,
-                new Validator(
-                    provider.getPublicKey(),
-                    provider.createSigner(),
-                    config.getGraffitiProvider())));
-
-    STATUS_LOG.validatorsInitialised(
-        validators.values().stream()
-            .map(Validator::getPublicKey)
-            .map(BLSPublicKey::toAbbreviatedString)
-            .collect(Collectors.toList()));
-    return validators;
+    return MultithreadedValidatorLoader.loadValidators(
+        validatorProviders, config.getGraffitiProvider());
   }
 
   private void addNewLocalSigners(
@@ -106,8 +86,7 @@ public class ValidatorLoader {
     if (config.getValidatorKeystorePasswordFilePairs() != null) {
       addValidatorsFromSource(
           validatorProviders,
-          new LocalValidatorSource(
-              new KeystoresValidatorKeyProvider(new KeystoreLocker(), config), asyncRunner));
+          slashingProtected(new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner)));
     }
   }
 

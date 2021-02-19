@@ -28,8 +28,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 public class CommitteeUtilTest {
   final SpecConstants specConstants = mock(SpecConstants.class);
@@ -97,7 +97,7 @@ public class CommitteeUtilTest {
             .atSlot(UInt64.ZERO)
             .getBeaconStateUtil()
             .computeSigningRoot(
-                57950,
+                UInt64.valueOf(57950),
                 Bytes32.fromHexString(
                     "0x05000000b5303f2ad2010d699a76c8e62350947421a3e4a979779642cfdb0f66"));
     BLSSignature selectionProof =

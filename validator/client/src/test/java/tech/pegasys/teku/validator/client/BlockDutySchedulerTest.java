@@ -41,6 +41,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private BlockDutyScheduler dutyScheduler;
@@ -340,7 +341,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                    new OwnedValidators(
+                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
             useDependentRoots);
   }
@@ -354,7 +356,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                    new OwnedValidators(
+                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
             false);
   }

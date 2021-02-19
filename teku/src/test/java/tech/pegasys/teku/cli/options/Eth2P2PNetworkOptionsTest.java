@@ -27,7 +27,7 @@ import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
-public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
+public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
@@ -103,7 +103,6 @@ public class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void usingNetworkFromUrl() {
     final URL url =
         getClass().getClassLoader().getResource("tech/pegasys/teku/cli/options/constants.yaml");
-    System.out.println(url);
     beaconNodeCommand.parse(new String[] {"--network", url.toString()});
 
     final TekuConfiguration config = getResultingTekuConfiguration();

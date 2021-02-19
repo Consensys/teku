@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -70,9 +70,9 @@ public class Eth2PeerManagerTest {
           statusMessageFactory,
           new MetadataMessagesFactory(),
           rpcEncoding,
-          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
-          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
-          Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
+          Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
+          Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
+          Eth2P2PNetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
 
   @Test
   public void subscribeConnect_singleListener() {
