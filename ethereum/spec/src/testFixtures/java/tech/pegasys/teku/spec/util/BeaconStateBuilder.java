@@ -43,7 +43,7 @@ public class BeaconStateBuilder {
   private SSZVector<Bytes32> stateRoots;
   private SSZList<Bytes32> historicalRoots;
   private Eth1Data eth1Data;
-  private SSZList<Eth1Data> eth1DataVotes;
+  private SszList<Eth1Data> eth1DataVotes;
   private UInt64 eth1DepositIndex;
   private SszList<Validator> validators;
   private SSZList<UInt64> balances;
@@ -122,8 +122,8 @@ public class BeaconStateBuilder {
             dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
     eth1DataVotes =
-        dataStructureUtil.randomSSZList(
-            Eth1Data.class,
+        dataStructureUtil.randomSszList(
+            BeaconState.ETH1_DATA_VOTES_FIELD_SCHEMA.get(),
             dataStructureUtil.getEpochsPerEth1VotingPeriod() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
@@ -226,7 +226,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder eth1DataVotes(final SSZList<Eth1Data> eth1DataVotes) {
+  public BeaconStateBuilder eth1DataVotes(final SszList<Eth1Data> eth1DataVotes) {
     checkNotNull(eth1DataVotes);
     this.eth1DataVotes = eth1DataVotes;
     return this;

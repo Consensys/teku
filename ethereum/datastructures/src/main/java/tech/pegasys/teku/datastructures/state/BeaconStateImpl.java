@@ -70,7 +70,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
 
       // Eth1
       Eth1Data eth1_data,
-      SSZList<Eth1Data> eth1_data_votes,
+      SszList<Eth1Data> eth1_data_votes,
       UInt64 eth1_deposit_index,
 
       // Registry

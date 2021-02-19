@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.HISTORICAL_ROOTS_LIMIT;
 import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.teku.util.config.Constants.VALIDATOR_REGISTRY_LIMIT;
@@ -182,10 +181,12 @@ public class BeaconState {
         SSZVector.createMutable(state_roots, Bytes32.class),
         SSZList.createMutable(historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class),
         eth1_data.asInternalEth1Data(),
-        SSZList.createMutable(
-            eth1_data_votes.stream().map(Eth1Data::asInternalEth1Data).collect(Collectors.toList()),
-            EPOCHS_PER_ETH1_VOTING_PERIOD,
-            tech.pegasys.teku.datastructures.blocks.Eth1Data.class),
+        eth1_data_votes.stream()
+            .map(Eth1Data::asInternalEth1Data)
+            .collect(
+                tech.pegasys.teku.datastructures.state.BeaconState.ETH1_DATA_VOTES_FIELD_SCHEMA
+                    .get()
+                    .collector()),
         eth1_deposit_index,
         validators.stream()
             .map(Validator::asInternalValidator)

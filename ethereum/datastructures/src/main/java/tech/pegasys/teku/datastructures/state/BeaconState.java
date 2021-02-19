@@ -73,14 +73,16 @@ public interface BeaconState extends SszContainer {
               SszListSchema.create(
                   SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.SSZ_SCHEMA);
-  SszField ETH1_DATA_VOTES_FIELD =
-      new SszField(
-          9,
-          "eth1_data_votes",
+
+  SpecDependent<SszListSchema<Eth1Data, ?>> ETH1_DATA_VOTES_FIELD_SCHEMA =
+      SpecDependent.of(
           () ->
               SszListSchema.create(
                   Eth1Data.SSZ_SCHEMA,
                   Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
+  SszField ETH1_DATA_VOTES_FIELD =
+      new SszField(9, "eth1_data_votes", ETH1_DATA_VOTES_FIELD_SCHEMA::get);
+
   SszField ETH1_DEPOSIT_INDEX_FIELD =
       new SszField(10, "eth1_deposit_index", SszPrimitiveSchemas.UINT64_SCHEMA);
 
@@ -206,7 +208,7 @@ public interface BeaconState extends SszContainer {
 
       // Eth1
       Eth1Data eth1_data,
-      SSZList<Eth1Data> eth1_data_votes,
+      SszList<Eth1Data> eth1_data_votes,
       UInt64 eth1_deposit_index,
 
       // Registry
@@ -241,7 +243,7 @@ public interface BeaconState extends SszContainer {
               state.getState_roots().setAll(state_roots);
               state.getHistorical_roots().setAll(historical_roots);
               state.setEth1_data(eth1_data);
-              state.getEth1_data_votes().setAll(eth1_data_votes);
+              state.setEth1_data_votes(eth1_data_votes);
               state.setEth1_deposit_index(eth1_deposit_index);
               state.setValidators(validators);
               state.getBalances().setAll(balances);
@@ -311,12 +313,8 @@ public interface BeaconState extends SszContainer {
     return getAny(ETH1_DATA_FIELD.getIndex());
   }
 
-  default SSZList<Eth1Data> getEth1_data_votes() {
-    return new SSZBackingList<>(
-        Eth1Data.class,
-        getAny(ETH1_DATA_VOTES_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszList<Eth1Data> getEth1_data_votes() {
+    return getAny(ETH1_DATA_VOTES_FIELD.getIndex());
   }
 
   default UInt64 getEth1_deposit_index() {

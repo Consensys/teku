@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
@@ -37,7 +36,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private SSZMutableVector<Bytes32> blockRoots;
   private SSZMutableVector<Bytes32> stateRoots;
   private SSZMutableList<Bytes32> historicalRoots;
-  private SSZMutableList<Eth1Data> eth1DataVotes;
   private SSZMutableVector<Bytes32> randaoMixes;
   private SSZMutableList<PendingAttestation> previousEpochAttestations;
   private SSZMutableList<PendingAttestation> currentEpochAttestations;
@@ -107,13 +105,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
     return historicalRoots != null
         ? historicalRoots
         : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZMutableList<Eth1Data> getEth1_data_votes() {
-    return eth1DataVotes != null
-        ? eth1DataVotes
-        : (eth1DataVotes = MutableBeaconState.super.getEth1_data_votes());
   }
 
   @Override

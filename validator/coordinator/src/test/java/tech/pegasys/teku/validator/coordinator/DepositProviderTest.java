@@ -44,9 +44,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -113,8 +112,10 @@ public class DepositProviderTest {
     int enoughVoteCount = Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH;
     UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
-    SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
-    IntStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
+    SszList<Eth1Data> et1hDataVotes =
+        Stream.generate(() -> newEth1Data)
+            .limit(enoughVoteCount)
+            .collect(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 50).collector());
     when(state.getEth1_data_votes()).thenReturn(et1hDataVotes);
 
     SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
@@ -284,6 +285,6 @@ public class DepositProviderTest {
   }
 
   private void mockStateEth1DataVotes() {
-    when(state.getEth1_data_votes()).thenReturn(SSZList.empty(Eth1Data.class));
+    when(state.getEth1_data_votes()).thenReturn(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 0).of());
   }
 }

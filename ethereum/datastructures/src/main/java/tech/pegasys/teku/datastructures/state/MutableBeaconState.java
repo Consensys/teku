@@ -83,9 +83,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   @Override
-  default SSZMutableList<Eth1Data> getEth1_data_votes() {
-    return new SSZBackingList<>(
-        Eth1Data.class, getAnyByRef(9), Function.identity(), Function.identity());
+  default SszMutableList<Eth1Data> getEth1_data_votes() {
+    return getAnyByRef(9);
+  }
+
+  default void setEth1_data_votes(SszList<Eth1Data> eth1DataList) {
+    set(ETH1_DATA_VOTES_FIELD.getIndex(), eth1DataList);
   }
 
   default void setEth1_deposit_index(UInt64 eth1_deposit_index) {

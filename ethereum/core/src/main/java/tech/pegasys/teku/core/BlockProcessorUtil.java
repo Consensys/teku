@@ -165,7 +165,7 @@ public final class BlockProcessorUtil {
    */
   @Deprecated
   public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
-    state.getEth1_data_votes().add(body.getEth1_data());
+    state.getEth1_data_votes().append(body.getEth1_data());
     long vote_count = getVoteCount(state, body.getEth1_data());
     if (isEnoughVotesToUpdateEth1Data(vote_count)) {
       state.setEth1_data(body.getEth1_data());
