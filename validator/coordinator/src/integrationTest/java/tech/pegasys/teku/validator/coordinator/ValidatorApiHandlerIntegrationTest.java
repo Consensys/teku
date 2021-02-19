@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
@@ -32,6 +31,8 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -53,6 +54,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
   private final EventBus eventBus = storageSystem.eventBus();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   // Other dependencies are mocked, but these can be updated as needed
   private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
@@ -81,7 +83,8 @@ public class ValidatorApiHandlerIntegrationTest {
           activeValidatorTracker,
           eventBus,
           mock(DutyMetrics.class),
-          performanceTracker);
+          performanceTracker,
+          specProvider);
 
   @BeforeEach
   public void setup() {
@@ -91,7 +94,7 @@ public class ValidatorApiHandlerIntegrationTest {
   @Test
   public void createUnsignedAttestation_withRecentBlockAvailable() {
     final UInt64 targetEpoch = UInt64.valueOf(3);
-    final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
+    final UInt64 targetEpochStartSlot = specProvider.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
@@ -123,9 +126,9 @@ public class ValidatorApiHandlerIntegrationTest {
   @Test
   public void createUnsignedAttestation_withLatestBlockFromAnOldEpoch() {
     final UInt64 latestEpoch = UInt64.valueOf(2);
-    final UInt64 latestSlot = compute_start_slot_at_epoch(latestEpoch).plus(ONE);
+    final UInt64 latestSlot = specProvider.computeStartSlotAtEpoch(latestEpoch).plus(ONE);
     final UInt64 targetEpoch = UInt64.valueOf(latestEpoch.longValue() + 3);
-    final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
+    final UInt64 targetEpochStartSlot = specProvider.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
