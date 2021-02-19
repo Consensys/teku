@@ -140,7 +140,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
     UInt64 latestDepositIndexWithMaxBlock =
-        eth1DepositIndex.plus(specProvider.getMaxDeposits(state.getSlot()));
+        eth1DepositIndex.plus(specProvider.getMaxDeposits(state));
 
     UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)
@@ -149,7 +149,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
     return SSZList.createMutable(
         getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount),
-        specProvider.getMaxDeposits(state.getSlot()),
+        specProvider.getMaxDeposits(state),
         Deposit.class);
   }
 

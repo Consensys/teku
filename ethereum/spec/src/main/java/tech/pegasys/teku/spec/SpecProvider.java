@@ -215,8 +215,8 @@ public class SpecProvider {
     return atSlot(state.getSlot());
   }
 
-  public long getMaxDeposits(final UInt64 slot) {
-    return atSlot(slot).getConstants().getMaxDeposits();
+  public long getMaxDeposits(final BeaconState state) {
+    return atState(state).getConstants().getMaxDeposits();
   }
 
   public AttestationData getGenericAttestationData(
