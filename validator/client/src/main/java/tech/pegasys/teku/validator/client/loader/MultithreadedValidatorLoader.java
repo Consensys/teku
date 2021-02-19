@@ -41,7 +41,7 @@ import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvid
  */
 public class MultithreadedValidatorLoader {
 
-  public static Map<BLSPublicKey, Validator> loadValidators(
+  public static OwnedValidators loadValidators(
       final Map<BLSPublicKey, ValidatorProvider> providers,
       final GraffitiProvider graffitiProvider) {
     final int totalValidatorCount = providers.size();
@@ -83,7 +83,7 @@ public class MultithreadedValidatorLoader {
               .map(BLSPublicKey::toAbbreviatedString)
               .collect(Collectors.toList()));
 
-      return validators;
+      return new OwnedValidators(validators);
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);
     } catch (ExecutionException e) {
