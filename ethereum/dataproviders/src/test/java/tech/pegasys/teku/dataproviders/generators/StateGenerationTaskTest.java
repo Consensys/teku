@@ -37,10 +37,13 @@ import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 
 class StateGenerationTaskTest {
 
   private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 0;
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
   private TrackingBlockProvider blockProvider;
 
@@ -133,6 +136,7 @@ class StateGenerationTaskTest {
     }
     final HashTree tree = treeBuilder.build();
     return new StateGenerationTask(
+        specProvider,
         endBlock.getRoot(),
         tree,
         blockProvider,
