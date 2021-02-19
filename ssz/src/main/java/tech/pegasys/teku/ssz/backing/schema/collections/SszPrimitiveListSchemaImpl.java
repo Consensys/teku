@@ -14,20 +14,27 @@
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveListImpl;
+import tech.pegasys.teku.ssz.backing.schema.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-public interface SszPrimitiveVectorSchema<
+public class SszPrimitiveListSchemaImpl<
         ElementT,
         SszElementT extends SszPrimitive<ElementT, SszElementT>,
-        SszVectorT extends SszPrimitiveVector<ElementT, SszElementT>>
-    extends SszPrimitiveCollectionSchema<ElementT, SszElementT, SszVectorT>,
-        SszVectorSchema<SszElementT, SszVectorT> {
+        SszListT extends SszPrimitiveList<ElementT, SszElementT>>
+    extends AbstractSszListSchema<SszElementT, SszListT>
+    implements SszPrimitiveListSchema<ElementT, SszElementT, SszListT> {
 
-  static <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-      SszPrimitiveVectorSchema<ElementT, SszElementT, ?> create(
-          SszPrimitiveSchema<ElementT, SszElementT> elementSchema, int length) {
-    return new SszPrimitiveVectorSchemaImpl<>(elementSchema, length);
+  public SszPrimitiveListSchemaImpl(
+      SszPrimitiveSchema<ElementT, SszElementT> elementSchema, long maxLength) {
+    super(elementSchema, maxLength);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public SszListT createFromBackingNode(TreeNode node) {
+    return (SszListT) new SszPrimitiveListImpl<>(this, node);
   }
 }

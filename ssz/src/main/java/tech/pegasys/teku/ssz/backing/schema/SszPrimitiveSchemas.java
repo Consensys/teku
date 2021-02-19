@@ -58,7 +58,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBit toSszData(Boolean rawValue) {
+        public SszBit boxed(Boolean rawValue) {
           return SszBit.viewOf(rawValue);
         }
 
@@ -89,7 +89,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public SszByte toSszData(Byte rawValue) {
+        public SszByte boxed(Byte rawValue) {
           return new SszByte(rawValue);
         }
 
@@ -142,7 +142,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public SszUInt64 toSszData(UInt64 rawValue) {
+        public SszUInt64 boxed(UInt64 rawValue) {
           return new SszUInt64(rawValue);
         }
 
@@ -175,7 +175,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBytes4 toSszData(Bytes4 rawValue) {
+        public SszBytes4 boxed(Bytes4 rawValue) {
           return new SszBytes4(rawValue);
         }
 
@@ -203,7 +203,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBytes32 toSszData(Bytes32 rawValue) {
+        public SszBytes32 boxed(Bytes32 rawValue) {
           return new SszBytes32(rawValue);
         }
 

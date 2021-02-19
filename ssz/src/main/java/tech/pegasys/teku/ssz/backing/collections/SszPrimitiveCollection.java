@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.Iterator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.SszCollection;
@@ -35,11 +34,24 @@ public interface SszPrimitiveCollection<
   @Override
   SszMutablePrimitiveCollection<ElementT, SszElementT> createWritableCopy();
 
-  default Stream<ElementT> streamElements() {
+  default Stream<ElementT> streamUnboxed() {
     return IntStream.range(0, size()).mapToObj(this::getElement);
   }
 
-  default Collection<ElementT> allElements() {
-    return streamElements().collect(Collectors.toList());
+  default Iterable<ElementT> unboxed() {
+    return () ->
+        new Iterator<>() {
+          final Iterator<SszElementT> boxedIterator = SszPrimitiveCollection.this.iterator();
+
+          @Override
+          public boolean hasNext() {
+            return boxedIterator.hasNext();
+          }
+
+          @Override
+          public ElementT next() {
+            return boxedIterator.next().get();
+          }
+        };
   }
 }

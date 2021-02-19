@@ -38,8 +38,7 @@ public interface SszVectorSchema<
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
       SszSchema<ElementDataT> elementSchema, long length, SszSchemaHints hints) {
     if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
-      return (SszVectorSchema<ElementDataT, ? extends SszVector<ElementDataT>>)
-          SszBitvectorSchema.create(length);
+      return (SszVectorSchema<ElementDataT, ?>) SszBitvectorSchema.create(length);
     } else {
       return new SszVectorSchemaImpl<>(elementSchema, length, false, hints);
     }

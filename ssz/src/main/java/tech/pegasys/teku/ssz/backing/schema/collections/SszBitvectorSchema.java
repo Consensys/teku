@@ -16,11 +16,10 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
-    extends SszVectorSchema<SszBit, SszBitvectorT> {
+    extends SszPrimitiveVectorSchema<Boolean, SszBit, SszBitvectorT> {
 
   static SszBitvectorSchema<SszBitvector> create(long length) {
     return new SszBitvectorSchemaImpl(length);

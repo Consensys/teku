@@ -27,7 +27,7 @@ public interface SszMutablePrimitiveCollection<
   }
 
   default void setElement(int index, ElementT primitiveValue) {
-    SszElementT sszData = getPrimitiveElementSchema().toSszData(primitiveValue);
+    SszElementT sszData = getPrimitiveElementSchema().boxed(primitiveValue);
     set(index, sszData);
   }
 

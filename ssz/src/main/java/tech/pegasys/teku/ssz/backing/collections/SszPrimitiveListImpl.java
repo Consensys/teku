@@ -15,24 +15,25 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszVectorImpl;
+import tech.pegasys.teku.ssz.backing.view.SszListImpl;
 
-public class SszPrimitiveVectorImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszVectorImpl<SszElementT> implements SszPrimitiveVector<ElementT, SszElementT> {
+public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+    extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
-  public SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  public SszPrimitiveListImpl(
+      SszPrimitiveListSchema<ElementT, SszElementT, ?> schema, Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  public SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   @Override
-  public SszMutablePrimitiveVector<ElementT, SszElementT> createWritableCopy() {
-    return new SszMutablePrimitiveVectorImpl<>(this);
+  public SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy() {
+    return new SszMutablePrimitiveListImpl<>(this);
   }
 }

@@ -18,7 +18,9 @@ import tech.pegasys.teku.ssz.backing.SszPrimitive;
 
 public interface SszMutablePrimitiveVector<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszMutablePrimitiveCollection<ElementT, SszElementT>, SszMutableVector<SszElementT> {
+    extends SszMutablePrimitiveCollection<ElementT, SszElementT>,
+        SszMutableVector<SszElementT>,
+        SszPrimitiveVector<ElementT, SszElementT> {
 
   @Override
   SszPrimitiveVector<ElementT, SszElementT> commitChanges();

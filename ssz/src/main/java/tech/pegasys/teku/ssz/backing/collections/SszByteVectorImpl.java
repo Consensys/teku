@@ -32,7 +32,7 @@ public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
   }
 
   public SszByteVectorImpl(SszByteVectorSchema<?> schema, TreeNode backingTree) {
-    super(schema, () -> backingTree);
+    super(schema, backingTree);
     this.data = SszByteVectorSchemaImpl.fromTreeToBytes(schema, backingTree);
   }
 
