@@ -32,7 +32,9 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class StateTransition {
 
@@ -56,11 +58,19 @@ public class StateTransition {
   }
 
   public static StateTransition create(
-      final BlockValidator blockValidator,
       final SpecConstants specConstants,
       final BlockProcessorUtil blockProcessorUtil,
-      final EpochProcessor epochProcessor) {
+      final EpochProcessor epochProcessor,
+      final BeaconStateUtil beaconStateUtil,
+      final ValidatorsUtil validatorsUtil) {
+    final BlockValidator blockValidator =
+        BlockValidator.standard(specConstants, beaconStateUtil, blockProcessorUtil, validatorsUtil);
     return new StateTransition(specConstants, blockProcessorUtil, epochProcessor, blockValidator);
+  }
+
+  public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
+      throws StateTransitionException {
+    return initiate(preState, signedBlock, true);
   }
 
   /**
@@ -70,17 +80,21 @@ public class StateTransition {
    *
    * @param preState
    * @param signed_block
+   * @param validateStateRootAndSignatures
    * @return
    * @throws StateTransitionException
    */
-  public BeaconState initiate(BeaconState preState, SignedBeaconBlock signed_block)
+  public BeaconState initiate(
+      BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
-    return initiate(preState, signed_block, IndexedAttestationCache.NOOP);
+    return initiate(
+        preState, signed_block, validateStateRootAndSignatures, IndexedAttestationCache.NOOP);
   }
 
   public BeaconState initiate(
       BeaconState preState,
       SignedBeaconBlock signedBlock,
+      boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
     try {
@@ -89,7 +103,8 @@ public class StateTransition {
       //   the new block will be processed when adding to the store.
       BeaconState postSlotState = processSlots(preState, signedBlock.getMessage().getSlot());
 
-      return processAndValidateBlock(signedBlock, indexedAttestationCache, postSlotState);
+      return processAndValidateBlock(
+          signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationCache);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
@@ -98,9 +113,12 @@ public class StateTransition {
 
   public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
-      final IndexedAttestationCache indexedAttestationCache,
-      final BeaconState blockSlotState)
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
+    BlockValidator blockValidator =
+        validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
     try {
       // Process_block
       BeaconState postState = processBlock(blockSlotState, signedBlock.getMessage());
@@ -140,38 +158,6 @@ public class StateTransition {
   /**
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Processes slot
-   */
-  private BeaconState processSlot(BeaconState preState) {
-    return preState.updated(
-        state -> {
-          // Cache state root
-          Bytes32 previous_state_root = state.hashTreeRoot();
-          int index = state.getSlot().mod(specConstants.getSlotsPerHistoricalRoot()).intValue();
-          state.getState_roots().set(index, previous_state_root);
-
-          // Cache latest block header state root
-          BeaconBlockHeader latest_block_header = state.getLatest_block_header();
-          if (latest_block_header.getStateRoot().equals(Bytes32.ZERO)) {
-            BeaconBlockHeader latest_block_header_new =
-                new BeaconBlockHeader(
-                    latest_block_header.getSlot(),
-                    latest_block_header.getProposerIndex(),
-                    latest_block_header.getParentRoot(),
-                    previous_state_root,
-                    latest_block_header.getBodyRoot());
-            state.setLatest_block_header(latest_block_header_new);
-          }
-
-          // Cache block root
-          Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
-          state.getBlock_roots().set(index, previous_block_root);
-        });
-  }
-
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
    * Processes slots through state slot through given slot
    *
    * @throws EpochProcessingException
@@ -203,5 +189,37 @@ public class StateTransition {
       LOG.warn(e.getMessage(), e);
       throw new SlotProcessingException(e);
     }
+  }
+
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes slot
+   */
+  private BeaconState processSlot(BeaconState preState) {
+    return preState.updated(
+        state -> {
+          // Cache state root
+          Bytes32 previous_state_root = state.hashTreeRoot();
+          int index = state.getSlot().mod(specConstants.getSlotsPerHistoricalRoot()).intValue();
+          state.getState_roots().set(index, previous_state_root);
+
+          // Cache latest block header state root
+          BeaconBlockHeader latest_block_header = state.getLatest_block_header();
+          if (latest_block_header.getStateRoot().equals(Bytes32.ZERO)) {
+            BeaconBlockHeader latest_block_header_new =
+                new BeaconBlockHeader(
+                    latest_block_header.getSlot(),
+                    latest_block_header.getProposerIndex(),
+                    latest_block_header.getParentRoot(),
+                    previous_state_root,
+                    latest_block_header.getBodyRoot());
+            state.setLatest_block_header(latest_block_header_new);
+          }
+
+          // Cache block root
+          Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
+          state.getBlock_roots().set(index, previous_block_root);
+        });
   }
 }

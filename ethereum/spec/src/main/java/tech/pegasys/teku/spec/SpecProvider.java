@@ -18,9 +18,13 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -122,7 +126,6 @@ public class SpecProvider {
   }
 
   // BeaconState
-
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
   }
@@ -135,7 +138,54 @@ public class SpecProvider {
     return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   }
 
-  // Block Processing
+  // State Transition Utils
+  public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
+      throws StateTransitionException {
+    return atBlock(signedBlock).getStateTransition().initiate(preState, signedBlock);
+  }
+
+  public BeaconState initiateStateTransition(
+      BeaconState preState, SignedBeaconBlock signedBlock, boolean validateStateRootAndSignatures)
+      throws StateTransitionException {
+    return atBlock(signedBlock)
+        .getStateTransition()
+        .initiate(preState, signedBlock, validateStateRootAndSignatures);
+  }
+
+  public BeaconState initiateStateTransition(
+      BeaconState preState,
+      SignedBeaconBlock signedBlock,
+      boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException {
+    return atBlock(signedBlock)
+        .getStateTransition()
+        .initiate(preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
+  }
+
+  public BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures)
+      throws StateTransitionException {
+    return atBlock(signedBlock)
+        .getStateTransition()
+        .processAndValidateBlock(
+            signedBlock, blockSlotState, validateStateRootAndSignatures, indexedAttestationCache);
+  }
+
+  public BeaconState processBlock(BeaconState preState, BeaconBlock block)
+      throws BlockProcessingException {
+    return atBlock(block).getStateTransition().processBlock(preState, block);
+  }
+
+  public BeaconState processSlots(BeaconState preState, UInt64 slot)
+      throws SlotProcessingException, EpochProcessingException {
+    return atSlot(slot).getStateTransition().processSlots(preState, slot);
+  }
+
+  // Block Processing Utils
   public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processBlockHeader(state, blockHeader);
@@ -252,7 +302,11 @@ public class SpecProvider {
   public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
     return atSlot(slot).getConstants().getSecondsPerEth1Block();
   }
-  // Private helpers
+
+  private Spec atBlock(final BeaconBlockSummary blockSummary) {
+    return atSlot(blockSummary.getSlot());
+  }
+
   private Spec getLatestSpec() {
     // When fork manifest is non-empty, we should pull the newest spec here
     return genesisSpec;
