@@ -37,7 +37,7 @@ public interface SszCollectionSchema<
 
   @SuppressWarnings("unchecked")
   default SszCollectionT createFromElements(List<? extends SszElementT> elements) {
-    checkArgument(elements.size() < getMaxLength(), "Too many elements for this collection type");
+    checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {
