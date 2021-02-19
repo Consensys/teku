@@ -483,8 +483,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     final Bytes32 dependentRoot =
         epoch.isGreaterThan(specProvider.getCurrentEpoch(state))
-            ? specProvider.atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : specProvider.atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+            ? specProvider.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : specProvider.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
         validatorIndexes.stream()
@@ -501,7 +501,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         specProvider.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
         CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot = specProvider.getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot =
+              specProvider
+                  .atEpoch(epoch)
+                  .getBeaconStateUtil()
+                  .getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,
