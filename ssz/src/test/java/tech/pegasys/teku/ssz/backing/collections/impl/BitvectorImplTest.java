@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.collections.impl.BitvectorImpl;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 
 class BitvectorImplTest {
