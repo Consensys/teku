@@ -72,11 +72,11 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -765,7 +765,7 @@ public class BeaconStateUtil {
   }
 
   @Deprecated
-  public static boolean all(Bitvector bitvector, int start, int end) {
+  public static boolean all(SszBitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
       if (!bitvector.getBit(i)) {
         return false;

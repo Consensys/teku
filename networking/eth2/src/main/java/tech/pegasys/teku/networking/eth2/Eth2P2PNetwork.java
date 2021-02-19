@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.networking.eth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
-public class BitvectorSerializer extends JsonSerializer<Bitvector> {
-  @Override
-  public void serialize(Bitvector value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.serialize().toHexString().toLowerCase());
-  }
+public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
+
+  void subscribeToAttestationSubnetId(final int subnetId);
+
+  void unsubscribeFromAttestationSubnetId(final int subnetId);
+
+  void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
+
+  MetadataMessage getMetadata();
 }

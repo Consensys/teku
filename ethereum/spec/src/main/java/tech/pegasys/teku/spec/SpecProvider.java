@@ -17,12 +17,24 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
+import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class SpecProvider {
   // Eventually we will have multiple versioned specs, where each version is active for a specific
@@ -86,24 +98,90 @@ public class SpecProvider {
     return forkManifest;
   }
 
+  public Fork fork(final UInt64 epoch) {
+    return forkManifest.get(epoch);
+  }
+
+  // Constants helpers
   public int slotsPerEpoch(final UInt64 epoch) {
     return atEpoch(epoch).getConstants().getSlotsPerEpoch();
   }
 
-  public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+  public int secondsPerSlot(final UInt64 epoch) {
+    return atEpoch(epoch).getConstants().getSecondsPerSlot();
   }
 
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
     return atEpoch(epoch).getConstants().getDomainBeaconProposer();
   }
 
+  public long getSlotsPerHistoricalRoot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
+  }
+
+  public int getSlotsPerEpoch(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSlotsPerEpoch();
+  }
+
+  public int getSecondsPerSlot(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSecondsPerSlot();
+  }
+
+  // BeaconState
+
+  public UInt64 getCurrentEpoch(final BeaconState state) {
+    return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
+  }
+
+  public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+  }
+
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   }
 
-  public Fork fork(final UInt64 epoch) {
-    return forkManifest.get(epoch);
+  // Block Processing
+  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processBlockHeader(state, blockHeader);
+  }
+
+  public void processProposerSlashings(
+      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processProposerSlashings(state, proposerSlashings);
+  }
+
+  public void processAttesterSlashings(
+      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processAttesterSlashings(state, attesterSlashings);
+  }
+
+  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processAttestations(state, attestations);
+  }
+
+  public void processAttestations(
+      MutableBeaconState state,
+      SSZList<Attestation> attestations,
+      BlockProcessorUtil.IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    atState(state)
+        .getBlockProcessorUtil()
+        .processAttestations(state, attestations, indexedAttestationCache);
+  }
+
+  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processDeposits(state, deposits);
+  }
+
+  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessorUtil().processVoluntaryExits(state, exits);
   }
 
   // Validator Utils
@@ -124,6 +202,12 @@ public class SpecProvider {
     return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
   }
 
+  // Attestation helpers
+  public List<Integer> getAttestingIndices(
+      BeaconState state, AttestationData data, SszBitlist bits) {
+    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
+  }
+
   // Private helpers
   private Spec atState(final BeaconState state) {
     return atSlot(state.getSlot());
@@ -132,22 +216,6 @@ public class SpecProvider {
   private Spec getLatestSpec() {
     // When fork manifest is non-empty, we should pull the newest spec here
     return genesisSpec;
-  }
-
-  public long getSlotsPerHistoricalRoot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
-  }
-
-  public int getSlotsPerEpoch(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerEpoch();
-  }
-
-  public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerSlot();
-  }
-
-  public UInt64 getCurrentEpoch(final BeaconState state) {
-    return atSlot(state.getSlot()).getBeaconStateUtil().getCurrentEpoch(state);
   }
 
   public long getMaxDeposits(final UInt64 slot) {

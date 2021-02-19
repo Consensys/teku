@@ -75,14 +75,15 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public final class DataStructureUtil {
@@ -188,10 +189,10 @@ public final class DataStructureUtil {
     return SszBitlistSchema.create(n).ofBits(n, bits);
   }
 
-  public Bitvector randomBitvector(int n) {
+  public SszBitvector randomSszBitvector(int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return new Bitvector(n, bits);
+    return SszBitvectorSchema.create(n).ofBits(bits);
   }
 
   public BLSPublicKey randomPublicKey() {

@@ -79,7 +79,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.spec.StubSpecProvider;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -113,7 +113,7 @@ public class BeaconRestApiV1Test {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            StubSpecProvider.create(),
+            SpecProviderFactory.createMinimal(),
             storageClient,
             combinedChainDataClient,
             null,

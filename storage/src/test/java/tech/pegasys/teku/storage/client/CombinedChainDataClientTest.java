@@ -21,14 +21,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
-  private final SpecProvider specProvider = StubSpecProvider.createMinimal();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);

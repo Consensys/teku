@@ -52,8 +52,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -64,7 +64,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final PeerChainValidator peerChainValidator;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
   private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
-  private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
+  private volatile Optional<SszBitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final Subscribers<PeerStatusSubscriber> statusSubscribers = Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
@@ -140,7 +140,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<Bitvector> getRemoteAttestationSubnets() {
+  public Optional<SszBitvector> getRemoteAttestationSubnets() {
     return remoteAttSubnets;
   }
 

@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -29,26 +29,26 @@ public class NodeManager {
   private final EventBus eventBus;
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
-  private final Eth2Network eth2Network;
+  private final Eth2P2PNetwork eth2P2PNetwork;
 
   private NodeManager(
       final EventBus eventBus,
       final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
-      final Eth2Network eth2Network) {
+      final Eth2P2PNetwork eth2P2PNetwork) {
     this.eventBus = eventBus;
     this.storageClient = storageClient;
     this.chainUtil = chainUtil;
-    this.eth2Network = eth2Network;
+    this.eth2P2PNetwork = eth2P2PNetwork;
   }
 
   public static NodeManager create(
-      Eth2NetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
+      Eth2P2PNetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
     return create(networkFactory, validatorKeys, c -> {});
   }
 
   public static NodeManager create(
-      Eth2NetworkFactory networkFactory,
+      Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
@@ -63,13 +63,14 @@ public class NodeManager {
 
     configureNetwork.accept(networkBuilder);
 
-    final Eth2Network eth2Network = networkBuilder.startNetwork();
-    return new NodeManager(eventBus, storageClient, chainUtil, eth2Network);
+    final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
+    return new NodeManager(eventBus, storageClient, chainUtil, eth2P2PNetwork);
   }
 
   public SafeFuture<Peer> connect(final NodeManager peer) {
-    final PeerAddress peerAddress = eth2Network.createPeerAddress(peer.network().getNodeAddress());
-    return eth2Network.connect(peerAddress);
+    final PeerAddress peerAddress =
+        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddress());
+    return eth2P2PNetwork.connect(peerAddress);
   }
 
   public EventBus eventBus() {
@@ -80,8 +81,8 @@ public class NodeManager {
     return chainUtil;
   }
 
-  public Eth2Network network() {
-    return eth2Network;
+  public Eth2P2PNetwork network() {
+    return eth2P2PNetwork;
   }
 
   public RecentChainData storageClient() {

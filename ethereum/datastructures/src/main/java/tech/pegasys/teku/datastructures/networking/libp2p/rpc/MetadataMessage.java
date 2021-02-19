@@ -13,33 +13,28 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszBitVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
-public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszVector<SszBit>>
+public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszBitvector>
     implements RpcRequest {
 
   public static class MetadataMessageSchema
-      extends ContainerSchema2<MetadataMessage, SszUInt64, SszVector<SszBit>> {
+      extends ContainerSchema2<MetadataMessage, SszUInt64, SszBitvector> {
 
     public MetadataMessageSchema() {
       super(
           "MetadataMessage",
           namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("attnets", new SszBitVectorSchema(Constants.ATTESTATION_SUBNET_COUNT)));
+          namedSchema("attnets", SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT)));
     }
 
     @Override
@@ -51,8 +46,6 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
   public static final MetadataMessageSchema SSZ_SCHEMA = new MetadataMessageSchema();
   public static final MetadataMessage DEFAULT = new MetadataMessage();
 
-  private Bitvector attnetsCache;
-
   private MetadataMessage(MetadataMessageSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -61,21 +54,16 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszV
     super(SSZ_SCHEMA);
   }
 
-  public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
-    super(SSZ_SCHEMA, new SszUInt64(seqNumber), SszUtils.toSszBitVector(attnets));
-    checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
-    this.attnetsCache = attnets;
+  public MetadataMessage(UInt64 seqNumber, SszBitvector attnets) {
+    super(SSZ_SCHEMA, new SszUInt64(seqNumber), attnets);
   }
 
   public UInt64 getSeqNumber() {
     return getField0().get();
   }
 
-  public Bitvector getAttnets() {
-    if (attnetsCache == null) {
-      attnetsCache = SszUtils.getBitvector(getField1());
-    }
-    return attnetsCache;
+  public SszBitvector getAttnets() {
+    return getField1();
   }
 
   @Override

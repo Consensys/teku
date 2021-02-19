@@ -8,7 +8,6 @@
   chain head block is imported. The `--Xvalidators-dependent-root-enabled` option can be used to switch to the new behaviour now for testing.
   Note: this should be applied to both the beacon node and validator client if running separately.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
-- Upgraded to use BLS implementation BLST version 0.3.2. 
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -30,6 +29,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated the ENRs for MainNet bootnodes run by the Nimbus team.
 - Added a `is_syncing` field to the `/eth/v1/node/syncing` endpoint to explicitly indicate if the node is in sync or not. 
 - Teku will now exit when database writes fail (e.g. due to disk failure) to enable systems like kubernetes to better identify and respond to the failure.
+- Reduced time required to load local validator keys at startup.
 
 ### Bug Fixes
 - Ensured shutdown operations have fully completed prior to exiting the process.
@@ -39,3 +39,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Increase the default limit for the queue for delivering events to REST API subscribers. When subscribing to attestations, they are often received in bursts which would exceed the previous limit even when the client was keeping up.
   The default limit is now 250 and can now be configured with `--Xrest-api-max-pending-events`.
 - Fixed `ProtoNode: Delta to be subtracted is greater than node weight` exception which may occur after an issue writing data to disk storage.
+- Fix issue where basic authentication credentials included in the `--beacon-node-api-endpoint` URL were included in `DEBUG` level logs.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.writeString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,24 +25,40 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.SigningRootUtil;
+import tech.pegasys.teku.datastructures.state.Fork;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
-class KeystoresValidatorKeyProviderTest {
+class LocalValidatorSourceTest {
+
   private static final String EXPECTED_PASSWORD = "testpassword";
-  private final ValidatorConfig config = mock(ValidatorConfig.class);
-  private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
-  private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
-      new KeystoresValidatorKeyProvider(keystoreLocker, config);
   private static final Bytes32 BLS_PRIVATE_KEY =
       Bytes32.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
       new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
+
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final ValidatorConfig config = mock(ValidatorConfig.class);
+  private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
+
+  private final LocalValidatorSource validatorSource =
+      new LocalValidatorSource(config, keystoreLocker, asyncRunner);
 
   @Test
   void shouldLoadKeysFromKeyStores(@TempDir final Path tempDir) throws Exception {
@@ -58,14 +76,15 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    final List<BLSKeyPair> blsKeyPairs = keystoresValidatorKeyProvider.loadValidatorKeys();
-
-    // since both test vectors encrypted same private key, we should get 1 element
-    Assertions.assertThat(blsKeyPairs).containsExactly(EXPECTED_BLS_KEY_PAIR);
+    final List<ValidatorProvider> availableValidators = validatorSource.getAvailableValidators();
+    assertThat(availableValidators).hasSize(2);
+    // Both keystores encyrpt the same key.
+    assertProviderMatchesKey(availableValidators.get(0), EXPECTED_BLS_KEY_PAIR);
+    assertProviderMatchesKey(availableValidators.get(1), EXPECTED_BLS_KEY_PAIR);
   }
 
   @Test
-  void emptyPasswordFileThrowsError(@TempDir final Path tempDir) throws Exception {
+  void shouldThrowExceptionWhenPasswordFileIsEmpty(@TempDir final Path tempDir) throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
 
@@ -77,13 +96,13 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
-        .withMessage("Keystore password cannot be empty: " + tempPasswordFile);
+    assertThatThrownBy(validatorSource::getAvailableValidators)
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Keystore password cannot be empty: " + tempPasswordFile);
   }
 
   @Test
-  void invalidPasswordThrowsError(@TempDir final Path tempDir) throws Exception {
+  void shouldThrowExceptionWhenPasswordIsIncorrect(@TempDir final Path tempDir) throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
 
@@ -96,13 +115,15 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
-        .withMessage("Invalid keystore password: " + scryptKeystore);
+    assertThatThrownBy(() -> validatorSource.getAvailableValidators().get(0).createSigner())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Failed to decrypt keystore " + scryptKeystore + ". Check the password is correct.");
   }
 
   @Test
-  void nonExistentPasswordFileThrowsError(@TempDir final Path tempDir) throws Exception {
+  void shouldThrowExceptionWhenPasswordFileDoesNotExist(@TempDir final Path tempDir)
+      throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
 
@@ -114,13 +135,14 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
-        .withMessage("Keystore password file not found: " + tempPasswordFile);
+    assertThatThrownBy(validatorSource::getAvailableValidators)
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Keystore password file not found: " + tempPasswordFile);
   }
 
   @Test
-  void nonExistentKeystoreFileThrowsError(@TempDir final Path tempDir) throws IOException {
+  void shouldThrowExceptionWhenKeystoreFileDoesNotExist(@TempDir final Path tempDir)
+      throws IOException {
     // load keystores from resources
     final Path scryptKeystore = tempDir.resolve("scryptTestVector.json");
 
@@ -133,8 +155,24 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
-        .withMessage("KeyStore file not found: " + scryptKeystore);
+    assertThatThrownBy(validatorSource::getAvailableValidators)
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("KeyStore file not found: " + scryptKeystore);
+  }
+
+  private void assertProviderMatchesKey(
+      final ValidatorProvider provider, final BLSKeyPair expectedKeyPair) {
+    assertThat(provider.getPublicKey()).isEqualTo(expectedKeyPair.getPublicKey());
+    final Signer signer = provider.createSigner();
+    final Bytes4 version = Bytes4.fromHexString("0x00000000");
+    final UInt64 epoch = UInt64.ZERO;
+    final ForkInfo forkInfo = new ForkInfo(new Fork(version, version, UInt64.ZERO), Bytes32.ZERO);
+    final Bytes signingRoot = SigningRootUtil.signingRootForRandaoReveal(epoch, forkInfo);
+
+    final SafeFuture<BLSSignature> signingFuture = signer.createRandaoReveal(epoch, forkInfo);
+    asyncRunner.executeQueuedActions();
+    assertThat(signingFuture).isCompleted();
+    final BLSSignature signature = signingFuture.getNow(null);
+    assertThat(BLS.verify(expectedKeyPair.getPublicKey(), signingRoot, signature)).isTrue();
   }
 }

@@ -39,7 +39,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 public class SszBitlistTest {
 
-  static Random random = new Random();
+  static Random random = new Random(1);
   static SszBitlistSchema<SszBitlist> emptySchema = SszBitlistSchema.create(0);
   static SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(500);
   static SszBitlistSchema<SszBitlist> hugeSchema = SszBitlistSchema.create(1L << 62);

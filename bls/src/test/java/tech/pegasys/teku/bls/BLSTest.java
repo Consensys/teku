@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +76,7 @@ public abstract class BLSTest {
 
   @Test
   // The empty signature is not a valid signature
-  void passingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
+  void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
     BLSSignature signature1 = BLSTestUtil.randomSignature(1);
     BLSSignature signature2 = BLSSignature.empty();
     BLSSignature signature3 = BLSTestUtil.randomSignature(3);
@@ -324,7 +325,9 @@ public abstract class BLSTest {
 
   @Test
   void succeedsWhenWeCanSignAndVerifyWithValidDST() {
-    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+    final Bytes DST =
+        Bytes.wrap(
+            "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_".getBytes(StandardCharsets.US_ASCII));
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);
@@ -333,7 +336,9 @@ public abstract class BLSTest {
 
   @Test
   void verifyWithDifferentDSTFails() {
-    final String DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+    final Bytes DST =
+        Bytes.wrap(
+            "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_".getBytes(StandardCharsets.US_ASCII));
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(42);
     final Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message, DST);

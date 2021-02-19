@@ -31,7 +31,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
@@ -68,7 +67,7 @@ public class SimpleBlockValidator implements BlockValidator {
   }
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePreState(
+  public BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
       IndexedAttestationProvider indexedAttestationProvider) {
@@ -86,37 +85,33 @@ public class SimpleBlockValidator implements BlockValidator {
 
         if (!BlockProcessorUtil.verify_proposer_slashings(
             preState, blockBody.getProposer_slashings(), signatureVerifier)) {
-          return SafeFuture.completedFuture(new BlockValidationResult(false));
+          return BlockValidationResult.FAILED;
         }
 
         if (!BlockProcessorUtil.verify_voluntary_exits(
             preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
-          return SafeFuture.completedFuture(new BlockValidationResult(false));
+          return BlockValidationResult.FAILED;
         }
       }
-      return SafeFuture.completedFuture(new BlockValidationResult(true));
+      return BlockValidationResult.SUCCESSFUL;
     } catch (BlockProcessingException | InvalidSignatureException e) {
-      return SafeFuture.completedFuture(new BlockValidationResult(e));
-    } catch (Exception e) {
-      return SafeFuture.failedFuture(e);
+      return BlockValidationResult.failedExceptionally(e);
     }
   }
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePostState(
-      BeaconState postState, SignedBeaconBlock block) {
+  public BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
     if (verifyPostStateRoot
         && !block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
-      return SafeFuture.completedFuture(
-          new BlockValidationResult(
-              new StateTransitionException(
-                  "Block state root does NOT match the calculated state root!\n"
-                      + "Block state root: "
-                      + block.getMessage().getStateRoot().toHexString()
-                      + "New state root: "
-                      + postState.hashTreeRoot().toHexString())));
+      return BlockValidationResult.failedExceptionally(
+          new StateTransitionException(
+              "Block state root does NOT match the calculated state root!\n"
+                  + "Block state root: "
+                  + block.getMessage().getStateRoot().toHexString()
+                  + "New state root: "
+                  + postState.hashTreeRoot().toHexString()));
     } else {
-      return SafeFuture.completedFuture(new BlockValidationResult(true));
+      return BlockValidationResult.SUCCESSFUL;
     }
   }
 

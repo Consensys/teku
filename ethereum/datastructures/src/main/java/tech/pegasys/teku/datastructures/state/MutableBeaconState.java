@@ -18,16 +18,15 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
+import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 
@@ -131,8 +130,8 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   // Finality
-  default void setJustification_bits(Bitvector justification_bits) {
-    set(17, SszUtils.toSszBitVector(justification_bits));
+  default void setJustification_bits(SszBitvector justification_bits) {
+    set(17, justification_bits);
   }
 
   default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {

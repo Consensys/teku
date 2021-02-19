@@ -15,6 +15,7 @@ package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,15 +29,37 @@ public class Eth2NetworkConfigurationTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getDefinedNetworks")
   public void build_shouldBuildKnownNetworks(
-      final String network, final NetworkDefinition networkDefinition) {
+      final Eth2Network network, final NetworkDefinition networkDefinition) {
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     final Eth2NetworkConfiguration.Builder networkConfigBuilder =
         Eth2NetworkConfiguration.builder();
     networkDefinition.configure(networkConfigBuilder);
 
-    assertThat(networkConfig.getConstants()).isEqualTo(network);
+    assertThat(networkConfig.getConstants()).isEqualTo(network.constantsName());
     assertThat(networkConfigBuilder.build()).usingRecursiveComparison().isEqualTo(networkConfig);
+  }
+
+  @Test
+  public void builder_usingConstantsUrl() {
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+    final Eth2NetworkConfiguration config =
+        Eth2NetworkConfiguration.builder(url.toString()).build();
+    assertThat(config.getConstants()).isEqualTo(url.toString());
+    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+        .isEqualTo("Custom Constants");
+  }
+
+  @Test
+  public void constants_usingConstantsUrl() {
+    final URL url =
+        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+    final Eth2NetworkConfiguration config =
+        Eth2NetworkConfiguration.builder().constants(url.toString()).build();
+    assertThat(config.getConstants()).isEqualTo(url.toString());
+    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+        .isEqualTo("Custom Constants");
   }
 
   @Test
@@ -45,8 +68,8 @@ public class Eth2NetworkConfigurationTest {
 
     for (Arguments networkA : definedNetworks) {
       for (Arguments networkB : definedNetworks) {
-        final String networkAName = ((String) networkA.get()[0]);
-        final String networkBName = ((String) networkB.get()[0]);
+        final Eth2Network networkAName = ((Eth2Network) networkA.get()[0]);
+        final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
 
         final Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
         builder.applyNetworkDefaults(networkAName);
@@ -72,7 +95,7 @@ public class Eth2NetworkConfigurationTest {
         networkADef.configure(builder);
         networkBDef.configure(builder);
 
-        final String networkBName = ((String) networkB.get()[0]);
+        final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
         assertThat(builder)
             .usingRecursiveComparison()
             .isEqualTo(Eth2NetworkConfiguration.builder(networkBName));
@@ -82,21 +105,14 @@ public class Eth2NetworkConfigurationTest {
 
   public static Stream<Arguments> getDefinedNetworks() {
     return Stream.of(
+        Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
+        Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
+        Arguments.of(Eth2Network.MEDALLA, (NetworkDefinition) b -> b.applyMedallaNetworkDefaults()),
+        Arguments.of(Eth2Network.TOLEDO, (NetworkDefinition) b -> b.applyToledoNetworkDefaults()),
+        Arguments.of(Eth2Network.PYRMONT, (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()),
+        Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
-            Eth2NetworkConfiguration.MAINNET,
-            (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
-        Arguments.of(
-            Eth2NetworkConfiguration.MINIMAL,
-            (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(
-            Eth2NetworkConfiguration.MEDALLA,
-            (NetworkDefinition) b -> b.applyMedallaNetworkDefaults()),
-        Arguments.of(
-            Eth2NetworkConfiguration.TOLEDO,
-            (NetworkDefinition) b -> b.applyToledoNetworkDefaults()),
-        Arguments.of(
-            Eth2NetworkConfiguration.PYRMONT,
-            (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()));
+            Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
   }
 
   @FunctionalInterface

@@ -16,7 +16,6 @@ package tech.pegasys.teku.bls.impl.mikuli;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
@@ -70,12 +69,11 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public MikuliSignature sign(Bytes message, String dst) {
+  public MikuliSignature sign(Bytes message, Bytes dst) {
     if (scalarValue.isZero()) {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     } else {
-      Bytes dstBytes = Bytes.wrap(dst.getBytes(StandardCharsets.US_ASCII));
-      G2Point hashInGroup2 = new G2Point(hashToG2(message, dstBytes));
+      G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
       G2Point signaturePoint = hashInGroup2.mul(scalarValue);
       return new MikuliSignature(signaturePoint);
     }
@@ -85,6 +83,12 @@ public class MikuliSecretKey implements SecretKey {
     return scalarValue;
   }
 
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  @Override
+  public void destroy() {
+    scalarValue.destroy();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -92,9 +96,6 @@ public class MikuliSecretKey implements SecretKey {
     MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKey) o);
     return Objects.equals(scalarValue, secretKey.scalarValue);
   }
-
-  @Override
-  public void destroy() {}
 
   @Override
   public int hashCode() {

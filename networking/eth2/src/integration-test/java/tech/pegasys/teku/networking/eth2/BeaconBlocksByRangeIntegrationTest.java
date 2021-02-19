@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BeaconBlocksByRangeIntegrationTest {
 
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private Eth2Peer peer;
 
@@ -49,7 +49,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     storageSystem.chainUpdater().initializeGenesis();
     storageSystem2.chainUpdater().initializeGenesis();
 
-    final Eth2Network network1 =
+    final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .rpcEncoding(rpcEncoding)
@@ -58,7 +58,7 @@ public class BeaconBlocksByRangeIntegrationTest {
             .historicalChainData(storageSystem.chainStorage())
             .startNetwork();
 
-    final Eth2Network network2 =
+    final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .rpcEncoding(rpcEncoding)
