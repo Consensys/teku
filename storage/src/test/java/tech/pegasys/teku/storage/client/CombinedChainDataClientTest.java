@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.networks.SpecProviderFactory;
@@ -32,10 +31,8 @@ class CombinedChainDataClientTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
-  private final StateTransition stateTransition = new StateTransition();
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(
-          recentChainData, historicalChainData, stateTransition, specProvider);
+      new CombinedChainDataClient(recentChainData, historicalChainData, specProvider);
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {

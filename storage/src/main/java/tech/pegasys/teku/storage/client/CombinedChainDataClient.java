@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -57,24 +56,14 @@ public class CombinedChainDataClient {
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
-  private final StateTransition stateTransition;
   private final SpecProvider specProvider;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final SpecProvider specProvider) {
-    this(recentChainData, historicalChainData, new StateTransition(), specProvider);
-  }
-
-  public CombinedChainDataClient(
-      final RecentChainData recentChainData,
-      final StorageQueryChannel historicalChainData,
-      final StateTransition stateTransition,
-      final SpecProvider specProvider) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
-    this.stateTransition = stateTransition;
     this.specProvider = specProvider;
   }
 
@@ -333,7 +322,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
     try {
-      return Optional.of(stateTransition.process_slots(preState, slot));
+      return Optional.of(specProvider.processSlots(preState, slot));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.debug("State Transition error", e);
       return Optional.empty();
