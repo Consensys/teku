@@ -16,9 +16,31 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszPrimitiveListSchemaImpl;
 
 public interface SszPrimitiveListSchema<
         ElementT,
         SszElementT extends SszPrimitive<ElementT, SszElementT>,
         SszListT extends SszPrimitiveList<ElementT, SszElementT>>
-    extends SszListSchema<SszElementT, SszListT> {}
+    extends SszListSchema<SszElementT, SszListT> {
+
+  static <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+      SszPrimitiveListSchema<ElementT, SszElementT, ?> create(
+          SszPrimitiveSchema<ElementT, SszElementT> elementSchema, int maxLength) {
+    return create(elementSchema, maxLength, SszSchemaHints.none());
+  }
+
+  @SuppressWarnings("unchecked")
+  static <PrimT, SszPrimT extends SszPrimitive<PrimT, SszPrimT>>
+      SszPrimitiveListSchema<PrimT, SszPrimT, ?> create(
+          SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long maxLength, SszSchemaHints hints) {
+    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBitlistSchema.create(maxLength);
+    } else {
+      return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
+    }
+  }
+}

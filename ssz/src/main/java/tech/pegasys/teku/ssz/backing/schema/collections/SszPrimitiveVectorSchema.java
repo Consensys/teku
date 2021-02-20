@@ -16,6 +16,8 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszPrimitiveVectorSchemaImpl;
 
@@ -29,6 +31,20 @@ public interface SszPrimitiveVectorSchema<
   static <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
       SszPrimitiveVectorSchema<ElementT, SszElementT, ?> create(
           SszPrimitiveSchema<ElementT, SszElementT> elementSchema, int length) {
-    return new SszPrimitiveVectorSchemaImpl<>(elementSchema, length);
+    return create(elementSchema, length, SszSchemaHints.none());
+  }
+
+  @SuppressWarnings("unchecked")
+  static <PrimT, SszPrimT extends SszPrimitive<PrimT, SszPrimT>>
+      SszPrimitiveVectorSchema<PrimT, SszPrimT, ?> create(
+          SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long length, SszSchemaHints hints) {
+    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
+      return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>) SszBitvectorSchema.create(length);
+    } else if (elementSchema == SszPrimitiveSchemas.BYTE_SCHEMA) {
+      return (SszPrimitiveVectorSchema<PrimT, SszPrimT, ?>)
+          SszByteVectorSchema.create((int) length);
+    } else {
+      return new SszPrimitiveVectorSchemaImpl<>(elementSchema, length);
+    }
   }
 }

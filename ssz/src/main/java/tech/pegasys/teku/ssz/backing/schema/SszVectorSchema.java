@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.SszVectorSchemaImpl;
 
 public interface SszVectorSchema<
@@ -38,8 +38,9 @@ public interface SszVectorSchema<
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
       SszSchema<ElementDataT> elementSchema, long length, SszSchemaHints hints) {
-    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
-      return (SszVectorSchema<ElementDataT, ?>) SszBitvectorSchema.create(length);
+    if (elementSchema instanceof SszPrimitiveSchema) {
+      return (SszVectorSchema<ElementDataT, ?>)
+          SszPrimitiveVectorSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, length, hints);
     } else {
       return new SszVectorSchemaImpl<>(elementSchema, length, false, hints);
     }

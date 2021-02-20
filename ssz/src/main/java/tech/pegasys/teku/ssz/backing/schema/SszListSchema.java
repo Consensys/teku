@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema;
 
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.SszListSchemaImpl;
 
 public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
@@ -31,9 +31,9 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
           SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
-    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
-      return (SszListSchema<ElementDataT, ? extends SszList<ElementDataT>>)
-          SszBitlistSchema.create(maxLength);
+    if (elementSchema instanceof SszPrimitiveSchema) {
+      return (SszListSchema<ElementDataT, ?>)
+          SszPrimitiveListSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, maxLength, hints);
     } else {
       return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
     }
