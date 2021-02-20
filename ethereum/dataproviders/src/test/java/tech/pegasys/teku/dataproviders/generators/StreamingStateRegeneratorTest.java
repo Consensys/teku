@@ -24,10 +24,13 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 
 class StreamingStateRegeneratorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   @Test
@@ -44,7 +47,9 @@ class StreamingStateRegeneratorTest {
         newBlocksAndStates.get(newBlocksAndStates.size() - 1);
     final BeaconState result =
         StreamingStateRegenerator.regenerate(
-            genesis.getState(), newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
+            specProvider,
+            genesis.getState(),
+            newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
     assertThat(result).isEqualTo(lastBlockAndState.getState());
   }
 }
