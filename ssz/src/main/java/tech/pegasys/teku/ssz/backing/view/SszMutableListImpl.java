@@ -37,8 +37,12 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   @Override
   protected SszListImpl<SszElementT> createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszElementT> childrenCache) {
-    TreeNode nodeWithUpdatedSize = updateSize(backingNode);
-    return new SszListImpl<>(getSchema(), nodeWithUpdatedSize, childrenCache);
+    return new SszListImpl<>(getSchema(), backingNode, childrenCache);
+  }
+
+  @Override
+  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+    return updateSize(updatedTree);
   }
 
   @Override

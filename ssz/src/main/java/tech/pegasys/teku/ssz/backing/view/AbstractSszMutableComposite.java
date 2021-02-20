@@ -155,8 +155,13 @@ public abstract class AbstractSszMutableComposite<
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();
       TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
-      return createImmutableSszComposite(newBackingTree, cache);
+      TreeNode finalBackingTree = doFinalTreeUpdates(newBackingTree);
+      return createImmutableSszComposite(finalBackingTree, cache);
     }
+  }
+
+  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+    return updatedTree;
   }
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
