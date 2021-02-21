@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.net.http.HttpClient;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -33,48 +32,50 @@ import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
 
 public class ExternalValidatorSource implements ValidatorSource {
 
-  private final MetricsSystem metricsSystem;
   private final ValidatorConfig config;
   private final Supplier<HttpClient> externalSignerHttpClientFactory;
   private final PublicKeyLoader publicKeyLoader;
-  private final AsyncRunner asyncRunner;
-  private ThrottlingTaskQueue externalSignerTaskQueue;
+  private final ThrottlingTaskQueue externalSignerTaskQueue;
 
-  public ExternalValidatorSource(
+  private ExternalValidatorSource(
+      final ValidatorConfig config,
+      final Supplier<HttpClient> externalSignerHttpClientFactory,
+      final PublicKeyLoader publicKeyLoader,
+      final ThrottlingTaskQueue externalSignerTaskQueue) {
+    this.config = config;
+    this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
+    this.publicKeyLoader = publicKeyLoader;
+    this.externalSignerTaskQueue = externalSignerTaskQueue;
+  }
+
+  public static ExternalValidatorSource create(
       final MetricsSystem metricsSystem,
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner) {
-    this.metricsSystem = metricsSystem;
-    this.config = config;
-    this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
-    this.publicKeyLoader = publicKeyLoader;
-    this.asyncRunner = asyncRunner;
-  }
-
-  @Override
-  public List<ValidatorProvider> getAvailableValidators() {
-    if (config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    externalSignerTaskQueue =
+    final ThrottlingTaskQueue externalSignerTaskQueue =
         new ThrottlingTaskQueue(
             config.getValidatorExternalSignerConcurrentRequestLimit(),
             metricsSystem,
             TekuMetricCategory.VALIDATOR,
             "external_signer_request_queue_size");
+    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, asyncRunner);
+    return new ExternalValidatorSource(
+        config, externalSignerHttpClientFactory, publicKeyLoader, externalSignerTaskQueue);
+  }
 
-    setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory);
-
+  @Override
+  public List<ValidatorProvider> getAvailableValidators() {
     final List<BLSPublicKey> publicKeys =
         publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
     return publicKeys.stream().map(ExternalValidatorProvider::new).collect(toList());
   }
 
-  private void setupExternalSignerStatusLogging(
-      final ValidatorConfig config, final Supplier<HttpClient> externalSignerHttpClientFactory) {
+  private static void setupExternalSignerStatusLogging(
+      final ValidatorConfig config,
+      final Supplier<HttpClient> externalSignerHttpClientFactory,
+      final AsyncRunner asyncRunner) {
     final ExternalSignerUpcheck externalSignerUpcheck =
         new ExternalSignerUpcheck(
             externalSignerHttpClientFactory.get(),
