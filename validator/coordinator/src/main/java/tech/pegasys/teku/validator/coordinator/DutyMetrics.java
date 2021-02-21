@@ -19,29 +19,33 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class DutyMetrics {
 
   private final TimeProvider timeProvider;
   private final RecentChainData recentChainData;
   private final MetricsHistogram attestationHistogram;
+  private final SpecProvider specProvider;
 
   @VisibleForTesting
   DutyMetrics(
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
-      final MetricsHistogram attestationHistogram) {
+      final MetricsHistogram attestationHistogram,
+      final SpecProvider specProvider) {
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
     this.attestationHistogram = attestationHistogram;
+    this.specProvider = specProvider;
   }
 
   public static DutyMetrics create(
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final SpecProvider specProvider) {
     final MetricsHistogram attestationHistogram =
         MetricsHistogram.create(
             TekuMetricCategory.VALIDATOR,
@@ -49,7 +53,7 @@ public class DutyMetrics {
             "attestation_publication_delay",
             "Histogram recording delay in milliseconds from scheduled time to an attestation being published",
             1);
-    return new DutyMetrics(timeProvider, recentChainData, attestationHistogram);
+    return new DutyMetrics(timeProvider, recentChainData, attestationHistogram, specProvider);
   }
 
   public void onAttestationPublished(final UInt64 slot) {
@@ -66,8 +70,8 @@ public class DutyMetrics {
   private UInt64 calculateExpectedAttestationTimeInMillis(final UInt64 slot) {
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     return genesisTime
-        .plus(slot.times(Constants.SECONDS_PER_SLOT))
-        .plus(Constants.SECONDS_PER_SLOT / 3)
+        .plus(slot.times(specProvider.getSecondsPerSlot(slot)))
+        .plus(specProvider.getSecondsPerSlot(slot) / 3)
         .times(1000);
   }
 }
