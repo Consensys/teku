@@ -373,6 +373,41 @@ class ValidatorLoaderTest {
   }
 
   @Test
+  void shouldNotRemoveExternalValidatorsOnReload() {
+    final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+    final List<BLSPublicKey> initialKeys = List.of(PUBLIC_KEY1);
+    final String publicKeysUrl = "http://example.com";
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).containsOnly(PUBLIC_KEY1);
+
+    final List<BLSPublicKey> reconfiguredKeys = List.of(PUBLIC_KEY2);
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(reconfiguredKeys);
+
+    validatorLoader.loadValidators();
+    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+  }
+
+  @Test
   void shouldLoadAdditionalLocalValidatorsOnReload(final @TempDir Path tempDir) throws Exception {
     final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
