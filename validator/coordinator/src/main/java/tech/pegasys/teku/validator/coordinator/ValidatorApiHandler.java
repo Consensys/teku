@@ -461,19 +461,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private ProposerDuties getProposerDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch) {
-    final List<ProposerDuty> result = new ArrayList<>();
-    getProposalSlotsForEpoch(state, epoch)
-        .forEach(
-            (slot, publicKey) -> {
-              Optional<Integer> maybeIndex = specProvider.getValidatorIndex(state, publicKey);
-              if (maybeIndex.isEmpty()) {
-                throw new IllegalStateException(
-                    String.format(
-                        "Assigned public key %s could not be found at epoch %s",
-                        publicKey.toString(), epoch.toString()));
-              }
-              result.add(new ProposerDuty(publicKey, maybeIndex.get(), slot));
-            });
+    final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     return new ProposerDuties(
         specProvider.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
         result);
@@ -525,17 +513,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return Optional.ofNullable(fun.apply(a.get(), b.get()));
   }
 
-  private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(
-      final BeaconState state, final UInt64 epoch) {
+  private List<ProposerDuty> getProposalSlotsForEpoch(final BeaconState state, final UInt64 epoch) {
     final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
     final UInt64 startSlot = epochStartSlot.max(GENESIS_SLOT.increment());
     final UInt64 endSlot = epochStartSlot.plus(specProvider.slotsPerEpoch(epoch));
-    final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
+    final List<ProposerDuty> proposerSlots = new ArrayList<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final int proposerIndex = specProvider.getBeaconProposerIndex(state, slot);
       final BLSPublicKey publicKey =
           specProvider.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
-      proposerSlots.put(slot, publicKey);
+      proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
     }
     return proposerSlots;
   }
