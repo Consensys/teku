@@ -458,19 +458,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private ProposerDuties getProposerDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch) {
-    final List<ProposerDuty> result = new ArrayList<>();
-    getProposalSlotsForEpoch(state, epoch)
-        .forEach(
-            (slot, publicKey) -> {
-              Optional<Integer> maybeIndex = ValidatorsUtil.getValidatorIndex(state, publicKey);
-              if (maybeIndex.isEmpty()) {
-                throw new IllegalStateException(
-                    String.format(
-                        "Assigned public key %s could not be found at epoch %s",
-                        publicKey.toString(), epoch.toString()));
-              }
-              result.add(new ProposerDuty(publicKey, maybeIndex.get(), slot));
-            });
+    final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     return new ProposerDuties(getCurrentDutyDependentRoot(state), result);
   }
 
@@ -516,17 +504,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return Optional.ofNullable(fun.apply(a.get(), b.get()));
   }
 
-  private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(
-      final BeaconState state, final UInt64 epoch) {
+  private List<ProposerDuty> getProposalSlotsForEpoch(final BeaconState state, final UInt64 epoch) {
     final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
     final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
-    final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
+    final List<ProposerDuty> proposerSlots = new ArrayList<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final int proposerIndex = get_beacon_proposer_index(state, slot);
       final BLSPublicKey publicKey =
           ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
-      proposerSlots.put(slot, publicKey);
+      proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
     }
     return proposerSlots;
   }
