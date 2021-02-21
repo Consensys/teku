@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.duties;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -23,16 +24,21 @@ import tech.pegasys.teku.validator.client.Validator;
 public class ValidatorDutyFactory {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final SpecProvider specProvider;
 
   public ValidatorDutyFactory(
-      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
+      final ForkProvider forkProvider,
+      final ValidatorApiChannel validatorApiChannel,
+      final SpecProvider specProvider) {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.specProvider = specProvider;
   }
 
   public BlockProductionDuty createBlockProductionDuty(
       final UInt64 slot, final Validator validator) {
-    return new BlockProductionDuty(validator, slot, forkProvider, validatorApiChannel);
+    return new BlockProductionDuty(
+        validator, slot, forkProvider, validatorApiChannel, specProvider);
   }
 
   public AttestationProductionDuty createAttestationProductionDuty(final UInt64 slot) {
