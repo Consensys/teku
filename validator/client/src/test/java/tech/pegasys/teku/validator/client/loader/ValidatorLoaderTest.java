@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -71,7 +73,8 @@ class ValidatorLoaderTest {
     }
   }
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(SpecProviderFactory.createMinimal());
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -82,8 +85,7 @@ class ValidatorLoaderTest {
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
 
-  private final ValidatorLoader validatorLoader =
-      ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
+  private final Supplier<HttpClient> httpClientFactory = () -> httpClient;
 
   @BeforeEach
   void initUpcheckMockResponse() throws IOException, InterruptedException {
@@ -97,8 +99,6 @@ class ValidatorLoaderTest {
     final List<BLSPublicKey> expectedKeys = List.of(PUBLIC_KEY1, PUBLIC_KEY2);
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(expectedKeys);
-    final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
 
     final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
@@ -108,8 +108,18 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
@@ -125,7 +135,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithExternalSignerAndSlashingProtection() throws Exception {
+  void initializeValidatorsWithExternalSignerAndSlashingProtection() {
     final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -134,9 +144,18 @@ class ValidatorLoaderTest {
                 Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
@@ -157,7 +176,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() throws Exception {
+  void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
     final InteropConfig interopConfig = InteropConfig.builder().build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -166,9 +185,18 @@ class ValidatorLoaderTest {
                 Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
@@ -205,9 +233,18 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(2);
 
@@ -239,9 +276,18 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     // Both local and external validators get loaded.
     assertThat(validators.getValidatorCount()).isEqualTo(1);
@@ -266,9 +312,18 @@ class ValidatorLoaderTest {
                         + File.pathSeparator
                         + tempDir.toAbsolutePath().toString()))
             .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
 
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
 
@@ -280,6 +335,110 @@ class ValidatorLoaderTest {
     verify(slashingProtector)
         .maySignBlock(
             validator.getPublicKey(), forkInfo.getGenesisValidatorsRoot(), block.getSlot());
+  }
+
+  @Test
+  void shouldLoadAdditionalExternalValidatorsOnReload() {
+    final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+    final List<BLSPublicKey> initialKeys = List.of(PUBLIC_KEY1);
+    final String publicKeysUrl = "http://example.com";
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).containsOnly(PUBLIC_KEY1);
+
+    final List<BLSPublicKey> reconfiguredKeys = List.of(PUBLIC_KEY1, PUBLIC_KEY2);
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(reconfiguredKeys);
+
+    validatorLoader.loadValidators();
+    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+  }
+
+  @Test
+  void shouldNotRemoveExternalValidatorsOnReload() {
+    final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
+    final List<BLSPublicKey> initialKeys = List.of(PUBLIC_KEY1);
+    final String publicKeysUrl = "http://example.com";
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerUrl(SIGNER_URL)
+            .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
+            .validatorExternalSignerSlashingProtectionEnabled(true)
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).containsOnly(PUBLIC_KEY1);
+
+    final List<BLSPublicKey> reconfiguredKeys = List.of(PUBLIC_KEY2);
+    when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(reconfiguredKeys);
+
+    validatorLoader.loadValidators();
+    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+  }
+
+  @Test
+  void shouldLoadAdditionalLocalValidatorsOnReload(final @TempDir Path tempDir) throws Exception {
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+
+    // No validators initially
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).isEmpty();
+
+    // Then we add one and reload
+    writeKeystore(tempDir);
+    validatorLoader.loadValidators();
+
+    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1);
   }
 
   private void writeKeystore(final Path tempDir) throws Exception {
@@ -297,8 +456,17 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(ownedValidatorCount);
   }
@@ -312,8 +480,17 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final OwnedValidators validators =
-        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            config,
+            interopConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem);
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.hasNoValidators()).isTrue();
   }
