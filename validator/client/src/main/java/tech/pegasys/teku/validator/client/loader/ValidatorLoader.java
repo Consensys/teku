@@ -25,7 +25,6 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
 public class ValidatorLoader {
@@ -54,7 +53,7 @@ public class ValidatorLoader {
     return new ValidatorLoader(slashingProtector, publicKeyLoader, asyncRunner, metricsSystem);
   }
 
-  public Map<BLSPublicKey, Validator> initializeValidators(
+  public OwnedValidators initializeValidators(
       final ValidatorConfig config, final InteropConfig interopConfig) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
@@ -62,7 +61,7 @@ public class ValidatorLoader {
   }
 
   @VisibleForTesting
-  Map<BLSPublicKey, Validator> initializeValidators(
+  OwnedValidators initializeValidators(
       final ValidatorConfig config,
       final InteropConfig interopConfig,
       final Supplier<HttpClient> externalSignerHttpClientFactory) {
@@ -86,7 +85,8 @@ public class ValidatorLoader {
       final ValidatorConfig config, final Map<BLSPublicKey, ValidatorProvider> validatorProviders) {
     if (config.getValidatorKeystorePasswordFilePairs() != null) {
       addValidatorsFromSource(
-          validatorProviders, new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner));
+          validatorProviders,
+          slashingProtected(new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner)));
     }
   }
 

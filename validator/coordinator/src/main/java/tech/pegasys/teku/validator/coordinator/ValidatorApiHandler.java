@@ -141,7 +141,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
-      final List<BLSPublicKey> publicKeys) {
+      final Collection<BLSPublicKey> publicKeys) {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
@@ -213,7 +213,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      List<BLSPublicKey> validatorIdentifiers) {
+      Collection<BLSPublicKey> validatorIdentifiers) {
     return isSyncActive()
         ? SafeFuture.completedFuture(Optional.empty())
         : chainDataProvider

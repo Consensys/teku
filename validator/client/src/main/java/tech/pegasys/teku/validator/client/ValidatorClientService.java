@@ -14,10 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -36,6 +33,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
@@ -115,11 +113,10 @@ public class ValidatorClientService extends Service {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             slashingProtector, new PublicKeyLoader(), asyncRunner, metricsSystem);
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getInteropConfig());
-    this.validatorIndexProvider =
-        new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
+    this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
@@ -148,14 +145,9 @@ public class ValidatorClientService extends Service {
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, useDependentRoots);
     this.blockProductionTimingChannel =
         new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots);
-    addValidatorCountMetric(metricsSystem, validators.size());
-    if (validators.keySet().size() > 0) {
-      this.validatorStatusLogger =
-          new DefaultValidatorStatusLogger(
-              new ArrayList<>(validators.keySet()), validatorApiChannel, asyncRunner);
-    } else {
-      this.validatorStatusLogger = ValidatorStatusLogger.NOOP;
-    }
+    addValidatorCountMetric(metricsSystem, validators);
+    this.validatorStatusLogger =
+        new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -163,12 +155,12 @@ public class ValidatorClientService extends Service {
   }
 
   private static void addValidatorCountMetric(
-      final MetricsSystem metricsSystem, final int validatorCount) {
+      final MetricsSystem metricsSystem, final OwnedValidators validators) {
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "local_validator_count",
         "Current number of validators running in this validator client",
-        () -> validatorCount);
+        validators::getValidatorCount);
   }
 
   @Override

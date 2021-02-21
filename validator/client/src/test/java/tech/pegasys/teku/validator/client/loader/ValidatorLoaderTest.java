@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,17 +108,17 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(2);
+    assertThat(validators.getValidatorCount()).isEqualTo(2);
 
-    final Validator validator1 = validators.get(PUBLIC_KEY1);
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.getSigner().isLocal()).isFalse();
 
-    final Validator validator2 = validators.get(PUBLIC_KEY2);
+    final Validator validator2 = validators.getValidator(PUBLIC_KEY2).orElseThrow();
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
@@ -136,11 +135,11 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(true)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(1);
-    final Validator validator = validators.get(PUBLIC_KEY1);
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
@@ -168,11 +167,11 @@ class ValidatorLoaderTest {
             .validatorExternalSignerSlashingProtectionEnabled(false)
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(1);
-    final Validator validator = validators.get(PUBLIC_KEY1);
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
@@ -207,17 +206,17 @@ class ValidatorLoaderTest {
                         + tempDir.toAbsolutePath().toString()))
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(2);
+    assertThat(validators.getValidatorCount()).isEqualTo(2);
 
-    final Validator validator1 = validators.get(PUBLIC_KEY1);
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.getSigner().isLocal()).isTrue();
 
-    final Validator validator2 = validators.get(PUBLIC_KEY2);
+    final Validator validator2 = validators.getValidator(PUBLIC_KEY2).orElseThrow();
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
@@ -241,17 +240,46 @@ class ValidatorLoaderTest {
                         + tempDir.toAbsolutePath().toString()))
             .build();
 
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
     // Both local and external validators get loaded.
-    assertThat(validators).hasSize(1);
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
 
     // Local validators are listed first
-    final Validator validator = validators.get(PUBLIC_KEY1);
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
+  }
+
+  @Test
+  void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
+    writeKeystore(tempDir);
+
+    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+
+    final OwnedValidators validators =
+        validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    when(slashingProtector.maySignBlock(any(), any(), any())).thenReturn(new SafeFuture<>());
+    assertThat(validator.getSigner().signBlock(block, forkInfo)).isNotDone();
+    verify(slashingProtector)
+        .maySignBlock(
+            validator.getPublicKey(), forkInfo.getGenesisValidatorsRoot(), block.getSlot());
   }
 
   private void writeKeystore(final Path tempDir) throws Exception {
@@ -269,10 +297,10 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).hasSize(ownedValidatorCount);
+    assertThat(validators.getValidatorCount()).isEqualTo(ownedValidatorCount);
   }
 
   @Test
@@ -284,9 +312,9 @@ class ValidatorLoaderTest {
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
     final ValidatorConfig config = ValidatorConfig.builder().build();
-    final Map<BLSPublicKey, Validator> validators =
+    final OwnedValidators validators =
         validatorLoader.initializeValidators(config, interopConfig, () -> httpClient);
 
-    assertThat(validators).isEmpty();
+    assertThat(validators.hasNoValidators()).isTrue();
   }
 }

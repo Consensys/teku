@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,13 +27,14 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
   private static final Duration INITIAL_STATUS_CHECK_RETRY_PERIOD = Duration.ofSeconds(5);
 
-  final List<BLSPublicKey> validatorPublicKeys;
+  final OwnedValidators validators;
   final ValidatorApiChannel validatorApiChannel;
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
@@ -43,19 +42,22 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
   final AtomicBoolean startupComplete = new AtomicBoolean(false);
 
   public DefaultValidatorStatusLogger(
-      List<BLSPublicKey> validatorPublicKeys,
+      OwnedValidators validators,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
-    checkArgument(!validatorPublicKeys.isEmpty());
-    this.validatorPublicKeys = validatorPublicKeys;
+    this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
   }
 
   @Override
   public SafeFuture<Void> printInitialValidatorStatuses() {
+    if (validators.hasNoValidators()) {
+      return SafeFuture.COMPLETE;
+    }
+
     return validatorApiChannel
-        .getValidatorStatuses(validatorPublicKeys)
+        .getValidatorStatuses(validators.getPublicKeys())
         .thenCompose(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
@@ -64,7 +66,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
               Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
               latestValidatorStatuses.set(validatorStatuses);
-              if (validatorPublicKeys.size() < VALIDATOR_KEYS_PRINT_LIMIT) {
+              if (validators.getValidatorCount() < VALIDATOR_KEYS_PRINT_LIMIT) {
                 printValidatorStatusesOneByOne(validatorStatuses);
               } else {
                 printValidatorStatusSummary(validatorStatuses);
@@ -83,7 +85,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private void printValidatorStatusesOneByOne(
       Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    for (BLSPublicKey publicKey : validatorPublicKeys) {
+    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
       Optional<ValidatorStatus> maybeValidatorStatus =
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
@@ -96,7 +98,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
   private void printValidatorStatusSummary(Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
     Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
     final AtomicInteger unknownValidatorCountReference = new AtomicInteger(0);
-    for (BLSPublicKey publicKey : validatorPublicKeys) {
+    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
       Optional<ValidatorStatus> maybeValidatorStatus =
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
@@ -120,12 +122,12 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   @Override
   public void checkValidatorStatusChanges() {
-    if (!startupComplete.get()) {
+    if (!startupComplete.get() || validators.hasNoValidators()) {
       return;
     }
 
     validatorApiChannel
-        .getValidatorStatuses(validatorPublicKeys)
+        .getValidatorStatuses(validators.getPublicKeys())
         .thenAccept(
             maybeNewValidatorStatuses -> {
               if (maybeNewValidatorStatuses.isEmpty()) {
