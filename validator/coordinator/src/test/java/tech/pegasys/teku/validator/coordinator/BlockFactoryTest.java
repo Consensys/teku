@@ -45,6 +45,8 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -56,8 +58,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
 
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   public static final Eth1Data ETH1_DATA = new Eth1Data();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
   private final AggregatingAttestationPool attestationsPool =
