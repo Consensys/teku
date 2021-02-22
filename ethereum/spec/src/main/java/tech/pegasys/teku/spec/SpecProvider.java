@@ -170,6 +170,14 @@ public class SpecProvider {
     return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
   }
 
+  public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
+    return atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+  }
+
+  public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
+    return atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
+  }
+
   // State Transition Utils
   public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
       throws StateTransitionException {
@@ -299,7 +307,8 @@ public class SpecProvider {
         .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
-  public Spec atState(final BeaconState state) {
+  // Private helpers
+  private Spec atState(final BeaconState state) {
     return atSlot(state.getSlot());
   }
 

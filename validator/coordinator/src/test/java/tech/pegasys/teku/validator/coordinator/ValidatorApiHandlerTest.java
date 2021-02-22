@@ -205,8 +205,7 @@ class ValidatorApiHandlerTest {
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties()).isEmpty();
     assertThat(duties.getDependentRoot())
-        .isEqualTo(
-            specProvider.atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state));
+        .isEqualTo(specProvider.getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -220,8 +219,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDependentRoot())
-        .isEqualTo(
-            specProvider.atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state));
+        .isEqualTo(specProvider.getPreviousDutyDependentRoot(state));
   }
 
   @Test
@@ -297,8 +295,7 @@ class ValidatorApiHandlerTest {
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties().size()).isEqualTo(specProvider.slotsPerEpoch(EPOCH));
     assertThat(duties.getDependentRoot())
-        .isEqualTo(
-            specProvider.atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state));
+        .isEqualTo(specProvider.getCurrentDutyDependentRoot(state));
   }
 
   @Test
