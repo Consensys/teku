@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
+  private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
   private final SpecProvider specProvider;
@@ -54,10 +56,12 @@ public class ValidatorClientService extends Service {
 
   private ValidatorClientService(
       final EventChannels eventChannels,
+      final ValidatorLoader validatorLoader,
       final BeaconNodeApi beaconNodeApi,
       final ForkProvider forkProvider,
       final SpecProvider specProvider) {
     this.eventChannels = eventChannels;
+    this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
     this.specProvider = specProvider;
@@ -88,9 +92,11 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider =
         new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
 
+    final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
+
     ValidatorClientService validatorClientService =
         new ValidatorClientService(
-            eventChannels, beaconNodeApi, forkProvider, config.getSpecProvider());
+            eventChannels, validatorLoader, beaconNodeApi, forkProvider, config.getSpecProvider());
 
     asyncRunner
         .runAsync(
@@ -101,23 +107,28 @@ public class ValidatorClientService extends Service {
     return validatorClientService;
   }
 
+  private static ValidatorLoader createValidatorLoader(
+      final ValidatorClientConfiguration config,
+      final AsyncRunner asyncRunner,
+      final ServiceConfig services) {
+    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
+    final SlashingProtector slashingProtector =
+        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+    return ValidatorLoader.create(
+        config.getValidatorConfig(),
+        config.getInteropConfig(),
+        slashingProtector,
+        new PublicKeyLoader(),
+        asyncRunner,
+        services.getMetricsSystem());
+  }
+
   void initializeValidators(
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner,
       ServiceConfig services) {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
-    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
-    final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
-    final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(
-            config.getValidatorConfig(),
-            config.getInteropConfig(),
-            slashingProtector,
-            new PublicKeyLoader(),
-            asyncRunner,
-            metricsSystem);
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
@@ -171,6 +182,7 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     return initializationComplete.thenCompose(
         (__) -> {
+          SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
           forkProvider.start().reportExceptions();
           validatorIndexProvider.lookupValidators();
           eventChannels.subscribe(
