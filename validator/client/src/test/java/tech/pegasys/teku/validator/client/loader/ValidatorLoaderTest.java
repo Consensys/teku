@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -73,8 +74,8 @@ class ValidatorLoaderTest {
     }
   }
 
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(SpecProviderFactory.createMinimal());
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -100,7 +101,7 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(expectedKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -136,7 +137,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() {
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -177,7 +178,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -221,7 +222,7 @@ class ValidatorLoaderTest {
   void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -264,7 +265,7 @@ class ValidatorLoaderTest {
       @TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -303,7 +304,7 @@ class ValidatorLoaderTest {
   void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
@@ -344,7 +345,7 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -379,7 +380,7 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -409,7 +410,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldLoadAdditionalLocalValidatorsOnReload(final @TempDir Path tempDir) throws Exception {
-    final InteropConfig interopConfig = InteropConfig.builder().build();
+    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
@@ -452,6 +453,7 @@ class ValidatorLoaderTest {
     final int ownedValidatorCount = 10;
     final InteropConfig interopConfig =
         InteropConfig.builder()
+            .specProvider(specProvider)
             .interopEnabled(true)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
@@ -476,6 +478,7 @@ class ValidatorLoaderTest {
     final int ownedValidatorCount = 10;
     final InteropConfig interopConfig =
         InteropConfig.builder()
+            .specProvider(specProvider)
             .interopEnabled(false)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();

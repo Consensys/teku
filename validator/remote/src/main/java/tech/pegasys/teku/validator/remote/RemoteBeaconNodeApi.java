@@ -81,7 +81,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel,
-                useIndependentAttestationTiming),
+                useIndependentAttestationTiming,
+                specProvider),
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
