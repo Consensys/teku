@@ -135,6 +135,7 @@ public abstract class AbstractStoreTest {
     return StoreBuilder.create()
         .asyncRunner(SYNC_RUNNER)
         .metricsSystem(new StubMetricsSystem())
+        .specProvider(specProvider)
         .blockProvider(blockProviderFromChainBuilder())
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())

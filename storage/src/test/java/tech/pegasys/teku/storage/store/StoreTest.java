@@ -55,6 +55,7 @@ class StoreTest extends AbstractStoreTest {
                 Store.create(
                     SYNC_RUNNER,
                     new StubMetricsSystem(),
+                    specProvider,
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),

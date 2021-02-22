@@ -141,11 +141,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         StoreBuilder.forkChoiceStoreBuilder(
                 asyncRunner,
                 metricsSystem,
+                specProvider,
                 blockProvider,
                 stateProvider,
                 anchorPoint,
-                currentTime,
-                specProvider)
+                currentTime)
             .storeConfig(storeConfig)
             .build();
 

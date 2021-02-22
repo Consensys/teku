@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.statetransition.StateTransition;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
@@ -29,6 +30,7 @@ public class Spec {
   private final BeaconStateUtil beaconStateUtil;
   private final EpochProcessor epochProcessor;
   private final BlockProcessorUtil blockProcessorUtil;
+  private final StateTransition stateTransition;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -39,6 +41,9 @@ public class Spec {
     this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
         new BlockProcessorUtil(this.constants, beaconStateUtil, attestationUtil, validatorsUtil);
+    this.stateTransition =
+        StateTransition.create(
+            constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
   }
 
   public SpecConstants getConstants() {
@@ -67,5 +72,9 @@ public class Spec {
 
   public BlockProcessorUtil getBlockProcessorUtil() {
     return blockProcessorUtil;
+  }
+
+  public StateTransition getStateTransition() {
+    return stateTransition;
   }
 }
