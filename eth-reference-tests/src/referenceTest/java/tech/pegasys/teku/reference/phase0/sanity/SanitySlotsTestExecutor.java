@@ -18,10 +18,13 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class SanitySlotsTestExecutor implements TestExecutor {
 
@@ -30,10 +33,28 @@ public class SanitySlotsTestExecutor implements TestExecutor {
     final int numberOfSlots = loadYaml(testDefinition, "slots.yaml", Integer.class);
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
-    final StateTransition stateTransition = new StateTransition();
+
     final UInt64 endSlot = preState.getSlot().plus(numberOfSlots);
 
-    final BeaconState result = stateTransition.process_slots(preState, endSlot);
+    // Standard test
+    final BeaconState result =
+        processSlotsStandard(testDefinition.getSpecProvider(), preState, endSlot);
     assertThat(result).isEqualTo(expectedState);
+
+    // Deprecated test
+    final BeaconState resultDeprecated = processSlotsDeprecated(preState, endSlot);
+    assertThat(resultDeprecated).isEqualTo(expectedState);
+  }
+
+  private BeaconState processSlotsStandard(
+      final SpecProvider specProvider, final BeaconState preState, final UInt64 endSlot)
+      throws EpochProcessingException, SlotProcessingException {
+    return specProvider.processSlots(preState, endSlot);
+  }
+
+  private BeaconState processSlotsDeprecated(final BeaconState preState, final UInt64 endSlot)
+      throws EpochProcessingException, SlotProcessingException {
+    final StateTransition stateTransition = new StateTransition();
+    return stateTransition.process_slots(preState, endSlot);
   }
 }
