@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +25,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -36,16 +36,19 @@ public class BlockProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final SpecProvider specProvider;
 
   public BlockProductionDuty(
       final Validator validator,
       final UInt64 slot,
       final ForkProvider forkProvider,
-      final ValidatorApiChannel validatorApiChannel) {
+      final ValidatorApiChannel validatorApiChannel,
+      final SpecProvider specProvider) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -92,7 +95,9 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
-    return validator.getSigner().createRandaoReveal(compute_epoch_at_slot(slot), forkInfo);
+    return validator
+        .getSigner()
+        .createRandaoReveal(specProvider.computeEpochAtSlot(slot), forkInfo);
   }
 
   public SafeFuture<SignedBeaconBlock> signBlock(
