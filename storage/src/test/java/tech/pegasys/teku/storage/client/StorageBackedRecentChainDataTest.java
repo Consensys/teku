@@ -103,11 +103,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
+            specProvider,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO,
-            specProvider);
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -157,6 +157,7 @@ public class StorageBackedRecentChainDataTest {
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
+            .specProvider(specProvider)
             .latestFinalized(anchorPoint)
             .justifiedCheckpoint(anchorPoint.getCheckpoint())
             .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
@@ -225,11 +226,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
+                specProvider,
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE),
-                UInt64.ZERO,
-                specProvider)
+                UInt64.ZERO)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
@@ -274,11 +275,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
+            specProvider,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO,
-            specProvider);
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

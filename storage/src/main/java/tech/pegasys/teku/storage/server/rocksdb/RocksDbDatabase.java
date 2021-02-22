@@ -486,6 +486,7 @@ public class RocksDbDatabase implements Database {
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
+            .specProvider(specProvider)
             .time(time)
             .anchor(maybeAnchor)
             .genesisTime(genesisTime)

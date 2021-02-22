@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.SpecProvider;
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
   private MetricsSystem metricsSystem;
+  private SpecProvider specProvider;
   private BlockProvider blockProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
@@ -59,11 +60,11 @@ public class StoreBuilder {
   public static StoreBuilder forkChoiceStoreBuilder(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
+      final SpecProvider specProvider,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor,
-      final UInt64 currentTime,
-      final SpecProvider specProvider) {
+      final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
     final UInt64 time =
@@ -84,6 +85,7 @@ public class StoreBuilder {
     return create()
         .asyncRunner(asyncRunner)
         .metricsSystem(metricsSystem)
+        .specProvider(specProvider)
         .blockProvider(blockProvider)
         .stateProvider(stateAndBlockProvider)
         .anchor(anchor.getCheckpoint())
@@ -102,6 +104,7 @@ public class StoreBuilder {
     return Store.create(
         asyncRunner,
         metricsSystem,
+        specProvider,
         blockProvider,
         stateAndBlockProvider,
         anchor,
@@ -119,6 +122,7 @@ public class StoreBuilder {
   private void assertValid() {
     checkState(asyncRunner != null, "Async runner must be defined");
     checkState(metricsSystem != null, "Metrics system must be defined");
+    checkState(specProvider != null, "SpecProvider must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
     checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
     checkState(time != null, "Time must be defined");
@@ -138,6 +142,12 @@ public class StoreBuilder {
   public StoreBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
+    return this;
+  }
+
+  public StoreBuilder specProvider(final SpecProvider specProvider) {
+    checkNotNull(specProvider);
+    this.specProvider = specProvider;
     return this;
   }
 

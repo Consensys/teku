@@ -386,7 +386,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CombinedChainDataClient(
             recentChainData,
             eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
-            stateTransition,
             specProvider);
   }
 
