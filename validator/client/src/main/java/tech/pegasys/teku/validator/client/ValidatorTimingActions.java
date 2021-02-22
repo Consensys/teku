@@ -43,7 +43,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     validatorIndexProvider.lookupValidators();
     blockDuties.onSlot(slot);
     attestationDuties.onSlot(slot);
-    if (slot.mod(specProvider.getSlotsPerEpoch(slot)).equals(UInt64.ONE)) {
+    final BeaconStateUtil beaconStateUtil = specProvider.atSlot(slot);
+    final UInt64 firstSlotOfEpoch = beaconStateUtil.computeStartSlotAtEpoch(beaconStateUtil.computeEpochAtSlot(slot));
+    if (slot.equals(firstSlotOfEpoch.plus(1)) {
       statusLogger.checkValidatorStatusChanges();
     }
   }
