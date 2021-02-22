@@ -14,8 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -49,6 +48,7 @@ public class BlockFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
+  private final SpecProvider specProvider;
 
   public BlockFactory(
       final BlockProposalUtil blockCreator,
@@ -59,7 +59,8 @@ public class BlockFactory {
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
-      final Bytes32 graffiti) {
+      final Bytes32 graffiti,
+      final SpecProvider specProvider) {
     this.blockCreator = blockCreator;
     this.stateTransition = stateTransition;
     this.attestationPool = attestationPool;
@@ -69,6 +70,7 @@ public class BlockFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
+    this.specProvider = specProvider;
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -118,12 +120,12 @@ public class BlockFactory {
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
-    final Bytes32 parentRoot = get_block_root_at_slot(blockSlotState, slotBeforeBlock);
+    final Bytes32 parentRoot = specProvider.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
     return blockCreator
         .createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(blockSlotState, newSlot),
+            specProvider.getBeaconProposerIndex(blockSlotState, newSlot),
             randaoReveal,
             blockSlotState,
             parentRoot,

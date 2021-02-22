@@ -179,6 +179,8 @@ public class TekuConfiguration {
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
       final SpecProvider specProvider = eth2NetworkConfiguration.getSpecProvider();
+
+      interopConfigBuilder.specProvider(specProvider);
       // Update storage config
       storageConfigurationBuilder.specProvider(specProvider);
       // Update weak subjectivity
