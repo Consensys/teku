@@ -42,7 +42,7 @@ public class ValidatorKeystores {
     this.validatorKeys = validatorKeys;
   }
 
-  public File getTarball() throws Exception {
+  public File getTarball() {
     return maybeTarball.orElseGet(
         () -> {
           try {
@@ -52,6 +52,10 @@ public class ValidatorKeystores {
             throw new IllegalStateException("Unable to create validator tarball");
           }
         });
+  }
+
+  public int getValidatorCount() {
+    return validatorKeys.size();
   }
 
   public String getKeysDirectoryName() {

@@ -22,6 +22,10 @@ For information on changes in released versions of Teku, see the [releases page]
 - Docker images are now being published to `consensys/teku`. The `pegasys/teku` images are no longer updated.
 
 ### Additions and Improvements
+- New validators can now be loaded without restarting by sending a `SIGHUP` to Teku. 
+  Teku will recheck directories of keys specified via `--validator-keys` and URLs specified via `--validators-external-signer-public-keys` for any new validators to run.
+  
+  *Important*: Removing validators still requires a restart as there is no reliable mechanism to signal when they have actually ceased performing duties.
 - `--p2p-nat-method upnp` has been added to allow users to use upnp to configure firewalls to allow incoming connection requests.
 - `--initial-state` argument is now ignored if chain data is already initialised. Previously it would be downloaded on every restart and Teku would exit if the referenced state was ahead of the chain on disk.
 - Enabled the new sync algorithm by default. This improves sync behaviour when there are multiple forks and distributes requests for blocks across available peers. The old sync algorithm can still be used by setting `--Xp2p-multipeer-sync-enabled=false`.

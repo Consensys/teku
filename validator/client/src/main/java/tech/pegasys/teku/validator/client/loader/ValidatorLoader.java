@@ -122,7 +122,8 @@ public class ValidatorLoader {
     }
   }
 
-  public void loadValidators() {
+  // synchronized to ensure that only one load is active at a time
+  public synchronized void loadValidators() {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
