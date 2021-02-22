@@ -49,5 +49,11 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
     // If the added validators perform their duties properly, the network will finalize.
     node.waitForNewFinalization();
+
+    // Check loading new validators a second time still works and that they don't have to be active
+    final ValidatorKeystores evenMoreKeystores =
+        createTekuDepositSender().sendValidatorDeposits(eth1Node, 1);
+    node.addValidators(evenMoreKeystores);
+    node.waitForOwnedValidatorCount(5);
   }
 }
