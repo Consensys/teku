@@ -125,6 +125,22 @@ public class SpecProvider {
     return atSlot(slot).getConstants().getSecondsPerSlot();
   }
 
+  public long getMaxDeposits(final BeaconState state) {
+    return atState(state).getConstants().getMaxDeposits();
+  }
+
+  public long getEpochsPerEth1VotingPeriod(final UInt64 slot) {
+    return atSlot(slot).getConstants().getEpochsPerEth1VotingPeriod();
+  }
+
+  public UInt64 getEth1FollowDistance(final UInt64 slot) {
+    return atSlot(slot).getConstants().getEth1FollowDistance();
+  }
+
+  public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
+    return atSlot(slot).getConstants().getSecondsPerEth1Block();
+  }
+
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
@@ -136,6 +152,30 @@ public class SpecProvider {
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  }
+
+  public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
+    return atState(state).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
+  }
+
+  public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
+    return atState(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+  }
+
+  public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
+    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+  }
+
+  public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
+    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+  }
+
+  public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
+    return atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+  }
+
+  public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
+    return atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
   }
 
   // State Transition Utils
@@ -246,23 +286,15 @@ public class SpecProvider {
     return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
   }
 
-  // Attestation helpers
-  public List<Integer> getAttestingIndices(
-      BeaconState state, AttestationData data, SszBitlist bits) {
-    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
-  }
-
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
     return atState(state).getValidatorsUtil().getValidatorIndex(state, publicKey);
   }
 
-  public Spec atState(final BeaconState state) {
-    return atSlot(state.getSlot());
-  }
-
-  public long getMaxDeposits(final BeaconState state) {
-    return atState(state).getConstants().getMaxDeposits();
+  // Attestation helpers
+  public List<Integer> getAttestingIndices(
+      BeaconState state, AttestationData data, SszBitlist bits) {
+    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
   }
 
   public AttestationData getGenericAttestationData(
@@ -275,32 +307,9 @@ public class SpecProvider {
         .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
-  public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
-  }
-
-  public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
-  }
-
-  public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
-  }
-
-  public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
-  }
-
-  public long getEpochsPerEth1VotingPeriod(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEpochsPerEth1VotingPeriod();
-  }
-
-  public UInt64 getEth1FollowDistance(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEth1FollowDistance();
-  }
-
-  public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerEth1Block();
+  // Private helpers
+  private Spec atState(final BeaconState state) {
+    return atSlot(state.getSlot());
   }
 
   private Spec atBlock(final BeaconBlockSummary blockSummary) {
