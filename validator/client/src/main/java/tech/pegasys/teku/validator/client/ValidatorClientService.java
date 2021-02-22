@@ -85,7 +85,9 @@ public class ValidatorClientService extends Service {
                         config.getSpecProvider(),
                         useDependentRoots))
             .orElseGet(
-                () -> InProcessBeaconNodeApi.create(services, asyncRunner, useDependentRoots));
+                () ->
+                    InProcessBeaconNodeApi.create(
+                        services, asyncRunner, useDependentRoots, config.getSpecProvider()));
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);

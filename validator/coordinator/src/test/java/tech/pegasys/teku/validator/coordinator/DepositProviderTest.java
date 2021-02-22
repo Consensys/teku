@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +42,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.networks.TestConstantsLoader;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -249,13 +250,14 @@ public class DepositProviderTest {
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
+    final Spec genesisSpec = specProvider.getGenesisSpec();
     deposits.forEach(
         deposit ->
             assertThat(
-                    is_valid_merkle_branch(
+                    BeaconStateUtil.isValidMerkleBranch(
                         deposit.getData().hashTreeRoot(),
                         deposit.getProof(),
-                        specProvider.getGenesisSpecConstants().getDepositContractTreeDepth() + 1,
+                        genesisSpec.getConstants().getDepositContractTreeDepth() + 1,
                         ((DepositWithIndex) deposit).getIndex().intValue(),
                         depositMerkleTree.getRoot()))
                 .isTrue());

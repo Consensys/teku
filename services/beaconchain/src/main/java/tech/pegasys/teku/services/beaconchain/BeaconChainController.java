@@ -450,7 +450,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
             : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
-    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber);
+    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, specProvider);
   }
 
   public void initValidatorApiHandler() {
@@ -465,7 +465,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             voluntaryExitPool,
             depositProvider,
             eth1DataCache,
-            VersionProvider.getDefaultGraffiti());
+            VersionProvider.getDefaultGraffiti(),
+            specProvider);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final ValidatorApiHandler validatorApiHandler =
