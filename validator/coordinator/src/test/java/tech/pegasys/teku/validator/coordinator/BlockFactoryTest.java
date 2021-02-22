@@ -88,7 +88,8 @@ class BlockFactoryTest {
           voluntaryExitPool,
           depositProvider,
           eth1DataCache,
-          graffiti);
+          graffiti,
+          specProvider);
 
   @BeforeEach
   void setUp() {

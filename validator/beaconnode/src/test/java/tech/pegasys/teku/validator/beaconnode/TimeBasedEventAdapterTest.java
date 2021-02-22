@@ -27,14 +27,18 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
 
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
+  final int secondsPerSlot = specProvider.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =
@@ -42,7 +46,12 @@ class TimeBasedEventAdapterTest {
 
   private final TimeBasedEventAdapter eventAdapter =
       new TimeBasedEventAdapter(
-          genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel, true);
+          genesisDataProvider,
+          repeatingTaskScheduler,
+          timeProvider,
+          validatorTimingChannel,
+          true,
+          specProvider);
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {
@@ -66,8 +75,8 @@ class TimeBasedEventAdapterTest {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 26;
     final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
-    final int timeUntilNextSlot = Constants.SECONDS_PER_SLOT / 2;
-    timeProvider.advanceTimeBySeconds(Constants.SECONDS_PER_SLOT * nextSlot - timeUntilNextSlot);
+    final int timeUntilNextSlot = secondsPerSlot / 2;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
     assertThat(eventAdapter.start()).isCompleted();
 
@@ -90,8 +99,8 @@ class TimeBasedEventAdapterTest {
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
-    final int timeUntilNextSlot = Constants.SECONDS_PER_SLOT - 1;
-    timeProvider.advanceTimeBySeconds(Constants.SECONDS_PER_SLOT * nextSlot - timeUntilNextSlot);
+    final int timeUntilNextSlot = secondsPerSlot - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
     assertThat(eventAdapter.start()).isCompleted();
 
@@ -105,7 +114,7 @@ class TimeBasedEventAdapterTest {
     verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
 
     // But does fire 1/3rds through the slot
-    timeProvider.advanceTimeBySeconds(Constants.SECONDS_PER_SLOT / 3);
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
   }
@@ -117,8 +126,8 @@ class TimeBasedEventAdapterTest {
     final long nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
-    final int timeUntilNextSlot = Constants.SECONDS_PER_SLOT - 1;
-    timeProvider.advanceTimeBySeconds(Constants.SECONDS_PER_SLOT * nextSlot - timeUntilNextSlot);
+    final int timeUntilNextSlot = secondsPerSlot - 1;
+    timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
     assertThat(eventAdapter.start()).isCompleted();
 
@@ -132,7 +141,7 @@ class TimeBasedEventAdapterTest {
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
 
     // But does fire 2/3rds through the slot
-    timeProvider.advanceTimeBySeconds(Constants.SECONDS_PER_SLOT / 3 * 2);
+    timeProvider.advanceTimeBySeconds(secondsPerSlot / 3 * 2);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
   }
