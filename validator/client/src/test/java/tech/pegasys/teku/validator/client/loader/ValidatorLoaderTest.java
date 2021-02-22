@@ -76,6 +76,8 @@ class ValidatorLoaderTest {
 
   private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final InteropConfig disabledInteropConfig =
+      InteropConfig.builder().specProvider(specProvider).build();
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -101,7 +103,6 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(expectedKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -112,7 +113,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -137,7 +138,6 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndSlashingProtection() {
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -148,7 +148,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -178,7 +178,6 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -189,7 +188,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -221,8 +220,6 @@ class ValidatorLoaderTest {
   @Test
   void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
-
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -237,7 +234,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -264,8 +261,6 @@ class ValidatorLoaderTest {
   void initializeValidatorsWithDuplicateKeysInLocalAndExternalSignersTakesExternalAsPriority(
       @TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
-
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -280,7 +275,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -304,7 +299,6 @@ class ValidatorLoaderTest {
   void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
@@ -316,7 +310,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -345,7 +339,6 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -355,7 +348,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -380,7 +373,6 @@ class ValidatorLoaderTest {
     final String publicKeysUrl = "http://example.com";
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(initialKeys);
 
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(SIGNER_URL)
@@ -390,7 +382,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
@@ -410,7 +402,6 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldLoadAdditionalLocalValidatorsOnReload(final @TempDir Path tempDir) throws Exception {
-    final InteropConfig interopConfig = InteropConfig.builder().specProvider(specProvider).build();
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
@@ -423,7 +414,7 @@ class ValidatorLoaderTest {
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             config,
-            interopConfig,
+            disabledInteropConfig,
             httpClientFactory,
             slashingProtector,
             publicKeyLoader,
