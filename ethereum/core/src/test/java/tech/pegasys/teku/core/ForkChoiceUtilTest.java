@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -24,25 +22,24 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 
 class ForkChoiceUtilTest {
 
@@ -50,16 +47,17 @@ class ForkChoiceUtilTest {
   static final UInt64 SLOT_50 = GENESIS_TIME.plus(SECONDS_PER_SLOT * 50L);
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-  private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
-  private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
-              store, ProtoArrayStorageChannel.NO_OP)
-          .join();
+  private final ChainBuilderForkChoiceStrategy forkChoiceStrategy =
+      new ChainBuilderForkChoiceStrategy(chainBuilder);
+
+  @BeforeEach
+  public void setup() {
+    chainBuilder.generateGenesis();
+  }
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
-    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
+    chainBuilder.generateBlocksUpToSlot(10);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -74,7 +72,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestors_shouldGetSequenceOfRootsWhenSkipping() {
-    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
+    chainBuilder.generateBlocksUpToSlot(10);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -89,10 +87,8 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestors_shouldGetSequenceOfRootsWhenStartIsPriorToFinalizedCheckpoint() {
-    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
-    forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.applyUpdate(
-        emptyList(), emptySet(), createCheckpointFromBlock(chainBuilder.getBlockAtSlot(4)));
+    chainBuilder.generateBlocksUpToSlot(10);
+    forkChoiceStrategy.prune(UInt64.valueOf(4));
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -112,7 +108,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestors_shouldGetSequenceOfRootsWhenEndIsAfterChainHead() {
-    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
+    chainBuilder.generateBlocksUpToSlot(10);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -127,8 +123,8 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestors_shouldNotIncludeEntryForEmptySlots() {
-    addBlock(chainBuilder.generateBlockAtSlot(3));
-    addBlock(chainBuilder.generateBlockAtSlot(5));
+    chainBuilder.generateBlockAtSlot(3);
+    chainBuilder.generateBlockAtSlot(5);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -142,7 +138,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestorsOnFork_shouldIncludeHeadBlockAndExcludeStartSlot() {
-    chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
+    chainBuilder.generateBlocksUpToSlot(10);
 
     final NavigableMap<UInt64, Bytes32> ancestorsOnFork =
         ForkChoiceUtil.getAncestorsOnFork(
@@ -152,7 +148,7 @@ class ForkChoiceUtilTest {
 
   @Test
   void getAncestorsOnFork_shouldNotIncludeHeadBlockWhenItIsAtStartSlot() {
-    chainBuilder.generateBlocksUpToSlot(3).forEach(this::addBlock);
+    chainBuilder.generateBlocksUpToSlot(3);
 
     final SignedBlockAndState headBlock = chainBuilder.getLatestBlockAndState();
     final NavigableMap<UInt64, Bytes32> ancestorsOnFork =
@@ -215,12 +211,64 @@ class ForkChoiceUtilTest {
         .collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
   }
 
-  private void addBlock(final SignedBlockAndState blockAndState) {
+  private static class ChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceStrategy {
+    private final ChainBuilder chainBuilder;
+    private UInt64 prunePriorToSlot = UInt64.ZERO;
 
-    forkChoiceStrategy.applyUpdate(
-        List.of(BlockAndCheckpointEpochs.fromBlockAndState(blockAndState)),
-        emptySet(),
-        new Checkpoint(
-            compute_next_epoch_boundary(blockAndState.getSlot()), blockAndState.getRoot()));
+    private ChainBuilderForkChoiceStrategy(final ChainBuilder chainBuilder) {
+      this.chainBuilder = chainBuilder;
+    }
+
+    /**
+     * Prune available block prior to the given slot
+     *
+     * @param slot
+     */
+    public void prune(final UInt64 slot) {
+      this.prunePriorToSlot = slot;
+    }
+
+    @Override
+    public Optional<UInt64> blockSlot(final Bytes32 blockRoot) {
+      return getBlock(blockRoot).map(SignedBeaconBlock::getSlot);
+    }
+
+    @Override
+    public Optional<Bytes32> blockParentRoot(final Bytes32 blockRoot) {
+      return getBlock(blockRoot).map(SignedBeaconBlock::getParentRoot);
+    }
+
+    @Override
+    public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+      if (getBlock(blockRoot).isEmpty()) {
+        return Optional.empty();
+      }
+      return getBlock(slot).map(SignedBeaconBlock::getRoot);
+    }
+
+    @Override
+    public Map<Bytes32, UInt64> getChainHeads() {
+      final SignedBlockAndState latestBlock = chainBuilder.getLatestBlockAndState();
+      if (latestBlock == null) {
+        return Collections.emptyMap();
+      }
+      return Map.of(latestBlock.getRoot(), latestBlock.getSlot());
+    }
+
+    @Override
+    public boolean contains(final Bytes32 blockRoot) {
+      return getBlock(blockRoot).isPresent();
+    }
+
+    private Optional<SignedBeaconBlock> getBlock(final Bytes32 root) {
+      return chainBuilder
+          .getBlock(root)
+          .filter(b -> b.getSlot().isGreaterThanOrEqualTo(prunePriorToSlot));
+    }
+
+    private Optional<SignedBeaconBlock> getBlock(final UInt64 slot) {
+      return Optional.ofNullable(chainBuilder.getBlockAtSlot(slot))
+          .filter(b -> b.getSlot().isGreaterThanOrEqualTo(prunePriorToSlot));
+    }
   }
 }
