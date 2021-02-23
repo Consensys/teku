@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.ForkChoiceUtil.getSlotStartTime;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -86,14 +85,14 @@ public class SlotProcessorTest {
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsNotDue() {
     slotProcessor.setCurrentSlot(desiredSlot.plus(ONE));
-    final UInt64 currentTime = getSlotStartTime(desiredSlot, genesisTime);
+    final UInt64 currentTime = specProvider.getSlotStartTime(desiredSlot, genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isFalse();
   }
 
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsDue() {
     slotProcessor.setCurrentSlot(desiredSlot);
-    final UInt64 currentTime = getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
+    final UInt64 currentTime = specProvider.getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isTrue();
   }
 
@@ -289,8 +288,8 @@ public class SlotProcessorTest {
             slotEventsChannel,
             eventLogger);
     slotProcessor.setCurrentSlot(UInt64.valueOf(6));
-    final UInt64 slot6StartTime = getSlotStartTime(UInt64.valueOf(6), genesisTime);
-    final UInt64 slot7StartTime = getSlotStartTime(UInt64.valueOf(7), genesisTime);
+    final UInt64 slot6StartTime = specProvider.getSlotStartTime(UInt64.valueOf(6), genesisTime);
+    final UInt64 slot7StartTime = specProvider.getSlotStartTime(UInt64.valueOf(7), genesisTime);
 
     // Progress through to end of initial epoch
     slotProcessor.onTick(slot6StartTime);
