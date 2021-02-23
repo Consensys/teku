@@ -16,27 +16,31 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PeerStatusFactory {
 
   private final Random random;
+  private final SpecProvider specProvider;
 
-  private PeerStatusFactory(final long seed) {
+  private PeerStatusFactory(final long seed, final SpecProvider specProvider) {
     random = new Random(seed);
+    this.specProvider = specProvider;
   }
 
-  public static PeerStatusFactory create(final long seed) {
-    return new PeerStatusFactory(seed);
+  public static PeerStatusFactory create(final long seed, final SpecProvider specProvider) {
+    return new PeerStatusFactory(seed, specProvider);
   }
 
   public PeerStatus random() {
-    final Bytes4 fork = Constants.GENESIS_FORK_VERSION;
+    final Bytes4 fork = specProvider.getGenesisSpecConstants().getGenesisForkVersion();
     final Bytes32 finalizedRoot = randomBytes32();
     final UInt64 finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();
-    final long minHeadSlot = (finalizedEpoch.longValue() + 2) * Constants.SLOTS_PER_EPOCH;
+    final long minHeadSlot =
+        (finalizedEpoch.longValue() + 2)
+            * specProvider.getGenesisSpecConstants().getSlotsPerEpoch();
     final UInt64 headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
     return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
