@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.storage.server.leveldb;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 
 import com.google.common.primitives.Ints;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -36,19 +40,21 @@ import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
 class LevelDbInstanceTest {
 
-  private static final IntSerializer LONG_SERIALIZER = new IntSerializer();
+  private static final IntSerializer INT_SERIALIZER = new IntSerializer();
 
   private static final RocksDbVariable<Integer> variable1 =
-      RocksDbVariable.create(0, LONG_SERIALIZER);
+      RocksDbVariable.create(0, INT_SERIALIZER);
   private static final RocksDbVariable<Integer> variable2 =
-      RocksDbVariable.create(1, LONG_SERIALIZER);
+      RocksDbVariable.create(1, INT_SERIALIZER);
 
   private static final RocksDbColumn<Integer, Integer> column1 =
-      RocksDbColumn.create(1, LONG_SERIALIZER, LONG_SERIALIZER);
+      RocksDbColumn.create(1, INT_SERIALIZER, INT_SERIALIZER);
   private static final RocksDbColumn<Integer, Integer> column2 =
-      RocksDbColumn.create(2, LONG_SERIALIZER, LONG_SERIALIZER);
+      RocksDbColumn.create(2, INT_SERIALIZER, INT_SERIALIZER);
   private static final RocksDbColumn<Integer, Integer> column3 =
-      RocksDbColumn.create(3, LONG_SERIALIZER, LONG_SERIALIZER);
+      RocksDbColumn.create(3, INT_SERIALIZER, INT_SERIALIZER);
+  private static final RocksDbColumn<UInt64, UInt64> column4 =
+      RocksDbColumn.create(4, UINT64_SERIALIZER, UINT64_SERIALIZER);
 
   private RocksDbAccessor instance;
 
@@ -199,6 +205,29 @@ class LevelDbInstanceTest {
   }
 
   @Test
+  void stream_performUnsignedComparisonsOnKeys() {
+    update(
+        tx -> {
+          for (int i = 499; i <= 655; i++) {
+            tx.put(column4, UInt64.valueOf(i), UInt64.valueOf(i));
+          }
+        });
+
+    // Deliberately select a range where signed comparison would cause the stream to stop early
+    final int startInclusive = 500;
+    final int endInclusive = 650;
+
+    final List<UInt64> expectedKeys =
+        IntStream.rangeClosed(startInclusive, endInclusive)
+            .mapToObj(UInt64::valueOf)
+            .collect(toList());
+    try (final Stream<ColumnEntry<UInt64, UInt64>> stream =
+        instance.stream(column4, UInt64.valueOf(startInclusive), UInt64.valueOf(endInclusive))) {
+      assertThat(stream.map(ColumnEntry::getKey)).containsExactlyElementsOf(expectedKeys);
+    }
+  }
+
+  @Test
   void getFloorEntry_shouldGetMatchingEntryWhenKeyExists() {
     update(
         tx -> {
@@ -258,7 +287,7 @@ class LevelDbInstanceTest {
           tx.put(column2, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4,4));
+    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4, 4));
   }
 
   @Test
@@ -269,7 +298,7 @@ class LevelDbInstanceTest {
           tx.put(column1, 4, 4);
         });
 
-    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4,4));
+    assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4, 4));
   }
 
   private void update(final Consumer<RocksDbTransaction> updater) {
