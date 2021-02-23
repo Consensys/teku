@@ -36,7 +36,6 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
 import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
@@ -509,7 +508,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
     AttestationValidator attestationValidator =
-        new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
+        new AttestationValidator(specProvider, recentChainData);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
     blockImporter.subscribeToVerifiedBlockAttestations(
