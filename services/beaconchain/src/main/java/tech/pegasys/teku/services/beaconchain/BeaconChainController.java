@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -804,7 +803,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    on_tick(transaction, currentTime);
+    specProvider.onTick(transaction, currentTime);
     transaction.commit().join();
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();

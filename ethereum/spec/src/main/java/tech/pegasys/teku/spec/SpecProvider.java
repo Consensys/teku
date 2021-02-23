@@ -26,6 +26,7 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -223,6 +224,10 @@ public class SpecProvider {
     return getLatestSpec()
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
+  }
+
+  public void onTick(MutableStore store, UInt64 time) {
+    getLatestSpec().getForkChoiceUtil().onTick(store, time);
   }
 
   // State Transition Utils
