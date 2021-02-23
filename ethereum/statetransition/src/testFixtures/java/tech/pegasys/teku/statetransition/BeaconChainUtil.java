@@ -24,9 +24,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -43,6 +40,8 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconChainUtil {
+  private static final SpecProvider DEFAULT_SPEC_PROVIDER = SpecProviderFactory.createMinimal();
 
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
   private final RecentChainData recentChainData;
@@ -80,12 +80,7 @@ public class BeaconChainUtil {
     return create(
         storageClient,
         validatorKeys,
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageClient,
-            new StateTransition()),
+        new ForkChoice(DEFAULT_SPEC_PROVIDER, new InlineEventThread(), storageClient),
         true);
   }
 
@@ -96,12 +91,7 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(
         validatorKeys,
         storageClient,
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageClient,
-            new StateTransition()),
+        new ForkChoice(DEFAULT_SPEC_PROVIDER, new InlineEventThread(), storageClient),
         signDeposits);
   }
 

@@ -32,8 +32,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -50,6 +48,8 @@ import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -59,22 +59,19 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final StateTransition stateTransition = new StateTransition();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
+      InMemoryStorageSystemBuilder.create()
+          .storageMode(StateStorageMode.PRUNE)
+          .specProvider(specProvider)
+          .build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final ForkChoice forkChoice =
-      new ForkChoice(
-          new ForkChoiceAttestationValidator(),
-          new ForkChoiceBlockTasks(),
-          new InlineEventThread(),
-          recentChainData,
-          stateTransition);
+      new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
 
   @BeforeEach
   public void setup() {

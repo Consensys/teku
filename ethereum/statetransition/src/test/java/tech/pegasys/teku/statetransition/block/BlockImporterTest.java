@@ -37,9 +37,6 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -73,13 +70,9 @@ public class BlockImporterTest {
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ForkChoice forkChoice =
-      new ForkChoice(
-          new ForkChoiceAttestationValidator(),
-          new ForkChoiceBlockTasks(),
-          new InlineEventThread(),
-          recentChainData,
-          new StateTransition());
+      new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(recentChainData, validatorKeys, forkChoice, false);
 
@@ -402,12 +395,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageSystem.recentChainData(),
-            new StateTransition());
+        new ForkChoice(specProvider, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -440,12 +428,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageSystem.recentChainData(),
-            new StateTransition());
+        new ForkChoice(specProvider, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -486,12 +469,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageSystem.recentChainData(),
-            new StateTransition());
+        new ForkChoice(specProvider, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -527,12 +505,7 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_initialCall() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageSystem.recentChainData(),
-            new StateTransition());
+        new ForkChoice(specProvider, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -556,12 +529,7 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_shouldPullUpdatedFinalizedCheckpoint() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageSystem.recentChainData(),
-            new StateTransition());
+        new ForkChoice(specProvider, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
