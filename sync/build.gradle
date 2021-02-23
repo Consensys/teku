@@ -44,6 +44,8 @@ dependencies {
 
     testFixturesImplementation testFixtures(project(':ethereum:core'))
     testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project(':ethereum:spec'))
+    testFixturesImplementation testFixtures(project(':ethereum:networks'))
     testFixturesImplementation testFixtures(project(':ethereum:weaksubjectivity'))
     testFixturesImplementation testFixtures(project(':infrastructure:async'))
     testFixturesImplementation testFixtures(project(':infrastructure:unsigned'))
