@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -25,6 +26,8 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -191,8 +194,35 @@ public class SpecProvider {
     return getLatestSpec().getForkChoiceUtil().getCurrentSlot(currentTime, genesisTime);
   }
 
+  public UInt64 getCurrentSlot(ReadOnlyStore store) {
+    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(store);
+  }
+
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
     return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
+  }
+
+  public Optional<Bytes32> getAncestor(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+    return getLatestSpec().getForkChoiceUtil().getAncestor(forkChoiceStrategy, root, slot);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestors(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      Bytes32 root,
+      UInt64 startSlot,
+      UInt64 step,
+      UInt64 count) {
+    return getLatestSpec()
+        .getForkChoiceUtil()
+        .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
+    return getLatestSpec()
+        .getForkChoiceUtil()
+        .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
   }
 
   // State Transition Utils
