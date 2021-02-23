@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.core.ForkChoiceBlockTasks.blockDescendsFromLatestFinalizedBlock;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -163,7 +162,7 @@ public class BlockValidator {
   }
 
   private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
-    return blockDescendsFromLatestFinalizedBlock(
+    return specProvider.blockDescendsFromLatestFinalizedBlock(
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());
