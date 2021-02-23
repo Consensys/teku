@@ -16,9 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION;
-import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -33,6 +30,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,12 +43,16 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Random random;
+  private final SpecProvider specProvider;
 
   public ValidatorBasedStableSubnetSubscriber(
-      final AttestationTopicSubscriber persistentSubnetSubscriber, final Random random) {
+      final AttestationTopicSubscriber persistentSubnetSubscriber,
+      final Random random,
+      final SpecProvider specProvider) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -84,8 +87,10 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
       UInt64 currentSlot, int validatorCount) {
 
+    final int randomSubnetsPerValidator =
+        specProvider.atSlot(currentSlot).getConstants().getRandomSubnetsPerValidator();
     int totalNumberOfSubscriptions =
-        min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validatorCount);
+        min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
 
     if (subnetSubscriptions.size() == totalNumberOfSubscriptions) {
       return emptySet();
@@ -145,13 +150,15 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   }
 
   private UInt64 getRandomUnsubscriptionSlot(UInt64 currentSlot) {
-    return currentSlot.plus(getRandomSubscriptionLength());
+    return currentSlot.plus(getRandomSubscriptionLength(currentSlot));
   }
 
-  private UInt64 getRandomSubscriptionLength() {
+  private UInt64 getRandomSubscriptionLength(final UInt64 currentSlot) {
+    final SpecConstants constants = specProvider.atSlot(currentSlot).getConstants();
+
     return UInt64.valueOf(
-        (EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
-                + random.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
-            * SLOTS_PER_EPOCH);
+        (constants.getEpochsPerRandomSubnetSubscription()
+                + random.nextInt(constants.getEpochsPerRandomSubnetSubscription()))
+            * constants.getSlotsPerEpoch());
   }
 }

@@ -448,7 +448,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
-            : new ValidatorBasedStableSubnetSubscriber(attestationTopicSubscriber, new Random());
+            : new ValidatorBasedStableSubnetSubscriber(
+                attestationTopicSubscriber, new Random(), specProvider);
     this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, specProvider);
   }
 
