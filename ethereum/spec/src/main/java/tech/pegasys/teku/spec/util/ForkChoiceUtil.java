@@ -17,10 +17,16 @@ import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
@@ -28,10 +34,15 @@ public class ForkChoiceUtil {
 
   private final SpecConstants specConstants;
   private final BeaconStateUtil beaconStateUtil;
+  private final AttestationUtil attestationUtil;
 
-  public ForkChoiceUtil(final SpecConstants specConstants, final BeaconStateUtil beaconStateUtil) {
+  public ForkChoiceUtil(
+      final SpecConstants specConstants,
+      final BeaconStateUtil beaconStateUtil,
+      final AttestationUtil attestationUtil) {
     this.specConstants = specConstants;
     this.beaconStateUtil = beaconStateUtil;
+    this.attestationUtil = attestationUtil;
   }
 
   public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -171,5 +182,100 @@ public class ForkChoiceUtil {
         > 0) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
     }
+  }
+
+  @CheckReturnValue
+  public AttestationProcessingResult validate(
+      final ReadOnlyStore store,
+      final ValidateableAttestation validateableAttestation,
+      final Optional<BeaconState> maybeTargetState) {
+    Attestation attestation = validateableAttestation.getAttestation();
+    return validateOnAttestation(store, attestation)
+        .ifSuccessful(
+            () -> {
+              if (maybeTargetState.isEmpty()) {
+                return AttestationProcessingResult.UNKNOWN_BLOCK;
+              } else {
+                return attestationUtil.isValidIndexedAttestation(
+                    maybeTargetState.get(), validateableAttestation);
+              }
+            })
+        .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));
+  }
+
+  private AttestationProcessingResult validateOnAttestation(
+      final ReadOnlyStore store, final Attestation attestation) {
+    final Checkpoint target = attestation.getData().getTarget();
+
+    UInt64 current_epoch = beaconStateUtil.computeEpochAtSlot(getCurrentSlot(store));
+
+    // Use GENESIS_EPOCH for previous when genesis to avoid underflow
+    UInt64 previous_epoch =
+        current_epoch.compareTo(SpecConstants.GENESIS_EPOCH) > 0
+            ? current_epoch.minus(UInt64.ONE)
+            : SpecConstants.GENESIS_EPOCH;
+
+    if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
+      return AttestationProcessingResult.invalid(
+          "Attestations must be from the current or previous epoch");
+    }
+
+    if (!target
+        .getEpoch()
+        .equals(beaconStateUtil.computeEpochAtSlot(attestation.getData().getSlot()))) {
+      return AttestationProcessingResult.invalid("Attestation slot must be within specified epoch");
+    }
+
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+    if (!forkChoiceStrategy.contains(target.getRoot())) {
+      // Attestations target must be for a known block. If a target block is unknown, delay
+      // consideration until the block is found
+      return AttestationProcessingResult.UNKNOWN_BLOCK;
+    }
+
+    Optional<UInt64> blockSlot =
+        forkChoiceStrategy.blockSlot(attestation.getData().getBeacon_block_root());
+    if (blockSlot.isEmpty()) {
+      // Attestations must be for a known block. If block is unknown, delay consideration until the
+      // block is found
+      return AttestationProcessingResult.UNKNOWN_BLOCK;
+    }
+
+    if (blockSlot.get().compareTo(attestation.getData().getSlot()) > 0) {
+      return AttestationProcessingResult.invalid(
+          "Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+    }
+
+    // LMD vote must be consistent with FFG vote target
+    final UInt64 target_slot = beaconStateUtil.computeStartSlotAtEpoch(target.getEpoch());
+    if (getAncestor(forkChoiceStrategy, attestation.getData().getBeacon_block_root(), target_slot)
+        .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
+        .orElse(true)) {
+      return AttestationProcessingResult.invalid(
+          "LMD vote must be consistent with FFG vote target");
+    }
+
+    return AttestationProcessingResult.SUCCESSFUL;
+  }
+
+  private AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
+      ReadOnlyStore store, Attestation attestation) {
+
+    // Attestations can only affect the fork choice of subsequent slots.
+    // Delay consideration in the fork choice until their slot is in the past.
+    final UInt64 currentSlot = getCurrentSlot(store);
+    if (currentSlot.compareTo(attestation.getData().getSlot()) < 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+    if (currentSlot.compareTo(attestation.getData().getSlot()) == 0) {
+      return AttestationProcessingResult.DEFER_FOR_FORK_CHOICE;
+    }
+
+    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
+    // arrives
+    if (currentSlot.compareTo(attestation.getData().getTarget().getEpochStartSlot()) < 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+    return AttestationProcessingResult.SUCCESSFUL;
   }
 }

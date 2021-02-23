@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -228,6 +230,15 @@ public class SpecProvider {
 
   public void onTick(MutableStore store, UInt64 time) {
     getLatestSpec().getForkChoiceUtil().onTick(store, time);
+  }
+
+  public AttestationProcessingResult validateAttestation(
+      final ReadOnlyStore store,
+      final ValidateableAttestation validateableAttestation,
+      final Optional<BeaconState> maybeTargetState) {
+    return atSlot(validateableAttestation.getAttestation().getData().getSlot())
+        .getForkChoiceUtil()
+        .validate(store, validateableAttestation, maybeTargetState);
   }
 
   // State Transition Utils
