@@ -597,6 +597,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSlotProcessor() {
     slotProcessor =
         new SlotProcessor(
+            specProvider,
             recentChainData,
             syncService.getForwardSync(),
             forkChoice,

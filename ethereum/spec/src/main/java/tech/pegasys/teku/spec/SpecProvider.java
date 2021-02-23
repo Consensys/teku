@@ -186,6 +186,15 @@ public class SpecProvider {
     return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
   }
 
+  // ForkChoice utils
+  public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(currentTime, genesisTime);
+  }
+
+  public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
+    return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
+  }
+
   // State Transition Utils
   public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
       throws StateTransitionException {

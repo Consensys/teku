@@ -40,6 +40,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -59,13 +61,20 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(
-          recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannel, eventLogger);
+          specProvider,
+          recentChainData,
+          syncService,
+          forkChoice,
+          p2pNetwork,
+          slotEventsChannel,
+          eventLogger);
   private final UInt64 genesisTime = beaconState.getGenesis_time();
   private final UInt64 desiredSlot = UInt64.valueOf(100L);
 
@@ -272,7 +281,13 @@ public class SlotProcessorTest {
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
-            recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannel, eventLogger);
+            specProvider,
+            recentChainData,
+            syncService,
+            forkChoice,
+            p2pNetwork,
+            slotEventsChannel,
+            eventLogger);
     slotProcessor.setCurrentSlot(UInt64.valueOf(6));
     final UInt64 slot6StartTime = getSlotStartTime(UInt64.valueOf(6), genesisTime);
     final UInt64 slot7StartTime = getSlotStartTime(UInt64.valueOf(7), genesisTime);
