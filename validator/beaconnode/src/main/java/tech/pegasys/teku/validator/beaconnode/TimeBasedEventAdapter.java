@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
-import static tech.pegasys.teku.core.ForkChoiceUtil.getSlotStartTime;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -53,8 +50,10 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
 
   void start(final UInt64 genesisTime) {
     this.genesisTime = genesisTime;
-    final UInt64 currentSlot = getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
-    final UInt64 nextSlotStartTime = getSlotStartTime(currentSlot.plus(1), genesisTime);
+    final UInt64 currentSlot =
+        specProvider.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+    final UInt64 nextSlotStartTime =
+        specProvider.getSlotStartTime(currentSlot.plus(1), genesisTime);
     final UInt64 secondsPerSlot = UInt64.valueOf(specProvider.getSecondsPerSlot(currentSlot));
 
     // NOTE: seconds_per_slot currently based on genesis slot, and timings set up based on this
@@ -74,7 +73,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   private void onStartSlot(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = getCurrentSlot(scheduledTime, genesisTime);
+    final UInt64 slot = specProvider.getCurrentSlot(scheduledTime, genesisTime);
     if (isTooLate(scheduledTime, actualTime)) {
       LOG.warn(
           "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
@@ -85,7 +84,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   private void onAttestationCreationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = getCurrentSlot(scheduledTime, genesisTime);
+    final UInt64 slot = specProvider.getCurrentSlot(scheduledTime, genesisTime);
     if (isTooLate(scheduledTime, actualTime)) {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
@@ -94,7 +93,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   private void onAggregationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 slot = getCurrentSlot(scheduledTime, genesisTime);
+    final UInt64 slot = specProvider.getCurrentSlot(scheduledTime, genesisTime);
     if (isTooLate(scheduledTime, actualTime)) {
       LOG.warn("Skipping aggregation for slot {} due to unexpected delay in slot processing", slot);
       return;
@@ -103,7 +102,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   }
 
   private boolean isTooLate(final UInt64 scheduledTime, final UInt64 actualTime) {
-    final UInt64 currentSlot = getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+    final UInt64 currentSlot =
+        specProvider.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
     final UInt64 secondsPerSlot = UInt64.valueOf(specProvider.getSecondsPerSlot(currentSlot));
     return scheduledTime.plus(secondsPerSlot).isLessThan(actualTime);
   }
