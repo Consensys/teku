@@ -36,7 +36,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -176,10 +175,10 @@ public class ForkChoiceTestExecutor {
       attestationBuffer.removeIf(attestation -> processAttestation(forkChoice, attestation));
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-        while (ForkChoiceUtil.get_current_slot(transaction).compareTo((UInt64) step) < 0) {
-          ForkChoiceUtil.on_tick(transaction, transaction.getTime().plus(UInt64.ONE));
+        while (specProvider.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
+          specProvider.onTick(transaction, transaction.getTime().plus(UInt64.ONE));
         }
-        assertEquals(step, ForkChoiceUtil.get_current_slot(transaction));
+        assertEquals(step, specProvider.getCurrentSlot(transaction));
         transaction.commit().join();
       } else if (step instanceof SignedBeaconBlock) {
         for (Attestation attestation :
