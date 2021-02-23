@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
@@ -239,6 +240,25 @@ public class SpecProvider {
     return atSlot(validateableAttestation.getAttestation().getData().getSlot())
         .getForkChoiceUtil()
         .validate(store, validateableAttestation, maybeTargetState);
+  }
+
+  public BlockImportResult onBlock(
+      final MutableStore store,
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final IndexedAttestationCache indexedAttestationCache) {
+    return atBlock(signedBlock)
+        .getForkChoiceUtil()
+        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache);
+  }
+
+  public boolean blockDescendsFromLatestFinalizedBlock(
+      final BeaconBlock block,
+      final ReadOnlyStore store,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+    return atBlock(block)
+        .getForkChoiceUtil()
+        .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
   // State Transition Utils

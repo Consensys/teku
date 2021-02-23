@@ -32,6 +32,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@Deprecated
 public class ForkChoiceAttestationValidator {
 
   @CheckReturnValue

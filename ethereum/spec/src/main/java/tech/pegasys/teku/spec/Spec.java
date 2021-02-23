@@ -29,10 +29,10 @@ public class Spec {
   private final ValidatorsUtil validatorsUtil;
   private final AttestationUtil attestationUtil;
   private final BeaconStateUtil beaconStateUtil;
-  private final ForkChoiceUtil forkChoiceUtil;
   private final EpochProcessor epochProcessor;
   private final BlockProcessorUtil blockProcessorUtil;
   private final StateTransition stateTransition;
+  private final ForkChoiceUtil forkChoiceUtil;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -40,13 +40,14 @@ public class Spec {
     this.validatorsUtil = new ValidatorsUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
-    this.forkChoiceUtil = new ForkChoiceUtil(this.constants, beaconStateUtil, attestationUtil);
     this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
         new BlockProcessorUtil(this.constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =
         StateTransition.create(
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
+    this.forkChoiceUtil =
+        new ForkChoiceUtil(this.constants, beaconStateUtil, attestationUtil, stateTransition);
   }
 
   public SpecConstants getConstants() {
@@ -65,10 +66,6 @@ public class Spec {
     return beaconStateUtil;
   }
 
-  public ForkChoiceUtil getForkChoiceUtil() {
-    return forkChoiceUtil;
-  }
-
   public AttestationUtil getAttestationUtil() {
     return attestationUtil;
   }
@@ -83,5 +80,9 @@ public class Spec {
 
   public StateTransition getStateTransition() {
     return stateTransition;
+  }
+
+  public ForkChoiceUtil getForkChoiceUtil() {
+    return forkChoiceUtil;
   }
 }

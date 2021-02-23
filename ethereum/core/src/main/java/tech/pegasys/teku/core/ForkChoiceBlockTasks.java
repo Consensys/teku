@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@Deprecated
 public class ForkChoiceBlockTasks {
 
   /**
