@@ -96,6 +96,10 @@ public class SpecProvider {
     return getGenesisSpec().getConstants();
   }
 
+  public BeaconStateUtil getGenesisBeaconStateUtil() {
+    return getGenesisSpec().getBeaconStateUtil();
+  }
+
   public ForkManifest getForkManifest() {
     return forkManifest;
   }
