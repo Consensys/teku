@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.Collections;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ForkChoiceUtilTest {
@@ -99,11 +97,6 @@ class ForkChoiceUtilTest {
             UInt64.valueOf(4));
 
     assertThat(rootsBySlot).containsExactlyEntriesOf(getRootsForBlocks(5, 7));
-  }
-
-  private Checkpoint createCheckpointFromBlock(final SignedBeaconBlock block) {
-    final UInt64 epoch = compute_next_epoch_boundary(block.getSlot());
-    return new Checkpoint(epoch, block.getRoot());
   }
 
   @Test

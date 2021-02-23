@@ -37,7 +37,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
@@ -104,11 +103,6 @@ class ForkChoiceUtilTest {
             UInt64.valueOf(4));
 
     assertThat(rootsBySlot).containsExactlyEntriesOf(getRootsForBlocks(5, 7));
-  }
-
-  private Checkpoint createCheckpointFromBlock(final SignedBeaconBlock block) {
-    final UInt64 epoch = specProvider.computeNextEpochBoundary(block.getSlot());
-    return new Checkpoint(epoch, block.getRoot());
   }
 
   @Test
