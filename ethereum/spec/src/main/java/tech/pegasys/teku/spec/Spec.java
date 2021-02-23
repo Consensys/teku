@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
+import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class Spec {
@@ -28,6 +29,7 @@ public class Spec {
   private final ValidatorsUtil validatorsUtil;
   private final AttestationUtil attestationUtil;
   private final BeaconStateUtil beaconStateUtil;
+  private final ForkChoiceUtil forkChoiceUtil;
   private final EpochProcessor epochProcessor;
   private final BlockProcessorUtil blockProcessorUtil;
   private final StateTransition stateTransition;
@@ -37,6 +39,7 @@ public class Spec {
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.validatorsUtil = new ValidatorsUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
+    this.forkChoiceUtil = new ForkChoiceUtil(this.constants, beaconStateUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
@@ -60,6 +63,10 @@ public class Spec {
 
   public BeaconStateUtil getBeaconStateUtil() {
     return beaconStateUtil;
+  }
+
+  public ForkChoiceUtil getForkChoiceUtil() {
+    return forkChoiceUtil;
   }
 
   public AttestationUtil getAttestationUtil() {

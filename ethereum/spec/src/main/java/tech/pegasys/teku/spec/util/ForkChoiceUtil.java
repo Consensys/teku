@@ -11,12 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
-
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+package tech.pegasys.teku.spec.util;
 
 import java.time.Instant;
 import java.util.NavigableMap;
@@ -27,42 +22,46 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
-@Deprecated
 public class ForkChoiceUtil {
 
-  @Deprecated
-  public static UInt64 get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
+  private final SpecConstants specConstants;
+  private final BeaconStateUtil beaconStateUtil;
+
+  public ForkChoiceUtil(final SpecConstants specConstants, final BeaconStateUtil beaconStateUtil) {
+    this.specConstants = specConstants;
+    this.beaconStateUtil = beaconStateUtil;
+  }
+
+  public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
     UInt64 time = useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTime();
     return getCurrentSlot(time, store.getGenesisTime());
   }
 
-  @Deprecated
-  public static UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+  public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
     if (currentTime.isLessThan(genesisTime)) {
       return UInt64.ZERO;
     }
-    return currentTime.minus(genesisTime).dividedBy(SECONDS_PER_SLOT);
+    return currentTime.minus(genesisTime).dividedBy(specConstants.getSecondsPerSlot());
   }
 
-  @Deprecated
-  public static UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
-    return genesisTime.plus(slotNumber.times(SECONDS_PER_SLOT));
+  public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
+    return genesisTime.plus(slotNumber.times(specConstants.getSecondsPerSlot()));
   }
 
-  @Deprecated
-  public static UInt64 get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
-    return UInt64.valueOf(GENESIS_SLOT).plus(get_slots_since_genesis(store, useUnixTime));
+  public UInt64 getCurrentSlot(ReadOnlyStore store, boolean useUnixTime) {
+    return SpecConstants.GENESIS_SLOT.plus(getSlotsSinceGenesis(store, useUnixTime));
   }
 
-  @Deprecated
-  public static UInt64 get_current_slot(ReadOnlyStore store) {
-    return get_current_slot(store, false);
+  public UInt64 getCurrentSlot(ReadOnlyStore store) {
+    return getCurrentSlot(store, false);
   }
 
-  @Deprecated
-  public static UInt64 compute_slots_since_epoch_start(UInt64 slot) {
-    return slot.minus(compute_start_slot_at_epoch(compute_epoch_at_slot(slot)));
+  public UInt64 computeSlotsSinceEpochStart(UInt64 slot) {
+    final UInt64 epoch = beaconStateUtil.computeEpochAtSlot(slot);
+    final UInt64 epochStartSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    return slot.minus(epochStartSlot);
   }
 
   /**
@@ -75,14 +74,12 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  @Deprecated
-  public static Optional<Bytes32> get_ancestor(
+  public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
     return forkChoiceStrategy.getAncestor(root, slot);
   }
 
-  @Deprecated
-  public static NavigableMap<UInt64, Bytes32> getAncestors(
+  public NavigableMap<UInt64, Bytes32> getAncestors(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       Bytes32 root,
       UInt64 startSlot,
@@ -109,8 +106,7 @@ public class ForkChoiceUtil {
    * @return every block root from root (inclusive) to start slot (exclusive) traversing the chain
    *     backwards
    */
-  @Deprecated
-  public static NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
     final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
     Bytes32 parentRoot = root;
@@ -123,7 +119,7 @@ public class ForkChoiceUtil {
     return roots;
   }
 
-  private static void maybeAddRoot(
+  private void maybeAddRoot(
       final UInt64 startSlot,
       final UInt64 step,
       final NavigableMap<UInt64, Bytes32> roots,
@@ -148,23 +144,22 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
-  @Deprecated
-  public static void on_tick(MutableStore store, UInt64 time) {
+  public void onTick(MutableStore store, UInt64 time) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
     if (store.getTime().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
       return;
     }
-    UInt64 previous_slot = get_current_slot(store);
+    UInt64 previous_slot = getCurrentSlot(store);
 
     // Update store time
     store.setTime(time);
 
-    UInt64 current_slot = get_current_slot(store);
+    UInt64 current_slot = getCurrentSlot(store);
 
     // Not a new epoch, return
     if (!(current_slot.compareTo(previous_slot) > 0
-        && compute_slots_since_epoch_start(current_slot).equals(UInt64.ZERO))) {
+        && computeSlotsSinceEpochStart(current_slot).equals(UInt64.ZERO))) {
       return;
     }
 

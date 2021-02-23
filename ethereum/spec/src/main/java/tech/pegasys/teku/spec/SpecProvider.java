@@ -182,6 +182,10 @@ public class SpecProvider {
     return atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
   }
 
+  public UInt64 computeNextEpochBoundary(final UInt64 slot) {
+    return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
+  }
+
   // State Transition Utils
   public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
       throws StateTransitionException {
