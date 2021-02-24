@@ -30,8 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.BlockProposalUtil;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -70,7 +68,6 @@ class BlockFactoryTest {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private final StateTransition stateTransition = new StateTransition();
   private final SSZMutableList<Deposit> deposits = createDeposits();
   private final SSZMutableList<Attestation> attestations = createAttestations();
   private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
@@ -80,8 +77,6 @@ class BlockFactoryTest {
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =
       new BlockFactory(
-          new BlockProposalUtil(stateTransition),
-          stateTransition,
           attestationsPool,
           attesterSlashingPool,
           proposerSlashingPool,

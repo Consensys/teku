@@ -19,6 +19,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -26,7 +27,9 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -306,6 +309,38 @@ public class SpecProvider {
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     return atSlot(slot).getStateTransition().processSlots(preState, slot);
+  }
+
+  // Block Proposal
+  public BeaconBlockAndState createNewUnsignedBlock(
+      final UInt64 newSlot,
+      final int proposerIndex,
+      final BLSSignature randaoReveal,
+      final BeaconState blockSlotState,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final Bytes32 graffiti,
+      final SSZList<Attestation> attestations,
+      final SSZList<ProposerSlashing> proposerSlashings,
+      final SSZList<AttesterSlashing> attesterSlashings,
+      final SSZList<Deposit> deposits,
+      final SSZList<SignedVoluntaryExit> voluntaryExits)
+      throws StateTransitionException {
+    return atSlot(newSlot)
+        .getBlockProposalUtil()
+        .createNewUnsignedBlock(
+            newSlot,
+            proposerIndex,
+            randaoReveal,
+            blockSlotState,
+            parentBlockSigningRoot,
+            eth1Data,
+            graffiti,
+            attestations,
+            proposerSlashings,
+            attesterSlashings,
+            deposits,
+            voluntaryExits);
   }
 
   // Block Processing Utils
