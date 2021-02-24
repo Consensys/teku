@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
+@Deprecated
 public class BlockProposalUtil {
 
   private final StateTransition stateTransition;
@@ -39,6 +40,7 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
+  @Deprecated
   public BeaconBlockAndState createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,

@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -80,8 +79,6 @@ class BlockFactoryTest {
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =
       new BlockFactory(
-          new BlockProposalUtil(stateTransition),
-          stateTransition,
           attestationsPool,
           attesterSlashingPool,
           proposerSlashingPool,
