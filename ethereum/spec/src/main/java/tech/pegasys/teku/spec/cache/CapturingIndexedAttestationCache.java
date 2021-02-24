@@ -20,8 +20,10 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 
-class CapturingIndexedAttestationCache implements IndexedAttestationCache {
+public class CapturingIndexedAttestationCache implements IndexedAttestationCache {
   private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();
+
+  CapturingIndexedAttestationCache() {}
 
   @Override
   public IndexedAttestation computeIfAbsent(

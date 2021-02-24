@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -22,9 +23,14 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -34,6 +40,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -180,6 +187,78 @@ public class SpecProvider {
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
+  }
+
+  public UInt64 computeNextEpochBoundary(final UInt64 slot) {
+    return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
+  }
+
+  // ForkChoice utils
+  public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(currentTime, genesisTime);
+  }
+
+  public UInt64 getCurrentSlot(ReadOnlyStore store) {
+    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(store);
+  }
+
+  public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
+    return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
+  }
+
+  public Optional<Bytes32> getAncestor(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+    return getLatestSpec().getForkChoiceUtil().getAncestor(forkChoiceStrategy, root, slot);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestors(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      Bytes32 root,
+      UInt64 startSlot,
+      UInt64 step,
+      UInt64 count) {
+    return getLatestSpec()
+        .getForkChoiceUtil()
+        .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
+    return getLatestSpec()
+        .getForkChoiceUtil()
+        .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
+  }
+
+  public void onTick(MutableStore store, UInt64 time) {
+    getLatestSpec().getForkChoiceUtil().onTick(store, time);
+  }
+
+  public AttestationProcessingResult validateAttestation(
+      final ReadOnlyStore store,
+      final ValidateableAttestation validateableAttestation,
+      final Optional<BeaconState> maybeTargetState) {
+    return atSlot(validateableAttestation.getAttestation().getData().getSlot())
+        .getForkChoiceUtil()
+        .validate(store, validateableAttestation, maybeTargetState);
+  }
+
+  public BlockImportResult onBlock(
+      final MutableStore store,
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final IndexedAttestationCache indexedAttestationCache) {
+    return atBlock(signedBlock)
+        .getForkChoiceUtil()
+        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache);
+  }
+
+  public boolean blockDescendsFromLatestFinalizedBlock(
+      final BeaconBlock block,
+      final ReadOnlyStore store,
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+    return atBlock(block)
+        .getForkChoiceUtil()
+        .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
   // State Transition Utils

@@ -24,7 +24,7 @@ public interface IndexedAttestationCache {
     return NOOP;
   }
 
-  static IndexedAttestationCache capturing() {
+  static CapturingIndexedAttestationCache capturing() {
     return new CapturingIndexedAttestationCache();
   }
 

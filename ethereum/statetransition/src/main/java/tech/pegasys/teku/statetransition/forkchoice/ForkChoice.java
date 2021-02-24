@@ -22,10 +22,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -42,6 +38,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -49,23 +48,17 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ForkChoiceAttestationValidator attestationValidator;
+  private final SpecProvider specProvider;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
-  private final StateTransition stateTransition;
-  private final ForkChoiceBlockTasks forkChoiceBlockTasks;
 
   public ForkChoice(
-      final ForkChoiceAttestationValidator attestationValidator,
-      final ForkChoiceBlockTasks forkChoiceBlockTasks,
+      final SpecProvider specProvider,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData,
-      final StateTransition stateTransition) {
-    this.attestationValidator = attestationValidator;
-    this.forkChoiceBlockTasks = forkChoiceBlockTasks;
+      final RecentChainData recentChainData) {
+    this.specProvider = specProvider;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
-    this.stateTransition = stateTransition;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
@@ -144,18 +137,14 @@ public class ForkChoice {
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
-          final CapturingIndexedAttestationProvider indexedAttestationProvider =
-              new CapturingIndexedAttestationProvider();
+          final CapturingIndexedAttestationCache indexedAttestationCache =
+              IndexedAttestationCache.capturing();
 
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              forkChoiceBlockTasks.on_block(
-                  transaction,
-                  block,
-                  blockSlotState.get(),
-                  stateTransition,
-                  indexedAttestationProvider);
+              specProvider.onBlock(
+                  transaction, block, blockSlotState.get(), indexedAttestationCache);
 
           if (!result.isSuccessful()) {
             return result;
@@ -163,14 +152,14 @@ public class ForkChoice {
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
           updateForkChoiceForImportedBlock(block, result);
-          applyVotesFromBlock(forkChoiceStrategy, indexedAttestationProvider);
+          applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });
   }
 
   private void applyVotesFromBlock(
       final ForkChoiceStrategy forkChoiceStrategy,
-      final CapturingIndexedAttestationProvider indexedAttestationProvider) {
+      final CapturingIndexedAttestationCache indexedAttestationProvider) {
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
@@ -209,7 +198,7 @@ public class ForkChoice {
             maybeTargetState -> {
               final UpdatableStore store = recentChainData.getStore();
               final AttestationProcessingResult validationResult =
-                  attestationValidator.validate(store, attestation, maybeTargetState);
+                  specProvider.validateAttestation(store, attestation, maybeTargetState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);
