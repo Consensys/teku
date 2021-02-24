@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @Deprecated
-public class BlockProposalUtil {
+class BlockProposalUtil {
 
   private final StateTransition stateTransition;
 
