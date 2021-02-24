@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -37,6 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.statetransition.StateTransition;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 
 public class ForkChoiceUtil {
 

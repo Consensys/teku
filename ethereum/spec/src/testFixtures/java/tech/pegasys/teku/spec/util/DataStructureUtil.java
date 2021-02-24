@@ -367,7 +367,13 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockAndState randomSignedBlockAndState(final UInt64 slot) {
-    final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
+    return randomSignedBlockAndState(slot, randomBytes32());
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(
+      final UInt64 slot, final Bytes32 parentRoot) {
+    final BeaconBlockAndState blockAndState =
+        randomBlockAndState(slot, randomBeaconState(slot), parentRoot);
 
     final SignedBeaconBlock signedBlock =
         new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
@@ -384,7 +390,11 @@ public final class DataStructureUtil {
   }
 
   private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
-    final Bytes32 parentRoot = randomBytes32();
+    return randomBlockAndState(slot, state, randomBytes32());
+  }
+
+  private BeaconBlockAndState randomBlockAndState(
+      final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
     final BeaconBlockHeader latestHeader =

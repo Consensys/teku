@@ -20,13 +20,13 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
-import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
+import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingValidator implements OperationValidator<ProposerSlashing> {
