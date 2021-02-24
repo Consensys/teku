@@ -39,7 +39,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.7.0-RELEASE'
-    dependency 'tech.pegasys:jblst:0.3.3-SNAPSHOT'
+    dependency 'tech.pegasys:jblst:0.3.3-20210223.200954-2'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -55,6 +55,7 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
+
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.51.Final') {

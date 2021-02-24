@@ -101,6 +101,7 @@ allprojects {
     mavenCentral()
     maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
     maven { url "https://consensys.bintray.com/pegasys-repo/" }
+    maven { url "https://artifacts.consensys.net/public/maven/maven/"}
   }
 
   dependencies {
