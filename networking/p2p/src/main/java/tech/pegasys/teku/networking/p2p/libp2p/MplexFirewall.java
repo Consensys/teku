@@ -56,7 +56,7 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
           blockFrame = true;
         }
 
-        long curTime = System.currentTimeMillis();
+        long curTime = currentTimeSupplier.get();
         if (curTime - startCounterTime > ONE_SECOND) {
           startCounterTime = curTime;
           openFrameCounter = 0;
