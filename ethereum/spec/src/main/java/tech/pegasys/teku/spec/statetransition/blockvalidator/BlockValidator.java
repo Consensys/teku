@@ -22,9 +22,9 @@ import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 /**
- * Dedicated class which performs block validation (apart from {@link
- * tech.pegasys.teku.core.BlockProcessorUtil} The validation may be performed either synchronously
- * (then the methods return completed futures) or asynchronously.
+ * Dedicated class which performs block validation (apart from {@link BlockProcessorUtil} The
+ * validation may be performed either synchronously (then the methods return completed futures) or
+ * asynchronously.
  */
 public interface BlockValidator {
 

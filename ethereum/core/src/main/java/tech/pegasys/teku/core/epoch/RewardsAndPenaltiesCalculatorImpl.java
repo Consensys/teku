@@ -22,14 +22,15 @@ import static tech.pegasys.teku.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_P
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 
 import java.util.List;
-import tech.pegasys.teku.core.Deltas;
-import tech.pegasys.teku.core.Deltas.Delta;
-import tech.pegasys.teku.core.epoch.status.InclusionInfo;
-import tech.pegasys.teku.core.epoch.status.ValidatorStatus;
-import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.statetransition.epoch.Deltas;
+import tech.pegasys.teku.spec.statetransition.epoch.Deltas.Delta;
+import tech.pegasys.teku.spec.statetransition.epoch.RewardsAndPenaltiesCalculator;
+import tech.pegasys.teku.spec.statetransition.epoch.status.InclusionInfo;
+import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatus;
+import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated

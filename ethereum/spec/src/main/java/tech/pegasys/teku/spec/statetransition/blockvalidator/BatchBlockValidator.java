@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.statetransition.blockvalidator;
 
-import tech.pegasys.teku.core.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;

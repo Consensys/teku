@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 
 @Deprecated
 public class EpochProcessor {

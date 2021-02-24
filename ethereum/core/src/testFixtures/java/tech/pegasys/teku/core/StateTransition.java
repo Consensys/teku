@@ -23,15 +23,16 @@ import tech.pegasys.teku.core.blockvalidator.BatchBlockValidator;
 import tech.pegasys.teku.core.blockvalidator.BlockValidator;
 import tech.pegasys.teku.core.blockvalidator.BlockValidator.BlockValidationResult;
 import tech.pegasys.teku.core.epoch.EpochProcessor;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 @Deprecated
 class StateTransition {
