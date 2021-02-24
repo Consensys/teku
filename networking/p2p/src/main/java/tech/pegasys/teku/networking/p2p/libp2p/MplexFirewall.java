@@ -39,7 +39,7 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
     private final Connection connection;
     private int openFrameCounter = 0;
     private long startCounterTime = 0;
-    private Set<MuxId> remoteOpenedStreamIds = new HashSet<>();
+    private final Set<MuxId> remoteOpenedStreamIds = new HashSet<>();
 
     public MplexFirewallHandler(Connection connection) {
       this.connection = connection;
