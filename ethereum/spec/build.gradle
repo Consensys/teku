@@ -1,6 +1,6 @@
 dependencies {
     implementation project(':ssz')
-    // TODO(#3356) - Remove dependencies on core, datastructures, independent
+    // TODO(#3356) - Remove dependencies on datastructures, independent
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:independent')
 
