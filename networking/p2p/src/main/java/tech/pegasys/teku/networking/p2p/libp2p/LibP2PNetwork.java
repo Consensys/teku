@@ -69,6 +69,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final int REMOTE_OPEN_STREAMS_RATE_LIMIT = 256;
+  private static final int REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT = 256;
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -142,12 +143,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
                 b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
               }
               if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
+                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.ERROR, "wire.mux");
               }
 
               b.getConnectionHandlers().add(peerManager);
 
-              MplexFirewall mplexFirewall = new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT);
+              MplexFirewall mplexFirewall = new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT,
+                  REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
               b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
             });
   }

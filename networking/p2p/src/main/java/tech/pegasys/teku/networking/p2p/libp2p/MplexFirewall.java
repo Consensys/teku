@@ -13,23 +13,33 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.ChannelVisitor;
 import io.libp2p.core.Connection;
+import io.libp2p.etc.util.netty.mux.MuxId;
 import io.libp2p.mux.MuxFrame;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.async.FutureUtil;
 
 public class MplexFirewall implements ChannelVisitor<Connection> {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final long ONE_SECOND = 1000;
 
   private class MplexFirewallHandler extends ChannelDuplexHandler {
+
     private final Connection connection;
     private int openFrameCounter = 0;
     private long startCounterTime = 0;
+    private Set<MuxId> remoteOpenedStreamIds = new HashSet<>();
 
     public MplexFirewallHandler(Connection connection) {
       this.connection = connection;
@@ -40,6 +50,12 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
       MuxFrame muxFrame = (MuxFrame) msg;
       boolean blockFrame = false;
       if (muxFrame.getFlag() == MuxFrame.Flag.OPEN) {
+        remoteOpenedStreamIds.add(muxFrame.getId());
+        if (remoteOpenedStreamIds.size() > remoteParallelOpenStreamsLimit) {
+          remoteParallelOpenStreamLimitExceeded(this);
+          blockFrame = true;
+        }
+
         long curTime = System.currentTimeMillis();
         if (curTime - startCounterTime > ONE_SECOND) {
           startCounterTime = curTime;
@@ -51,10 +67,22 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
             blockFrame = true;
           }
         }
+      } else if (muxFrame.getFlag() == MuxFrame.Flag.CLOSE
+          || muxFrame.getFlag() == MuxFrame.Flag.RESET) {
+        remoteOpenedStreamIds.remove(muxFrame.getId());
       }
       if (!blockFrame) {
         ctx.fireChannelRead(msg);
       }
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+      MuxFrame muxFrame = (MuxFrame) msg;
+      if (muxFrame.getFlag() == MuxFrame.Flag.CLOSE || muxFrame.getFlag() == MuxFrame.Flag.RESET) {
+        remoteOpenedStreamIds.remove(muxFrame.getId());
+      }
+      ctx.write(msg, promise);
     }
 
     public Connection getConnection() {
@@ -63,14 +91,30 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
   }
 
   private final int remoteOpenStreamsRateLimit;
+  private final int remoteParallelOpenStreamsLimit;
+  private final Supplier<Long> currentTimeSupplier;
 
-  public MplexFirewall(int remoteOpenStreamsRateLimit) {
+  public MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit,
+      Supplier<Long> currentTimeSupplier) {
     this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
+    this.remoteParallelOpenStreamsLimit = remoteParallelOpenStreamsLimit;
+    this.currentTimeSupplier = currentTimeSupplier;
+  }
+
+  @VisibleForTesting
+  MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit) {
+    this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit,
+        System::currentTimeMillis);
+  }
+
+  protected void remoteParallelOpenStreamLimitExceeded(MplexFirewallHandler peerMplexHandler) {
+    LOG.debug("Abruptly closing peer connection due to exceeding parallel open streams limit");
+    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
   }
 
   protected void remoteOpenFrameRateLimitExceeded(MplexFirewallHandler peerMplexHandler) {
     LOG.debug("Abruptly closing peer connection due to exceeding open mplex frame rate limit");
-    peerMplexHandler.getConnection().close();
+    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
   }
 
   @Override
