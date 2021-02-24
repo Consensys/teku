@@ -39,7 +39,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.eth1.Eth1Address;
@@ -124,7 +123,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
-  protected final StateTransition stateTransition = new StateTransition();
   protected ForkChoice forkChoice;
 
   private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {

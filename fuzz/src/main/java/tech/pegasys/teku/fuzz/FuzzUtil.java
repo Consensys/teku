@@ -19,7 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSConstants;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -124,9 +123,8 @@ public class FuzzUtil {
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
-      StateTransition transition = new StateTransition();
       BeaconState postState =
-          transition.initiate(
+          specProvider.initiateStateTransition(
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);
