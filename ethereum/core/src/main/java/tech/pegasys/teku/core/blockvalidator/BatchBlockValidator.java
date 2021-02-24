@@ -16,6 +16,7 @@ package tech.pegasys.teku.core.blockvalidator;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.statetransition.blockvalidator.BatchSignatureVerifier;
 
 /**
  * Advanced block validator which uses {@link BatchSignatureVerifier} to verify all the BLS

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
+import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 

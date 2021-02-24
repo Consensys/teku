@@ -21,8 +21,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
@@ -34,6 +32,8 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 
 public class AggregateGenerator {
   private final AttestationGenerator attestationGenerator;

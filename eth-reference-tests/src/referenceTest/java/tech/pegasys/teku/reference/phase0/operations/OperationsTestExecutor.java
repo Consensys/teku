@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -33,6 +32,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.backing.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {

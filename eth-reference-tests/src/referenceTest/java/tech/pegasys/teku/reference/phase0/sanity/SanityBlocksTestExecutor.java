@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.BlsSetting;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
 
