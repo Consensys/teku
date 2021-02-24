@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -42,6 +41,7 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -54,13 +54,12 @@ public class AttestationValidator {
 
   private final Set<ValidatorAndTargetEpoch> receivedValidAttestations =
       LimitedSet.create(VALID_ATTESTATION_SET_SIZE);
+  private final SpecProvider specProvider;
   private final RecentChainData recentChainData;
-  private final ForkChoiceUtilWrapper forkChoiceUtilWrapper;
 
-  public AttestationValidator(
-      RecentChainData recentChainData, ForkChoiceUtilWrapper forkChoiceUtilWrapper) {
+  public AttestationValidator(final SpecProvider specProvider, RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
-    this.forkChoiceUtilWrapper = forkChoiceUtilWrapper;
+    this.specProvider = specProvider;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -180,8 +179,8 @@ public class AttestationValidator {
               }
 
               // The attestation's target block is an ancestor of the block named in the LMD vote
-              if (!forkChoiceUtilWrapper
-                  .get_ancestor(
+              if (!specProvider
+                  .getAncestor(
                       recentChainData.getForkChoiceStrategy().orElseThrow(),
                       data.getBeacon_block_root(),
                       compute_start_slot_at_epoch(data.getTarget().getEpoch()))
@@ -194,8 +193,8 @@ public class AttestationValidator {
               // aggregate.data.beacon_block_root
               Checkpoint finalizedCheckpoint =
                   recentChainData.getFinalizedCheckpoint().orElseThrow();
-              if (!forkChoiceUtilWrapper
-                  .get_ancestor(
+              if (!specProvider
+                  .getAncestor(
                       recentChainData.getForkChoiceStrategy().orElseThrow(),
                       data.getBeacon_block_root(),
                       compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch()))
