@@ -33,7 +33,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
@@ -142,7 +141,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunnerEventThread forkChoiceExecutor;
 
   private volatile ForkChoice forkChoice;
-  private volatile StateTransition stateTransition;
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2P2PNetwork p2pNetwork;
@@ -293,7 +291,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
-    initStateTransition();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -393,11 +390,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             finalConfig -> {
               this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
             });
-  }
-
-  private void initStateTransition() {
-    LOG.debug("BeaconChainController.initStateTransition()");
-    stateTransition = new StateTransition();
   }
 
   private void initForkChoice() {
