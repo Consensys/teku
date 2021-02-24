@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -244,6 +245,34 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
     assertThat(strategy.contains(block4.getRoot())).isTrue();
+  }
+
+  @Test
+  void applyUpdate_shouldPruneBlocksPriorToLatestFinalized() {
+    final StorageSystem storageSystem = initStorageSystem();
+    storageSystem.chainUpdater().advanceChainUntil(10);
+    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = createProtoArray(storageSystem);
+
+    final SignedBeaconBlock finalizedBlock = storageSystem.chainBuilder().getBlockAtSlot(4);
+    final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
+    forkChoiceStrategy.setPruneThreshold(0);
+    forkChoiceStrategy.applyUpdate(emptyList(), emptySet(), finalizedCheckpoint);
+
+    // Check that all blocks prior to latest finalized have been pruned
+    final List<SignedBlockAndState> allBlocks =
+        storageSystem.chainBuilder().streamBlocksAndStates().collect(Collectors.toList());
+    for (SignedBlockAndState block : allBlocks) {
+      if (block.getSlot().isLessThan(finalizedBlock.getSlot())) {
+        assertThat(forkChoiceStrategy.contains(block.getRoot())).isFalse();
+        assertThat(forkChoiceStrategy.blockSlot(block.getRoot())).isEmpty();
+        assertThat(forkChoiceStrategy.blockParentRoot(block.getRoot())).isEmpty();
+      } else {
+        assertThat(forkChoiceStrategy.contains(block.getRoot())).isTrue();
+        assertThat(forkChoiceStrategy.blockSlot(block.getRoot())).contains(block.getSlot());
+        assertThat(forkChoiceStrategy.blockParentRoot(block.getRoot()))
+            .contains(block.getParentRoot());
+      }
+    }
   }
 
   @Test
