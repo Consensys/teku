@@ -68,7 +68,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_REMOTE_OPEN_STREAM_PER_SECOND = 256;
+  private static final int REMOTE_OPEN_STREAMS_RATE_LIMIT = 256;
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -147,7 +147,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
               b.getConnectionHandlers().add(peerManager);
 
-              MplexFirewall mplexFirewall = new MplexFirewall(MAX_REMOTE_OPEN_STREAM_PER_SECOND);
+              MplexFirewall mplexFirewall = new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT);
               b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
             });
   }

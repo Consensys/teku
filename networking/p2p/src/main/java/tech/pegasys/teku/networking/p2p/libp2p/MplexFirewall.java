@@ -46,7 +46,7 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
           openFrameCounter = 0;
         } else {
           openFrameCounter++;
-          if (openFrameCounter > maxRemoteOpenStreamPerSecond) {
+          if (openFrameCounter > remoteOpenStreamsRateLimit) {
             remoteOpenFrameRateLimitExceeded(this);
             blockFrame = true;
           }
@@ -62,10 +62,10 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
     }
   }
 
-  private final int maxRemoteOpenStreamPerSecond;
+  private final int remoteOpenStreamsRateLimit;
 
-  public MplexFirewall(int maxRemoteOpenStreamPerSecond) {
-    this.maxRemoteOpenStreamPerSecond = maxRemoteOpenStreamPerSecond;
+  public MplexFirewall(int remoteOpenStreamsRateLimit) {
+    this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
   }
 
   protected void remoteOpenFrameRateLimitExceeded(MplexFirewallHandler peerMplexHandler) {
