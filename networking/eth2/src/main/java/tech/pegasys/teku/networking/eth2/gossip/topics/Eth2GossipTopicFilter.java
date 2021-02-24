@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopic;
 
 import com.google.common.base.Suppliers;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -38,9 +38,13 @@ import tech.pegasys.teku.util.config.Constants;
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
   private final Supplier<Set<String>> relevantTopics;
+  private final SpecProvider specProvider;
 
   public Eth2GossipTopicFilter(
-      final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
+      final RecentChainData recentChainData,
+      final GossipEncoding gossipEncoding,
+      final SpecProvider specProvider) {
+    this.specProvider = specProvider;
     relevantTopics =
         Suppliers.memoize(() -> computeRelevantTopics(recentChainData, gossipEncoding));
   }
@@ -64,8 +68,11 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .getNextFork()
         .map(
             nextFork ->
-                compute_fork_digest(
-                    nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))
+                specProvider
+                    .atEpoch(nextFork.getEpoch())
+                    .getBeaconStateUtil()
+                    .computeForkDigest(
+                        nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))
         .ifPresent(
             nextForkDigest -> addTopicsForForkDigest(gossipEncoding, nextForkDigest, topics));
     return topics;

@@ -38,6 +38,7 @@ public abstract class Node {
   public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";
 
   protected static final int REST_API_PORT = 9051;
+  protected static final int METRICS_PORT = 8008;
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";
@@ -116,9 +117,8 @@ public abstract class Node {
    * Copies contents of the given directory into node's working directory.
    *
    * @param tarFile
-   * @throws IOException
    */
-  public void copyContentsToWorkingDirectory(File tarFile) throws IOException {
+  public void copyContentsToWorkingDirectory(File tarFile) {
     container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
   }
 }

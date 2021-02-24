@@ -37,7 +37,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -131,7 +130,7 @@ class SignedAggregateAndProofValidatorTest {
     bestBlock = chainUpdater.addNewBestBlock();
 
     final AttestationValidator realAttestationValidator =
-        new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
+        new AttestationValidator(specProvider, recentChainData);
     when(attestationValidator.resolveStateForAttestation(any(), any()))
         .thenAnswer(
             i ->

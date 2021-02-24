@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@Deprecated
 public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -46,11 +47,7 @@ public class StateTransition {
   private final BlockValidator blockValidator;
 
   public StateTransition() {
-    this(createDefaultBlockValidator());
-  }
-
-  public StateTransition(BlockValidator blockValidator) {
-    this.blockValidator = blockValidator;
+    this.blockValidator = createDefaultBlockValidator();
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signed_block)
@@ -92,7 +89,7 @@ public class StateTransition {
       BeaconState postSlotState = process_slots(preState, signedBlock.getMessage().getSlot());
 
       return processAndValidateBlock(
-          signedBlock, indexedAttestationProvider, postSlotState, validateStateRootAndSignatures);
+          signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationProvider);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
@@ -101,9 +98,9 @@ public class StateTransition {
 
   public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
-      final IndexedAttestationProvider indexedAttestationProvider,
       final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures)
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationProvider indexedAttestationProvider)
       throws StateTransitionException {
     BlockValidator blockValidator =
         validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;

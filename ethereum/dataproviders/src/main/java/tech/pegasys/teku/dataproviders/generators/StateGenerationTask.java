@@ -23,19 +23,23 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlockSummary> {
   private static final Logger LOG = LogManager.getLogger();
+  private final SpecProvider specProvider;
   private final HashTree tree;
   private final BlockProvider blockProvider;
   private final Bytes32 blockRoot;
   private final StateRegenerationBaseSelector baseSelector;
 
   public StateGenerationTask(
+      final SpecProvider specProvider,
       final Bytes32 blockRoot,
       final HashTree tree,
       final BlockProvider blockProvider,
       final StateRegenerationBaseSelector baseSelector) {
+    this.specProvider = specProvider;
     this.tree = tree;
     this.blockProvider = blockProvider;
     this.blockRoot = blockRoot;
@@ -71,6 +75,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
       return this;
     }
     return new StateGenerationTask(
+        specProvider,
         blockRoot,
         tree,
         blockProvider,
@@ -89,7 +94,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
     }
     final StateAndBlockSummary base = maybeBase.get();
     return StateGenerator.create(
-            tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
+            specProvider, tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
         .regenerateStateForBlock(blockRoot)
         .thenApply(Optional::of);
   }

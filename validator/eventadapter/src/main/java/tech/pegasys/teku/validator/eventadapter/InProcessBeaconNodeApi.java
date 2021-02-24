@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -42,7 +43,8 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
   public static BeaconNodeApi create(
       final ServiceConfig services,
       final AsyncRunner asyncRunner,
-      final boolean useIndependentAttestationTiming) {
+      final boolean useIndependentAttestationTiming,
+      final SpecProvider specProvider) {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
@@ -56,7 +58,8 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
             new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
             services.getTimeProvider(),
             validatorTimingChannel,
-            useIndependentAttestationTiming);
+            useIndependentAttestationTiming,
+            specProvider);
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new IndependentTimerEventChannelEventAdapter(
             eventChannels, timeBasedEventAdapter, validatorTimingChannel);

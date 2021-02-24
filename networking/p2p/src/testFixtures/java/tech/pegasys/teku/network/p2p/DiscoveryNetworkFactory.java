@@ -38,6 +38,8 @@ import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -62,6 +64,7 @@ public class DiscoveryNetworkFactory {
   public class DiscoveryNetworkBuilder {
     private final List<String> staticPeers = new ArrayList<>();
     private final List<String> bootnodes = new ArrayList<>();
+    private SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
     private DiscoveryNetworkBuilder() {}
 
@@ -112,7 +115,8 @@ public class DiscoveryNetworkFactory {
                     topic -> true),
                 peerSelectionStrategy,
                 discoveryConfig,
-                config);
+                config,
+                specProvider);
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);

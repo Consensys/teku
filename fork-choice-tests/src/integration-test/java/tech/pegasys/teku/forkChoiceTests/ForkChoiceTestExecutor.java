@@ -36,10 +36,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.ForkChoiceUtil;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -49,6 +45,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -159,19 +157,13 @@ public class ForkChoiceTestExecutor {
   @MethodSource("loadForkChoiceTests")
   void runForkChoiceTests(
       BeaconState genesis, List<Object> steps, String testName, boolean protoArrayFC) {
-    StateTransition st = new StateTransition();
 
+    final SpecProvider specProvider = SpecProviderFactory.createMinimal();
     EventBus eventBus = new EventBus();
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     storageClient.initializeFromGenesis(genesis, UInt64.ZERO);
 
-    ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageClient,
-            st);
+    ForkChoice forkChoice = new ForkChoice(specProvider, new InlineEventThread(), storageClient);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -183,10 +175,10 @@ public class ForkChoiceTestExecutor {
       attestationBuffer.removeIf(attestation -> processAttestation(forkChoice, attestation));
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-        while (ForkChoiceUtil.get_current_slot(transaction).compareTo((UInt64) step) < 0) {
-          ForkChoiceUtil.on_tick(transaction, transaction.getTime().plus(UInt64.ONE));
+        while (specProvider.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
+          specProvider.onTick(transaction, transaction.getTime().plus(UInt64.ONE));
         }
-        assertEquals(step, ForkChoiceUtil.get_current_slot(transaction));
+        assertEquals(step, specProvider.getCurrentSlot(transaction));
         transaction.commit().join();
       } else if (step instanceof SignedBeaconBlock) {
         for (Attestation attestation :

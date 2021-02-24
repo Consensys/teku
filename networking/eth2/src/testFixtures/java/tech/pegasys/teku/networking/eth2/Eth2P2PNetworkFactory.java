@@ -201,7 +201,7 @@ public class Eth2P2PNetworkFactory {
         final AttestationSubnetTopicProvider subnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
-            new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
+            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, specProvider);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =
@@ -234,7 +234,8 @@ public class Eth2P2PNetworkFactory {
                     reputationManager,
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
-                config.getNetworkConfig());
+                config.getNetworkConfig(),
+                config.getSpecProvider());
 
         return new ActiveEth2P2PNetwork(
             specProvider,
