@@ -18,8 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.ZERO_HASH;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.blockvalidator.BatchBlockValidator;
 import tech.pegasys.teku.core.blockvalidator.BlockValidator;
@@ -37,8 +35,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @Deprecated
 class StateTransition {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private static BlockValidator createDefaultBlockValidator() {
     return new BatchBlockValidator();
@@ -91,7 +87,6 @@ class StateTransition {
       return processAndValidateBlock(
           signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationProvider);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }
   }
@@ -118,7 +113,6 @@ class StateTransition {
 
       return postState;
     } catch (final IllegalArgumentException | BlockProcessingException e) {
-      LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }
   }
@@ -200,7 +194,6 @@ class StateTransition {
       }
       return state;
     } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage(), e);
       throw new SlotProcessingException(e);
     }
   }
