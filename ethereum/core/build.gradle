@@ -1,4 +1,6 @@
 dependencies {
+  api project(':ethereum:spec')
+
   implementation project(':bls')
   implementation project(':data')
   implementation project(':infrastructure:collections')
@@ -21,11 +23,14 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
 
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
   testFixturesImplementation 'org.apache.tuweni:tuweni-crypto'
+
+  testFixturesApi testFixtures(project(':ethereum:spec'))
 
   testFixturesImplementation project(':bls')
   testFixturesImplementation testFixtures(project(':bls'))
