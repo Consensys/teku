@@ -32,13 +32,13 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
@@ -75,11 +75,11 @@ public class TransitionCommand implements Runnable {
           List<String> blocks) {
     return processStateTransition(
         params,
-        (state, stateTransition) -> {
+        (specProvider, state) -> {
           if (blocks != null) {
             for (String blockPath : blocks) {
               SignedBeaconBlock block = readBlock(blockPath);
-              state = stateTransition.initiate(state, block);
+              state = specProvider.initiateStateTransition(state, block);
             }
           }
           return state;
@@ -108,26 +108,27 @@ public class TransitionCommand implements Runnable {
           long number) {
     return processStateTransition(
         params,
-        (state, stateTransition) -> {
+        (specProvider, state) -> {
           UInt64 targetSlot = UInt64.valueOf(number);
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          return stateTransition.process_slots(state, targetSlot);
+          return specProvider.processSlots(state, targetSlot);
         });
   }
 
   private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
+    final SpecProvider specProvider =
+        params.eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
     Constants.setConstants(params.eth2NetworkOptions.getNetworkConfiguration().getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
       BeaconState state = readState(inData);
 
-      final StateTransition stateTransition = new StateTransition();
       try {
-        BeaconState result = transition.applyTransition(state, stateTransition);
+        BeaconState result = transition.applyTransition(specProvider, state);
         out.write(result.sszSerialize().toArrayUnsafe());
         return 0;
       } catch (final StateTransitionException
@@ -205,7 +206,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private interface StateTransitionFunction {
-    BeaconState applyTransition(BeaconState state, StateTransition stateTransition)
+    BeaconState applyTransition(final SpecProvider specProvider, BeaconState state)
         throws StateTransitionException, EpochProcessingException, SlotProcessingException,
             IOException;
   }

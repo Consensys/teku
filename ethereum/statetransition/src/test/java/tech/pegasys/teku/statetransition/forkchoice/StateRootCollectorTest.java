@@ -22,18 +22,21 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StateRootCollectorTest {
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final StorageSystem storageSystem =
+      InMemoryStorageSystemBuilder.create().specProvider(specProvider).build();
   private final StoreTransaction transaction = mock(StoreTransaction.class);
   private SignedBlockAndState genesis;
 
@@ -74,12 +77,11 @@ class StateRootCollectorTest {
 
     StateRootCollector.addParentStateRoots(state, transaction);
 
-    final StateTransition stateTransition = new StateTransition();
     BeaconState historicState = genesis.getState();
     for (int i = 2; i < SLOTS_PER_HISTORICAL_ROOT + 2; i++) {
       final UInt64 slot = UInt64.valueOf(i);
       // Regenerate states to ensure we don't wrap around and record the wrong values.
-      historicState = stateTransition.process_slots(historicState, slot);
+      historicState = specProvider.processSlots(historicState, slot);
       verify(transaction)
           .putStateRoot(
               historicState.hashTreeRoot(), new SlotAndBlockRoot(slot, genesis.getRoot()));

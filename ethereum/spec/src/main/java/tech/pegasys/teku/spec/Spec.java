@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
+import tech.pegasys.teku.spec.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
@@ -33,6 +34,7 @@ public class Spec {
   private final BlockProcessorUtil blockProcessorUtil;
   private final StateTransition stateTransition;
   private final ForkChoiceUtil forkChoiceUtil;
+  private final BlockProposalUtil blockProposalUtil;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -48,6 +50,7 @@ public class Spec {
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     this.forkChoiceUtil =
         new ForkChoiceUtil(this.constants, beaconStateUtil, attestationUtil, stateTransition);
+    this.blockProposalUtil = new BlockProposalUtil(stateTransition);
   }
 
   public SpecConstants getConstants() {
@@ -84,5 +87,9 @@ public class Spec {
 
   public ForkChoiceUtil getForkChoiceUtil() {
     return forkChoiceUtil;
+  }
+
+  public BlockProposalUtil getBlockProposalUtil() {
+    return blockProposalUtil;
   }
 }
