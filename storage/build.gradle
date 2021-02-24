@@ -33,6 +33,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation project(':ethereum:networks')
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':protoarray'))
   testImplementation testFixtures(project(':util'))
@@ -45,6 +46,7 @@ dependencies {
   testFixturesApi project(':storage')
   testFixturesApi project(':storage:api')
   testFixturesApi project(':ethereum:datastructures')
+  testFixturesApi project(':ethereum:spec')
 
   testFixturesImplementation project(':ethereum:dataproviders')
   testFixturesImplementation testFixtures(project(':bls'))

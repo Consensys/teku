@@ -28,6 +28,7 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   testImplementation testFixtures(project(':infrastructure:async'))
@@ -44,6 +45,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':validator:client')
 }

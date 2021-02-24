@@ -5,6 +5,7 @@ dependencies {
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
   testFixturesImplementation project(':ethereum:datastructures')
+  testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation project(':pow')

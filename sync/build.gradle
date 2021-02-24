@@ -23,6 +23,7 @@ dependencies {
 
     testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':ethereum:statetransition'))
     testImplementation project(':ethereum:weaksubjectivity')
     testImplementation testFixtures(project(':infrastructure:async'))

@@ -31,6 +31,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation project(':ethereum:networks')
@@ -44,12 +45,14 @@ dependencies {
 
   integrationTestImplementation testFixtures(project(':ethereum:core'))
   integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+  integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))
   integrationTestImplementation testFixtures(project(':util'))
   integrationTestImplementation testFixtures(project(':infrastructure:events'))
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
   testFixturesImplementation project(':ethereum:networks')

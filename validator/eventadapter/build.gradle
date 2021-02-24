@@ -21,4 +21,5 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
 }

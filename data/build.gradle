@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:spec')
   implementation project(':pow')
   implementation project(':util')
 

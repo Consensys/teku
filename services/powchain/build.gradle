@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':infrastructure:events')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:spec')
   implementation project(':ethereum:networks')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')

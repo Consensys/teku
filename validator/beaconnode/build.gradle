@@ -18,6 +18,7 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(':ethereum:networks')
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:time'))

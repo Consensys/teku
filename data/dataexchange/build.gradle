@@ -6,5 +6,6 @@ dependencies {
     implementation project(':data:yaml')
     implementation project(':data:signingrecord')
     implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:spec')
     implementation project(':infrastructure:logging')
 }

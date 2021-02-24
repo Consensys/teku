@@ -4,8 +4,10 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:spec')
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ssz'))
 }
