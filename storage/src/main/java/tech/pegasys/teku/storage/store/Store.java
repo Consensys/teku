@@ -313,7 +313,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        this, lock, storageUpdateChannel, updateHandler);
+        specProvider, this, lock, storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -472,13 +472,14 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(
-        new StateAtSlotTask(checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
+        new StateAtSlotTask(
+            specProvider, checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
-        new StateAtSlotTask(slotAndBlockRoot, this::retrieveBlockState));
+        new StateAtSlotTask(specProvider, slotAndBlockRoot, this::retrieveBlockState));
   }
 
   @Override
@@ -495,7 +496,9 @@ class Store implements UpdatableStore {
     return checkpointStates
         .perform(
             new StateAtSlotTask(
-                finalized.getCheckpoint().toSlotAndBlockRoot(), fromAnchor(finalized)))
+                specProvider,
+                finalized.getCheckpoint().toSlotAndBlockRoot(),
+                fromAnchor(finalized)))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
@@ -509,6 +512,7 @@ class Store implements UpdatableStore {
       Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     return checkpointStates.perform(
         new StateAtSlotTask(
+            specProvider,
             checkpoint.toSlotAndBlockRoot(),
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }

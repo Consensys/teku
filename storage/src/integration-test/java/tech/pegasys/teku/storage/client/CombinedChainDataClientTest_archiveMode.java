@@ -148,7 +148,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
 
     final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual =
         client.getCheckpointStateAtEpoch(finalizedEpoch);
@@ -173,7 +173,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
 
     final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual =
         client.getCheckpointStateAtEpoch(finalizedEpoch);

@@ -32,7 +32,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -295,7 +294,7 @@ class ForkChoiceTest {
   private BeaconState processSlots(final SignedBlockAndState block, final BeaconState preState) {
     if (preState.getSlot().isLessThan(block.getSlot())) {
       try {
-        return new StateTransition().process_slots(preState, block.getSlot());
+        return specProvider.processSlots(preState, block.getSlot());
       } catch (final SlotProcessingException | EpochProcessingException e) {
         Assertions.fail("State transition failed", e);
       }
