@@ -36,11 +36,14 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBui
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitGossipIntegrationTest {
 
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
@@ -52,8 +55,9 @@ public class VoluntaryExitGossipIntegrationTest {
   @Test
   public void shouldGossipVoluntaryExitToPeers() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    final SpecConstants constants = specProvider.getGenesisSpecConstants();
     final UInt64 blockSlot =
-        Constants.SHARD_COMMITTEE_PERIOD.plus(2).times(Constants.SLOTS_PER_EPOCH);
+        constants.getShardCommitteePeriod().plus(2).times(constants.getSlotsPerEpoch());
 
     // Set up publishers & consumers
     final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =

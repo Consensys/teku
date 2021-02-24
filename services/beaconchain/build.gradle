@@ -32,6 +32,7 @@ dependencies {
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':util'))
 

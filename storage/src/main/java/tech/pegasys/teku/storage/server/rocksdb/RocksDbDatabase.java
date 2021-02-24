@@ -47,7 +47,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -480,12 +479,13 @@ public class RocksDbDatabase implements Database {
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
     final long clockTime = timeSupplier.get();
-    final UInt64 slotTime = ForkChoiceUtil.getSlotStartTime(finalizedState.getSlot(), genesisTime);
+    final UInt64 slotTime = specProvider.getSlotStartTime(finalizedState.getSlot(), genesisTime);
     final UInt64 time = slotTime.max(clockTime);
 
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
+            .specProvider(specProvider)
             .time(time)
             .anchor(maybeAnchor)
             .genesisTime(genesisTime)

@@ -17,6 +17,8 @@ dependencies {
     testFixturesApi project(':pow')
     testFixturesApi 'com.google.guava:guava'
 
+    // TODO(#3356) - Remove dependency on core
+    testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':bls'))
 
     testImplementation 'org.assertj:assertj-core'

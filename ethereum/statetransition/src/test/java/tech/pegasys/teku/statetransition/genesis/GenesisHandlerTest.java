@@ -45,7 +45,11 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandlerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private SpecProvider specProvider;
+  private final SpecConstants specConstants =
+      TestConstantsLoader.loadConstantsBuilder("minimal")
+          .minGenesisActiveValidatorCount(VALIDATOR_KEYS.size())
+          .build();
+  private SpecProvider specProvider = SpecProviderFactory.create(specConstants);
 
   private static final List<DepositData> INITIAL_DEPOSIT_DATA =
       new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
@@ -63,7 +67,7 @@ public class GenesisHandlerTest {
               })
           .collect(toList());
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
 
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final TimeProvider timeProvider = mock(TimeProvider.class);
@@ -71,12 +75,6 @@ public class GenesisHandlerTest {
 
   @BeforeEach
   public void setup() {
-    final SpecConstants specConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal")
-            .minGenesisActiveValidatorCount(VALIDATOR_KEYS.size())
-            .build();
-    specProvider = SpecProviderFactory.create(specConstants);
-
     genesisHandler =
         new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);

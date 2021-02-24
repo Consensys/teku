@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
-
 import com.google.common.eventbus.EventBus;
 import java.util.Collections;
 import java.util.Map;
@@ -27,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -141,11 +138,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         StoreBuilder.forkChoiceStoreBuilder(
                 asyncRunner,
                 metricsSystem,
+                specProvider,
                 blockProvider,
                 stateProvider,
                 anchorPoint,
-                currentTime,
-                specProvider)
+                currentTime)
             .storeConfig(storeConfig)
             .build();
 
@@ -204,13 +201,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead
         .map(
             head ->
-                ForkChoiceUtil.getAncestors(
+                specProvider.getAncestors(
                     store.getForkChoiceStrategy(), head.getRoot(), startSlot, step, count))
         .orElseGet(TreeMap::new);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
-    return ForkChoiceUtil.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
+    return specProvider.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
@@ -341,11 +338,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     if (isPreGenesis()) {
       return Optional.empty();
     }
-    return Optional.of(ForkChoiceUtil.get_current_slot(store));
+    return Optional.of(specProvider.getCurrentSlot(store));
   }
 
   public Optional<UInt64> getCurrentEpoch() {
-    return getCurrentSlot().map(slot -> specProvider.computeEpochAtSlot(slot));
+    return getCurrentSlot().map(specProvider::computeEpochAtSlot);
   }
 
   /** @return The number of slots between our chainhead and the current slot by time */
@@ -479,7 +476,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot, final Bytes32 headBlockRoot) {
-    return getForkChoiceStrategy().flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
+    return getForkChoiceStrategy()
+        .flatMap(strategy -> specProvider.getAncestor(strategy, headBlockRoot, slot));
   }
 
   public UInt64 getFinalizedEpoch() {

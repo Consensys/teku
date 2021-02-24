@@ -17,12 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -48,7 +44,6 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -57,6 +52,7 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -497,34 +493,5 @@ public final class BlockProcessorUtil {
       }
     }
     return true;
-  }
-
-  public interface IndexedAttestationCache {
-    IndexedAttestationCache NOOP = (att, supplier) -> supplier.get();
-
-    static IndexedAttestationCache noop() {
-      return NOOP;
-    }
-
-    static IndexedAttestationCache capturing() {
-      return new CapturingIndexedAttestationCache();
-    }
-
-    IndexedAttestation computeIfAbsent(
-        Attestation attestation, Supplier<IndexedAttestation> attestationProvider);
-  }
-
-  public static class CapturingIndexedAttestationCache implements IndexedAttestationCache {
-    private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();
-
-    @Override
-    public IndexedAttestation computeIfAbsent(
-        final Attestation attestation, final Supplier<IndexedAttestation> attestationProvider) {
-      return indexedAttestations.computeIfAbsent(attestation, __ -> attestationProvider.get());
-    }
-
-    public Collection<IndexedAttestation> getIndexedAttestations() {
-      return indexedAttestations.values();
-    }
   }
 }

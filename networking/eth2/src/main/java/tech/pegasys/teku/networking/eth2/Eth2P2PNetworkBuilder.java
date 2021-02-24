@@ -157,7 +157,7 @@ public class Eth2P2PNetworkBuilder {
     PreparedGossipMessageFactory defaultMessageFactory =
         (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
     final GossipTopicFilter gossipTopicsFilter =
-        new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
+        new Eth2GossipTopicFilter(recentChainData, gossipEncoding, specProvider);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
     final LibP2PNetwork p2pNetwork =
@@ -192,7 +192,8 @@ public class Eth2P2PNetworkBuilder {
             reputationManager,
             Collections::shuffle),
         discoConfig,
-        networkConfig);
+        networkConfig,
+        config.getSpecProvider());
   }
 
   private void validate() {

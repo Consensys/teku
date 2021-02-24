@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Deposit;
@@ -42,41 +39,51 @@ import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.networks.TestConstantsLoader;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProviderTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private SpecProvider specProvider;
+  private DataStructureUtil dataStructureUtil;
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private List<tech.pegasys.teku.pow.event.Deposit> allSeenDepositsList;
-  private final DepositProvider depositProvider =
-      new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache);
-  private final Eth1Data randomEth1Data = dataStructureUtil.randomEth1Data();
+  private DepositProvider depositProvider;
+  private Eth1Data randomEth1Data;
 
   private MerkleTree depositMerkleTree;
 
-  @BeforeEach
-  void setUp() {
-    depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+  void setup(final int maxDeposits) {
+    when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
+
+    SpecConstants specConstants =
+        TestConstantsLoader.loadConstantsBuilder("minimal").maxDeposits(maxDeposits).build();
+    specProvider = SpecProviderFactory.create(specConstants);
+    dataStructureUtil = new DataStructureUtil(specProvider);
+    depositProvider =
+        new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, specProvider);
+    depositMerkleTree =
+        new OptimizedMerkleTree(
+            specProvider.getGenesisSpecConstants().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
     createDepositEvents(40);
-  }
-
-  @AfterEach
-  void tearDown() {
-    Constants.setConstants("minimal");
+    randomEth1Data = dataStructureUtil.randomEth1Data();
   }
 
   @Test
   void stateEth1DepositIndexIsEqualToEth1DataDepositCount_NoDepositReturned() {
-    Constants.MAX_DEPOSITS = 5;
+    setup(5);
     mockStateEth1DepositIndex(2);
     mockEth1DataDepositCount(2);
     mockDepositsFromEth1Block(0, 10);
@@ -86,10 +93,9 @@ public class DepositProviderTest {
 
   @Test
   void numberOfDepositsThatCanBeIncludedLessThanMaxDeposits() {
+    setup(16);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(20);
-
-    Constants.MAX_DEPOSITS = 16;
 
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
@@ -101,15 +107,16 @@ public class DepositProviderTest {
 
   @Test
   void numberOfDepositsGetsAdjustedAccordingToOurEth1DataVote() {
+    setup(30);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(20);
-
-    Constants.MAX_DEPOSITS = 30;
 
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 30);
 
-    int enoughVoteCount = Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH;
+    int enoughVoteCount =
+        specProvider.getGenesisSpecConstants().getEpochsPerEth1VotingPeriod()
+            * specProvider.slotsPerEpoch(SpecConstants.GENESIS_EPOCH);
     UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
     SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
@@ -123,10 +130,9 @@ public class DepositProviderTest {
 
   @Test
   void numberOfDepositsThatCanBeIncludedMoreThanMaxDeposits() {
+    setup(10);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(20);
-
-    Constants.MAX_DEPOSITS = 10;
 
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
@@ -138,6 +144,7 @@ public class DepositProviderTest {
 
   @Test
   void depositsWithFinalizedIndicesGetPrunedFromMap() {
+    setup(16);
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
     mockStateEth1DepositIndex(10);
     mockDepositsFromEth1Block(0, 20);
@@ -153,6 +160,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldDelegateOnEth1BlockToEth1DataCache() {
+    setup(16);
     final Bytes32 blockHash = dataStructureUtil.randomBytes32();
     final UInt64 blockTimestamp = dataStructureUtil.randomUInt64();
     depositProvider.onEth1Block(blockHash, blockTimestamp);
@@ -161,6 +169,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldNotifyEth1DataCacheOfDepositBlocks() {
+    setup(16);
     final tech.pegasys.teku.pow.event.Deposit deposit =
         dataStructureUtil.randomDepositEvent(UInt64.ZERO);
     final DepositsFromBlockEvent event =
@@ -181,6 +190,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldNotThrowMissingDepositsExceptionWhenAllKnownDepositsHaveBeenIncluded() {
+    setup(16);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(5);
     mockDepositsFromEth1Block(0, 5);
@@ -189,6 +199,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldThrowMissingDepositsExceptionWhenRequiredDepositsAreNotAvailable() {
+    setup(16);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(10);
     assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
@@ -198,9 +209,9 @@ public class DepositProviderTest {
 
   @Test
   void shouldThrowMissingDepositsExceptionWhenAllDepositsRequiredForStateNotAvailable() {
+    setup(1);
     // To generate a valid proof we need the deposits up to state deposit count
     // So fail even if we could have filled MAX_DEPOSITS
-    Constants.MAX_DEPOSITS = 1;
     mockDepositsFromEth1Block(0, 8);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(10);
@@ -212,7 +223,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposit() {
-    Constants.MAX_DEPOSITS = 5;
+    setup(5);
     mockDepositsFromEth1Block(0, 7);
     // Deposit 7 is missing
     mockDepositsFromEth1Block(8, 10);
@@ -226,7 +237,7 @@ public class DepositProviderTest {
 
   @Test
   void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
-    Constants.MAX_DEPOSITS = 5;
+    setup(5);
     mockDepositsFromEth1Block(0, 7);
     // Deposits 7,8 are missing
     mockDepositsFromEth1Block(9, 10);
@@ -239,13 +250,14 @@ public class DepositProviderTest {
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
+    final Spec genesisSpec = specProvider.getGenesisSpec();
     deposits.forEach(
         deposit ->
             assertThat(
-                    is_valid_merkle_branch(
+                    BeaconStateUtil.isValidMerkleBranch(
                         deposit.getData().hashTreeRoot(),
                         deposit.getProof(),
-                        Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+                        genesisSpec.getConstants().getDepositContractTreeDepth() + 1,
                         ((DepositWithIndex) deposit).getIndex().intValue(),
                         depositMerkleTree.getRoot()))
                 .isTrue());

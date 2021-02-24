@@ -35,9 +35,12 @@ import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   @Test
@@ -58,7 +61,8 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(specProvider, tree, genesis, blockProvider);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(lastBlockAndState.getRoot());
     assertThat(result).isCompletedWithValue(lastBlockAndState);
@@ -81,7 +85,8 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(specProvider, tree, genesis, blockProvider);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(genesis.getRoot());
     final StateAndBlockSummary expected = StateAndBlockSummary.create(genesis.getState());
@@ -132,7 +137,8 @@ public class StateGeneratorTest {
     blockMap.remove(missingBlock.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(specProvider, tree, genesis, blockProvider);
     processor.accept(generator, missingBlock);
   }
 

@@ -16,24 +16,26 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class DutyMetricsTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(100_000);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final StubTimeProvider timeProvider =
       StubTimeProvider.withTimeInSeconds(GENESIS_TIME.longValue());
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final MetricsHistogram attestationHistogram = mock(MetricsHistogram.class);
   private final DutyMetrics metrics =
-      new DutyMetrics(timeProvider, recentChainData, attestationHistogram);
+      new DutyMetrics(timeProvider, recentChainData, attestationHistogram, specProvider);
 
   @BeforeEach
   void setUp() {
@@ -64,6 +66,8 @@ class DutyMetricsTest {
   }
 
   private UInt64 expectedAttestationTime(final UInt64 slot) {
-    return slot.times(SECONDS_PER_SLOT).plus(SECONDS_PER_SLOT / 3).times(1000);
+    return slot.times(specProvider.getSecondsPerSlot(slot))
+        .plus(specProvider.getSecondsPerSlot(slot) / 3)
+        .times(1000);
   }
 }

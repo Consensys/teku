@@ -62,7 +62,9 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
     final int finalizedStateCacheSize =
         specProvider.getSlotsPerEpoch(SpecConstants.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        eventBus, database, new FinalizedStateCache(database, finalizedStateCacheSize, true));
+        eventBus,
+        database,
+        new FinalizedStateCache(specProvider, database, finalizedStateCacheSize, true));
   }
 
   public void start() {
