@@ -145,8 +145,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependency 'org.hyperledger.besu.internal:metrics-core:20.10.4'
-    dependency 'org.hyperledger.besu:plugin-api:20.10.4'
+    dependency('org.hyperledger.besu.internal:metrics-core:21.1.0') {
+      // Besu pom declares incorrect internal dependencies.
+      // We already include plugin-api as a direct dependency so just exclude the incorrect dep.
+      exclude 'besu:plugin-api'
+    }
+    dependency 'org.hyperledger.besu:plugin-api:21.1.0'
 
     dependency "org.testcontainers:testcontainers:1.15.0-rc2"
     dependency "org.testcontainers:junit-jupiter:1.15.0-rc2"
