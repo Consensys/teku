@@ -69,7 +69,6 @@ class BlockFactoryTest {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private final StateTransition stateTransition = new StateTransition();
   private final SSZMutableList<Deposit> deposits = createDeposits();
   private final SSZMutableList<Attestation> attestations = createAttestations();
   private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
