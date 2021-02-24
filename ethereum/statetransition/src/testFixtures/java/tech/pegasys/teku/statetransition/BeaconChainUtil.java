@@ -48,7 +48,10 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
+/** @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem */
+@Deprecated
 public class BeaconChainUtil {
+  // TODO(#3356) Inject spec provider rather than using this default
   private static final SpecProvider DEFAULT_SPEC_PROVIDER = SpecProviderFactory.createMinimal();
 
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
