@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -32,6 +33,11 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
 
   public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public SszPrimitiveListImpl(
+      SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+    super(schema, backingNode, cache);
   }
 
   @Override

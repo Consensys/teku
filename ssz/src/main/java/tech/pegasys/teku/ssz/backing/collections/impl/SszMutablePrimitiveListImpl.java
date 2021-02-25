@@ -38,7 +38,7 @@ public class SszMutablePrimitiveListImpl<
   @Override
   protected SszPrimitiveListImpl<ElementT, SszElementT> createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszElementT> childrenCache) {
-    return new SszPrimitiveListImpl<>(getSchema(), backingNode);
+    return new SszPrimitiveListImpl<>(getSchema(), backingNode, childrenCache);
   }
 
   @Override
