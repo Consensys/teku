@@ -1,5 +1,5 @@
 dependencies {
-implementation project(':ethereum:spec')
+  implementation project(':ethereum:spec')
   implementation project(':pow')
   implementation project(':util')
 

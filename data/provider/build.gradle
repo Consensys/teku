@@ -5,7 +5,7 @@ dependencies {
     implementation project(':data')
     implementation project(':data:serializer')
     implementation project(':ethereum:core')
-implementation project(':ethereum:spec')
+    implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
     implementation project(':networking:eth2')
@@ -20,7 +20,7 @@ implementation project(':ethereum:spec')
     implementation 'org.apache.tuweni:tuweni-units'
 
     testImplementation testFixtures(project(':ethereum:core'))
-testImplementation testFixtures(project(':ethereum:spec'))
+    testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':bls'))
