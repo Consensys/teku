@@ -83,7 +83,8 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
         // Track only RESET since CLOSE from local doesn't close the stream for writing from remote
         remoteOpenedStreamIds.remove(muxFrame.getId());
       }
-      ctx.write(msg, promise);
+      // ignoring since the write() just returns `promise` instance
+      FutureUtil.ignoreFuture(ctx.write(msg, promise));
     }
 
     public Connection getConnection() {
@@ -95,17 +96,18 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
   private final int remoteParallelOpenStreamsLimit;
   private final Supplier<Long> currentTimeSupplier;
 
-  public MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit,
+  public MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit) {
+    this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit, System::currentTimeMillis);
+  }
+
+  @VisibleForTesting
+  MplexFirewall(
+      int remoteOpenStreamsRateLimit,
+      int remoteParallelOpenStreamsLimit,
       Supplier<Long> currentTimeSupplier) {
     this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
     this.remoteParallelOpenStreamsLimit = remoteParallelOpenStreamsLimit;
     this.currentTimeSupplier = currentTimeSupplier;
-  }
-
-  @VisibleForTesting
-  MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit) {
-    this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit,
-        System::currentTimeMillis);
   }
 
   protected void remoteParallelOpenStreamLimitExceeded(MplexFirewallHandler peerMplexHandler) {

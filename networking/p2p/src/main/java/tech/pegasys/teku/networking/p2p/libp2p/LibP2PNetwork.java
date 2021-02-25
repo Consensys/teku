@@ -148,8 +148,9 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
               b.getConnectionHandlers().add(peerManager);
 
-              MplexFirewall mplexFirewall = new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT,
-                  REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
+              MplexFirewall mplexFirewall =
+                  new MplexFirewall(
+                      REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
               b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
             });
   }
