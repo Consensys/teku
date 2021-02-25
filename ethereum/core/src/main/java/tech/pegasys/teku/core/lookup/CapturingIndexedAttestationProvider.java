@@ -16,9 +16,9 @@ package tech.pegasys.teku.core.lookup;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class CapturingIndexedAttestationProvider implements IndexedAttestationProvider {
   private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();

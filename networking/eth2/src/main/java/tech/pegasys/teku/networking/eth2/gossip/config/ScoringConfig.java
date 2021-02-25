@@ -16,9 +16,9 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 import com.google.common.base.Suppliers;
 import java.time.Duration;
 import java.util.function.Supplier;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 class ScoringConfig {

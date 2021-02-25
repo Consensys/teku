@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.sync.forward.multipeer.chains;
 
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /**
  * Tracks the {@link tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain} available from the

@@ -1,16 +1,14 @@
 dependencies {
     implementation project(':ssz')
     // TODO(#3356) - Remove dependencies on datastructures, independent
-    implementation project(':ethereum:datastructures')
-    implementation project(':ethereum:independent')
+implementation project(':ethereum:independent')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-bytes'
 
-    testFixturesImplementation project(':ethereum:datastructures')
-    testFixturesImplementation project(':infrastructure:unsigned')
+testFixturesImplementation project(':infrastructure:unsigned')
     testFixturesImplementation testFixtures(project(':bls'))
 
     testFixturesApi project(':pow')
@@ -22,4 +20,44 @@ dependencies {
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
+
+
+    // From datastructures - TODO clean up these imports
+    api project(':bls')
+    api project(':ssz')
+    api project(':util')
+
+    implementation project(':bls')
+    implementation project(':ethereum:independent')
+    implementation project(':infrastructure:async')
+    api project(':infrastructure:collections')
+    implementation project(':infrastructure:io')
+    implementation project(':infrastructure:logging')
+    implementation project(':pow')
+    implementation project(':util')
+
+    implementation 'com.google.code.gson:gson'
+    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'org.apache.tuweni:tuweni-crypto'
+    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'org.apache.tuweni:tuweni-ssz'
+
+    testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':util'))
+    testImplementation testFixtures(project(':ssz'))
+
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+
+    testFixturesApi project(':pow')
+    testFixturesApi project(':ssz')
+    testFixturesApi project(':storage:api')
+
+    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+    testFixturesApi 'com.google.guava:guava'
+    testFixturesApi project(':infrastructure:unsigned')
+
+    testFixturesImplementation project(':bls')
+    testFixturesImplementation testFixtures(project(':bls'))
+    testFixturesImplementation project(':util')
+    testFixturesImplementation project(':infrastructure:async')
 }

@@ -14,23 +14,23 @@
 package tech.pegasys.teku.reference.phase0.genesis;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadBytes32FromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadUInt64FromYaml;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class GenesisInitializationTestExecutor implements TestExecutor {
 

@@ -8,8 +8,7 @@ dependencies {
   implementation project(':data:dataexchange')
   implementation project(':data:yaml')
   implementation project(':ethereum:core')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:dataproviders')
+implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
@@ -58,8 +57,7 @@ dependencies {
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
-  testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':ethereum:spec'))
+testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':bls'))
 
   testImplementation 'org.awaitility:awaitility'

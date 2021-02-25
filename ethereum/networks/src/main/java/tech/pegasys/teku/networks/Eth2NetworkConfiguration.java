@@ -26,10 +26,10 @@ import static tech.pegasys.teku.networks.Eth2Network.TOLEDO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;

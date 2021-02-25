@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.sync.forward.singlepeer;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 
 public class FailedBlockImportException extends InvalidResponseException {

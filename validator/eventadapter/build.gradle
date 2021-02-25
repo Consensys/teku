@@ -1,8 +1,7 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:spec')
+implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
@@ -20,6 +19,5 @@ dependencies {
 
   testImplementation 'org.mockito:mockito-core'
   testImplementation testFixtures(project(':util'))
-  testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':ethereum:spec'))
+testImplementation testFixtures(project(':ethereum:spec'))
 }

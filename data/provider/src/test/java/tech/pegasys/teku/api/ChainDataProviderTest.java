@@ -48,12 +48,12 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -67,7 +67,7 @@ public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private CombinedChainDataClient combinedChainDataClient;
-  private tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal;
+  private tech.pegasys.teku.spec.datastructures.state.BeaconState beaconStateInternal;
 
   private SignedBlockAndState bestBlock;
   private Bytes32 blockRoot;
@@ -231,7 +231,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
-    final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
+    final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         combinedChainDataClient.getBestBlock().get();
     BlockHeader result = provider.getBlockHeader("head").get().get();
     final BeaconBlockHeader beaconBlockHeader =
@@ -256,7 +256,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
 
-    final Optional<tech.pegasys.teku.datastructures.state.BeaconState> state =
+    final Optional<tech.pegasys.teku.spec.datastructures.state.BeaconState> state =
         combinedChainDataClient.getStateAtSlotExact(ZERO).get();
     final Optional<Root> maybeStateRoot = provider.getStateRoot("genesis").get();
     assertThat(maybeStateRoot).isPresent();
@@ -268,7 +268,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
-    final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
+    final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
         combinedChainDataClient.getBestBlock().get();
     List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.empty()).get();
     assertThat(results.get(0).root).isEqualTo(block.getRoot());
@@ -301,7 +301,7 @@ public class ChainDataProviderTest {
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorIndex() {
 
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
@@ -314,7 +314,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorPubkey() {
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
@@ -353,7 +353,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorStatus() {
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(11);
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
@@ -386,7 +386,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getCommitteesFromState_shouldNotRequireFilters() {
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(64);
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
@@ -401,7 +401,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getCommitteesFromState_shouldFilterOnSlot() {
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(64);
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
@@ -436,7 +436,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, mockCombinedChainDataClient);
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(UInt64.valueOf(42));
     final FinalityCheckpointsResponse expected =
         new FinalityCheckpointsResponse(
@@ -467,7 +467,7 @@ public class ChainDataProviderTest {
   public void getValidatorBalancesFromState_shouldGetBalances() {
     final ChainDataProvider provider =
         new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
-    final tech.pegasys.teku.datastructures.state.BeaconState internalState =
+    final tech.pegasys.teku.spec.datastructures.state.BeaconState internalState =
         data.randomBeaconState(1024);
     assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
 
@@ -504,9 +504,9 @@ public class ChainDataProviderTest {
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
         new AttestationGenerator(chainBuilder.getValidatorKeys());
-    tech.pegasys.teku.datastructures.operations.Attestation attestation1 =
+    tech.pegasys.teku.spec.datastructures.operations.Attestation attestation1 =
         attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
-    tech.pegasys.teku.datastructures.operations.Attestation attestation2 =
+    tech.pegasys.teku.spec.datastructures.operations.Attestation attestation2 =
         attestationGenerator.validAttestation(
             bestBlock.toUnsigned(), bestBlock.getSlot().increment());
     blockOptions.addAttestation(attestation1);

@@ -16,8 +16,8 @@ package tech.pegasys.teku.services.powchain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PowchainConfiguration {
   private final String eth1Endpoint;

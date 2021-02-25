@@ -49,7 +49,7 @@ public class AttestationData {
     this.target = target;
   }
 
-  public AttestationData(tech.pegasys.teku.datastructures.operations.AttestationData data) {
+  public AttestationData(tech.pegasys.teku.spec.datastructures.operations.AttestationData data) {
     this.slot = data.getSlot();
     this.index = data.getIndex();
     this.beacon_block_root = data.getBeacon_block_root();
@@ -57,11 +57,12 @@ public class AttestationData {
     this.target = new Checkpoint(data.getTarget());
   }
 
-  public tech.pegasys.teku.datastructures.operations.AttestationData asInternalAttestationData() {
-    tech.pegasys.teku.datastructures.state.Checkpoint src = source.asInternalCheckpoint();
-    tech.pegasys.teku.datastructures.state.Checkpoint tgt = target.asInternalCheckpoint();
+  public tech.pegasys.teku.spec.datastructures.operations.AttestationData
+      asInternalAttestationData() {
+    tech.pegasys.teku.spec.datastructures.state.Checkpoint src = source.asInternalCheckpoint();
+    tech.pegasys.teku.spec.datastructures.state.Checkpoint tgt = target.asInternalCheckpoint();
 
-    return new tech.pegasys.teku.datastructures.operations.AttestationData(
+    return new tech.pegasys.teku.spec.datastructures.operations.AttestationData(
         slot, index, beacon_block_root, src, tgt);
   }
 

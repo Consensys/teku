@@ -34,7 +34,7 @@ public class BeaconValidators {
 
   @VisibleForTesting
   public BeaconValidators(
-      tech.pegasys.teku.datastructures.state.BeaconState state, final UInt64 farFutureEpoch) {
+      tech.pegasys.teku.spec.datastructures.state.BeaconState state, final UInt64 farFutureEpoch) {
     this(state, false, farFutureEpoch, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
@@ -47,7 +47,7 @@ public class BeaconValidators {
 
   @VisibleForTesting
   public BeaconValidators(
-      tech.pegasys.teku.datastructures.state.BeaconState state,
+      tech.pegasys.teku.spec.datastructures.state.BeaconState state,
       final boolean activeOnly,
       final UInt64 epoch,
       final int pageSize,

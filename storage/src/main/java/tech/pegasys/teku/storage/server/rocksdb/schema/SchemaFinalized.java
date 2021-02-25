@@ -14,9 +14,9 @@
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public interface SchemaFinalized extends Schema {
   RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();

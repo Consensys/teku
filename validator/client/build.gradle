@@ -5,8 +5,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:http')
   implementation project(':ethereum:core')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:spec')
+implementation project(':ethereum:spec')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
@@ -28,8 +27,7 @@ dependencies {
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
   testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':ethereum:spec'))
+testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:async'))

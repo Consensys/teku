@@ -14,8 +14,8 @@
 package tech.pegasys.teku.core.blockvalidator;
 
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 class NoOpBlockValidator implements BlockValidator {
 

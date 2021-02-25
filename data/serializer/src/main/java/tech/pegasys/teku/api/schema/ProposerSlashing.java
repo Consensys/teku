@@ -22,7 +22,7 @@ public class ProposerSlashing {
   public final SignedBeaconBlockHeader signed_header_2;
 
   public ProposerSlashing(
-      tech.pegasys.teku.datastructures.operations.ProposerSlashing proposerSlashing) {
+      tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
     signed_header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
     signed_header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
   }
@@ -35,8 +35,9 @@ public class ProposerSlashing {
     this.signed_header_2 = header_2;
   }
 
-  public tech.pegasys.teku.datastructures.operations.ProposerSlashing asInternalProposerSlashing() {
-    return new tech.pegasys.teku.datastructures.operations.ProposerSlashing(
+  public tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing
+      asInternalProposerSlashing() {
+    return new tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing(
         signed_header_1.asInternalSignedBeaconBlockHeader(),
         signed_header_2.asInternalSignedBeaconBlockHeader());
   }

@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.events.attestation;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class ProcessedAggregateEvent {
 

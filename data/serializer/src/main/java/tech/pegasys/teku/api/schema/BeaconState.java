@@ -27,8 +27,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -138,7 +138,7 @@ public class BeaconState {
     this(blockAndState.getState());
   }
 
-  public BeaconState(final tech.pegasys.teku.datastructures.state.BeaconState beaconState) {
+  public BeaconState(final tech.pegasys.teku.spec.datastructures.state.BeaconState beaconState) {
     this.genesis_time = beaconState.getGenesis_time();
     this.genesis_validators_root = beaconState.getGenesis_validators_root();
     this.slot = beaconState.getSlot();
@@ -172,8 +172,8 @@ public class BeaconState {
     this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
   }
 
-  public tech.pegasys.teku.datastructures.state.BeaconState asInternalBeaconState() {
-    return tech.pegasys.teku.datastructures.state.BeaconState.create(
+  public tech.pegasys.teku.spec.datastructures.state.BeaconState asInternalBeaconState() {
+    return tech.pegasys.teku.spec.datastructures.state.BeaconState.create(
         genesis_time,
         genesis_validators_root,
         slot,
@@ -186,12 +186,12 @@ public class BeaconState {
         SSZList.createMutable(
             eth1_data_votes.stream().map(Eth1Data::asInternalEth1Data).collect(Collectors.toList()),
             EPOCHS_PER_ETH1_VOTING_PERIOD,
-            tech.pegasys.teku.datastructures.blocks.Eth1Data.class),
+            tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.class),
         eth1_deposit_index,
         SSZList.createMutable(
             validators.stream().map(Validator::asInternalValidator).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            tech.pegasys.teku.datastructures.state.Validator.class),
+            tech.pegasys.teku.spec.datastructures.state.Validator.class),
         SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
         SSZVector.createMutable(randao_mixes, Bytes32.class),
         SSZVector.createMutable(slashings, UInt64.class),
@@ -200,13 +200,13 @@ public class BeaconState {
                 .map(PendingAttestation::asInternalPendingAttestation)
                 .collect(Collectors.toList()),
             MAX_ATTESTATIONS,
-            tech.pegasys.teku.datastructures.state.PendingAttestation.class),
+            tech.pegasys.teku.spec.datastructures.state.PendingAttestation.class),
         SSZList.createMutable(
             current_epoch_attestations.stream()
                 .map(PendingAttestation::asInternalPendingAttestation)
                 .collect(Collectors.toList()),
             MAX_ATTESTATIONS,
-            tech.pegasys.teku.datastructures.state.PendingAttestation.class),
+            tech.pegasys.teku.spec.datastructures.state.PendingAttestation.class),
         justification_bits,
         previous_justified_checkpoint.asInternalCheckpoint(),
         current_justified_checkpoint.asInternalCheckpoint(),

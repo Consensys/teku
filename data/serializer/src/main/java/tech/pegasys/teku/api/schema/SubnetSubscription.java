@@ -33,9 +33,9 @@ public class SubnetSubscription {
     this.unsubscription_slot = unsubscription_slot;
   }
 
-  public tech.pegasys.teku.datastructures.validator.SubnetSubscription
+  public tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription
       asInternalSubnetSubscription() {
-    return new tech.pegasys.teku.datastructures.validator.SubnetSubscription(
+    return new tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription(
         subnet_id, unsubscription_slot);
   }
 }

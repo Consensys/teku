@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.integer_squareroot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.teku.util.config.Constants.BASE_REWARDS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.INACTIVITY_PENALTY_QUOTIENT;
@@ -22,9 +22,9 @@ import static tech.pegasys.teku.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_P
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 
 import java.util.List;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.statetransition.epoch.RewardsAndPenaltiesCalculator;

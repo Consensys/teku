@@ -16,10 +16,10 @@ package tech.pegasys.teku.dataproviders.generators;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 class ChainStateGenerator {
   private final BlockProcessor blockProcessor;

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput> {

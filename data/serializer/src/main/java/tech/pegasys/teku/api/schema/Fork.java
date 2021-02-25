@@ -44,14 +44,14 @@ public class Fork {
     this.epoch = epoch;
   }
 
-  public Fork(final tech.pegasys.teku.datastructures.state.Fork fork) {
+  public Fork(final tech.pegasys.teku.spec.datastructures.state.Fork fork) {
     this.previous_version = fork.getPrevious_version();
     this.current_version = fork.getCurrent_version();
     this.epoch = fork.getEpoch();
   }
 
-  public tech.pegasys.teku.datastructures.state.Fork asInternalFork() {
-    return new tech.pegasys.teku.datastructures.state.Fork(
+  public tech.pegasys.teku.spec.datastructures.state.Fork asInternalFork() {
+    return new tech.pegasys.teku.spec.datastructures.state.Fork(
         previous_version, current_version, epoch);
   }
 

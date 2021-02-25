@@ -2,8 +2,7 @@ dependencies {
     implementation project(':data')
     implementation project(':data:provider')
     implementation project(':data:serializer')
-    implementation project(':ethereum:datastructures')
-    implementation project(':ethereum:spec')
+implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:http')
@@ -31,16 +30,14 @@ dependencies {
 
     testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':storage'))
-    testImplementation testFixtures(project(':ethereum:datastructures'))
-    testImplementation testFixtures(project(':ethereum:spec'))
+testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation project(':ethereum:networks')
     testImplementation testFixtures(project(':infrastructure:async'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
     integrationTestImplementation testFixtures(project(':bls'))
-    integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
-    integrationTestImplementation testFixtures(project(':ethereum:spec'))
+integrationTestImplementation testFixtures(project(':ethereum:spec'))
     integrationTestImplementation project(':ethereum:weaksubjectivity')
     integrationTestImplementation testFixtures(project(':ethereum:core'))
 

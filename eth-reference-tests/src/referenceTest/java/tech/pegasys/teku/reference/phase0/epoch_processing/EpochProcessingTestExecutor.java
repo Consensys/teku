@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 

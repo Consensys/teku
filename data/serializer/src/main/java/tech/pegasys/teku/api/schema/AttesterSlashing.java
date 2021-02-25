@@ -22,7 +22,7 @@ public class AttesterSlashing {
   public final IndexedAttestation attestation_2;
 
   public AttesterSlashing(
-      tech.pegasys.teku.datastructures.operations.AttesterSlashing attesterSlashing) {
+      tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
     this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation_1());
     this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation_2());
   }
@@ -35,8 +35,9 @@ public class AttesterSlashing {
     this.attestation_2 = attestation_2;
   }
 
-  public tech.pegasys.teku.datastructures.operations.AttesterSlashing asInternalAttesterSlashing() {
-    return new tech.pegasys.teku.datastructures.operations.AttesterSlashing(
+  public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
+      asInternalAttesterSlashing() {
+    return new tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing(
         attestation_1.asInternalIndexedAttestation(), attestation_2.asInternalIndexedAttestation());
   }
 

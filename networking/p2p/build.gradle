@@ -1,7 +1,6 @@
 dependencies {
   implementation project(':data')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:spec')
+implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
@@ -27,8 +26,7 @@ dependencies {
   implementation 'tech.pegasys.discovery:discovery'
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
-  testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':ethereum:spec'))
+testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
@@ -42,8 +40,7 @@ dependencies {
 
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
-  testFixturesImplementation project(':ethereum:datastructures')
-  testFixturesImplementation project(':ethereum:spec')
+testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation project(':storage')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
