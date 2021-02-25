@@ -10,6 +10,7 @@ dependencies {
     testImplementation testFixtures(project(':storage'))
 
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+    testFixturesImplementation project(':ethereum:core')
     testFixturesImplementation project(':ethereum:spec')
     testFixturesImplementation testFixtures(project(':ethereum:spec'))
     testFixturesImplementation project(':infrastructure:async')
