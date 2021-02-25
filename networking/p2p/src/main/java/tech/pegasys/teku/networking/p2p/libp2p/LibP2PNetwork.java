@@ -143,7 +143,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
                 b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
               }
               if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.ERROR, "wire.mux");
+                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
               }
 
               b.getConnectionHandlers().add(peerManager);
