@@ -79,7 +79,8 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
       MuxFrame muxFrame = (MuxFrame) msg;
-      if (muxFrame.getFlag() == MuxFrame.Flag.CLOSE || muxFrame.getFlag() == MuxFrame.Flag.RESET) {
+      if (muxFrame.getFlag() == MuxFrame.Flag.RESET) {
+        // Track only RESET since CLOSE from local doesn't close the stream for writing from remote
         remoteOpenedStreamIds.remove(muxFrame.getId());
       }
       ctx.write(msg, promise);
