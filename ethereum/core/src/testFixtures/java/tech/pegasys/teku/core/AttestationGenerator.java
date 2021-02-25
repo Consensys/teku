@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.Preconditions;
 import java.util.Collection;
@@ -33,15 +33,15 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.LocalSigner;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Committee;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Committee;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -65,11 +65,11 @@ public class AttestationGenerator {
 
   /**
    * Groups passed attestations by their {@link
-   * tech.pegasys.teku.datastructures.operations.AttestationData} and aggregates attestations in
-   * every group to a single {@link Attestation}
+   * tech.pegasys.teku.spec.datastructures.operations.AttestationData} and aggregates attestations
+   * in every group to a single {@link Attestation}
    *
    * @return a list of aggregated {@link Attestation}s with distinct {@link
-   *     tech.pegasys.teku.datastructures.operations.AttestationData}
+   *     tech.pegasys.teku.spec.datastructures.operations.AttestationData}
    */
   public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
     Collection<List<Attestation>> groupedAtt =

@@ -13,20 +13,20 @@
 
 package tech.pegasys.teku.spec.statetransition.epoch;
 
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.HistoricalBatch;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;

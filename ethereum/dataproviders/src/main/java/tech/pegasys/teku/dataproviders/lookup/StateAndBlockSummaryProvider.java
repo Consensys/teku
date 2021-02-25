@@ -15,8 +15,8 @@ package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 
 public interface StateAndBlockSummaryProvider {
   StateAndBlockSummaryProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());

@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
   // Beacon REST API

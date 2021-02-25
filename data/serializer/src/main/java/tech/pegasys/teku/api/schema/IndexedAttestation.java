@@ -36,7 +36,7 @@ public class IndexedAttestation {
   public final BLSSignature signature;
 
   public IndexedAttestation(
-      tech.pegasys.teku.datastructures.operations.IndexedAttestation indexedAttestation) {
+      tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
     this.attesting_indices =
         indexedAttestation.getAttesting_indices().stream().collect(Collectors.toList());
     this.data = new AttestationData(indexedAttestation.getData());
@@ -53,9 +53,9 @@ public class IndexedAttestation {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.datastructures.operations.IndexedAttestation
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation() {
-    return new tech.pegasys.teku.datastructures.operations.IndexedAttestation(
+    return new tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation(
         SSZList.createMutable(attesting_indices, MAX_VALIDATORS_PER_COMMITTEE, UInt64.class),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());

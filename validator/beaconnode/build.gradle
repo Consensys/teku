@@ -1,6 +1,5 @@
 dependencies {
   implementation project(':ethereum:core')
-  implementation project(':ethereum:datastructures')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
@@ -17,7 +16,7 @@ dependencies {
 
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(':ethereum:networks')
-  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:time'))

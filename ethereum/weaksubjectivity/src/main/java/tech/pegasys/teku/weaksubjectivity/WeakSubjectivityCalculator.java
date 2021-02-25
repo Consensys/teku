@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_total_active_balance;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 import com.google.common.annotations.VisibleForTesting;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**

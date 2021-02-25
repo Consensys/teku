@@ -22,7 +22,7 @@ import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcErrorMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 
 public class RpcException extends Exception {
   private static final Logger LOG = LogManager.getLogger();

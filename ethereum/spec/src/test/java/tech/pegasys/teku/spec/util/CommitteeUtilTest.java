@@ -82,7 +82,7 @@ public class CommitteeUtilTest {
     int index_count = 3333;
     int[] indexes = IntStream.range(0, index_count).toArray();
 
-    tech.pegasys.teku.datastructures.util.CommitteeUtil.shuffle_list(indexes, seed);
+    tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.shuffle_list(indexes, seed);
     assertThat(indexes)
         .isEqualTo(
             IntStream.range(0, index_count)

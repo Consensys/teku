@@ -22,9 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class ForkManifest {

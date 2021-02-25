@@ -16,13 +16,13 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 public class StatusMessageHandler
     extends PeerRequiredLocalMessageHandler<StatusMessage, StatusMessage> {

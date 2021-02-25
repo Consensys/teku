@@ -16,8 +16,8 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBlockRoot> {
   @Override

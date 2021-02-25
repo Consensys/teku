@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
 

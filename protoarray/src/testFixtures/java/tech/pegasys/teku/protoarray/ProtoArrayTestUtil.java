@@ -16,12 +16,12 @@ package tech.pegasys.teku.protoarray;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class ProtoArrayTestUtil {
   private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();

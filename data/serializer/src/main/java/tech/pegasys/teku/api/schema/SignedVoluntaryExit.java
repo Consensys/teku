@@ -26,7 +26,7 @@ public class SignedVoluntaryExit {
   public final BLSSignature signature;
 
   public SignedVoluntaryExit(
-      tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
+      tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
     this.signature = new BLSSignature(signedVoluntaryExit.getSignature());
     this.message = new VoluntaryExit(signedVoluntaryExit.getMessage());
   }
@@ -39,15 +39,15 @@ public class SignedVoluntaryExit {
   }
 
   public SignedVoluntaryExit(
-      final tech.pegasys.teku.datastructures.operations.VoluntaryExit message,
+      final tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit message,
       final tech.pegasys.teku.bls.BLSSignature signature) {
     this.message = new VoluntaryExit(message);
     this.signature = new BLSSignature(signature);
   }
 
-  public tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit
+  public tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
       asInternalSignedVoluntaryExit() {
-    return new tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit(
+    return new tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit(
         message.asInternalVoluntaryExit(), signature.asInternalBLSSignature());
   }
 

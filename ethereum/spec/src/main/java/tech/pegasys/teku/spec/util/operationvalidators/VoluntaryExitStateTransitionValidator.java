@@ -14,19 +14,19 @@
 package tech.pegasys.teku.spec.util.operationvalidators;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SHARD_COMMITTEE_PERIOD;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 public class VoluntaryExitStateTransitionValidator
     implements OperationStateTransitionValidator<SignedVoluntaryExit> {

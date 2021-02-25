@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.statetransition.epoch.status;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 
 public class ValidatorStatus {
   private final UInt64 currentEpochEffectiveBalance;

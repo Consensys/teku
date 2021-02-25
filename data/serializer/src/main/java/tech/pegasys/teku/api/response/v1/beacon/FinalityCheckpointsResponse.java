@@ -18,8 +18,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.api.schema.Checkpoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class FinalityCheckpointsResponse {
   @JsonProperty("previous_justified")

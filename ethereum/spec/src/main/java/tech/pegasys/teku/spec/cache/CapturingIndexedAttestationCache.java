@@ -17,8 +17,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
 public class CapturingIndexedAttestationCache implements IndexedAttestationCache {
   private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();

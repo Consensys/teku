@@ -1,7 +1,6 @@
 dependencies {
     api project(':ethereum:spec')
 
-    implementation project(':ethereum:datastructures')
     implementation project(':infrastructure:io')
 
     testFixturesImplementation project(':ethereum:spec')

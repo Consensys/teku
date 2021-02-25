@@ -93,7 +93,7 @@ public class Validator {
     this.withdrawable_epoch = withdrawable_epoch;
   }
 
-  public Validator(final tech.pegasys.teku.datastructures.state.Validator validator) {
+  public Validator(final tech.pegasys.teku.spec.datastructures.state.Validator validator) {
     this.pubkey = new BLSPubKey(validator.getPubkey());
     this.withdrawal_credentials = validator.getWithdrawal_credentials();
     this.effective_balance = validator.getEffective_balance();
@@ -104,8 +104,8 @@ public class Validator {
     this.withdrawable_epoch = validator.getWithdrawable_epoch();
   }
 
-  public tech.pegasys.teku.datastructures.state.Validator asInternalValidator() {
-    return new tech.pegasys.teku.datastructures.state.Validator(
+  public tech.pegasys.teku.spec.datastructures.state.Validator asInternalValidator() {
+    return new tech.pegasys.teku.spec.datastructures.state.Validator(
         pubkey.asBLSPublicKey().toBytesCompressed(),
         withdrawal_credentials,
         effective_balance,
