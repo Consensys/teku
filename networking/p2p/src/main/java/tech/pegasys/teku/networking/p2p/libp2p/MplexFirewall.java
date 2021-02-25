@@ -34,6 +34,40 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
   private static final Logger LOG = LogManager.getLogger();
   private static final long ONE_SECOND = 1000;
 
+  private final int remoteOpenStreamsRateLimit;
+  private final int remoteParallelOpenStreamsLimit;
+  private final Supplier<Long> currentTimeSupplier;
+
+  public MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit) {
+    this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit, System::currentTimeMillis);
+  }
+
+  @VisibleForTesting
+  MplexFirewall(
+      int remoteOpenStreamsRateLimit,
+      int remoteParallelOpenStreamsLimit,
+      Supplier<Long> currentTimeSupplier) {
+    this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
+    this.remoteParallelOpenStreamsLimit = remoteParallelOpenStreamsLimit;
+    this.currentTimeSupplier = currentTimeSupplier;
+  }
+
+  protected void remoteParallelOpenStreamLimitExceeded(MplexFirewallHandler peerMplexHandler) {
+    LOG.debug("Abruptly closing peer connection due to exceeding parallel open streams limit");
+    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
+  }
+
+  protected void remoteOpenFrameRateLimitExceeded(MplexFirewallHandler peerMplexHandler) {
+    LOG.debug("Abruptly closing peer connection due to exceeding open mplex frame rate limit");
+    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
+  }
+
+  @Override
+  public void visit(@NotNull Connection connection) {
+    MplexFirewallHandler firewallHandler = new MplexFirewallHandler(connection);
+    connection.pushHandler(firewallHandler);
+  }
+
   private class MplexFirewallHandler extends ChannelDuplexHandler {
 
     private final Connection connection;
@@ -90,39 +124,5 @@ public class MplexFirewall implements ChannelVisitor<Connection> {
     public Connection getConnection() {
       return connection;
     }
-  }
-
-  private final int remoteOpenStreamsRateLimit;
-  private final int remoteParallelOpenStreamsLimit;
-  private final Supplier<Long> currentTimeSupplier;
-
-  public MplexFirewall(int remoteOpenStreamsRateLimit, int remoteParallelOpenStreamsLimit) {
-    this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit, System::currentTimeMillis);
-  }
-
-  @VisibleForTesting
-  MplexFirewall(
-      int remoteOpenStreamsRateLimit,
-      int remoteParallelOpenStreamsLimit,
-      Supplier<Long> currentTimeSupplier) {
-    this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
-    this.remoteParallelOpenStreamsLimit = remoteParallelOpenStreamsLimit;
-    this.currentTimeSupplier = currentTimeSupplier;
-  }
-
-  protected void remoteParallelOpenStreamLimitExceeded(MplexFirewallHandler peerMplexHandler) {
-    LOG.debug("Abruptly closing peer connection due to exceeding parallel open streams limit");
-    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
-  }
-
-  protected void remoteOpenFrameRateLimitExceeded(MplexFirewallHandler peerMplexHandler) {
-    LOG.debug("Abruptly closing peer connection due to exceeding open mplex frame rate limit");
-    FutureUtil.ignoreFuture(peerMplexHandler.getConnection().close());
-  }
-
-  @Override
-  public void visit(@NotNull Connection connection) {
-    MplexFirewallHandler firewallHandler = new MplexFirewallHandler(connection);
-    connection.pushHandler(firewallHandler);
   }
 }
