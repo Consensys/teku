@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final tech.pegasys.teku.datastructures.state.Validator validatorInternal =
+  private final tech.pegasys.teku.spec.datastructures.state.Validator validatorInternal =
       dataStructureUtil.randomValidator();
 
   @Test

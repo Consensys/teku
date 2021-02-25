@@ -20,8 +20,8 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class AllSubnetsSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();

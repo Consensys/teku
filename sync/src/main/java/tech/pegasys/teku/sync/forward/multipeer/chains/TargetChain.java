@@ -20,8 +20,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /** A chain which some set of peers claim to have that may be used as a target to sync to. */
 public class TargetChain {

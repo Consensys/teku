@@ -20,10 +20,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 
 public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlockSummary> {
   private static final Logger LOG = LogManager.getLogger();

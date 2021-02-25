@@ -14,9 +14,9 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,17 +28,17 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 

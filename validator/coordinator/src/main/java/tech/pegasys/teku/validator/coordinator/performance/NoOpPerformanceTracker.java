@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class NoOpPerformanceTracker implements PerformanceTracker {
 

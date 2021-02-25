@@ -27,7 +27,7 @@ public class SignedBeaconBlock {
   public final BLSSignature signature;
 
   public SignedBeaconBlock(
-      tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     this.signature = new BLSSignature(internalBlock.getSignature());
     this.message = new BeaconBlock(internalBlock.getMessage());
   }
@@ -40,8 +40,9 @@ public class SignedBeaconBlock {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock asInternalSignedBeaconBlock() {
-    return new tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock(
+  public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock
+      asInternalSignedBeaconBlock() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock(
         message.asInternalBeaconBlock(), signature.asInternalBLSSignature());
   }
 

@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PendingAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final tech.pegasys.teku.datastructures.state.PendingAttestation attestationInternal =
+  private final tech.pegasys.teku.spec.datastructures.state.PendingAttestation attestationInternal =
       dataStructureUtil.randomPendingAttestation();
 
   @Test

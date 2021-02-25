@@ -39,12 +39,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -54,6 +48,12 @@ import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -230,7 +230,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     assertThat(beaconChainUtil).isNotNull();
     final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
     for (UInt64 slot : slots) {
-      final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
           beaconChainUtil.createAndImportBlockAtSlot(slot.longValue());
       results.add(
           new BeaconBlockAndState(

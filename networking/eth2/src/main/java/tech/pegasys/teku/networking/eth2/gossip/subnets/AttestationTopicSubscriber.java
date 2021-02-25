@@ -20,10 +20,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {

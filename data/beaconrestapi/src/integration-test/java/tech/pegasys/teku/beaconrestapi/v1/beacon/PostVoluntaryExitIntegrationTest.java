@@ -46,7 +46,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
+    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit();
 
     final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
@@ -59,7 +59,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
   @Test
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
+    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit();
 
     final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);

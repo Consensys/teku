@@ -14,9 +14,9 @@
 package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 /**

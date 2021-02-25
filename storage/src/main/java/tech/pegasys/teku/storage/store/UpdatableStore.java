@@ -14,12 +14,12 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 

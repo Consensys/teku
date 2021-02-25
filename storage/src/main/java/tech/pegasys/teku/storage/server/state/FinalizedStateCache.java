@@ -27,10 +27,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 import tech.pegasys.teku.dataproviders.generators.StreamingStateRegenerator;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {

@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 class ChainHead extends StateAndBlockSummary {
   private final UInt64 forkChoiceSlot;

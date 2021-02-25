@@ -14,17 +14,17 @@
 package tech.pegasys.teku.spec.util.operationvalidators;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.firstOf;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class ProposerSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<ProposerSlashing> {
