@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference.phase0.operations;
 
 import tech.pegasys.teku.core.BlockProcessorUtil;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -23,6 +22,7 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class DeprecatedOperationProcessor implements OperationProcessor {

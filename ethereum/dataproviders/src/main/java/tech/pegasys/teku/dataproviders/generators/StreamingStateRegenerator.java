@@ -14,10 +14,10 @@
 package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 /**
  * This class is only suitable for regenerating states we have previously performed full validation

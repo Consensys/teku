@@ -1,7 +1,6 @@
 dependencies {
     implementation project(':ssz')
-    // TODO(#3356) - Remove dependencies on core, datastructures, independent
-    implementation project(':ethereum:core')
+    // TODO(#3356) - Remove dependencies on datastructures, independent
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:independent')
 
@@ -17,8 +16,6 @@ dependencies {
     testFixturesApi project(':pow')
     testFixturesApi 'com.google.guava:guava'
 
-    // TODO(#3356) - Remove dependency on core
-    testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':bls'))
 
     testImplementation 'org.assertj:assertj-core'

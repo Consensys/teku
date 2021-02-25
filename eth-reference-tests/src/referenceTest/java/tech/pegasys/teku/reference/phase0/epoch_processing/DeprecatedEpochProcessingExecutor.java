@@ -14,9 +14,9 @@
 package tech.pegasys.teku.reference.phase0.epoch_processing;
 
 import tech.pegasys.teku.core.epoch.EpochProcessorUtil;
-import tech.pegasys.teku.core.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 
 public class DeprecatedEpochProcessingExecutor implements EpochProcessingExecutor {
   @Override
