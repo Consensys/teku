@@ -188,6 +188,54 @@ public class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
+  public void sendAllChunksPlusUnexpectedExtraData() throws Exception {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    Bytes extraBytes = Bytes.fromHexString("0x112233445566");
+    deliverBytes(extraBytes);
+    complete();
+    close();
+
+    asyncRequestRunner.waitForExactly(maxChunks);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    verify(rpcStream).closeAbruptly();
+    assertThat(blocks.size()).isEqualTo(maxChunks);
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
+    assertThatThrownBy(finishedProcessingFuture::get)
+        .hasRootCauseInstanceOf(ExtraDataAppendedException.class)
+        .hasMessageContaining(extraBytes.toString());
+  }
+
+  @Test
+  public void shouldWorkWhenSendAllChunksPlusEmptyExtraChunk() throws Exception {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    deliverBytes(Bytes.EMPTY);
+    complete();
+    close();
+
+    asyncRequestRunner.waitForExactly(maxChunks);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    verify(rpcStream, never()).closeAbruptly();
+    assertThat(blocks.size()).isEqualTo(maxChunks);
+    assertThat(finishedProcessingFuture).isCompleted();
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
+    verify(rpcStream, never()).closeAbruptly();
+  }
+
+  @Test
   public void disconnectsIfInitialBytesAreNotReceivedInTime() {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();

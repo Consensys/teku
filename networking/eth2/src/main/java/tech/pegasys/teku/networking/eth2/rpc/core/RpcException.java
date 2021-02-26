@@ -54,6 +54,10 @@ public class RpcException extends Exception {
     public ExtraDataAppendedException() {
       super(INVALID_REQUEST_CODE, "Extra data appended to end of message");
     }
+
+    public ExtraDataAppendedException(String details) {
+      super(INVALID_REQUEST_CODE, "Extra data appended to end of message: " + details);
+    }
   }
 
   public static class MessageTruncatedException extends RpcException {
