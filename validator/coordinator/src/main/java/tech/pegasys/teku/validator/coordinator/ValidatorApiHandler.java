@@ -63,6 +63,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -98,6 +99,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
   private final SpecProvider specProvider;
+  private final ForkChoiceTrigger forkChoiceTrigger;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -112,7 +114,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker,
-      final SpecProvider specProvider) {
+      final SpecProvider specProvider,
+      final ForkChoiceTrigger forkChoiceTrigger) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
@@ -126,6 +129,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.dutyMetrics = dutyMetrics;
     this.performanceTracker = performanceTracker;
     this.specProvider = specProvider;
+    this.forkChoiceTrigger = forkChoiceTrigger;
   }
 
   @Override
@@ -240,16 +244,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    return combinedChainDataClient
-        .getStateAtSlotExact(slot.minus(UInt64.ONE))
+    return forkChoiceTrigger
+        .prepareForBlockProduction(slot)
         .thenCompose(
-            maybePreState ->
-                combinedChainDataClient
-                    .getStateAtSlotExact(slot)
-                    .thenApplyChecked(
-                        maybeBlockSlotState ->
-                            createBlock(
-                                slot, randaoReveal, graffiti, maybePreState, maybeBlockSlotState)));
+            __ -> {
+              final SafeFuture<Optional<BeaconState>> preStateFuture =
+                  combinedChainDataClient.getStateAtSlotExact(slot.decrement());
+              final SafeFuture<Optional<BeaconState>> blockSlotStateFuture =
+                  combinedChainDataClient.getStateAtSlotExact(slot);
+              return preStateFuture.thenCompose(
+                  preState ->
+                      blockSlotStateFuture.thenApplyChecked(
+                          blockSlotState ->
+                              createBlock(slot, randaoReveal, graffiti, preState, blockSlotState)));
+            });
   }
 
   private Optional<BeaconBlock> createBlock(
