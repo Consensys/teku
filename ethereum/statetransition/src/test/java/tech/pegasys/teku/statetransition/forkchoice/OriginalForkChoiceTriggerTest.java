@@ -13,16 +13,32 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class OriginalForkChoiceTriggerTest extends ForkChoiceTriggerTestBase {
+class OriginalForkChoiceTriggerTest {
 
-  public OriginalForkChoiceTriggerTest() {
-    super(false);
+  protected final ForkChoice forkChoice = mock(ForkChoice.class);
+  private final ForkChoiceTrigger trigger = ForkChoiceTrigger.create(forkChoice, false);
+
+  @BeforeEach
+  void setUp() {
+    when(forkChoice.processHead(any())).thenReturn(SafeFuture.COMPLETE);
+  }
+
+  @Test
+  void shouldProcessHeadOnSlotStartedWhileSyncing() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
   }
 
   @Test
@@ -34,6 +50,12 @@ class OriginalForkChoiceTriggerTest extends ForkChoiceTriggerTestBase {
   @Test
   void shouldNotProcessHeadOnSlotStart() {
     trigger.onSlotStarted(UInt64.ONE);
+    verifyNoInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldNotRunForkChoicePriorToBlockProduction() {
+    assertThat(trigger.prepareForBlockProduction(UInt64.ONE)).isCompleted();
     verifyNoInteractions(forkChoice);
   }
 }

@@ -13,12 +13,25 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class OriginalForkChoiceTrigger extends ForkChoiceTrigger {
+/**
+ * Replicates the fork choice behaviour prior to HF1 changes where processHead ran synchronously
+ * when attestations were due (or on slot during sync) regardless of whether it had been run for
+ * that slot previously.
+ */
+class OriginalForkChoiceTrigger implements ForkChoiceTrigger {
+
+  private final ForkChoice forkChoice;
 
   OriginalForkChoiceTrigger(final ForkChoice forkChoice) {
-    super(forkChoice);
+    this.forkChoice = forkChoice;
+  }
+
+  @Override
+  public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
+    forkChoice.processHead(nodeSlot).join();
   }
 
   @Override
@@ -26,6 +39,11 @@ class OriginalForkChoiceTrigger extends ForkChoiceTrigger {
 
   @Override
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
-    processHead(nodeSlot);
+    forkChoice.processHead(nodeSlot).join();
+  }
+
+  @Override
+  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+    return SafeFuture.COMPLETE;
   }
 }

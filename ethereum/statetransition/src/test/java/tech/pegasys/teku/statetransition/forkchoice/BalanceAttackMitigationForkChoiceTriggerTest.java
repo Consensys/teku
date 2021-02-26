@@ -13,16 +13,28 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class BalanceAttackMitigationForkChoiceTriggerTest extends ForkChoiceTriggerTestBase {
+class BalanceAttackMitigationForkChoiceTriggerTest {
 
-  public BalanceAttackMitigationForkChoiceTriggerTest() {
-    super(true);
+  private final ForkChoice forkChoice = mock(ForkChoice.class);
+  private final SafeFuture<Void> processHeadResult = new SafeFuture<>();
+  private final ForkChoiceTrigger trigger = ForkChoiceTrigger.create(forkChoice, true);
+
+  @BeforeEach
+  void setUp() {
+    when(forkChoice.processHead(any())).thenReturn(processHeadResult);
   }
 
   @Test
@@ -35,5 +47,63 @@ class BalanceAttackMitigationForkChoiceTriggerTest extends ForkChoiceTriggerTest
   void shouldProcessHeadOnSlotStart() {
     trigger.onSlotStarted(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
+  }
+
+  @Test
+  void shouldProcessHeadOnSlotWhileSyncing() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+  }
+
+  @Test
+  void shouldNotRunForkChoiceAgainForTheSameSlot() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRun() {
+    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
+    verify(forkChoice).processHead(UInt64.valueOf(2));
+
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verifyNoMoreInteractions(forkChoice);
+  }
+
+  @Test
+  void requireForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
+    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
+
+    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void requireForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSame() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+
+    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    verifyNoMoreInteractions(forkChoice);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(null);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void requiredForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ZERO);
+    verify(forkChoice).processHead(UInt64.ZERO);
+
+    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.complete(null);
+    assertThat(result).isCompleted();
   }
 }
