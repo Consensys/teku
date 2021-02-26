@@ -485,6 +485,26 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void catchAndRethrow_shouldCompleteWithHandlersException() throws RuntimeException {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+
+    final RuntimeException originalException = new RuntimeException("Nope");
+    final RuntimeException consumerException = new RuntimeException("Yup");
+
+    final SafeFuture<String> result =
+        safeFuture.catchAndRethrow(
+            err -> {
+              receivedError.set(err);
+              throw consumerException;
+            });
+
+    safeFuture.completeExceptionally(originalException);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(consumerException);
+    assertThat(receivedError).hasValue(originalException);
+  }
+
+  @Test
   public void propagateTo_propagatesSuccessfulResult() {
     final SafeFuture<String> target = new SafeFuture<>();
     final SafeFuture<String> source = new SafeFuture<>();
