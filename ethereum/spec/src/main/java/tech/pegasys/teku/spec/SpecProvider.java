@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
@@ -51,6 +50,7 @@ import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
+import tech.pegasys.teku.spec.util.results.AttestationProcessingResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -436,9 +436,19 @@ public class SpecProvider {
   }
 
   // Operation Validation
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return atState(state).getAttestationDataStateTransitionValidator().validate(state, data);
+  }
+
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
     return atState(state).getVoluntaryExitStateTransitionValidator().validate(state, signedExit);
+  }
+
+  public Optional<OperationInvalidReason> validateAttesterSlashing(
+      final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return atState(state).getBlockProcessorUtil().validateAttesterSlashing(state, attesterSlashing);
   }
 
   public boolean verifyVoluntaryExitSignature(

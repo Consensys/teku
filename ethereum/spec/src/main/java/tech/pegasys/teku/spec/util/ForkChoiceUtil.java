@@ -33,10 +33,10 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.statetransition.StateTransition;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.util.results.AttestationProcessingResult;
 
 public class ForkChoiceUtil {
 

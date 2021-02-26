@@ -14,10 +14,6 @@
 package tech.pegasys.teku.spec.util.operationvalidators;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.spec.datastructures.util.AttestationUtil.is_slashable_attestation_data;
-import static tech.pegasys.teku.spec.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.firstOf;
 
@@ -28,9 +24,25 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.util.AttestationUtil;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class AttesterSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<AttesterSlashing> {
+
+  private final BeaconStateUtil beaconStateUtil;
+  private final AttestationUtil attestationUtil;
+  private final ValidatorsUtil validatorsUtil;
+
+  public AttesterSlashingStateTransitionValidator(
+      final BeaconStateUtil beaconStateUtil,
+      final AttestationUtil attestationUtil,
+      final ValidatorsUtil validatorsUtil) {
+    this.beaconStateUtil = beaconStateUtil;
+    this.attestationUtil = attestationUtil;
+    this.validatorsUtil = validatorsUtil;
+  }
 
   public Optional<OperationInvalidReason> validate(
       final BeaconState state,
@@ -54,15 +66,16 @@ public class AttesterSlashingStateTransitionValidator
     return firstOf(
         () ->
             check(
-                is_slashable_attestation_data(attestation_1.getData(), attestation_2.getData()),
+                attestationUtil.isSlashableAttestationData(
+                    attestation_1.getData(), attestation_2.getData()),
                 AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE),
         () ->
             check(
-                is_valid_indexed_attestation(state, attestation_1).isSuccessful(),
+                attestationUtil.isValidIndexedAttestation(state, attestation_1).isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_1_INVALID),
         () ->
             check(
-                is_valid_indexed_attestation(state, attestation_2).isSuccessful(),
+                attestationUtil.isValidIndexedAttestation(state, attestation_2).isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_2_INVALID),
         () -> {
           boolean slashed_any = false;
@@ -70,9 +83,9 @@ public class AttesterSlashingStateTransitionValidator
           Set<UInt64> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
 
           for (UInt64 index : intersectingIndices) {
-            if (is_slashable_validator(
+            if (validatorsUtil.isSlashableValidator(
                 state.getValidators().get(toIntExact(index.longValue())),
-                get_current_epoch(state))) {
+                beaconStateUtil.getCurrentEpoch(state))) {
               maybeIndicesToSlash.ifPresent(indicesToSlash -> indicesToSlash.add(index));
               slashed_any = true;
             }

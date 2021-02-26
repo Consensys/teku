@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
@@ -148,7 +147,8 @@ public class BlockValidator {
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
-        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposerIndex())
+        specProvider
+            .getValidatorPubKey(postState, block.getMessage().getProposerIndex())
             .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
             .orElse(false);
 

@@ -26,15 +26,16 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class ValidatorsUtil {
 
   private final SpecConstants specConstants;
+  private final BeaconStateUtil beaconStateUtil;
 
-  public ValidatorsUtil(final SpecConstants specConstants) {
+  public ValidatorsUtil(final SpecConstants specConstants, final BeaconStateUtil beaconStateUtil) {
     this.specConstants = specConstants;
+    this.beaconStateUtil = beaconStateUtil;
   }
 
   /**
@@ -97,8 +98,7 @@ public class ValidatorsUtil {
    * @return A list of indices representing the active validators for the given epoch.
    */
   public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
-    final UInt64 stateEpoch =
-        tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch(state);
+    final UInt64 stateEpoch = beaconStateUtil.getCurrentEpoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
         epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
@@ -119,7 +119,7 @@ public class ValidatorsUtil {
   }
 
   public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
+    return getMaxLookaheadEpoch(beaconStateUtil.getCurrentEpoch(state));
   }
 
   private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {

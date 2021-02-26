@@ -34,11 +34,11 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
@@ -55,14 +55,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
-  private final AttestationDataStateTransitionValidator attestationDataValidator;
   private final AtomicInteger size = new AtomicInteger(0);
   private final SettableGauge sizeGauge;
+  private final SpecProvider specProvider;
 
   public AggregatingAttestationPool(
-      final AttestationDataStateTransitionValidator attestationDataValidator,
-      final MetricsSystem metricsSystem) {
-    this.attestationDataValidator = attestationDataValidator;
+      final SpecProvider specProvider, final MetricsSystem metricsSystem) {
+    this.specProvider = specProvider;
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -197,7 +196,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private boolean isValid(
       final BeaconState stateAtBlockSlot, final AttestationData attestationData) {
-    return attestationDataValidator.validate(stateAtBlockSlot, attestationData).isEmpty();
+    return specProvider.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
   }
 
   public synchronized Optional<ValidateableAttestation> createAggregateFor(

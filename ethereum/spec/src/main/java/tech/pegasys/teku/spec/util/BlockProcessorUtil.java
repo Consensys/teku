@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTran
 import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.util.results.AttestationProcessingResult;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public final class BlockProcessorUtil {
@@ -65,6 +65,7 @@ public final class BlockProcessorUtil {
   private final AttestationUtil attestationUtil;
   private final ValidatorsUtil validatorsUtil;
   private final VoluntaryExitSignatureVerifier voluntaryExitSignatureVerifier;
+  private final AttesterSlashingStateTransitionValidator attesterSlashingStateTransitionValidator;
 
   public BlockProcessorUtil(
       final SpecConstants specConstants,
@@ -77,6 +78,9 @@ public final class BlockProcessorUtil {
     this.validatorsUtil = validatorsUtil;
     this.voluntaryExitSignatureVerifier =
         new VoluntaryExitSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
+    this.attesterSlashingStateTransitionValidator =
+        new AttesterSlashingStateTransitionValidator(
+            beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   /**
@@ -298,14 +302,12 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
-      final AttesterSlashingStateTransitionValidator validator =
-          new AttesterSlashingStateTransitionValidator();
-
       // For each attester_slashing in block.body.attester_slashings:
       for (AttesterSlashing attesterSlashing : attesterSlashings) {
         List<UInt64> indicesToSlash = new ArrayList<>();
         final Optional<OperationInvalidReason> invalidReason =
-            validator.validate(state, attesterSlashing, indicesToSlash);
+            attesterSlashingStateTransitionValidator.validate(
+                state, attesterSlashing, indicesToSlash);
 
         checkArgument(
             invalidReason.isEmpty(),
@@ -320,6 +322,11 @@ public final class BlockProcessorUtil {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  public Optional<OperationInvalidReason> validateAttesterSlashing(
+      final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return attesterSlashingStateTransitionValidator.validate(state, attesterSlashing);
   }
 
   /**
@@ -358,7 +365,7 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
       final AttestationDataStateTransitionValidator validator =
-          new AttestationDataStateTransitionValidator();
+          new AttestationDataStateTransitionValidator(specConstants, beaconStateUtil);
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();

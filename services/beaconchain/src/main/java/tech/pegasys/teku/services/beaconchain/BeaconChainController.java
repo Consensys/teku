@@ -62,8 +62,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
@@ -343,8 +341,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initAttesterSlashingPool() {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
     AttesterSlashingValidator validator =
-        new AttesterSlashingValidator(
-            recentChainData, new AttesterSlashingStateTransitionValidator());
+        new AttesterSlashingValidator(specProvider, recentChainData);
     attesterSlashingPool = new OperationPool<>(AttesterSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
@@ -588,9 +585,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool =
-        new AggregatingAttestationPool(
-            new AttestationDataStateTransitionValidator(), metricsSystem);
+    attestationPool = new AggregatingAttestationPool(specProvider, metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
   }

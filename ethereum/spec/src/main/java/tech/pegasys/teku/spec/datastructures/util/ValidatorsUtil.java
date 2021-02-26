@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated
-public class ValidatorsUtil {
+class ValidatorsUtil {
 
   /**
    * Check if (this) validator is active in the given epoch.
