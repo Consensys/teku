@@ -24,6 +24,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -42,13 +43,10 @@ import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionExceptio
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class BlockProposalTestUtil {
+  private final SpecProvider specProvider;
 
-  private final BlockProposalUtil blockProposalUtil;
-  private final StateTransition stateTransition;
-
-  public BlockProposalTestUtil() {
-    stateTransition = new StateTransition();
-    blockProposalUtil = new BlockProposalUtil(stateTransition);
+  public BlockProposalTestUtil(final SpecProvider specProvider) {
+    this.specProvider = specProvider;
   }
 
   public SignedBlockAndState createNewBlock(
@@ -67,9 +65,9 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState = stateTransition.process_slots(state, newSlot);
+    final BeaconState blockSlotState = specProvider.processSlots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
-        blockProposalUtil.createNewUnsignedBlock(
+        specProvider.createNewUnsignedBlock(
             newSlot,
             get_beacon_proposer_index(blockSlotState, newSlot),
             randaoReveal,
@@ -126,7 +124,7 @@ public class BlockProposalTestUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = stateTransition.process_slots(preState, slot);
+      state = specProvider.processSlots(preState, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }

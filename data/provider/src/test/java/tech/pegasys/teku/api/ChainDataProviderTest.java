@@ -503,7 +503,7 @@ public class ChainDataProviderTest {
 
     ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
-        new AttestationGenerator(chainBuilder.getValidatorKeys());
+        new AttestationGenerator(specProvider, chainBuilder.getValidatorKeys());
     tech.pegasys.teku.spec.datastructures.operations.Attestation attestation1 =
         attestationGenerator.validAttestation(bestBlock.toUnsigned(), bestBlock.getSlot());
     tech.pegasys.teku.spec.datastructures.operations.Attestation attestation2 =
