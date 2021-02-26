@@ -14,7 +14,7 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class BlockFuzzInputTest extends AbstractFuzzInputTest<BlockFuzzInput> {

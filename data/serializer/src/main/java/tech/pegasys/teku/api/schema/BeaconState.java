@@ -138,7 +138,8 @@ public class BeaconState {
     this(blockAndState.getState());
   }
 
-  public BeaconState(final tech.pegasys.teku.spec.datastructures.state.BeaconState beaconState) {
+  public BeaconState(
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconState) {
     this.genesis_time = beaconState.getGenesis_time();
     this.genesis_validators_root = beaconState.getGenesis_validators_root();
     this.slot = beaconState.getSlot();
@@ -172,8 +173,9 @@ public class BeaconState {
     this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
   }
 
-  public tech.pegasys.teku.spec.datastructures.state.BeaconState asInternalBeaconState() {
-    return tech.pegasys.teku.spec.datastructures.state.BeaconState.create(
+  public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState
+      asInternalBeaconState() {
+    return tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState.create(
         genesis_time,
         genesis_validators_root,
         slot,

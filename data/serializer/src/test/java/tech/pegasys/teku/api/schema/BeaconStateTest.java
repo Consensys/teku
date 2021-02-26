@@ -20,8 +20,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final tech.pegasys.teku.spec.datastructures.state.BeaconState beaconStateInternal =
-      dataStructureUtil.randomBeaconState();
+  private final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState
+      beaconStateInternal = dataStructureUtil.randomBeaconState();
 
   @Test
   public void shouldConvertToInternalObject() {

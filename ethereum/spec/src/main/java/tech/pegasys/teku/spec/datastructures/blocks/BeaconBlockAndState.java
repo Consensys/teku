@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /** Helper datastructure that holds an unsigned block with its corresponding state */
 public class BeaconBlockAndState extends StateAndBlockSummary {

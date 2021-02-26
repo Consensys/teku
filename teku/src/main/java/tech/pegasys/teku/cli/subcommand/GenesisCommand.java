@@ -26,7 +26,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @Command(
     name = "genesis",
