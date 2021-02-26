@@ -139,7 +139,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             ? mock(ForkChoice.class)
             : new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
     beaconChainUtil =
-        BeaconChainUtil.create(specProvider, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
+        BeaconChainUtil.create(
+            specProvider, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {

@@ -63,25 +63,10 @@ public class EpochProcessingTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz");
-    runStandardTest(testDefinition, preState, expectedPostState);
-    runDeprecatedTest(preState, expectedPostState);
-  }
 
-  private void runStandardTest(
-      final TestDefinition testDefinition,
-      final BeaconState preState,
-      final BeaconState expectedPostState)
-      throws EpochProcessingException {
     final EpochProcessor epochProcessor =
         testDefinition.getSpecProvider().getGenesisSpec().getEpochProcessor();
     final EpochProcessingExecutor processor = new DefaultEpochProcessingExecutor(epochProcessor);
-    final BeaconState result = preState.updated(state -> executeOperation(processor, state));
-    assertThat(result).isEqualTo(expectedPostState);
-  }
-
-  private void runDeprecatedTest(BeaconState preState, BeaconState expectedPostState)
-      throws EpochProcessingException {
-    final EpochProcessingExecutor processor = new DeprecatedEpochProcessingExecutor();
     final BeaconState result = preState.updated(state -> executeOperation(processor, state));
     assertThat(result).isEqualTo(expectedPostState);
   }
