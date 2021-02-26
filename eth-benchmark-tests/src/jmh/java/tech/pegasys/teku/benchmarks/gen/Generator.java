@@ -34,6 +34,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -52,7 +54,7 @@ public class Generator {
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-
+    final SpecProvider specProvider = SpecProviderFactory.createMainnet();
     Constants.setConstants("mainnet");
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
@@ -68,9 +70,16 @@ public class Generator {
 
     EventBus localEventBus = mock(EventBus.class);
     RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-    BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
+    BeaconChainUtil localChain =
+        BeaconChainUtil.builder()
+            .specProvider(specProvider)
+            .recentChainData(localStorage)
+            .validatorKeys(validatorKeys)
+            .signDeposits(false)
+            .build();
     localChain.initializeStorage();
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(specProvider, validatorKeys);
 
     UInt64 currentSlot = localStorage.getHeadSlot();
     List<Attestation> attestations = Collections.emptyList();

@@ -81,6 +81,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class AttestationValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -88,9 +89,8 @@ class AttestationValidatorTest {
   private final ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
   private final AttestationGenerator attestationGenerator =
-      new AttestationGenerator(chainBuilder.getValidatorKeys());
+      new AttestationGenerator(specProvider, chainBuilder.getValidatorKeys());
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final AttestationValidator validator =
       new AttestationValidator(specProvider, recentChainData);
 

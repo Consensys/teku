@@ -77,7 +77,7 @@ public class BlockImporterTest {
   private final ForkChoice forkChoice =
       new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
   private final BeaconChainUtil localChain =
-      BeaconChainUtil.create(recentChainData, validatorKeys, forkChoice, false);
+      BeaconChainUtil.create(specProvider, recentChainData, validatorKeys, forkChoice, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create(otherEventBus);
@@ -144,7 +144,8 @@ public class BlockImporterTest {
     SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UInt64.ONE);
 
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(specProvider, validatorKeys);
     final StateAndBlockSummary stateAndBlock =
         recentChainData
             .getStore()
@@ -168,7 +169,8 @@ public class BlockImporterTest {
     SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UInt64.ONE);
 
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(specProvider, validatorKeys);
     final StateAndBlockSummary stateAndBlock =
         recentChainData
             .getStore()
@@ -315,7 +317,8 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Now create a new block that is not descendant from the finalized block
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(specProvider, validatorKeys);
     final StateAndBlockSummary blockAndState = otherStorage.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =

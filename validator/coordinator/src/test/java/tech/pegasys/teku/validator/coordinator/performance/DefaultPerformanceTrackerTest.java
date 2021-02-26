@@ -211,7 +211,7 @@ public class DefaultPerformanceTrackerTest {
     SignedBlockAndState blockAndState = chainUpdaterFork.advanceChainUntil(8);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
-        new AttestationGenerator(chainBuilder.getValidatorKeys());
+        new AttestationGenerator(specProvider, chainBuilder.getValidatorKeys());
     Attestation attestation2 =
         attestationGenerator.validAttestation(blockAndState.toUnsigned(), UInt64.valueOf(9));
     block2Options.addAttestation(attestation2);
