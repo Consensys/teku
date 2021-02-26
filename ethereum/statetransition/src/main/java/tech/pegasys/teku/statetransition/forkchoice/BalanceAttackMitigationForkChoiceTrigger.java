@@ -48,6 +48,7 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
   @Override
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {}
 
+  @Override
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
     final ForkChoiceUpdate forkChoiceUpdate = processHead(slot);
     if (forkChoiceUpdate.nodeSlot.isGreaterThan(slot)) {
