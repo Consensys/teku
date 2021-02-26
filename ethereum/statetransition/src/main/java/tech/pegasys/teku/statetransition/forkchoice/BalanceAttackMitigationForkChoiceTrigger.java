@@ -21,9 +21,11 @@ class BalanceAttackMitigationForkChoiceTrigger extends ForkChoiceTrigger {
     super(forkChoice);
   }
 
+  @Override
   public void onSlotStarted(final UInt64 nodeSlot) {
     processHead(nodeSlot);
   }
 
+  @Override
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {}
 }
