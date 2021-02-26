@@ -96,7 +96,8 @@ class SignedAggregateAndProofValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -105,9 +106,8 @@ class SignedAggregateAndProofValidatorTest {
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
   private final AggregateGenerator generator =
-      new AggregateGenerator(chainBuilder.getValidatorKeys());
+      new AggregateGenerator(specProvider, chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   private final AggregateAttestationValidator validator =
       new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
