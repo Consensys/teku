@@ -80,7 +80,9 @@ public class MplexFirewallTest {
       time.incrementAndGet();
     }
     assertThat(channel.isOpen()).isFalse();
-    assertThat(passedMessages).hasSizeBetween(18, 25).doesNotHaveDuplicates();
+    // hasSizeBetween: giving the Firewall some flexibility to pass 1 extra OPEN frame before
+    // closing connection
+    assertThat(passedMessages).hasSizeBetween(20, 22).doesNotHaveDuplicates();
   }
 
   @Test
@@ -116,7 +118,9 @@ public class MplexFirewallTest {
       time.addAndGet(80); // ~12 per sec
     }
     assertThat(channel.isOpen()).isFalse();
-    assertThat(passedMessages).hasSizeLessThan(225).doesNotHaveDuplicates();
+    // 220 + 2: giving the Firewall some flexibility to pass 1 extra OPEN frame before closing
+    // connection
+    assertThat(passedMessages).hasSizeLessThan(220 + 2).doesNotHaveDuplicates();
   }
 
   @Test
@@ -145,7 +149,9 @@ public class MplexFirewallTest {
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isFalse();
-    assertThat(passedMessages).hasSizeLessThan(25).doesNotHaveDuplicates();
+    // 20 + 1: giving the Firewall some flexibility to pass 1 extra OPEN frame before closing
+    // connection
+    assertThat(passedMessages).hasSizeLessThan(20 + 1).doesNotHaveDuplicates();
   }
 
   @Test
@@ -212,6 +218,9 @@ public class MplexFirewallTest {
 
   @Test
   void testThatDisconnectsOnLocalClose() throws InterruptedException {
+    // CLOSE (unlike RESET) sent from local doesn't close the stream and still allows remote to
+    // write
+    // so it shouldn't affect the number of opened tracked streams
     for (int i = 0; i < 25; i++) {
       writeOneInbound(
           new MuxFrame(new MuxId(dummyChannelId, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
@@ -225,8 +234,10 @@ public class MplexFirewallTest {
 
     assertThat(channel.isOpen()).isFalse();
     assertThat(passedMessages).hasSizeBetween(18, 22).doesNotHaveDuplicates();
+    // hasSizeBetween: giving the Firewall some flexibility to pass 1 extra OPEN frame before
+    // closing connection
     assertThat(channel.outboundMessages().stream().map(Object::toString))
-        .hasSizeBetween(18, 22)
+        .hasSizeBetween(20, 22)
         .doesNotHaveDuplicates();
   }
 }
