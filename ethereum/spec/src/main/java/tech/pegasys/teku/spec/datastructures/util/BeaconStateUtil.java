@@ -80,6 +80,7 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
+@Deprecated
 public class BeaconStateUtil {
 
   private static final Logger LOG = LogManager.getLogger(BeaconStateUtil.class);

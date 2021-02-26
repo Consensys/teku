@@ -23,6 +23,8 @@ import tech.pegasys.teku.spec.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
 
 public class Spec {
   private final SpecConstants constants;
@@ -35,6 +37,8 @@ public class Spec {
   private final StateTransition stateTransition;
   private final ForkChoiceUtil forkChoiceUtil;
   private final BlockProposalUtil blockProposalUtil;
+  private final VoluntaryExitStateTransitionValidator voluntaryExitStateTransitionValidator;
+  private final ProposerSlashingSignatureVerifier proposerSlashingSignatureVerifier;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -42,7 +46,8 @@ public class Spec {
     this.validatorsUtil = new ValidatorsUtil(this.constants);
     this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
-    this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
+    this.epochProcessor =
+        new EpochProcessor(this.constants, validatorsUtil, attestationUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
         new BlockProcessorUtil(this.constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =
@@ -51,6 +56,10 @@ public class Spec {
     this.forkChoiceUtil =
         new ForkChoiceUtil(this.constants, beaconStateUtil, attestationUtil, stateTransition);
     this.blockProposalUtil = new BlockProposalUtil(stateTransition);
+    this.voluntaryExitStateTransitionValidator =
+        new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
+    this.proposerSlashingSignatureVerifier =
+        new ProposerSlashingSignatureVerifier(this.constants, beaconStateUtil, validatorsUtil);
   }
 
   public SpecConstants getConstants() {
@@ -91,5 +100,13 @@ public class Spec {
 
   public BlockProposalUtil getBlockProposalUtil() {
     return blockProposalUtil;
+  }
+
+  public VoluntaryExitStateTransitionValidator getVoluntaryExitStateTransitionValidator() {
+    return voluntaryExitStateTransitionValidator;
+  }
+
+  public ProposerSlashingSignatureVerifier getProposerSlashingSignatureVerifier() {
+    return proposerSlashingSignatureVerifier;
   }
 }

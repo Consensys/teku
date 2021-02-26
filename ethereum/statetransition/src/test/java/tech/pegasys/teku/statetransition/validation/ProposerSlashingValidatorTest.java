@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.core.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -44,20 +44,19 @@ public class ProposerSlashingValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = mock(SpecProvider.class);
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
   private ProposerSlashingValidator proposerSlashingValidator;
   private ProposerSlashingStateTransitionValidator stateTransitionValidator;
-  private ProposerSlashingSignatureVerifier signatureVerifier;
 
   @BeforeEach
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
     beaconChainUtil = BeaconChainUtil.create(recentChainData, VALIDATOR_KEYS, true);
     stateTransitionValidator = mock(ProposerSlashingStateTransitionValidator.class);
-    signatureVerifier = mock(ProposerSlashingSignatureVerifier.class);
     proposerSlashingValidator =
-        new ProposerSlashingValidator(recentChainData, stateTransitionValidator, signatureVerifier);
+        new ProposerSlashingValidator(specProvider, recentChainData, stateTransitionValidator);
   }
 
   @Test
@@ -67,7 +66,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(specProvider.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(ACCEPT);
@@ -83,7 +82,7 @@ public class ProposerSlashingValidatorTest {
             Optional.of(
                 ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
                     .PROPOSER_INDICES_DIFFERENT));
-    when(signatureVerifier.verifySignature(
+    when(specProvider.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(REJECT);
@@ -96,7 +95,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(specProvider.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(REJECT);
@@ -111,7 +110,7 @@ public class ProposerSlashingValidatorTest {
         new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
     when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(specProvider.verifyProposerSlashingSignature(
             eq(recentChainData.getBestState().orElseThrow()),
             any(),
             eq(BLSSignatureVerifier.SIMPLE)))

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.interop;
+package tech.pegasys.teku.core.interop;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;

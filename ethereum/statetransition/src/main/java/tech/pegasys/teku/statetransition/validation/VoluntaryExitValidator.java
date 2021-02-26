@@ -24,11 +24,10 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
-import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
@@ -36,16 +35,11 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
 
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidExitSet = LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
-  private final VoluntaryExitStateTransitionValidator stateTransitionValidator;
-  private final VoluntaryExitSignatureVerifier signatureVerifier;
+  private final SpecProvider specProvider;
 
-  public VoluntaryExitValidator(
-      RecentChainData recentChainData,
-      VoluntaryExitStateTransitionValidator stateTransitionValidator,
-      VoluntaryExitSignatureVerifier signatureVerifier) {
+  public VoluntaryExitValidator(RecentChainData recentChainData, SpecProvider specProvider) {
     this.recentChainData = recentChainData;
-    this.stateTransitionValidator = stateTransitionValidator;
-    this.signatureVerifier = signatureVerifier;
+    this.specProvider = specProvider;
   }
 
   @Override
@@ -92,7 +86,8 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
 
   private Optional<String> getFailureReason(
       final BeaconState state, final SignedVoluntaryExit exit, final boolean verifySignature) {
-    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
+    Optional<OperationInvalidReason> invalidReason =
+        specProvider.validateVoluntaryExit(state, exit);
     if (invalidReason.isPresent()) {
       final String message =
           String.format(
@@ -103,7 +98,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     }
 
     if (verifySignature
-        && !signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
+        && !specProvider.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
       final String message =
           String.format(
               "Exit for validator %s fails signature verification.",

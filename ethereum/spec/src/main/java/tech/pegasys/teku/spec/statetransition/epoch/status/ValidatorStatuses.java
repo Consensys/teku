@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.statetransition.epoch.status;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +27,9 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.AttestationUtil;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class ValidatorStatuses {
@@ -43,18 +42,25 @@ public class ValidatorStatuses {
     this.totalBalances = totalBalances;
   }
 
-  public static ValidatorStatuses create(final BeaconState state) {
+  public static ValidatorStatuses create(
+      final BeaconState state,
+      final BeaconStateUtil beaconStateUtil,
+      final ValidatorsUtil validatorsUtil,
+      final AttestationUtil attestationUtil) {
     final SSZList<Validator> validators = state.getValidators();
 
-    final UInt64 currentEpoch = BeaconStateUtil.get_current_epoch(state);
-    final UInt64 previousEpoch = BeaconStateUtil.get_previous_epoch(state);
+    final UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
+    final UInt64 previousEpoch = beaconStateUtil.getPreviousEpoch(state);
 
     final List<ValidatorStatus> statuses =
         validators.stream()
-            .map(validator -> ValidatorStatus.create(validator, previousEpoch, currentEpoch))
+            .map(
+                validator ->
+                    ValidatorStatus.create(validator, previousEpoch, currentEpoch, validatorsUtil))
             .collect(Collectors.toCollection(() -> new ArrayList<>(validators.size())));
 
-    processAttestations(statuses, state, previousEpoch, currentEpoch);
+    processAttestations(
+        statuses, state, previousEpoch, currentEpoch, beaconStateUtil, attestationUtil);
 
     final TotalBalances totalBalances = createTotalBalances(statuses);
     BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
@@ -69,7 +75,9 @@ public class ValidatorStatuses {
       final List<ValidatorStatus> statuses,
       final BeaconState state,
       final UInt64 previousEpoch,
-      final UInt64 currentEpoch) {
+      final UInt64 currentEpoch,
+      final BeaconStateUtil beaconStateUtil,
+      final AttestationUtil attestationUtil) {
     Stream.concat(
             state.getPrevious_epoch_attestations().stream(),
             state.getCurrent_epoch_attestations().stream())
@@ -82,7 +90,7 @@ public class ValidatorStatuses {
               if (target.getEpoch().equals(currentEpoch)) {
                 updates.currentEpochAttester = true;
                 updates.currentEpochTargetAttester =
-                    matchesEpochStartBlock(state, currentEpoch, target.getRoot());
+                    matchesEpochStartBlock(state, currentEpoch, target.getRoot(), beaconStateUtil);
               } else if (target.getEpoch().equals(previousEpoch)) {
                 updates.previousEpochAttester = true;
 
@@ -91,26 +99,31 @@ public class ValidatorStatuses {
                         new InclusionInfo(
                             attestation.getInclusion_delay(), attestation.getProposer_index()));
 
-                if (matchesEpochStartBlock(state, previousEpoch, target.getRoot())) {
+                if (matchesEpochStartBlock(
+                    state, previousEpoch, target.getRoot(), beaconStateUtil)) {
                   updates.previousEpochTargetAttester = true;
 
                   updates.previousEpochHeadAttester =
-                      get_block_root_at_slot(state, data.getSlot())
+                      beaconStateUtil
+                          .getBlockRootAtSlot(state, data.getSlot())
                           .equals(data.getBeacon_block_root());
                 }
               }
 
               // Apply flags to attestingIndices
-              AttestationUtil.stream_attesting_indices(
-                      state, data, attestation.getAggregation_bits())
+              attestationUtil
+                  .streamAttestingIndices(state, data, attestation.getAggregation_bits())
                   .mapToObj(statuses::get)
                   .forEach(updates::apply);
             });
   }
 
   private static boolean matchesEpochStartBlock(
-      final BeaconState state, final UInt64 currentEpoch, final Bytes32 root) {
-    return BeaconStateUtil.get_block_root(state, currentEpoch).equals(root);
+      final BeaconState state,
+      final UInt64 currentEpoch,
+      final Bytes32 root,
+      final BeaconStateUtil beaconStateUtil) {
+    return beaconStateUtil.getBlockRoot(state, currentEpoch).equals(root);
   }
 
   public TotalBalances getTotalBalances() {

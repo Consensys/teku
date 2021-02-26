@@ -22,9 +22,9 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -32,19 +32,19 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ProposerSlashingValidator implements OperationValidator<ProposerSlashing> {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecProvider specProvider;
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidSlashingForProposerSet =
       LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
   private final ProposerSlashingStateTransitionValidator transitionValidator;
-  private final ProposerSlashingSignatureVerifier signatureValidator;
 
   public ProposerSlashingValidator(
+      final SpecProvider specProvider,
       RecentChainData recentChainData,
-      ProposerSlashingStateTransitionValidator proposerSlashingStateTransitionValidator,
-      ProposerSlashingSignatureVerifier proposerSlashingSignatureVerifier) {
+      ProposerSlashingStateTransitionValidator proposerSlashingStateTransitionValidator) {
+    this.specProvider = specProvider;
     this.recentChainData = recentChainData;
     this.transitionValidator = proposerSlashingStateTransitionValidator;
-    this.signatureValidator = proposerSlashingSignatureVerifier;
   }
 
   @Override
@@ -89,7 +89,8 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
       return false;
     }
 
-    if (!signatureValidator.verifySignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
+    if (!specProvider.verifyProposerSlashingSignature(
+        state, slashing, BLSSignatureVerifier.SIMPLE)) {
       LOG.trace("ProposerSlashingValidator: Slashing fails signature verification.");
       return false;
     }

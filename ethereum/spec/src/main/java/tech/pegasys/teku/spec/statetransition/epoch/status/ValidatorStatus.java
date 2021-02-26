@@ -17,7 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class ValidatorStatus {
   private final UInt64 currentEpochEffectiveBalance;
@@ -49,14 +49,17 @@ public class ValidatorStatus {
   }
 
   public static ValidatorStatus create(
-      final Validator validator, final UInt64 previousEpoch, final UInt64 currentEpoch) {
+      final Validator validator,
+      final UInt64 previousEpoch,
+      final UInt64 currentEpoch,
+      final ValidatorsUtil validatorsUtil) {
 
     return new ValidatorStatus(
         validator.isSlashed(),
         validator.getWithdrawable_epoch().isLessThanOrEqualTo(currentEpoch),
         validator.getEffective_balance(),
-        ValidatorsUtil.is_active_validator(validator, currentEpoch),
-        ValidatorsUtil.is_active_validator(validator, previousEpoch));
+        validatorsUtil.isActiveValidator(validator, currentEpoch),
+        validatorsUtil.isActiveValidator(validator, previousEpoch));
   }
 
   public boolean isEligibleValidator() {

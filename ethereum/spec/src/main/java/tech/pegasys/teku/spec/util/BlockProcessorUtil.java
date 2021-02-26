@@ -64,6 +64,7 @@ public final class BlockProcessorUtil {
   private final BeaconStateUtil beaconStateUtil;
   private final AttestationUtil attestationUtil;
   private final ValidatorsUtil validatorsUtil;
+  private final VoluntaryExitSignatureVerifier voluntaryExitSignatureVerifier;
 
   public BlockProcessorUtil(
       final SpecConstants specConstants,
@@ -74,6 +75,8 @@ public final class BlockProcessorUtil {
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
+    this.voluntaryExitSignatureVerifier =
+        new VoluntaryExitSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
   }
 
   /**
@@ -267,7 +270,7 @@ public final class BlockProcessorUtil {
       SSZList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
     ProposerSlashingSignatureVerifier slashingSignatureVerifier =
-        new ProposerSlashingSignatureVerifier();
+        new ProposerSlashingSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
 
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
@@ -459,7 +462,8 @@ public final class BlockProcessorUtil {
   public void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
+    VoluntaryExitStateTransitionValidator validator =
+        new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
     try {
 
       // For each exit in block.body.voluntaryExits:
@@ -484,14 +488,19 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
-    VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {
-      boolean exitSignatureValid = verifier.verifySignature(state, signedExit, signatureVerifier);
+      boolean exitSignatureValid =
+          voluntaryExitSignatureVerifier.verifySignature(state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         LOG.trace("Exit signature is invalid {}", signedExit);
         return false;
       }
     }
     return true;
+  }
+
+  public boolean verifyVoluntaryExit(
+      BeaconState state, SignedVoluntaryExit exit, BLSSignatureVerifier signatureVerifier) {
+    return voluntaryExitSignatureVerifier.verifySignature(state, exit, signatureVerifier);
   }
 }

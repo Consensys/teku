@@ -20,6 +20,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionExceptio
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
+import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -431,6 +433,28 @@ public class SpecProvider {
     return atSlot(slot)
         .getAttestationUtil()
         .getGenericAttestationData(slot, state, block, committeeIndex);
+  }
+
+  // Operation Validation
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return atState(state).getVoluntaryExitStateTransitionValidator().validate(state, signedExit);
+  }
+
+  public boolean verifyVoluntaryExitSignature(
+      BeaconState state, SignedVoluntaryExit exit, BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .getBlockProcessorUtil()
+        .verifyVoluntaryExit(state, exit, signatureVerifier);
+  }
+
+  public boolean verifyProposerSlashingSignature(
+      BeaconState state,
+      ProposerSlashing proposerSlashing,
+      BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .getProposerSlashingSignatureVerifier()
+        .verifySignature(state, proposerSlashing, signatureVerifier);
   }
 
   // Private helpers

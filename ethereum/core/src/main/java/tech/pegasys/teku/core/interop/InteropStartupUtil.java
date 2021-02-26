@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.interop;
+package tech.pegasys.teku.core.interop;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;

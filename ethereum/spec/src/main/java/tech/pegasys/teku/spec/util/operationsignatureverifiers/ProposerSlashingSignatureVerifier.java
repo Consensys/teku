@@ -13,24 +13,34 @@
 
 package tech.pegasys.teku.spec.util.operationsignatureverifiers;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class ProposerSlashingSignatureVerifier {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final SpecConstants specConstants;
+  private final BeaconStateUtil beaconStateUtil;
+  private final ValidatorsUtil validatorsUtil;
+
+  public ProposerSlashingSignatureVerifier(
+      final SpecConstants specConstants,
+      final BeaconStateUtil beaconStateUtil,
+      final ValidatorsUtil validatorsUtil) {
+    this.specConstants = specConstants;
+    this.beaconStateUtil = beaconStateUtil;
+    this.validatorsUtil = validatorsUtil;
+  }
 
   public boolean verifySignature(
       BeaconState state,
@@ -41,7 +51,7 @@ public class ProposerSlashingSignatureVerifier {
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
 
     Optional<BLSPublicKey> maybePublicKey =
-        ValidatorsUtil.getValidatorPubKey(state, header1.getProposerIndex());
+        validatorsUtil.getValidatorPubKey(state, header1.getProposerIndex());
     if (maybePublicKey.isEmpty()) {
       return false;
     }
@@ -49,9 +59,12 @@ public class ProposerSlashingSignatureVerifier {
 
     if (!signatureVerifier.verify(
         publicKey,
-        compute_signing_root(
+        beaconStateUtil.computeSigningRoot(
             header1,
-            get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header1.getSlot()))),
+            beaconStateUtil.getDomain(
+                state,
+                specConstants.getDomainBeaconProposer(),
+                beaconStateUtil.computeEpochAtSlot(header1.getSlot()))),
         proposerSlashing.getHeader_1().getSignature())) {
       LOG.trace("Header1 signature is invalid {}", header1);
       return false;
@@ -59,9 +72,12 @@ public class ProposerSlashingSignatureVerifier {
 
     if (!signatureVerifier.verify(
         publicKey,
-        compute_signing_root(
+        beaconStateUtil.computeSigningRoot(
             header2,
-            get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
+            beaconStateUtil.getDomain(
+                state,
+                specConstants.getDomainBeaconProposer(),
+                beaconStateUtil.computeEpochAtSlot(header2.getSlot()))),
         proposerSlashing.getHeader_2().getSignature())) {
       LOG.trace("Header2 signature is invalid {}", header1);
       return false;

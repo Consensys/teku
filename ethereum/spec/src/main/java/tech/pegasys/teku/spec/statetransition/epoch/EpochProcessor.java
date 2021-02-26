@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -39,14 +40,17 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 public class EpochProcessor {
   private final SpecConstants specConstants;
   private final ValidatorsUtil validatorsUtil;
+  private final AttestationUtil attestationUtil;
   private final BeaconStateUtil beaconStateUtil;
 
   public EpochProcessor(
       final SpecConstants specConstants,
       final ValidatorsUtil validatorsUtil,
+      final AttestationUtil attestationUtil,
       final BeaconStateUtil beaconStateUtil) {
     this.specConstants = specConstants;
     this.validatorsUtil = validatorsUtil;
+    this.attestationUtil = attestationUtil;
     this.beaconStateUtil = beaconStateUtil;
   }
 
@@ -57,7 +61,8 @@ public class EpochProcessor {
    * @throws EpochProcessingException if processing fails
    */
   public BeaconState processEpoch(final BeaconState preState) throws EpochProcessingException {
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
+    final ValidatorStatuses validatorStatuses =
+        ValidatorStatuses.create(preState, beaconStateUtil, validatorsUtil, attestationUtil);
     return preState.updated(
         state -> {
           processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
@@ -161,7 +166,7 @@ public class EpochProcessor {
 
   public RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
       final BeaconState state, final ValidatorStatuses validatorStatuses) {
-    return new DefaultRewardsAndPenaltiesCalculator(
+    return new RewardsAndPenaltiesCalculator(
         specConstants, beaconStateUtil, state, validatorStatuses);
   }
 

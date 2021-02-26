@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 
+@Deprecated
 public class CommitteeUtil {
 
   /**

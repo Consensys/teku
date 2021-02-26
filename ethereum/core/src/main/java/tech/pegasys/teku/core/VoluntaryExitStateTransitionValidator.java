@@ -11,9 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.util.operationvalidators;
+package tech.pegasys.teku.core;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -25,20 +27,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason;
+import tech.pegasys.teku.spec.util.operationvalidators.OperationStateTransitionValidator;
 
+@Deprecated
 public class VoluntaryExitStateTransitionValidator
     implements OperationStateTransitionValidator<SignedVoluntaryExit> {
-
-  private final BeaconStateUtil beaconStateUtil;
-  private final ValidatorsUtil validatorsUtil;
-
-  public VoluntaryExitStateTransitionValidator(
-      final BeaconStateUtil beaconStateUtil, final ValidatorsUtil validatorsUtil) {
-    this.beaconStateUtil = beaconStateUtil;
-    this.validatorsUtil = validatorsUtil;
-  }
 
   @Override
   public Optional<OperationInvalidReason> validate(
@@ -52,8 +46,7 @@ public class VoluntaryExitStateTransitionValidator
                 ExitInvalidReason.INVALID_VALIDATOR_INDEX),
         () ->
             check(
-                validatorsUtil.isActiveValidator(
-                    getValidator(state, exit), beaconStateUtil.getCurrentEpoch(state)),
+                is_active_validator(getValidator(state, exit), get_current_epoch(state)),
                 ExitInvalidReason.VALIDATOR_INACTIVE),
         () ->
             check(
@@ -61,12 +54,11 @@ public class VoluntaryExitStateTransitionValidator
                 ExitInvalidReason.EXIT_INITIATED),
         () ->
             check(
-                beaconStateUtil.getCurrentEpoch(state).compareTo(exit.getEpoch()) >= 0,
+                get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
                 ExitInvalidReason.SUBMITTED_TOO_EARLY),
         () ->
             check(
-                beaconStateUtil
-                        .getCurrentEpoch(state)
+                get_current_epoch(state)
                         .compareTo(
                             getValidator(state, exit)
                                 .getActivation_epoch()

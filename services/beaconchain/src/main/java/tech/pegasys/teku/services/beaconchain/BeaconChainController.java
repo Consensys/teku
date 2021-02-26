@@ -33,6 +33,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.core.interop.InteropStartupUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -56,18 +57,14 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
-import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -356,20 +353,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
     ProposerSlashingValidator validator =
         new ProposerSlashingValidator(
-            recentChainData,
-            new ProposerSlashingStateTransitionValidator(),
-            new ProposerSlashingSignatureVerifier());
+            specProvider, recentChainData, new ProposerSlashingStateTransitionValidator());
     proposerSlashingPool = new OperationPool<>(ProposerSlashing.class, validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    VoluntaryExitValidator validator =
-        new VoluntaryExitValidator(
-            recentChainData,
-            new VoluntaryExitStateTransitionValidator(),
-            new VoluntaryExitSignatureVerifier());
+    VoluntaryExitValidator validator = new VoluntaryExitValidator(recentChainData, specProvider);
     voluntaryExitPool = new OperationPool<>(SignedVoluntaryExit.class, validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }

@@ -26,20 +26,25 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 class ValidatorStatusTest {
   private final SpecProvider specProvider = StubSpecProvider.create();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec genesisSpec = specProvider.getGenesisSpec();
+  private final ValidatorsUtil validatorsUtil = genesisSpec.getValidatorsUtil();
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void shouldSetSlashedCorrectly(final boolean slashed) {
     final Validator validator = dataStructureUtil.randomValidator().withSlashed(slashed);
-    assertThat(ValidatorStatus.create(validator, UInt64.ZERO, UInt64.ZERO).isSlashed())
+    assertThat(
+            ValidatorStatus.create(validator, UInt64.ZERO, UInt64.ZERO, validatorsUtil).isSlashed())
         .isEqualTo(slashed);
   }
 
@@ -48,7 +53,7 @@ class ValidatorStatusTest {
     final Validator validator =
         dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
     assertThat(
-            ValidatorStatus.create(validator, UInt64.valueOf(7), UInt64.valueOf(8))
+            ValidatorStatus.create(validator, UInt64.valueOf(7), UInt64.valueOf(8), validatorsUtil)
                 .isWithdrawableInCurrentEpoch())
         .isTrue();
   }
@@ -58,7 +63,7 @@ class ValidatorStatusTest {
     final Validator validator =
         dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
     assertThat(
-            ValidatorStatus.create(validator, UInt64.valueOf(6), UInt64.valueOf(7))
+            ValidatorStatus.create(validator, UInt64.valueOf(6), UInt64.valueOf(7), validatorsUtil)
                 .isWithdrawableInCurrentEpoch())
         .isTrue();
   }
@@ -68,7 +73,7 @@ class ValidatorStatusTest {
     final Validator validator =
         dataStructureUtil.randomValidator().withWithdrawable_epoch(UInt64.valueOf(7));
     assertThat(
-            ValidatorStatus.create(validator, UInt64.valueOf(5), UInt64.valueOf(6))
+            ValidatorStatus.create(validator, UInt64.valueOf(5), UInt64.valueOf(6), validatorsUtil)
                 .isWithdrawableInCurrentEpoch())
         .isFalse();
   }
@@ -80,7 +85,7 @@ class ValidatorStatusTest {
     final Validator validator =
         dataStructureUtil.randomValidator().withEffective_balance(effectiveBalance);
     assertThat(
-            ValidatorStatus.create(validator, UInt64.ZERO, UInt64.ZERO)
+            ValidatorStatus.create(validator, UInt64.ZERO, UInt64.ZERO, validatorsUtil)
                 .getCurrentEpochEffectiveBalance())
         .isEqualTo(effectiveBalance);
   }
@@ -98,7 +103,8 @@ class ValidatorStatusTest {
             .withActivation_epoch(activationEpoch)
             .withExit_epoch(exitEpoch);
     final ValidatorStatus validatorStatus =
-        ValidatorStatus.create(validator, currentEpoch.minusMinZero(1), currentEpoch);
+        ValidatorStatus.create(
+            validator, currentEpoch.minusMinZero(1), currentEpoch, validatorsUtil);
     assertThat(validatorStatus.isActiveInCurrentEpoch()).isEqualTo(isActive);
   }
 
@@ -115,7 +121,7 @@ class ValidatorStatusTest {
             .withActivation_epoch(activationEpoch)
             .withExit_epoch(exitEpoch);
     final ValidatorStatus validatorStatus =
-        ValidatorStatus.create(validator, previousEpoch, previousEpoch.plus(1));
+        ValidatorStatus.create(validator, previousEpoch, previousEpoch.plus(1), validatorsUtil);
     assertThat(validatorStatus.isActiveInPreviousEpoch()).isEqualTo(isActive);
   }
 
@@ -138,7 +144,8 @@ class ValidatorStatusTest {
       final Function<ValidatorStatus, Boolean> getter,
       final BiConsumer<ValidatorStatus, Boolean> setter) {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     assertThat(getter.apply(status)).isFalse();
     setter.accept(status, true);
     assertThat(getter.apply(status)).isTrue();
@@ -151,7 +158,8 @@ class ValidatorStatusTest {
       final Function<ValidatorStatus, Boolean> getter,
       final BiConsumer<ValidatorStatus, Boolean> setter) {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     assertThat(getter.apply(status)).isFalse();
     setter.accept(status, false);
     assertThat(getter.apply(status)).isFalse();
@@ -164,7 +172,8 @@ class ValidatorStatusTest {
       final Function<ValidatorStatus, Boolean> getter,
       final BiConsumer<ValidatorStatus, Boolean> setter) {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     assertThat(getter.apply(status)).isFalse();
     setter.accept(status, true);
     assertThat(getter.apply(status)).isTrue();
@@ -179,7 +188,8 @@ class ValidatorStatusTest {
       final Function<ValidatorStatus, Boolean> getter,
       final BiConsumer<ValidatorStatus, Boolean> setter) {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     assertThat(getter.apply(status)).isFalse();
     setter.accept(status, true);
     assertThat(getter.apply(status)).isTrue();
@@ -190,7 +200,8 @@ class ValidatorStatusTest {
   @Test
   void shouldUpdateInclusionInfoWhenNoPreviousValueSet() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     final InclusionInfo newValue = new InclusionInfo(UInt64.ONE, UInt64.ONE);
     status.updateInclusionInfo(Optional.of(newValue));
     assertThat(status.getInclusionInfo()).contains(newValue);
@@ -199,7 +210,8 @@ class ValidatorStatusTest {
   @Test
   void shouldLeaveInclusionInfoEmptyWhenNewValueIsEmpty() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     status.updateInclusionInfo(Optional.empty());
     assertThat(status.getInclusionInfo()).isEmpty();
   }
@@ -207,7 +219,8 @@ class ValidatorStatusTest {
   @Test
   void shouldNotChangeInclusionInfoWhenNewValueIsEmpty() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     final InclusionInfo oldValue = new InclusionInfo(UInt64.ONE, UInt64.ONE);
     status.updateInclusionInfo(Optional.of(oldValue));
 
@@ -218,7 +231,8 @@ class ValidatorStatusTest {
   @Test
   void shouldUseNewInclusionInfoWhenItHasLowerDelay() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     final InclusionInfo oldValue = new InclusionInfo(UInt64.ONE, UInt64.ONE);
     final InclusionInfo newValue = new InclusionInfo(UInt64.ZERO, UInt64.valueOf(3));
     status.updateInclusionInfo(Optional.of(oldValue));
@@ -230,7 +244,8 @@ class ValidatorStatusTest {
   @Test
   void shouldKeepOldInclusionInfoWhenNewValueHasEqualDelay() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     final InclusionInfo oldValue = new InclusionInfo(UInt64.ONE, UInt64.ONE);
     final InclusionInfo newValue = new InclusionInfo(UInt64.ONE, UInt64.valueOf(3));
     status.updateInclusionInfo(Optional.of(oldValue));
@@ -242,7 +257,8 @@ class ValidatorStatusTest {
   @Test
   void shouldKeepOldInclusionInfoWhenNewValueHasHigherDelay() {
     final ValidatorStatus status =
-        ValidatorStatus.create(dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE);
+        ValidatorStatus.create(
+            dataStructureUtil.randomValidator(), UInt64.ZERO, UInt64.ONE, validatorsUtil);
     final InclusionInfo oldValue = new InclusionInfo(UInt64.ONE, UInt64.ONE);
     final InclusionInfo newValue = new InclusionInfo(UInt64.valueOf(2), UInt64.valueOf(3));
     status.updateInclusionInfo(Optional.of(oldValue));
