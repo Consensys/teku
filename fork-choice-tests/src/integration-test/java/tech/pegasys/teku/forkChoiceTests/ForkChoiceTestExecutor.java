@@ -217,8 +217,8 @@ public class ForkChoiceTestExecutor {
             case "head":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                forkChoice.processHead();
-                Bytes32 head = storageClient.getBestBlockRoot().get();
+                forkChoice.processHead().join();
+                Bytes32 head = storageClient.getBestBlockRoot().orElseThrow();
                 assertEquals(
                     root,
                     head,
@@ -275,6 +275,6 @@ public class ForkChoiceTestExecutor {
     slot,
     block,
     attestation,
-    checks;
+    checks
   }
 }

@@ -84,11 +84,11 @@ class ForkChoiceTest {
   @Test
   void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
-    forkChoice.processHead(ONE);
+    processHead(ONE);
 
     // Then rerun with a filled slot 1
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
-    forkChoice.processHead(ONE);
+    processHead(ONE);
 
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
@@ -112,7 +112,7 @@ class ForkChoiceTest {
   void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
-    forkChoice.processHead(nodeSlot);
+    processHead(nodeSlot);
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
@@ -160,7 +160,7 @@ class ForkChoiceTest {
     assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
     // Should have processed the attestations and switched to this fork
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
 
@@ -206,7 +206,7 @@ class ForkChoiceTest {
     importBlock(chainBuilder, blockWithAttestations);
 
     // Apply these votes
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
 
     // Now we import the fork block
@@ -300,5 +300,9 @@ class ForkChoiceTest {
       }
     }
     return preState;
+  }
+
+  private void processHead(final UInt64 one) {
+    assertThat(forkChoice.processHead(one)).isCompleted();
   }
 }

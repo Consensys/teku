@@ -63,21 +63,21 @@ public class ForkChoice {
   }
 
   private void initializeProtoArrayForkChoice() {
-    processHead();
+    processHead().join();
   }
 
-  public void processHead() {
-    processHead(Optional.empty());
+  public SafeFuture<Void> processHead() {
+    return processHead(Optional.empty());
   }
 
-  public void processHead(UInt64 nodeSlot) {
-    processHead(Optional.of(nodeSlot));
+  public SafeFuture<Void> processHead(UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot));
   }
 
-  private void processHead(Optional<UInt64> nodeSlot) {
+  private SafeFuture<Void> processHead(Optional<UInt64> nodeSlot) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
-    recentChainData
+    return recentChainData
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
             justifiedCheckpointState ->
@@ -115,8 +115,7 @@ public class ForkChoice {
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
                       transaction.commit();
-                    }))
-        .join();
+                    }));
   }
 
   /**
