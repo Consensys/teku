@@ -44,6 +44,7 @@ public class Eth2NetworkConfiguration {
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
+  private final boolean balanceAttackMitigationEnabled;
 
   private Eth2NetworkConfiguration(
       final SpecProvider specProvider,
@@ -54,7 +55,8 @@ public class Eth2NetworkConfiguration {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<UInt64> eth1DepositContractDeployBlock) {
+      final Optional<UInt64> eth1DepositContractDeployBlock,
+      final boolean balanceAttackMitigationEnabled) {
     this.specProvider = specProvider;
     this.constants = constants;
     this.initialState = initialState;
@@ -64,6 +66,7 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -119,6 +122,10 @@ public class Eth2NetworkConfiguration {
     return eth1DepositContractDeployBlock;
   }
 
+  public boolean isBalanceAttackMitigationEnabled() {
+    return balanceAttackMitigationEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -133,6 +140,7 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+    private boolean balanceAttackMitigationEnabled = false;
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
@@ -146,7 +154,8 @@ public class Eth2NetworkConfiguration {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1DepositContractDeployBlock);
+          eth1DepositContractDeployBlock,
+          balanceAttackMitigationEnabled);
     }
 
     public Builder constants(final String constants) {
@@ -195,6 +204,11 @@ public class Eth2NetworkConfiguration {
     public Builder eth1DepositContractDeployBlock(final long eth1DepositContractDeployBlock) {
       this.eth1DepositContractDeployBlock =
           Optional.of(UInt64.valueOf(eth1DepositContractDeployBlock));
+      return this;
+    }
+
+    public Builder balanceAttackMitigationEnabled(final boolean balanceAttackMitigationEnabled) {
+      this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
       return this;
     }
 

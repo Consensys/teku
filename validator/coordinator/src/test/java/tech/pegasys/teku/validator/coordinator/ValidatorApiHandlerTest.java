@@ -67,6 +67,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -103,6 +104,7 @@ class ValidatorApiHandlerTest {
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
+  private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
@@ -118,11 +120,13 @@ class ValidatorApiHandlerTest {
           eventBus,
           dutyMetrics,
           performanceTracker,
-          specProvider);
+          specProvider,
+          forkChoiceTrigger);
 
   @BeforeEach
   public void setUp() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test

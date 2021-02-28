@@ -225,7 +225,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead(slot);
+    forkChoice.processHead(slot).join();
     return importResult.getBlock();
   }
 

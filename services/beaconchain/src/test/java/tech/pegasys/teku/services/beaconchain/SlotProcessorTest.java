@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -62,7 +62,7 @@ public class SlotProcessorTest {
 
   private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final ForwardSync syncService = mock(ForwardSync.class);
-  private final ForkChoice forkChoice = mock(ForkChoice.class);
+  private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
@@ -70,7 +70,7 @@ public class SlotProcessorTest {
           specProvider,
           recentChainData,
           syncService,
-          forkChoice,
+          forkChoiceTrigger,
           p2pNetwork,
           slotEventsChannel,
           eventLogger);
@@ -225,7 +225,7 @@ public class SlotProcessorTest {
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
             1);
-    verify(forkChoice).processHead(slot);
+    verify(forkChoiceTrigger).onAttestationsDueForSlot(slot);
   }
 
   @Test
@@ -259,7 +259,7 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ZERO);
+    verify(forkChoiceTrigger).onAttestationsDueForSlot(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = beaconState.getGenesis_time().plus(SECONDS_PER_SLOT);
@@ -267,7 +267,7 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ONE);
+    verify(forkChoiceTrigger).onAttestationsDueForSlot(ONE);
   }
 
   @Test
@@ -283,7 +283,7 @@ public class SlotProcessorTest {
             specProvider,
             recentChainData,
             syncService,
-            forkChoice,
+            forkChoiceTrigger,
             p2pNetwork,
             slotEventsChannel,
             eventLogger);
