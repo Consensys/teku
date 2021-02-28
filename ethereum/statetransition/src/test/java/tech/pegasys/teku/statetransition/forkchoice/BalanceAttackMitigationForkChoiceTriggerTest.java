@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 class BalanceAttackMitigationForkChoiceTriggerTest {
 
   private final ForkChoice forkChoice = mock(ForkChoice.class);
-  private final SafeFuture<Void> processHeadResult = new SafeFuture<>();
+  private final SafeFuture<Boolean> processHeadResult = new SafeFuture<>();
   private final ForkChoiceTrigger trigger = ForkChoiceTrigger.create(forkChoice, true);
 
   @BeforeEach
@@ -90,7 +90,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
     verifyNoMoreInteractions(forkChoice);
     assertThat(result).isNotDone();
 
-    processHeadResult.complete(null);
+    processHeadResult.complete(true);
     assertThat(result).isCompleted();
   }
 
@@ -103,7 +103,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 
-    processHeadResult.complete(null);
+    processHeadResult.complete(true);
     assertThat(result).isCompleted();
   }
 }

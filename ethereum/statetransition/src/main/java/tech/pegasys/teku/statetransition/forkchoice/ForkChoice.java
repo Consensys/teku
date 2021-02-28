@@ -66,15 +66,15 @@ public class ForkChoice {
     processHead().join();
   }
 
-  public SafeFuture<Void> processHead() {
+  public SafeFuture<Boolean> processHead() {
     return processHead(Optional.empty());
   }
 
-  public SafeFuture<Void> processHead(UInt64 nodeSlot) {
+  public SafeFuture<Boolean> processHead(UInt64 nodeSlot) {
     return processHead(Optional.of(nodeSlot));
   }
 
-  private SafeFuture<Void> processHead(Optional<UInt64> nodeSlot) {
+  private SafeFuture<Boolean> processHead(Optional<UInt64> nodeSlot) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -94,7 +94,7 @@ public class ForkChoice {
                             retrievedJustifiedCheckpoint.getRoot(),
                             justifiedCheckpoint.getEpoch(),
                             justifiedCheckpoint.getRoot());
-                        return;
+                        return false;
                       }
                       final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -115,6 +115,7 @@ public class ForkChoice {
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
                       transaction.commit();
+                      return true;
                     }));
   }
 

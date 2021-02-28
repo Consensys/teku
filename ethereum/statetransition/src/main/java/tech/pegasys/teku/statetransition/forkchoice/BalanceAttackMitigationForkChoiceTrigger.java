@@ -54,7 +54,7 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
     if (forkChoiceUpdate.nodeSlot.isGreaterThan(slot)) {
       return SafeFuture.COMPLETE;
     } else if (forkChoiceUpdate.nodeSlot.equals(slot)) {
-      return forkChoiceUpdate.result;
+      return forkChoiceUpdate.result.thenApply(__ -> null);
     } else {
       // Only possible if processHead messed up somehow
       return SafeFuture.failedFuture(
@@ -87,7 +87,7 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
 
   private static class ForkChoiceUpdate {
     private final UInt64 nodeSlot;
-    private final SafeFuture<Void> result = new SafeFuture<>();
+    private final SafeFuture<Boolean> result = new SafeFuture<>();
 
     private ForkChoiceUpdate(final UInt64 nodeSlot) {
       this.nodeSlot = nodeSlot;

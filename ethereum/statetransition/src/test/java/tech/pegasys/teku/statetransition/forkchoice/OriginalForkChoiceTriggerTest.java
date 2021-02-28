@@ -32,7 +32,7 @@ class OriginalForkChoiceTriggerTest {
 
   @BeforeEach
   void setUp() {
-    when(forkChoice.processHead(any())).thenReturn(SafeFuture.COMPLETE);
+    when(forkChoice.processHead(any())).thenReturn(SafeFuture.completedFuture(true));
   }
 
   @Test
