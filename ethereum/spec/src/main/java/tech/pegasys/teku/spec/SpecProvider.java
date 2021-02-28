@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -384,6 +385,13 @@ public class SpecProvider {
   public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processVoluntaryExits(state, exits);
+  }
+
+  public boolean isEnoughVotesToUpdateEth1Data(
+      BeaconState state, Eth1Data eth1Data, final int additionalVotes) {
+    final BlockProcessorUtil blockProcessor = atState(state).getBlockProcessorUtil();
+    final long existingVotes = blockProcessor.getVoteCount(state, eth1Data);
+    return blockProcessor.isEnoughVotesToUpdateEth1Data(existingVotes + additionalVotes);
   }
 
   // Validator Utils

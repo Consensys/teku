@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.getVoteCount;
-import static tech.pegasys.teku.core.BlockProcessorUtil.isEnoughVotesToUpdateEth1Data;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
@@ -127,7 +125,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   public synchronized SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UInt64 eth1DepositCount;
-    if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
+    if (specProvider.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
     } else {
       eth1DepositCount = state.getEth1_data().getDeposit_count();
