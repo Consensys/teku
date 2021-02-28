@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -68,6 +69,7 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =
@@ -84,7 +86,8 @@ public class ValidatorApiHandlerIntegrationTest {
           eventBus,
           mock(DutyMetrics.class),
           performanceTracker,
-          specProvider);
+          specProvider,
+          forkChoiceTrigger);
 
   @BeforeEach
   public void setup() {

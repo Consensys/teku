@@ -76,6 +76,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -141,6 +142,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunnerEventThread forkChoiceExecutor;
 
   private volatile ForkChoice forkChoice;
+  private volatile ForkChoiceTrigger forkChoiceTrigger;
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2P2PNetwork p2pNetwork;
@@ -395,6 +397,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     forkChoice = new ForkChoice(specProvider, forkChoiceExecutor, recentChainData);
+    forkChoiceTrigger =
+        ForkChoiceTrigger.create(
+            forkChoice, beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled());
   }
 
   public void initMetrics() {
@@ -462,7 +467,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventBus,
             DutyMetrics.create(metricsSystem, timeProvider, recentChainData, specProvider),
             performanceTracker,
-            specProvider);
+            specProvider,
+            forkChoiceTrigger);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
@@ -579,7 +585,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             specProvider,
             recentChainData,
             syncService.getForwardSync(),
-            forkChoice,
+            forkChoiceTrigger,
             p2pNetwork,
             slotEventsChannelPublisher);
   }

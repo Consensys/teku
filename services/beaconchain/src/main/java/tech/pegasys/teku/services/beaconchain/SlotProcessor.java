@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -45,7 +45,7 @@ public class SlotProcessor {
   private final SpecProvider specProvider;
   private final RecentChainData recentChainData;
   private final ForwardSync syncService;
-  private final ForkChoice forkChoice;
+  private final ForkChoiceTrigger forkChoiceTrigger;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
@@ -61,14 +61,14 @@ public class SlotProcessor {
       final SpecProvider specProvider,
       final RecentChainData recentChainData,
       final ForwardSync syncService,
-      final ForkChoice forkChoice,
+      final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EventLogger eventLogger) {
     this.specProvider = specProvider;
     this.recentChainData = recentChainData;
     this.syncService = syncService;
-    this.forkChoice = forkChoice;
+    this.forkChoiceTrigger = forkChoiceTrigger;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.eventLog = eventLogger;
@@ -78,14 +78,14 @@ public class SlotProcessor {
       final SpecProvider specProvider,
       final RecentChainData recentChainData,
       final ForwardSync syncService,
-      final ForkChoice forkChoice,
+      final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher) {
     this(
         specProvider,
         recentChainData,
         syncService,
-        forkChoice,
+        forkChoiceTrigger,
         p2pNetwork,
         slotEventsChannelPublisher,
         EventLogger.EVENT_LOG);
@@ -175,7 +175,7 @@ public class SlotProcessor {
 
   private void processSlotWhileSyncing() {
     UInt64 slot = nodeSlot.getValue();
-    this.forkChoice.processHead(slot);
+    this.forkChoiceTrigger.onSlotStartedWhileSyncing(slot);
     eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(slot);
   }
@@ -224,6 +224,7 @@ public class SlotProcessor {
 
   private void processSlotStart(final UInt64 nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
+    forkChoiceTrigger.onSlotStarted(onTickSlotStart);
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
       recentChainData
           .getFinalizedCheckpoint()
@@ -240,7 +241,7 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UInt64 nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    this.forkChoice.processHead(onTickSlotAttestation);
+    forkChoiceTrigger.onAttestationsDueForSlot(onTickSlotAttestation);
     recentChainData
         .getChainHead()
         .ifPresent(
