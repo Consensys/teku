@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networks;
+package tech.pegasys.teku.spec;
 
-import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.ConstantsLoader;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecProviderFactory {
 

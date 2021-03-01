@@ -17,8 +17,8 @@ import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAUL
 import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 
 public class ScoringConfigTest {
 

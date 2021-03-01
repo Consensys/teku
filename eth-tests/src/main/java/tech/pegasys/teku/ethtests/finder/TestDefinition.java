@@ -14,8 +14,8 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 
 public class TestDefinition {
   private final String specName;
