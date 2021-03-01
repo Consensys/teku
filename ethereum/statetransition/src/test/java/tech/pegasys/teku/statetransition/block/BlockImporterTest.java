@@ -72,7 +72,7 @@ public class BlockImporterTest {
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
   private final ForkChoice forkChoice =
-      new ForkChoice(spec, new InlineEventThread(), recentChainData);
+      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
@@ -389,7 +389,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -422,7 +422,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -463,7 +463,7 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -499,7 +499,7 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_initialCall() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),
@@ -523,7 +523,7 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_shouldPullUpdatedFinalizedCheckpoint() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        new ForkChoice(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
             storageSystem.recentChainData(),

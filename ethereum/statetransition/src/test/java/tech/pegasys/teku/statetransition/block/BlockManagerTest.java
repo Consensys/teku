@@ -71,7 +71,7 @@ public class BlockManagerTest {
   private final BeaconChainUtil remoteChain =
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
   private final ForkChoice forkChoice =
-      new ForkChoice(spec, new InlineEventThread(), localRecentChainData);
+      ForkChoice.create(spec, new InlineEventThread(), localRecentChainData);
 
   private final BlockImporter blockImporter =
       new BlockImporter(
