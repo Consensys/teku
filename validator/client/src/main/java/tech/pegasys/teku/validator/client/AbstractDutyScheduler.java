@@ -21,12 +21,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final boolean useDependentRoots;
   private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
@@ -38,16 +38,16 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       final DutyLoader epochDutiesScheduler,
       final int lookAheadEpochs,
       final boolean useDependentRoots,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
     this.useDependentRoots = useDependentRoots;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   protected void notifyEpochDuties(
       final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
-    final EpochDuties epochDuties = dutiesByEpoch.get(specProvider.computeEpochAtSlot(slot));
+    final EpochDuties epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
     if (epochDuties != null) {
       action.accept(epochDuties, slot);
     }
@@ -55,7 +55,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    final UInt64 currentEpoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     this.currentEpoch = Optional.of(currentEpoch);
     removePriorEpochs(currentEpoch);
     calculateDuties(currentEpoch);
@@ -70,7 +70,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     if (!useDependentRoots) {
       return;
     }
-    final UInt64 headEpoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 headEpoch = spec.computeEpochAtSlot(slot);
     dutiesByEpoch
         .tailMap(headEpoch, true)
         .forEach(
@@ -96,7 +96,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     if (useDependentRoots) {
       return;
     }
-    final UInt64 changedEpoch = specProvider.computeEpochAtSlot(commonAncestorSlot);
+    final UInt64 changedEpoch = spec.computeEpochAtSlot(commonAncestorSlot);
     // Because duties for an epoch can be calculated from the very start of that epoch, the epoch
     // containing the common ancestor is not affected by the reorg.
     // Similarly epochs within the look-ahead distance of the common ancestor must not be affected
@@ -105,7 +105,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
         "Chain reorganisation detected. Invalidating validator duties after epoch {}",
         lastUnaffectedEpoch);
     invalidateEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
-    calculateDuties(specProvider.computeEpochAtSlot(newSlot));
+    calculateDuties(spec.computeEpochAtSlot(newSlot));
   }
 
   @Override
@@ -143,7 +143,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     if (currentEpoch.isEmpty()) {
       return false;
     }
-    final UInt64 signingEpoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 signingEpoch = spec.computeEpochAtSlot(slot);
     final UInt64 epoch = currentEpoch.get();
     return !signingEpoch.isGreaterThan(epoch.plus(lookAheadEpochs + 1));
   }

@@ -49,7 +49,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -90,7 +90,7 @@ public class Eth2P2PNetworkBuilder {
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
   private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
-  private SpecProvider specProvider;
+  private Spec spec;
 
   private Eth2P2PNetworkBuilder() {}
 
@@ -119,7 +119,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
-            specProvider);
+            spec);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -157,7 +157,7 @@ public class Eth2P2PNetworkBuilder {
     PreparedGossipMessageFactory defaultMessageFactory =
         (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
     final GossipTopicFilter gossipTopicsFilter =
-        new Eth2GossipTopicFilter(recentChainData, gossipEncoding, specProvider);
+        new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
     final LibP2PNetwork p2pNetwork =
@@ -364,9 +364,9 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder specProvider(final SpecProvider specProvider) {
-    checkNotNull(specProvider);
-    this.specProvider = specProvider;
+  public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
+    checkNotNull(spec);
+    this.spec = spec;
     return this;
   }
 }

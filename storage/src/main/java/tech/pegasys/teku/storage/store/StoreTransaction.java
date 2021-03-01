@@ -31,7 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -46,7 +46,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final Store store;
   private final ReadWriteLock lock;
   private final StorageUpdateChannel storageUpdateChannel;
@@ -61,12 +61,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
-      final SpecProvider specProvider,
+      final Spec spec,
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
       final UpdatableStore.StoreUpdateHandler updateHandler) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -308,7 +308,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
       return new StateAtSlotTask(
-              specProvider,
+              spec,
               checkpoint.toSlotAndBlockRoot(),
               fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
@@ -324,7 +324,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
       return new StateAtSlotTask(
-              specProvider, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+              spec, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
     return store.retrieveStateAtSlot(slotAndBlockRoot);

@@ -27,18 +27,18 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
-  final int secondsPerSlot = specProvider.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
+  final int secondsPerSlot = spec.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =
@@ -51,7 +51,7 @@ class TimeBasedEventAdapterTest {
           timeProvider,
           validatorTimingChannel,
           true,
-          specProvider);
+          spec);
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {

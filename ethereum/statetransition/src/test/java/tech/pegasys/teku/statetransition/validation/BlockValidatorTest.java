@@ -30,8 +30,8 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -45,9 +45,9 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(eventBus).specProvider(specProvider).build();
+      MemoryOnlyRecentChainData.builder().eventBus(eventBus).specProvider(spec).build();
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(10, recentChainData);
 
   private BlockValidator blockValidator;
@@ -55,7 +55,7 @@ public class BlockValidatorTest {
   @BeforeEach
   void setUp() {
     beaconChainUtil.initializeStorage();
-    blockValidator = new BlockValidator(specProvider, recentChainData);
+    blockValidator = new BlockValidator(spec, recentChainData);
   }
 
   @Test
@@ -188,8 +188,7 @@ public class BlockValidatorTest {
     ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
-    BlockValidator blockValidator =
-        new BlockValidator(specProvider, storageSystem.recentChainData());
+    BlockValidator blockValidator = new BlockValidator(spec, storageSystem.recentChainData());
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));

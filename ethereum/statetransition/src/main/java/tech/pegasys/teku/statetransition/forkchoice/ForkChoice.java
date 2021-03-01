@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -49,25 +49,25 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
 
   private ForkChoice(
-      final SpecProvider specProvider,
+      final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
   public static ForkChoice create(
-      final SpecProvider specProvider,
+      final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    return new ForkChoice(specProvider, forkChoiceExecutor, recentChainData);
+    return new ForkChoice(spec, forkChoiceExecutor, recentChainData);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -158,8 +158,7 @@ public class ForkChoice {
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              specProvider.onBlock(
-                  transaction, block, blockSlotState.get(), indexedAttestationCache);
+              spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
 
           if (!result.isSuccessful()) {
             return result;
@@ -213,7 +212,7 @@ public class ForkChoice {
             maybeTargetState -> {
               final UpdatableStore store = recentChainData.getStore();
               final AttestationProcessingResult validationResult =
-                  specProvider.validateAttestation(store, attestation, maybeTargetState);
+                  spec.validateAttestation(store, attestation, maybeTargetState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);
