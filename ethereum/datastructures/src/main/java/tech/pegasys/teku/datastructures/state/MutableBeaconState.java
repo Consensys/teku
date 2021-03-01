@@ -82,7 +82,10 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(
-        Bytes32.class, getAnyByRef(HISTORICAL_ROOTS_FIELD.getIndex()), SszBytes32::new, AbstractSszPrimitive::get);
+        Bytes32.class,
+        getAnyByRef(HISTORICAL_ROOTS_FIELD.getIndex()),
+        SszBytes32::new,
+        AbstractSszPrimitive::get);
   }
 
   // Eth1
@@ -116,7 +119,10 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UInt64.class, getAnyByRef(BALANCES_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
+        UInt64.class,
+        getAnyByRef(BALANCES_FIELD.getIndex()),
+        SszUInt64::new,
+        AbstractSszPrimitive::get);
   }
 
   @Override
@@ -132,20 +138,29 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAnyByRef(SLASHINGS_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
+        UInt64.class,
+        getAnyByRef(SLASHINGS_FIELD.getIndex()),
+        SszUInt64::new,
+        AbstractSszPrimitive::get);
   }
 
   // Attestations
   @Override
   default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()), Function.identity(), Function.identity());
+        PendingAttestation.class,
+        getAnyByRef(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
   }
 
   @Override
   default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()), Function.identity(), Function.identity());
+        PendingAttestation.class,
+        getAnyByRef(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
   }
 
   // Finality

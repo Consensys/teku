@@ -103,11 +103,7 @@ public interface BeaconState extends SszContainer {
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
   SpecDependent<SszBytes32VectorSchema<?>> RANDAO_MIXES_FIELD_SCHEMA =
       SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.EPOCHS_PER_HISTORICAL_VECTOR));
-  SszField RANDAO_MIXES_FIELD =
-      new SszField(
-          13,
-          "randao_mixes",
-          RANDAO_MIXES_FIELD_SCHEMA::get);
+  SszField RANDAO_MIXES_FIELD = new SszField(13, "randao_mixes", RANDAO_MIXES_FIELD_SCHEMA::get);
 
   SszField SLASHINGS_FIELD =
       new SszField(

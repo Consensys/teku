@@ -13,16 +13,11 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
