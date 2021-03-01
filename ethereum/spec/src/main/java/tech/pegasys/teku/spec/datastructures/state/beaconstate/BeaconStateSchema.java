@@ -271,7 +271,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
             () ->
                 SszListSchema.create(
                     PendingAttestation.SSZ_SCHEMA,
-                    (long) specConstants.getMaxAttestations() * specConstants.getSecondsPerSlot()));
+                    (long) specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
     final SszField currentEpochAttestationsField =
         new SszField(
             16,
@@ -279,7 +279,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
             () ->
                 SszListSchema.create(
                     PendingAttestation.SSZ_SCHEMA,
-                    (long) specConstants.getMaxAttestations() * specConstants.getSecondsPerSlot()));
+                    (long) specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
     SszField justificationBitsField =
         new SszField(
             17,
