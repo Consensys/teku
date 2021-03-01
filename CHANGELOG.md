@@ -18,3 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+- Reduced verbosity of warning message when SIGHUP can't be interecepted (e.g. on Windows)
