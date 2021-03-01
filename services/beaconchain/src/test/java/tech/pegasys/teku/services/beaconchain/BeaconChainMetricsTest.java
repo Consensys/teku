@@ -86,7 +86,10 @@ class BeaconChainMetricsTest {
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
     when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
     List<Bytes32> blockRootsList =
-        new ArrayList<>(Collections.nCopies(1000, dataStructureUtil.randomBytes32()));
+        new ArrayList<>(
+            Collections.nCopies(
+                BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().getLength(),
+                dataStructureUtil.randomBytes32()));
     when(state.getBlock_roots())
         .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
   }
