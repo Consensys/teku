@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -79,8 +78,6 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
@@ -227,15 +224,6 @@ public final class DataStructureUtil {
             Stream.generate(valueGenerator).limit(numItems),
             Stream.generate(() -> defaultElement).limit(schema.getLength() - numItems))
         .collect(schema.collector());
-  }
-
-  public <T> SSZVector<T> randomSSZVector(
-      T defaultClassObject, long maxSize, Supplier<T> valueGenerator) {
-    SSZMutableVector<T> sszvector =
-        SSZVector.createMutable(toIntExact(maxSize), defaultClassObject);
-    long numItems = maxSize / 10;
-    LongStream.range(0, numItems).forEach(i -> sszvector.set(toIntExact(i), valueGenerator.get()));
-    return sszvector;
   }
 
   public SszBitlist randomBitlist() {

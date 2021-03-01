@@ -22,8 +22,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 
-public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
-    implements SSZMutableList<T>, SSZMutableVector<T> {
+public class SSZArrayCollection<T> extends SSZAbstractCollection<T> implements SSZMutableList<T> {
 
   private final boolean isVector;
   protected final long maxSize;
