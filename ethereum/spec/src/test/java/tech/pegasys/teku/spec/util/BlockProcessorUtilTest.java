@@ -159,7 +159,10 @@ class BlockProcessorUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
-    return BeaconState.createEmpty()
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             beaconState -> {
               beaconState.setSlot(dataStructureUtil.randomUInt64());

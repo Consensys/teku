@@ -45,6 +45,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -60,7 +62,8 @@ import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void minReturnsMin() {
@@ -360,7 +363,10 @@ class BeaconStateUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
-    return BeaconState.createEmpty()
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             beaconState -> {
               beaconState.setSlot(dataStructureUtil.randomUInt64());

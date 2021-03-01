@@ -22,6 +22,10 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
@@ -29,7 +33,8 @@ import tech.pegasys.teku.util.config.Constants;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void vectorLengthsTest() {
@@ -47,7 +52,10 @@ class BeaconStateTest {
   void simpleMutableBeaconStateTest() {
     UInt64 val1 = UInt64.valueOf(0x3333);
     BeaconState stateR1 =
-        BeaconState.createEmpty()
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconStateSchema()
+            .createEmpty()
             .updated(
                 state -> {
                   state.getBalances().add(val1);
@@ -72,37 +80,38 @@ class BeaconStateTest {
 
   @Test
   public void changeSpecConstantsTest() {
-    try {
-      BeaconState s1 = BeaconState.createEmpty();
+    final Spec standardSpec = SpecFactory.createMinimal();
+    final SpecConstants specConstants =
+        TestConstantsLoader.loadConstantsBuilder("minimal")
+            .slotsPerHistoricalRoot(123)
+            .historicalRootsLimit(123)
+            .epochsPerEth1VotingPeriod(123)
+            .validatorRegistryLimit(123L)
+            .epochsPerHistoricalVector(123)
+            .epochsPerSlashingsVector(123)
+            .maxAttestations(123)
+            .build();
+    final Spec modifiedSpec = SpecFactory.create(specConstants);
+    BeaconState s1 =
+        modifiedSpec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema().createEmpty();
 
-      Constants.SLOTS_PER_HISTORICAL_ROOT = 123;
-      Constants.HISTORICAL_ROOTS_LIMIT = 123;
-      Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 123;
-      Constants.VALIDATOR_REGISTRY_LIMIT = 123;
-      Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
-      Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
-      Constants.MAX_ATTESTATIONS = 123;
+    BeaconState s2 =
+        standardSpec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema().createEmpty();
 
-      // this call should reset all the memorized spec constants
-      BeaconState s2 = BeaconState.createEmpty();
-
-      assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
-      assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
-      assertThat(s1.getHistorical_roots().getMaxSize())
-          .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
-      assertThat(s1.getEth1_data_votes().getMaxSize())
-          .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
-      assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
-      assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
-      assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
-      assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
-      assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
-          .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
-      assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
-          .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
-    } finally {
-      Constants.setConstants("minimal");
-    }
+    assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
+    assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
+    assertThat(s1.getHistorical_roots().getMaxSize())
+        .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
+    assertThat(s1.getEth1_data_votes().getMaxSize())
+        .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
+    assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
+    assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
+    assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
+    assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
+    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
+        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
+    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
+        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
   }
 
   @Test
