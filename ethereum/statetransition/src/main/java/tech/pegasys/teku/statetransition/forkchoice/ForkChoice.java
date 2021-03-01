@@ -52,17 +52,14 @@ public class ForkChoice {
   private final SpecProvider specProvider;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
-  private final ProposerWeightings proposerWeightings;
 
   private ForkChoice(
       final SpecProvider specProvider,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData,
-      final ProposerWeightings proposerWeightings) {
+      final RecentChainData recentChainData) {
     this.specProvider = specProvider;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
-    this.proposerWeightings = proposerWeightings;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
@@ -70,11 +67,7 @@ public class ForkChoice {
       final SpecProvider specProvider,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    return new ForkChoice(
-        specProvider,
-        forkChoiceExecutor,
-        recentChainData,
-        new ProposerWeightings(forkChoiceExecutor));
+    return new ForkChoice(specProvider, forkChoiceExecutor, recentChainData);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -98,7 +91,6 @@ public class ForkChoice {
             justifiedCheckpointState ->
                 onForkChoiceThread(
                     () -> {
-                      nodeSlot.ifPresent(proposerWeightings::onForkChoiceRunAtSlotStart);
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
                       final Checkpoint justifiedCheckpoint =
@@ -139,7 +131,7 @@ public class ForkChoice {
   public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-        .thenCompose(blockSlotState -> onBlock(block, UInt64.ZERO, blockSlotState));
+        .thenCompose(blockSlotState -> onBlock(block, blockSlotState));
   }
 
   /**
@@ -147,9 +139,7 @@ public class ForkChoice {
    * processed to the same slot as the block.
    */
   private SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block,
-      final UInt64 priorSlotCommitteeWeight,
-      Optional<BeaconState> blockSlotState) {
+      final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -176,7 +166,7 @@ public class ForkChoice {
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, priorSlotCommitteeWeight, result);
+          updateForkChoiceForImportedBlock(block, result);
           applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });
@@ -197,11 +187,8 @@ public class ForkChoice {
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final UInt64 priorSlotCommitteeWeight,
-      final BlockImportResult result) {
+      final SignedBeaconBlock block, final BlockImportResult result) {
     if (result.isSuccessful()) {
-      proposerWeightings.onBlockReceived(block, priorSlotCommitteeWeight);
       // If the new block builds on our current chain head immediately make it the new head
       // Since fork choice works by walking down the tree selecting the child block with
       // the greatest weight, when a block has only one child it will automatically become
