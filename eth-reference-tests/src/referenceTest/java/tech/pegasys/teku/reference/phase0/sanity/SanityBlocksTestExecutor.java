@@ -22,15 +22,16 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.BlsSetting;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
 
@@ -51,26 +52,50 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                         SignedBeaconBlock.getSszSchema()))
             .collect(Collectors.toList());
 
+    final Optional<BeaconState> expectedState;
     if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILENAME).toFile().exists()) {
-      final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILENAME);
-      assertThat(applyBlocks(metaData, preState, blocks)).isEqualTo(expectedState);
+      expectedState = Optional.of(loadStateFromSsz(testDefinition, EXPECTED_STATE_FILENAME));
     } else {
-      assertThatThrownBy(() -> applyBlocks(metaData, preState, blocks))
-          .isInstanceOf(StateTransitionException.class);
+      expectedState = Optional.empty();
     }
+
+    runBlockProcessor(this::applyBlocks, testDefinition, metaData, preState, blocks, expectedState);
+  }
+
+  private void runBlockProcessor(
+      final BlocksProcessor processor,
+      final TestDefinition testDefinition,
+      final SanityBlocksMetaData metaData,
+      final BeaconState preState,
+      final List<SignedBeaconBlock> blocks,
+      final Optional<BeaconState> expectedState) {
+    final SpecProvider specProvider = testDefinition.getSpecProvider();
+    expectedState.ifPresentOrElse(
+        (state) ->
+            assertThat(processor.processBlocks(specProvider, metaData, preState, blocks))
+                .isEqualTo(state),
+        () ->
+            assertThatThrownBy(
+                    () -> processor.processBlocks(specProvider, metaData, preState, blocks))
+                .hasCauseInstanceOf(StateTransitionException.class));
   }
 
   private BeaconState applyBlocks(
+      final SpecProvider specProvider,
       final SanityBlocksMetaData metaData,
       final BeaconState preState,
-      final List<SignedBeaconBlock> blocks)
-      throws StateTransitionException {
-    final StateTransition stateTransition = new StateTransition();
-    BeaconState result = preState;
-    for (SignedBeaconBlock block : blocks) {
-      result = stateTransition.initiate(result, block, metaData.getBlsSetting() != IGNORED);
+      final List<SignedBeaconBlock> blocks) {
+    try {
+      BeaconState result = preState;
+      for (SignedBeaconBlock block : blocks) {
+        result =
+            specProvider.initiateStateTransition(
+                result, block, metaData.getBlsSetting() != IGNORED);
+      }
+      return result;
+    } catch (StateTransitionException e) {
+      throw new RuntimeException(e);
     }
-    return result;
   }
 
   private static class SanityBlocksMetaData {
@@ -94,5 +119,13 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     public int getRevealDeadlinesSetting() {
       return revealDeadlinesSetting;
     }
+  }
+
+  private interface BlocksProcessor {
+    BeaconState processBlocks(
+        final SpecProvider specProvider,
+        final SanityBlocksMetaData metaData,
+        final BeaconState preState,
+        final List<SignedBeaconBlock> blocks);
   }
 }

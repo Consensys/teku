@@ -31,10 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -43,6 +39,10 @@ import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -103,11 +103,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
+            specProvider,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO,
-            specProvider);
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -157,6 +157,7 @@ public class StorageBackedRecentChainDataTest {
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
+            .specProvider(specProvider)
             .latestFinalized(anchorPoint)
             .justifiedCheckpoint(anchorPoint.getCheckpoint())
             .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
@@ -225,11 +226,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
+                specProvider,
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE),
-                UInt64.ZERO,
-                specProvider)
+                UInt64.ZERO)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
@@ -274,11 +275,11 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
+            specProvider,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
-            UInt64.ZERO,
-            specProvider);
+            UInt64.ZERO);
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

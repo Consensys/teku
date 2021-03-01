@@ -25,8 +25,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 @FunctionalInterface
 public interface BlockProvider {

@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SlotAndBlockRootSerializerTest {

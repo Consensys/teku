@@ -24,25 +24,24 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -57,24 +56,14 @@ public class CombinedChainDataClient {
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
-  private final StateTransition stateTransition;
   private final SpecProvider specProvider;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final SpecProvider specProvider) {
-    this(recentChainData, historicalChainData, new StateTransition(), specProvider);
-  }
-
-  public CombinedChainDataClient(
-      final RecentChainData recentChainData,
-      final StorageQueryChannel historicalChainData,
-      final StateTransition stateTransition,
-      final SpecProvider specProvider) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
-    this.stateTransition = stateTransition;
     this.specProvider = specProvider;
   }
 
@@ -333,7 +322,7 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
     try {
-      return Optional.of(stateTransition.process_slots(preState, slot));
+      return Optional.of(specProvider.processSlots(preState, slot));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.debug("State Transition error", e);
       return Optional.empty();

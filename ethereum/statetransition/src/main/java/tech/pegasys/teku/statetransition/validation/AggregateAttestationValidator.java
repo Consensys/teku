@@ -14,10 +14,10 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -33,17 +33,17 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 

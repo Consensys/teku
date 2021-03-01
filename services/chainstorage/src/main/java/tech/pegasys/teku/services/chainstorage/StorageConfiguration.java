@@ -14,8 +14,8 @@
 package tech.pegasys.teku.services.chainstorage;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 

@@ -22,10 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.data.yaml.YamlProvider;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
 public class ForkChoiceDataWriter {
 

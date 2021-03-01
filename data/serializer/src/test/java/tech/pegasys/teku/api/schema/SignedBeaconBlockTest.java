@@ -24,7 +24,7 @@ class SignedBeaconBlockTest {
 
   @Test
   public void shouldConvertSchemaToInternalCorrectly() {
-    final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock internalBlock =
+    final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock apiBlock = new SignedBeaconBlock(internalBlock);
     assertThatSszData(apiBlock.asInternalSignedBeaconBlock()).isEqualByAllMeansTo(internalBlock);

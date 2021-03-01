@@ -14,10 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static org.assertj.core.util.Preconditions.checkState;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,24 +30,27 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.interop.MockStartBeaconStateGenerator;
-import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
-import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.util.config.Constants;
@@ -60,28 +60,38 @@ public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
 
+  private final SpecProvider specProvider;
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
-  private BlockProposalTestUtil blockProposalTestUtil = new BlockProposalTestUtil();
+  private final BlockProposalTestUtil blockProposalTestUtil;
 
   private ChainBuilder(
-      final List<BLSKeyPair> validatorKeys, final Map<UInt64, SignedBlockAndState> existingBlocks) {
+      final SpecProvider specProvider,
+      final List<BLSKeyPair> validatorKeys,
+      final Map<UInt64, SignedBlockAndState> existingBlocks) {
+    this.specProvider = specProvider;
     this.validatorKeys = validatorKeys;
 
-    attestationGenerator = new AttestationGenerator(validatorKeys);
+    attestationGenerator = new AttestationGenerator(specProvider, validatorKeys);
+    blockProposalTestUtil = new BlockProposalTestUtil(specProvider);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
   }
 
   public static ChainBuilder createDefault() {
-    return ChainBuilder.create(DEFAULT_VALIDATOR_KEYS);
+    return ChainBuilder.create(SpecProviderFactory.createMinimal(), DEFAULT_VALIDATOR_KEYS);
   }
 
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(validatorKeys, Collections.emptyMap());
+    return create(SpecProviderFactory.createMinimal(), validatorKeys);
+  }
+
+  public static ChainBuilder create(
+      final SpecProvider specProvider, final List<BLSKeyPair> validatorKeys) {
+    return new ChainBuilder(specProvider, validatorKeys, Collections.emptyMap());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -99,7 +109,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(validatorKeys, blocks);
+    return new ChainBuilder(specProvider, validatorKeys, blocks);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -114,7 +124,7 @@ public class ChainBuilder {
   public UInt64 getLatestEpoch() {
     assertChainIsNotEmpty();
     final UInt64 slot = getLatestSlot();
-    return compute_epoch_at_slot(slot);
+    return specProvider.computeEpochAtSlot(slot);
   }
 
   public Stream<SignedBlockAndState> streamBlocksAndStates() {
@@ -194,7 +204,7 @@ public class ChainBuilder {
 
   public SignedBlockAndState getLatestBlockAndStateAtEpochBoundary(final UInt64 epoch) {
     assertChainIsNotEmpty();
-    final UInt64 slot = compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = specProvider.computeStartSlotAtEpoch(epoch);
     return getLatestBlockAndStateAtSlot(slot);
   }
 
@@ -313,13 +323,14 @@ public class ChainBuilder {
    */
   public Stream<Attestation> streamValidAttestationsForBlockAtSlot(final UInt64 slot) {
     // Calculate bounds for valid head blocks
-    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
+    final UInt64 currentEpoch = specProvider.computeEpochAtSlot(slot);
     final UInt64 prevEpoch =
         currentEpoch.compareTo(UInt64.ZERO) == 0 ? currentEpoch : currentEpoch.minus(UInt64.ONE);
-    final UInt64 minBlockSlot = compute_start_slot_at_epoch(prevEpoch);
+    final UInt64 minBlockSlot = specProvider.computeStartSlotAtEpoch(prevEpoch);
 
     // Calculate valid assigned slots to be included in a block at the given slot
-    final UInt64 slotsPerEpoch = UInt64.valueOf(SLOTS_PER_EPOCH);
+    final UInt64 slotsPerEpoch =
+        UInt64.valueOf(specProvider.getGenesisSpecConstants().getSlotsPerEpoch());
     final UInt64 minAssignedSlot =
         slot.compareTo(slotsPerEpoch) <= 0 ? UInt64.ZERO : slot.minus(slotsPerEpoch);
     final UInt64 minInclusionDiff = UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);

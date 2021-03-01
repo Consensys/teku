@@ -26,18 +26,18 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -55,6 +55,7 @@ class StoreTest extends AbstractStoreTest {
                 Store.create(
                     SYNC_RUNNER,
                     new StubMetricsSystem(),
+                    specProvider,
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),

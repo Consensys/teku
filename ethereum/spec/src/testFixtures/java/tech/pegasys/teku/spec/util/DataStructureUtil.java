@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,46 +36,46 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -414,7 +415,13 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockAndState randomSignedBlockAndState(final UInt64 slot) {
-    final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
+    return randomSignedBlockAndState(slot, randomBytes32());
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(
+      final UInt64 slot, final Bytes32 parentRoot) {
+    final BeaconBlockAndState blockAndState =
+        randomBlockAndState(slot, randomBeaconState(slot), parentRoot);
 
     final SignedBeaconBlock signedBlock =
         new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
@@ -431,7 +438,11 @@ public final class DataStructureUtil {
   }
 
   private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
-    final Bytes32 parentRoot = randomBytes32();
+    return randomBlockAndState(slot, state, randomBytes32());
+  }
+
+  private BeaconBlockAndState randomBlockAndState(
+      final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
     final BeaconBlockHeader latestHeader =

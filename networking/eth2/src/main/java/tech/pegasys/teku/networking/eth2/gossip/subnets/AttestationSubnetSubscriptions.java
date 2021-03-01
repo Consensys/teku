@@ -17,10 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -30,6 +26,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {

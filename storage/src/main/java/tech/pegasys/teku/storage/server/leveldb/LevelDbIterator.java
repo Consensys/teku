@@ -52,7 +52,7 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
 
   private boolean isValidKey() {
     final byte[] nextKey = iterator.peekNext().getKey();
-    return isFromColumn(column, nextKey) && Arrays.compare(nextKey, lastKey) <= 0;
+    return isFromColumn(column, nextKey) && Arrays.compareUnsigned(nextKey, lastKey) <= 0;
   }
 
   @Override

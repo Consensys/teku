@@ -38,7 +38,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
@@ -49,6 +48,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
 class ConnectionManagerTest {

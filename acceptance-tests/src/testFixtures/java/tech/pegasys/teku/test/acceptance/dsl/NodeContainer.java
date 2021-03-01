@@ -49,6 +49,10 @@ public class NodeContainer extends GenericContainer<NodeContainer> {
     return this;
   }
 
+  public void expandTarballToContainer(final File tarball, final String targetPath) {
+    expandTarballToContainer(getContainerId(), tarball, targetPath);
+  }
+
   private void expandTarballToContainer(
       final String containerId, final File tarball, final String targetPath) {
     try {

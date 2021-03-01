@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptySet;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
 
 import java.util.Collections;
@@ -26,21 +25,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class ActiveValidatorTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final SpecProvider specProvider;
   private final NavigableMap<UInt64, Set<Integer>> validatorsPerEpoch =
       new ConcurrentSkipListMap<>();
 
   private final StableSubnetSubscriber stableSubnetSubscriber;
 
-  public ActiveValidatorTracker(final StableSubnetSubscriber stableSubnetSubscriber) {
+  public ActiveValidatorTracker(
+      final StableSubnetSubscriber stableSubnetSubscriber, final SpecProvider specProvider) {
     this.stableSubnetSubscriber = stableSubnetSubscriber;
+    this.specProvider = specProvider;
   }
 
   public void onCommitteeSubscriptionRequest(final int validatorIndex, final UInt64 slot) {
-    final UInt64 epoch = compute_epoch_at_slot(slot);
+    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
     validatorsPerEpoch
         .computeIfAbsent(epoch, __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
         .add(validatorIndex);
@@ -48,7 +51,7 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    final UInt64 epoch = compute_epoch_at_slot(slot);
+    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
     final int validatorCount = getNumberOfValidatorsForEpoch(epoch);
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
     stableSubnetSubscriber.onSlot(slot, validatorCount);

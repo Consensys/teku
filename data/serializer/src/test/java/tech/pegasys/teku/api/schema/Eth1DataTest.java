@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class Eth1DataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final tech.pegasys.teku.datastructures.blocks.Eth1Data eth1DataInternal =
+  private final tech.pegasys.teku.spec.datastructures.blocks.Eth1Data eth1DataInternal =
       dataStructureUtil.randomEth1Data();
 
   @Test

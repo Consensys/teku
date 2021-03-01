@@ -14,34 +14,29 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.BlockProposalUtil;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 
 public class BlockFactory {
-  private final BlockProposalUtil blockCreator;
-  private final StateTransition stateTransition;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
@@ -49,19 +44,17 @@ public class BlockFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
+  private final SpecProvider specProvider;
 
   public BlockFactory(
-      final BlockProposalUtil blockCreator,
-      final StateTransition stateTransition,
       final AggregatingAttestationPool attestationPool,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
-      final Bytes32 graffiti) {
-    this.blockCreator = blockCreator;
-    this.stateTransition = stateTransition;
+      final Bytes32 graffiti,
+      final SpecProvider specProvider) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -69,6 +62,7 @@ public class BlockFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
+    this.specProvider = specProvider;
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -90,7 +84,7 @@ public class BlockFactory {
     if (previousState.getSlot().equals(slotBeforeBlock)) {
       blockPreState = previousState;
     } else {
-      blockPreState = stateTransition.process_slots(previousState, slotBeforeBlock);
+      blockPreState = specProvider.processSlots(previousState, slotBeforeBlock);
     }
 
     // Collect attestations to include
@@ -98,7 +92,7 @@ public class BlockFactory {
     if (maybeBlockSlotState.isPresent()) {
       blockSlotState = maybeBlockSlotState.get();
     } else {
-      blockSlotState = stateTransition.process_slots(blockPreState, newSlot);
+      blockSlotState = specProvider.processSlots(blockPreState, newSlot);
     }
     SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
@@ -118,12 +112,12 @@ public class BlockFactory {
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final SszList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
-    final Bytes32 parentRoot = get_block_root_at_slot(blockSlotState, slotBeforeBlock);
+    final Bytes32 parentRoot = specProvider.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
-    return blockCreator
+    return specProvider
         .createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(blockSlotState, newSlot),
+            specProvider.getBeaconProposerIndex(blockSlotState, newSlot),
             randaoReveal,
             blockSlotState,
             parentRoot,

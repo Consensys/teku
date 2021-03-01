@@ -14,8 +14,8 @@
 package tech.pegasys.teku.api.stateselector;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public interface StateSelector {
   SafeFuture<Optional<BeaconState>> getState();

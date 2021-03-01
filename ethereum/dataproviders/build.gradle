@@ -1,6 +1,6 @@
 dependencies {
     implementation project(':ethereum:core')
-    implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:spec')
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:metrics')
 
@@ -8,7 +8,8 @@ dependencies {
 
     testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':ethereum:core'))
-    testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:spec'))
+    testImplementation testFixtures(project(':ethereum:networks'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:metrics'))
 }

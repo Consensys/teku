@@ -17,8 +17,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class GossipedBlockCollector {
   private final Collection<SignedBeaconBlock> blocks = new ConcurrentLinkedQueue<>();

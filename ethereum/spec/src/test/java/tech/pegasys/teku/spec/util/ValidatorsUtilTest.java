@@ -18,9 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 class ValidatorsUtilTest {

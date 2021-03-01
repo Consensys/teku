@@ -26,10 +26,10 @@ import static tech.pegasys.teku.networks.Eth2Network.TOLEDO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -44,6 +44,7 @@ public class Eth2NetworkConfiguration {
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
+  private final boolean balanceAttackMitigationEnabled;
 
   private Eth2NetworkConfiguration(
       final SpecProvider specProvider,
@@ -54,7 +55,8 @@ public class Eth2NetworkConfiguration {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<UInt64> eth1DepositContractDeployBlock) {
+      final Optional<UInt64> eth1DepositContractDeployBlock,
+      final boolean balanceAttackMitigationEnabled) {
     this.specProvider = specProvider;
     this.constants = constants;
     this.initialState = initialState;
@@ -64,6 +66,7 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -119,6 +122,10 @@ public class Eth2NetworkConfiguration {
     return eth1DepositContractDeployBlock;
   }
 
+  public boolean isBalanceAttackMitigationEnabled() {
+    return balanceAttackMitigationEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -133,6 +140,7 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+    private boolean balanceAttackMitigationEnabled = false;
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
@@ -146,7 +154,8 @@ public class Eth2NetworkConfiguration {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1DepositContractDeployBlock);
+          eth1DepositContractDeployBlock,
+          balanceAttackMitigationEnabled);
     }
 
     public Builder constants(final String constants) {
@@ -195,6 +204,11 @@ public class Eth2NetworkConfiguration {
     public Builder eth1DepositContractDeployBlock(final long eth1DepositContractDeployBlock) {
       this.eth1DepositContractDeployBlock =
           Optional.of(UInt64.valueOf(eth1DepositContractDeployBlock));
+      return this;
+    }
+
+    public Builder balanceAttackMitigationEnabled(final boolean balanceAttackMitigationEnabled) {
+      this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
       return this;
     }
 
@@ -259,7 +273,8 @@ public class Eth2NetworkConfiguration {
           .discoveryBootnodes(
               // PegaSys Teku
               "enr:-KG4QJRlj4pHagfNIm-Fsx9EVjW4rviuZYzle3tyddm2KAWMJBDGAhxfM2g-pDaaiwE8q19uvLSH4jyvWjypLMr3TIcEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA",
-              "enr:-KG4QDyytgmE4f7AnvW-ZaUOIi9i79qX4JwjRAiXBZCU65wOfBu-3Nb5I7b_Rmg3KCOcZM_C3y5pg7EBU5XGrcLTduQEhGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQ2_DUbiXNlY3AyNTZrMaEDKnz_-ps3UUOfHWVYaskI5kWYO_vtYMGYCQRAR3gHDouDdGNwgiMog3VkcIIjKA",
+              "enr:-KG4QL-eqFoHy0cI31THvtZjpYUu_Jdw_MO7skQRJxY1g5HTN1A0epPCU6vi0gLGUgrzpU-ygeMSS8ewVxDpKfYmxMMGhGV0aDKQtTA_KgAAAAD__________4JpZIJ2NIJpcIQ2_DUbiXNlY3AyNTZrMaED8GJ2vzUqgL6-KD1xalo1CsmY4X1HaDnyl6Y_WayCo9GDdGNwgiMog3VkcIIjKA",
+
               // Prysmatic Labs
               "enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
               "enr:-Ku4QP2xDnEtUXIjzJ_DhlCRN9SN99RYQPJL92TMlSv7U5C1YnYLjwOQHgZIUXw6c-BvRg2Yc2QsZxxoS_pPRVe0yK8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMeFF5GrS7UZpAH2Ly84aLK-TyvH-dRo0JM1i8yygH50YN1ZHCCJxA",

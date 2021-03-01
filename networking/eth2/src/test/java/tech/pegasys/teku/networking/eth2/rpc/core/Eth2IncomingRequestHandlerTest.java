@@ -26,17 +26,17 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<

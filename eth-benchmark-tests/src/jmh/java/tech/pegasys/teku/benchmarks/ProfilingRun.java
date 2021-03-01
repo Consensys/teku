@@ -30,17 +30,16 @@ import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
+  private SpecProvider specProvider = SpecProviderFactory.createMainnet();
 
   @Disabled
   @Test
@@ -88,12 +88,7 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice =
-          new ForkChoice(
-              new ForkChoiceAttestationValidator(),
-              new ForkChoiceBlockTasks(),
-              new InlineEventThread(),
-              recentChainData,
-              new StateTransition());
+          new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
@@ -166,12 +161,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       ForkChoice forkChoice =
-          new ForkChoice(
-              new ForkChoiceAttestationValidator(),
-              new ForkChoiceBlockTasks(),
-              new InlineEventThread(),
-              recentChainData,
-              new StateTransition());
+          new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 

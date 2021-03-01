@@ -35,14 +35,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -73,6 +65,14 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -201,7 +201,7 @@ public class Eth2P2PNetworkFactory {
         final AttestationSubnetTopicProvider subnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
-            new Eth2GossipTopicFilter(recentChainData, gossipEncoding);
+            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, specProvider);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =
@@ -234,7 +234,8 @@ public class Eth2P2PNetworkFactory {
                     reputationManager,
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
-                config.getNetworkConfig());
+                config.getNetworkConfig(),
+                config.getSpecProvider());
 
         return new ActiveEth2P2PNetwork(
             specProvider,

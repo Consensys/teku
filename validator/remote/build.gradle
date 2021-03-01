@@ -1,7 +1,6 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data:serializer')
-  implementation project(':ethereum:datastructures')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
@@ -17,7 +16,7 @@ dependencies {
   implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.vertx:vertx-core'
 
-  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':ssz'))
   testImplementation 'com.squareup.okhttp3:mockwebserver'

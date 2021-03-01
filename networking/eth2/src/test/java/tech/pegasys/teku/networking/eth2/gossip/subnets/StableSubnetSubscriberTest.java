@@ -25,28 +25,25 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.networks.TestConstantsLoader;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
+  SpecConstants specConstants =
+      TestConstantsLoader.loadConstantsBuilder("minimal")
+          .epochsPerRandomSubnetSubscription(5)
+          .build();
+  private final SpecProvider specProvider = SpecProviderFactory.create(specConstants);
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
-
-  @BeforeEach
-  void setUp() {
-    Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 5;
-  }
-
-  @AfterEach
-  void tearDown() {
-    Constants.setConstants("minimal");
-  }
 
   @Test
   void shouldCreateEnoughSubscriptionsAtStart() {
@@ -174,11 +171,14 @@ public class StableSubnetSubscriberTest {
     UInt64 lowerBound =
         currentSlot.plus(
             UInt64.valueOf(
-                Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
+                specProvider.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
+                    * specProvider.getGenesisSpecConstants().getSlotsPerEpoch()));
     UInt64 upperBound =
         currentSlot.plus(
             UInt64.valueOf(
-                2 * Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
+                2
+                    * specProvider.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
+                    * specProvider.getGenesisSpecConstants().getSlotsPerEpoch()));
     subnetSubscriptions.forEach(
         subnetSubscription -> {
           assertThat(subnetSubscription.getUnsubscriptionSlot()).isBetween(lowerBound, upperBound);
@@ -194,6 +194,7 @@ public class StableSubnetSubscriberTest {
   }
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
-    return new ValidatorBasedStableSubnetSubscriber(validatorApiChannel, new Random(13241234L));
+    return new ValidatorBasedStableSubnetSubscriber(
+        validatorApiChannel, new Random(13241234L), specProvider);
   }
 }

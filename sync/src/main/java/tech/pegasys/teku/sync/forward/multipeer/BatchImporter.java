@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 

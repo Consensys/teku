@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -41,7 +40,8 @@ import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvid
  */
 public class MultithreadedValidatorLoader {
 
-  public static OwnedValidators loadValidators(
+  public static void loadValidators(
+      final OwnedValidators ownedValidators,
       final Map<BLSPublicKey, ValidatorProvider> providers,
       final GraffitiProvider graffitiProvider) {
     final int totalValidatorCount = providers.size();
@@ -71,19 +71,20 @@ public class MultithreadedValidatorLoader {
                           }))
               .collect(toList());
 
-      final Map<BLSPublicKey, Validator> validators = new HashMap<>();
+      final List<Validator> addedValidators = new ArrayList<>();
       for (Future<Validator> future : futures) {
         final Validator validator = future.get();
-        validators.put(validator.getPublicKey(), validator);
+        addedValidators.add(validator);
       }
 
-      STATUS_LOG.validatorsInitialised(
-          validators.values().stream()
-              .map(Validator::getPublicKey)
-              .map(BLSPublicKey::toAbbreviatedString)
-              .collect(Collectors.toList()));
+      // Only start adding validators once we've successfully loaded all keys
+      addedValidators.forEach(ownedValidators::addValidator);
 
-      return new OwnedValidators(validators);
+      STATUS_LOG.validatorsInitialised(
+          addedValidators.stream()
+              .map(validator -> validator.getPublicKey().toAbbreviatedString())
+              .collect(toList()));
+
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);
     } catch (ExecutionException e) {

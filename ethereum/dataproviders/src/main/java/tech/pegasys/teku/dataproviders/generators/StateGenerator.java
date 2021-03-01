@@ -22,10 +22,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class StateGenerator {
   public static final int DEFAULT_STATE_CACHE_SIZE = 100;
@@ -46,22 +47,31 @@ public class StateGenerator {
   }
 
   public static StateGenerator create(
+      SpecProvider specProvider,
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider) {
-    return create(blockTree, rootBlockAndState, blockProvider, Collections.emptyMap());
+    return create(
+        specProvider, blockTree, rootBlockAndState, blockProvider, Collections.emptyMap());
   }
 
   public static StateGenerator create(
+      final SpecProvider specProvider,
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
       final Map<Bytes32, BeaconState> knownStates) {
     return create(
-        blockTree, rootBlockAndState, blockProvider, knownStates, DEFAULT_STATE_CACHE_SIZE);
+        specProvider,
+        blockTree,
+        rootBlockAndState,
+        blockProvider,
+        knownStates,
+        DEFAULT_STATE_CACHE_SIZE);
   }
 
   public static StateGenerator create(
+      final SpecProvider specProvider,
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
@@ -76,7 +86,7 @@ public class StateGenerator {
     final StateCache stateCache = new StateCache(stateCacheSize, availableStates);
 
     final AsyncChainStateGenerator chainStateGenerator =
-        AsyncChainStateGenerator.create(blockTree, blockProvider, stateCache::get);
+        AsyncChainStateGenerator.create(specProvider, blockTree, blockProvider, stateCache::get);
     return new StateGenerator(blockTree, chainStateGenerator, stateCache);
   }
 

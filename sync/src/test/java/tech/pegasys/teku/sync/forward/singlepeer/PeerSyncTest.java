@@ -22,8 +22,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import java.util.ArrayList;
@@ -35,10 +35,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.OngoingStubbing;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -46,6 +42,10 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 

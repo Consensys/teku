@@ -16,9 +16,9 @@ package tech.pegasys.teku.networking.eth2.peers;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {

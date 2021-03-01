@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.core.ForkChoiceBlockTasks.blockDescendsFromLatestFinalizedBlock;
-import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
@@ -32,24 +30,27 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecProvider specProvider;
   private final RecentChainData recentChainData;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
       LimitedSet.create(VALID_BLOCK_SET_SIZE);
 
-  public BlockValidator(RecentChainData recentChainData) {
+  public BlockValidator(final SpecProvider specProvider, RecentChainData recentChainData) {
+    this.specProvider = specProvider;
     this.recentChainData = recentChainData;
   }
 
@@ -127,7 +128,7 @@ public class BlockValidator {
     final long disparityInSeconds = Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0);
     final UInt64 maxOffset = UInt64.valueOf(disparityInSeconds);
     final UInt64 maxTime = store.getTime().plus(maxOffset);
-    UInt64 maxCurrSlot = getCurrentSlot(maxTime, store.getGenesisTime());
+    UInt64 maxCurrSlot = specProvider.getCurrentSlot(maxTime, store.getGenesisTime());
     return block.getSlot().compareTo(maxCurrSlot) > 0;
   }
 
@@ -161,7 +162,7 @@ public class BlockValidator {
   }
 
   private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
-    return blockDescendsFromLatestFinalizedBlock(
+    return specProvider.blockDescendsFromLatestFinalizedBlock(
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());

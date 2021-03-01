@@ -37,12 +37,12 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -146,7 +146,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onNewVoluntaryExit(
-      final tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit exit,
+      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
       final InternalValidationResult result) {
     try {
       final String newVoluntaryExitString =
@@ -167,7 +167,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     }
   }
 
-  protected void onNewBlock(final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block) {
+  protected void onNewBlock(
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block) {
     try {
       final String newBlockJsonString = jsonProvider.objectToJSON(new SignedBeaconBlock(block));
       notifySubscribersOfEvent(EventType.block, newBlockJsonString);

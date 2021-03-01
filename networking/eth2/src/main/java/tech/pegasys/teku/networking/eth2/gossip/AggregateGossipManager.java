@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -24,6 +22,8 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAt
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 public class AggregateGossipManager {
   public static String TOPIC_NAME = AggregateAttestationTopicHandler.TOPIC_NAME;

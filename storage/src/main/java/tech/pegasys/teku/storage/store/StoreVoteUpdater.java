@@ -19,11 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
 public class StoreVoteUpdater implements VoteUpdater {

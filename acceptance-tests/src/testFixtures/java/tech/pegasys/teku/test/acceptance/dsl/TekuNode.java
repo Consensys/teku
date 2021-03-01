@@ -23,11 +23,13 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
-import java.nio.file.Files;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -79,7 +82,7 @@ public class TekuNode extends Node {
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withExposedPorts(REST_API_PORT)
+        .withExposedPorts(REST_API_PORT, METRICS_PORT)
         .waitingFor(
             new HttpWaitStrategy()
                 .forPort(REST_API_PORT)
@@ -119,6 +122,7 @@ public class TekuNode extends Node {
         (localFile, targetPath) ->
             container.withCopyFileToContainer(
                 MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
+    config.getTarballsToCopy().forEach(this::copyContentsToWorkingDirectory);
     container.start();
   }
 
@@ -272,7 +276,7 @@ public class TekuNode extends Node {
           // Check that the fetched block and state are in sync
           assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
 
-          tech.pegasys.teku.datastructures.state.BeaconState internalBeaconState =
+          tech.pegasys.teku.spec.datastructures.state.BeaconState internalBeaconState =
               state.asInternalBeaconState();
           UInt64 proposerIndex = block.message.proposer_index;
 
@@ -304,6 +308,40 @@ public class TekuNode extends Node {
 
   public Config getConfig() {
     return config;
+  }
+
+  public void addValidators(final ValidatorKeystores additionalKeystores) {
+    LOG.debug("Adding {} validators", additionalKeystores.getValidatorCount());
+    container.expandTarballToContainer(additionalKeystores.getTarball(), WORKING_DIRECTORY);
+    container
+        .getDockerClient()
+        .killContainerCmd(container.getContainerId())
+        .withSignal("HUP")
+        .exec();
+  }
+
+  public void waitForOwnedValidatorCount(final int expectedValidatorCount) throws IOException {
+    LOG.debug("Waiting for validator count to be {}", expectedValidatorCount);
+    waitFor(
+        () -> {
+          final String validatorCount = getMetricValue("validator_local_validator_count");
+          LOG.debug("Current validator count {}", validatorCount);
+          assertThat(Double.parseDouble(validatorCount)).isEqualTo(expectedValidatorCount);
+        });
+  }
+
+  private String getMetricValue(final String metricName) throws IOException {
+    final String prefix = metricName + " ";
+    final String allMetrics = httpClient.get(getMetricsUrl(), "/metrics");
+    try (BufferedReader reader = new BufferedReader(new StringReader(allMetrics))) {
+      for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+        if (line.startsWith(prefix)) {
+          return line.substring(prefix.length());
+        }
+      }
+    }
+    throw new IllegalArgumentException(
+        "Did not find metric " + metricName + " in: \n" + allMetrics);
   }
 
   /**
@@ -338,6 +376,10 @@ public class TekuNode extends Node {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
   }
 
+  private URI getMetricsUrl() {
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(METRICS_PORT));
+  }
+
   @Override
   public void stop() {
     if (!started) {
@@ -367,13 +409,12 @@ public class TekuNode extends Node {
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
-    private static final String VALIDATORS_FILE_PATH = "/validators.yml";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private String networkName = "swift";
-    private Map<String, Object> configMap = new HashMap<>();
+    private final Map<String, Object> configMap = new HashMap<>();
+    private final List<File> tarballsToCopy = new ArrayList<>();
 
-    private Optional<String> validatorKeys = Optional.empty();
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
 
     public Config() {
@@ -389,9 +430,14 @@ public class TekuNode extends Node {
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-enabled", true);
+      configMap.put("validators-keystore-locking-enabled", false);
       configMap.put("rest-api-enabled", true);
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
+      configMap.put("metrics-enabled", true);
+      configMap.put("metrics-port", METRICS_PORT);
+      configMap.put("metrics-interface", "0.0.0.0");
+      configMap.put("metrics-host-allowlist", "*");
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
@@ -414,6 +460,18 @@ public class TekuNode extends Node {
 
     public Config withInteropNumberOfValidators(final int validatorCount) {
       configMap.put("Xinterop-number-of-validators", validatorCount);
+      return this;
+    }
+
+    public Config withValidatorKeystores(final ValidatorKeystores keystores) {
+      tarballsToCopy.add(keystores.getTarball());
+      configMap.put(
+          "validator-keys",
+          WORKING_DIRECTORY
+              + keystores.getKeysDirectoryName()
+              + ":"
+              + WORKING_DIRECTORY
+              + keystores.getPasswordsDirectoryName());
       return this;
     }
 
@@ -451,12 +509,6 @@ public class TekuNode extends Node {
 
     public Map<File, String> write() throws Exception {
       final Map<File, String> configFiles = new HashMap<>();
-      if (validatorKeys.isPresent()) {
-        final File validatorsFile = Files.createTempFile("validators", ".yml").toFile();
-        validatorsFile.deleteOnExit();
-        Files.writeString(validatorsFile.toPath(), validatorKeys.get());
-        configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
 
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
@@ -471,6 +523,10 @@ public class TekuNode extends Node {
 
     private void writeTo(final File configFile) throws Exception {
       YAML_MAPPER.writeValue(configFile, configMap);
+    }
+
+    private List<File> getTarballsToCopy() {
+      return tarballsToCopy;
     }
   }
 }

@@ -18,9 +18,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 
 public class WeakSubjectivityConfig {

@@ -23,7 +23,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -36,12 +35,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
@@ -76,7 +75,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(UInt64.ONE));
 
     verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
     verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(2), VALIDATOR_INDICES);
@@ -91,7 +90,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
 
     // Process each slot up to the start of epoch 1
-    final UInt64 epoch1Start = compute_start_slot_at_epoch(UInt64.ONE);
+    final UInt64 epoch1Start = specProvider.computeStartSlotAtEpoch(UInt64.ONE);
     for (int slot = 0; slot <= epoch1Start.intValue(); slot++) {
       dutyScheduler.onSlot(UInt64.valueOf(slot));
     }
@@ -102,12 +101,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrieved() {
     createDutySchedulerWithRealDuties(false);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(UInt64.ONE));
 
     verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
     verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(2), VALIDATOR_INDICES);
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(UInt64.valueOf(2)));
 
     // Requests the next epoch, but not the current one because we already have that
     verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(3), VALIDATOR_INDICES);
@@ -139,7 +138,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(request1)
         .thenReturn(request2);
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(UInt64.ONE));
     verify(validatorApiChannel, times(1)).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
 
     request1.completeExceptionally(new RuntimeException("Nope"));
@@ -157,10 +156,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldRefetchDutiesForMultipleEpochsAfterReorg() {
     createDutySchedulerWithRealDuties(false);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final UInt64 commonAncestorEpoch = currentEpoch.minus(2);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
+    final UInt64 commonAncestorSlot = specProvider.computeStartSlotAtEpoch(commonAncestorEpoch);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
@@ -178,10 +177,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldRefetchDutiesForNextEpochAfterReorg() {
     createDutySchedulerWithRealDuties(false);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
+    final UInt64 commonAncestorSlot = specProvider.computeStartSlotAtEpoch(commonAncestorEpoch);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
@@ -198,9 +197,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotRefetchDutiesWhenCommonAncestorInCurrentEpoch() {
     createDutySchedulerWithRealDuties(false);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
-    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 commonAncestorSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
@@ -216,7 +215,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldRefetchDutiesForMultipleEpochsWhenCurrentAndPreviousDependentRootChanges() {
     createDutySchedulerWithRealDuties(true);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
@@ -248,7 +247,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldRefetchDutiesForNextEpochWhenHeadUpdateHasNewCurrentDependentRoot() {
     createDutySchedulerWithRealDuties(true);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
@@ -279,7 +278,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotRefetchDutiesWhenHeadUpdateReceivedWithNoChangeInDependentRoots() {
     createDutySchedulerWithRealDuties(true);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
@@ -309,7 +308,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   void shouldRefetchAllDutiesOnMissedEvents() {
     createDutySchedulerWithRealDuties(false);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
@@ -329,7 +328,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   void shouldRefetchAllDutiesOnMissedEventsWhenUsingDependentRoots() {
     createDutySchedulerWithRealDuties(true);
     final UInt64 currentEpoch = UInt64.valueOf(5);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = specProvider.computeStartSlotAtEpoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
@@ -372,7 +371,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotProcessAggregationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
     createDutySchedulerWithMockDuties();
     // first slot of epoch 2
-    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    final UInt64 slot = specProvider.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
     verify(scheduledDuties, never()).performAggregation(slot);
@@ -382,7 +381,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotProcessAttestationIfCurrentEpochIsTooFarBeforeSlotEpoch() {
     createDutySchedulerWithMockDuties();
     // first slot of epoch 2
-    final UInt64 slot = compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
+    final UInt64 slot = specProvider.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
     verify(scheduledDuties, never()).produceAttestations(slot);
@@ -393,7 +392,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     createDutySchedulerWithMockDuties();
     // last slot of epoch 1
     final UInt64 slot =
-        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+        specProvider.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
     verify(scheduledDuties).performAggregation(slot);
@@ -404,7 +403,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     createDutySchedulerWithMockDuties();
     // last slot of epoch 1
     final UInt64 slot =
-        compute_start_slot_at_epoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+        specProvider.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
     verify(scheduledDuties).produceAttestations(slot);
@@ -455,7 +454,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(attestationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(ZERO));
     verify(attestationDuty).addValidator(validator1, 3, 6, 5, 10);
 
     // Execute
@@ -512,7 +511,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(ZERO));
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
@@ -579,7 +578,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(ZERO));
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
@@ -646,7 +645,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+    dutyScheduler.onSlot(specProvider.computeStartSlotAtEpoch(ZERO));
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
@@ -733,7 +732,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(unsignedAttestationFuture);
 
     // Load duties
-    final UInt64 epochStartSlot = compute_start_slot_at_epoch(ONE);
+    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(ONE);
     dutyScheduler.onSlot(epochStartSlot);
 
     // Only validator1 should have had an aggregation duty created for it
@@ -799,38 +798,38 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   private void createDutySchedulerWithRealDuties(final boolean useDependentRoots) {
+    final AttestationDutyLoader attestationDutyLoader =
+        new AttestationDutyLoader(
+            validatorApiChannel,
+            forkProvider,
+            dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
+            new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
+            validatorIndexProvider,
+            beaconCommitteeSubscriptions,
+            specProvider);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader(
-                asyncRunner,
-                new AttestationDutyLoader(
-                    validatorApiChannel,
-                    forkProvider,
-                    dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot),
-                    new OwnedValidators(
-                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-                    validatorIndexProvider,
-                    beaconCommitteeSubscriptions,
-                    specProvider)),
-            useDependentRoots);
+            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            useDependentRoots,
+            specProvider);
   }
 
   private void createDutySchedulerWithMockDuties() {
+    final AttestationDutyLoader attestationDutyLoader =
+        new AttestationDutyLoader(
+            validatorApiChannel,
+            forkProvider,
+            dependentRoot -> scheduledDuties,
+            new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
+            validatorIndexProvider,
+            beaconCommitteeSubscriptions,
+            specProvider);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader(
-                asyncRunner,
-                new AttestationDutyLoader(
-                    validatorApiChannel,
-                    forkProvider,
-                    dependentRoot -> scheduledDuties,
-                    new OwnedValidators(
-                        Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-                    validatorIndexProvider,
-                    beaconCommitteeSubscriptions,
-                    specProvider)),
-            false);
+            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            false,
+            specProvider);
   }
 }

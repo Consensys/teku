@@ -19,17 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSConstants;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -40,6 +29,10 @@ import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -131,9 +124,8 @@ public class FuzzUtil {
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
-      StateTransition transition = new StateTransition();
       BeaconState postState =
-          transition.initiate(
+          specProvider.initiateStateTransition(
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);

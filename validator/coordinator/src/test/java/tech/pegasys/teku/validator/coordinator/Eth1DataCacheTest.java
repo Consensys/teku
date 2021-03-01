@@ -22,9 +22,11 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 public class Eth1DataCacheTest {
 
   private static final UInt64 CACHE_DURATION = UInt64.valueOf(10_000);
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   // Note: The slot and genesis time won't line up with the voting period start and end
   // This is semi-deliberate - if you use the Eth1VotingPeriod instance it all works,
@@ -46,7 +49,7 @@ public class Eth1DataCacheTest {
   public static final UInt64 IN_RANGE_TIMESTAMP_3 = UInt64.valueOf(53_000);
   private static final int STATE_DEPOSIT_COUNT = 10;
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final Eth1Data stateEth1Data = createEth1Data(STATE_DEPOSIT_COUNT);
   private final Eth1VotingPeriod eth1VotingPeriod = mock(Eth1VotingPeriod.class);
 

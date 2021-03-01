@@ -16,10 +16,8 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -96,12 +94,9 @@ public class TekuValidatorNode extends Node {
   }
 
   public static class Config {
-    private static final String VALIDATORS_FILE_PATH = "/validators.yml";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
-
-    private Optional<String> validatorKeys = Optional.empty();
 
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
@@ -143,12 +138,6 @@ public class TekuValidatorNode extends Node {
 
     public Map<File, String> write() throws Exception {
       final Map<File, String> configFiles = new HashMap<>();
-      if (validatorKeys.isPresent()) {
-        final File validatorsFile = Files.createTempFile("validators", ".yml").toFile();
-        validatorsFile.deleteOnExit();
-        Files.writeString(validatorsFile.toPath(), validatorKeys.get());
-        configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
 
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();

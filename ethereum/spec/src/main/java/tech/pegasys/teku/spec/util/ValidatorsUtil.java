@@ -20,14 +20,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateCache;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class ValidatorsUtil {
 
@@ -96,7 +96,7 @@ public class ValidatorsUtil {
    */
   public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch =
-        tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch(state);
+        tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
         epoch.isLessThanOrEqualTo(maxLookaheadEpoch),

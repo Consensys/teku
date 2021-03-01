@@ -38,17 +38,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Committee;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Committee;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -234,7 +234,7 @@ public class BeaconStateUtilTest {
   public void isSlotAtNthEpochBoundary_invalidNParameter_zero() {
     assertThatThrownBy(
             () ->
-                tech.pegasys.teku.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
+                tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
                     UInt64.ONE, UInt64.ZERO, 0))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parameter n must be greater than 0");
@@ -244,7 +244,7 @@ public class BeaconStateUtilTest {
   public void isSlotAtNthEpochBoundary_invalidNParameter_negative() {
     assertThatThrownBy(
             () ->
-                tech.pegasys.teku.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
+                tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
                     UInt64.ONE, UInt64.ZERO, -1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parameter n must be greater than 0");
@@ -261,7 +261,7 @@ public class BeaconStateUtilTest {
 
       final UInt64 blockSlot = UInt64.valueOf(i);
       assertThat(
-              tech.pegasys.teku.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
+              tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
                   blockSlot, blockSlot.minus(1), n))
           .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
           .isEqualTo(expected);

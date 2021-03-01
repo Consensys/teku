@@ -15,13 +15,13 @@ package tech.pegasys.teku.spec.internal;
 
 import java.io.IOException;
 import java.util.List;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.ForkManifest;
 import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.constants.SpecConstantsReader;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 

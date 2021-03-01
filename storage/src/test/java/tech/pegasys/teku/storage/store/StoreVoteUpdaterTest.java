@@ -20,9 +20,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 

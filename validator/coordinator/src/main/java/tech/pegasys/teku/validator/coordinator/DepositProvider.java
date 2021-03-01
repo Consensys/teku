@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.getVoteCount;
-import static tech.pegasys.teku.core.BlockProcessorUtil.isEnoughVotesToUpdateEth1Data;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -27,14 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DepositUtil;
-import tech.pegasys.teku.datastructures.util.MerkleTree;
-import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -43,6 +31,15 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
+import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
+import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.SpecDependent;
@@ -56,17 +53,23 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
-  private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
+  private final MerkleTree depositMerkleTree;
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
+  private final SpecProvider specProvider;
 
   public DepositProvider(
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
-      final Eth1DataCache eth1DataCache) {
+      final Eth1DataCache eth1DataCache,
+      final SpecProvider specProvider) {
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
+    this.specProvider = specProvider;
+    depositMerkleTree =
+        new OptimizedMerkleTree(
+            specProvider.getGenesisSpecConstants().getDepositContractTreeDepth());
     depositCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -126,7 +129,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UInt64 eth1DepositCount;
-    if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
+    if (specProvider.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
     } else {
       eth1DepositCount = state.getEth1_data().getDeposit_count();
@@ -138,7 +141,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
-    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(MAX_DEPOSITS);
+    UInt64 latestDepositIndexWithMaxBlock =
+        eth1DepositIndex.plus(specProvider.getMaxDeposits(state));
 
     UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)

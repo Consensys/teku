@@ -1,7 +1,7 @@
 dependencies {
     implementation project(':data')
     implementation project(':ethereum:core')
-    implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
     implementation project(':networking:p2p')
@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-bytes'
 
     testImplementation testFixtures(project(':ethereum:core'))
-    testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':ethereum:statetransition'))
     testImplementation project(':ethereum:weaksubjectivity')
     testImplementation testFixtures(project(':infrastructure:async'))
@@ -44,6 +44,8 @@ dependencies {
 
     testFixturesImplementation testFixtures(project(':ethereum:core'))
     testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project(':ethereum:spec'))
+    testFixturesImplementation testFixtures(project(':ethereum:networks'))
     testFixturesImplementation testFixtures(project(':ethereum:weaksubjectivity'))
     testFixturesImplementation testFixtures(project(':infrastructure:async'))
     testFixturesImplementation testFixtures(project(':infrastructure:unsigned'))

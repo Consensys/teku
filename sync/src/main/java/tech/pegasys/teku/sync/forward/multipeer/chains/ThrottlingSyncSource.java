@@ -16,7 +16,6 @@ package tech.pegasys.teku.sync.forward.multipeer.chains;
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -26,6 +25,7 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();

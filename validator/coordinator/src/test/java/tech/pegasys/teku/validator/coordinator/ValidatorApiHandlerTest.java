@@ -23,17 +23,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getCurrentDutyDependentRoot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.getPreviousDutyDependentRoot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.spec.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,38 +41,42 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -82,10 +84,12 @@ class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
-  private static final UInt64 EPOCH_START_SLOT = compute_start_slot_at_epoch(EPOCH);
-  private static final UInt64 PREVIOUS_EPOCH_START_SLOT =
-      compute_start_slot_at_epoch(PREVIOUS_EPOCH);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final UInt64 EPOCH_START_SLOT = specProvider.computeStartSlotAtEpoch(EPOCH);
+  private final UInt64 PREVIOUS_EPOCH_START_SLOT =
+      specProvider.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
@@ -100,6 +104,7 @@ class ValidatorApiHandlerTest {
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
+  private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
@@ -114,11 +119,14 @@ class ValidatorApiHandlerTest {
           activeValidatorTracker,
           eventBus,
           dutyMetrics,
-          performanceTracker);
+          performanceTracker,
+          specProvider,
+          forkChoiceTrigger);
 
   @BeforeEach
   public void setUp() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -200,7 +208,8 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
     assertThat(duties.getDuties()).isEmpty();
-    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
+    assertThat(duties.getDependentRoot())
+        .isEqualTo(specProvider.getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -213,7 +222,8 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
     final AttesterDuties duties = assertCompletedSuccessfully(result).orElseThrow();
-    assertThat(duties.getDependentRoot()).isEqualTo(getPreviousDutyDependentRoot(state));
+    assertThat(duties.getDependentRoot())
+        .isEqualTo(specProvider.getPreviousDutyDependentRoot(state));
   }
 
   @Test
@@ -287,8 +297,9 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     final ProposerDuties duties = assertCompletedSuccessfully(result).orElseThrow();
-    assertThat(duties.getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
-    assertThat(duties.getDependentRoot()).isEqualTo(getCurrentDutyDependentRoot(state));
+    assertThat(duties.getDuties().size()).isEqualTo(specProvider.slotsPerEpoch(EPOCH));
+    assertThat(duties.getDependentRoot())
+        .isEqualTo(specProvider.getCurrentDutyDependentRoot(state));
   }
 
   @Test
@@ -301,7 +312,22 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<ProposerDuties>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties.orElseThrow().getDuties().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+    assertThat(duties.orElseThrow().getDuties().size())
+        .isEqualTo(specProvider.slotsPerEpoch(EPOCH));
+  }
+
+  @Test
+  void getProposerDuties_shouldReturnDutiesInOrder() {
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    when(chainDataClient.getStateAtSlotExact(EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
+
+    final SafeFuture<Optional<ProposerDuties>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.orElseThrow().getDuties())
+        .isSortedAccordingTo(Comparator.comparing(ProposerDuty::getSlot));
   }
 
   @Test
@@ -355,7 +381,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldCreateAttestation() {
-    final UInt64 slot = compute_start_slot_at_epoch(EPOCH).plus(ONE);
+    final UInt64 slot = specProvider.computeStartSlotAtEpoch(EPOCH).plus(ONE);
 
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
     final SignedBeaconBlock block =
@@ -388,7 +414,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldUseCorrectSourceWhenEpochTransitionRequired() {
-    final UInt64 slot = compute_start_slot_at_epoch(EPOCH);
+    final UInt64 slot = specProvider.computeStartSlotAtEpoch(EPOCH);
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
@@ -626,8 +652,8 @@ class ValidatorApiHandlerTest {
                         validator
                             .withActivation_eligibility_epoch(ZERO)
                             .withActivation_epoch(ZERO)
-                            .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
-                            .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
+                            .withExit_epoch(SpecConstants.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(SpecConstants.FAR_FUTURE_EPOCH));
               }
             });
   }

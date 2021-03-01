@@ -33,13 +33,12 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
+  SpecProvider specProvider;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
   BeaconChainUtil localChain;
@@ -83,18 +83,13 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
+    specProvider = SpecProviderFactory.createMainnet();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
     localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            recentChainData,
-            new StateTransition());
+    ForkChoice forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);

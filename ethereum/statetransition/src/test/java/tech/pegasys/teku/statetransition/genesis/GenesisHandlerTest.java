@@ -26,9 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.SpecProviderFactory;
@@ -38,6 +35,9 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -45,7 +45,11 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandlerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private SpecProvider specProvider;
+  private final SpecConstants specConstants =
+      TestConstantsLoader.loadConstantsBuilder("minimal")
+          .minGenesisActiveValidatorCount(VALIDATOR_KEYS.size())
+          .build();
+  private SpecProvider specProvider = SpecProviderFactory.create(specConstants);
 
   private static final List<DepositData> INITIAL_DEPOSIT_DATA =
       new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
@@ -63,7 +67,7 @@ public class GenesisHandlerTest {
               })
           .collect(toList());
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
 
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final TimeProvider timeProvider = mock(TimeProvider.class);
@@ -71,12 +75,6 @@ public class GenesisHandlerTest {
 
   @BeforeEach
   public void setup() {
-    final SpecConstants specConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal")
-            .minGenesisActiveValidatorCount(VALIDATOR_KEYS.size())
-            .build();
-    specProvider = SpecProviderFactory.create(specConstants);
-
     genesisHandler =
         new GenesisHandler(storageSystem.recentChainData(), timeProvider, specProvider);
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);

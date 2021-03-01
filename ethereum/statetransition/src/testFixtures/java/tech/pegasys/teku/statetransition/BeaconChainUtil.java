@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
@@ -24,49 +25,59 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
-import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
+/** @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem */
+@Deprecated
 public class BeaconChainUtil {
+  // TODO(#3356) Inject spec provider rather than using this default
+  private static final SpecProvider DEFAULT_SPEC_PROVIDER = SpecProviderFactory.createMinimal();
 
-  private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
+  private final SpecProvider specProvider;
+  private final BlockProposalTestUtil blockCreator;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
 
   private BeaconChainUtil(
+      final SpecProvider specProvider,
       final List<BLSKeyPair> validatorKeys,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       boolean signDeposits) {
+    this.specProvider = specProvider;
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
     this.forkChoice = forkChoice;
+    this.blockCreator = new BlockProposalTestUtil(specProvider);
+  }
+
+  public static Builder builder() {
+    return new Builder();
   }
 
   public static BeaconChainUtil create(
@@ -78,15 +89,12 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
+    final SpecProvider specProvider = DEFAULT_SPEC_PROVIDER;
     return create(
+        specProvider,
         storageClient,
         validatorKeys,
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageClient,
-            new StateTransition()),
+        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
         true);
   }
 
@@ -94,24 +102,23 @@ public class BeaconChainUtil {
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
+    final SpecProvider specProvider = DEFAULT_SPEC_PROVIDER;
     return new BeaconChainUtil(
+        specProvider,
         validatorKeys,
         storageClient,
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            storageClient,
-            new StateTransition()),
+        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
         signDeposits);
   }
 
   public static BeaconChainUtil create(
+      final SpecProvider specProvider,
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final ForkChoice forkChoice,
       final boolean signDeposits) {
-    return new BeaconChainUtil(validatorKeys, storageClient, forkChoice, signDeposits);
+    return new BeaconChainUtil(
+        specProvider, validatorKeys, storageClient, forkChoice, signDeposits);
   }
 
   public static void initializeStorage(
@@ -220,7 +227,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead(slot);
+    forkChoice.processHead(slot).join();
     return importResult.getBlock();
   }
 
@@ -280,7 +287,8 @@ public class BeaconChainUtil {
       throw new Exception("Chain already finalized at this or higher epoch");
     }
 
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(specProvider, validatorKeys);
     createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
@@ -310,5 +318,68 @@ public class BeaconChainUtil {
 
   public Signer getSigner(final int proposerIndex) {
     return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
+  }
+
+  public static class Builder {
+    // Required
+    private RecentChainData recentChainData;
+    // Not required
+    private SpecProvider specProvider = SpecProviderFactory.createMinimal();
+    private Integer validatorCount = 3;
+    private Boolean signDeposits = true;
+    private ForkChoice forkChoice;
+    private List<BLSKeyPair> validatorKeys;
+
+    public BeaconChainUtil build() {
+      validate();
+      if (forkChoice == null) {
+        forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+      }
+      if (validatorKeys == null) {
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+      }
+      return new BeaconChainUtil(
+          specProvider, validatorKeys, recentChainData, forkChoice, signDeposits);
+    }
+
+    private void validate() {
+      checkNotNull(recentChainData);
+    }
+
+    public Builder recentChainData(final RecentChainData recentChainData) {
+      checkNotNull(recentChainData);
+      this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Builder specProvider(final SpecProvider specProvider) {
+      checkNotNull(specProvider);
+      this.specProvider = specProvider;
+      return this;
+    }
+
+    public Builder validatorCount(final Integer validatorCount) {
+      checkNotNull(validatorCount);
+      this.validatorCount = validatorCount;
+      return this;
+    }
+
+    public Builder signDeposits(final Boolean signDeposits) {
+      checkNotNull(signDeposits);
+      this.signDeposits = signDeposits;
+      return this;
+    }
+
+    public Builder forkChoice(final ForkChoice forkChoice) {
+      checkNotNull(forkChoice);
+      this.forkChoice = forkChoice;
+      return this;
+    }
+
+    public Builder validatorKeys(final List<BLSKeyPair> validatorKeys) {
+      checkNotNull(validatorKeys);
+      this.validatorKeys = validatorKeys;
+      return this;
+    }
   }
 }

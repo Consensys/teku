@@ -15,13 +15,13 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
@@ -47,22 +47,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -71,6 +56,20 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -480,12 +479,13 @@ public class RocksDbDatabase implements Database {
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
     final long clockTime = timeSupplier.get();
-    final UInt64 slotTime = ForkChoiceUtil.getSlotStartTime(finalizedState.getSlot(), genesisTime);
+    final UInt64 slotTime = specProvider.getSlotStartTime(finalizedState.getSlot(), genesisTime);
     final UInt64 time = slotTime.max(clockTime);
 
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
+            .specProvider(specProvider)
             .time(time)
             .anchor(maybeAnchor)
             .genesisTime(genesisTime)

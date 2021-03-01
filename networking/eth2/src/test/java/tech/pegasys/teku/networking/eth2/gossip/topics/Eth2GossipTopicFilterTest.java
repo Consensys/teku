@@ -16,31 +16,36 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopicName;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth2GossipTopicFilterTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  protected SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final Fork nextFork = dataStructureUtil.randomFork();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Bytes4 nextForkDigest =
-      compute_fork_digest(nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot());
+      specProvider
+          .atEpoch(nextFork.getEpoch())
+          .getBeaconStateUtil()
+          .computeForkDigest(nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot());
 
   private final Eth2GossipTopicFilter filter =
-      new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY);
+      new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, specProvider);
 
   @BeforeEach
   void setUp() {

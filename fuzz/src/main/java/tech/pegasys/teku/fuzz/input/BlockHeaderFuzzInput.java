@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;

@@ -8,7 +8,6 @@ dependencies {
   implementation project(':ethereum:independent')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
-  implementation project(':ethereum:datastructures')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
@@ -30,8 +29,8 @@ dependencies {
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
-  testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':util'))
 

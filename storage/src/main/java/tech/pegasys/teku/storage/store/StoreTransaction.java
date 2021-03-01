@@ -29,22 +29,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecProvider specProvider;
   private final Store store;
   private final ReadWriteLock lock;
   private final StorageUpdateChannel storageUpdateChannel;
@@ -59,10 +61,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
+      final SpecProvider specProvider,
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
       final UpdatableStore.StoreUpdateHandler updateHandler) {
+    this.specProvider = specProvider;
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -304,7 +308,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
       return new StateAtSlotTask(
-              checkpoint.toSlotAndBlockRoot(), fromBlockAndState(inMemoryCheckpointBlockState))
+              specProvider,
+              checkpoint.toSlotAndBlockRoot(),
+              fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
@@ -317,7 +323,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
-      return new StateAtSlotTask(slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+      return new StateAtSlotTask(
+              specProvider, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
     return store.retrieveStateAtSlot(slotAndBlockRoot);

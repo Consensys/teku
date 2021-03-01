@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.ForkChoiceAttestationValidator;
-import tech.pegasys.teku.core.ForkChoiceBlockTasks;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -34,6 +30,9 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -83,6 +82,7 @@ public class SyncingNodeManager {
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
+    final SpecProvider specProvider = SpecProviderFactory.createMinimal();
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
@@ -91,18 +91,12 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
-    ForkChoice forkChoice =
-        new ForkChoice(
-            new ForkChoiceAttestationValidator(),
-            new ForkChoiceBlockTasks(),
-            new InlineEventThread(),
-            recentChainData,
-            new StateTransition());
+    ForkChoice forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
     BlockImporter blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityFactory.lenientValidator(), eventBus);
 
-    BlockValidator blockValidator = new BlockValidator(recentChainData);
+    BlockValidator blockValidator = new BlockValidator(specProvider, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
@@ -118,6 +112,7 @@ public class SyncingNodeManager {
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
             .builder()
+            .specProvider(specProvider)
             .eventBus(eventBus)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock);
