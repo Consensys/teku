@@ -176,10 +176,10 @@ public class BeaconState {
         slot,
         fork.asInternalFork(),
         latest_block_header.asInternalBeaconBlockHeader(),
-        tech.pegasys.teku.datastructures.state.BeaconState.BLOCK_ROOTS_FIELD_SCHEMA
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.BLOCK_ROOTS_FIELD_SCHEMA
             .get()
             .of(block_roots),
-        tech.pegasys.teku.datastructures.state.BeaconState.STATE_ROOTS_FIELD_SCHEMA
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.STATE_ROOTS_FIELD_SCHEMA
             .get()
             .of(state_roots),
         SSZList.createMutable(historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class),
@@ -198,10 +198,10 @@ public class BeaconState {
                     .get()
                     .collector()),
         SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
-        tech.pegasys.teku.datastructures.state.BeaconState.RANDAO_MIXES_FIELD_SCHEMA
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.RANDAO_MIXES_FIELD_SCHEMA
             .get()
             .of(randao_mixes),
-        tech.pegasys.teku.datastructures.state.BeaconState.SLASHINGS_FIELD_SCHEMA
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.SLASHINGS_FIELD_SCHEMA
             .get()
             .of(slashings),
         SSZList.createMutable(

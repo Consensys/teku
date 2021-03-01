@@ -14,9 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.types.SszSignature;
-import tech.pegasys.teku.datastructures.types.SszSignatureSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;

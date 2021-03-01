@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;

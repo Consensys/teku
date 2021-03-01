@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.types.SszPublicKey;
-import tech.pegasys.teku.datastructures.types.SszPublicKeySchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;

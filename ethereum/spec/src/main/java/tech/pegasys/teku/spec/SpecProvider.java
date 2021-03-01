@@ -321,11 +321,11 @@ public class SpecProvider {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> proposerSlashings,
-      final SSZList<AttesterSlashing> attesterSlashings,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> voluntaryExits)
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
     return atSlot(newSlot)
         .getBlockProposalUtil()

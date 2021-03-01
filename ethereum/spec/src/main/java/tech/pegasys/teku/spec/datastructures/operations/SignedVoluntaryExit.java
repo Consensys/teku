@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.types.SszSignature;
-import tech.pegasys.teku.datastructures.types.SszSignatureSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;

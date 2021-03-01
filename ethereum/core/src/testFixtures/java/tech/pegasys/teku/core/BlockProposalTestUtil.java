@@ -24,7 +24,6 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -41,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BlockProposalTestUtil {
   private final SpecProvider specProvider;

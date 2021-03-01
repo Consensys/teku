@@ -46,7 +46,9 @@ public class Deposit {
 
   public tech.pegasys.teku.spec.datastructures.operations.Deposit asInternalDeposit() {
     return new tech.pegasys.teku.spec.datastructures.operations.Deposit(
-        tech.pegasys.teku.spec.datastructures.operations.Deposit.SSZ_SCHEMA.getProofSchema().of(proof),
+        tech.pegasys.teku.spec.datastructures.operations.Deposit.SSZ_SCHEMA
+            .getProofSchema()
+            .of(proof),
         data.asInternalDepositData());
   }
 

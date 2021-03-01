@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -28,9 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -40,6 +38,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.SpecDependent;

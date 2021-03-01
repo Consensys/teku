@@ -22,12 +22,12 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class ValidatorsUtil {
 

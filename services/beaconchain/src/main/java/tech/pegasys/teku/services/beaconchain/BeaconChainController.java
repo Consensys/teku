@@ -55,6 +55,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
