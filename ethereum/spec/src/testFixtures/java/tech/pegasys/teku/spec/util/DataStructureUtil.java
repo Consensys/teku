@@ -579,8 +579,12 @@ public final class DataStructureUtil {
   }
 
   public Deposit randomDeposit() {
+    Bytes32 randomBytes32 = randomBytes32();
+    SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new Deposit(
-        randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), this::randomBytes32),
+        Stream.generate(() -> randomBytes32)
+            .limit(proofSchema.getLength())
+            .collect(proofSchema.collectorUnboxed()),
         randomDepositData());
   }
 
