@@ -70,7 +70,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -656,7 +655,7 @@ public final class DataStructureUtil {
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
-    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
