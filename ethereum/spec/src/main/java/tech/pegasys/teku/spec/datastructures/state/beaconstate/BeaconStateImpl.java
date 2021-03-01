@@ -39,8 +39,13 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
 
   private final TransitionCaches transitionCaches;
 
+  @Deprecated
   public BeaconStateImpl() {
-    super(BeaconState.getSszSchema());
+    this(BeaconState.getSszSchema());
+  }
+
+  public BeaconStateImpl(final BeaconStateSchema schema) {
+    super(schema);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 

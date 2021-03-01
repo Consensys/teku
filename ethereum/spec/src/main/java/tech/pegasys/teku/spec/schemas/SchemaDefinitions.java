@@ -23,7 +23,7 @@ public class SchemaDefinitions {
     this.specConstants = specConstants;
   }
 
-  BeaconStateSchema getBeaconStateSchema() {
+  public BeaconStateSchema getBeaconStateSchema() {
     return BeaconStateSchema.create(specConstants);
   }
 }

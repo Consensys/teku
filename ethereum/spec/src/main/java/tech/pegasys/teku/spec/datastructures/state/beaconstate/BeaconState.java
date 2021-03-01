@@ -43,11 +43,15 @@ public interface BeaconState extends SszContainer {
     return SSZ_SCHEMA.get();
   }
 
+  /** @deprecated User {@link BeaconStateSchema#createEmpty()} */
+  @Deprecated
   static BeaconState createEmpty() {
     SSZ_SCHEMA.reset();
     return new BeaconStateImpl();
   }
 
+  /** @deprecated User {@link BeaconStateSchema#create()} */
+  @Deprecated
   static BeaconState create(
 
       // Versioning

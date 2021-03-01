@@ -617,15 +617,15 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists).build();
+    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists).build();
   }
 
   public BeaconStateBuilder stateBuilder() {
-    return BeaconStateBuilder.create(this, 10, 10);
+    return BeaconStateBuilder.create(this, spec, 10, 10);
   }
 
   public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists);
+    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
