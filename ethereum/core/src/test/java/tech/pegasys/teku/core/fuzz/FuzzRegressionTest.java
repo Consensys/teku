@@ -19,8 +19,8 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class FuzzRegressionTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMainnet();
+  private final Spec spec = SpecFactory.createMainnet();
 
   @Test
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {
@@ -41,8 +41,7 @@ public class FuzzRegressionTest {
             () ->
                 state.updated(
                     mutableState ->
-                        specProvider.processAttesterSlashings(
-                            mutableState, SSZList.singleton(slashing))))
+                        spec.processAttesterSlashings(mutableState, SSZList.singleton(slashing))))
         .isInstanceOf(BlockProcessingException.class);
   }
 

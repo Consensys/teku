@@ -21,7 +21,7 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_acti
 
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
@@ -35,16 +35,14 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
  */
 public class WeakSubjectivityCalculator {
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final UInt64 safetyDecay;
   // Use injectable StateCalculator to make unit testing simpler
   private final StateCalculator stateCalculator;
 
   WeakSubjectivityCalculator(
-      final SpecProvider specProvider,
-      final UInt64 safetyDecay,
-      final StateCalculator stateCalculator) {
-    this.specProvider = specProvider;
+      final Spec spec, final UInt64 safetyDecay, final StateCalculator stateCalculator) {
+    this.spec = spec;
     this.safetyDecay = safetyDecay;
     this.stateCalculator = stateCalculator;
   }
@@ -83,7 +81,7 @@ public class WeakSubjectivityCalculator {
     final int activeValidators = stateCalculator.getActiveValidators(state);
     final UInt64 totalActiveValidatorBalance =
         stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
-    final SpecConstants constants = specProvider.atEpoch(checkpointState.getEpoch()).getConstants();
+    final SpecConstants constants = spec.atEpoch(checkpointState.getEpoch()).getConstants();
     return computeWeakSubjectivityPeriod(constants, activeValidators, totalActiveValidatorBalance);
   }
 

@@ -41,8 +41,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -81,7 +81,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class AttestationValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -89,10 +89,9 @@ class AttestationValidatorTest {
   private final ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
   private final AttestationGenerator attestationGenerator =
-      new AttestationGenerator(specProvider, chainBuilder.getValidatorKeys());
+      new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
 
-  private final AttestationValidator validator =
-      new AttestationValidator(specProvider, recentChainData);
+  private final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
 
   @BeforeAll
   public static void init() {
@@ -360,9 +359,9 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithTargetRoot() {
-    SpecProvider specProvider = mock(SpecProvider.class);
-    when(specProvider.getAncestor(any(), any(), any())).thenReturn(Optional.of(Bytes32.ZERO));
-    final AttestationValidator validator = new AttestationValidator(specProvider, recentChainData);
+    Spec spec = mock(Spec.class);
+    when(spec.getAncestor(any(), any(), any())).thenReturn(Optional.of(Bytes32.ZERO));
+    final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
@@ -373,11 +372,11 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithFinalizedCheckpointRoot() {
-    SpecProvider specProvider = mock(SpecProvider.class);
-    final AttestationValidator validator = new AttestationValidator(specProvider, recentChainData);
+    Spec spec = mock(Spec.class);
+    final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(specProvider.getAncestor(any(), any(), any()))
+    when(spec.getAncestor(any(), any(), any()))
         .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
         .thenReturn(Optional.of(Bytes32.ZERO));
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);

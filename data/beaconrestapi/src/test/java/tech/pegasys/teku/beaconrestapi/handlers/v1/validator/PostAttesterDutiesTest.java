@@ -63,7 +63,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
 
     final UInt64 epoch = UInt64.valueOf(100);
     final UInt64 startSlot =
-        specProvider.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+        spec.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
     PostAttesterDutiesResponse duties =
         new PostAttesterDutiesResponse(
             Bytes32.fromHexString("0x1234"), List.of(getDuty(2, 1, 2, 10, 3, startSlot)));

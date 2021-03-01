@@ -27,8 +27,8 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
@@ -43,7 +43,7 @@ public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
@@ -52,10 +52,7 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
-    specProvider =
-        useMainnetConfig
-            ? SpecProviderFactory.createMainnet()
-            : SpecProviderFactory.createMinimal();
+    spec = useMainnetConfig ? SpecFactory.createMainnet() : SpecFactory.createMinimal();
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;
@@ -86,7 +83,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state ->
-                      specProvider.processAttestations(
+                      spec.processAttestations(
                           state, SSZList.singleton(structuredInput.getAttestation())));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -107,7 +104,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processAttesterSlashings(
+                    spec.processAttesterSlashings(
                         state, SSZList.singleton(structuredInput.getAttester_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -124,7 +121,7 @@ public class FuzzUtil {
     boolean validate_root_and_sigs = !disable_bls;
     try {
       BeaconState postState =
-          specProvider.initiateStateTransition(
+          spec.initiateStateTransition(
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);
@@ -145,7 +142,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processBlockHeader(state, structuredInput.getBlock());
+                    spec.processBlockHeader(state, structuredInput.getBlock());
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -164,8 +161,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processDeposits(
-                        state, SSZList.singleton(structuredInput.getDeposit()));
+                    spec.processDeposits(state, SSZList.singleton(structuredInput.getDeposit()));
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -186,7 +182,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processProposerSlashings(
+                    spec.processProposerSlashings(
                         state, SSZList.singleton(structuredInput.getProposer_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -220,7 +216,7 @@ public class FuzzUtil {
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
       result_bb.putLong(
-          specProvider.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
+          spec.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
     }
     return Optional.of(result_bb.array());
   }
@@ -235,8 +231,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processVoluntaryExits(
-                        state, SSZList.singleton(structuredInput.getExit()));
+                    spec.processVoluntaryExits(state, SSZList.singleton(structuredInput.getExit()));
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());

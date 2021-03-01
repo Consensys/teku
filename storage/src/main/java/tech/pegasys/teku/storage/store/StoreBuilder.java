@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
   private MetricsSystem metricsSystem;
-  private SpecProvider specProvider;
+  private Spec spec;
   private BlockProvider blockProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
@@ -60,15 +60,14 @@ public class StoreBuilder {
   public static StoreBuilder forkChoiceStoreBuilder(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final SpecProvider specProvider,
+      final Spec spec,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final AnchorPoint anchor,
       final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time =
-        genesisTime.plus(slot.times(specProvider.getSecondsPerSlot(slot))).max(currentTime);
+    final UInt64 time = genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot))).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(
@@ -85,7 +84,7 @@ public class StoreBuilder {
     return create()
         .asyncRunner(asyncRunner)
         .metricsSystem(metricsSystem)
-        .specProvider(specProvider)
+        .specProvider(spec)
         .blockProvider(blockProvider)
         .stateProvider(stateAndBlockProvider)
         .anchor(anchor.getCheckpoint())
@@ -104,7 +103,7 @@ public class StoreBuilder {
     return Store.create(
         asyncRunner,
         metricsSystem,
-        specProvider,
+        spec,
         blockProvider,
         stateAndBlockProvider,
         anchor,
@@ -122,7 +121,7 @@ public class StoreBuilder {
   private void assertValid() {
     checkState(asyncRunner != null, "Async runner must be defined");
     checkState(metricsSystem != null, "Metrics system must be defined");
-    checkState(specProvider != null, "SpecProvider must be defined");
+    checkState(spec != null, "SpecProvider must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
     checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
     checkState(time != null, "Time must be defined");
@@ -145,9 +144,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder specProvider(final SpecProvider specProvider) {
-    checkNotNull(specProvider);
-    this.specProvider = specProvider;
+  public StoreBuilder specProvider(final Spec spec) {
+    checkNotNull(spec);
+    this.spec = spec;
     return this;
   }
 

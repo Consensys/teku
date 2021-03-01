@@ -28,8 +28,8 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -37,14 +37,14 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final RandomChainBuilder chainBuilder = new RandomChainBuilder(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final RandomChainBuilder chainBuilder = new RandomChainBuilder(spec);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =
       new RandomChainBuilderForkChoiceStrategy(chainBuilder);
 
-  private final ForkChoiceUtil forkChoiceUtil = specProvider.getGenesisSpec().getForkChoiceUtil();
+  private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
   private final UInt64 slot50Time =
-      GENESIS_TIME.plus(specProvider.getGenesisSpecConstants().getSecondsPerSlot() * 50L);
+      GENESIS_TIME.plus(spec.getGenesisSpecConstants().getSecondsPerSlot() * 50L);
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {

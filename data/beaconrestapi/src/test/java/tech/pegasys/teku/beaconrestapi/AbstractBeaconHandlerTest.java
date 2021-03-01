@@ -31,20 +31,20 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 
 public abstract class AbstractBeaconHandlerTest {
 
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
-  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  protected final Spec spec = SpecFactory.createMinimal();
 
   protected final Context context = mock(Context.class);
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
-  protected final ConfigProvider configProvider = new ConfigProvider(specProvider);
+  protected final ConfigProvider configProvider = new ConfigProvider(spec);
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);

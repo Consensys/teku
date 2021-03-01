@@ -47,8 +47,8 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -70,7 +70,7 @@ public abstract class AbstractDatabaseTest {
 
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  protected final Spec spec = SpecFactory.createMinimal();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   protected UInt64 genesisTime = UInt64.valueOf(100);
@@ -156,7 +156,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void updateWeakSubjectivityState_setValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
 
@@ -169,7 +169,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void updateWeakSubjectivityState_clearValue() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
     // Set an initial value
@@ -291,10 +291,8 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockB));
 
     // Then build on both chains, into the next epoch
-    final SignedBlockAndState blockA2 =
-        forkA.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) * 2 + 2);
-    final SignedBlockAndState blockB2 =
-        forkB.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) * 2 + 2);
+    final SignedBlockAndState blockA2 = forkA.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2 + 2);
+    final SignedBlockAndState blockB2 = forkB.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2 + 2);
 
     // Add blocks while finalizing blockA at the same time
     StoreTransaction tx = recentChainData.startStoreTransaction();
@@ -518,7 +516,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldRecordAndRetrieveGenesisInformation() {
-    final DataStructureUtil util = new DataStructureUtil(specProvider);
+    final DataStructureUtil util = new DataStructureUtil(spec);
     final MinGenesisTimeBlockEvent event =
         new MinGenesisTimeBlockEvent(
             util.randomUInt64(), util.randomUInt64(), util.randomBytes32());
@@ -537,7 +535,7 @@ public abstract class AbstractDatabaseTest {
     final int startSlot = genesisBlockAndState.getSlot().intValue();
     final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
     final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
-    final UInt64 finalizedSlot = specProvider.computeStartSlotAtEpoch(finalizedEpoch);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
 
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
@@ -564,7 +562,7 @@ public abstract class AbstractDatabaseTest {
                 blockAndState ->
                     blockAndState
                         .getSlot()
-                        .equals(specProvider.computeStartSlotAtEpoch(blockAndState.getSlot())))
+                        .equals(spec.computeStartSlotAtEpoch(blockAndState.getSlot())))
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertBlocksAvailable(expectedFinalizedBlocks);
@@ -588,7 +586,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldStoreAndRetrieve() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
@@ -607,7 +605,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
@@ -634,7 +632,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
     final Bytes32 oneStateRoot = insertRandomSlotAndBlock(1L, dataStructureUtil);
     insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -646,7 +644,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void slotAndBlock_shouldPurgeToSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     insertRandomSlotAndBlock(0L, dataStructureUtil);
     insertRandomSlotAndBlock(1L, dataStructureUtil);
     final Bytes32 twoStateRoot = insertRandomSlotAndBlock(2L, dataStructureUtil);
@@ -673,7 +671,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
@@ -705,7 +703,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   void shouldStoreAndRetrieveVotes() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     createStorage(StateStorageMode.PRUNE);
     assertThat(database.getVotes()).isEmpty();
 
@@ -736,7 +734,7 @@ public abstract class AbstractDatabaseTest {
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
@@ -1081,7 +1079,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {
-    final BeaconStateUtil beaconStateUtil = specProvider.getBeaconStateUtil(block.getSlot());
+    final BeaconStateUtil beaconStateUtil = spec.getBeaconStateUtil(block.getSlot());
     final UInt64 blockEpoch = beaconStateUtil.computeEpochAtSlot(block.getSlot());
     final UInt64 blockEpochBoundary = beaconStateUtil.computeStartSlotAtEpoch(blockEpoch);
     final UInt64 checkpointEpoch =

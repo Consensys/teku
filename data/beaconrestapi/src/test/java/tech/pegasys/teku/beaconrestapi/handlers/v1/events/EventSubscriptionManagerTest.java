@@ -50,8 +50,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -63,17 +63,16 @@ import tech.pegasys.teku.sync.events.SyncState;
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil();
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final SpecConstants specConstants = specProvider.getGenesisSpecConstants();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final SpecConstants specConstants = spec.getGenesisSpecConstants();
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
-  private ConfigProvider configProvider = new ConfigProvider(specProvider);
+  private ConfigProvider configProvider = new ConfigProvider(spec);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
-  private final UInt64 epoch =
-      specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  private final UInt64 epoch = spec.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
   private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(

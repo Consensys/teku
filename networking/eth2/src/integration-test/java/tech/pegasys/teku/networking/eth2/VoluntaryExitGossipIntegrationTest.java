@@ -33,8 +33,8 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBui
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class VoluntaryExitGossipIntegrationTest {
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
@@ -55,7 +55,7 @@ public class VoluntaryExitGossipIntegrationTest {
   @Test
   public void shouldGossipVoluntaryExitToPeers() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    final SpecConstants constants = specProvider.getGenesisSpecConstants();
+    final SpecConstants constants = spec.getGenesisSpecConstants();
     final UInt64 blockSlot =
         constants.getShardCommitteePeriod().plus(2).times(constants.getSlotsPerEpoch());
 

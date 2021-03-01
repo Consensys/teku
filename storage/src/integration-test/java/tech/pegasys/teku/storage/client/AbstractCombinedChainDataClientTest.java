@@ -33,8 +33,8 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -49,7 +49,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
-  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  protected final Spec spec = SpecFactory.createMinimal();
   protected StorageSystem storageSystem;
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;
@@ -67,7 +67,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   protected StorageSystem createStorageSystem() {
     return InMemoryStorageSystemBuilder.create()
         .storageMode(getStorageMode())
-        .specProvider(specProvider)
+        .specProvider(spec)
         .build();
   }
 
@@ -292,7 +292,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
     assertThat(actual).isCompletedWithValue(Optional.of(expected));
@@ -313,7 +313,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
     assertThat(actual).isCompletedWithValue(Optional.of(expected));

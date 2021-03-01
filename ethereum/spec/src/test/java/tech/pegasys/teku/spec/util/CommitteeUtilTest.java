@@ -27,13 +27,13 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class CommitteeUtilTest {
   final SpecConstants specConstants = mock(SpecConstants.class);
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
 
   @Test
@@ -93,8 +93,7 @@ public class CommitteeUtilTest {
   @Test
   void testIsAggregatorReturnsFalseOnARealCase() {
     Bytes signingRoot =
-        specProvider
-            .atSlot(UInt64.ZERO)
+        spec.atSlot(UInt64.ZERO)
             .getBeaconStateUtil()
             .computeSigningRoot(
                 UInt64.valueOf(57950),
@@ -113,7 +112,7 @@ public class CommitteeUtilTest {
     assertThat(BLS.verify(pKey, signingRoot, selectionProof)).isTrue();
 
     int aggregatorModulo =
-        specProvider.atSlot(UInt64.ZERO).getCommitteeUtil().getAggregatorModulo(committeeLen);
+        spec.atSlot(UInt64.ZERO).getCommitteeUtil().getAggregatorModulo(committeeLen);
     assertThat(CommitteeUtil.isAggregator(selectionProof, aggregatorModulo)).isFalse();
   }
 }

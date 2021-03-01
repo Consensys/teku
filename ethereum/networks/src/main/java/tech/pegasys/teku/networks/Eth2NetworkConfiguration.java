@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -37,7 +37,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
   private final boolean usingCustomInitialState;
@@ -49,7 +49,7 @@ public class Eth2NetworkConfiguration {
   private final boolean balanceAttackMitigationEnabled;
 
   private Eth2NetworkConfiguration(
-      final SpecProvider specProvider,
+      final Spec spec,
       final String constants,
       final Optional<String> initialState,
       final boolean usingCustomInitialState,
@@ -59,7 +59,7 @@ public class Eth2NetworkConfiguration {
       final Optional<Eth1Address> eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
     this.usingCustomInitialState = usingCustomInitialState;
@@ -83,12 +83,12 @@ public class Eth2NetworkConfiguration {
     return new Builder();
   }
 
-  public SpecProvider getSpecProvider() {
-    return specProvider;
+  public Spec getSpecProvider() {
+    return spec;
   }
 
   /**
-   * @deprecated Constants should be accessed via {@link Spec}
+   * @deprecated Constants should be accessed via {@link SpecVersion}
    * @return The constants resource name or url
    */
   @Deprecated
@@ -148,7 +148,7 @@ public class Eth2NetworkConfiguration {
       checkNotNull(constants, "Missing constants");
 
       return new Eth2NetworkConfiguration(
-          SpecProviderFactory.create(constants),
+          SpecFactory.create(constants),
           constants,
           initialState,
           usingCustomInitialState,

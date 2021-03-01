@@ -14,15 +14,15 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 
 public class TestDefinition {
   private final String specName;
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
-  private SpecProvider specProvider;
+  private Spec spec;
 
   public TestDefinition(
       final String specName,
@@ -39,11 +39,11 @@ public class TestDefinition {
     return specName;
   }
 
-  public SpecProvider getSpecProvider() {
-    if (specProvider == null) {
-      specProvider = SpecProviderFactory.create(specName);
+  public Spec getSpecProvider() {
+    if (spec == null) {
+      spec = SpecFactory.create(specName);
     }
-    return specProvider;
+    return spec;
   }
 
   public String getTestType() {

@@ -17,28 +17,28 @@ import tech.pegasys.teku.spec.constants.ConstantsLoader;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
-public class SpecProviderFactory {
+public class SpecFactory {
 
-  public static SpecProvider create(final Eth2Network network) {
+  public static Spec create(final Eth2Network network) {
     return create(network.constantsName());
   }
 
-  public static SpecProvider createMinimal() {
+  public static Spec createMinimal() {
     return create(Eth2Network.MINIMAL);
   }
 
-  public static SpecProvider createMainnet() {
+  public static Spec createMainnet() {
     return create(Eth2Network.MAINNET);
   }
 
-  public static SpecProvider create(final String constantsName) {
+  public static Spec create(final String constantsName) {
     final SpecConstants constants = ConstantsLoader.loadConstants(constantsName);
     return create(constants);
   }
 
-  public static SpecProvider create(final SpecConstants specConstants) {
+  public static Spec create(final SpecConstants specConstants) {
     final SpecConfiguration specConfig =
         SpecConfiguration.builder().constants(specConstants).build();
-    return SpecProvider.create(specConfig);
+    return Spec.create(specConfig);
   }
 }

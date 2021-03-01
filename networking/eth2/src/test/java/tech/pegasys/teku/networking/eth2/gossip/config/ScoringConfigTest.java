@@ -17,13 +17,13 @@ import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAUL
 import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 
 public class ScoringConfigTest {
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMainnet();
-  private final ScoringConfig scoringConfig = ScoringConfig.create(specProvider, DEFAULT_D);
+  private final Spec spec = SpecFactory.createMainnet();
+  private final ScoringConfig scoringConfig = ScoringConfig.create(spec, DEFAULT_D);
 
   @Test
   public void maxPositiveScore() {

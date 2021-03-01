@@ -56,7 +56,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -84,7 +84,7 @@ class Store implements UpdatableStore {
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
 
@@ -103,7 +103,7 @@ class Store implements UpdatableStore {
 
   private Store(
       final MetricsSystem metricsSystem,
-      final SpecProvider specProvider,
+      final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
@@ -128,7 +128,7 @@ class Store implements UpdatableStore {
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.states = states;
     this.checkpointStates = checkpointStates;
 
@@ -163,7 +163,7 @@ class Store implements UpdatableStore {
   public static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final SpecProvider specProvider,
+      final Spec spec,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -219,7 +219,7 @@ class Store implements UpdatableStore {
     final Store store =
         new Store(
             metricsSystem,
-            specProvider,
+            spec,
             config.getHotStatePersistenceFrequencyInEpochs(),
             blockProvider,
             stateAndBlockProvider,
@@ -313,7 +313,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        specProvider, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -472,14 +472,13 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(
-        new StateAtSlotTask(
-            specProvider, checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
+        new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
-        new StateAtSlotTask(specProvider, slotAndBlockRoot, this::retrieveBlockState));
+        new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
   }
 
   @Override
@@ -496,9 +495,7 @@ class Store implements UpdatableStore {
     return checkpointStates
         .perform(
             new StateAtSlotTask(
-                specProvider,
-                finalized.getCheckpoint().toSlotAndBlockRoot(),
-                fromAnchor(finalized)))
+                spec, finalized.getCheckpoint().toSlotAndBlockRoot(), fromAnchor(finalized)))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
@@ -512,7 +509,7 @@ class Store implements UpdatableStore {
       Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     return checkpointStates.perform(
         new StateAtSlotTask(
-            specProvider,
+            spec,
             checkpoint.toSlotAndBlockRoot(),
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
@@ -608,7 +605,7 @@ class Store implements UpdatableStore {
     return SafeFuture.completedFuture(
         Optional.of(
             new StateGenerationTask(
-                specProvider,
+                spec,
                 blockRoot,
                 treeBuilder.build(),
                 blockProvider,

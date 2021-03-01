@@ -27,7 +27,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
@@ -40,15 +40,13 @@ public class GenesisHandler implements Eth1EventsChannel {
   private final RecentChainData recentChainData;
   private final TimeProvider timeProvider;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public GenesisHandler(
-      final RecentChainData recentChainData,
-      final TimeProvider timeProvider,
-      final SpecProvider specProvider) {
+      final RecentChainData recentChainData, final TimeProvider timeProvider, final Spec spec) {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   @Override
@@ -85,7 +83,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
     final tech.pegasys.teku.spec.util.BeaconStateUtil beaconStateUtil =
-        specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
+        spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
     if (beaconStateUtil.isValidGenesisState(
         genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {
       eth2Genesis(genesisGenerator.getGenesisState());

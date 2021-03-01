@@ -29,8 +29,8 @@ import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -53,9 +53,9 @@ import tech.pegasys.teku.util.config.Constants;
 @Deprecated
 public class BeaconChainUtil {
   // TODO(#3356) Inject spec provider rather than using this default
-  private static final SpecProvider DEFAULT_SPEC_PROVIDER = SpecProviderFactory.createMinimal();
+  private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final BlockProposalTestUtil blockCreator;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
@@ -63,17 +63,17 @@ public class BeaconChainUtil {
   private final boolean signDeposits;
 
   private BeaconChainUtil(
-      final SpecProvider specProvider,
+      final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       boolean signDeposits) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
     this.forkChoice = forkChoice;
-    this.blockCreator = new BlockProposalTestUtil(specProvider);
+    this.blockCreator = new BlockProposalTestUtil(spec);
   }
 
   public static Builder builder() {
@@ -89,12 +89,12 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    final SpecProvider specProvider = DEFAULT_SPEC_PROVIDER;
+    final Spec spec = DEFAULT_SPEC_PROVIDER;
     return create(
-        specProvider,
+        spec,
         storageClient,
         validatorKeys,
-        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
+        new ForkChoice(spec, new InlineEventThread(), storageClient),
         true);
   }
 
@@ -102,23 +102,22 @@ public class BeaconChainUtil {
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    final SpecProvider specProvider = DEFAULT_SPEC_PROVIDER;
+    final Spec spec = DEFAULT_SPEC_PROVIDER;
     return new BeaconChainUtil(
-        specProvider,
+        spec,
         validatorKeys,
         storageClient,
-        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
+        new ForkChoice(spec, new InlineEventThread(), storageClient),
         signDeposits);
   }
 
   public static BeaconChainUtil create(
-      final SpecProvider specProvider,
+      final Spec spec,
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final ForkChoice forkChoice,
       final boolean signDeposits) {
-    return new BeaconChainUtil(
-        specProvider, validatorKeys, storageClient, forkChoice, signDeposits);
+    return new BeaconChainUtil(spec, validatorKeys, storageClient, forkChoice, signDeposits);
   }
 
   public static void initializeStorage(
@@ -285,8 +284,7 @@ public class BeaconChainUtil {
       throw new Exception("Chain already finalized at this or higher epoch");
     }
 
-    AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
@@ -323,7 +321,7 @@ public class BeaconChainUtil {
     // Required
     private RecentChainData recentChainData;
     // Not required
-    private SpecProvider specProvider = SpecProviderFactory.createMinimal();
+    private Spec spec = SpecFactory.createMinimal();
     private Integer validatorCount = 3;
     private Boolean signDeposits = true;
     private ForkChoice forkChoice;
@@ -332,13 +330,12 @@ public class BeaconChainUtil {
     public BeaconChainUtil build() {
       validate();
       if (forkChoice == null) {
-        forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+        forkChoice = new ForkChoice(spec, new InlineEventThread(), recentChainData);
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
       }
-      return new BeaconChainUtil(
-          specProvider, validatorKeys, recentChainData, forkChoice, signDeposits);
+      return new BeaconChainUtil(spec, validatorKeys, recentChainData, forkChoice, signDeposits);
     }
 
     private void validate() {
@@ -351,9 +348,9 @@ public class BeaconChainUtil {
       return this;
     }
 
-    public Builder specProvider(final SpecProvider specProvider) {
-      checkNotNull(specProvider);
-      this.specProvider = specProvider;
+    public Builder specProvider(final Spec spec) {
+      checkNotNull(spec);
+      this.spec = spec;
       return this;
     }
 

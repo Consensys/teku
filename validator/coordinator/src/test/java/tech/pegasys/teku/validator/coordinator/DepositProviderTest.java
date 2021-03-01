@@ -33,8 +33,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.TestConstantsLoader;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DepositProviderTest {
 
-  private SpecProvider specProvider;
+  private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
@@ -69,13 +69,12 @@ public class DepositProviderTest {
 
     SpecConstants specConstants =
         TestConstantsLoader.loadConstantsBuilder("minimal").maxDeposits(maxDeposits).build();
-    specProvider = SpecProviderFactory.create(specConstants);
-    dataStructureUtil = new DataStructureUtil(specProvider);
+    spec = SpecFactory.create(specConstants);
+    dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
-        new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, specProvider);
+        new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, spec);
     depositMerkleTree =
-        new OptimizedMerkleTree(
-            specProvider.getGenesisSpecConstants().getDepositContractTreeDepth());
+        new OptimizedMerkleTree(spec.getGenesisSpecConstants().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
     createDepositEvents(40);
     randomEth1Data = dataStructureUtil.randomEth1Data();
@@ -115,8 +114,8 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(10, 30);
 
     int enoughVoteCount =
-        specProvider.getGenesisSpecConstants().getEpochsPerEth1VotingPeriod()
-            * specProvider.slotsPerEpoch(SpecConstants.GENESIS_EPOCH);
+        spec.getGenesisSpecConstants().getEpochsPerEth1VotingPeriod()
+            * spec.slotsPerEpoch(SpecConstants.GENESIS_EPOCH);
     UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
     SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
@@ -250,7 +249,7 @@ public class DepositProviderTest {
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
-    final Spec genesisSpec = specProvider.getGenesisSpec();
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
     deposits.forEach(
         deposit ->
             assertThat(

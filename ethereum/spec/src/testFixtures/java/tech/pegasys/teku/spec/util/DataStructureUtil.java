@@ -35,8 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -83,9 +83,9 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 
 public final class DataStructureUtil {
-  private static final SpecProvider DEFAULT_SPEC_PROVIDER = SpecProviderFactory.createMinimal();
+  private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
@@ -99,13 +99,13 @@ public final class DataStructureUtil {
     this(seed, DEFAULT_SPEC_PROVIDER);
   }
 
-  public DataStructureUtil(final SpecProvider specProvider) {
-    this(92892824, specProvider);
+  public DataStructureUtil(final Spec spec) {
+    this(92892824, spec);
   }
 
-  public DataStructureUtil(final int seed, final SpecProvider specProvider) {
+  public DataStructureUtil(final int seed, final Spec spec) {
     this.seed = seed;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
@@ -727,23 +727,22 @@ public final class DataStructureUtil {
   }
 
   private Bytes32 computeDomain() {
-    final Spec spec = specProvider.getGenesisSpec();
-    final Bytes4 domain = spec.getConstants().getDomainDeposit();
-    return spec.getBeaconStateUtil().computeDomain(domain);
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 domain = genesisSpec.getConstants().getDomainDeposit();
+    return genesisSpec.getBeaconStateUtil().computeDomain(domain);
   }
 
   private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return specProvider
-        .getGenesisSpec()
+    return spec.getGenesisSpec()
         .getBeaconStateUtil()
         .computeSigningRoot(proofOfPossessionData, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return specProvider.computeStartSlotAtEpoch(epoch);
+    return spec.computeStartSlotAtEpoch(epoch);
   }
 
   private <T> T getConstant(final Function<SpecConstants, T> getter) {
-    return getter.apply(specProvider.getGenesisSpec().getConstants());
+    return getter.apply(spec.getGenesisSpec().getConstants());
   }
 }

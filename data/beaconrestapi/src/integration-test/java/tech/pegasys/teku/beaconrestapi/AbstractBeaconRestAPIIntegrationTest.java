@@ -35,8 +35,8 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -65,7 +65,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
-  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  protected final Spec spec = SpecFactory.createMinimal();
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
@@ -82,7 +82,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
-      new CombinedChainDataClient(recentChainData, historicalChainData, specProvider);
+      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
@@ -91,7 +91,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   public void setup() {
     dataProvider =
         new DataProvider(
-            specProvider,
+            spec,
             recentChainData,
             combinedChainDataClient,
             eth2P2PNetwork,

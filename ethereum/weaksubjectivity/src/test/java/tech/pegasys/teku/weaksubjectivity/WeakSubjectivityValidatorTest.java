@@ -33,8 +33,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
@@ -48,9 +48,9 @@ import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPoli
 public class WeakSubjectivityValidatorTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final WeakSubjectivityConfig config =
-      WeakSubjectivityConfig.builder().specProvider(specProvider).build();
+      WeakSubjectivityConfig.builder().specProvider(spec).build();
 
   // Set up mocks
   private final WeakSubjectivityCalculator calculator = mock(WeakSubjectivityCalculator.class);
@@ -597,6 +597,6 @@ public class WeakSubjectivityValidatorTest {
   }
 
   private WeakSubjectivityConfig.Builder configBuilder() {
-    return WeakSubjectivityConfig.builder().specProvider(specProvider);
+    return WeakSubjectivityConfig.builder().specProvider(spec);
   }
 }

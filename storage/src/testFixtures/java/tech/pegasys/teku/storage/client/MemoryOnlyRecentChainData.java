@@ -23,8 +23,8 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -46,7 +46,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     super(
         asyncRunner,
         metricsSystem,
@@ -59,7 +59,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         finalizedCheckpointChannel,
         chainHeadChannel,
         eventBus,
-        specProvider);
+        spec);
     eventBus.register(this);
   }
 
@@ -78,7 +78,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
 
   public static class Builder {
     private StoreConfig storeConfig = StoreConfig.createDefault();
-    private SpecProvider specProvider = SpecProviderFactory.createMinimal();
+    private Spec spec = SpecFactory.createMinimal();
     private EventBus eventBus = new EventBus();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
@@ -96,7 +96,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
           chainHeadChannel,
-          specProvider);
+          spec);
     }
 
     public Builder storeConfig(final StoreConfig storeConfig) {
@@ -105,9 +105,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       return this;
     }
 
-    public Builder specProvider(final SpecProvider specProvider) {
-      checkNotNull(specProvider);
-      this.specProvider = specProvider;
+    public Builder specProvider(final Spec spec) {
+      checkNotNull(spec);
+      this.spec = spec;
       return this;
     }
 

@@ -44,8 +44,8 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -74,10 +74,10 @@ class ValidatorLoaderTest {
     }
   }
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final InteropConfig disabledInteropConfig =
-      InteropConfig.builder().specProvider(specProvider).build();
+      InteropConfig.builder().specProvider(spec).build();
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -444,7 +444,7 @@ class ValidatorLoaderTest {
     final int ownedValidatorCount = 10;
     final InteropConfig interopConfig =
         InteropConfig.builder()
-            .specProvider(specProvider)
+            .specProvider(spec)
             .interopEnabled(true)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
@@ -469,7 +469,7 @@ class ValidatorLoaderTest {
     final int ownedValidatorCount = 10;
     final InteropConfig interopConfig =
         InteropConfig.builder()
-            .specProvider(specProvider)
+            .specProvider(spec)
             .interopEnabled(false)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();

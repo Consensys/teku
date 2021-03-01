@@ -18,15 +18,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class WeakSubjectivityConfigTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final WeakSubjectivityConfig config =
-      WeakSubjectivityConfig.builder().specProvider(specProvider).build();
+      WeakSubjectivityConfig.builder().specProvider(spec).build();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
@@ -93,6 +93,6 @@ public class WeakSubjectivityConfigTest {
   }
 
   private WeakSubjectivityConfig.Builder configBuilder() {
-    return WeakSubjectivityConfig.builder().specProvider(specProvider);
+    return WeakSubjectivityConfig.builder().specProvider(spec);
   }
 }

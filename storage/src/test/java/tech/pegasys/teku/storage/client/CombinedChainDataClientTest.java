@@ -18,8 +18,8 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.SpecProviderFactory;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -27,18 +27,18 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData, specProvider);
+      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
     BeaconState state = dataStructureUtil.randomBeaconState();
     List<CommitteeAssignment> data =
-        client.getCommitteesFromState(state, specProvider.getCurrentEpoch(state));
-    assertThat(data.size()).isEqualTo(specProvider.getSlotsPerEpoch(state.getSlot()));
+        client.getCommitteesFromState(state, spec.getCurrentEpoch(state));
+    assertThat(data.size()).isEqualTo(spec.getSlotsPerEpoch(state.getSlot()));
   }
 }
