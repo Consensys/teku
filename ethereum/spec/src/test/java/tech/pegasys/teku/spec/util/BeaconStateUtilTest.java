@@ -40,6 +40,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -49,12 +50,11 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final BeaconStateUtil beaconStateUtil =
       specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();

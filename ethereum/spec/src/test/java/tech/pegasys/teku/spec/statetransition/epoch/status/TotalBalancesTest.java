@@ -21,12 +21,12 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 class TotalBalancesTest {
 
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final SpecConstants genesisConstants = specProvider.getGenesisSpecConstants();
 
   private UInt64 balance(final int amount) {

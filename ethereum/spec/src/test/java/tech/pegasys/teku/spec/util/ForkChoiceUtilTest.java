@@ -29,15 +29,15 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final RandomChainBuilder chainBuilder = new RandomChainBuilder(specProvider);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =
       new RandomChainBuilderForkChoiceStrategy(chainBuilder);

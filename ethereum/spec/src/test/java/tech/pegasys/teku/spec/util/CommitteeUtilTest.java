@@ -28,12 +28,12 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 public class CommitteeUtilTest {
   final SpecConstants specConstants = mock(SpecConstants.class);
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
 
   @Test

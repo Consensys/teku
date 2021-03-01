@@ -19,12 +19,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecProviderFactory;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 
 class ValidatorsUtilTest {
-  private final SpecProvider specProvider = StubSpecProvider.create();
+  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
   private final ValidatorsUtil validatorsUtil = specProvider.getGenesisSpec().getValidatorsUtil();
 
