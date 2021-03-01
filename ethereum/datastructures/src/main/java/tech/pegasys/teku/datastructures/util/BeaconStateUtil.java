@@ -625,7 +625,7 @@ public class BeaconStateUtil {
   @Deprecated
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
-    return state.getRandao_mixes().get(index);
+    return state.getRandao_mixes().getElement(index);
   }
 
   /**

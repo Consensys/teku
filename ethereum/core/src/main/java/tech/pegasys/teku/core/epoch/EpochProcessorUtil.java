@@ -333,7 +333,7 @@ public final class EpochProcessorUtil {
 
     // Set randao mix
     final int randaoIndex = next_epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
-    state.getRandao_mixes().set(randaoIndex, get_randao_mix(state, current_epoch));
+    state.getRandao_mixes().setElement(randaoIndex, get_randao_mix(state, current_epoch));
 
     // Set historical root accumulator
     if (next_epoch.mod(SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH).equals(UInt64.ZERO)) {

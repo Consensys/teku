@@ -136,7 +136,7 @@ public final class BlockProcessorUtil {
               .getRandaoMix(state, epoch)
               .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
       int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-      state.getRandao_mixes().set(index, mix);
+      state.getRandao_mixes().setElement(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);

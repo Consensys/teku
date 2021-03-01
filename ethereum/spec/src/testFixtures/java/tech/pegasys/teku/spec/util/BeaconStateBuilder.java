@@ -48,7 +48,7 @@ public class BeaconStateBuilder {
   private UInt64 eth1DepositIndex;
   private SszList<Validator> validators;
   private SSZList<UInt64> balances;
-  private SSZVector<Bytes32> randaoMixes;
+  private SszBytes32Vector randaoMixes;
   private SSZVector<UInt64> slashings;
   private SSZList<PendingAttestation> previousEpochAttestations;
   private SSZList<PendingAttestation> currentEpochAttestations;
@@ -136,10 +136,8 @@ public class BeaconStateBuilder {
             dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomUInt64);
     randaoMixes =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getEpochsPerHistoricalVector(),
-            dataStructureUtil::randomBytes32);
+        dataStructureUtil.randomSszVector(
+            BeaconState.RANDAO_MIXES_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     slashings =
         dataStructureUtil.randomSSZVector(
             UInt64.ZERO,
@@ -247,7 +245,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder randaoMixes(final SSZVector<Bytes32> randaoMixes) {
+  public BeaconStateBuilder randaoMixes(final SszBytes32Vector randaoMixes) {
     checkNotNull(randaoMixes);
     this.randaoMixes = randaoMixes;
     return this;

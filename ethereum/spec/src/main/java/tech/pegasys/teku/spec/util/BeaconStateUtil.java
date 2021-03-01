@@ -150,7 +150,7 @@ public class BeaconStateUtil {
 
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-    return state.getRandao_mixes().get(index);
+    return state.getRandao_mixes().getElement(index);
   }
 
   public int getBeaconProposerIndex(BeaconState state) {

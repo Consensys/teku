@@ -79,7 +79,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       SSZList<UInt64> balances,
 
       // Randomness
-      SSZVector<Bytes32> randao_mixes,
+      SszBytes32Vector randao_mixes,
 
       // Slashings
       SSZVector<UInt64> slashings,

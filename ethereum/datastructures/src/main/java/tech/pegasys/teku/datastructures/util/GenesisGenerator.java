@@ -152,7 +152,7 @@ public class GenesisGenerator {
 
   private void calculateRandaoMixes() {
     for (int i = 0; i < state.getRandao_mixes().size(); i++) {
-      state.getRandao_mixes().set(i, state.getEth1_data().getBlock_hash());
+      state.getRandao_mixes().setElement(i, state.getEth1_data().getBlock_hash());
     }
   }
 

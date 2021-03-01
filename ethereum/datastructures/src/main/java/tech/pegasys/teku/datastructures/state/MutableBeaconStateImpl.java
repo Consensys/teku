@@ -34,7 +34,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
 
   private SSZMutableList<UInt64> balances;
   private SSZMutableList<Bytes32> historicalRoots;
-  private SSZMutableVector<Bytes32> randaoMixes;
   private SSZMutableList<PendingAttestation> previousEpochAttestations;
   private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
@@ -89,13 +88,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
     return historicalRoots != null
         ? historicalRoots
         : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getRandao_mixes() {
-    return randaoMixes != null
-        ? randaoMixes
-        : (randaoMixes = MutableBeaconState.super.getRandao_mixes());
   }
 
   @Override

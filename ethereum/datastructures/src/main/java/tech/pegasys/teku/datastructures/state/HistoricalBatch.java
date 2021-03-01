@@ -80,13 +80,11 @@ public class HistoricalBatch
     super(type, block_roots, state_roots);
   }
 
-  public SSZVector<Bytes32> getBlockRoots() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getField0(), SszBytes32::new, AbstractSszPrimitive::get);
+  public SszBytes32Vector getBlockRoots() {
+    return getField0();
   }
 
-  public SSZVector<Bytes32> getStateRoots() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getField1(), SszBytes32::new, AbstractSszPrimitive::get);
+  public SszBytes32Vector getStateRoots() {
+    return getField1();
   }
 }

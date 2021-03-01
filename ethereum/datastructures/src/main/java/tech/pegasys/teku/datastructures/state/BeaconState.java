@@ -101,13 +101,14 @@ public interface BeaconState extends SszContainer {
           () ->
               SszListSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
+  SpecDependent<SszBytes32VectorSchema<?>> RANDAO_MIXES_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField RANDAO_MIXES_FIELD =
       new SszField(
           13,
           "randao_mixes",
-          () ->
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
+          RANDAO_MIXES_FIELD_SCHEMA::get);
+
   SszField SLASHINGS_FIELD =
       new SszField(
           14,
@@ -215,7 +216,7 @@ public interface BeaconState extends SszContainer {
       SSZList<UInt64> balances,
 
       // Randomness
-      SSZVector<Bytes32> randao_mixes,
+      SszBytes32Vector randao_mixes,
 
       // Slashings
       SSZVector<UInt64> slashings,
@@ -246,7 +247,7 @@ public interface BeaconState extends SszContainer {
               state.setEth1_deposit_index(eth1_deposit_index);
               state.setValidators(validators);
               state.getBalances().setAll(balances);
-              state.getRandao_mixes().setAll(randao_mixes);
+              state.setRandao_mixes(randao_mixes);
               state.getSlashings().setAll(slashings);
               state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
               state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
@@ -322,12 +323,8 @@ public interface BeaconState extends SszContainer {
         UInt64.class, getAny(BALANCES_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
-  default SSZVector<Bytes32> getRandao_mixes() {
-    return new SSZBackingVector<>(
-        Bytes32.class,
-        getAny(RANDAO_MIXES_FIELD.getIndex()),
-        SszBytes32::new,
-        AbstractSszPrimitive::get);
+  default SszBytes32Vector getRandao_mixes() {
+    return getAny(RANDAO_MIXES_FIELD.getIndex());
   }
 
   // Slashings

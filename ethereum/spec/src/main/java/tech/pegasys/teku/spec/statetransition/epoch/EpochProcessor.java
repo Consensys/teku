@@ -350,7 +350,7 @@ public class EpochProcessor {
 
     // Set randao mix
     final int randaoIndex = nextEpoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-    state.getRandao_mixes().set(randaoIndex, beaconStateUtil.getRandaoMix(state, currentEpoch));
+    state.getRandao_mixes().setElement(randaoIndex, beaconStateUtil.getRandaoMix(state, currentEpoch));
 
     // Set historical root accumulator
     if (nextEpoch

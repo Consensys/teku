@@ -152,7 +152,7 @@ public class BeaconState {
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
     this.balances = beaconState.getBalances().stream().collect(Collectors.toList());
-    this.randao_mixes = beaconState.getRandao_mixes().stream().collect(Collectors.toList());
+    this.randao_mixes = beaconState.getRandao_mixes().streamUnboxed().collect(Collectors.toList());
     this.slashings = beaconState.getSlashings().stream().collect(Collectors.toList());
     this.previous_epoch_attestations =
         beaconState.getPrevious_epoch_attestations().stream()
@@ -199,7 +199,9 @@ public class BeaconState {
                     .get()
                     .collector()),
         SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
-        SSZVector.createMutable(randao_mixes, Bytes32.class),
+        tech.pegasys.teku.datastructures.state.BeaconState.RANDAO_MIXES_FIELD_SCHEMA
+            .get()
+            .of(randao_mixes),
         SSZVector.createMutable(slashings, UInt64.class),
         SSZList.createMutable(
             previous_epoch_attestations.stream()

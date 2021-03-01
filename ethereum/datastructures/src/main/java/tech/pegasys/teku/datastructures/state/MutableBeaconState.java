@@ -41,29 +41,29 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   // Versioning
 
   default void setGenesis_time(UInt64 genesis_time) {
-    set(0, new SszUInt64(genesis_time));
+    set(GENESIS_TIME_FIELD.getIndex(), new SszUInt64(genesis_time));
   }
 
   default void setGenesis_validators_root(Bytes32 genesis_validators_root) {
-    set(1, new SszBytes32(genesis_validators_root));
+    set(GENESIS_VALIDATORS_ROOT_FIELD.getIndex(), new SszBytes32(genesis_validators_root));
   }
 
   default void setSlot(UInt64 slot) {
-    set(2, new SszUInt64(slot));
+    set(SLOT_FIELD.getIndex(), new SszUInt64(slot));
   }
 
   default void setFork(Fork fork) {
-    set(3, fork);
+    set(FORK_FIELD.getIndex(), fork);
   }
 
   // History
   default void setLatest_block_header(BeaconBlockHeader latest_block_header) {
-    set(4, latest_block_header);
+    set(LATEST_BLOCK_HEADER_FIELD.getIndex(), latest_block_header);
   }
 
   @Override
   default SszMutableBytes32Vector getBlock_roots() {
-    return getAnyByRef(5);
+    return getAnyByRef(BLOCK_ROOTS_FIELD.getIndex());
   }
 
   default void setBlock_roots(SszBytes32Vector block_roots) {
@@ -72,7 +72,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   @Override
   default SszMutableBytes32Vector getState_roots() {
-    return getAnyByRef(6);
+    return getAnyByRef(STATE_ROOTS_FIELD.getIndex());
   }
 
   default void setState_roots(SszBytes32Vector state_roots) {
@@ -82,17 +82,17 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(
-        Bytes32.class, getAnyByRef(7), SszBytes32::new, AbstractSszPrimitive::get);
+        Bytes32.class, getAnyByRef(HISTORICAL_ROOTS_FIELD.getIndex()), SszBytes32::new, AbstractSszPrimitive::get);
   }
 
   // Eth1
   default void setEth1_data(Eth1Data eth1_data) {
-    set(8, eth1_data);
+    set(ETH1_DATA_FIELD.getIndex(), eth1_data);
   }
 
   @Override
   default SszMutableList<Eth1Data> getEth1_data_votes() {
-    return getAnyByRef(9);
+    return getAnyByRef(ETH1_DATA_VOTES_FIELD.getIndex());
   }
 
   default void setEth1_data_votes(SszList<Eth1Data> eth1DataList) {
@@ -100,13 +100,13 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   default void setEth1_deposit_index(UInt64 eth1_deposit_index) {
-    set(10, new SszUInt64(eth1_deposit_index));
+    set(ETH1_DEPOSIT_INDEX_FIELD.getIndex(), new SszUInt64(eth1_deposit_index));
   }
 
   // Registry
   @Override
   default SszMutableList<Validator> getValidators() {
-    return getAnyByRef(11);
+    return getAnyByRef(VALIDATORS_FIELD.getIndex());
   }
 
   default void setValidators(SszList<Validator> validators) {
@@ -116,42 +116,45 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   default SSZMutableList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UInt64.class, getAnyByRef(12), SszUInt64::new, AbstractSszPrimitive::get);
+        UInt64.class, getAnyByRef(BALANCES_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   @Override
-  default SSZMutableVector<Bytes32> getRandao_mixes() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(13), SszBytes32::new, AbstractSszPrimitive::get);
+  default SszMutableBytes32Vector getRandao_mixes() {
+    return getAnyByRef(RANDAO_MIXES_FIELD.getIndex());
+  }
+
+  default void setRandao_mixes(SszBytes32Vector randao_mixes) {
+    set(RANDAO_MIXES_FIELD.getIndex(), randao_mixes);
   }
 
   // Slashings
   @Override
   default SSZMutableVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UInt64.class, getAnyByRef(14), SszUInt64::new, AbstractSszPrimitive::get);
+        UInt64.class, getAnyByRef(SLASHINGS_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
   // Attestations
   @Override
   default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
+        PendingAttestation.class, getAnyByRef(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()), Function.identity(), Function.identity());
   }
 
   @Override
   default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(16), Function.identity(), Function.identity());
+        PendingAttestation.class, getAnyByRef(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()), Function.identity(), Function.identity());
   }
 
   // Finality
   default void setJustification_bits(SszBitvector justification_bits) {
-    set(17, justification_bits);
+    set(JUSTIFICATION_BITS_FIELD.getIndex(), justification_bits);
   }
 
   default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {
-    set(18, previous_justified_checkpoint);
+    set(PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD.getIndex(), previous_justified_checkpoint);
   }
 
   default void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint) {
