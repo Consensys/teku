@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
@@ -56,14 +57,15 @@ public class HistoricalBatchTest {
 
   @Test
   void roundTripViaSsz() {
-    SSZMutableVector<Bytes32> block_roots =
-        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+
+    SszMutableBytes32Vector block_roots =
+        HistoricalBatch.SSZ_SCHEMA.get().getBlockRootsSchema().getDefault().createWritableCopy();
     SSZMutableVector<Bytes32> state_roots =
         SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
-              block_roots.set(i, dataStructureUtil.randomBytes32());
+              block_roots.setElement(i, dataStructureUtil.randomBytes32());
               state_roots.set(i, dataStructureUtil.randomBytes32());
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);

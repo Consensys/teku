@@ -873,7 +873,7 @@ public class BeaconStateUtil {
         slot,
         state.getSlot());
     int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
-    return state.getBlock_roots().get(latestBlockRootIndex);
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
   }
 
   @Deprecated

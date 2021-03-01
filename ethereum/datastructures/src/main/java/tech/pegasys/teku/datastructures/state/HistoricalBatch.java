@@ -17,10 +17,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
@@ -29,18 +31,16 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public class HistoricalBatch
-    extends Container2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
+    extends Container2<HistoricalBatch, SszBytes32Vector, SszVector<SszBytes32>> {
 
   public static class HistoricalBatchSchema
-      extends ContainerSchema2<HistoricalBatch, SszVector<SszBytes32>, SszVector<SszBytes32>> {
+      extends ContainerSchema2<HistoricalBatch, SszBytes32Vector, SszVector<SszBytes32>> {
 
     public HistoricalBatchSchema() {
       super(
           "HistoricalBatch",
           namedSchema(
-              "block_roots",
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT)),
+              "block_roots", SszBytes32VectorSchema.create(Constants.SLOTS_PER_HISTORICAL_ROOT)),
           namedSchema(
               "state_roots",
               SszVectorSchema.create(
@@ -52,13 +52,12 @@ public class HistoricalBatch
       return new HistoricalBatch(this, node);
     }
 
-    public HistoricalBatch create(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+    public HistoricalBatch create(SszBytes32Vector block_roots, SSZVector<Bytes32> state_roots) {
       return new HistoricalBatch(this, block_roots, state_roots);
     }
 
-    @SuppressWarnings("unchecked")
-    public SszVectorSchema<SszBytes32, ?> getBlockRootsSchema() {
-      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
+    public SszBytes32VectorSchema<?> getBlockRootsSchema() {
+      return (SszBytes32VectorSchema<?>) getFieldSchema0();
     }
 
     @SuppressWarnings("unchecked")
@@ -79,15 +78,15 @@ public class HistoricalBatch
   }
 
   @Deprecated // Use the constructor with type
-  public HistoricalBatch(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+  public HistoricalBatch(SszBytes32Vector block_roots, SSZVector<Bytes32> state_roots) {
     this(SSZ_SCHEMA.get(), block_roots, state_roots);
   }
 
   private HistoricalBatch(
-      HistoricalBatchSchema type, SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
+      HistoricalBatchSchema type, SszBytes32Vector block_roots, SSZVector<Bytes32> state_roots) {
     super(
         type,
-        SszUtils.toSszVector(type.getBlockRootsSchema(), block_roots, SszBytes32::new),
+        block_roots,
         SszUtils.toSszVector(type.getStateRootsSchema(), state_roots, SszBytes32::new));
   }
 

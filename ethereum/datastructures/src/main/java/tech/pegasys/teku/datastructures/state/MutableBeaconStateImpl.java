@@ -33,7 +33,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private final boolean builder;
 
   private SSZMutableList<UInt64> balances;
-  private SSZMutableVector<Bytes32> blockRoots;
   private SSZMutableVector<Bytes32> stateRoots;
   private SSZMutableList<Bytes32> historicalRoots;
   private SSZMutableVector<Bytes32> randaoMixes;
@@ -84,13 +83,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   @Override
   public SSZMutableList<UInt64> getBalances() {
     return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getBlock_roots() {
-    return blockRoots != null
-        ? blockRoots
-        : (blockRoots = MutableBeaconState.super.getBlock_roots());
   }
 
   @Override

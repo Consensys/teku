@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 
 public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
@@ -39,7 +40,7 @@ public class BeaconStateBuilder {
   private UInt64 slot;
   private Fork fork;
   private BeaconBlockHeader latestBlockHeader;
-  private SSZVector<Bytes32> blockRoots;
+  private SszBytes32Vector blockRoots;
   private SSZVector<Bytes32> stateRoots;
   private SSZList<Bytes32> historicalRoots;
   private Eth1Data eth1Data;
@@ -105,10 +106,8 @@ public class BeaconStateBuilder {
     fork = dataStructureUtil.randomFork();
     latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     blockRoots =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getSlotsPerHistoricalRoot(),
-            dataStructureUtil::randomBytes32);
+        dataStructureUtil.randomSszVector(
+            BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     stateRoots =
         dataStructureUtil.randomSSZVector(
             Bytes32.ZERO,
@@ -202,7 +201,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder blockRoots(final SSZVector<Bytes32> blockRoots) {
+  public BeaconStateBuilder blockRoots(final SszBytes32Vector blockRoots) {
     checkNotNull(blockRoots);
     this.blockRoots = blockRoots;
     return this;

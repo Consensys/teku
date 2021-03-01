@@ -26,6 +26,8 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -60,9 +62,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   @Override
-  default SSZMutableVector<Bytes32> getBlock_roots() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(5), SszBytes32::new, AbstractSszPrimitive::get);
+  default SszMutableBytes32Vector getBlock_roots() {
+    return getAnyByRef(5);
+  }
+
+  default void setBlock_roots(SszBytes32Vector block_roots) {
+    set(BLOCK_ROOTS_FIELD.getIndex(), block_roots);
   }
 
   @Override

@@ -142,7 +142,7 @@ public class BeaconState {
     this.slot = beaconState.getSlot();
     this.fork = new Fork(beaconState.getFork());
     this.latest_block_header = new BeaconBlockHeader(beaconState.getLatest_block_header());
-    this.block_roots = beaconState.getBlock_roots().stream().collect(Collectors.toList());
+    this.block_roots = beaconState.getBlock_roots().streamUnboxed().collect(Collectors.toList());
     this.state_roots = beaconState.getState_roots().stream().collect(Collectors.toList());
     this.historical_roots = beaconState.getHistorical_roots().stream().collect(Collectors.toList());
     this.eth1_data = new Eth1Data(beaconState.getEth1_data());
@@ -177,7 +177,9 @@ public class BeaconState {
         slot,
         fork.asInternalFork(),
         latest_block_header.asInternalBeaconBlockHeader(),
-        SSZVector.createMutable(block_roots, Bytes32.class),
+        tech.pegasys.teku.datastructures.state.BeaconState.BLOCK_ROOTS_FIELD_SCHEMA
+            .get()
+            .of(block_roots),
         SSZVector.createMutable(state_roots, Bytes32.class),
         SSZList.createMutable(historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class),
         eth1_data.asInternalEth1Data(),

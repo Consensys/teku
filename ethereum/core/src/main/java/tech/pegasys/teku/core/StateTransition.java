@@ -172,7 +172,7 @@ public class StateTransition {
 
           // Cache block root
           Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
-          state.getBlock_roots().set(index, previous_block_root);
+          state.getBlock_roots().setElement(index, previous_block_root);
         });
   }
 

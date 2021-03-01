@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveCollection;
@@ -41,5 +42,9 @@ public interface SszPrimitiveCollectionSchema<
   @SuppressWarnings("unchecked")
   default SszPrimitiveSchema<ElementT, SszElementT> getPrimitiveElementSchema() {
     return (SszPrimitiveSchema<ElementT, SszElementT>) getElementSchema();
+  }
+
+  default Collector<ElementT, ?, SszCollectionT> collectorUnboxed() {
+    return Collectors.collectingAndThen(Collectors.<ElementT>toList(), this::of);
   }
 }

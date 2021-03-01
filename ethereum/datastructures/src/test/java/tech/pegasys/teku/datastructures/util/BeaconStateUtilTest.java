@@ -473,7 +473,7 @@ class BeaconStateUtilTest {
   void getCurrentDutyDependentRoot_returnsGenesisBlockDuringEpochZero() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + 3));
     assertThat(BeaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -481,7 +481,7 @@ class BeaconStateUtilTest {
     final BeaconState state =
         dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH + 3));
     assertThat(BeaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
+        .isEqualTo(state.getBlock_roots().getElement((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
   }
 
   @Test
@@ -495,7 +495,7 @@ class BeaconStateUtilTest {
   void getPreviousDutyDependentRoot_returnsGenesisBlockDuringEpochZero() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + 3));
     assertThat(BeaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -503,7 +503,7 @@ class BeaconStateUtilTest {
     final BeaconState state =
         dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH + 3));
     assertThat(BeaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -511,6 +511,6 @@ class BeaconStateUtilTest {
     final BeaconState state =
         dataStructureUtil.randomBeaconState(UInt64.valueOf(GENESIS_SLOT + SLOTS_PER_EPOCH * 2 + 3));
     assertThat(BeaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
+        .isEqualTo(state.getBlock_roots().getElement((int) (GENESIS_SLOT + SLOTS_PER_EPOCH - 1)));
   }
 }

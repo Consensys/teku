@@ -13,19 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.SszPrimitive;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 
-public interface SszMutablePrimitiveList<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszMutablePrimitiveCollection<ElementT, SszElementT>, SszMutableList<SszElementT> {
+public interface SszMutableBytes32Vector
+    extends SszMutablePrimitiveVector<Bytes32, SszBytes32>, SszBytes32Vector {
 
-  @Override
-  SszPrimitiveList<ElementT, SszElementT> commitChanges();
-
-  @Override
-  default SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy() {
-    throw new UnsupportedOperationException(
-        "Creating a writable copy from writable instance is not supported");
+  default void setBytes32(int index, Bytes32 value) {
+    setElement(index, value);
   }
+
+  @Override
+  SszBytes32Vector commitChanges();
 }

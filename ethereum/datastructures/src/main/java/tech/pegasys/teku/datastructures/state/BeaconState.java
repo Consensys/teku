@@ -28,11 +28,13 @@ import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -51,13 +53,12 @@ public interface BeaconState extends SszContainer {
   SszField FORK_FIELD = new SszField(3, "fork", Fork.SSZ_SCHEMA);
   SszField LATEST_BLOCK_HEADER_FIELD =
       new SszField(4, "latest_block_header", BeaconBlockHeader.SSZ_SCHEMA);
-  SszField BLOCK_ROOTS_FIELD =
-      new SszField(
-          5,
-          "block_roots",
-          () ->
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
+
+  SpecDependent<SszBytes32VectorSchema<?>> BLOCK_ROOTS_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.SLOTS_PER_HISTORICAL_ROOT));
+
+  SszField BLOCK_ROOTS_FIELD = new SszField(5, "block_roots", BLOCK_ROOTS_FIELD_SCHEMA::get);
+
   SszField STATE_ROOTS_FIELD =
       new SszField(
           6,
@@ -202,7 +203,7 @@ public interface BeaconState extends SszContainer {
 
       // History
       BeaconBlockHeader latest_block_header,
-      SSZVector<Bytes32> block_roots,
+      SszBytes32Vector block_roots,
       SSZVector<Bytes32> state_roots,
       SSZList<Bytes32> historical_roots,
 
@@ -239,7 +240,7 @@ public interface BeaconState extends SszContainer {
               state.setSlot(slot);
               state.setFork(fork);
               state.setLatest_block_header(latest_block_header);
-              state.getBlock_roots().setAll(block_roots);
+              state.setBlock_roots(block_roots);
               state.getState_roots().setAll(state_roots);
               state.getHistorical_roots().setAll(historical_roots);
               state.setEth1_data(eth1_data);
@@ -284,12 +285,8 @@ public interface BeaconState extends SszContainer {
     return getAny(LATEST_BLOCK_HEADER_FIELD.getIndex());
   }
 
-  default SSZVector<Bytes32> getBlock_roots() {
-    return new SSZBackingVector<>(
-        Bytes32.class,
-        getAny(BLOCK_ROOTS_FIELD.getIndex()),
-        SszBytes32::new,
-        AbstractSszPrimitive::get);
+  default SszBytes32Vector getBlock_roots() {
+    return getAny(BLOCK_ROOTS_FIELD.getIndex());
   }
 
   default SSZVector<Bytes32> getState_roots() {

@@ -27,6 +27,7 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -64,7 +65,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
 
       // History
       BeaconBlockHeader latest_block_header,
-      SSZVector<Bytes32> block_roots,
+      SszBytes32Vector block_roots,
       SSZVector<Bytes32> state_roots,
       SSZList<Bytes32> historical_roots,
 

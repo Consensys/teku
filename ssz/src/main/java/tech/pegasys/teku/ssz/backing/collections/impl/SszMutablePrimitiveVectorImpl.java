@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszComposite;
 import tech.pegasys.teku.ssz.backing.view.SszMutableVectorImpl;
@@ -31,8 +32,8 @@ public class SszMutablePrimitiveVectorImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszPrimitiveVectorImpl<ElementT, SszElementT> commitChanges() {
-    return (SszPrimitiveVectorImpl<ElementT, SszElementT>) super.commitChanges();
+  public SszPrimitiveVector<ElementT, SszElementT> commitChanges() {
+    return (SszPrimitiveVector<ElementT, SszElementT>) super.commitChanges();
   }
 
   @Override

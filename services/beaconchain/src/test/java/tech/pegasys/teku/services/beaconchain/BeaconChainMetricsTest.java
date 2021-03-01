@@ -46,7 +46,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -88,8 +87,8 @@ class BeaconChainMetricsTest {
     when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(1000, dataStructureUtil.randomBytes32()));
-    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
-    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    when(state.getBlock_roots())
+        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
   }
 
   @Test
@@ -351,8 +350,8 @@ class BeaconChainMetricsTest {
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     blockRootsList.set(
         target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
-    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
-    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    when(state.getBlock_roots())
+        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -382,8 +381,8 @@ class BeaconChainMetricsTest {
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     blockRootsList.set(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
-    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
-    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    when(state.getBlock_roots())
+        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -412,8 +411,8 @@ class BeaconChainMetricsTest {
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     final int blockRootIndex = target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     blockRootsList.set(blockRootIndex, blockRoot);
-    SSZVector<Bytes32> blockRootSSZList = SSZVector.createMutable(blockRootsList, Bytes32.class);
-    when(state.getBlock_roots()).thenReturn(blockRootSSZList);
+    when(state.getBlock_roots())
+        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =

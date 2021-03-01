@@ -127,7 +127,7 @@ public class BeaconStateUtil {
         slot,
         state.getSlot());
     int latestBlockRootIndex = slot.mod(specConstants.getSlotsPerHistoricalRoot()).intValue();
-    return state.getBlock_roots().get(latestBlockRootIndex);
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
   }
 
   public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
