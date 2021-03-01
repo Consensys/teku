@@ -46,8 +46,8 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -65,12 +65,12 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.teku.spec.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDataProvider provider =
-      new ValidatorDataProvider(specProvider, validatorApiChannel, combinedChainDataClient);
+      new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -180,10 +180,7 @@ public class ValidatorDataProviderTest {
   public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final int maxValidatorsPerCommittee =
-        specProvider
-            .atSlot(attestationData.getSlot())
-            .getConstants()
-            .getMaxValidatorsPerCommittee();
+        spec.atSlot(attestationData.getSlot()).getConstants().getMaxValidatorsPerCommittee();
     final tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         new tech.pegasys.teku.spec.datastructures.operations.Attestation(
             SszBitlistSchema.create(maxValidatorsPerCommittee).ofBits(4),

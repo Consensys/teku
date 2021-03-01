@@ -33,7 +33,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -44,13 +44,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BlockValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
       LimitedSet.create(VALID_BLOCK_SET_SIZE);
 
-  public BlockValidator(final SpecProvider specProvider, RecentChainData recentChainData) {
-    this.specProvider = specProvider;
+  public BlockValidator(final Spec spec, RecentChainData recentChainData) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
   }
 
@@ -128,7 +128,7 @@ public class BlockValidator {
     final long disparityInSeconds = Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0);
     final UInt64 maxOffset = UInt64.valueOf(disparityInSeconds);
     final UInt64 maxTime = store.getTime().plus(maxOffset);
-    UInt64 maxCurrSlot = specProvider.getCurrentSlot(maxTime, store.getGenesisTime());
+    UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
     return block.getSlot().compareTo(maxCurrSlot) > 0;
   }
 
@@ -162,7 +162,7 @@ public class BlockValidator {
   }
 
   private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
-    return specProvider.blockDescendsFromLatestFinalizedBlock(
+    return spec.blockDescendsFromLatestFinalizedBlock(
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());

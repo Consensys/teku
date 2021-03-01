@@ -29,7 +29,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -52,7 +52,7 @@ public class TekuConfiguration {
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
-      final SpecProvider specProvider,
+      final Spec spec,
       final StorageConfiguration storageConfiguration,
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
@@ -85,9 +85,9 @@ public class TekuConfiguration {
             powchainConfiguration,
             loggingConfig,
             storeConfig,
-            specProvider);
+            spec);
     this.validatorClientConfig =
-        new ValidatorClientConfiguration(validatorConfig, interopConfig, specProvider);
+        new ValidatorClientConfiguration(validatorConfig, interopConfig, spec);
     this.natConfiguration = natConfiguration;
   }
 
@@ -178,19 +178,19 @@ public class TekuConfiguration {
       // Create spec, and pass spec to other builders that require it
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
-      final SpecProvider specProvider = eth2NetworkConfiguration.getSpecProvider();
+      final Spec spec = eth2NetworkConfiguration.getSpecProvider();
 
-      interopConfigBuilder.specProvider(specProvider);
+      interopConfigBuilder.specProvider(spec);
       // Update storage config
-      storageConfigurationBuilder.specProvider(specProvider);
+      storageConfigurationBuilder.specProvider(spec);
       // Update weak subjectivity
-      weakSubjectivityBuilder.specProvider(specProvider);
+      weakSubjectivityBuilder.specProvider(spec);
       // Update p2p config
-      p2pConfigBuilder.specProvider(specProvider);
+      p2pConfigBuilder.specProvider(spec);
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,
-          specProvider,
+          spec,
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),

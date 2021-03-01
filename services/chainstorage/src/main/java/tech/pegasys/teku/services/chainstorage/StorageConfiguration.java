@@ -14,7 +14,7 @@
 package tech.pegasys.teku.services.chainstorage;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -25,19 +25,19 @@ public class StorageConfiguration {
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   private StorageConfiguration(
       final Optional<Eth1Address> eth1DepositContract,
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final DatabaseVersion dataStorageCreateDbVersion,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public static Builder builder() {
@@ -60,8 +60,8 @@ public class StorageConfiguration {
     return dataStorageCreateDbVersion;
   }
 
-  public SpecProvider getSpecProvider() {
-    return specProvider;
+  public Spec getSpecProvider() {
+    return spec;
   }
 
   public static final class Builder {
@@ -70,7 +70,7 @@ public class StorageConfiguration {
     private StateStorageMode dataStorageMode;
     private long dataStorageFrequency;
     private DatabaseVersion dataStorageCreateDbVersion;
-    private SpecProvider specProvider;
+    private Spec spec;
 
     private Builder() {}
 
@@ -94,8 +94,8 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder specProvider(SpecProvider specProvider) {
-      this.specProvider = specProvider;
+    public Builder specProvider(Spec spec) {
+      this.spec = spec;
       return this;
     }
 
@@ -105,7 +105,7 @@ public class StorageConfiguration {
           dataStorageMode,
           dataStorageFrequency,
           dataStorageCreateDbVersion,
-          specProvider);
+          spec);
     }
   }
 }

@@ -28,7 +28,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -57,7 +57,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     super(
         asyncRunner,
         metricsSystem,
@@ -70,7 +70,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         finalizedCheckpointChannel,
         chainHeadChannel,
         eventBus,
-        specProvider);
+        spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
@@ -89,7 +89,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
@@ -102,7 +102,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
   }
@@ -119,7 +119,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
@@ -132,7 +132,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     return client.initializeFromStorage().join();
   }

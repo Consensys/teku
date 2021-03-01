@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -227,15 +227,14 @@ public class DebugDbCommand implements Runnable {
       final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final SpecProvider specProvider =
-        eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
-            specProvider);
+            spec);
     return databaseFactory.createDatabase();
   }
 
