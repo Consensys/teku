@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -51,15 +52,29 @@ public class ForkChoice {
   private final SpecProvider specProvider;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
+  private final ProposerWeightings proposerWeightings;
 
-  public ForkChoice(
+  private ForkChoice(
       final SpecProvider specProvider,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final ProposerWeightings proposerWeightings) {
     this.specProvider = specProvider;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
+    this.proposerWeightings = proposerWeightings;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
+  }
+
+  public static ForkChoice create(
+      final SpecProvider specProvider,
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData) {
+    return new ForkChoice(
+        specProvider,
+        forkChoiceExecutor,
+        recentChainData,
+        new ProposerWeightings(forkChoiceExecutor));
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -83,6 +98,7 @@ public class ForkChoice {
             justifiedCheckpointState ->
                 onForkChoiceThread(
                     () -> {
+                      nodeSlot.ifPresent(proposerWeightings::onForkChoiceRunAtSlotStart);
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
                       final Checkpoint justifiedCheckpoint =
@@ -119,12 +135,21 @@ public class ForkChoice {
                     }));
   }
 
+  /** Import a block to the store. */
+  public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
+    return recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+        .thenCompose(blockSlotState -> onBlock(block, UInt64.ZERO, blockSlotState));
+  }
+
   /**
    * Import a block to the store. The supplied blockSlotState must already have empty slots
    * processed to the same slot as the block.
    */
-  public SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
+  private SafeFuture<BlockImportResult> onBlock(
+      final SignedBeaconBlock block,
+      final UInt64 priorSlotCommitteeWeight,
+      Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -151,7 +176,7 @@ public class ForkChoice {
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, result);
+          updateForkChoiceForImportedBlock(block, priorSlotCommitteeWeight, result);
           applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });
@@ -172,8 +197,11 @@ public class ForkChoice {
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block, final BlockImportResult result) {
+      final SignedBeaconBlock block,
+      final UInt64 priorSlotCommitteeWeight,
+      final BlockImportResult result) {
     if (result.isSuccessful()) {
+      proposerWeightings.onBlockReceived(block, priorSlotCommitteeWeight);
       // If the new block builds on our current chain head immediately make it the new head
       // Since fork choice works by walking down the tree selecting the child block with
       // the greatest weight, when a block has only one child it will automatically become

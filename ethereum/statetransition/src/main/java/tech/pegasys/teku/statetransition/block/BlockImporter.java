@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -84,11 +83,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(
-            __ ->
-                recentChainData.retrieveStateAtSlot(
-                    new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
-        .thenCompose(blockSlotState -> forkChoice.onBlock(block, blockSlotState))
+        .thenCompose(__ -> forkChoice.onBlock(block))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

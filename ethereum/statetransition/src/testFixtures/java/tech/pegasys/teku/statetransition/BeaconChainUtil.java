@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -94,7 +93,7 @@ public class BeaconChainUtil {
         specProvider,
         storageClient,
         validatorKeys,
-        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
+        ForkChoice.create(specProvider, new InlineEventThread(), storageClient),
         true);
   }
 
@@ -107,7 +106,7 @@ public class BeaconChainUtil {
         specProvider,
         validatorKeys,
         storageClient,
-        new ForkChoice(specProvider, new InlineEventThread(), storageClient),
+        ForkChoice.create(specProvider, new InlineEventThread(), storageClient),
         signDeposits);
   }
 
@@ -211,11 +210,7 @@ public class BeaconChainUtil {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
-    final Optional<BeaconState> preState =
-        recentChainData
-            .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-            .join();
-    final BlockImportResult importResult = forkChoice.onBlock(block, preState).join();
+    final BlockImportResult importResult = forkChoice.onBlock(block).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "
@@ -332,7 +327,8 @@ public class BeaconChainUtil {
     public BeaconChainUtil build() {
       validate();
       if (forkChoice == null) {
-        forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+        final InlineEventThread forkChoiceExecutor = new InlineEventThread();
+        forkChoice = ForkChoice.create(specProvider, forkChoiceExecutor, recentChainData);
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
