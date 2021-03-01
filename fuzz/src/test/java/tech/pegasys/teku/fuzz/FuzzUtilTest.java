@@ -32,6 +32,8 @@ import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.util.config.SpecDependent;
 @ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
 
+  private final Spec spec = SpecFactory.createMinimal();
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
   // correct/equivalent according to the spec
@@ -67,16 +71,17 @@ class FuzzUtilTest {
   @Test
   public void fuzzAttestation_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final SchemaDefinitions schemaDefinitions = spec.getGenesisSpec().getSchemaDefinitions();
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
     final Attestation data =
         loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.SSZ_SCHEMA);
     final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("pre.ssz"), schemaDefinitions.getBeaconStateSchema());
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), schemaDefinitions.getBeaconStateSchema());
 
-    AttestationFuzzInput input = new AttestationFuzzInput(preState, data);
+    AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 

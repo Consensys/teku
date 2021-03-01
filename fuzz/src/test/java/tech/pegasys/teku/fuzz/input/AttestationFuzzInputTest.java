@@ -21,13 +21,13 @@ public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationF
 
   @Override
   protected SszSchema<AttestationFuzzInput> getInputType() {
-    return AttestationFuzzInput.createSchema();
+    return AttestationFuzzInput.createSchema(spec.getGenesisSpec());
   }
 
   @Override
   protected AttestationFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    return new AttestationFuzzInput(state, attestation);
+    return new AttestationFuzzInput(spec, state, attestation);
   }
 }

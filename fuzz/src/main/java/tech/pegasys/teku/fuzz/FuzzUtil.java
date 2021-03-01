@@ -74,7 +74,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createSchema());
+    AttestationFuzzInput structuredInput =
+        deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
 
     // process and return post state
     try {
