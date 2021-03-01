@@ -396,7 +396,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoice = new ForkChoice(spec, forkChoiceExecutor, recentChainData);
+    forkChoice = ForkChoice.create(spec, forkChoiceExecutor, recentChainData);
     forkChoiceTrigger =
         ForkChoiceTrigger.create(
             forkChoice, beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled());

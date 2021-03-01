@@ -89,7 +89,7 @@ public abstract class TransitionBenchmark {
     localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    ForkChoice forkChoice = new ForkChoice(spec, new InlineEventThread(), recentChainData);
+    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);

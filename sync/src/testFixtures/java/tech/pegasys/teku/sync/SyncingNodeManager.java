@@ -91,7 +91,7 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
-    ForkChoice forkChoice = new ForkChoice(spec, new InlineEventThread(), recentChainData);
+    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     BlockImporter blockImporter =
         new BlockImporter(
             recentChainData, forkChoice, WeakSubjectivityFactory.lenientValidator(), eventBus);

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -52,7 +53,7 @@ public class ForkChoice {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
 
-  public ForkChoice(
+  private ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
@@ -60,6 +61,13 @@ public class ForkChoice {
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
+  }
+
+  public static ForkChoice create(
+      final Spec spec,
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData) {
+    return new ForkChoice(spec, forkChoiceExecutor, recentChainData);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -119,11 +127,18 @@ public class ForkChoice {
                     }));
   }
 
+  /** Import a block to the store. */
+  public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
+    return recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+        .thenCompose(blockSlotState -> onBlock(block, blockSlotState));
+  }
+
   /**
    * Import a block to the store. The supplied blockSlotState must already have empty slots
    * processed to the same slot as the block.
    */
-  public SafeFuture<BlockImportResult> onBlock(
+  private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
