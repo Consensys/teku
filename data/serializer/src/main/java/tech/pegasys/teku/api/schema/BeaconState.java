@@ -29,7 +29,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconState {
@@ -153,7 +152,7 @@ public class BeaconState {
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
     this.balances = beaconState.getBalances().stream().collect(Collectors.toList());
     this.randao_mixes = beaconState.getRandao_mixes().streamUnboxed().collect(Collectors.toList());
-    this.slashings = beaconState.getSlashings().stream().collect(Collectors.toList());
+    this.slashings = beaconState.getSlashings().streamUnboxed().collect(Collectors.toList());
     this.previous_epoch_attestations =
         beaconState.getPrevious_epoch_attestations().stream()
             .map(PendingAttestation::new)
@@ -202,7 +201,9 @@ public class BeaconState {
         tech.pegasys.teku.datastructures.state.BeaconState.RANDAO_MIXES_FIELD_SCHEMA
             .get()
             .of(randao_mixes),
-        SSZVector.createMutable(slashings, UInt64.class),
+        tech.pegasys.teku.datastructures.state.BeaconState.SLASHINGS_FIELD_SCHEMA
+            .get()
+            .of(slashings),
         SSZList.createMutable(
             previous_epoch_attestations.stream()
                 .map(PendingAttestation::asInternalPendingAttestation)

@@ -21,20 +21,19 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -105,13 +104,13 @@ public interface BeaconState extends SszContainer {
       SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField RANDAO_MIXES_FIELD = new SszField(13, "randao_mixes", RANDAO_MIXES_FIELD_SCHEMA::get);
 
-  SszField SLASHINGS_FIELD =
-      new SszField(
-          14,
-          "slashings",
+  SpecDependent<SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>> SLASHINGS_FIELD_SCHEMA =
+      SpecDependent.of(
           () ->
-              SszVectorSchema.create(
+              SszPrimitiveVectorSchema.create(
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
+  SszField SLASHINGS_FIELD = new SszField(14, "slashings", SLASHINGS_FIELD_SCHEMA::get);
+
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           15,
@@ -215,7 +214,7 @@ public interface BeaconState extends SszContainer {
       SszBytes32Vector randao_mixes,
 
       // Slashings
-      SSZVector<UInt64> slashings,
+      SszPrimitiveVector<UInt64, SszUInt64> slashings,
 
       // Attestations
       SSZList<PendingAttestation> previous_epoch_attestations,
@@ -244,7 +243,7 @@ public interface BeaconState extends SszContainer {
               state.setValidators(validators);
               state.getBalances().setAll(balances);
               state.setRandao_mixes(randao_mixes);
-              state.getSlashings().setAll(slashings);
+              state.setSlashings(slashings);
               state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
               state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
               state.setJustification_bits(justification_bits);
@@ -324,12 +323,8 @@ public interface BeaconState extends SszContainer {
   }
 
   // Slashings
-  default SSZVector<UInt64> getSlashings() {
-    return new SSZBackingVector<>(
-        UInt64.class,
-        getAny(SLASHINGS_FIELD.getIndex()),
-        SszUInt64::new,
-        AbstractSszPrimitive::get);
+  default SszPrimitiveVector<UInt64, SszUInt64> getSlashings() {
+    return getAny(SLASHINGS_FIELD.getIndex());
   }
 
   // Attestations

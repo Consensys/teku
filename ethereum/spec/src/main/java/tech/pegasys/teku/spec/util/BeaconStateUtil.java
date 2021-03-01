@@ -406,7 +406,8 @@ public class BeaconStateUtil {
     int index = epoch.mod(specConstants.getEpochsPerSlashingsVector()).intValue();
     state
         .getSlashings()
-        .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
+        .setElement(
+            index, state.getSlashings().getElement(index).plus(validator.getEffective_balance()));
     validatorsUtil.decreaseBalance(
         state,
         slashedIndex,

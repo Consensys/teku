@@ -262,7 +262,9 @@ public final class EpochProcessorUtil {
   public static void process_slashings(MutableBeaconState state, final UInt64 total_balance) {
     UInt64 epoch = get_current_epoch(state);
     UInt64 adjusted_total_slashing_balance =
-        state.getSlashings().stream()
+        state
+            .getSlashings()
+            .streamUnboxed()
             .reduce(UInt64.ZERO, UInt64::plus)
             .times(Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
             .min(total_balance);
@@ -329,7 +331,7 @@ public final class EpochProcessorUtil {
 
     // Reset slashings
     int index = next_epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
-    state.getSlashings().set(index, UInt64.ZERO);
+    state.getSlashings().setElement(index, UInt64.ZERO);
 
     // Set randao mix
     final int randaoIndex = next_epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();

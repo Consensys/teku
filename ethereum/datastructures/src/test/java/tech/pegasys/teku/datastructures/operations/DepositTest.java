@@ -95,6 +95,7 @@ class DepositTest {
 
   private SszBytes32Vector setupMerkleBranch() {
     return new DataStructureUtil()
-        .randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), (Supplier<Bytes32>) Bytes32::random);
+        .randomSszBytes32Vector(
+            Deposit.SSZ_SCHEMA.getProofSchema(), (Supplier<Bytes32>) Bytes32::random);
   }
 }

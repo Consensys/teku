@@ -25,10 +25,11 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
@@ -49,7 +50,7 @@ public class BeaconStateBuilder {
   private SszList<Validator> validators;
   private SSZList<UInt64> balances;
   private SszBytes32Vector randaoMixes;
-  private SSZVector<UInt64> slashings;
+  private SszPrimitiveVector<UInt64, SszUInt64> slashings;
   private SSZList<PendingAttestation> previousEpochAttestations;
   private SSZList<PendingAttestation> currentEpochAttestations;
   private SszBitvector justificationBits;
@@ -106,10 +107,10 @@ public class BeaconStateBuilder {
     fork = dataStructureUtil.randomFork();
     latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     blockRoots =
-        dataStructureUtil.randomSszVector(
+        dataStructureUtil.randomSszBytes32Vector(
             BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     stateRoots =
-        dataStructureUtil.randomSszVector(
+        dataStructureUtil.randomSszBytes32Vector(
             BeaconState.STATE_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     historicalRoots =
         dataStructureUtil.randomSSZList(
@@ -136,13 +137,11 @@ public class BeaconStateBuilder {
             dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomUInt64);
     randaoMixes =
-        dataStructureUtil.randomSszVector(
+        dataStructureUtil.randomSszBytes32Vector(
             BeaconState.RANDAO_MIXES_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     slashings =
-        dataStructureUtil.randomSSZVector(
-            UInt64.ZERO,
-            dataStructureUtil.getEpochsPerSlashingsVector(),
-            dataStructureUtil::randomUInt64);
+        dataStructureUtil.randomSszPrimitiveVector(
+            BeaconState.SLASHINGS_FIELD_SCHEMA.get(), dataStructureUtil::randomUInt64);
     previousEpochAttestations =
         dataStructureUtil.randomSSZList(
             PendingAttestation.class,
@@ -251,7 +250,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder slashings(final SSZVector<UInt64> slashings) {
+  public BeaconStateBuilder slashings(final SszPrimitiveVector<UInt64, SszUInt64> slashings) {
     checkNotNull(slashings);
     this.slashings = slashings;
     return this;

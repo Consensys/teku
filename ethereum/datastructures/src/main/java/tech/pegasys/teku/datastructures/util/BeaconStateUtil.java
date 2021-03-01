@@ -550,7 +550,8 @@ public class BeaconStateUtil {
     int index = epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
     state
         .getSlashings()
-        .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
+        .setElement(
+            index, state.getSlashings().getElement(index).plus(validator.getEffective_balance()));
     decrease_balance(
         state,
         slashed_index,

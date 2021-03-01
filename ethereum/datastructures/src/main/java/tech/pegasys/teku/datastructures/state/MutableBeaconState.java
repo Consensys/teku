@@ -19,15 +19,15 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -136,12 +136,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   // Slashings
   @Override
-  default SSZMutableVector<UInt64> getSlashings() {
-    return new SSZBackingVector<>(
-        UInt64.class,
-        getAnyByRef(SLASHINGS_FIELD.getIndex()),
-        SszUInt64::new,
-        AbstractSszPrimitive::get);
+  default SszMutablePrimitiveVector<UInt64, SszUInt64> getSlashings() {
+    return getAnyByRef(SLASHINGS_FIELD.getIndex());
+  }
+
+  default void setSlashings(SszPrimitiveVector<UInt64, SszUInt64> slashings) {
+    set(SLASHINGS_FIELD.getIndex(), slashings);
   }
 
   // Attestations

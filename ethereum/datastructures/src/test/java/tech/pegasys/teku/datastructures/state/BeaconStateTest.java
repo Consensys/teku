@@ -98,7 +98,7 @@ class BeaconStateTest {
       assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
       assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
       assertThat(s1.getRandao_mixes().size()).isNotEqualTo(s2.getRandao_mixes().size());
-      assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
+      assertThat(s1.getSlashings().size()).isNotEqualTo(s2.getSlashings().size());
       assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
           .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
       assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
