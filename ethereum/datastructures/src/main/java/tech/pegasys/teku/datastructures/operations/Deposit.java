@@ -13,38 +13,28 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositData> {
+public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> {
 
   public static class DepositSchema
-      extends ContainerSchema2<Deposit, SszVector<SszBytes32>, DepositData> {
+      extends ContainerSchema2<Deposit, SszBytes32Vector, DepositData> {
 
     public DepositSchema() {
       super(
           "Deposit",
           namedSchema(
-              "proof",
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+              "proof", SszBytes32VectorSchema.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
           namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 
-    @SuppressWarnings("unchecked")
-    public SszVectorSchema<SszBytes32, ?> getProofSchema() {
-      return (SszVectorSchema<SszBytes32, ?>) getFieldSchema0();
+    public SszBytes32VectorSchema<?> getProofSchema() {
+      return (SszBytes32VectorSchema<?>) getFieldSchema0();
     }
 
     @Override
@@ -55,31 +45,22 @@ public class Deposit extends Container2<Deposit, SszVector<SszBytes32>, DepositD
 
   public static final DepositSchema SSZ_SCHEMA = new DepositSchema();
 
-  private static final SSZVector<Bytes32> EMPTY_PROOF =
-      SSZVector.createMutable(SSZ_SCHEMA.getProofSchema().getLength(), Bytes32.ZERO);
+  private static final SszBytes32Vector EMPTY_PROOF = SSZ_SCHEMA.getProofSchema().getDefault();
 
   private Deposit(DepositSchema type, TreeNode backingNode) {
     super(type, backingNode);
-  }
-
-  public Deposit(SSZVector<Bytes32> proof, DepositData data) {
-    super(
-        SSZ_SCHEMA,
-        SszUtils.toSszVector(SSZ_SCHEMA.getProofSchema(), proof, SszBytes32::new),
-        data);
-  }
-
-  public Deposit() {
-    super(SSZ_SCHEMA);
   }
 
   public Deposit(DepositData data) {
     this(EMPTY_PROOF, data);
   }
 
-  public SSZVector<Bytes32> getProof() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getField0(), SszBytes32::new, AbstractSszPrimitive::get);
+  public Deposit(SszBytes32Vector proof, DepositData data) {
+    super(SSZ_SCHEMA, proof, data);
+  }
+
+  public SszBytes32Vector getProof() {
+    return getField0();
   }
 
   public DepositData getData() {

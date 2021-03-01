@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 
 public class MerkleTreeTest {
 
@@ -62,12 +64,16 @@ public class MerkleTreeTest {
       results.add(
           is_valid_merkle_branch(
               leaf,
-              merkleTree1.getProof(leaf),
+              toSszBytes32Vector(merkleTree1.getProof(leaf)),
               treeDepth + 1, // Add 1 for the `List` length mix-in
               index,
               root));
     }
     assertThat(results).allSatisfy(Assertions::assertTrue);
+  }
+
+  private SszBytes32Vector toSszBytes32Vector(List<Bytes32> list) {
+    return SszBytes32VectorSchema.create(list.size()).of(list);
   }
 
   @Test
@@ -88,7 +94,7 @@ public class MerkleTreeTest {
       results.add(
           is_valid_merkle_branch(
               leaf,
-              merkleTree2.getProofWithViewBoundary(leaf, index + 1),
+              toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(leaf, index + 1)),
               treeDepth + 1, // Add 1 for the `List` length mix-in
               index,
               root));
@@ -116,7 +122,7 @@ public class MerkleTreeTest {
       results.add(
           is_valid_merkle_branch(
               leaves.get(index),
-              merkleTree2.getProofWithViewBoundary(index, 10),
+              toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(index, 10)),
               treeDepth + 1, // Add 1 for the `List` length mix-in
               index,
               root));

@@ -73,10 +73,10 @@ import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -232,13 +232,13 @@ public class BeaconStateUtil {
    */
   @Deprecated
   public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
+      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.get(i), value));
+        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
       } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.get(i)));
+        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
       }
     }
     return value.equals(root);

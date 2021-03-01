@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -206,12 +207,11 @@ class BlockProcessorUtilTest {
                 state.setEth1_data(
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
+    SszBytes32Vector proof = Deposit.SSZ_SCHEMA.getProofSchema().of(depositMerkleTree.getProof(0));
     SszList<Deposit> deposits =
         BeaconBlockBody.getSszSchema()
             .getDepositsSchema()
-            .of(
-                new DepositWithIndex(
-                    depositMerkleTree.getProof(0), depositData, UInt64.valueOf(0)));
+            .of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
     return beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));

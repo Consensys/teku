@@ -41,6 +41,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -182,11 +183,13 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                     expectedDepositIndex.get(), deposit.getIndex());
               }
               expectedDepositIndex.set(deposit.getIndex().plus(ONE));
-              return new DepositWithIndex(
-                  depositMerkleTree.getProofWithViewBoundary(
-                      deposit.getIndex().intValue(), eth1DepositCount.intValue()),
-                  deposit.getData(),
-                  deposit.getIndex());
+              SszBytes32Vector proof =
+                  Deposit.SSZ_SCHEMA
+                      .getProofSchema()
+                      .of(
+                          depositMerkleTree.getProofWithViewBoundary(
+                              deposit.getIndex().intValue(), eth1DepositCount.intValue()));
+              return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
         .collect(DEPOSITS_SCHEMA.get().collector());
   }

@@ -546,7 +546,7 @@ public final class DataStructureUtil {
 
   public DepositWithIndex randomDepositWithIndex(long depositIndex) {
     return new DepositWithIndex(
-        SSZVector.createMutable(32, randomBytes32()),
+        randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), this::randomBytes32),
         randomDepositData(),
         UInt64.valueOf(depositIndex));
   }
@@ -574,13 +574,13 @@ public final class DataStructureUtil {
 
   public Deposit randomDepositWithoutIndex() {
     return new Deposit(
-        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
+        randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), this::randomBytes32),
         randomDepositData());
   }
 
   public Deposit randomDeposit() {
     return new Deposit(
-        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
+        randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), this::randomBytes32),
         randomDepositData());
   }
 
@@ -630,8 +630,9 @@ public final class DataStructureUtil {
           depositGenerator.createDepositData(
               keypair, getMaxEffectiveBalance(), keypair.getPublicKey());
 
-      SSZVector<Bytes32> proof =
-          SSZVector.createMutable(getDepositContractTreeDepth() + 1, Bytes32.ZERO);
+      SszBytes32Vector proof =
+          randomSszVector(Deposit.SSZ_SCHEMA.getProofSchema(), this::randomBytes32);
+
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UInt64.valueOf(i));
       deposits.add(deposit);
     }

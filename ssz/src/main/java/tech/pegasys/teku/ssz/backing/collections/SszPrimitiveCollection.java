@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.SszCollection;
@@ -53,5 +55,9 @@ public interface SszPrimitiveCollection<
             return boxedIterator.next().get();
           }
         };
+  }
+
+  default List<ElementT> toListUnboxed() {
+    return streamUnboxed().collect(Collectors.toList());
   }
 }
