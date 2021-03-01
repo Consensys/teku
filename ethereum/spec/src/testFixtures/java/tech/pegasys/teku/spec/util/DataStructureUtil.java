@@ -775,11 +775,6 @@ public final class DataStructureUtil {
     return getConstant(SpecConstants::getMaxEffectiveBalance, Constants.MAX_EFFECTIVE_BALANCE);
   }
 
-  private int getDepositContractTreeDepth() {
-    return getConstant(
-        SpecConstants::getDepositContractTreeDepth, Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-  }
-
   private Bytes32 computeDomain() {
     return maybeSpecProvider
         .map(
