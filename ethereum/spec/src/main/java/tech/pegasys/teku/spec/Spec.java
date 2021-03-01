@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.util.ChainTimingUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransit
 
 public class Spec {
   private final SpecConstants constants;
+  private final ChainTimingUtil chainTimingUtil;
   private final CommitteeUtil committeeUtil;
   private final ValidatorsUtil validatorsUtil;
   private final AttestationUtil attestationUtil;
@@ -44,9 +46,11 @@ public class Spec {
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
+    this.chainTimingUtil = new ChainTimingUtil(constants);
     this.committeeUtil = new CommitteeUtil(this.constants);
-    this.validatorsUtil = new ValidatorsUtil(this.constants, beaconStateUtil);
-    this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
+    this.validatorsUtil = new ValidatorsUtil(this.constants, chainTimingUtil);
+    this.beaconStateUtil =
+        new BeaconStateUtil(this.constants, chainTimingUtil, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor =
         new EpochProcessor(this.constants, validatorsUtil, attestationUtil, this.beaconStateUtil);

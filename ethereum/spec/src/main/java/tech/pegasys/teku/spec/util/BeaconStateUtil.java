@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
@@ -72,14 +71,17 @@ public class BeaconStateUtil {
   private final SpecConstants specConstants;
   private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
+  private final ChainTimingUtil chainTimingUtil;
 
   public BeaconStateUtil(
       final SpecConstants specConstants,
+      final ChainTimingUtil chainTimingUtil,
       final ValidatorsUtil validatorsUtil,
       final CommitteeUtil committeeUtil) {
     this.specConstants = specConstants;
     this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
+    this.chainTimingUtil = chainTimingUtil;
   }
 
   public boolean isValidGenesisState(UInt64 genesisTime, int activeValidatorCount) {
@@ -96,26 +98,23 @@ public class BeaconStateUtil {
   }
 
   public UInt64 computeEpochAtSlot(UInt64 slot) {
-    // TODO this should take into account hard forks
-    return slot.dividedBy(specConstants.getSlotsPerEpoch());
+    return chainTimingUtil.computeEpochAtSlot(slot);
   }
 
   public UInt64 getCurrentEpoch(BeaconState state) {
-    return computeEpochAtSlot(state.getSlot());
+    return chainTimingUtil.getCurrentEpoch(state);
   }
 
   UInt64 getNextEpoch(BeaconState state) {
-    return getCurrentEpoch(state).plus(UInt64.ONE);
+    return chainTimingUtil.getNextEpoch(state);
   }
 
   public UInt64 getPreviousEpoch(BeaconState state) {
-    UInt64 currentEpoch = getCurrentEpoch(state);
-    return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
+    return chainTimingUtil.getPreviousEpoch(state);
   }
 
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
-    final UInt64 currentEpoch = computeEpochAtSlot(slot);
-    return computeStartSlotAtEpoch(currentEpoch).equals(slot) ? currentEpoch : currentEpoch.plus(1);
+    return chainTimingUtil.computeNextEpochBoundary(slot);
   }
 
   public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
@@ -134,7 +133,7 @@ public class BeaconStateUtil {
   }
 
   public UInt64 computeStartSlotAtEpoch(UInt64 epoch) {
-    return epoch.times(specConstants.getSlotsPerEpoch());
+    return chainTimingUtil.computeStartSlotAtEpoch(epoch);
   }
 
   public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
