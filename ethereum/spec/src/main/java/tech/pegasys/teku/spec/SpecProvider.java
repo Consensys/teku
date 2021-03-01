@@ -463,8 +463,8 @@ public class SpecProvider {
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
     return atState(state)
-        .getProposerSlashingSignatureVerifier()
-        .verifySignature(state, proposerSlashing, signatureVerifier);
+        .getBlockProcessorUtil()
+        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
   }
 
   // Private helpers

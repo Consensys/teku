@@ -67,6 +67,7 @@ public final class BlockProcessorUtil {
   private final VoluntaryExitSignatureVerifier voluntaryExitSignatureVerifier;
   private final AttesterSlashingStateTransitionValidator attesterSlashingStateTransitionValidator;
   private final AttestationDataStateTransitionValidator attestationDataStateTransitionValidator;
+  private final ProposerSlashingSignatureVerifier slashingSignatureVerifier;
 
   public BlockProcessorUtil(
       final SpecConstants specConstants,
@@ -84,6 +85,8 @@ public final class BlockProcessorUtil {
             beaconStateUtil, attestationUtil, validatorsUtil);
     this.attestationDataStateTransitionValidator =
         new AttestationDataStateTransitionValidator(specConstants, beaconStateUtil);
+    this.slashingSignatureVerifier =
+        new ProposerSlashingSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
   }
 
   /**
@@ -276,20 +279,24 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
-    ProposerSlashingSignatureVerifier slashingSignatureVerifier =
-        new ProposerSlashingSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
-
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
       boolean slashingSignatureValid =
-          slashingSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
+          verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
       if (!slashingSignatureValid) {
         LOG.trace("Proposer slashing signature is invalid {}", proposerSlashing);
         return false;
       }
     }
     return true;
+  }
+
+  public boolean verifyProposerSlashingSignature(
+      BeaconState state,
+      ProposerSlashing proposerSlashing,
+      BLSSignatureVerifier signatureVerifier) {
+    return slashingSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
   }
 
   /**
