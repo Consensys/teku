@@ -49,9 +49,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final SpecDependent<SszListSchema<Deposit, ?>> DEPOSITS_SCHEMA =
-      SpecDependent.of(() -> SszListSchema.create(Deposit.SSZ_SCHEMA, MAX_DEPOSITS));
-
   private final RecentChainData recentChainData;
   private final Eth1DataCache eth1DataCache;
   private final MerkleTree depositMerkleTree;
@@ -59,6 +56,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
   private final SpecProvider specProvider;
+  private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
 
   public DepositProvider(
       MetricsSystem metricsSystem,
@@ -142,15 +140,16 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
+    long maxDeposits = specProvider.getMaxDeposits(state);
     UInt64 latestDepositIndexWithMaxBlock =
-        eth1DepositIndex.plus(specProvider.getMaxDeposits(state));
+        eth1DepositIndex.plus(maxDeposits);
 
     UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
 
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
+    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits);
   }
 
   private void checkRequiredDepositsAvailable(
@@ -177,8 +176,9 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    * @return
    */
   private SszList<Deposit> getDepositsWithProof(
-      UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount) {
+      UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount, long maxDeposits) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
+    SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
     return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
         .stream()
         .map(
@@ -196,6 +196,19 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                               deposit.getIndex().intValue(), eth1DepositCount.intValue()));
               return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
             })
-        .collect(DEPOSITS_SCHEMA.get().collector());
+        .collect(depositsSchema.collector());
+  }
+
+  private static class DepositsSchemaCache {
+    private SszListSchema<Deposit, ?> cachedSchema;
+
+    public SszListSchema<Deposit, ?> get(long maxDeposits) {
+      SszListSchema<Deposit, ?> cachedSchemaLoc = cachedSchema;
+      if (cachedSchemaLoc == null || maxDeposits != cachedSchemaLoc.getMaxLength()) {
+        cachedSchemaLoc = SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits);
+        cachedSchema = cachedSchemaLoc;
+      }
+      return cachedSchemaLoc;
+    }
   }
 }
