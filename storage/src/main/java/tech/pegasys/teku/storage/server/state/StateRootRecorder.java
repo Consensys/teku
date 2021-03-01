@@ -45,7 +45,7 @@ public class StateRootRecorder {
 
     while (slot.compareTo(state.getSlot()) < 0) {
       stateRootConsumer.accept(
-          state.getState_roots().get(slot.mod(slotsPerHistoricalRoot).intValue()), slot);
+          state.getState_roots().getElement(slot.mod(slotsPerHistoricalRoot).intValue()), slot);
       slot = slot.plus(UInt64.ONE);
     }
 

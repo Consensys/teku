@@ -59,13 +59,11 @@ public interface BeaconState extends SszContainer {
 
   SszField BLOCK_ROOTS_FIELD = new SszField(5, "block_roots", BLOCK_ROOTS_FIELD_SCHEMA::get);
 
-  SszField STATE_ROOTS_FIELD =
-      new SszField(
-          6,
-          "state_roots",
-          () ->
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.SLOTS_PER_HISTORICAL_ROOT));
+  SpecDependent<SszBytes32VectorSchema<?>> STATE_ROOTS_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.SLOTS_PER_HISTORICAL_ROOT));
+
+  SszField STATE_ROOTS_FIELD = new SszField(6, "state_roots", STATE_ROOTS_FIELD_SCHEMA::get);
+
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
@@ -204,7 +202,7 @@ public interface BeaconState extends SszContainer {
       // History
       BeaconBlockHeader latest_block_header,
       SszBytes32Vector block_roots,
-      SSZVector<Bytes32> state_roots,
+      SszBytes32Vector state_roots,
       SSZList<Bytes32> historical_roots,
 
       // Eth1
@@ -241,7 +239,7 @@ public interface BeaconState extends SszContainer {
               state.setFork(fork);
               state.setLatest_block_header(latest_block_header);
               state.setBlock_roots(block_roots);
-              state.getState_roots().setAll(state_roots);
+              state.setState_roots(state_roots);
               state.getHistorical_roots().setAll(historical_roots);
               state.setEth1_data(eth1_data);
               state.setEth1_data_votes(eth1_data_votes);
@@ -289,12 +287,8 @@ public interface BeaconState extends SszContainer {
     return getAny(BLOCK_ROOTS_FIELD.getIndex());
   }
 
-  default SSZVector<Bytes32> getState_roots() {
-    return new SSZBackingVector<>(
-        Bytes32.class,
-        getAny(STATE_ROOTS_FIELD.getIndex()),
-        SszBytes32::new,
-        AbstractSszPrimitive::get);
+  default SszBytes32Vector getState_roots() {
+    return getAny(STATE_ROOTS_FIELD.getIndex());
   }
 
   default SSZList<Bytes32> getHistorical_roots() {

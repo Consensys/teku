@@ -66,7 +66,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       // History
       BeaconBlockHeader latest_block_header,
       SszBytes32Vector block_roots,
-      SSZVector<Bytes32> state_roots,
+      SszBytes32Vector state_roots,
       SSZList<Bytes32> historical_roots,
 
       // Eth1

@@ -71,9 +71,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   @Override
-  default SSZMutableVector<Bytes32> getState_roots() {
-    return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(6), SszBytes32::new, AbstractSszPrimitive::get);
+  default SszMutableBytes32Vector getState_roots() {
+    return getAnyByRef(6);
+  }
+
+  default void setState_roots(SszBytes32Vector state_roots) {
+    set(STATE_ROOTS_FIELD.getIndex(), state_roots);
   }
 
   @Override

@@ -155,7 +155,7 @@ public class StateTransition {
           // Cache state root
           Bytes32 previous_state_root = state.hashTreeRoot();
           int index = state.getSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
-          state.getState_roots().set(index, previous_state_root);
+          state.getState_roots().setElement(index, previous_state_root);
 
           // Cache latest block header state root
           BeaconBlockHeader latest_block_header = state.getLatest_block_header();

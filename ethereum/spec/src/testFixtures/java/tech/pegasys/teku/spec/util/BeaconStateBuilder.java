@@ -41,7 +41,7 @@ public class BeaconStateBuilder {
   private Fork fork;
   private BeaconBlockHeader latestBlockHeader;
   private SszBytes32Vector blockRoots;
-  private SSZVector<Bytes32> stateRoots;
+  private SszBytes32Vector stateRoots;
   private SSZList<Bytes32> historicalRoots;
   private Eth1Data eth1Data;
   private SszList<Eth1Data> eth1DataVotes;
@@ -109,10 +109,8 @@ public class BeaconStateBuilder {
         dataStructureUtil.randomSszVector(
             BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     stateRoots =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getSlotsPerHistoricalRoot(),
-            dataStructureUtil::randomBytes32);
+        dataStructureUtil.randomSszVector(
+            BeaconState.STATE_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     historicalRoots =
         dataStructureUtil.randomSSZList(
             Bytes32.class,
@@ -207,7 +205,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder stateRoots(final SSZVector<Bytes32> stateRoots) {
+  public BeaconStateBuilder stateRoots(final SszBytes32Vector stateRoots) {
     checkNotNull(stateRoots);
     this.stateRoots = stateRoots;
     return this;

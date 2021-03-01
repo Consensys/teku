@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -32,7 +31,7 @@ public class StateRootCollector {
       final BeaconState blockSlotState, final StoreTransaction transaction) {
     final UInt64 newBlockSlot = blockSlotState.getSlot();
     final SszBytes32Vector blockRoots = blockSlotState.getBlock_roots();
-    final SSZVector<Bytes32> stateRoots = blockSlotState.getState_roots();
+    final SszBytes32Vector stateRoots = blockSlotState.getState_roots();
     final UInt64 minimumSlot = newBlockSlot.minusMinZero(SLOTS_PER_HISTORICAL_ROOT);
     // Get the parent block root from the state as the genesis block root is recorded as 0
     final Bytes32 parentBlockRoot =
@@ -56,9 +55,5 @@ public class StateRootCollector {
 
   private static Bytes32 getValue(final SszBytes32Vector roots, final UInt64 slot) {
     return roots.getElement(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
-  }
-
-  private static Bytes32 getValue(final SSZVector<Bytes32> roots, final UInt64 slot) {
-    return roots.get(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
   }
 }

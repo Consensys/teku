@@ -18,15 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.util.config.Constants;
@@ -60,13 +57,13 @@ public class HistoricalBatchTest {
 
     SszMutableBytes32Vector block_roots =
         HistoricalBatch.SSZ_SCHEMA.get().getBlockRootsSchema().getDefault().createWritableCopy();
-    SSZMutableVector<Bytes32> state_roots =
-        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SszMutableBytes32Vector state_roots =
+        HistoricalBatch.SSZ_SCHEMA.get().getStateRootsSchema().getDefault().createWritableCopy();
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
               block_roots.setElement(i, dataStructureUtil.randomBytes32());
-              state_roots.set(i, dataStructureUtil.randomBytes32());
+              state_roots.setElement(i, dataStructureUtil.randomBytes32());
             });
     HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = batch.sszSerialize();
