@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -111,22 +110,25 @@ public interface BeaconState extends SszContainer {
                   SszPrimitiveSchemas.UINT64_SCHEMA, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
   SszField SLASHINGS_FIELD = new SszField(14, "slashings", SLASHINGS_FIELD_SCHEMA::get);
 
+  SpecDependent<SszListSchema<PendingAttestation, ?>> PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA =
+      SpecDependent.of(
+          () ->
+              SszListSchema.create(
+                  PendingAttestation.SSZ_SCHEMA,
+                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
-          15,
-          "previous_epoch_attestations",
+          15, "previous_epoch_attestations", PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA::get);
+
+  SpecDependent<SszListSchema<PendingAttestation, ?>> CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA =
+      SpecDependent.of(
           () ->
               SszListSchema.create(
                   PendingAttestation.SSZ_SCHEMA,
                   Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
-      new SszField(
-          16,
-          "current_epoch_attestations",
-          () ->
-              SszListSchema.create(
-                  PendingAttestation.SSZ_SCHEMA,
-                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+      new SszField(16, "current_epoch_attestations", CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA::get);
+
   SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
           17,
@@ -217,8 +219,8 @@ public interface BeaconState extends SszContainer {
       SszPrimitiveVector<UInt64, SszUInt64> slashings,
 
       // Attestations
-      SSZList<PendingAttestation> previous_epoch_attestations,
-      SSZList<PendingAttestation> current_epoch_attestations,
+      SszList<PendingAttestation> previous_epoch_attestations,
+      SszList<PendingAttestation> current_epoch_attestations,
 
       // Finality
       SszBitvector justification_bits,
@@ -244,8 +246,8 @@ public interface BeaconState extends SszContainer {
               state.getBalances().setAll(balances);
               state.setRandao_mixes(randao_mixes);
               state.setSlashings(slashings);
-              state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
-              state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
+              state.setPrevious_epoch_attestations(previous_epoch_attestations);
+              state.setCurrent_epoch_attestations(current_epoch_attestations);
               state.setJustification_bits(justification_bits);
               state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
               state.setCurrent_justified_checkpoint(current_justified_checkpoint);
@@ -328,20 +330,12 @@ public interface BeaconState extends SszContainer {
   }
 
   // Attestations
-  default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class,
-        getAny(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszList<PendingAttestation> getPrevious_epoch_attestations() {
+    return getAny(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex());
   }
 
-  default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class,
-        getAny(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszList<PendingAttestation> getCurrent_epoch_attestations() {
+    return getAny(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex());
   }
 
   // Finality

@@ -33,8 +33,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
 
   private SSZMutableList<UInt64> balances;
   private SSZMutableList<Bytes32> historicalRoots;
-  private SSZMutableList<PendingAttestation> previousEpochAttestations;
-  private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
   MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
     this(backingImmutableView, false);
@@ -87,20 +85,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
     return historicalRoots != null
         ? historicalRoots
         : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return previousEpochAttestations != null
-        ? previousEpochAttestations
-        : (previousEpochAttestations = MutableBeaconState.super.getPrevious_epoch_attestations());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return currentEpochAttestations != null
-        ? currentEpochAttestations
-        : (currentEpochAttestations = MutableBeaconState.super.getCurrent_epoch_attestations());
   }
 
   @Override

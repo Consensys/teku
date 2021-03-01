@@ -86,8 +86,8 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
       SszMutablePrimitiveVector<UInt64, SszUInt64> slashings,
 
       // Attestations
-      SSZList<PendingAttestation> previous_epoch_attestations,
-      SSZList<PendingAttestation> current_epoch_attestations,
+      SszList<PendingAttestation> previous_epoch_attestations,
+      SszList<PendingAttestation> current_epoch_attestations,
 
       // Finality
       SszBitvector justification_bits,

@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
@@ -364,12 +363,8 @@ public class EpochProcessor {
     }
 
     // Rotate current/previous epoch attestations
-    state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
-    state
-        .getCurrent_epoch_attestations()
-        .setAll(
-            SSZList.createMutable(
-                PendingAttestation.class,
-                specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
+    state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
+    state.setCurrent_epoch_attestations(
+        BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
   }
 }

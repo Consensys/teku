@@ -379,9 +379,9 @@ public final class BlockProcessorUtil {
                 UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
         if (data.getTarget().getEpoch().equals(beaconStateUtil.getCurrentEpoch(state))) {
-          state.getCurrent_epoch_attestations().add(pendingAttestation);
+          state.getCurrent_epoch_attestations().append(pendingAttestation);
         } else {
-          state.getPrevious_epoch_attestations().add(pendingAttestation);
+          state.getPrevious_epoch_attestations().append(pendingAttestation);
         }
       }
     } catch (IllegalArgumentException e) {

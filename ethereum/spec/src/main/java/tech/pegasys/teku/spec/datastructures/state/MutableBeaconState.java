@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -146,21 +145,23 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   // Attestations
   @Override
-  default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class,
-        getAnyByRef(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
+    return getAnyByRef(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex());
+  }
+
+  default void setPrevious_epoch_attestations(
+      SszList<PendingAttestation> previous_epoch_attestations) {
+    set(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex(), previous_epoch_attestations);
   }
 
   @Override
-  default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class,
-        getAnyByRef(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()),
-        Function.identity(),
-        Function.identity());
+  default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
+    return getAnyByRef(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex());
+  }
+
+  default void setCurrent_epoch_attestations(
+      SszList<PendingAttestation> current_epoch_attestations) {
+    set(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex(), current_epoch_attestations);
   }
 
   // Finality

@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -237,7 +237,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private CorrectAndLiveValidators getNumberOfValidators(
-      final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
+      final SszList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
 
     final Map<UInt64, Map<UInt64, SszBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();

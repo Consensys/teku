@@ -51,8 +51,8 @@ public class BeaconStateBuilder {
   private SSZList<UInt64> balances;
   private SszBytes32Vector randaoMixes;
   private SszPrimitiveVector<UInt64, SszUInt64> slashings;
-  private SSZList<PendingAttestation> previousEpochAttestations;
-  private SSZList<PendingAttestation> currentEpochAttestations;
+  private SszList<PendingAttestation> previousEpochAttestations;
+  private SszList<PendingAttestation> currentEpochAttestations;
   private SszBitvector justificationBits;
   private Checkpoint previousJustifiedCheckpoint;
   private Checkpoint currentJustifiedCheckpoint;
@@ -143,15 +143,13 @@ public class BeaconStateBuilder {
         dataStructureUtil.randomSszPrimitiveVector(
             BeaconState.SLASHINGS_FIELD_SCHEMA.get(), dataStructureUtil::randomUInt64);
     previousEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
-            defaultItemsInSSZLists,
+        dataStructureUtil.randomSszList(
+            BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get(),
             dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
     currentEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
-            defaultItemsInSSZLists,
+        dataStructureUtil.randomSszList(
+            BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get(),
             dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
     justificationBits =
@@ -257,14 +255,14 @@ public class BeaconStateBuilder {
   }
 
   public BeaconStateBuilder previousEpochAttestations(
-      final SSZList<PendingAttestation> previousEpochAttestations) {
+      final SszList<PendingAttestation> previousEpochAttestations) {
     checkNotNull(previousEpochAttestations);
     this.previousEpochAttestations = previousEpochAttestations;
     return this;
   }
 
   public BeaconStateBuilder currentEpochAttestations(
-      final SSZList<PendingAttestation> currentEpochAttestations) {
+      final SszList<PendingAttestation> currentEpochAttestations) {
     checkNotNull(currentEpochAttestations);
     this.currentEpochAttestations = currentEpochAttestations;
     return this;

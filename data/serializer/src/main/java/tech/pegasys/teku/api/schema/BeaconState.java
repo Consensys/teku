@@ -16,7 +16,6 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 import static tech.pegasys.teku.util.config.Constants.HISTORICAL_ROOTS_LIMIT;
-import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.teku.util.config.Constants.VALIDATOR_REGISTRY_LIMIT;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -204,18 +203,20 @@ public class BeaconState {
         tech.pegasys.teku.spec.datastructures.state.BeaconState.SLASHINGS_FIELD_SCHEMA
             .get()
             .of(slashings),
-        SSZList.createMutable(
-            previous_epoch_attestations.stream()
-                .map(PendingAttestation::asInternalPendingAttestation)
-                .collect(Collectors.toList()),
-            MAX_ATTESTATIONS,
-            tech.pegasys.teku.spec.datastructures.state.PendingAttestation.class),
-        SSZList.createMutable(
-            current_epoch_attestations.stream()
-                .map(PendingAttestation::asInternalPendingAttestation)
-                .collect(Collectors.toList()),
-            MAX_ATTESTATIONS,
-            tech.pegasys.teku.spec.datastructures.state.PendingAttestation.class),
+        previous_epoch_attestations.stream()
+            .map(PendingAttestation::asInternalPendingAttestation)
+            .collect(
+                tech.pegasys.teku.spec.datastructures.state.BeaconState
+                    .PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA
+                    .get()
+                    .collector()),
+        current_epoch_attestations.stream()
+            .map(PendingAttestation::asInternalPendingAttestation)
+            .collect(
+                tech.pegasys.teku.spec.datastructures.state.BeaconState
+                    .CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA
+                    .get()
+                    .collector()),
         justification_bits,
         previous_justified_checkpoint.asInternalCheckpoint(),
         current_justified_checkpoint.asInternalCheckpoint(),

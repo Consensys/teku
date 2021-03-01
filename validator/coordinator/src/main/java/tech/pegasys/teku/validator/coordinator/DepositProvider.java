@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
 
@@ -141,8 +139,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
     long maxDeposits = specProvider.getMaxDeposits(state);
-    UInt64 latestDepositIndexWithMaxBlock =
-        eth1DepositIndex.plus(maxDeposits);
+    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(maxDeposits);
 
     UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)

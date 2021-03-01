@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -264,9 +263,10 @@ class BeaconChainMetricsTest {
             validator(10, 12, false),
             validator(10, 15, true));
     when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
-    when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
+    when(state.getCurrent_epoch_attestations())
+        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
     when(state.getPrevious_epoch_attestations())
-        .thenReturn(SSZList.empty(PendingAttestation.class));
+        .thenReturn(BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
     when(state.getValidators())
         .thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 100).createFromElements(validators));
     beaconChainMetrics.onSlot(slotNumber);
@@ -447,9 +447,11 @@ class BeaconChainMetricsTest {
       final Bytes32 currentBlockRoot) {
     when(state.getCurrent_epoch_attestations())
         .thenReturn(
-            SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
+            BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA
+                .get()
+                .createFromElements(attestations));
     when(state.getPrevious_epoch_attestations())
-        .thenReturn(SSZList.empty(PendingAttestation.class));
+        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
     when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     when(state.getSlot()).thenReturn(slot);
 
@@ -464,8 +466,11 @@ class BeaconChainMetricsTest {
       final int slotAsInt, final List<PendingAttestation> attestations) {
     when(state.getPrevious_epoch_attestations())
         .thenReturn(
-            SSZList.createMutable(attestations, attestations.size(), PendingAttestation.class));
-    when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
+            BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA
+                .get()
+                .createFromElements(attestations));
+    when(state.getPrevious_epoch_attestations())
+        .thenReturn(BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
     when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     final UInt64 slot = UInt64.valueOf(slotAsInt);
     when(state.getSlot()).thenReturn(slot);
