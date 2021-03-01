@@ -251,7 +251,7 @@ public class TekuNode extends Node {
           Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeState).isPresent();
           BeaconState state = maybeState.get();
-          assertThat(state.asInternalBeaconState().getValidators().size())
+          assertThat(state.asInternalBeaconState(spec).getValidators().size())
               .isEqualTo(numberOfValidators);
         });
   }
@@ -277,7 +277,7 @@ public class TekuNode extends Node {
           assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
 
           tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
-              state.asInternalBeaconState();
+              state.asInternalBeaconState(spec);
           UInt64 proposerIndex = block.message.proposer_index;
 
           Set<UInt64> attesterIndicesInAttestations =

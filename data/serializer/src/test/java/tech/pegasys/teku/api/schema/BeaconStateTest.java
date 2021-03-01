@@ -16,10 +16,13 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState
       beaconStateInternal = dataStructureUtil.randomBeaconState();
 
@@ -27,6 +30,6 @@ public class BeaconStateTest {
   public void shouldConvertToInternalObject() {
     BeaconState beaconState = new BeaconState(beaconStateInternal);
 
-    assertThat(beaconState.asInternalBeaconState()).isEqualTo(beaconStateInternal);
+    assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);
   }
 }
