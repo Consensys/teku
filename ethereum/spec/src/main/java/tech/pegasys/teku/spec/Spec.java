@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.util.ChainTimingUtil;
 import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
 
 public class Spec {
   private final SpecConstants constants;
@@ -38,7 +37,6 @@ public class Spec {
   private final StateTransition stateTransition;
   private final ForkChoiceUtil forkChoiceUtil;
   private final BlockProposalUtil blockProposalUtil;
-  private final VoluntaryExitStateTransitionValidator voluntaryExitStateTransitionValidator;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -58,8 +56,6 @@ public class Spec {
     this.forkChoiceUtil =
         new ForkChoiceUtil(this.constants, beaconStateUtil, attestationUtil, stateTransition);
     this.blockProposalUtil = new BlockProposalUtil(stateTransition);
-    this.voluntaryExitStateTransitionValidator =
-        new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
   }
 
   public SpecConstants getConstants() {
@@ -100,9 +96,5 @@ public class Spec {
 
   public BlockProposalUtil getBlockProposalUtil() {
     return blockProposalUtil;
-  }
-
-  public VoluntaryExitStateTransitionValidator getVoluntaryExitStateTransitionValidator() {
-    return voluntaryExitStateTransitionValidator;
   }
 }

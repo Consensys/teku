@@ -68,6 +68,7 @@ public final class BlockProcessorUtil {
   private final AttesterSlashingStateTransitionValidator attesterSlashingStateTransitionValidator;
   private final AttestationDataStateTransitionValidator attestationDataStateTransitionValidator;
   private final ProposerSlashingSignatureVerifier slashingSignatureVerifier;
+  private final VoluntaryExitStateTransitionValidator voluntaryExitStateTransitionValidator;
 
   public BlockProcessorUtil(
       final SpecConstants specConstants,
@@ -87,6 +88,8 @@ public final class BlockProcessorUtil {
         new AttestationDataStateTransitionValidator(specConstants, beaconStateUtil);
     this.slashingSignatureVerifier =
         new ProposerSlashingSignatureVerifier(specConstants, beaconStateUtil, validatorsUtil);
+    this.voluntaryExitStateTransitionValidator =
+        new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
   }
 
   /**
@@ -481,13 +484,12 @@ public final class BlockProcessorUtil {
   public void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    VoluntaryExitStateTransitionValidator validator =
-        new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
     try {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
+        Optional<OperationInvalidReason> invalidReason =
+            validateVoluntaryExit(state, signedExit);
         checkArgument(
             invalidReason.isEmpty(),
             "process_voluntary_exits: %s",
@@ -501,6 +503,11 @@ public final class BlockProcessorUtil {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return voluntaryExitStateTransitionValidator.validate(state, signedExit);
   }
 
   public boolean verifyVoluntaryExits(

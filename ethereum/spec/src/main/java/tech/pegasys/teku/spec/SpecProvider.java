@@ -443,7 +443,7 @@ public class SpecProvider {
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    return atState(state).getVoluntaryExitStateTransitionValidator().validate(state, signedExit);
+    return atState(state).getBlockProcessorUtil().validateVoluntaryExit(state, signedExit);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
