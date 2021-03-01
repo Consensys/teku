@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
 
 public class Spec {
@@ -42,7 +41,6 @@ public class Spec {
   private final BlockProposalUtil blockProposalUtil;
   private final VoluntaryExitStateTransitionValidator voluntaryExitStateTransitionValidator;
   private final ProposerSlashingSignatureVerifier proposerSlashingSignatureVerifier;
-  private final AttestationDataStateTransitionValidator attestationDataStateTransitionValidator;
 
   Spec(final SpecConstants constants) {
     this.constants = constants;
@@ -66,8 +64,6 @@ public class Spec {
         new VoluntaryExitStateTransitionValidator(beaconStateUtil, validatorsUtil);
     this.proposerSlashingSignatureVerifier =
         new ProposerSlashingSignatureVerifier(this.constants, beaconStateUtil, validatorsUtil);
-    this.attestationDataStateTransitionValidator =
-        new AttestationDataStateTransitionValidator(this.constants, beaconStateUtil);
   }
 
   public SpecConstants getConstants() {
@@ -116,9 +112,5 @@ public class Spec {
 
   public ProposerSlashingSignatureVerifier getProposerSlashingSignatureVerifier() {
     return proposerSlashingSignatureVerifier;
-  }
-
-  public AttestationDataStateTransitionValidator getAttestationDataStateTransitionValidator() {
-    return attestationDataStateTransitionValidator;
   }
 }

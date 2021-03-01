@@ -438,7 +438,7 @@ public class SpecProvider {
   // Operation Validation
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return atState(state).getAttestationDataStateTransitionValidator().validate(state, data);
+    return atState(state).getBlockProcessorUtil().validateAttestation(state, data);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(

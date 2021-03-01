@@ -66,6 +66,7 @@ public final class BlockProcessorUtil {
   private final ValidatorsUtil validatorsUtil;
   private final VoluntaryExitSignatureVerifier voluntaryExitSignatureVerifier;
   private final AttesterSlashingStateTransitionValidator attesterSlashingStateTransitionValidator;
+  private final AttestationDataStateTransitionValidator attestationDataStateTransitionValidator;
 
   public BlockProcessorUtil(
       final SpecConstants specConstants,
@@ -81,6 +82,8 @@ public final class BlockProcessorUtil {
     this.attesterSlashingStateTransitionValidator =
         new AttesterSlashingStateTransitionValidator(
             beaconStateUtil, attestationUtil, validatorsUtil);
+    this.attestationDataStateTransitionValidator =
+        new AttestationDataStateTransitionValidator(specConstants, beaconStateUtil);
   }
 
   /**
@@ -361,15 +364,17 @@ public final class BlockProcessorUtil {
     verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
   }
 
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return attestationDataStateTransitionValidator.validate(state, data);
+  }
+
   public void processAttestationsNoValidation(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
-      final AttestationDataStateTransitionValidator validator =
-          new AttestationDataStateTransitionValidator(specConstants, beaconStateUtil);
-
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<OperationInvalidReason> invalidReason = validator.validate(state, data);
+        final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
