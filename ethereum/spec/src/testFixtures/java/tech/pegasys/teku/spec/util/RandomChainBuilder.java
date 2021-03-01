@@ -24,7 +24,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -35,8 +35,8 @@ public class RandomChainBuilder {
   private final NavigableMap<UInt64, SignedBlockAndState> chain = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
-  public RandomChainBuilder(final SpecProvider specProvider) {
-    this.datastructureUtil = new DataStructureUtil(specProvider);
+  public RandomChainBuilder(final Spec spec) {
+    this.datastructureUtil = new DataStructureUtil(spec);
   }
 
   public Optional<SignedBlockAndState> getChainHead() {

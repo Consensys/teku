@@ -19,24 +19,24 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 
 public class WeakSubjectivityConfig {
   public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final UInt64 safetyDecay;
   private final Optional<Checkpoint> weakSubjectivityCheckpoint;
   private final Optional<UInt64> suppressWSPeriodChecksUntilEpoch;
 
   private WeakSubjectivityConfig(
-      SpecProvider specProvider,
+      Spec spec,
       UInt64 safetyDecay,
       final Optional<Checkpoint> weakSubjectivityCheckpoint,
       final Optional<UInt64> suppressWSPeriodChecksUntilEpoch) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.safetyDecay = safetyDecay;
     this.suppressWSPeriodChecksUntilEpoch = suppressWSPeriodChecksUntilEpoch;
     checkNotNull(weakSubjectivityCheckpoint);
@@ -60,14 +60,14 @@ public class WeakSubjectivityConfig {
 
   private Builder copy() {
     return WeakSubjectivityConfig.builder()
-        .specProvider(specProvider)
+        .specProvider(spec)
         .safetyDecay(safetyDecay)
         .weakSubjectivityCheckpoint(weakSubjectivityCheckpoint)
         .suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);
   }
 
-  public SpecProvider getSpecProvider() {
-    return specProvider;
+  public Spec getSpecProvider() {
+    return spec;
   }
 
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
@@ -108,7 +108,7 @@ public class WeakSubjectivityConfig {
   }
 
   public static class Builder {
-    private SpecProvider specProvider;
+    private Spec spec;
     private UInt64 safetyDecay = DEFAULT_SAFETY_DECAY;
     private Optional<Checkpoint> weakSubjectivityCheckpoint = Optional.empty();
     private Optional<UInt64> suppressWSPeriodChecksUntilEpoch = Optional.empty();
@@ -118,16 +118,16 @@ public class WeakSubjectivityConfig {
     public WeakSubjectivityConfig build() {
       validate();
       return new WeakSubjectivityConfig(
-          specProvider, safetyDecay, weakSubjectivityCheckpoint, suppressWSPeriodChecksUntilEpoch);
+          spec, safetyDecay, weakSubjectivityCheckpoint, suppressWSPeriodChecksUntilEpoch);
     }
 
     private void validate() {
-      checkNotNull(specProvider, "Must provide specProvider");
+      checkNotNull(spec, "Must provide specProvider");
     }
 
-    public Builder specProvider(final SpecProvider specProvider) {
-      checkNotNull(specProvider);
-      this.specProvider = specProvider;
+    public Builder specProvider(final Spec spec) {
+      checkNotNull(spec);
+      this.spec = spec;
       return this;
     }
 

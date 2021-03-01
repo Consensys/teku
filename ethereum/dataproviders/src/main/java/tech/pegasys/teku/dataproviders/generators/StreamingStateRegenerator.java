@@ -14,7 +14,7 @@
 package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
@@ -26,28 +26,25 @@ import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionExceptio
  */
 public class StreamingStateRegenerator {
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private BeaconState state;
 
-  private StreamingStateRegenerator(final SpecProvider specProvider, final BeaconState preState) {
-    this.specProvider = specProvider;
+  private StreamingStateRegenerator(final Spec spec, final BeaconState preState) {
+    this.spec = spec;
     this.state = preState;
   }
 
   private void processBlock(final SignedBeaconBlock block) {
     try {
-      state = specProvider.initiateStateTransition(state, block, false);
+      state = spec.initiateStateTransition(state, block, false);
     } catch (StateTransitionException e) {
       throw new IllegalStateException("Regenerating state failed", e);
     }
   }
 
   public static BeaconState regenerate(
-      final SpecProvider specProvider,
-      final BeaconState initialState,
-      final Stream<SignedBeaconBlock> blocks) {
-    final StreamingStateRegenerator regenerator =
-        new StreamingStateRegenerator(specProvider, initialState);
+      final Spec spec, final BeaconState initialState, final Stream<SignedBeaconBlock> blocks) {
+    final StreamingStateRegenerator regenerator = new StreamingStateRegenerator(spec, initialState);
     blocks.forEach(regenerator::processBlock);
     return regenerator.state;
   }

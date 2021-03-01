@@ -39,7 +39,7 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   @BeforeEach
   public void setup() {
     handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
-    beaconStateUtil = specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
+    beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
   }
 
   @Test

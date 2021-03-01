@@ -55,7 +55,7 @@ class StoreTest extends AbstractStoreTest {
                 Store.create(
                     SYNC_RUNNER,
                     new StubMetricsSystem(),
-                    specProvider,
+                    spec,
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),
@@ -195,7 +195,7 @@ class StoreTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
 
     final UInt64 epoch = UInt64.valueOf(2);
-    final UInt64 startSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
     final SignedBlockAndState futureBlockAndState = chainBuilder.generateBlockAtSlot(startSlot);
 
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureBlockAndState.getRoot());
@@ -208,7 +208,7 @@ class StoreTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(UInt64.ZERO) - 1);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
@@ -231,7 +231,7 @@ class StoreTest extends AbstractStoreTest {
       retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot() {
     final UpdatableStore store = createGenesisStore();
     final UInt64 epoch = UInt64.valueOf(2);
-    final UInt64 startSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
     final Bytes32 futureRoot = chainBuilder.generateBlockAtSlot(startSlot).getRoot();
 
     // Add blocks
@@ -248,7 +248,7 @@ class StoreTest extends AbstractStoreTest {
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
     final UpdatableStore store = createGenesisStore();
     final UInt64 epoch3 = UInt64.valueOf(4);
-    final UInt64 epoch3Slot = specProvider.computeStartSlotAtEpoch(epoch3);
+    final UInt64 epoch3Slot = spec.computeStartSlotAtEpoch(epoch3);
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
 
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();

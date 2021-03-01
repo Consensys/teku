@@ -20,7 +20,7 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
@@ -30,8 +30,8 @@ public class GenesisValidityTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState state = loadStateFromSsz(testDefinition, "genesis.ssz");
-    final SpecProvider specProvider = testDefinition.getSpecProvider();
-    final BeaconStateUtil beaconStateUtil = specProvider.atEpoch(UInt64.ZERO).getBeaconStateUtil();
+    final Spec spec = testDefinition.getSpecProvider();
+    final BeaconStateUtil beaconStateUtil = spec.atEpoch(UInt64.ZERO).getBeaconStateUtil();
     final boolean expectedValidity = loadYaml(testDefinition, "is_valid.yaml", Boolean.class);
     final int activeValidatorCount =
         testDefinition.getSpecProvider().countActiveValidators(state, SpecConstants.GENESIS_EPOCH);

@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -75,7 +75,7 @@ public class InteropConfig {
     private int interopOwnedValidatorCount;
     private int interopNumberOfValidators = 64;
     private boolean interopEnabled;
-    private SpecProvider specProvider;
+    private Spec spec;
 
     private InteropConfigBuilder() {}
 
@@ -84,8 +84,8 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder specProvider(SpecProvider specProvider) {
-      this.specProvider = specProvider;
+    public InteropConfigBuilder specProvider(Spec spec) {
+      this.spec = spec;
       return this;
     }
 
@@ -121,8 +121,8 @@ public class InteropConfig {
     }
 
     private void validate() throws IllegalArgumentException {
-      checkNotNull(specProvider);
-      final SpecConstants genesisSpecConstants = specProvider.getGenesisSpecConstants();
+      checkNotNull(spec);
+      final SpecConstants genesisSpecConstants = spec.getGenesisSpecConstants();
       if (interopNumberOfValidators < genesisSpecConstants.getSlotsPerEpoch()) {
         throw new InvalidConfigurationException(
             String.format(
