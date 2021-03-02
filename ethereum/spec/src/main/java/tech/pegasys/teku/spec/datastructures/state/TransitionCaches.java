@@ -40,6 +40,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
           ValidatorIndexCache.NO_OP_INSTANCE,
           NoOpCache.getNoOpCache()) {
 
@@ -62,6 +63,7 @@ public class TransitionCaches {
   private final Cache<UInt64, List<Integer>> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
   private final Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee;
+  private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
   private final ValidatorIndexCache validatorIndexCache;
@@ -73,6 +75,7 @@ public class TransitionCaches {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
+    attestersTotalBalance = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
     validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
@@ -83,6 +86,7 @@ public class TransitionCaches {
       Cache<UInt64, List<Integer>> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
       Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee,
+      Cache<UInt64, UInt64> attestersTotalBalance,
       Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
       ValidatorIndexCache validatorIndexCache,
@@ -90,6 +94,7 @@ public class TransitionCaches {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
+    this.attestersTotalBalance = attestersTotalBalance;
     this.totalActiveBalance = totalActiveBalance;
     this.validatorsPubKeys = validatorsPubKeys;
     this.validatorIndexCache = validatorIndexCache;
@@ -117,6 +122,11 @@ public class TransitionCaches {
   /** (slot, committeeIndex) -> (committee) cache */
   public Cache<Pair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
     return beaconCommittee;
+  }
+
+  /** (slot) -> (total effective balance of attesters in slot) */
+  public Cache<UInt64, UInt64> getAttestersTotalBalance() {
+    return attestersTotalBalance;
   }
 
   /** (epoch) -> (total active balance) cache */
@@ -154,6 +164,7 @@ public class TransitionCaches {
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),
+        attestersTotalBalance.copy(),
         totalActiveBalance.copy(),
         validatorsPubKeys,
         validatorIndexCache,
