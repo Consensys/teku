@@ -98,7 +98,6 @@ public class ForkChoice {
             justifiedCheckpointState ->
                 onForkChoiceThread(
                     () -> {
-                      nodeSlot.ifPresent(proposerWeightings::onForkChoiceRunAtSlotStart);
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
                       final Checkpoint justifiedCheckpoint =
@@ -118,7 +117,8 @@ public class ForkChoice {
                           transaction.applyForkChoiceScoreChanges(
                               finalizedCheckpoint,
                               justifiedCheckpoint,
-                              justifiedCheckpointState.orElseThrow());
+                              justifiedCheckpointState.orElseThrow(),
+                              proposerWeightings.clearProposerWeightings());
 
                       recentChainData.updateHead(
                           headBlockRoot,

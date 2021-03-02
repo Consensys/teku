@@ -15,18 +15,18 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class ProposerWeightings {
   private final EventThread eventThread;
   private final Spec spec;
 
-  private List<ExtraWeight> extraWeightTargetRoots = new ArrayList<>();
+  private List<ProposerWeighting> currentProposerWeightings = new ArrayList<>();
   // TODO: Should this be inited based on current time?
   // How much do we need to worry about whether a block received in the first slot after startup
   // gets a boost or not?
@@ -48,13 +48,21 @@ public class ProposerWeightings {
       final UInt64 priorSlotCommitteeWeight = calculatePriorSlotCommitteeWeight(blockSlotState);
       final UInt64 weight = priorSlotCommitteeWeight.dividedBy(4);
       // weight should be the total weight of attesters to the slot prior to the block slot
-      final ExtraWeight extraWeight = new ExtraWeight(block.getRoot(), weight);
-      extraWeightTargetRoots.add(extraWeight);
+      final ProposerWeighting proposerWeighting = new ProposerWeighting(block.getRoot(), weight);
+      currentProposerWeightings.add(proposerWeighting);
     }
   }
 
-  public void onForkChoiceRunAtSlotStart(final UInt64 slot) {
+  /**
+   * Removes all current proposer weightings, returning the list of previously active weightings.
+   *
+   * @return the list of proposer weightings that were removed.
+   */
+  public List<ProposerWeighting> clearProposerWeightings() {
     eventThread.checkOnEventThread();
+    final List<ProposerWeighting> oldProposerWeightings = this.currentProposerWeightings;
+    currentProposerWeightings = new ArrayList<>();
+    return oldProposerWeightings;
     // TODO: Reverse all extra weight target roots
     // Might be able to just include this in the deltas to apply as part of the fork choice run
   }
@@ -67,15 +75,5 @@ public class ProposerWeightings {
     return spec.getBeaconStateUtil(blockSlotState.getSlot())
         .getAttestersTotalEffectiveBalance(
             blockSlotState, blockSlotState.getSlot().minusMinZero(1));
-  }
-
-  private static class ExtraWeight {
-    private final Bytes32 targetRoot;
-    private final UInt64 weight;
-
-    private ExtraWeight(final Bytes32 targetRoot, final UInt64 weight) {
-      this.targetRoot = targetRoot;
-      this.weight = weight;
-    }
   }
 }

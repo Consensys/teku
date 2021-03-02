@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.protoarray;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -23,10 +25,11 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public interface ForkChoiceStrategy extends ReadOnlyForkChoiceStrategy {
 
   Bytes32 findHead(
-      final VoteUpdater store,
-      final Checkpoint finalizedCheckpoint,
-      final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState);
+      VoteUpdater store,
+      List<ProposerWeighting> removedProposerWeightings,
+      Checkpoint finalizedCheckpoint,
+      Checkpoint justifiedCheckpoint,
+      BeaconState justifiedCheckpointState);
 
-  void onAttestation(final VoteUpdater store, final IndexedAttestation attestation);
+  void onAttestation(VoteUpdater store, IndexedAttestation attestation);
 }

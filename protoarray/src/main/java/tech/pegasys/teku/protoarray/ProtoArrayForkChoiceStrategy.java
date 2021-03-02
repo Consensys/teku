@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -93,6 +94,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   @Override
   public Bytes32 findHead(
       final VoteUpdater voteUpdater,
+      final List<ProposerWeighting> removedProposerWeightings,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final BeaconState justifiedCheckpointState) {
@@ -101,7 +103,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().asList());
+        justifiedCheckpointState.getBalances().asList(),
+        removedProposerWeightings);
   }
 
   @Override
@@ -192,7 +195,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       UInt64 justifiedEpoch,
       Bytes32 justifiedRoot,
       UInt64 finalizedEpoch,
-      List<UInt64> justifiedStateBalances) {
+      List<UInt64> justifiedStateBalances,
+      final List<ProposerWeighting> removedProposerWeightings) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -206,7 +210,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
               getTotalTrackedNodeCount(),
               protoArray.getIndices(),
               oldBalances,
-              newBalances);
+              newBalances,
+              removedProposerWeightings);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);

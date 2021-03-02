@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 public class NoVotesTest {
@@ -39,9 +40,12 @@ public class NoVotesTest {
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
+    List<ProposerWeighting> proposerWeightings = Collections.emptyList();
 
     // Check that the head is the finalized block.
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(0));
 
     // Add block 2
@@ -56,7 +60,9 @@ public class NoVotesTest {
     //         0
     //        /
     //        2 <- head
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
     // Add block 1
@@ -71,7 +77,9 @@ public class NoVotesTest {
     //         0
     //        / \
     // head-> 2  1
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
     // Add block 3
@@ -90,7 +98,9 @@ public class NoVotesTest {
     // head-> 2  1
     //           |
     //           3
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
     // Add block 4
@@ -109,7 +119,9 @@ public class NoVotesTest {
     //        2  1
     //        |  |
     // head-> 4  3
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(4));
 
     // Add block 5 with a justified epoch of 2
@@ -132,7 +144,9 @@ public class NoVotesTest {
     // head-> 4  3
     //        |
     //        5
-    assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(4));
 
     // Ensure there is an error when starting from a block that has the wrong justified epoch.
@@ -145,7 +159,9 @@ public class NoVotesTest {
     //     |
     //     5 <- starting from 5 with justified epoch 0 should error.
     assertThatThrownBy(
-            () -> forkChoice.findHead(store, unsigned(1), getHash(5), unsigned(1), balances))
+            () ->
+                forkChoice.findHead(
+                    store, unsigned(1), getHash(5), unsigned(1), balances, proposerWeightings))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Set the justified epoch to 2 and the start block to 5 and ensure 5 is the head.
@@ -157,7 +173,9 @@ public class NoVotesTest {
     //     4  3
     //     |
     //     5 <- head
-    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(5));
 
     // Add block 6
@@ -184,7 +202,9 @@ public class NoVotesTest {
     //     5
     //     |
     //     6 <- head
-    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(1), balances))
+    assertThat(
+            forkChoice.findHead(
+                store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(6));
   }
 

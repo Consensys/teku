@@ -15,11 +15,13 @@ package tech.pegasys.teku.storage.store;
 
 import com.google.common.collect.Sets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
@@ -65,7 +67,8 @@ public class StoreVoteUpdater implements VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
+      final BeaconState justifiedCheckpointState,
+      final List<ProposerWeighting> removedProposerWeightings) {
 
     // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
     // protoArray lock first, and may deadlock when it later needs to get votes which requires the
@@ -74,7 +77,12 @@ public class StoreVoteUpdater implements VoteUpdater {
     try {
       return store
           .getForkChoiceStrategy()
-          .findHead(this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState);
+          .findHead(
+              this,
+              removedProposerWeightings,
+              finalizedCheckpoint,
+              justifiedCheckpoint,
+              justifiedCheckpointState);
     } finally {
       lock.writeLock().unlock();
     }

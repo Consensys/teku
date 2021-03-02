@@ -136,7 +136,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
     final Bytes32 head =
         forkChoiceStrategy.findHead(
-            store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+            store, emptyList(), anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -300,6 +300,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final Bytes32 bestHead =
         strategy.findHead(
             transaction,
+            emptyList(),
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
             block3State);
