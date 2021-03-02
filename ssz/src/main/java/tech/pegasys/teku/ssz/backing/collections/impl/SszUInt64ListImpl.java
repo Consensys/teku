@@ -14,26 +14,26 @@
 package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class SszBytes32VectorImpl extends SszPrimitiveVectorImpl<Bytes32, SszBytes32>
-    implements SszBytes32Vector {
+public class SszUInt64ListImpl extends SszPrimitiveListImpl<UInt64, SszUInt64>
+    implements SszUInt64List {
 
-  public SszBytes32VectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  public SszUInt64ListImpl(SszUInt64ListSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  public SszBytes32VectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  public SszUInt64ListImpl(SszUInt64ListSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   @Override
-  public SszMutableBytes32Vector createWritableCopy() {
-    return new SszMutableBytes32VectorImpl(this);
+  public SszMutableUInt64List createWritableCopy() {
+    return new SszMutableUInt64ListImpl(this);
   }
 }

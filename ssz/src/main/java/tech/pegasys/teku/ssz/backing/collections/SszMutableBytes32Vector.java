@@ -19,10 +19,6 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 public interface SszMutableBytes32Vector
     extends SszMutablePrimitiveVector<Bytes32, SszBytes32>, SszBytes32Vector {
 
-  default void setBytes32(int index, Bytes32 value) {
-    setElement(index, value);
-  }
-
   @Override
   SszBytes32Vector commitChanges();
 }

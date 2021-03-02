@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszMutableListImpl;
 
@@ -31,7 +32,7 @@ public class SszMutablePrimitiveListImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszPrimitiveListImpl<ElementT, SszElementT> commitChanges() {
+  public SszPrimitiveList<ElementT, SszElementT> commitChanges() {
     return (SszPrimitiveListImpl<ElementT, SszElementT>) super.commitChanges();
   }
 

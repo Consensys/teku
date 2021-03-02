@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.schema.collections;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszUInt64ListSchemaImpl;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public interface SszBytes32Vector extends SszPrimitiveVector<Bytes32, SszBytes32> {
+public interface SszUInt64ListSchema<SszListT extends SszUInt64List>
+    extends SszPrimitiveListSchema<UInt64, SszUInt64, SszListT> {
 
-  @Override
-  SszMutableBytes32Vector createWritableCopy();
+  static SszUInt64ListSchema<SszUInt64List> create(int length) {
+    return new SszUInt64ListSchemaImpl<>(length);
+  }
 }

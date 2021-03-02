@@ -24,8 +24,5 @@ public interface SszMutablePrimitiveList<
   SszPrimitiveList<ElementT, SszElementT> commitChanges();
 
   @Override
-  default SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy() {
-    throw new UnsupportedOperationException(
-        "Creating a writable copy from writable instance is not supported");
-  }
+  SszMutablePrimitiveList<ElementT, SszElementT> createWritableCopy();
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -89,8 +90,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListImpl<SszElementT> commitChanges() {
-    return (SszListImpl<SszElementT>) super.commitChanges();
+  public SszList<SszElementT> commitChanges() {
+    return (SszList<SszElementT>) super.commitChanges();
   }
 
   @Override

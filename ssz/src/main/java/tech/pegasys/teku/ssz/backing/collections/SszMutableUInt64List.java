@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public interface SszBytes32Vector extends SszPrimitiveVector<Bytes32, SszBytes32> {
+public interface SszMutableUInt64List
+    extends SszMutablePrimitiveList<UInt64, SszUInt64>, SszUInt64List {
 
   @Override
-  SszMutableBytes32Vector createWritableCopy();
+  SszUInt64List commitChanges();
 }
