@@ -173,12 +173,11 @@ public final class DataStructureUtil {
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-      SszPrimitiveList<ElementT, SszElementT> randomSszFullPrimitiveList(
+      SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
           SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
+          final long numItems,
           Supplier<ElementT> valueGenerator) {
-    return Stream.generate(valueGenerator)
-        .limit(schema.getMaxLength())
-        .collect(schema.collectorUnboxed());
+    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(
