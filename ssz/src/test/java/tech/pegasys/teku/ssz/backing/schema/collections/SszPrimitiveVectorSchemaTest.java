@@ -32,11 +32,11 @@ public class SszPrimitiveVectorSchemaTest {
         SszPrimitiveVectorSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10);
     SszPrimitiveVector<UInt64, SszUInt64> defaultVector = schema.getDefault();
     assertThat(defaultVector).hasSize(10).containsOnly(SszUInt64.fromLong(0));
-    assertThat(defaultVector.unboxed()).hasSize(10).containsOnly(UInt64.ZERO);
+    assertThat(defaultVector.asListUnboxed()).hasSize(10).containsOnly(UInt64.ZERO);
 
     List<UInt64> uints =
         LongStream.range(1, 11).mapToObj(UInt64::valueOf).collect(Collectors.toList());
     SszPrimitiveVector<UInt64, SszUInt64> vector1 = schema.of(uints);
-    assertThat(vector1.unboxed()).hasSize(10).containsSequence(uints);
+    assertThat(vector1.asListUnboxed()).hasSize(10).containsSequence(uints);
   }
 }

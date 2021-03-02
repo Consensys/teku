@@ -101,7 +101,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().toListUnboxed());
+        justifiedCheckpointState.getBalances().asListUnboxed());
   }
 
   @Override
@@ -110,7 +110,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     try {
       attestation
           .getAttesting_indices()
-          .unboxed()
+          .streamUnboxed()
           .forEach(
               validatorIndex ->
                   processAttestation(

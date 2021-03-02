@@ -158,7 +158,7 @@ class BeaconStateUtilTest {
 
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
-    for (UInt64 balance : state.getBalances().unboxed()) {
+    for (UInt64 balance : state.getBalances().asListUnboxed()) {
       if (balance.isLessThan(Constants.MAX_EFFECTIVE_BALANCE)) {
         expectedBalance = expectedBalance.plus(balance);
       } else {

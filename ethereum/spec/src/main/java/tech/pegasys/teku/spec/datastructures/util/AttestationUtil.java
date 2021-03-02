@@ -24,6 +24,8 @@ import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beaco
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValidatorPubKey;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
+import com.google.common.collect.Comparators;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -159,17 +161,6 @@ public class AttestationUtil {
     return is_valid_indexed_attestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
-  private static <C extends Comparable<C>> boolean isDistinctAndSorted(Iterable<C> list) {
-    C previous = null;
-    for (final C current : list) {
-      if (previous != null && previous.compareTo(current) >= 0) {
-        return false;
-      }
-      previous = current;
-    }
-    return true;
-  }
-
   @Deprecated
   public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state,
@@ -177,7 +168,8 @@ public class AttestationUtil {
       BLSSignatureVerifier signatureVerifier) {
     SszUInt64List indices = indexed_attestation.getAttesting_indices();
 
-    if (indices.isEmpty() || !isDistinctAndSorted(indices.unboxed())) {
+    if (indices.isEmpty()
+        || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 

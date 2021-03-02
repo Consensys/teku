@@ -64,11 +64,11 @@ public class OperationPool<T extends SszData> {
   }
 
   public void addAll(SszCollection<T> items) {
-    operations.addAll(items.toList());
+    operations.addAll(items.asList());
   }
 
   public void removeAll(SszCollection<T> items) {
-    operations.removeAll(items.toList());
+    operations.removeAll(items.asList());
   }
 
   public Set<T> getAll() {

@@ -67,7 +67,7 @@ public class BeaconStateBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateBalances(Blackhole bh) {
-    for (UInt64 balance : beaconState.getBalances().unboxed()) {
+    for (UInt64 balance : beaconState.getBalances().asListUnboxed()) {
       bh.consume(balance);
     }
   }

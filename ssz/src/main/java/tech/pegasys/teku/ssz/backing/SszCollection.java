@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
 
@@ -28,30 +27,28 @@ public interface SszCollection<ElementT extends SszData>
     return size() == 0;
   }
 
-  default Stream<ElementT> stream() {
-    return StreamSupport.stream(spliterator(), false);
-  }
+  default List<ElementT> asList() {
+    return new AbstractList<>() {
+      @Override
+      public ElementT get(int index) {
+        return SszCollection.this.get(index);
+      }
 
-  default List<ElementT> toList() {
-    return stream().collect(Collectors.toList());
+      @Override
+      public int size() {
+        return SszCollection.this.size();
+      }
+    };
   }
 
   @NotNull
   @Override
   default Iterator<ElementT> iterator() {
-    return new Iterator<>() {
-      int index = 0;
+    return asList().iterator();
+  }
 
-      @Override
-      public boolean hasNext() {
-        return index < size();
-      }
-
-      @Override
-      public ElementT next() {
-        return get(index++);
-      }
-    };
+  default Stream<ElementT> stream() {
+    return asList().stream();
   }
 
   @Override

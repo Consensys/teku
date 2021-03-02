@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.collect.Comparators;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -158,24 +160,14 @@ public class AttestationUtil {
     return isValidIndexedAttestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
-  private static <C extends Comparable<C>> boolean isDistinctAndSorted(Iterable<C> list) {
-    C previous = null;
-    for (final C current : list) {
-      if (previous != null && previous.compareTo(current) >= 0) {
-        return false;
-      }
-      previous = current;
-    }
-    return true;
-  }
-
   public AttestationProcessingResult isValidIndexedAttestation(
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
     SszUInt64List indices = indexed_attestation.getAttesting_indices();
 
-    if (indices.isEmpty() || !isDistinctAndSorted(indices.unboxed())) {
+    if (indices.isEmpty()
+        || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 

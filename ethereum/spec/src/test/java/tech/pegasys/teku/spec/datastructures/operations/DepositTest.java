@@ -56,7 +56,7 @@ class DepositTest {
   void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
 
-    List<Bytes32> reverseBranch = branch.toListUnboxed();
+    List<Bytes32> reverseBranch = branch.asListUnboxed();
     Collections.reverse(reverseBranch);
 
     Deposit testDeposit =
