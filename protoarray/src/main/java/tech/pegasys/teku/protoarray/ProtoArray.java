@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,16 +61,14 @@ public class ProtoArray {
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
       UInt64 initialEpoch,
-      List<ProtoNode> nodes,
-      Map<BlockRootAndSlot, Integer> rootAndSlotIndices,
-      Map<Bytes32, Integer> rootIndices) {
+      List<ProtoNode> nodes) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
     this.initialEpoch = initialEpoch;
     this.nodes = nodes;
-    this.rootAndSlotIndices = rootAndSlotIndices;
-    this.rootIndices = rootIndices;
+    this.rootAndSlotIndices = new HashMap<>();
+    this.rootIndices = new HashMap<>();
   }
 
   public static ProtoArrayBuilder builder() {

@@ -16,11 +16,8 @@ package tech.pegasys.teku.protoarray;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -32,20 +29,11 @@ public class ProtoArrayBuilder {
   private UInt64 finalizedEpoch;
   private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
   private List<ProtoNode> nodes = new ArrayList<>();
-  private Map<BlockRootAndSlot, Integer> indices = new HashMap<>();
-  private Map<Bytes32, Integer> blockRootToIndexMap = new HashMap<>();
 
   public ProtoArray build() {
     checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
     checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
-    return new ProtoArray(
-        pruneThreshold,
-        justifiedEpoch,
-        finalizedEpoch,
-        initialEpoch,
-        nodes,
-        indices,
-        blockRootToIndexMap);
+    return new ProtoArray(pruneThreshold, justifiedEpoch, finalizedEpoch, initialEpoch, nodes);
   }
 
   public ProtoArrayBuilder pruneThreshold(final int pruneThreshold) {
@@ -91,16 +79,6 @@ public class ProtoArrayBuilder {
 
   ProtoArrayBuilder nodes(final List<ProtoNode> nodes) {
     this.nodes = nodes;
-    return this;
-  }
-
-  ProtoArrayBuilder indices(final Map<BlockRootAndSlot, Integer> indices) {
-    this.indices = indices;
-    return this;
-  }
-
-  ProtoArrayBuilder blockRootToIndexMap(Map<Bytes32, Integer> blockRootToIndexMap) {
-    this.blockRootToIndexMap = blockRootToIndexMap;
     return this;
   }
 }
