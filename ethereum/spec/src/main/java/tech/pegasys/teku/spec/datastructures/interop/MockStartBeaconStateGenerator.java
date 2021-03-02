@@ -18,14 +18,16 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class MockStartBeaconStateGenerator {
-
   private static final Bytes32 BLOCK_HASH;
+
+  private final Spec spec;
 
   static {
     final byte[] eth1BlockHashBytes = new byte[32];
@@ -33,8 +35,13 @@ public class MockStartBeaconStateGenerator {
     BLOCK_HASH = Bytes32.wrap(eth1BlockHashBytes);
   }
 
+  public MockStartBeaconStateGenerator(final Spec spec) {
+    this.spec = spec;
+  }
+
   public BeaconState createInitialBeaconState(
       final UInt64 genesisTime, final List<DepositData> initialDepositData) {
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
     final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
       final DepositData data = initialDepositData.get(index);
@@ -42,7 +49,9 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final BeaconState initialState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits);
+        genesisSpec
+            .getBeaconStateUtil()
+            .initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits);
     return initialState.updated(state -> state.setGenesis_time(genesisTime));
   }
 }

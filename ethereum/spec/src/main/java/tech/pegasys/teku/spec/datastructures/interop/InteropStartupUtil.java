@@ -43,7 +43,7 @@ public final class InteropStartupUtil {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
             .createDeposits(validatorKeys);
-    return new MockStartBeaconStateGenerator()
+    return new MockStartBeaconStateGenerator(spec)
         .createInitialBeaconState(UInt64.valueOf(genesisTime), initialDepositData);
   }
 }

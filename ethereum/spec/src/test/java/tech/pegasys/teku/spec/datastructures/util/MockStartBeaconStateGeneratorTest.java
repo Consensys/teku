@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class MockStartBeaconStateGeneratorTest {
+  private final Spec spec = SpecFactory.createMinimal();
 
   @Test
   public void shouldCreateInitialBeaconChainState() {
@@ -42,7 +45,7 @@ class MockStartBeaconStateGeneratorTest {
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
 
     final BeaconState initialBeaconState =
-        new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
+        new MockStartBeaconStateGenerator(spec).createInitialBeaconState(genesisTime, deposits);
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
     assertEquals(validatorCount, initialBeaconState.getEth1_data().getDeposit_count().longValue());
