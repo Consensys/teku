@@ -71,10 +71,7 @@ public class ForkChoice {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
     return new ForkChoice(
-        spec,
-        forkChoiceExecutor,
-        recentChainData,
-        new ProposerWeightings(forkChoiceExecutor));
+        spec, forkChoiceExecutor, recentChainData, new ProposerWeightings(forkChoiceExecutor));
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -137,9 +134,26 @@ public class ForkChoice {
 
   /** Import a block to the store. */
   public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
+    return calculatePriorSlotCommitteeWeight(block)
+        .thenCombineComposed(
+            recentChainData.retrieveStateAtSlot(
+                new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())),
+            (priorSlotCommitteeWeight, blockSlotState) ->
+                onBlock(block, priorSlotCommitteeWeight, blockSlotState));
+  }
+
+  private SafeFuture<Optional<UInt64>> calculatePriorSlotCommitteeWeight(
+      final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot().minusMinZero(1), block.getRoot());
     return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-        .thenCompose(blockSlotState -> onBlock(block, UInt64.ZERO, blockSlotState));
+        .retrieveStateAtSlot(slotAndBlockRoot)
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    state ->
+                        spec.getBeaconStateUtil(state.getSlot())
+                            .getAttestersTotalEffectiveBalance(state, slotAndBlockRoot.getSlot())));
   }
 
   /**
@@ -148,9 +162,9 @@ public class ForkChoice {
    */
   private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
-      final UInt64 priorSlotCommitteeWeight,
+      final Optional<UInt64> priorSlotCommitteeWeight,
       Optional<BeaconState> blockSlotState) {
-    if (blockSlotState.isEmpty()) {
+    if (blockSlotState.isEmpty() || priorSlotCommitteeWeight.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
     checkArgument(
@@ -175,7 +189,7 @@ public class ForkChoice {
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, priorSlotCommitteeWeight, result);
+          updateForkChoiceForImportedBlock(block, priorSlotCommitteeWeight.orElseThrow(), result);
           applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });

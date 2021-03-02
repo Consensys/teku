@@ -16,10 +16,12 @@ package tech.pegasys.teku.infrastructure.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -993,6 +996,86 @@ public class SafeFutureTest {
     input.completeExceptionally(exception);
     assertThatSafeFuture(result).isCompletedWithValue(null);
     verify(exceptionHandler).accept(exception);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void thenCombineComposed_firstFutureCompletesFirst() {
+    final SafeFuture<String> a = new SafeFuture<>();
+    final SafeFuture<String> b = new SafeFuture<>();
+    final SafeFuture<String> fnResult = new SafeFuture<>();
+    final BiFunction<String, String, SafeFuture<String>> function = mock(BiFunction.class);
+    when(function.apply(any(), any())).thenReturn(fnResult);
+    final SafeFuture<String> result = a.thenCombineComposed(b, function);
+
+    verifyNoInteractions(function);
+
+    a.complete("A");
+    verifyNoInteractions(function);
+
+    b.complete("B");
+    verify(function).apply("A", "B");
+    assertThat(result).isNotDone();
+
+    fnResult.complete("Result");
+    assertThat(fnResult).isCompletedWithValue("Result");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void thenCombineComposed_secondFutureCompletesFirst() {
+    final SafeFuture<String> a = new SafeFuture<>();
+    final SafeFuture<String> b = new SafeFuture<>();
+    final SafeFuture<String> fnResult = new SafeFuture<>();
+    final BiFunction<String, String, SafeFuture<String>> function = mock(BiFunction.class);
+    when(function.apply(any(), any())).thenReturn(fnResult);
+    final SafeFuture<String> result = a.thenCombineComposed(b, function);
+
+    verifyNoInteractions(function);
+
+    b.complete("B");
+    verifyNoInteractions(function);
+
+    a.complete("A");
+    verify(function).apply("A", "B");
+    assertThat(result).isNotDone();
+
+    fnResult.complete("Result");
+    assertThat(fnResult).isCompletedWithValue("Result");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void thenCombineComposed_functionThrowsException() {
+    final SafeFuture<String> a = new SafeFuture<>();
+    final SafeFuture<String> b = new SafeFuture<>();
+    final BiFunction<String, String, SafeFuture<String>> function = mock(BiFunction.class);
+    final Exception exception = new RuntimeException("Boom!");
+    when(function.apply(any(), any())).thenThrow(exception);
+    final SafeFuture<String> result = a.thenCombineComposed(b, function);
+
+    a.complete("A");
+    b.complete("B");
+
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void thenCombineComposed_functionReturnsFailedFuture() {
+    final SafeFuture<String> a = new SafeFuture<>();
+    final SafeFuture<String> b = new SafeFuture<>();
+    final SafeFuture<String> fnResult = new SafeFuture<>();
+    final BiFunction<String, String, SafeFuture<String>> function = mock(BiFunction.class);
+    final Exception exception = new RuntimeException("Boom!");
+    when(function.apply(any(), any())).thenReturn(fnResult);
+    final SafeFuture<String> result = a.thenCombineComposed(b, function);
+
+    a.complete("A");
+    b.complete("B");
+
+    fnResult.completeExceptionally(exception);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
   private List<Throwable> collectUncaughtExceptions() {
