@@ -14,10 +14,18 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_TIME_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.SLOT_FIELD;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
@@ -44,6 +52,38 @@ public class BeaconStateSchemaTest {
     final BeaconStateSchema specB = BeaconStateSchema.create();
 
     assertThat(specA).isEqualTo(specB);
+  }
+
+  @Test
+  public void shouldValidateFieldsAreOrdered() {
+    assertThatThrownBy(
+            () ->
+                new BeaconStateSchema(
+                    List.of(GENESIS_TIME_FIELD, SLOT_FIELD, GENESIS_VALIDATORS_ROOT_FIELD)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "fields must be ordered and contiguous.  Encountered unexpected index 2 at fields element 1");
+  }
+
+  @Test
+  public void shouldValidateFieldCount() {
+    assertThatThrownBy(
+            () -> new BeaconStateSchema(List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Must provide at least 3 fields");
+  }
+
+  @Test
+  public void shouldValidateInvariantFields() {
+    final SszField randomField =
+        new SszField(
+            2, "random", () -> SszVectorSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 10));
+    assertThatThrownBy(
+            () ->
+                new BeaconStateSchema(
+                    List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, randomField)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Expected invariant field 'SLOT' at index 2, but got 'random'");
   }
 
   private Spec setupMinimalSpec() {

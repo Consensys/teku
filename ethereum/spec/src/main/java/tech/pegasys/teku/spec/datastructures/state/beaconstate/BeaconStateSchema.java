@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
-import java.util.Comparator;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_TIME_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.SLOT_FIELD;
+
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,13 +45,6 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
 
-  private static final SszField GENESIS_TIME_FIELD =
-      new SszField(0, BeaconStateFields.GENESIS_TIME.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
-  private static final SszField GENESIS_VALIDATORS_ROOT_FIELD =
-      new SszField(
-          1, BeaconStateFields.GENESIS_VALIDATORS_ROOT.name(), SszPrimitiveSchemas.BYTES32_SCHEMA);
-  private static final SszField SLOT_FIELD =
-      new SszField(2, BeaconStateFields.SLOT.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
   private static final SszField FORK_FIELD =
       new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
   private static final SszField LATEST_BLOCK_HEADER_FIELD =
@@ -145,13 +143,42 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
   private static final SszField FINALIZED_CHECKPOINT_FIELD =
       new SszField(20, BeaconStateFields.FINALIZED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
 
-  private BeaconStateSchema(final List<SszField> fields) {
+  @VisibleForTesting
+  BeaconStateSchema(final List<SszField> fields) {
     super(
         "BeaconState",
         fields.stream()
-            .sorted(Comparator.comparing(SszField::getIndex))
             .map(f -> namedSchema(f.getName(), f.getSchema().get()))
             .collect(Collectors.toList()));
+    validateFields(fields);
+  }
+
+  private void validateFields(final List<SszField> fields) {
+    for (int i = 0; i < fields.size(); i++) {
+      final int fieldIndex = fields.get(i).getIndex();
+      checkArgument(
+          fieldIndex == i,
+          "%s fields must be ordered and contiguous.  Encountered unexpected index %s at fields element %s",
+          getClass().getSimpleName(),
+          fieldIndex,
+          i);
+    }
+
+    final List<SszField> invariantFields = BeaconStateSchemaInvariants.getInvariantFields();
+    checkArgument(
+        fields.size() >= invariantFields.size(),
+        "Must provide at least %s fields",
+        invariantFields.size());
+    for (SszField invariantField : invariantFields) {
+      final int invariantIndex = invariantField.getIndex();
+      final SszField actualField = fields.get(invariantIndex);
+      checkArgument(
+          actualField.equals(invariantField),
+          "Expected invariant field '%s' at index %s, but got '%s'",
+          invariantField.getName(),
+          invariantIndex,
+          actualField.getName());
+    }
   }
 
   public static BeaconStateSchema create(final SpecConstants specConstants) {
@@ -187,15 +214,6 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
   }
 
   private static List<SszField> getFields(final SpecConstants specConstants) {
-    SszField genesisTimeField =
-        new SszField(0, BeaconStateFields.GENESIS_TIME.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
-    SszField genesisValidatorsRootField =
-        new SszField(
-            1,
-            BeaconStateFields.GENESIS_VALIDATORS_ROOT.name(),
-            SszPrimitiveSchemas.BYTES32_SCHEMA);
-    SszField sszField =
-        new SszField(2, BeaconStateFields.SLOT.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
     SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
     // TODO(#3658) - Use non-static BeaconBlockHeaderSchema
     final BeaconBlockHeader.BeaconBlockHeaderSchema blockHeaderSchema =
@@ -300,9 +318,9 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
         new SszField(20, BeaconStateFields.FINALIZED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);
 
     return List.of(
-        genesisTimeField,
-        genesisValidatorsRootField,
-        sszField,
+        GENESIS_TIME_FIELD,
+        GENESIS_VALIDATORS_ROOT_FIELD,
+        SLOT_FIELD,
         fork_field,
         latestBlockHeaderField,
         blockRootsField,
