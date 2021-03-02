@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
@@ -159,7 +158,12 @@ public class BeaconStateUtilTest {
   }
 
   private BeaconState createBeaconState() {
-    return createBeaconState(false, null, null);
+    return new BeaconStateTestBuilder(dataStructureUtil)
+        .forkVersion(specConstants.getGenesisForkVersion())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .build();
   }
 
   @Test
@@ -363,6 +367,25 @@ public class BeaconStateUtilTest {
     assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
   }
 
+  @Test
+  void getAttestersTotalEffectiveBalance_shouldCalculateTotalsFromEarlierEpoch() {
+    final BeaconState state =
+        new BeaconStateTestBuilder(dataStructureUtil)
+            .slot(50)
+
+            // Not quite enough validators to have one in every slot
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(2000000000L))
+            .activeValidator(UInt64.valueOf(1600000000L))
+            .activeValidator(UInt64.valueOf(1800000000L))
+            .build();
+    final UInt64 result = beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.ONE);
+    assertThat(result).isEqualTo(UInt64.valueOf(3200000000L));
+    assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
+  }
+
   /**
    * Since every active validator attests once per epoch, the total sum of attester effective
    * balances across each epoch in the slot should be equal to the total active balance for the
@@ -380,31 +403,10 @@ public class BeaconStateUtilTest {
   }
 
   @Test
-  void getAttestersTotalEffectiveBalance_shouldRejectRequestFromEarlierEpoch() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(500));
-    assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.ONE))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
   void getAttestersTotalEffectiveBalance_shouldRejectRequestFromBeyondLookAheadPeriod() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
     final UInt64 epoch3Start = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(3));
     assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
         .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  private BeaconState createBeaconState(
-      boolean addToList, UInt64 amount, Validator knownValidator) {
-    final BeaconStateTestBuilder stateBuilder =
-        new BeaconStateTestBuilder(dataStructureUtil)
-            .forkVersion(specConstants.getGenesisForkVersion())
-            .validator(dataStructureUtil.randomValidator())
-            .validator(dataStructureUtil.randomValidator())
-            .validator(dataStructureUtil.randomValidator());
-    if (addToList) {
-      stateBuilder.validator(knownValidator);
-    }
-    return stateBuilder.build();
   }
 }
