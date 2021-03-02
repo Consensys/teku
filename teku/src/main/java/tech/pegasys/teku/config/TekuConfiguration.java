@@ -178,7 +178,7 @@ public class TekuConfiguration {
       // Create spec, and pass spec to other builders that require it
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
-      final Spec spec = eth2NetworkConfiguration.getSpecProvider();
+      final Spec spec = eth2NetworkConfiguration.getSpec();
 
       interopConfigBuilder.specProvider(spec);
       // Update storage config

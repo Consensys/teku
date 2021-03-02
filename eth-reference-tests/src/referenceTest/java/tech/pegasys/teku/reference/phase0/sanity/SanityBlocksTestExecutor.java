@@ -69,7 +69,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
       final BeaconState preState,
       final List<SignedBeaconBlock> blocks,
       final Optional<BeaconState> expectedState) {
-    final Spec spec = testDefinition.getSpecProvider();
+    final Spec spec = testDefinition.getSpec();
     expectedState.ifPresentOrElse(
         (state) ->
             assertThat(processor.processBlocks(spec, metaData, preState, blocks)).isEqualTo(state),

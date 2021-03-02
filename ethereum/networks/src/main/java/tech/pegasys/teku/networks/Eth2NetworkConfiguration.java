@@ -83,7 +83,7 @@ public class Eth2NetworkConfiguration {
     return new Builder();
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 

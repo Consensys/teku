@@ -45,7 +45,7 @@ public class RewardsTestExecutor implements TestExecutor {
     final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     final RewardsAndPenaltiesCalculator calculator =
         testDefinition
-            .getSpecProvider()
+            .getSpec()
             .getGenesisSpec()
             .getEpochProcessor()
             .createRewardsAndPenaltiesCalculator(preState, validatorStatuses);

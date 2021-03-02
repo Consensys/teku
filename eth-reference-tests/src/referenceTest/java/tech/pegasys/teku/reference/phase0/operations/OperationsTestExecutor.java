@@ -82,7 +82,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final Path dataPath = testDefinition.getTestDirectory().resolve(dataFileName);
 
     final DefaultOperationProcessor standardProcessor =
-        new DefaultOperationProcessor(testDefinition.getSpecProvider());
+        new DefaultOperationProcessor(testDefinition.getSpec());
     runProcessor(standardProcessor, testDefinition, preState, dataPath);
   }
 
