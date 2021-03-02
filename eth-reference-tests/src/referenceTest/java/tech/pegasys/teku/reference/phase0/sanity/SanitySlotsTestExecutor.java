@@ -35,7 +35,7 @@ public class SanitySlotsTestExecutor implements TestExecutor {
 
     final UInt64 endSlot = preState.getSlot().plus(numberOfSlots);
 
-    final BeaconState result = processSlots(testDefinition.getSpecProvider(), preState, endSlot);
+    final BeaconState result = processSlots(testDefinition.getSpec(), preState, endSlot);
     assertThat(result).isEqualTo(expectedState);
   }
 

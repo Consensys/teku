@@ -235,7 +235,7 @@ public class Eth2P2PNetworkFactory {
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
                 config.getNetworkConfig(),
-                config.getSpecProvider());
+                config.getSpec());
 
         return new ActiveEth2P2PNetwork(
             spec,

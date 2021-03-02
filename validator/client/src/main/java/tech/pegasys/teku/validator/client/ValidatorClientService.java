@@ -79,15 +79,11 @@ public class ValidatorClientService extends Service {
             .map(
                 endpoint ->
                     RemoteBeaconNodeApi.create(
-                        services,
-                        asyncRunner,
-                        endpoint,
-                        config.getSpecProvider(),
-                        useDependentRoots))
+                        services, asyncRunner, endpoint, config.getSpec(), useDependentRoots))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(
-                        services, asyncRunner, useDependentRoots, config.getSpecProvider()));
+                        services, asyncRunner, useDependentRoots, config.getSpec()));
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
@@ -98,7 +94,7 @@ public class ValidatorClientService extends Service {
 
     ValidatorClientService validatorClientService =
         new ValidatorClientService(
-            eventChannels, validatorLoader, beaconNodeApi, forkProvider, config.getSpecProvider());
+            eventChannels, validatorLoader, beaconNodeApi, forkProvider, config.getSpec());
 
     asyncRunner
         .runAsync(
