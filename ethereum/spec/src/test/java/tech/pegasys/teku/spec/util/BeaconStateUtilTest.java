@@ -367,6 +367,25 @@ public class BeaconStateUtilTest {
     assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
   }
 
+  @Test
+  void getAttestersTotalEffectiveBalance_shouldCalculateTotalsFromEarlierEpoch() {
+    final BeaconState state =
+        new BeaconStateTestBuilder(dataStructureUtil)
+            .slot(50)
+
+            // Not quite enough validators to have one in every slot
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(3200000000L))
+            .activeValidator(UInt64.valueOf(2000000000L))
+            .activeValidator(UInt64.valueOf(1600000000L))
+            .activeValidator(UInt64.valueOf(1800000000L))
+            .build();
+    final UInt64 result = beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.ONE);
+    assertThat(result).isEqualTo(UInt64.valueOf(3200000000L));
+    assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
+  }
+
   /**
    * Since every active validator attests once per epoch, the total sum of attester effective
    * balances across each epoch in the slot should be equal to the total active balance for the
@@ -381,13 +400,6 @@ public class BeaconStateUtilTest {
               beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.valueOf(i)));
     }
     assertThat(actualTotalBalance).isEqualTo(expectedTotalBalance);
-  }
-
-  @Test
-  void getAttestersTotalEffectiveBalance_shouldRejectRequestFromEarlierEpoch() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(500));
-    assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.ONE))
-        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
