@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +57,7 @@ class DepositTest {
   void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
 
-    List<Bytes32> reverseBranch = branch.asListUnboxed();
+    List<Bytes32> reverseBranch = new ArrayList<>(branch.asListUnboxed());
     Collections.reverse(reverseBranch);
 
     Deposit testDeposit =
