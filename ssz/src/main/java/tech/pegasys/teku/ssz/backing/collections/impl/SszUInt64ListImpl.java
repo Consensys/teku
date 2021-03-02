@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.ssz.backing.collections.impl;
 
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
 import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -24,12 +25,13 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public class SszUInt64ListImpl extends SszPrimitiveListImpl<UInt64, SszUInt64>
     implements SszUInt64List {
 
-  public SszUInt64ListImpl(SszUInt64ListSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
-    super(schema, lazyBackingNode);
-  }
-
   public SszUInt64ListImpl(SszUInt64ListSchema<?> schema, TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  SszUInt64ListImpl(
+      SszListSchema<SszUInt64, ?> schema, TreeNode backingNode, IntCache<SszUInt64> cache) {
+    super(schema, backingNode, cache);
   }
 
   @Override

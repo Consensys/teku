@@ -36,7 +36,7 @@ public class SszMutableUInt64ListImpl extends SszMutablePrimitiveListImpl<UInt64
   @Override
   protected SszUInt64ListImpl createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszUInt64> childrenCache) {
-    return new SszUInt64ListImpl(getSchema(), backingNode);
+    return new SszUInt64ListImpl(getSchema(), backingNode, childrenCache);
   }
 
   @Override
