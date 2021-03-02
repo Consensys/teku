@@ -71,7 +71,7 @@ class FuzzUtilTest {
   @Test
   public void fuzzAttestation_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
-    final SchemaDefinitions schemaDefinitions = spec.getGenesisSpec().getSchemaDefinitions();
+    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
     final Attestation data =

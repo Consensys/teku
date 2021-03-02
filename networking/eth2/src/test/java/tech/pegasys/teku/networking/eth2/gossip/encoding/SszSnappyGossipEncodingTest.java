@@ -36,7 +36,7 @@ public class SszSnappyGossipEncodingTest {
   private final GossipEncoding encoding = createEncoding();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateSchema beaconStateSchema =
-      spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
+      spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
   private GossipEncoding createEncoding() {
     return GossipEncoding.SSZ_SNAPPY;

@@ -37,8 +37,10 @@ import tech.pegasys.teku.util.config.SpecDependent;
 
 public interface BeaconState extends SszContainer {
 
+  @Deprecated
   SpecDependent<BeaconStateSchema> SSZ_SCHEMA = SpecDependent.of(BeaconStateSchema::create);
 
+  @Deprecated
   static BeaconStateSchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }

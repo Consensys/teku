@@ -63,7 +63,7 @@ import tech.pegasys.teku.util.config.SpecDependent;
  */
 public class LengthBoundsCalculatorTest {
   final Spec spec = SpecFactory.createMainnet();
-  final SchemaDefinitions schemaDefinitions = spec.getGenesisSpec().getSchemaDefinitions();
+  final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
   @BeforeAll
   static void setConstants() {

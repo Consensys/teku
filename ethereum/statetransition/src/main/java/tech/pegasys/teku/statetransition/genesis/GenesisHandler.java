@@ -47,7 +47,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
     this.spec = spec;
-    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSpec().getSchemaDefinitions());
+    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSchemaDefinitions());
   }
 
   @Override

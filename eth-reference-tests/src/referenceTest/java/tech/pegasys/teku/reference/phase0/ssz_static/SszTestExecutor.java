@@ -59,7 +59,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
     final SchemaDefinitions schemaDefinitions =
-        testDefinition.getSpec().getGenesisSpec().getSchemaDefinitions();
+        testDefinition.getSpec().getGenesisSchemaDefinitions();
     final T result = sszType.get(schemaDefinitions).sszDeserialize(inputData);
 
     // Deserialize
