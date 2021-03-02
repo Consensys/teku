@@ -32,6 +32,10 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
    */
   SszMutableData createWritableCopy();
 
+  default boolean isWritableSupported() {
+    return true;
+  }
+
   /** Gets the schema of this structure */
   SszSchema<? extends SszData> getSchema();
 

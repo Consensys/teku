@@ -31,5 +31,10 @@ public interface SszPrimitive<ValueType, SszType extends SszPrimitive<ValueType,
   }
 
   @Override
+  default boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   SszPrimitiveSchema<ValueType, SszType> getSchema();
 }
