@@ -24,6 +24,7 @@ import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutor;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
+import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutorDeprecated;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
@@ -32,6 +33,7 @@ public abstract class Eth2ReferenceTestCase {
   private final ImmutableMap<String, TestExecutor> TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
+          .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
           .putAll(BlsTests.BLS_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)

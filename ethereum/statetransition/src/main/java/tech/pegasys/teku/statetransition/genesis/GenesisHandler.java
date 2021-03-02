@@ -29,7 +29,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -39,7 +39,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final TimeProvider timeProvider;
-  private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final GenesisGenerator genesisGenerator;
   private final Spec spec;
 
   public GenesisHandler(
@@ -47,6 +47,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
     this.spec = spec;
+    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSchemaDefinitions());
   }
 
   @Override

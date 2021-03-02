@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -46,10 +47,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -315,7 +317,11 @@ public class BeaconStateUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
-    return BeaconState.createEmpty()
+
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             beaconState -> {
               beaconState.setSlot(dataStructureUtil.randomUInt64());
@@ -352,5 +358,31 @@ public class BeaconStateUtilTest {
                       SSZList.createMutable(
                           balanceList, specConstants.getValidatorRegistryLimit(), UInt64.class));
             });
+  }
+
+  @Test
+  void initializeBeaconStateFromEth1_shouldIgnoreInvalidSignedDeposits() {
+    ArrayList<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
+    DepositWithIndex deposit = deposits.get(1);
+    DepositData depositData = deposit.getData();
+    DepositWithIndex invalidSigDeposit =
+        new DepositWithIndex(
+            new DepositData(
+                depositData.getPubkey(),
+                depositData.getWithdrawal_credentials(),
+                depositData.getAmount(),
+                BLSSignature.empty()),
+            deposit.getIndex());
+    deposits.set(1, invalidSigDeposit);
+
+    BeaconState state =
+        beaconStateUtil.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits);
+    assertEquals(2, state.getValidators().size());
+    assertEquals(
+        deposits.get(0).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(0).getPubkey());
+    assertEquals(
+        deposits.get(2).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(1).getPubkey());
   }
 }

@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -43,13 +45,13 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.util.config.Constants;
@@ -60,6 +62,8 @@ import tech.pegasys.teku.util.config.SpecDependent;
  * they produce the right value which is a much more valuable test than using fake classes
  */
 public class LengthBoundsCalculatorTest {
+  final Spec spec = SpecFactory.createMainnet();
+  final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
   @BeforeAll
   static void setConstants() {
@@ -75,43 +79,64 @@ public class LengthBoundsCalculatorTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateParameters")
-  void shouldCalculateCorrectLengthBounds(final SszSchema<?> type, final SszLengthBounds expected) {
-    assertThat(type.getSszLengthBounds()).isEqualTo(expected);
+  void shouldCalculateCorrectLengthBounds(
+      final SchemaProvider type, final SszLengthBounds expected) {
+    SszSchema<?> schema = type.get(schemaDefinitions);
+    assertThat(schema.getSszLengthBounds()).isEqualTo(expected);
   }
 
   // Expected values taken from https://gist.github.com/protolambda/db75c7faa1e94f2464787a480e5d613e
   static Stream<Arguments> generateParameters() {
     return Stream.of(
-        Arguments.of(AggregateAndProof.SSZ_SCHEMA, SszLengthBounds.ofBytes(337, 593)),
-        Arguments.of(Attestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(229, 485)),
-        Arguments.of(AttestationData.SSZ_SCHEMA, SszLengthBounds.ofBytes(128, 128)),
-        Arguments.of(AttesterSlashing.SSZ_SCHEMA, SszLengthBounds.ofBytes(464, 33232)),
-        Arguments.of(BeaconBlock.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(304, 157656)),
-        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(220, 157572)),
-        Arguments.of(BeaconBlockHeader.SSZ_SCHEMA, SszLengthBounds.ofBytes(112, 112)),
+        Arguments.of(getProvider(AggregateAndProof.SSZ_SCHEMA), SszLengthBounds.ofBytes(337, 593)),
+        Arguments.of(getProvider(Attestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(229, 485)),
+        Arguments.of(getProvider(AttestationData.SSZ_SCHEMA), SszLengthBounds.ofBytes(128, 128)),
+        Arguments.of(getProvider(AttesterSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(464, 33232)),
         Arguments.of(
-            BeaconState.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(2687377, 141837543039377L)),
-        Arguments.of(Checkpoint.SSZ_SCHEMA, SszLengthBounds.ofBytes(40, 40)),
-        Arguments.of(Deposit.SSZ_SCHEMA, SszLengthBounds.ofBytes(1240, 1240)),
-        Arguments.of(DepositData.SSZ_SCHEMA, SszLengthBounds.ofBytes(184, 184)),
-        Arguments.of(DepositMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(88, 88)),
-        Arguments.of(Eth1Data.SSZ_SCHEMA, SszLengthBounds.ofBytes(72, 72)),
-        Arguments.of(Fork.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
-        Arguments.of(ForkData.SSZ_SCHEMA, SszLengthBounds.ofBytes(36, 36)),
-        Arguments.of(HistoricalBatch.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(524288, 524288)),
-        Arguments.of(IndexedAttestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(228, 16612)),
-        Arguments.of(PendingAttestation.SSZ_SCHEMA, SszLengthBounds.ofBytes(149, 405)),
-        Arguments.of(ProposerSlashing.SSZ_SCHEMA, SszLengthBounds.ofBytes(416, 416)),
-        Arguments.of(SignedAggregateAndProof.SSZ_SCHEMA, SszLengthBounds.ofBytes(437, 693)),
-        Arguments.of(SignedBeaconBlock.SSZ_SCHEMA.get(), SszLengthBounds.ofBytes(404, 157756)),
-        Arguments.of(SignedBeaconBlockHeader.SSZ_SCHEMA, SszLengthBounds.ofBytes(208, 208)),
-        Arguments.of(SignedVoluntaryExit.SSZ_SCHEMA, SszLengthBounds.ofBytes(112, 112)),
-        Arguments.of(Validator.SSZ_SCHEMA, SszLengthBounds.ofBytes(121, 121)),
-        Arguments.of(VoluntaryExit.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
-        Arguments.of(MetadataMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(16, 16)),
-        Arguments.of(StatusMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(84, 84)),
-        Arguments.of(GoodbyeMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(8, 8)),
+            getProvider(BeaconBlock.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(304, 157656)),
         Arguments.of(
-            BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA, SszLengthBounds.ofBytes(24, 24)));
+            getProvider(BeaconBlockBody.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(220, 157572)),
+        Arguments.of(getProvider(BeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(112, 112)),
+        Arguments.of(
+            (SchemaProvider) SchemaDefinitions::getBeaconStateSchema,
+            SszLengthBounds.ofBytes(2687377, 141837543039377L)),
+        Arguments.of(getProvider(Checkpoint.SSZ_SCHEMA), SszLengthBounds.ofBytes(40, 40)),
+        Arguments.of(getProvider(Deposit.SSZ_SCHEMA), SszLengthBounds.ofBytes(1240, 1240)),
+        Arguments.of(getProvider(DepositData.SSZ_SCHEMA), SszLengthBounds.ofBytes(184, 184)),
+        Arguments.of(getProvider(DepositMessage.SSZ_SCHEMA), SszLengthBounds.ofBytes(88, 88)),
+        Arguments.of(getProvider(Eth1Data.SSZ_SCHEMA), SszLengthBounds.ofBytes(72, 72)),
+        Arguments.of(getProvider(Fork.SSZ_SCHEMA), SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(getProvider(ForkData.SSZ_SCHEMA), SszLengthBounds.ofBytes(36, 36)),
+        Arguments.of(
+            getProvider(HistoricalBatch.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(524288, 524288)),
+        Arguments.of(
+            getProvider(IndexedAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(228, 16612)),
+        Arguments.of(getProvider(PendingAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(149, 405)),
+        Arguments.of(getProvider(ProposerSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(416, 416)),
+        Arguments.of(
+            getProvider(SignedAggregateAndProof.SSZ_SCHEMA), SszLengthBounds.ofBytes(437, 693)),
+        Arguments.of(
+            getProvider(SignedBeaconBlock.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(404, 157756)),
+        Arguments.of(
+            getProvider(SignedBeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(208, 208)),
+        Arguments.of(
+            getProvider(SignedVoluntaryExit.SSZ_SCHEMA), SszLengthBounds.ofBytes(112, 112)),
+        Arguments.of(getProvider(Validator.SSZ_SCHEMA), SszLengthBounds.ofBytes(121, 121)),
+        Arguments.of(getProvider(VoluntaryExit.SSZ_SCHEMA), SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(getProvider(MetadataMessage.SSZ_SCHEMA), SszLengthBounds.ofBytes(16, 16)),
+        Arguments.of(getProvider(StatusMessage.SSZ_SCHEMA), SszLengthBounds.ofBytes(84, 84)),
+        Arguments.of(getProvider(GoodbyeMessage.SSZ_SCHEMA), SszLengthBounds.ofBytes(8, 8)),
+        Arguments.of(
+            getProvider(BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA),
+            SszLengthBounds.ofBytes(24, 24)));
+  }
+
+  @Deprecated
+  private static SchemaProvider getProvider(final SszSchema<?> schema) {
+    return __ -> schema;
+  }
+
+  private interface SchemaProvider {
+    SszSchema<?> get(SchemaDefinitions schemas);
   }
 }
