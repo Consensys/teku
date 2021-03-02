@@ -115,10 +115,8 @@ public class BeaconStateBuilder {
         dataStructureUtil.randomSszBytes32Vector(
             BeaconState.STATE_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     historicalRoots =
-        dataStructureUtil.randomSszPrimitiveList(
-            BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get(),
-            dataStructureUtil.getHistoricalRootsLimit(),
-            dataStructureUtil::randomBytes32);
+        dataStructureUtil.randomSszFullPrimitiveList(
+            BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
     eth1DataVotes =
         dataStructureUtil.randomSszList(

@@ -173,11 +173,12 @@ public final class DataStructureUtil {
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-      SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
+      SszPrimitiveList<ElementT, SszElementT> randomSszFullPrimitiveList(
           SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
-          final long numItems,
           Supplier<ElementT> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
+    return Stream.generate(valueGenerator)
+        .limit(schema.getMaxLength())
+        .collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(
@@ -734,15 +735,6 @@ public final class DataStructureUtil {
     return maybeSpecProvider;
   }
 
-  int getSlotsPerHistoricalRoot() {
-    return getConstant(
-        SpecConstants::getSlotsPerHistoricalRoot, Constants.SLOTS_PER_HISTORICAL_ROOT);
-  }
-
-  int getHistoricalRootsLimit() {
-    return getConstant(SpecConstants::getHistoricalRootsLimit, Constants.HISTORICAL_ROOTS_LIMIT);
-  }
-
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(
         SpecConstants::getEpochsPerEth1VotingPeriod, Constants.EPOCHS_PER_ETH1_VOTING_PERIOD);
@@ -752,21 +744,6 @@ public final class DataStructureUtil {
     return getConstant(SpecConstants::getSlotsPerEpoch, Constants.SLOTS_PER_EPOCH);
   }
 
-  long getValidatorRegistryLimit() {
-    return getConstant(
-        SpecConstants::getValidatorRegistryLimit, Constants.VALIDATOR_REGISTRY_LIMIT);
-  }
-
-  long getEpochsPerHistoricalVector() {
-    return getConstant(
-        SpecConstants::getEpochsPerHistoricalVector, Constants.EPOCHS_PER_HISTORICAL_VECTOR);
-  }
-
-  long getEpochsPerSlashingsVector() {
-    return getConstant(
-        SpecConstants::getEpochsPerSlashingsVector, Constants.EPOCHS_PER_SLASHINGS_VECTOR);
-  }
-
   int getJustificationBitsLength() {
     return getConstant(
         SpecConstants::getJustificationBitsLength, Constants.JUSTIFICATION_BITS_LENGTH);
@@ -774,10 +751,6 @@ public final class DataStructureUtil {
 
   int getMaxAttestations() {
     return getConstant(SpecConstants::getMaxAttestations, Constants.MAX_ATTESTATIONS);
-  }
-
-  private int getMaxDeposits() {
-    return getConstant(SpecConstants::getMaxDeposits, Constants.MAX_DEPOSITS);
   }
 
   private int getMaxValidatorsPerCommittee() {
