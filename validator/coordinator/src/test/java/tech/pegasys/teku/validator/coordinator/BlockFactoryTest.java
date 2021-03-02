@@ -59,8 +59,9 @@ class BlockFactoryTest {
   private final Spec spec = SpecFactory.createMinimal();
   public static final Eth1Data ETH1_DATA = new Eth1Data();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
+  private final RecentChainData recentChainData =
+      MemoryOnlyRecentChainData.create(spec, new EventBus());
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 1, recentChainData);
   private final AggregatingAttestationPool attestationsPool =
       mock(AggregatingAttestationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);

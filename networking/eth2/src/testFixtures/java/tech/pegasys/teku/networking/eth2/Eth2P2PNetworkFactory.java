@@ -305,7 +305,7 @@ public class Eth2P2PNetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-        BeaconChainUtil.create(0, recentChainData).initializeStorage();
+        BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
       }
       if (processedAttestationSubscriptionProvider == null) {
         Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);

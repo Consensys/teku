@@ -79,7 +79,7 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
@@ -150,7 +150,7 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {

@@ -718,7 +718,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
     final BeaconState genesisState =
         InteropStartupUtil.createMockedStartInitialBeaconState(
-            config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+            spec, config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 

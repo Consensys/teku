@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.interop;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -23,19 +24,22 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 public final class InteropStartupUtil {
 
   public static BeaconState createMockedStartInitialBeaconState(
-      final long genesisTime, final int numValidators) {
+      final Spec spec, final long genesisTime, final int numValidators) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
-    return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
+    return createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys, true);
   }
 
   public static BeaconState createMockedStartInitialBeaconState(
-      final long genesisTime, List<BLSKeyPair> validatorKeys) {
-    return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
+      final Spec spec, final long genesisTime, List<BLSKeyPair> validatorKeys) {
+    return createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys, true);
   }
 
   public static BeaconState createMockedStartInitialBeaconState(
-      final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
+      final Spec spec,
+      final long genesisTime,
+      List<BLSKeyPair> validatorKeys,
+      boolean signDeposits) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
             .createDeposits(validatorKeys);
