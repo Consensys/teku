@@ -20,6 +20,14 @@ public interface SszMutablePrimitiveList<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
     extends SszMutablePrimitiveCollection<ElementT, SszElementT>, SszMutableList<SszElementT> {
 
+  default void appendElement(ElementT newElement) {
+    append(getPrimitiveElementSchema().boxed(newElement));
+  }
+
+  default void appendAllElements(Iterable<? extends ElementT> newElements) {
+    newElements.forEach(this::appendElement);
+  }
+
   @Override
   SszPrimitiveList<ElementT, SszElementT> commitChanges();
 

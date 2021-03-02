@@ -99,7 +99,7 @@ public class GenesisGenerator {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
-    UInt64 balance = state.getBalances().get(index);
+    UInt64 balance = state.getBalances().getElement(index);
     UInt64 effective_balance =
         balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
 

@@ -26,7 +26,9 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -116,12 +118,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   @Override
-  default SSZMutableList<UInt64> getBalances() {
-    return new SSZBackingList<>(
-        UInt64.class,
-        getAnyByRef(BALANCES_FIELD.getIndex()),
-        SszUInt64::new,
-        AbstractSszPrimitive::get);
+  default SszMutableUInt64List getBalances() {
+    return getAnyByRef(BALANCES_FIELD.getIndex());
+  }
+
+  default void setBalances(SszUInt64List balances) {
+    set(BALANCES_FIELD.getIndex(), balances);
   }
 
   @Override

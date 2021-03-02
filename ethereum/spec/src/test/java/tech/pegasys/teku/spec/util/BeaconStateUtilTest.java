@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
@@ -179,7 +178,7 @@ public class BeaconStateUtilTest {
 
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
-    for (UInt64 balance : state.getBalances()) {
+    for (UInt64 balance : state.getBalances().unboxed()) {
       if (balance.isLessThan(specConstants.getMaxEffectiveBalance())) {
         expectedBalance = expectedBalance.plus(balance);
       } else {
@@ -340,18 +339,8 @@ public class BeaconStateUtilTest {
                 balanceList.add(amount);
               }
 
-              beaconState
-                  .getValidators()
-                  .appendAll(
-                      SSZList.createMutable(
-                          validatorList,
-                          specConstants.getValidatorRegistryLimit(),
-                          Validator.class));
-              beaconState
-                  .getBalances()
-                  .addAll(
-                      SSZList.createMutable(
-                          balanceList, specConstants.getValidatorRegistryLimit(), UInt64.class));
+              beaconState.getValidators().appendAll(validatorList);
+              beaconState.getBalances().appendAllElements(balanceList);
             });
   }
 }

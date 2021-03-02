@@ -27,12 +27,14 @@ import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -92,13 +94,10 @@ public interface BeaconState extends SszContainer {
                   SszSchemaHints.sszSuperNode(8)));
 
   SszField VALIDATORS_FIELD = new SszField(11, "validators", VALIDATORS_FIELD_SCHEMA::get);
-  SszField BALANCES_FIELD =
-      new SszField(
-          12,
-          "balances",
-          () ->
-              SszListSchema.create(
-                  SszPrimitiveSchemas.UINT64_SCHEMA, Constants.VALIDATOR_REGISTRY_LIMIT));
+
+  SpecDependent<SszUInt64ListSchema<?>> BALANCES_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszUInt64ListSchema.create(Constants.VALIDATOR_REGISTRY_LIMIT));
+  SszField BALANCES_FIELD = new SszField(12, "balances", BALANCES_FIELD_SCHEMA::get);
   SpecDependent<SszBytes32VectorSchema<?>> RANDAO_MIXES_FIELD_SCHEMA =
       SpecDependent.of(() -> SszBytes32VectorSchema.create(Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   SszField RANDAO_MIXES_FIELD = new SszField(13, "randao_mixes", RANDAO_MIXES_FIELD_SCHEMA::get);
@@ -210,7 +209,7 @@ public interface BeaconState extends SszContainer {
 
       // Registry
       SszList<Validator> validators,
-      SSZList<UInt64> balances,
+      SszUInt64List balances,
 
       // Randomness
       SszBytes32Vector randao_mixes,
@@ -243,7 +242,7 @@ public interface BeaconState extends SszContainer {
               state.setEth1_data_votes(eth1_data_votes);
               state.setEth1_deposit_index(eth1_deposit_index);
               state.setValidators(validators);
-              state.getBalances().setAll(balances);
+              state.setBalances(balances);
               state.setRandao_mixes(randao_mixes);
               state.setSlashings(slashings);
               state.setPrevious_epoch_attestations(previous_epoch_attestations);
@@ -315,9 +314,8 @@ public interface BeaconState extends SszContainer {
     return getAny(VALIDATORS_FIELD.getIndex());
   }
 
-  default SSZList<UInt64> getBalances() {
-    return new SSZBackingList<>(
-        UInt64.class, getAny(BALANCES_FIELD.getIndex()), SszUInt64::new, AbstractSszPrimitive::get);
+  default SszUInt64List getBalances() {
+    return getAny(BALANCES_FIELD.getIndex());
   }
 
   default SszBytes32Vector getRandao_mixes() {

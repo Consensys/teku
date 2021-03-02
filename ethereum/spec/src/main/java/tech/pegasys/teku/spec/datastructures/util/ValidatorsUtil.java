@@ -142,7 +142,9 @@ public class ValidatorsUtil {
    */
   @Deprecated
   public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
+    state
+        .getBalances()
+        .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
   }
 
   /**
@@ -156,7 +158,7 @@ public class ValidatorsUtil {
    */
   @Deprecated
   public static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).plus(delta));
+    state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
   }
 
   /**

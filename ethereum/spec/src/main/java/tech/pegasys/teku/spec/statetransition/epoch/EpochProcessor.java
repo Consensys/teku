@@ -31,11 +31,11 @@ import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 
 public class EpochProcessor {
   private final SpecConstants specConstants;
@@ -167,10 +167,11 @@ public class EpochProcessor {
   }
 
   private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
-    final SSZMutableList<UInt64> balances = state.getBalances();
+    final SszMutableUInt64List balances = state.getBalances();
     for (int i = 0; i < state.getValidators().size(); i++) {
       final Deltas.Delta delta = attestationDeltas.getDelta(i);
-      balances.set(i, balances.get(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
   }
 
@@ -317,10 +318,10 @@ public class EpochProcessor {
 
     // Update effective balances with hysteresis
     SszMutableList<Validator> validators = state.getValidators();
-    SSZList<UInt64> balances = state.getBalances();
+    SszUInt64List balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
-      UInt64 balance = balances.get(index);
+      UInt64 balance = balances.getElement(index);
 
       final UInt64 hysteresisIncrement =
           specConstants

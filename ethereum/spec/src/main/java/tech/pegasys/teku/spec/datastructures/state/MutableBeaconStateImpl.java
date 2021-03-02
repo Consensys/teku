@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -31,7 +30,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private final TransitionCaches transitionCaches;
   private final boolean builder;
 
-  private SSZMutableList<UInt64> balances;
   private SSZMutableList<Bytes32> historicalRoots;
 
   MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
@@ -73,11 +71,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   @Override
   public MutableBeaconState createWritableCopy() {
     return (MutableBeaconState) super.createWritableCopy();
-  }
-
-  @Override
-  public SSZMutableList<UInt64> getBalances() {
-    return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
   }
 
   @Override

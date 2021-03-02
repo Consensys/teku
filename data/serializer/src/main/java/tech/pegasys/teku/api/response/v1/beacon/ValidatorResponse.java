@@ -74,7 +74,7 @@ public class ValidatorResponse {
     return Optional.of(
         new ValidatorResponse(
             UInt64.valueOf(index),
-            state.getBalances().get(index),
+            state.getBalances().getElement(index),
             getValidatorStatus(epoch, validatorInternal, farFutureEpoch),
             new Validator(validatorInternal)));
   }

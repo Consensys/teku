@@ -149,8 +149,8 @@ class BlockProcessorUtilTest {
         originalValidatorBalancesSize,
         "The balance was added to the validator balances.");
     assertEquals(
-        preState.getBalances().hash_tree_root(),
-        postState.getBalances().hash_tree_root(),
+        preState.getBalances().hashTreeRoot(),
+        postState.getBalances().hashTreeRoot(),
         "The balances list has changed.");
   }
 
@@ -197,7 +197,7 @@ class BlockProcessorUtilTest {
               }
 
               beaconState.getValidators().appendAll(validatorList);
-              beaconState.getBalances().addAll(balanceList);
+              beaconState.getBalances().appendAllElements(balanceList);
             });
   }
 

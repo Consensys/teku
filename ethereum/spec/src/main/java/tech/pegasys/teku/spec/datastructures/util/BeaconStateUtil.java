@@ -179,7 +179,7 @@ public class BeaconStateUtil {
         LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
       state.getValidators().append(getValidatorFromDeposit(deposit));
-      state.getBalances().add(amount);
+      state.getBalances().appendElement(amount);
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
     }

@@ -51,9 +51,9 @@ class BeaconStateTest {
         BeaconState.createEmpty()
             .updated(
                 state -> {
-                  state.getBalances().add(val1);
+                  state.getBalances().appendElement(val1);
                 });
-    UInt64 v1 = stateR1.getBalances().get(0);
+    UInt64 v1 = stateR1.getBalances().getElement(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
     assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
@@ -61,9 +61,9 @@ class BeaconStateTest {
     BeaconState stateR2 =
         stateR1.updated(
             state -> {
-              state.getBalances().add(UInt64.valueOf(0x4444));
+              state.getBalances().appendElement(UInt64.valueOf(0x4444));
             });
-    UInt64 v2 = stateR2.getBalances().get(0);
+    UInt64 v2 = stateR2.getBalances().getElement(0);
 
     // check that view caching is effectively works and the value
     // is not recreated from tree node without need
@@ -96,7 +96,8 @@ class BeaconStateTest {
       assertThat(s1.getEth1_data_votes().getSchema())
           .isNotEqualTo(s2.getEth1_data_votes().getSchema());
       assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
-      assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
+      assertThat(s1.getBalances().getSchema().getMaxLength())
+          .isNotEqualTo(s2.getBalances().getSchema().getMaxLength());
       assertThat(s1.getRandao_mixes().size()).isNotEqualTo(s2.getRandao_mixes().size());
       assertThat(s1.getSlashings().size()).isNotEqualTo(s2.getSlashings().size());
       assertThat(s1.getPrevious_epoch_attestations().getSchema().getMaxLength())

@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 public interface SszUInt64ListSchema<SszListT extends SszUInt64List>
     extends SszPrimitiveListSchema<UInt64, SszUInt64, SszListT> {
 
-  static SszUInt64ListSchema<SszUInt64List> create(int length) {
-    return new SszUInt64ListSchemaImpl<>(length);
+  static SszUInt64ListSchema<SszUInt64List> create(long maxLength) {
+    return new SszUInt64ListSchemaImpl<>(maxLength);
   }
 }

@@ -28,6 +28,7 @@ import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -77,7 +78,7 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
 
       // Registry
       SszList<Validator> validators,
-      SSZList<UInt64> balances,
+      SszUInt64List balances,
 
       // Randomness
       SszBytes32Vector randao_mixes,

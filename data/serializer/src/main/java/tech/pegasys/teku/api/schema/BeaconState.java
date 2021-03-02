@@ -16,7 +16,6 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 import static tech.pegasys.teku.util.config.Constants.HISTORICAL_ROOTS_LIMIT;
-import static tech.pegasys.teku.util.config.Constants.VALIDATOR_REGISTRY_LIMIT;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -149,7 +148,7 @@ public class BeaconState {
     this.eth1_deposit_index = beaconState.getEth1_deposit_index();
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
-    this.balances = beaconState.getBalances().stream().collect(Collectors.toList());
+    this.balances = beaconState.getBalances().streamUnboxed().collect(Collectors.toList());
     this.randao_mixes = beaconState.getRandao_mixes().streamUnboxed().collect(Collectors.toList());
     this.slashings = beaconState.getSlashings().streamUnboxed().collect(Collectors.toList());
     this.previous_epoch_attestations =
@@ -196,7 +195,9 @@ public class BeaconState {
                 tech.pegasys.teku.spec.datastructures.state.BeaconState.VALIDATORS_FIELD_SCHEMA
                     .get()
                     .collector()),
-        SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.BALANCES_FIELD_SCHEMA
+            .get()
+            .of(balances),
         tech.pegasys.teku.spec.datastructures.state.BeaconState.RANDAO_MIXES_FIELD_SCHEMA
             .get()
             .of(randao_mixes),
