@@ -23,14 +23,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
-  private static final Spec spec = SpecFactory.createMinimal();
   private final SchemaProvider<T> sszType;
 
   public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
