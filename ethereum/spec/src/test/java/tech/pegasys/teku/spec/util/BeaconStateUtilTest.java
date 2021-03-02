@@ -390,8 +390,7 @@ public class BeaconStateUtilTest {
   void getAttestersTotalEffectiveBalance_shouldRejectRequestFromBeyondLookAheadPeriod() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
     final UInt64 epoch3Start = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(3));
-    assertThatThrownBy(
-            () -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
+    assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

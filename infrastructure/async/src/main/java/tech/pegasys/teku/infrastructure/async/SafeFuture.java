@@ -441,13 +441,6 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.thenComposeAsync(fn, executor);
   }
 
-  public <U, V> SafeFuture<V> thenCombineComposed(
-      final CompletionStage<? extends U> other,
-      final BiFunction<? super T, ? super U, ? extends CompletionStage<V>> fn) {
-    return this.thenCompose(
-        thisResult -> other.thenCompose(otherResult -> fn.apply(thisResult, otherResult)));
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public <U, V> SafeFuture<V> thenCombineAsync(

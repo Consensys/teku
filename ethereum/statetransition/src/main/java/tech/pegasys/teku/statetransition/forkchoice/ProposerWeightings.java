@@ -18,10 +18,13 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 
 public class ProposerWeightings {
   private final EventThread eventThread;
+  private final Spec spec;
 
   private List<ExtraWeight> extraWeightTargetRoots = new ArrayList<>();
   // TODO: Should this be inited based on current time?
@@ -29,8 +32,9 @@ public class ProposerWeightings {
   // gets a boost or not?
   private UInt64 maxSlotWhereBlockOverdue = UInt64.ZERO;
 
-  public ProposerWeightings(final EventThread eventThread) {
+  public ProposerWeightings(final EventThread eventThread, final Spec spec) {
     this.eventThread = eventThread;
+    this.spec = spec;
   }
 
   public void onBlockDueForSlot(final UInt64 slot) {
@@ -38,10 +42,10 @@ public class ProposerWeightings {
     maxSlotWhereBlockOverdue = slot;
   }
 
-  public void onBlockReceived(
-      final SignedBeaconBlock block, final UInt64 priorSlotCommitteeWeight) {
+  public void onBlockReceived(final SignedBeaconBlock block, final BeaconState blockSlotState) {
     eventThread.checkOnEventThread();
     if (isBlockOnTime(block)) {
+      final UInt64 priorSlotCommitteeWeight = calculatePriorSlotCommitteeWeight(blockSlotState);
       final UInt64 weight = priorSlotCommitteeWeight.dividedBy(4);
       // weight should be the total weight of attesters to the slot prior to the block slot
       final ExtraWeight extraWeight = new ExtraWeight(block.getRoot(), weight);
@@ -52,10 +56,17 @@ public class ProposerWeightings {
   public void onForkChoiceRunAtSlotStart(final UInt64 slot) {
     eventThread.checkOnEventThread();
     // TODO: Reverse all extra weight target roots
+    // Might be able to just include this in the deltas to apply as part of the fork choice run
   }
 
   private boolean isBlockOnTime(final SignedBeaconBlock block) {
     return block.getSlot().isGreaterThan(maxSlotWhereBlockOverdue);
+  }
+
+  private UInt64 calculatePriorSlotCommitteeWeight(final BeaconState blockSlotState) {
+    return spec.getBeaconStateUtil(blockSlotState.getSlot())
+        .getAttestersTotalEffectiveBalance(
+            blockSlotState, blockSlotState.getSlot().minusMinZero(1));
   }
 
   private static class ExtraWeight {
