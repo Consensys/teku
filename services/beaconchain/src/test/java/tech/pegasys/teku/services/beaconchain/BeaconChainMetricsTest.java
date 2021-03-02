@@ -469,8 +469,8 @@ class BeaconChainMetricsTest {
             BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA
                 .get()
                 .createFromElements(attestations));
-    when(state.getPrevious_epoch_attestations())
-        .thenReturn(BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+    when(state.getCurrent_epoch_attestations())
+        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
     when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     final UInt64 slot = UInt64.valueOf(slotAsInt);
     when(state.getSlot()).thenReturn(slot);
