@@ -69,7 +69,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
     assertThat(result.sszSerialize()).isEqualTo(inputData);
   }
 
-  private static interface SchemaProvider<T extends SszData> {
-    SszSchema<T> get(SchemaDefinitions spec);
+  private interface SchemaProvider<T extends SszData> {
+    SszSchema<T> get(SchemaDefinitions schemas);
   }
 }
