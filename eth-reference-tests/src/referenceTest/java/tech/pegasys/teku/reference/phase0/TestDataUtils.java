@@ -42,7 +42,10 @@ public class TestDataUtils {
 
   public static BeaconState loadStateFromSsz(
       final TestDefinition testDefinition, final String fileName) {
-    return loadSsz(testDefinition, fileName, BeaconState.getSszSchema());
+    return loadSsz(
+        testDefinition,
+        fileName,
+        testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconStateSchema());
   }
 
   public static Bytes32 loadBytes32FromSsz(

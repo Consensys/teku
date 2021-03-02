@@ -94,6 +94,7 @@ public final class DataStructureUtil {
     this(92892824, DEFAULT_SPEC_PROVIDER);
   }
 
+  @Deprecated
   public DataStructureUtil(final int seed) {
     this(seed, DEFAULT_SPEC_PROVIDER);
   }
