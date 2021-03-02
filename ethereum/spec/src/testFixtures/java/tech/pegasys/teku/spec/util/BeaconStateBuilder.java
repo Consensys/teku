@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
@@ -207,7 +206,8 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder historicalRoots(final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
+  public BeaconStateBuilder historicalRoots(
+      final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
     checkNotNull(historicalRoots);
     this.historicalRoots = historicalRoots;
     return this;

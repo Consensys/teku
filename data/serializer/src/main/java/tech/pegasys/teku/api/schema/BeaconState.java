@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
-import static tech.pegasys.teku.util.config.Constants.HISTORICAL_ROOTS_LIMIT;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconState {
@@ -180,7 +178,9 @@ public class BeaconState {
         tech.pegasys.teku.spec.datastructures.state.BeaconState.STATE_ROOTS_FIELD_SCHEMA
             .get()
             .of(state_roots),
-        tech.pegasys.teku.spec.datastructures.state.BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get().of(historical_roots),
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA
+            .get()
+            .of(historical_roots),
         eth1_data.asInternalEth1Data(),
         eth1_data_votes.stream()
             .map(Eth1Data::asInternalEth1Data)

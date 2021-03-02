@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
@@ -39,7 +37,6 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.sos.SszField;
@@ -67,13 +64,12 @@ public interface BeaconState extends SszContainer {
   SszField STATE_ROOTS_FIELD = new SszField(6, "state_roots", STATE_ROOTS_FIELD_SCHEMA::get);
 
   SpecDependent<SszPrimitiveListSchema<Bytes32, SszBytes32, ?>> HISTORICAL_ROOTS_FIELD_SCHEMA =
-      SpecDependent.of(() -> SszPrimitiveListSchema.create(
-          SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
+      SpecDependent.of(
+          () ->
+              SszPrimitiveListSchema.create(
+                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField HISTORICAL_ROOTS_FIELD =
-      new SszField(
-          7,
-          "historical_roots",
-          HISTORICAL_ROOTS_FIELD_SCHEMA::get);
+      new SszField(7, "historical_roots", HISTORICAL_ROOTS_FIELD_SCHEMA::get);
 
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.SSZ_SCHEMA);
 

@@ -17,9 +17,10 @@ import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 
 public interface SszMutablePrimitiveList<
-    ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszMutablePrimitiveCollection<ElementT, SszElementT>, SszMutableList<SszElementT>,
-    SszPrimitiveList<ElementT, SszElementT> {
+        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+    extends SszMutablePrimitiveCollection<ElementT, SszElementT>,
+        SszMutableList<SszElementT>,
+        SszPrimitiveList<ElementT, SszElementT> {
 
   default void appendElement(ElementT newElement) {
     append(getPrimitiveElementSchema().boxed(newElement));

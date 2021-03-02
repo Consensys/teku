@@ -186,10 +186,10 @@ public final class DataStructureUtil {
   }
 
   public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-  SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
-      SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
-      final long numItems,
-      Supplier<ElementT> valueGenerator) {
+      SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
+          SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
+          final long numItems,
+          Supplier<ElementT> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
