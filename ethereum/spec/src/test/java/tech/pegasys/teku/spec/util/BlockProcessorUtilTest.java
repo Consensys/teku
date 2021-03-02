@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -181,10 +180,11 @@ class BlockProcessorUtilTest {
                           dataStructureUtil.randomValidator(),
                           dataStructureUtil.randomValidator()));
               List<UInt64> balanceList =
-                  Arrays.asList(
-                      dataStructureUtil.randomUInt64(),
-                      dataStructureUtil.randomUInt64(),
-                      dataStructureUtil.randomUInt64());
+                  new ArrayList<>(
+                      List.of(
+                          dataStructureUtil.randomUInt64(),
+                          dataStructureUtil.randomUInt64(),
+                          dataStructureUtil.randomUInt64()));
 
               if (addToList) {
                 validatorList.add(knownValidator);
