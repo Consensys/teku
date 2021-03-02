@@ -112,7 +112,7 @@ public class SyncingNodeManager {
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .eventBus(eventBus)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock);

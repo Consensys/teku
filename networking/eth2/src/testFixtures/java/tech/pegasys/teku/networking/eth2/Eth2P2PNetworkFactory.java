@@ -345,7 +345,7 @@ public class Eth2P2PNetworkFactory {
       }
     }
 
-    public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
+    public Eth2P2PNetworkBuilder spec(final Spec spec) {
       checkNotNull(spec);
       this.spec = spec;
       return this;

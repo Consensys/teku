@@ -67,14 +67,14 @@ public class PeerStatusIntegrationTest {
     final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .recentChainData(recentChainData1)
             .startNetwork();
     final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .eventBus(eventBus2)
             .recentChainData(recentChainData2)
@@ -101,7 +101,7 @@ public class PeerStatusIntegrationTest {
     final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .recentChainData(recentChainData1)
             .startNetwork();
@@ -112,7 +112,7 @@ public class PeerStatusIntegrationTest {
     final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .eventBus(eventBus2)
             .recentChainData(recentChainData2)
@@ -138,7 +138,7 @@ public class PeerStatusIntegrationTest {
     final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .eth2StatusUpdateInterval(statusUpdateInterval)
             .recentChainData(recentChainData1)
@@ -150,7 +150,7 @@ public class PeerStatusIntegrationTest {
     final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .rpcEncoding(encoding)
             .eventBus(eventBus2)
             .eth2StatusUpdateInterval(statusUpdateInterval)

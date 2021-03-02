@@ -74,11 +74,7 @@ public class NodeManager {
     chainUtil.initializeStorage();
 
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory
-            .builder()
-            .specProvider(spec)
-            .eventBus(eventBus)
-            .recentChainData(storageClient);
+        networkFactory.builder().spec(spec).eventBus(eventBus).recentChainData(storageClient);
 
     configureNetwork.accept(networkBuilder);
 
