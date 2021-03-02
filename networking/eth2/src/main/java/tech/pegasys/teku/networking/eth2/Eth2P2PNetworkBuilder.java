@@ -129,7 +129,7 @@ public class Eth2P2PNetworkBuilder {
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
     return new ActiveEth2P2PNetwork(
-        config.getSpecProvider(),
+        config.getSpec(),
         asyncRunner,
         metricsSystem,
         network,
@@ -193,7 +193,7 @@ public class Eth2P2PNetworkBuilder {
             Collections::shuffle),
         discoConfig,
         networkConfig,
-        config.getSpecProvider());
+        config.getSpec());
   }
 
   private void validate() {

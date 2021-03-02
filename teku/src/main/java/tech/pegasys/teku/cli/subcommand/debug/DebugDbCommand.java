@@ -227,7 +227,7 @@ public class DebugDbCommand implements Runnable {
       final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),

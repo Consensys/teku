@@ -119,7 +119,7 @@ public class TransitionCommand implements Runnable {
 
   private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    final Spec spec = params.eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
+    final Spec spec = params.eth2NetworkOptions.getNetworkConfiguration().getSpec();
     Constants.setConstants(params.eth2NetworkOptions.getNetworkConfiguration().getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
