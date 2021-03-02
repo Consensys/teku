@@ -49,7 +49,7 @@ public class WeakSubjectivityCalculator {
 
   public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
     return new WeakSubjectivityCalculator(
-        config.getSpecProvider(), config.getSafetyDecay(), StateCalculator.DEFAULT);
+        config.getSpec(), config.getSafetyDecay(), StateCalculator.DEFAULT);
   }
 
   /**
