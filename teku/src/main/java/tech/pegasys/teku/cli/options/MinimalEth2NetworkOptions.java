@@ -32,7 +32,7 @@ public class MinimalEth2NetworkOptions {
   }
 
   public Spec getSpec() {
-    return getConfig().getSpecProvider();
+    return getConfig().getSpec();
   }
 
   private Eth2NetworkConfiguration getConfig() {
