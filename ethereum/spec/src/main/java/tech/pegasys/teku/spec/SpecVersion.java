@@ -45,7 +45,8 @@ public class SpecVersion {
     this.schemaDefinitions = new SchemaDefinitions(constants);
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.validatorsUtil = new ValidatorsUtil(this.constants);
-    this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
+    this.beaconStateUtil =
+        new BeaconStateUtil(this.constants, schemaDefinitions, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =

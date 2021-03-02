@@ -330,7 +330,15 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
     return new BeaconStateImpl(this, node);
   }
 
+  public MutableBeaconState createBuilder() {
+    return new MutableBeaconStateImpl(createEmptyBeaconStateImpl(), true);
+  }
+
   public BeaconState createEmpty() {
+    return createEmptyBeaconStateImpl();
+  }
+
+  private BeaconStateImpl createEmptyBeaconStateImpl() {
     return new BeaconStateImpl(this);
   }
 

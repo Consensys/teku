@@ -39,7 +39,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final TimeProvider timeProvider;
-  private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final GenesisGenerator genesisGenerator;
   private final Spec spec;
 
   public GenesisHandler(
@@ -47,6 +47,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
     this.spec = spec;
+    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSpec().getSchemaDefinitions());
   }
 
   @Override

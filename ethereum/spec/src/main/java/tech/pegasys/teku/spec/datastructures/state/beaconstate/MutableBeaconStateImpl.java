@@ -28,10 +28,6 @@ import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 class MutableBeaconStateImpl extends SszMutableContainerImpl
     implements MutableBeaconState, BeaconStateCache {
 
-  static MutableBeaconStateImpl createBuilder() {
-    return new MutableBeaconStateImpl(new BeaconStateImpl(), true);
-  }
-
   private final TransitionCaches transitionCaches;
   private final boolean builder;
 

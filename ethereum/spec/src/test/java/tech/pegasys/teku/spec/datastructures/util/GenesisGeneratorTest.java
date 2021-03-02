@@ -58,7 +58,8 @@ class GenesisGeneratorTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final GenesisGenerator genesisGenerator =
+      new GenesisGenerator(spec.getGenesisSpec().getSchemaDefinitions());
 
   @Test
   public void shouldGenerateSameGenesisAsSpecMethodForSingleDeposit() {

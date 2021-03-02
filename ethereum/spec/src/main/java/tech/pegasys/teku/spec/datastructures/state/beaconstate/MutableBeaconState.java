@@ -34,10 +34,6 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 
-  static MutableBeaconState createBuilder() {
-    return MutableBeaconStateImpl.createBuilder();
-  }
-
   // Versioning
 
   default void setGenesis_time(UInt64 genesis_time) {
