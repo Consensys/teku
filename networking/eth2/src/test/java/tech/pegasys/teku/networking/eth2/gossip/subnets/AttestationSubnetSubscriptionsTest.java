@@ -32,6 +32,8 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
@@ -41,10 +43,11 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.create(mock(EventBus.class));
+      MemoryOnlyRecentChainData.create(spec, mock(EventBus.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
@@ -56,7 +59,7 @@ public class AttestationSubnetSubscriptionsTest {
 
   @BeforeEach
   void setUp() {
-    BeaconChainUtil.create(0, recentChainData).initializeStorage();
+    BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             asyncRunner, gossipNetwork, gossipEncoding, recentChainData, processor);

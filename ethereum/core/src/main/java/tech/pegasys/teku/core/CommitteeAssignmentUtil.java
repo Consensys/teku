@@ -23,8 +23,8 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class CommitteeAssignmentUtil {
 

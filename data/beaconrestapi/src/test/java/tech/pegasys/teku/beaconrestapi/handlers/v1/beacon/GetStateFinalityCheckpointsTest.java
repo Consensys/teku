@@ -24,7 +24,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsRespo
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {

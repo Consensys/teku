@@ -61,7 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
@@ -718,7 +718,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
     final BeaconState genesisState =
         InteropStartupUtil.createMockedStartInitialBeaconState(
-            config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+            spec, config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
 
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
 

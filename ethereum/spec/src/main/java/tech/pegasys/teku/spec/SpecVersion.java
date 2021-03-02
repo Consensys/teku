@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.statetransition.StateTransition;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.AttestationUtil;
@@ -26,6 +27,9 @@ import tech.pegasys.teku.spec.util.ValidatorsUtil;
 
 public class SpecVersion {
   private final SpecConstants constants;
+  private final SchemaDefinitions schemaDefinitions;
+
+  // Utils
   private final CommitteeUtil committeeUtil;
   private final ValidatorsUtil validatorsUtil;
   private final AttestationUtil attestationUtil;
@@ -38,9 +42,11 @@ public class SpecVersion {
 
   SpecVersion(final SpecConstants constants) {
     this.constants = constants;
+    this.schemaDefinitions = new SchemaDefinitions(constants);
     this.committeeUtil = new CommitteeUtil(this.constants);
     this.validatorsUtil = new ValidatorsUtil(this.constants);
-    this.beaconStateUtil = new BeaconStateUtil(this.constants, validatorsUtil, this.committeeUtil);
+    this.beaconStateUtil =
+        new BeaconStateUtil(this.constants, schemaDefinitions, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(this.constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor = new EpochProcessor(this.constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
@@ -55,6 +61,10 @@ public class SpecVersion {
 
   public SpecConstants getConstants() {
     return constants;
+  }
+
+  public SchemaDefinitions getSchemaDefinitions() {
+    return schemaDefinitions;
   }
 
   public CommitteeUtil getCommitteeUtil() {

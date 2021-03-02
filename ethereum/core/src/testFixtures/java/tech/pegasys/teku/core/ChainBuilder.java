@@ -44,8 +44,8 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
@@ -234,7 +234,7 @@ public class ChainBuilder {
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
             .createDeposits(validatorKeys, depositAmount);
     final BeaconState genesisState =
-        new MockStartBeaconStateGenerator()
+        new MockStartBeaconStateGenerator(spec)
             .createInitialBeaconState(genesisTime, initialDepositData);
 
     // Generate genesis block
