@@ -232,7 +232,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
             () ->
                 SszListSchema.create(
                     Eth1Data.SSZ_SCHEMA,
-                    specConstants.getEpochsPerEth1VotingPeriod()
+                    (long) specConstants.getEpochsPerEth1VotingPeriod()
                         * specConstants.getSlotsPerEpoch()));
     SszField eth1DepositIndexField =
         new SszField(
@@ -338,10 +338,6 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStateImpl createEmptyBeaconStateImpl() {
-    return new BeaconStateImpl(this);
-  }
-
   public BeaconState create(
 
       // Versioning
@@ -406,5 +402,9 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
               state.setCurrent_justified_checkpoint(current_justified_checkpoint);
               state.setFinalized_checkpoint(finalized_checkpoint);
             });
+  }
+
+  private BeaconStateImpl createEmptyBeaconStateImpl() {
+    return new BeaconStateImpl(this);
   }
 }
