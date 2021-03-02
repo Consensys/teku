@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -40,10 +42,7 @@ import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
@@ -175,25 +174,20 @@ class BlockProcessorUtilTest {
                       specConstants.getGenesisForkVersion(),
                       SpecConstants.GENESIS_EPOCH));
 
-              SszMutableList<Validator> validatorList =
-                  BeaconState.VALIDATORS_FIELD_SCHEMA
-                      .get()
-                      .of(
+              List<Validator> validatorList =
+                  new ArrayList<>(
+                      List.of(
                           dataStructureUtil.randomValidator(),
                           dataStructureUtil.randomValidator(),
-                          dataStructureUtil.randomValidator())
-                      .createWritableCopy();
-              SSZMutableList<UInt64> balanceList =
-                  SSZList.createMutable(
-                      Arrays.asList(
-                          dataStructureUtil.randomUInt64(),
-                          dataStructureUtil.randomUInt64(),
-                          dataStructureUtil.randomUInt64()),
-                      specConstants.getValidatorRegistryLimit(),
-                      UInt64.class);
+                          dataStructureUtil.randomValidator()));
+              List<UInt64> balanceList =
+                  Arrays.asList(
+                      dataStructureUtil.randomUInt64(),
+                      dataStructureUtil.randomUInt64(),
+                      dataStructureUtil.randomUInt64());
 
               if (addToList) {
-                validatorList.append(knownValidator);
+                validatorList.add(knownValidator);
                 balanceList.add(amount);
               }
 

@@ -25,7 +25,6 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -76,8 +75,6 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
@@ -160,16 +157,6 @@ public final class DataStructureUtil {
     return BLSTestUtil.randomSignature(nextSeed());
   }
 
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
-    return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
-  }
-
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator, long numItems) {
-    return randomSSZList(classInfo, numItems, maxSize, valueGenerator);
-  }
-
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, Supplier<T> valueGenerator, long numItems) {
     return randomSszList(schema, numItems, valueGenerator);
@@ -196,13 +183,6 @@ public final class DataStructureUtil {
   public SszUInt64List randomSszUInt64List(
       SszUInt64ListSchema<?> schema, final long numItems, Supplier<UInt64> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
-  }
-
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, final long numItems, long maxSize, Supplier<T> valueGenerator) {
-    SSZMutableList<T> sszList = SSZList.createMutable(classInfo, maxSize);
-    LongStream.range(0, numItems).forEach(i -> sszList.add(valueGenerator.get()));
-    return sszList;
   }
 
   public SszBytes32Vector randomSszBytes32Vector(
@@ -655,9 +635,8 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUInt64(), randomUInt64());
   }
 
-  public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, getMaxDeposits());
+  public List<DepositWithIndex> newDeposits(int numDeposits) {
+    List<DepositWithIndex> deposits = new ArrayList<>();
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
