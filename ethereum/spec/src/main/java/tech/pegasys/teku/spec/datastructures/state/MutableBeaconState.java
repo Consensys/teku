@@ -25,8 +25,10 @@ import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
@@ -81,12 +83,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   @Override
-  default SSZMutableList<Bytes32> getHistorical_roots() {
-    return new SSZBackingList<>(
-        Bytes32.class,
-        getAnyByRef(HISTORICAL_ROOTS_FIELD.getIndex()),
-        SszBytes32::new,
-        AbstractSszPrimitive::get);
+  default SszMutablePrimitiveList<Bytes32, SszBytes32> getHistorical_roots() {
+    return getAnyByRef(HISTORICAL_ROOTS_FIELD.getIndex());
+  }
+
+  default void setHistorical_roots(SszPrimitiveList<Bytes32, SszBytes32> historical_roots) {
+    set(HISTORICAL_ROOTS_FIELD.getIndex(), historical_roots);
   }
 
   // Eth1

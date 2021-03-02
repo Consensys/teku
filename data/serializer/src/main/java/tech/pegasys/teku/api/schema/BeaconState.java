@@ -139,18 +139,18 @@ public class BeaconState {
     this.slot = beaconState.getSlot();
     this.fork = new Fork(beaconState.getFork());
     this.latest_block_header = new BeaconBlockHeader(beaconState.getLatest_block_header());
-    this.block_roots = beaconState.getBlock_roots().streamUnboxed().collect(Collectors.toList());
-    this.state_roots = beaconState.getState_roots().streamUnboxed().collect(Collectors.toList());
-    this.historical_roots = beaconState.getHistorical_roots().stream().collect(Collectors.toList());
+    this.block_roots = beaconState.getBlock_roots().asListUnboxed();
+    this.state_roots = beaconState.getState_roots().asListUnboxed();
+    this.historical_roots = beaconState.getHistorical_roots().asListUnboxed();
     this.eth1_data = new Eth1Data(beaconState.getEth1_data());
     this.eth1_data_votes =
         beaconState.getEth1_data_votes().stream().map(Eth1Data::new).collect(Collectors.toList());
     this.eth1_deposit_index = beaconState.getEth1_deposit_index();
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
-    this.balances = beaconState.getBalances().streamUnboxed().collect(Collectors.toList());
-    this.randao_mixes = beaconState.getRandao_mixes().streamUnboxed().collect(Collectors.toList());
-    this.slashings = beaconState.getSlashings().streamUnboxed().collect(Collectors.toList());
+    this.balances = beaconState.getBalances().asListUnboxed();
+    this.randao_mixes = beaconState.getRandao_mixes().asListUnboxed();
+    this.slashings = beaconState.getSlashings().asListUnboxed();
     this.previous_epoch_attestations =
         beaconState.getPrevious_epoch_attestations().stream()
             .map(PendingAttestation::new)
@@ -180,7 +180,7 @@ public class BeaconState {
         tech.pegasys.teku.spec.datastructures.state.BeaconState.STATE_ROOTS_FIELD_SCHEMA
             .get()
             .of(state_roots),
-        SSZList.createMutable(historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class),
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get().of(historical_roots),
         eth1_data.asInternalEth1Data(),
         eth1_data_votes.stream()
             .map(Eth1Data::asInternalEth1Data)

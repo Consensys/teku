@@ -91,8 +91,8 @@ class BeaconStateTest {
 
       assertThat(s1.getBlock_roots().size()).isNotEqualTo(s2.getBlock_roots().size());
       assertThat(s1.getState_roots().size()).isNotEqualTo(s2.getState_roots().size());
-      assertThat(s1.getHistorical_roots().getMaxSize())
-          .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
+      assertThat(s1.getHistorical_roots().getSchema().getMaxLength())
+          .isNotEqualTo(s2.getHistorical_roots().getSchema().getMaxLength());
       assertThat(s1.getEth1_data_votes().getSchema())
           .isNotEqualTo(s2.getEth1_data_votes().getSchema());
       assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());

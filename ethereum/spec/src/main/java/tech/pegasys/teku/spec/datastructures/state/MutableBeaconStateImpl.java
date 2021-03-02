@@ -30,8 +30,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private final TransitionCaches transitionCaches;
   private final boolean builder;
 
-  private SSZMutableList<Bytes32> historicalRoots;
-
   MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
     this(backingImmutableView, false);
   }
@@ -71,13 +69,6 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   @Override
   public MutableBeaconState createWritableCopy() {
     return (MutableBeaconState) super.createWritableCopy();
-  }
-
-  @Override
-  public SSZMutableList<Bytes32> getHistorical_roots() {
-    return historicalRoots != null
-        ? historicalRoots
-        : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
   }
 
   @Override

@@ -360,7 +360,7 @@ public class EpochProcessor {
         .equals(UInt64.ZERO)) {
       HistoricalBatch historicalBatch =
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
-      state.getHistorical_roots().add(historicalBatch.hashTreeRoot());
+      state.getHistorical_roots().appendElement(historicalBatch.hashTreeRoot());
     }
 
     // Rotate current/previous epoch attestations

@@ -28,8 +28,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class BeaconStateBuilder {
@@ -44,7 +46,7 @@ public class BeaconStateBuilder {
   private BeaconBlockHeader latestBlockHeader;
   private SszBytes32Vector blockRoots;
   private SszBytes32Vector stateRoots;
-  private SSZList<Bytes32> historicalRoots;
+  private SszPrimitiveList<Bytes32, SszBytes32> historicalRoots;
   private Eth1Data eth1Data;
   private SszList<Eth1Data> eth1DataVotes;
   private UInt64 eth1DepositIndex;
@@ -114,9 +116,8 @@ public class BeaconStateBuilder {
         dataStructureUtil.randomSszBytes32Vector(
             BeaconState.STATE_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
     historicalRoots =
-        dataStructureUtil.randomSSZList(
-            Bytes32.class,
-            defaultItemsInSSZLists,
+        dataStructureUtil.randomSszPrimitiveList(
+            BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get(),
             dataStructureUtil.getHistoricalRootsLimit(),
             dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
@@ -206,7 +207,7 @@ public class BeaconStateBuilder {
     return this;
   }
 
-  public BeaconStateBuilder historicalRoots(final SSZList<Bytes32> historicalRoots) {
+  public BeaconStateBuilder historicalRoots(final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
     checkNotNull(historicalRoots);
     this.historicalRoots = historicalRoots;
     return this;

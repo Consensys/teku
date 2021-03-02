@@ -85,6 +85,7 @@ import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.util.config.Constants;
@@ -181,6 +183,14 @@ public final class DataStructureUtil {
   public <T extends SszData> SszList<T> randomSszList(
       SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
+  }
+
+  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
+      SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
+      final long numItems,
+      Supplier<ElementT> valueGenerator) {
+    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
   public SszUInt64List randomSszUInt64List(

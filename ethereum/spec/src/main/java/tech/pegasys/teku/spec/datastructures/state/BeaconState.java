@@ -26,6 +26,7 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
@@ -64,13 +66,15 @@ public interface BeaconState extends SszContainer {
 
   SszField STATE_ROOTS_FIELD = new SszField(6, "state_roots", STATE_ROOTS_FIELD_SCHEMA::get);
 
+  SpecDependent<SszPrimitiveListSchema<Bytes32, SszBytes32, ?>> HISTORICAL_ROOTS_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszPrimitiveListSchema.create(
+          SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
   SszField HISTORICAL_ROOTS_FIELD =
       new SszField(
           7,
           "historical_roots",
-          () ->
-              SszListSchema.create(
-                  SszPrimitiveSchemas.BYTES32_SCHEMA, Constants.HISTORICAL_ROOTS_LIMIT));
+          HISTORICAL_ROOTS_FIELD_SCHEMA::get);
+
   SszField ETH1_DATA_FIELD = new SszField(8, "eth1_data", Eth1Data.SSZ_SCHEMA);
 
   SpecDependent<SszListSchema<Eth1Data, ?>> ETH1_DATA_VOTES_FIELD_SCHEMA =
@@ -200,7 +204,7 @@ public interface BeaconState extends SszContainer {
       BeaconBlockHeader latest_block_header,
       SszBytes32Vector block_roots,
       SszBytes32Vector state_roots,
-      SSZList<Bytes32> historical_roots,
+      SszPrimitiveList<Bytes32, SszBytes32> historical_roots,
 
       // Eth1
       Eth1Data eth1_data,
@@ -237,7 +241,7 @@ public interface BeaconState extends SszContainer {
               state.setLatest_block_header(latest_block_header);
               state.setBlock_roots(block_roots);
               state.setState_roots(state_roots);
-              state.getHistorical_roots().setAll(historical_roots);
+              state.setHistorical_roots(historical_roots);
               state.setEth1_data(eth1_data);
               state.setEth1_data_votes(eth1_data_votes);
               state.setEth1_deposit_index(eth1_deposit_index);
@@ -288,12 +292,8 @@ public interface BeaconState extends SszContainer {
     return getAny(STATE_ROOTS_FIELD.getIndex());
   }
 
-  default SSZList<Bytes32> getHistorical_roots() {
-    return new SSZBackingList<>(
-        Bytes32.class,
-        getAny(HISTORICAL_ROOTS_FIELD.getIndex()),
-        SszBytes32::new,
-        AbstractSszPrimitive::get);
+  default SszPrimitiveList<Bytes32, SszBytes32> getHistorical_roots() {
+    return getAny(HISTORICAL_ROOTS_FIELD.getIndex());
   }
 
   // Eth1
