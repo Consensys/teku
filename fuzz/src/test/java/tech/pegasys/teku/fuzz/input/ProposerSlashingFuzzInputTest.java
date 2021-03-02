@@ -22,13 +22,13 @@ public class ProposerSlashingFuzzInputTest
 
   @Override
   protected SszSchema<ProposerSlashingFuzzInput> getInputType() {
-    return ProposerSlashingFuzzInput.createType();
+    return ProposerSlashingFuzzInput.createType(spec.getGenesisSpec());
   }
 
   @Override
   protected ProposerSlashingFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    return new ProposerSlashingFuzzInput(state, slashing);
+    return new ProposerSlashingFuzzInput(spec, state, slashing);
   }
 }

@@ -96,7 +96,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzAttesterSlashing(final byte[] input) {
     AttesterSlashingFuzzInput structuredInput =
-        deserialize(input, AttesterSlashingFuzzInput.createType());
+        deserialize(input, AttesterSlashingFuzzInput.createType(spec.getGenesisSpec()));
 
     // process and return post state
     try {
@@ -117,7 +117,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createSchema());
+    BlockFuzzInput structuredInput =
+        deserialize(input, BlockFuzzInput.createSchema(spec.getGenesisSpec()));
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
@@ -135,7 +136,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlockHeader(final byte[] input) {
-    BlockHeaderFuzzInput structuredInput = deserialize(input, BlockHeaderFuzzInput.createType());
+    BlockHeaderFuzzInput structuredInput =
+        deserialize(input, BlockHeaderFuzzInput.createType(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =
@@ -154,7 +156,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createSchema());
+    DepositFuzzInput structuredInput =
+        deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =
@@ -174,7 +177,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzProposerSlashing(final byte[] input) {
     ProposerSlashingFuzzInput structuredInput =
-        deserialize(input, ProposerSlashingFuzzInput.createType());
+        deserialize(input, ProposerSlashingFuzzInput.createType(spec.getGenesisSpec()));
 
     // process and return post state
     try {
@@ -224,7 +227,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
     VoluntaryExitFuzzInput structuredInput =
-        deserialize(input, VoluntaryExitFuzzInput.createSchema());
+        deserialize(input, VoluntaryExitFuzzInput.createSchema(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =

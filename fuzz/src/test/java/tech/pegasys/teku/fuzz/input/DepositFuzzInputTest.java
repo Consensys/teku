@@ -21,13 +21,13 @@ public class DepositFuzzInputTest extends AbstractFuzzInputTest<DepositFuzzInput
 
   @Override
   protected SszSchema<DepositFuzzInput> getInputType() {
-    return DepositFuzzInput.createSchema();
+    return DepositFuzzInput.createSchema(spec.getGenesisSpec());
   }
 
   @Override
   protected DepositFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Deposit deposit = dataStructureUtil.randomDeposit();
-    return new DepositFuzzInput(state, deposit);
+    return new DepositFuzzInput(spec, state, deposit);
   }
 }

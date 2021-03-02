@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -52,6 +53,9 @@ import tech.pegasys.teku.util.config.SpecDependent;
 class FuzzUtilTest {
 
   private final Spec spec = SpecFactory.createMinimal();
+  private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
+  private final BeaconStateSchema genesisBeaconStateSchema =
+      genesisSchemaDefinitions.getBeaconStateSchema();
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
   // correct/equivalent according to the spec
@@ -71,15 +75,13 @@ class FuzzUtilTest {
   @Test
   public void fuzzAttestation_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
-    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
     final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
     final Attestation data =
         loadSsz(testCaseDir.resolve("attestation.ssz"), Attestation.SSZ_SCHEMA);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), schemaDefinitions.getBeaconStateSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), schemaDefinitions.getBeaconStateSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
     AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
@@ -98,12 +100,11 @@ class FuzzUtilTest {
         Path.of("minimal/operations/attester_slashing/pyspec_tests/success_surround");
     final AttesterSlashing data =
         loadSsz(testCaseDir.resolve("attester_slashing.ssz"), AttesterSlashing.SSZ_SCHEMA);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
-    AttesterSlashingFuzzInput input = new AttesterSlashingFuzzInput(preState, data);
+    AttesterSlashingFuzzInput input = new AttesterSlashingFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzAttesterSlashing(rawInput).map(Bytes::wrap);
 
@@ -122,18 +123,17 @@ class FuzzUtilTest {
     final SignedBeaconBlock block1 =
         loadSsz(testCaseDir.resolve("blocks_1.ssz"), SignedBeaconBlock.getSszSchema());
     final List<SignedBeaconBlock> blocks = List.of(block0, block1);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
     BeaconState currentState = preState;
     for (SignedBeaconBlock block : blocks) {
-      BlockFuzzInput input = new BlockFuzzInput(currentState, block);
+      BlockFuzzInput input = new BlockFuzzInput(spec, currentState, block);
       byte[] rawInput = input.sszSerialize().toArrayUnsafe();
       Optional<Bytes> result = fuzzUtil.fuzzBlock(rawInput).map(Bytes::wrap);
       assertThat(result).isNotEmpty();
-      currentState = BeaconState.getSszSchema().sszDeserialize(result.get());
+      currentState = genesisBeaconStateSchema.sszDeserialize(result.get());
     }
 
     assertThat(currentState).isNotNull();
@@ -147,12 +147,11 @@ class FuzzUtilTest {
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/success_block_header");
     final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), BeaconBlock.getSszSchema());
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
-    BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(preState, data);
+    BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzBlockHeader(rawInput).map(Bytes::wrap);
 
@@ -167,12 +166,11 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/operations/deposit/pyspec_tests/success_top_up");
     final Deposit data = loadSsz(testCaseDir.resolve("deposit.ssz"), Deposit.SSZ_SCHEMA);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
-    DepositFuzzInput input = new DepositFuzzInput(preState, data);
+    DepositFuzzInput input = new DepositFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzDeposit(rawInput).map(Bytes::wrap);
 
@@ -188,12 +186,11 @@ class FuzzUtilTest {
     final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/success");
     final ProposerSlashing data =
         loadSsz(testCaseDir.resolve("proposer_slashing.ssz"), ProposerSlashing.SSZ_SCHEMA);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
-    ProposerSlashingFuzzInput input = new ProposerSlashingFuzzInput(preState, data);
+    ProposerSlashingFuzzInput input = new ProposerSlashingFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzProposerSlashing(rawInput).map(Bytes::wrap);
 
@@ -209,12 +206,11 @@ class FuzzUtilTest {
     final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/success");
     final SignedVoluntaryExit data =
         loadSsz(testCaseDir.resolve("voluntary_exit.ssz"), SignedVoluntaryExit.SSZ_SCHEMA);
-    final BeaconState preState =
-        loadSsz(testCaseDir.resolve("pre.ssz"), BeaconState.getSszSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
-        loadSsz(testCaseDir.resolve("post.ssz"), BeaconState.getSszSchema());
+        loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);
 
-    VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(preState, data);
+    VoluntaryExitFuzzInput input = new VoluntaryExitFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzVoluntaryExit(rawInput).map(Bytes::wrap);
 

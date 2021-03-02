@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.fuzz.input;
 
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
@@ -23,9 +25,11 @@ public class VoluntaryExitFuzzInput
     extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> {
 
   public static ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
-      createSchema() {
+      createSchema(final SpecVersion spec) {
     return ContainerSchema2.create(
-        BeaconState.getSszSchema(), SignedVoluntaryExit.SSZ_SCHEMA, VoluntaryExitFuzzInput::new);
+        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SignedVoluntaryExit.SSZ_SCHEMA,
+        VoluntaryExitFuzzInput::new);
   }
 
   public VoluntaryExitFuzzInput(
@@ -34,13 +38,9 @@ public class VoluntaryExitFuzzInput
     super(type, backingNode);
   }
 
-  public VoluntaryExitFuzzInput(final BeaconState state, final SignedVoluntaryExit exit) {
-    super(createSchema(), state, exit);
-  }
-
-  // NOTE: empty constructor is needed for reflection/introspection
-  public VoluntaryExitFuzzInput() {
-    super(createSchema());
+  public VoluntaryExitFuzzInput(
+      final Spec spec, final BeaconState state, final SignedVoluntaryExit exit) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, exit);
   }
 
   public SignedVoluntaryExit getExit() {
