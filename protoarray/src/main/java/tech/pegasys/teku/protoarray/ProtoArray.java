@@ -17,16 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArray {
 
@@ -77,8 +72,8 @@ public class ProtoArray {
     this.blockRootToIndexMap = blockRootToIndexMap;
   }
 
-  public static Builder builder() {
-    return new Builder();
+  public static ProtoArrayBuilder builder() {
+    return new ProtoArrayBuilder();
   }
 
   public Map<BlockRootAndSlot, Integer> getIndices() {
@@ -481,84 +476,5 @@ public class ProtoArray {
 
   private interface NodeVisitor {
     void onNode(ProtoNode node, int nodeIndex);
-  }
-
-  public static class Builder {
-    private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
-    private UInt64 justifiedEpoch;
-    private UInt64 finalizedEpoch;
-    private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
-    private List<ProtoNode> nodes = new ArrayList<>();
-    private Map<BlockRootAndSlot, Integer> indices = new HashMap<>();
-    private Map<Bytes32, Integer> blockRootToIndexMap = new HashMap<>();
-
-    public ProtoArray build() {
-      checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
-      checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
-      return new ProtoArray(
-          pruneThreshold,
-          justifiedEpoch,
-          finalizedEpoch,
-          initialEpoch,
-          nodes,
-          indices,
-          blockRootToIndexMap);
-    }
-
-    public Builder pruneThreshold(final int pruneThreshold) {
-      this.pruneThreshold = pruneThreshold;
-      return this;
-    }
-
-    public Builder initialEpoch(final UInt64 initialEpoch) {
-      this.initialEpoch = initialEpoch;
-      return this;
-    }
-
-    public Builder justifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
-      checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
-      this.justifiedEpoch(justifiedCheckpoint.getEpoch());
-      return this;
-    }
-
-    public Builder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-      checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
-      this.finalizedEpoch(finalizedCheckpoint.getEpoch());
-      return this;
-    }
-
-    public Builder justifiedEpoch(final UInt64 justifiedEpoch) {
-      this.justifiedEpoch = justifiedEpoch;
-      return this;
-    }
-
-    public Builder finalizedEpoch(final UInt64 finalizedEpoch) {
-      this.finalizedEpoch = finalizedEpoch;
-      return this;
-    }
-
-    public Builder initialCheckpoint(final Optional<Checkpoint> initialCheckpoint) {
-      if (initialCheckpoint.isPresent()) {
-        initialEpoch(initialCheckpoint.get().getEpoch());
-      } else {
-        initialEpoch(SpecConstants.GENESIS_EPOCH);
-      }
-      return this;
-    }
-
-    Builder nodes(final List<ProtoNode> nodes) {
-      this.nodes = nodes;
-      return this;
-    }
-
-    Builder indices(final Map<BlockRootAndSlot, Integer> indices) {
-      this.indices = indices;
-      return this;
-    }
-
-    Builder blockRootToIndexMap(Map<Bytes32, Integer> blockRootToIndexMap) {
-      this.blockRootToIndexMap = blockRootToIndexMap;
-      return this;
-    }
   }
 }
