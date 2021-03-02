@@ -83,7 +83,7 @@ class BlockProcessorUtilTest {
     assertEquals(
         makeValidator(pubkey, withdrawalCredentials),
         postState.getValidators().get(originalValidatorRegistrySize));
-    assertEquals(amount, postState.getBalances().get(originalValidatorBalancesSize));
+    assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize));
   }
 
   @Test
@@ -113,7 +113,8 @@ class BlockProcessorUtilTest {
         originalValidatorBalancesSize,
         "A new balance was added to the validator balances, but should not have been.");
     assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
-    assertEquals(amount.times(2L), postState.getBalances().get(originalValidatorBalancesSize - 1));
+    assertEquals(
+        amount.times(2L), postState.getBalances().getElement(originalValidatorBalancesSize - 1));
   }
 
   @Test
