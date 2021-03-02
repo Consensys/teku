@@ -17,11 +17,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArray {
 
@@ -51,25 +56,37 @@ public class ProtoArray {
    * <p>The {@link #removeBlockRoot(Bytes32)} method removes blocks from this map but does not
    * change the nodes list to avoid having to adjust all indices.
    */
-  private final Map<Bytes32, Integer> indices;
+  private final Map<BlockRootAndSlot, Integer> indices;
 
-  public ProtoArray(
+  private final Map<Bytes32, Integer> blockRootToIndexMap;
+
+  ProtoArray(
       int pruneThreshold,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
       UInt64 initialEpoch,
       List<ProtoNode> nodes,
-      Map<Bytes32, Integer> indices) {
+      Map<BlockRootAndSlot, Integer> indices,
+      Map<Bytes32, Integer> blockRootToIndexMap) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
     this.initialEpoch = initialEpoch;
     this.nodes = nodes;
     this.indices = indices;
+    this.blockRootToIndexMap = blockRootToIndexMap;
   }
 
-  public Map<Bytes32, Integer> getIndices() {
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public Map<BlockRootAndSlot, Integer> getIndices() {
     return indices;
+  }
+
+  public Map<Bytes32, Integer> getBlockRootIndices() {
+    return blockRootToIndexMap;
   }
 
   public List<ProtoNode> getNodes() {
@@ -97,7 +114,8 @@ public class ProtoArray {
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch) {
-    if (indices.containsKey(blockRoot)) {
+    final BlockRootAndSlot blockRootAndSlot = new BlockRootAndSlot(blockRoot, blockSlot);
+    if (indices.containsKey(blockRootAndSlot)) {
       return;
     }
 
@@ -109,15 +127,16 @@ public class ProtoArray {
             stateRoot,
             blockRoot,
             parentRoot,
-            Optional.ofNullable(indices.get(parentRoot)),
+            Optional.ofNullable(blockRootToIndexMap.get(parentRoot)),
             justifiedEpoch,
             finalizedEpoch,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 
-    indices.put(node.getBlockRoot(), nodeIndex);
+    indices.put(blockRootAndSlot, nodeIndex);
     nodes.add(node);
+    blockRootToIndexMap.put(blockRoot, nodeIndex);
 
     updateBestDescendantOfParent(node, nodeIndex);
   }
@@ -134,7 +153,7 @@ public class ProtoArray {
    */
   public Bytes32 findHead(Bytes32 justifiedRoot) {
     int justifiedIndex =
-        checkNotNull(indices.get(justifiedRoot), "ProtoArray: Unknown justified root");
+        checkNotNull(blockRootToIndexMap.get(justifiedRoot), "ProtoArray: Unknown justified root");
     ProtoNode justifiedNode =
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
 
@@ -201,7 +220,8 @@ public class ProtoArray {
    */
   public void maybePrune(Bytes32 finalizedRoot) {
     int finalizedIndex =
-        checkNotNull(indices.get(finalizedRoot), "ProtoArray: Finalized root is unknown");
+        checkNotNull(
+            blockRootToIndexMap.get(finalizedRoot), "ProtoArray: Finalized root is unknown");
 
     if (finalizedIndex < pruneThreshold) {
       // Pruning at small numbers incurs more cost than benefit.
@@ -212,7 +232,8 @@ public class ProtoArray {
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
       Bytes32 root =
           checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
-      indices.remove(root);
+      indices.remove(new BlockRootAndSlot(root, nodes.get(nodeIndex).getBlockSlot()));
+      blockRootToIndexMap.remove(root);
     }
 
     // Drop all the nodes prior to finalization.
@@ -220,6 +241,12 @@ public class ProtoArray {
 
     // Adjust the indices map.
     indices.replaceAll(
+        (key, value) -> {
+          int newIndex = value - finalizedIndex;
+          checkState(newIndex >= 0, "ProtoArray: New array index less than 0.");
+          return newIndex;
+        });
+    blockRootToIndexMap.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;
           checkState(newIndex >= 0, "ProtoArray: New array index less than 0.");
@@ -416,7 +443,8 @@ public class ProtoArray {
    * @param blockRoot the block root to remove from the lookup map.
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
-    indices.remove(blockRoot);
+    blockRootToIndexMap.remove(blockRoot);
+    indices.keySet().removeIf(key -> key.getBlockRoot().equals(blockRoot));
   }
 
   private void applyDeltas(final List<Long> deltas) {
@@ -453,5 +481,84 @@ public class ProtoArray {
 
   private interface NodeVisitor {
     void onNode(ProtoNode node, int nodeIndex);
+  }
+
+  public static class Builder {
+    private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
+    private UInt64 justifiedEpoch;
+    private UInt64 finalizedEpoch;
+    private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
+    private List<ProtoNode> nodes = new ArrayList<>();
+    private Map<BlockRootAndSlot, Integer> indices = new HashMap<>();
+    private Map<Bytes32, Integer> blockRootToIndexMap = new HashMap<>();
+
+    public ProtoArray build() {
+      checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
+      checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
+      return new ProtoArray(
+          pruneThreshold,
+          justifiedEpoch,
+          finalizedEpoch,
+          initialEpoch,
+          nodes,
+          indices,
+          blockRootToIndexMap);
+    }
+
+    public Builder pruneThreshold(final int pruneThreshold) {
+      this.pruneThreshold = pruneThreshold;
+      return this;
+    }
+
+    public Builder initialEpoch(final UInt64 initialEpoch) {
+      this.initialEpoch = initialEpoch;
+      return this;
+    }
+
+    public Builder justifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
+      checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
+      this.justifiedEpoch(justifiedCheckpoint.getEpoch());
+      return this;
+    }
+
+    public Builder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
+      checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
+      this.finalizedEpoch(finalizedCheckpoint.getEpoch());
+      return this;
+    }
+
+    public Builder justifiedEpoch(final UInt64 justifiedEpoch) {
+      this.justifiedEpoch = justifiedEpoch;
+      return this;
+    }
+
+    public Builder finalizedEpoch(final UInt64 finalizedEpoch) {
+      this.finalizedEpoch = finalizedEpoch;
+      return this;
+    }
+
+    public Builder initialCheckpoint(final Optional<Checkpoint> initialCheckpoint) {
+      if (initialCheckpoint.isPresent()) {
+        initialEpoch(initialCheckpoint.get().getEpoch());
+      } else {
+        initialEpoch(SpecConstants.GENESIS_EPOCH);
+      }
+      return this;
+    }
+
+    Builder nodes(final List<ProtoNode> nodes) {
+      this.nodes = nodes;
+      return this;
+    }
+
+    Builder indices(final Map<BlockRootAndSlot, Integer> indices) {
+      this.indices = indices;
+      return this;
+    }
+
+    Builder blockRootToIndexMap(Map<Bytes32, Integer> blockRootToIndexMap) {
+      this.blockRootToIndexMap = blockRootToIndexMap;
+      return this;
+    }
   }
 }

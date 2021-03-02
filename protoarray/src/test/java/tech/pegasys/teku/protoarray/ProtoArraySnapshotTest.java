@@ -18,13 +18,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshotTest {
 
@@ -32,13 +30,11 @@ public class ProtoArraySnapshotTest {
   void shouldProduceEqualProtoArray() {
     List<ProtoNode> nodes = new ArrayList<>();
     ProtoArray protoArray1 =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            UInt64.valueOf(10),
-            UInt64.valueOf(9),
-            UInt64.ZERO,
-            nodes,
-            new HashMap<>());
+        ProtoArray.builder()
+            .justifiedEpoch(UInt64.valueOf(10))
+            .finalizedEpoch(UInt64.valueOf(9))
+            .nodes(nodes)
+            .build();
 
     ProtoNode protoNode1 =
         new ProtoNode(
@@ -74,13 +70,11 @@ public class ProtoArraySnapshotTest {
   void shouldNotBeAlteredByChangesToOriginalProtoArray() {
     List<ProtoNode> nodes = new ArrayList<>();
     ProtoArray protoArray1 =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            UInt64.valueOf(10),
-            UInt64.valueOf(9),
-            UInt64.ZERO,
-            nodes,
-            new HashMap<>());
+        ProtoArray.builder()
+            .justifiedEpoch(UInt64.valueOf(10))
+            .finalizedEpoch(UInt64.valueOf(9))
+            .nodes(nodes)
+            .build();
 
     ProtoNode protoNode1 =
         new ProtoNode(

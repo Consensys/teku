@@ -21,8 +21,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import com.google.common.collect.Streams;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -345,13 +343,11 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     // init ProtoArray
     final ProtoArray protoArray =
-        new ProtoArray(
-            10000,
-            UInt64.valueOf(100),
-            UInt64.valueOf(99),
-            UInt64.ZERO,
-            new ArrayList<>(),
-            new HashMap<>());
+        ProtoArray.builder()
+            .pruneThreshold(10000)
+            .justifiedEpoch(UInt64.valueOf(100))
+            .finalizedEpoch(UInt64.valueOf(99))
+            .build();
 
     // add block 1
     final Bytes32 block1Root = Bytes32.fromHexString("0xdeadbeef");
