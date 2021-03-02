@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /** Holds a block root and the state corresponding to this block's post-state */
 public class BlockRootAndState {

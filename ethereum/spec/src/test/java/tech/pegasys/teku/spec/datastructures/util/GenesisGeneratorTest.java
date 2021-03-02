@@ -28,18 +28,20 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test
 class GenesisGeneratorTest {
-
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final List<DepositData> INITIAL_DEPOSIT_DATA =
       new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
@@ -53,8 +55,11 @@ class GenesisGeneratorTest {
           .collect(toList());
   public static final UInt64 GENESIS_EPOCH = UInt64.valueOf(Constants.GENESIS_EPOCH);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final SpecVersion genesisSpec = spec.getGenesisSpec();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final GenesisGenerator genesisGenerator =
+      new GenesisGenerator(spec.getGenesisSchemaDefinitions());
 
   @Test
   public void shouldGenerateSameGenesisAsSpecMethodForSingleDeposit() {
@@ -64,8 +69,9 @@ class GenesisGeneratorTest {
     final UInt64 genesisTime = UInt64.valueOf(982928293223232L);
 
     final BeaconState expectedState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(
-            eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
+        genesisSpec
+            .getBeaconStateUtil()
+            .initializeBeaconStateFromEth1(eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
     genesisGenerator.updateCandidateState(
         eth1BlockHash1, genesisTime.minus(UInt64.ONE), INITIAL_DEPOSITS.subList(0, 8));

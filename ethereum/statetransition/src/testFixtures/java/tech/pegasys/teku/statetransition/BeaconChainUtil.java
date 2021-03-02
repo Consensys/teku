@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -79,16 +79,27 @@ public class BeaconChainUtil {
     return new Builder();
   }
 
+  @Deprecated
   public static BeaconChainUtil create(
       final int validatorCount, final RecentChainData storageClient) {
-    final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
-    return create(storageClient, validatorKeys);
+    return create(DEFAULT_SPEC_PROVIDER, validatorCount, storageClient);
   }
 
   public static BeaconChainUtil create(
+      final Spec spec, final int validatorCount, final RecentChainData storageClient) {
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+    return create(spec, storageClient, validatorKeys);
+  }
+
+  @Deprecated
+  public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    final Spec spec = DEFAULT_SPEC_PROVIDER;
+    return create(DEFAULT_SPEC_PROVIDER, storageClient, validatorKeys);
+  }
+
+  public static BeaconChainUtil create(
+      final Spec spec, final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
     return create(
         spec,
         storageClient,
@@ -97,11 +108,19 @@ public class BeaconChainUtil {
         true);
   }
 
+  @Deprecated
   public static BeaconChainUtil create(
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    final Spec spec = DEFAULT_SPEC_PROVIDER;
+    return create(DEFAULT_SPEC_PROVIDER, storageClient, validatorKeys, signDeposits);
+  }
+
+  public static BeaconChainUtil create(
+      final Spec spec,
+      final RecentChainData storageClient,
+      final List<BLSKeyPair> validatorKeys,
+      final boolean signDeposits) {
     return new BeaconChainUtil(
         spec,
         validatorKeys,
@@ -120,16 +139,20 @@ public class BeaconChainUtil {
   }
 
   public static void initializeStorage(
-      final RecentChainData recentChainData, final List<BLSKeyPair> validatorKeys) {
-    initializeStorage(recentChainData, validatorKeys, true);
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final List<BLSKeyPair> validatorKeys) {
+    initializeStorage(spec, recentChainData, validatorKeys, true);
   }
 
   public static void initializeStorage(
+      final Spec spec,
       final RecentChainData recentChainData,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
     final BeaconState initState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, signDeposits);
+        InteropStartupUtil.createMockedStartInitialBeaconState(
+            spec, 0, validatorKeys, signDeposits);
     recentChainData.initializeFromGenesis(initState, UInt64.ZERO);
   }
 
@@ -138,7 +161,7 @@ public class BeaconChainUtil {
   }
 
   public void initializeStorage(final RecentChainData recentChainData) {
-    initializeStorage(recentChainData, validatorKeys, signDeposits);
+    initializeStorage(spec, recentChainData, validatorKeys, signDeposits);
   }
 
   public void setSlot(final UInt64 currentSlot) {

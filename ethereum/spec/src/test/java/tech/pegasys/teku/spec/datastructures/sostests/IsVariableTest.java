@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -34,15 +36,17 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class IsVariableTest {
+  private static final Spec SPEC = SpecFactory.createMinimal();
+  private static final SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
 
   static Stream<Arguments> variableSizeTypes() {
     return Stream.of(
@@ -51,7 +55,7 @@ public class IsVariableTest {
         Arguments.of(Attestation.SSZ_SCHEMA),
         Arguments.of(AttesterSlashing.SSZ_SCHEMA),
         Arguments.of(IndexedAttestation.SSZ_SCHEMA),
-        Arguments.of(BeaconState.getSszSchema()),
+        Arguments.of(SCHEMA_DEFINITIONS.getBeaconStateSchema()),
         Arguments.of(PendingAttestation.SSZ_SCHEMA),
         Arguments.of(AggregateAndProof.SSZ_SCHEMA));
   }
