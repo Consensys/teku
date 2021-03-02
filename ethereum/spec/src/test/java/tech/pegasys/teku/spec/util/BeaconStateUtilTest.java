@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
@@ -159,7 +158,12 @@ public class BeaconStateUtilTest {
   }
 
   private BeaconState createBeaconState() {
-    return createBeaconState(false, null, null);
+    return new BeaconStateTestBuilder(dataStructureUtil)
+        .forkVersion(specConstants.getGenesisForkVersion())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .build();
   }
 
   @Test
@@ -392,19 +396,5 @@ public class BeaconStateUtilTest {
     final UInt64 epoch3Start = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(3));
     assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
         .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  private BeaconState createBeaconState(
-      boolean addToList, UInt64 amount, Validator knownValidator) {
-    final BeaconStateTestBuilder stateBuilder =
-        new BeaconStateTestBuilder(dataStructureUtil)
-            .forkVersion(specConstants.getGenesisForkVersion())
-            .validator(dataStructureUtil.randomValidator())
-            .validator(dataStructureUtil.randomValidator())
-            .validator(dataStructureUtil.randomValidator());
-    if (addToList) {
-      stateBuilder.validator(knownValidator);
-    }
-    return stateBuilder.build();
   }
 }
