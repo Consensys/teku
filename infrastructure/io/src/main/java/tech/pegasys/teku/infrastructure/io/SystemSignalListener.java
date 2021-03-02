@@ -55,8 +55,8 @@ public class SystemSignalListener {
       handleMethod.invoke(null, hupSignal, handler);
     } catch (Throwable e) {
       LOG.warn(
-          "Unable to register listener for SIGHUP events. Dynamic config reloading will not be supported.",
-          e);
+          "Unable to register listener for SIGHUP events. Dynamic config reloading will not be supported.");
+      LOG.debug("Failed to register listener for SIGHUP events.", e);
     }
   }
 }

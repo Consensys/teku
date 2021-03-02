@@ -65,7 +65,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz");
 
     final EpochProcessor epochProcessor =
-        testDefinition.getSpecProvider().getGenesisSpec().getEpochProcessor();
+        testDefinition.getSpec().getGenesisSpec().getEpochProcessor();
     final EpochProcessingExecutor processor = new DefaultEpochProcessingExecutor(epochProcessor);
     final BeaconState result = preState.updated(state -> executeOperation(processor, state));
     assertThat(result).isEqualTo(expectedPostState);

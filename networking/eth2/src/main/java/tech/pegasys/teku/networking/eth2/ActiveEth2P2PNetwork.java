@@ -50,7 +50,7 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -65,7 +65,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
@@ -104,7 +104,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private volatile Cancellable gossipUpdateTask;
 
   public ActiveEth2P2PNetwork(
-      final SpecProvider specProvider,
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -125,7 +125,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
@@ -272,12 +272,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest();
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
-    final UInt64 currentEpoch = specProvider.computeEpochAtSlot(currentSlot);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
     final UInt64 activeValidatorsEpoch =
-        specProvider.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
+        spec.getMaxLookaheadEpoch(chainHead.getState()).min(currentEpoch);
     final int activeValidators =
-        specProvider.countActiveValidators(chainHead.getState(), activeValidatorsEpoch);
+        spec.countActiveValidators(chainHead.getState(), activeValidatorsEpoch);
 
     return Eth2Context.builder()
         .currentSlot(currentSlot)

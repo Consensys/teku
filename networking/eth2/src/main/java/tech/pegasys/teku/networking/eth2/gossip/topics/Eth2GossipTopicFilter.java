@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -38,13 +38,11 @@ import tech.pegasys.teku.util.config.Constants;
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
   private final Supplier<Set<String>> relevantTopics;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public Eth2GossipTopicFilter(
-      final RecentChainData recentChainData,
-      final GossipEncoding gossipEncoding,
-      final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+      final RecentChainData recentChainData, final GossipEncoding gossipEncoding, final Spec spec) {
+    this.spec = spec;
     relevantTopics =
         Suppliers.memoize(() -> computeRelevantTopics(recentChainData, gossipEncoding));
   }
@@ -68,8 +66,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .getNextFork()
         .map(
             nextFork ->
-                specProvider
-                    .atEpoch(nextFork.getEpoch())
+                spec.atEpoch(nextFork.getEpoch())
                     .getBeaconStateUtil()
                     .computeForkDigest(
                         nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))

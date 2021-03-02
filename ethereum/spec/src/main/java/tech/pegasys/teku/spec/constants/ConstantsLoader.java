@@ -11,14 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networks;
+package tech.pegasys.teku.spec.constants;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.SpecConstantsReader;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ConstantsLoader {

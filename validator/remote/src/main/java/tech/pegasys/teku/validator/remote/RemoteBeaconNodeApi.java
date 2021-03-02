@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -50,11 +50,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final ServiceConfig serviceConfig,
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
-      final SpecProvider specProvider,
+      final Spec spec,
       final boolean useIndependentAttestationTiming) {
 
-    final int readTimeoutInSeconds =
-        getReadTimeoutInSeconds(specProvider, useIndependentAttestationTiming);
+    final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
     HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
@@ -82,7 +81,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel,
                 useIndependentAttestationTiming,
-                specProvider),
+                spec),
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
@@ -102,12 +101,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   private static int getReadTimeoutInSeconds(
-      final SpecProvider specProvider, final boolean useIndependentAttestationTiming) {
+      final Spec spec, final boolean useIndependentAttestationTiming) {
     // We should get at least one event per slot so give the read timeout 2 slots to be safe
     // but when using independent timing we only get head events on each new block so they may be
     // much rarer
     final int readTimeoutInSlots = useIndependentAttestationTiming ? 5 : 2;
-    return readTimeoutInSlots * specProvider.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
+    return readTimeoutInSlots * spec.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
   }
 
   @Override

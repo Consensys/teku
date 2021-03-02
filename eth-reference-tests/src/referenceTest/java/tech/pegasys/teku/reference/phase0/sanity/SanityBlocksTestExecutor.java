@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.BlsSetting;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
@@ -69,28 +69,24 @@ public class SanityBlocksTestExecutor implements TestExecutor {
       final BeaconState preState,
       final List<SignedBeaconBlock> blocks,
       final Optional<BeaconState> expectedState) {
-    final SpecProvider specProvider = testDefinition.getSpecProvider();
+    final Spec spec = testDefinition.getSpec();
     expectedState.ifPresentOrElse(
         (state) ->
-            assertThat(processor.processBlocks(specProvider, metaData, preState, blocks))
-                .isEqualTo(state),
+            assertThat(processor.processBlocks(spec, metaData, preState, blocks)).isEqualTo(state),
         () ->
-            assertThatThrownBy(
-                    () -> processor.processBlocks(specProvider, metaData, preState, blocks))
+            assertThatThrownBy(() -> processor.processBlocks(spec, metaData, preState, blocks))
                 .hasCauseInstanceOf(StateTransitionException.class));
   }
 
   private BeaconState applyBlocks(
-      final SpecProvider specProvider,
+      final Spec spec,
       final SanityBlocksMetaData metaData,
       final BeaconState preState,
       final List<SignedBeaconBlock> blocks) {
     try {
       BeaconState result = preState;
       for (SignedBeaconBlock block : blocks) {
-        result =
-            specProvider.initiateStateTransition(
-                result, block, metaData.getBlsSetting() != IGNORED);
+        result = spec.initiateStateTransition(result, block, metaData.getBlsSetting() != IGNORED);
       }
       return result;
     } catch (StateTransitionException e) {
@@ -123,7 +119,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
 
   private interface BlocksProcessor {
     BeaconState processBlocks(
-        final SpecProvider specProvider,
+        final Spec spec,
         final SanityBlocksMetaData metaData,
         final BeaconState preState,
         final List<SignedBeaconBlock> blocks);

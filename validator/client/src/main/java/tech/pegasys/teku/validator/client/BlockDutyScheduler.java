@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
@@ -31,8 +31,8 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       final MetricsSystem metricsSystem,
       final DutyLoader epochDutiesScheduler,
       final boolean useDependentRoots,
-      final SpecProvider specProvider) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, specProvider);
+      final Spec spec) {
+    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
