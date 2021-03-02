@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class FuzzRegressionTest {
-  private final Spec spec = SpecFactory.createMainnet();
+  private final Spec spec = SpecFactory.createMinimal();
 
   @Test
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {
