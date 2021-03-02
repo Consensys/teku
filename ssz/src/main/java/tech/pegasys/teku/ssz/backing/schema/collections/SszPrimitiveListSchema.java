@@ -25,7 +25,8 @@ public interface SszPrimitiveListSchema<
         ElementT,
         SszElementT extends SszPrimitive<ElementT, SszElementT>,
         SszListT extends SszPrimitiveList<ElementT, SszElementT>>
-    extends SszListSchema<SszElementT, SszListT> {
+    extends SszListSchema<SszElementT, SszListT>,
+        SszPrimitiveCollectionSchema<ElementT, SszElementT, SszListT> {
 
   static <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
       SszPrimitiveListSchema<ElementT, SszElementT, ?> create(

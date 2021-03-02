@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
@@ -38,7 +36,7 @@ public class IndexedAttestation {
   public IndexedAttestation(
       tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
     this.attesting_indices =
-        indexedAttestation.getAttesting_indices().stream().collect(Collectors.toList());
+        indexedAttestation.getAttesting_indices().streamUnboxed().collect(Collectors.toList());
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
   }
@@ -56,7 +54,9 @@ public class IndexedAttestation {
   public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation() {
     return new tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation(
-        SSZList.createMutable(attesting_indices, MAX_VALIDATORS_PER_COMMITTEE, UInt64.class),
+        tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.SSZ_SCHEMA
+            .getAttestingIndicesSchema()
+            .of(attesting_indices),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());
   }

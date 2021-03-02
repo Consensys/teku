@@ -110,6 +110,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     try {
       attestation
           .getAttesting_indices()
+          .unboxed()
           .forEach(
               validatorIndex ->
                   processAttestation(

@@ -35,8 +35,8 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 
 public class AttestationUtil {
 
@@ -86,10 +86,10 @@ public class AttestationUtil {
         getAttestingIndices(state, attestation.getData(), attestation.getAggregation_bits());
 
     return new IndexedAttestation(
-        SSZList.createMutable(
-            attesting_indices.stream().sorted().map(UInt64::valueOf).collect(toList()),
-            specConstants.getMaxValidatorsPerCommittee(),
-            UInt64.class),
+        attesting_indices.stream()
+            .sorted()
+            .map(UInt64::valueOf)
+            .collect(IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
@@ -158,19 +158,30 @@ public class AttestationUtil {
     return isValidIndexedAttestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
+  private static <C extends Comparable<C>> boolean isDistinctAndSorted(Iterable<C> list) {
+    C previous = null;
+    for (final C current : list) {
+      if (previous != null && previous.compareTo(current) >= 0) {
+        return false;
+      }
+      previous = current;
+    }
+    return true;
+  }
+
   public AttestationProcessingResult isValidIndexedAttestation(
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
-    SSZList<UInt64> indices = indexed_attestation.getAttesting_indices();
+    SszUInt64List indices = indexed_attestation.getAttesting_indices();
 
-    List<UInt64> bit_0_indices_sorted = indices.stream().sorted().distinct().collect(toList());
-    if (indices.isEmpty() || !indices.equals(bit_0_indices_sorted)) {
+    if (indices.isEmpty() || !isDistinctAndSorted(indices.unboxed())) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 
     List<BLSPublicKey> pubkeys =
-        indices.stream()
+        indices
+            .streamUnboxed()
             .flatMap(i -> validatorsUtil.getValidatorPubKey(state, i).stream())
             .collect(toList());
     if (pubkeys.size() < indices.size()) {

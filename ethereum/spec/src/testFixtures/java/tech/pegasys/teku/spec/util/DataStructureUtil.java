@@ -86,6 +86,7 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
@@ -529,11 +530,10 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation() {
-    SSZMutableList<UInt64> attesting_indices =
-        SSZList.createMutable(UInt64.class, getMaxValidatorsPerCommittee());
-    attesting_indices.add(randomUInt64());
-    attesting_indices.add(randomUInt64());
-    attesting_indices.add(randomUInt64());
+    SszUInt64List attesting_indices =
+        IndexedAttestation.SSZ_SCHEMA
+            .getAttestingIndicesSchema()
+            .of(randomUInt64(), randomUInt64(), randomUInt64());
     return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
   }
 

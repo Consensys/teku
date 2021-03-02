@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingExceptio
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -267,7 +266,7 @@ class ForkChoiceTest {
                 dataStructureUtil.randomSignature()));
     updatedVote.setIndexedAttestation(
         new IndexedAttestation(
-            SSZList.singleton(validatorIndex),
+            IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(validatorIndex),
             updatedVote.getData(),
             updatedVote.getAttestation().getAggregate_signature()));
 
