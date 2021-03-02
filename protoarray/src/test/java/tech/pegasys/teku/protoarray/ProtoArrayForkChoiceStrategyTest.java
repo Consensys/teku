@@ -268,9 +268,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
         assertThat(forkChoiceStrategy.blockParentRoot(block.getRoot())).isEmpty();
       } else {
         assertThat(forkChoiceStrategy.contains(block.getRoot())).isTrue();
-        // FIXME
-        //
-        // assertThat(forkChoiceStrategy.blockSlot(block.getRoot())).contains(block.getSlot());
+        assertThat(forkChoiceStrategy.blockSlot(block.getRoot())).contains(block.getSlot());
         assertThat(forkChoiceStrategy.blockParentRoot(block.getRoot()))
             .contains(block.getParentRoot());
       }
