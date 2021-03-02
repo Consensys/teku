@@ -22,7 +22,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
-public interface SszBitlist extends SszList<SszBit>, SszPrimitiveList<Boolean, SszBit> {
+public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {

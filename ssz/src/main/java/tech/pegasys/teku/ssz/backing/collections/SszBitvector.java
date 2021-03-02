@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszVector<SszBit>} */
-public interface SszBitvector extends SszVector<SszBit>, SszPrimitiveVector<Boolean, SszBit> {
+public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
 
   @Override
   default SszMutablePrimitiveVector<Boolean, SszBit> createWritableCopy() {
