@@ -363,8 +363,7 @@ public class EpochProcessor {
     }
 
     // Rotate current/previous epoch attestations
-    state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
-    state.setCurrent_epoch_attestations(
-        BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+    state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations().commitChanges());
+    state.getCurrent_epoch_attestations().clear();
   }
 }
