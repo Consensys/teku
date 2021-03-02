@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.compute_shuffled_index;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
@@ -42,7 +41,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -51,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -421,31 +418,6 @@ class BeaconStateUtilTest {
   }
 
   // *************** END Shuffling Tests *****************
-
-  @Test
-  void processDepositsShouldIgnoreInvalidSignedDeposits() {
-    ArrayList<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
-    DepositWithIndex deposit = deposits.get(1);
-    DepositData depositData = deposit.getData();
-    DepositWithIndex invalidSigDeposit =
-        new DepositWithIndex(
-            new DepositData(
-                depositData.getPubkey(),
-                depositData.getWithdrawal_credentials(),
-                depositData.getAmount(),
-                BLSSignature.empty()),
-            deposit.getIndex());
-    deposits.set(1, invalidSigDeposit);
-
-    BeaconState state = initialize_beacon_state_from_eth1(Bytes32.ZERO, UInt64.ZERO, deposits);
-    assertEquals(2, state.getValidators().size());
-    assertEquals(
-        deposits.get(0).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(0).getPubkey());
-    assertEquals(
-        deposits.get(2).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(1).getPubkey());
-  }
 
   @Test
   void ensureVerifyDepositDefaultsToTrue() {
