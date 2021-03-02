@@ -27,6 +27,7 @@ public class AbstractSszMutableCompositeTest {
 
   @Disabled("https://github.com/ConsenSys/teku/issues/3680")
   @Test
+  @SuppressWarnings("unchecked")
   void setChildAfterAcquiringItByRefShouldWork() {
     SszBytes32VectorSchema<SszBytes32Vector> childSchema = SszBytes32VectorSchema.create(3);
     SszVectorSchema<SszBytes32Vector, ?> compositeSchema = SszVectorSchema.create(childSchema, 2);
