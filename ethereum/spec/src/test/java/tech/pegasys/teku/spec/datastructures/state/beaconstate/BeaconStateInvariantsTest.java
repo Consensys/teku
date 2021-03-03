@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_TIME_FIELD;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_TIME_SCHEMA;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_VALIDATORS_ROOT_SCHEMA;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.SLOT_FIELD;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.SLOT_SCHEMA;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_TIME_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_TIME_SCHEMA;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_SCHEMA;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.SLOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.SLOT_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BeaconStateSchemaInvariantsTest {
+public class BeaconStateInvariantsTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -39,7 +39,7 @@ public class BeaconStateSchemaInvariantsTest {
       final Bytes stateBytes = state.sszSerialize();
 
       final UInt64 expectedSlot = state.getSlot();
-      final UInt64 result = BeaconStateSchemaInvariants.extractSlot(stateBytes);
+      final UInt64 result = BeaconStateInvariants.extractSlot(stateBytes);
       assertThat(result).isEqualTo(expectedSlot);
     }
   }
@@ -49,7 +49,7 @@ public class BeaconStateSchemaInvariantsTest {
     final BeaconState state = dataStructureUtil.stateBuilder().slot(UInt64.ZERO).build();
     final Bytes stateBytes = state.sszSerialize();
 
-    final UInt64 result = BeaconStateSchemaInvariants.extractSlot(stateBytes);
+    final UInt64 result = BeaconStateInvariants.extractSlot(stateBytes);
     assertThat(result).isEqualTo(UInt64.ZERO);
   }
 
@@ -58,7 +58,7 @@ public class BeaconStateSchemaInvariantsTest {
     final BeaconState state = dataStructureUtil.stateBuilder().slot(UInt64.MAX_VALUE).build();
     final Bytes stateBytes = state.sszSerialize();
 
-    final UInt64 result = BeaconStateSchemaInvariants.extractSlot(stateBytes);
+    final UInt64 result = BeaconStateInvariants.extractSlot(stateBytes);
     assertThat(result).isEqualTo(UInt64.MAX_VALUE);
   }
 

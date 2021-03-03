@@ -23,13 +23,15 @@ import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
 import tech.pegasys.teku.ssz.sos.SszField;
 
-class BeaconStateSchemaInvariants {
+class BeaconStateInvariants {
+  // Schemas
   static final SszSchema<SszPrimitives.SszUInt64> GENESIS_TIME_SCHEMA =
       SszPrimitiveSchemas.UINT64_SCHEMA;
   static final SszSchema<SszPrimitives.SszBytes32> GENESIS_VALIDATORS_ROOT_SCHEMA =
       SszPrimitiveSchemas.BYTES32_SCHEMA;
   static final SszSchema<SszPrimitives.SszUInt64> SLOT_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
 
+  // Fields
   static SszField GENESIS_TIME_FIELD =
       new SszField(0, BeaconStateFields.GENESIS_TIME.name(), GENESIS_TIME_SCHEMA);
   static SszField GENESIS_VALIDATORS_ROOT_FIELD =
@@ -37,6 +39,7 @@ class BeaconStateSchemaInvariants {
           1, BeaconStateFields.GENESIS_VALIDATORS_ROOT.name(), GENESIS_VALIDATORS_ROOT_SCHEMA);
   static SszField SLOT_FIELD = new SszField(2, BeaconStateFields.SLOT.name(), SLOT_SCHEMA);
 
+  // Return list of invariant fields
   public static List<SszField> getInvariantFields() {
     return List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, SLOT_FIELD);
   }

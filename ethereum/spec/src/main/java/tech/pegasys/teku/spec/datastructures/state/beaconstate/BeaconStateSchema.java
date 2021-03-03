@@ -14,9 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_TIME_FIELD;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchemaInvariants.SLOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_TIME_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.SLOT_FIELD;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -79,7 +79,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
           () ->
               SszListSchema.create(
                   Eth1Data.SSZ_SCHEMA,
-                  Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
+                  (long) Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH));
   private static final SszField ETH1_DEPOSIT_INDEX_FIELD =
       new SszField(
           10, BeaconStateFields.ETH1_DEPOSIT_INDEX.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
@@ -120,7 +120,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
           () ->
               SszListSchema.create(
                   PendingAttestation.SSZ_SCHEMA,
-                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  (long) Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   private static final SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(
           16,
@@ -128,7 +128,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
           () ->
               SszListSchema.create(
                   PendingAttestation.SSZ_SCHEMA,
-                  Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+                  (long) Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
   private static final SszField JUSTIFICATION_BITS_FIELD =
       new SszField(
           17,
@@ -164,7 +164,7 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
           i);
     }
 
-    final List<SszField> invariantFields = BeaconStateSchemaInvariants.getInvariantFields();
+    final List<SszField> invariantFields = BeaconStateInvariants.getInvariantFields();
     checkArgument(
         fields.size() >= invariantFields.size(),
         "Must provide at least %s fields",
