@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.math.BigInteger;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /** An unsigned 64-bit integer. All instances are immutable. */
 public final class UInt64 implements Comparable<UInt64> {
@@ -521,5 +522,9 @@ public final class UInt64 implements Comparable<UInt64> {
 
   private static void checkPositive(final long other) {
     checkArgument(other >= 0, "value (%s) must be >= 0", other);
+  }
+
+  public static Stream<UInt64> range(final UInt64 fromInclusive, final UInt64 toExclusive) {
+    return Stream.iterate(fromInclusive, value -> value.isLessThan(toExclusive), UInt64::increment);
   }
 }
