@@ -21,37 +21,21 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStat
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class BeaconStateSchemaTest {
 
-  public void tearDown() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
-  }
-
   @Test
-  public void create_minimal() {
-    final Spec spec = setupMinimalSpec();
-    final BeaconStateSchema specA = BeaconStateSchema.create(spec.getGenesisSpecConstants());
-    final BeaconStateSchema specB = BeaconStateSchema.create();
+  public void create_compareDifferentSpecs() {
+    final BeaconStateSchema minimalState =
+        BeaconStateSchema.create(SpecFactory.createMinimal().getGenesisSpecConstants());
+    final BeaconStateSchema mainnetState =
+        BeaconStateSchema.create(SpecFactory.createMainnet().getGenesisSpecConstants());
 
-    assertThat(specA).isEqualTo(specB);
-  }
-
-  @Test
-  public void create_mainnet() {
-    final Spec spec = setupMainnetSpec();
-    final BeaconStateSchema specA = BeaconStateSchema.create(spec.getGenesisSpecConstants());
-    final BeaconStateSchema specB = BeaconStateSchema.create();
-
-    assertThat(specA).isEqualTo(specB);
+    assertThat(minimalState).isNotEqualTo(mainnetState);
   }
 
   @Test
@@ -84,17 +68,5 @@ public class BeaconStateSchemaTest {
                     List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, randomField)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Expected invariant field 'SLOT' at index 2, but got 'random'");
-  }
-
-  private Spec setupMinimalSpec() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
-    return SpecFactory.createMinimal();
-  }
-
-  private Spec setupMainnetSpec() {
-    Constants.setConstants("mainnet");
-    SpecDependent.resetAll();
-    return SpecFactory.createMainnet();
   }
 }

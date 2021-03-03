@@ -15,10 +15,9 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
-
-import java.util.Objects;
 
 public class RocksDbColumn<TKey, TValue> {
   private final Bytes id;
@@ -59,7 +58,9 @@ public class RocksDbColumn<TKey, TValue> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final RocksDbColumn<?, ?> that = (RocksDbColumn<?, ?>) o;
-    return Objects.equals(id, that.id) && Objects.equals(keySerializer, that.keySerializer) && Objects.equals(valueSerializer, that.valueSerializer);
+    return Objects.equals(id, that.id)
+        && Objects.equals(keySerializer, that.keySerializer)
+        && Objects.equals(valueSerializer, that.valueSerializer);
   }
 
   @Override

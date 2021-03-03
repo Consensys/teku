@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-
-import java.util.Objects;
 
 class BeaconStateSerializer implements RocksDbSerializer<BeaconState> {
 
