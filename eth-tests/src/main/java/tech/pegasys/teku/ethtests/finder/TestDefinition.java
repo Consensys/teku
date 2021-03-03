@@ -39,7 +39,7 @@ public class TestDefinition {
     return specName;
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     if (spec == null) {
       spec = SpecFactory.create(specName);
     }

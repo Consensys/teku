@@ -64,12 +64,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -94,6 +94,7 @@ public final class DataStructureUtil {
     this(92892824, DEFAULT_SPEC_PROVIDER);
   }
 
+  @Deprecated
   public DataStructureUtil(final int seed) {
     this(seed, DEFAULT_SPEC_PROVIDER);
   }
@@ -617,15 +618,15 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists).build();
+    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists).build();
   }
 
   public BeaconStateBuilder stateBuilder() {
-    return BeaconStateBuilder.create(this, 10, 10);
+    return BeaconStateBuilder.create(this, spec, 10, 10);
   }
 
   public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists);
+    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -739,6 +740,10 @@ public final class DataStructureUtil {
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return spec.computeStartSlotAtEpoch(epoch);
+  }
+
+  public Spec getSpec() {
+    return spec;
   }
 
   private <T> T getConstant(final Function<SpecConstants, T> getter) {

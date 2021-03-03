@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.backing.SszData;
 
@@ -82,7 +82,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final Path dataPath = testDefinition.getTestDirectory().resolve(dataFileName);
 
     final DefaultOperationProcessor standardProcessor =
-        new DefaultOperationProcessor(testDefinition.getSpecProvider());
+        new DefaultOperationProcessor(testDefinition.getSpec());
     runProcessor(standardProcessor, testDefinition, preState, dataPath);
   }
 

@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
@@ -45,7 +45,7 @@ public class RewardsTestExecutor implements TestExecutor {
     final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     final RewardsAndPenaltiesCalculator calculator =
         testDefinition
-            .getSpecProvider()
+            .getSpec()
             .getGenesisSpec()
             .getEpochProcessor()
             .createRewardsAndPenaltiesCalculator(preState, validatorStatuses);

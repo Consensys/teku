@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -131,7 +131,8 @@ public class ChainHeadTest {
   private ChainHead copy(ChainHead original) {
     final SignedBeaconBlock blockCopy =
         copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
-    final BeaconState stateCopy = copy(original.getState(), BeaconState.getSszSchema());
+    final BeaconState stateCopy =
+        copy(original.getState(), spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy, spec);

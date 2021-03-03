@@ -62,7 +62,7 @@ public class WeakSubjectivityValidator {
       WeakSubjectivityCalculator calculator,
       WeakSubjectivityViolationPolicy violationPolicy,
       final Optional<BeaconStateUtil> maybeBeaconStateUtil) {
-    this.spec = config.getSpecProvider();
+    this.spec = config.getSpec();
     this.calculator = calculator;
     this.violationPolicy = violationPolicy;
     this.config = config;

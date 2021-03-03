@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -62,7 +64,11 @@ public class BeaconStateTestBuilder {
   }
 
   public BeaconState build() {
-    return BeaconState.createEmpty()
+    final SpecVersion specVersion = dataStructureUtil.getSpec().atSlot(slot);
+    return specVersion
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             state -> {
               state.setSlot(slot);
