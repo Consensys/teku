@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.backing.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
@@ -54,5 +55,11 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
     Bytes bytes = TreeUtil.concatenateLeavesData(tree);
     checkArgument(bytes.size() == schema.getLength(), "Tree doesn't match vector schema");
     return bytes;
+  }
+
+  @Override
+  public SszVectorT createFromElements(List<? extends SszByte> elements) {
+    Bytes bytes = Bytes.of(elements.stream().mapToInt(sszByte -> 0xFF & sszByte.get()).toArray());
+    return fromBytes(bytes);
   }
 }
