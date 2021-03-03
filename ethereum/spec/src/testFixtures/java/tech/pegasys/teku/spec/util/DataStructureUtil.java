@@ -742,6 +742,10 @@ public final class DataStructureUtil {
     return spec.computeStartSlotAtEpoch(epoch);
   }
 
+  public Spec getSpec() {
+    return spec;
+  }
+
   private <T> T getConstant(final Function<SpecConstants, T> getter) {
     return getter.apply(spec.getGenesisSpec().getConstants());
   }

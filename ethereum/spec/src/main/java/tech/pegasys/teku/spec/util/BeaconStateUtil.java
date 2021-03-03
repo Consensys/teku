@@ -28,6 +28,7 @@ import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -342,6 +343,28 @@ public class BeaconStateUtil {
 
   public void slashValidator(MutableBeaconState state, int slashed_index) {
     slashValidator(state, slashed_index, -1);
+  }
+
+  public UInt64 getAttestersTotalEffectiveBalance(final BeaconState state, final UInt64 slot) {
+    validateStateForCommitteeQuery(state, slot);
+    return BeaconStateCache.getTransitionCaches(state)
+        .getAttestersTotalBalance()
+        .get(
+            slot,
+            p -> {
+              final SSZList<Validator> validators = state.getValidators();
+              final UInt64 committeeCount =
+                  getCommitteeCountPerSlot(state, computeEpochAtSlot(slot));
+              return UInt64.range(UInt64.ZERO, committeeCount)
+                  .flatMap(committee -> streamEffectiveBalancesForCommittee(state, slot, committee))
+                  .reduce(UInt64.ZERO, UInt64::plus);
+            });
+  }
+
+  private Stream<UInt64> streamEffectiveBalancesForCommittee(
+      final BeaconState state, final UInt64 slot, final UInt64 committeeIndex) {
+    return getBeaconCommittee(state, slot, committeeIndex).stream()
+        .map(validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
   }
 
   public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
