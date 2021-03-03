@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
@@ -245,7 +246,7 @@ public class BeaconStateUtil {
                             validatorsUtil.isActiveValidator(validator, epoch)
                                 ? validator.getEffective_balance()
                                 : UInt64.ZERO)
-                    .collect(toList()));
+                    .collect(toUnmodifiableList()));
   }
 
   public void initiateValidatorExit(MutableBeaconState state, int index) {

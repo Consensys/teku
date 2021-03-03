@@ -198,7 +198,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     balancesLock.writeLock().lock();
     try {
       List<UInt64> oldBalances = balances;
-      List<UInt64> newBalances = justifiedStateBalances;
 
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
@@ -206,10 +205,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
               getTotalTrackedNodeCount(),
               protoArray.getIndices(),
               oldBalances,
-              newBalances);
+              justifiedStateBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = new ArrayList<>(newBalances);
+      balances = justifiedStateBalances;
 
       return protoArray.findHead(justifiedRoot);
     } finally {
