@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
@@ -44,5 +45,11 @@ public interface SszCompositeAbstractTest extends SszDataAbstractTest {
     assertThatThrownBy(
             () -> data.get((int) Long.min(Integer.MAX_VALUE, data.getSchema().getMaxLength())))
         .isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default void size_shouldBeLessOrEqualThanMaxLength(SszComposite<?> data) {
+    Assertions.assertThat((long) data.size()).isLessThanOrEqualTo(data.getSchema().getMaxLength());
   }
 }

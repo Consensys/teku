@@ -13,18 +13,5 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
-
-public class SszContainerTest implements SszCompositeAbstractTest, SszMutableCompositeAbstractTest {
-
-  @Override
-  public Stream<? extends SszData> sszData() {
-    return Stream.of(
-        TestSubContainer.SSZ_SCHEMA.getDefault(),
-        TestSmallContainer.SSZ_SCHEMA.getDefault(),
-        VariableSizeContainer.SSZ_SCHEMA.getDefault());
-  }
-}
+public interface SszMutableCollectionAbstractTest
+    extends SszCollectionAbstractTest, SszMutableCompositeAbstractTest {}

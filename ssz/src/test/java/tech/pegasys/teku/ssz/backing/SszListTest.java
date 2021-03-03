@@ -43,9 +43,29 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class SszListTest {
+public class SszListTest implements SszListAbstractTest, SszMutableCompositeAbstractTest {
 
   private RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+
+  @Override
+  public Stream<? extends SszData> sszData() {
+    return SszCollectionAbstractTest.elementSchemas()
+        .flatMap(
+            elementSchema ->
+                Stream.of(
+                    SszListSchema.create(elementSchema, 0),
+                    SszListSchema.create(elementSchema, 1),
+                    SszListSchema.create(elementSchema, 2),
+                    SszListSchema.create(elementSchema, 3),
+                    SszListSchema.create(elementSchema, 15),
+                    SszListSchema.create(elementSchema, 16),
+                    SszListSchema.create(elementSchema, 17),
+                    SszListSchema.create(elementSchema, Integer.MAX_VALUE),
+                    SszListSchema.create(elementSchema, Long.MAX_VALUE)))
+        .flatMap(
+            vectorSchema ->
+                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
+  }
 
   @Test
   void testMutableListReusable() {

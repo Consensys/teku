@@ -32,28 +32,29 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 @TestInstance(Lifecycle.PER_CLASS)
 public interface SszDataAbstractTest {
 
-  Stream<? extends SszData> sszData();
-
-  default Stream<Arguments> sszWritableDataArguments() {
-    List<Arguments> list =
-        sszData()
-            .filter(SszData::isWritableSupported)
-            .map(Arguments::of)
-            .collect(Collectors.toList());
-    // workaround for https://github.com/junit-team/junit5/issues/1477
+  // workaround for https://github.com/junit-team/junit5/issues/1477
+  static Stream<Arguments> passWhenEmpty(Stream<Arguments> args) {
+    List<Arguments> list = args.collect(Collectors.toList());
     Assumptions.assumeFalse(list.isEmpty());
     return list.stream();
   }
 
+  Stream<? extends SszData> sszData();
+
+  default Stream<? extends SszData> sszWritableData() {
+    return sszData().filter(SszData::isWritableSupported);
+  }
+
+  default Stream<? extends SszData> sszNonWritableData() {
+    return sszData().filter(d -> !d.isWritableSupported());
+  }
+
+  default Stream<Arguments> sszWritableDataArguments() {
+    return passWhenEmpty(sszWritableData().map(Arguments::of));
+  }
+
   default Stream<Arguments> sszNonWritableDataArguments() {
-    List<Arguments> list =
-        sszData()
-            .filter(d -> !d.isWritableSupported())
-            .map(Arguments::of)
-            .collect(Collectors.toList());
-    // workaround for https://github.com/junit-team/junit5/issues/1477
-    Assumptions.assumeFalse(list.isEmpty());
-    return list.stream();
+    return passWhenEmpty(sszNonWritableData().map(Arguments::of));
   }
 
   default Stream<Arguments> sszDataArguments() {
@@ -132,5 +133,14 @@ public interface SszDataAbstractTest {
       assertThat(data.createWritableCopy().commitChanges().hashTreeRoot())
           .isEqualTo(data.hashTreeRoot());
     }
+  }
+
+  @MethodSource("sszWritableDataArguments")
+  @ParameterizedTest
+  default void clear_shouldYieldDefault(SszData data) {
+    SszMutableData mutableData = data.createWritableCopy();
+    mutableData.clear();
+    SszData data1 = mutableData.commitChanges();
+    assertThatSszData(data1).isEqualByAllMeansTo(data.getSchema().getDefault());
   }
 }

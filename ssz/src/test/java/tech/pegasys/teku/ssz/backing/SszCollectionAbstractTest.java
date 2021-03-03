@@ -19,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestByteVectorContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
+import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
@@ -32,7 +33,8 @@ public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
         SszPrimitiveSchemas.UINT64_SCHEMA,
         SszPrimitiveSchemas.BYTES32_SCHEMA,
         TestSmallContainer.SSZ_SCHEMA,
-        TestByteVectorContainer.SSZ_SCHEMA);
+        TestByteVectorContainer.SSZ_SCHEMA,
+        VariableSizeContainer.SSZ_SCHEMA);
   }
 
   @MethodSource("sszDataArguments")

@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public class SszVectorTest implements SszCollectionAbstractTest {
+public class SszVectorTest implements SszCollectionAbstractTest, SszMutableCollectionAbstractTest {
 
   private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
@@ -32,11 +35,6 @@ public class SszVectorTest implements SszCollectionAbstractTest {
                     SszVectorSchema.create(elementSchema, 1),
                     SszVectorSchema.create(elementSchema, 2),
                     SszVectorSchema.create(elementSchema, 3),
-                    SszVectorSchema.create(elementSchema, 4),
-                    SszVectorSchema.create(elementSchema, 5),
-                    SszVectorSchema.create(elementSchema, 15),
-                    SszVectorSchema.create(elementSchema, 16),
-                    SszVectorSchema.create(elementSchema, 17),
                     SszVectorSchema.create(elementSchema, 31),
                     SszVectorSchema.create(elementSchema, 32),
                     SszVectorSchema.create(elementSchema, 33)))
@@ -45,10 +43,16 @@ public class SszVectorTest implements SszCollectionAbstractTest {
                 Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
   }
 
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  void size_shouldMatchSchemaLength(SszVector<?> data) {
+    assertThat(data.size()).isEqualTo(data.getSchema().getLength());
+  }
+
   @Test
   void testContainerSszSerialize() {
     SszVectorSchema<TestSubContainer, ?> schema =
         SszVectorSchema.create(TestSubContainer.SSZ_SCHEMA, 2);
-    Assertions.assertThat(schema.getSszFixedPartSize()).isEqualTo(80);
+    assertThat(schema.getSszFixedPartSize()).isEqualTo(80);
   }
 }
