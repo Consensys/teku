@@ -69,7 +69,7 @@ public class SingleAttestationTopicHandlerTest {
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
+    BeaconChainUtil.initializeStorage(spec, recentChainData, validatorKeys);
   }
 
   @Test

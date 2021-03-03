@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
-public interface BeaconStateCache {
-
-  static TransitionCaches getTransitionCaches(BeaconState state) {
-    return state instanceof BeaconStateCache
-        ? ((BeaconStateCache) state).getTransitionCaches()
-        : TransitionCaches.getNoOp();
-  }
-
-  TransitionCaches getTransitionCaches();
+public enum BeaconStateFields {
+  GENESIS_TIME,
+  GENESIS_VALIDATORS_ROOT,
+  SLOT,
+  FORK,
+  LATEST_BLOCK_HEADER,
+  BLOCK_ROOTS,
+  STATE_ROOTS,
+  HISTORICAL_ROOTS,
+  ETH1_DATA,
+  ETH1_DATA_VOTES,
+  ETH1_DEPOSIT_INDEX,
+  VALIDATORS,
+  BALANCES,
+  RANDAO_MIXES,
+  SLASHINGS,
+  PREVIOUS_EPOCH_ATTESTATIONS,
+  CURRENT_EPOCH_ATTESTATIONS,
+  JUSTIFICATION_BITS,
+  PREVIOUS_JUSTIFIED_CHECKPOINT,
+  CURRENT_JUSTIFIED_CHECKPOINT,
+  FINALIZED_CHECKPOINT
 }

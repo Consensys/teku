@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.util.operationvalidators;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @FunctionalInterface
 public interface OperationStateTransitionValidator<T> {

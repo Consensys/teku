@@ -37,7 +37,7 @@ public class ValidatorClientConfiguration {
     return interopConfig;
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 }

@@ -67,6 +67,11 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     return new Builder();
   }
 
+  public static RecentChainData create(final Spec spec, final EventBus eventBus) {
+    return builder().specProvider(spec).eventBus(eventBus).build();
+  }
+
+  @Deprecated
   public static RecentChainData create(final EventBus eventBus) {
     return builder().eventBus(eventBus).build();
   }

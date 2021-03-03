@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -41,7 +43,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class VoluntaryExitValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
@@ -52,8 +55,8 @@ public class VoluntaryExitValidatorTest {
 
   @BeforeEach
   void beforeEach() {
-    recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
-    beaconChainUtil = BeaconChainUtil.create(recentChainData, VALIDATOR_KEYS, true);
+    recentChainData = MemoryOnlyRecentChainData.create(spec, new EventBus());
+    beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
 
     stateTransitionValidator = mock(VoluntaryExitStateTransitionValidator.class);
     signatureVerifier = mock(VoluntaryExitSignatureVerifier.class);

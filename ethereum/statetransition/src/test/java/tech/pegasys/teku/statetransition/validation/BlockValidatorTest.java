@@ -48,7 +48,7 @@ public class BlockValidatorTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().eventBus(eventBus).specProvider(spec).build();
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(10, recentChainData);
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 10, recentChainData);
 
   private BlockValidator blockValidator;
 

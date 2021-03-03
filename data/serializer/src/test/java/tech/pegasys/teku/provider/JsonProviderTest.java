@@ -88,7 +88,7 @@ class JsonProviderTest {
 
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
-    tech.pegasys.teku.spec.datastructures.state.BeaconState stateInternal =
+    tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState stateInternal =
         dataStructureUtil.randomBeaconState(UInt64.valueOf(16));
     BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);

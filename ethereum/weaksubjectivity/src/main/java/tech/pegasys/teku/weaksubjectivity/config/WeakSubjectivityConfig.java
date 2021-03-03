@@ -66,7 +66,7 @@ public class WeakSubjectivityConfig {
         .suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 

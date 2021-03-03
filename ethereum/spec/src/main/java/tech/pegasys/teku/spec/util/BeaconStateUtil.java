@@ -44,14 +44,15 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -70,14 +71,17 @@ public class BeaconStateUtil {
   public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConstants specConstants;
+  private final SchemaDefinitions schemaDefinitions;
   private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
 
   public BeaconStateUtil(
       final SpecConstants specConstants,
+      final SchemaDefinitions schemaDefinitions,
       final ValidatorsUtil validatorsUtil,
       final CommitteeUtil committeeUtil) {
     this.specConstants = specConstants;
+    this.schemaDefinitions = schemaDefinitions;
     this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
   }
@@ -466,7 +470,7 @@ public class BeaconStateUtil {
 
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1_block_hash, UInt64 eth1_timestamp, List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator();
+    final GenesisGenerator genesisGenerator = new GenesisGenerator(schemaDefinitions);
     genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }
