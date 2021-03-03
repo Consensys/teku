@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -36,16 +35,22 @@ public interface SszDataAbstractTest {
   Stream<? extends SszData> sszData();
 
   default Stream<Arguments> sszWritableDataArguments() {
-    List<Arguments> list = sszData().filter(SszData::isWritableSupported).map(Arguments::of)
-        .collect(Collectors.toList());
+    List<Arguments> list =
+        sszData()
+            .filter(SszData::isWritableSupported)
+            .map(Arguments::of)
+            .collect(Collectors.toList());
     // workaround for https://github.com/junit-team/junit5/issues/1477
     Assumptions.assumeFalse(list.isEmpty());
     return list.stream();
   }
 
   default Stream<Arguments> sszNonWritableDataArguments() {
-    List<Arguments> list = sszData().filter(d -> !d.isWritableSupported()).map(Arguments::of)
-        .collect(Collectors.toList());
+    List<Arguments> list =
+        sszData()
+            .filter(d -> !d.isWritableSupported())
+            .map(Arguments::of)
+            .collect(Collectors.toList());
     // workaround for https://github.com/junit-team/junit5/issues/1477
     Assumptions.assumeFalse(list.isEmpty());
     return list.stream();
@@ -124,7 +129,8 @@ public interface SszDataAbstractTest {
     assertThat(data.hashTreeRoot()).isEqualTo(data.hashTreeRoot());
     if (data.isWritableSupported()) {
       assertThat(data.createWritableCopy().hashTreeRoot()).isEqualTo(data.hashTreeRoot());
-      assertThat(data.createWritableCopy().commitChanges().hashTreeRoot()).isEqualTo(data.hashTreeRoot());
+      assertThat(data.createWritableCopy().commitChanges().hashTreeRoot())
+          .isEqualTo(data.hashTreeRoot());
     }
   }
 }

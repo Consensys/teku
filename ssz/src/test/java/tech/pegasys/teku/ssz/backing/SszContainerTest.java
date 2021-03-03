@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.backing;
 
 import java.util.stream.Stream;
-import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;

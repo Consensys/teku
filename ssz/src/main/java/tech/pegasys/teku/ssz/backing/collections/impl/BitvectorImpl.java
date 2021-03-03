@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
 
 import com.google.common.base.Objects;
 import java.util.Arrays;
@@ -44,7 +45,7 @@ class BitvectorImpl {
   }
 
   public static int sszSerializationLength(final int size) {
-    return (size + 7) / 8;
+    return bitsCeilToBytes(size);
   }
 
   private final BitSet data;

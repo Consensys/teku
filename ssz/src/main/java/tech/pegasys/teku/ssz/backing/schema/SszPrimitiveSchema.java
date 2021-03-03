@@ -18,5 +18,12 @@ import tech.pegasys.teku.ssz.backing.SszPrimitive;
 public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
     extends SszSchema<SszDataT> {
 
+  int getBitsSize();
+
   SszDataT boxed(DataT rawValue);
+
+  @Override
+  default boolean isPrimitive() {
+    return true;
+  }
 }

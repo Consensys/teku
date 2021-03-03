@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -69,7 +70,7 @@ public abstract class AbstractSszPrimitiveSchema<
   public abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
-    return (getBitsSize() + 7) / 8;
+    return bitsCeilToBytes(getBitsSize());
   }
 
   @Override
@@ -78,12 +79,12 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public int getFixedPartSize() {
+  public int getSszFixedPartSize() {
     return getSSZBytesSize();
   }
 
   @Override
-  public int getVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(TreeNode node) {
     return 0;
   }
 

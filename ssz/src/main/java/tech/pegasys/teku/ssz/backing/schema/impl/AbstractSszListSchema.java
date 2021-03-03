@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.schema.impl;
 
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
+
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -74,20 +76,20 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int getFixedPartSize() {
+  public int getSszFixedPartSize() {
     return 0;
   }
 
   @Override
-  public int getVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(TreeNode node) {
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
-      if (elementSchema.getBitsSize() == 1) {
+      if (getSszElementBitSize() == 1) {
         // BitlistImpl is handled specially
         return length / 8 + 1;
       } else {
-        return length * elementSchema.getFixedPartSize();
+        return bitsCeilToBytes(length * getSszElementBitSize());
       }
     } else {
       return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)
@@ -153,7 +155,9 @@ public abstract class AbstractSszListSchema<
     SszLengthBounds maxLenBounds =
         SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
     // adding 1 boundary bit for BitlistImpl
-    return maxLenBounds.addBits(getElementSchema().getBitsSize() == 1 ? 1 : 0).ceilToBytes();
+    return maxLenBounds
+        .addBits(getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA ? 1 : 0)
+        .ceilToBytes();
   }
 
   @Override

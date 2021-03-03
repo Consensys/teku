@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -117,7 +118,7 @@ public class SszBitlistSchemaImpl extends AbstractSszListSchema<SszBit, SszBitli
 
     public int flushWithBoundaryBit(SszWriter writer, int boundaryBitOffset) {
       int bitIdx = boundaryBitOffset % 8;
-      checkArgument((boundaryBitOffset + 7) / 8 == size, "Invalid boundary bit offset");
+      checkArgument(bitsCeilToBytes(boundaryBitOffset) == size, "Invalid boundary bit offset");
       if (bitIdx == 0) {
         bytesList.forEach(bb -> writer.write(bb.bytes, bb.offset, bb.length));
         writer.write(new byte[] {1});

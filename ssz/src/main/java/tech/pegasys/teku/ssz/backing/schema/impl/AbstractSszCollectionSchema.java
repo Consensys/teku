@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints.SszSuperNodeHint;
@@ -87,7 +88,17 @@ public abstract class AbstractSszCollectionSchema<
 
   @Override
   public int getElementsPerChunk() {
-    return 256 / getElementSchema().getBitsSize();
+    SszSchema<SszElementT> elementSchema = getElementSchema();
+    return elementSchema.isPrimitive()
+        ? (256 / ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize())
+        : 1;
+  }
+
+  protected int getSszElementBitSize() {
+    SszSchema<SszElementT> elementSchema = getElementSchema();
+    return elementSchema.isPrimitive()
+        ? ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize()
+        : elementSchema.getSszFixedPartSize() * 8;
   }
 
   protected int getVariablePartSize(TreeNode vectorNode, int length) {
@@ -140,7 +151,7 @@ public abstract class AbstractSszCollectionSchema<
     for (int i = 0; i < elementsCount; i++) {
       TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
       int childSize = elementType.getSszSize(childSubtree);
-      writer.write(SszType.lengthToBytes(variableOffset));
+      writer.write(SszType.sszLengthToBytes(variableOffset));
       variableOffset += childSize;
     }
     for (int i = 0; i < elementsCount; i++) {
@@ -191,12 +202,12 @@ public abstract class AbstractSszCollectionSchema<
   private DeserializedData sszDeserializeFixed(SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
     checkSsz(
-        bytesSize % getElementSchema().getFixedPartSize() == 0,
+        bytesSize % getElementSchema().getSszFixedPartSize() == 0,
         "SSZ sequence length is not multiple of fixed element size");
-    int elementBitSize = getElementSchema().getBitsSize();
+    int elementBitSize = getSszElementBitSize();
     if (elementBitSize >= 8) {
       checkSsz(
-          bytesSize / getElementSchema().getFixedPartSize() <= getMaxLength(),
+          bytesSize * 8 / elementBitSize <= getMaxLength(),
           "SSZ sequence length exceeds max type length");
     } else {
       // preliminary rough check
@@ -225,10 +236,10 @@ public abstract class AbstractSszCollectionSchema<
       return new DeserializedData(
           TreeUtil.createTree(childNodes, treeDepth()), bytesSize * 8 / elementBitSize, lastByte);
     } else {
-      int elementsCount = bytesSize / getElementSchema().getFixedPartSize();
+      int elementsCount = bytesSize / getElementSchema().getSszFixedPartSize();
       List<TreeNode> childNodes = new ArrayList<>();
       for (int i = 0; i < elementsCount; i++) {
-        try (SszReader sszReader = reader.slice(getElementSchema().getFixedPartSize())) {
+        try (SszReader sszReader = reader.slice(getElementSchema().getSszFixedPartSize())) {
           TreeNode childNode = getElementSchema().sszDeserializeTree(sszReader);
           childNodes.add(childNode);
         }
@@ -241,14 +252,14 @@ public abstract class AbstractSszCollectionSchema<
     final int endOffset = reader.getAvailableBytes();
     final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
-      int firstElementOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+      int firstElementOffset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));
       checkSsz(firstElementOffset % SSZ_LENGTH_SIZE == 0, "Invalid first element offset");
       int elementsCount = firstElementOffset / SSZ_LENGTH_SIZE;
       checkSsz(elementsCount <= getMaxLength(), "SSZ sequence length exceeds max type length");
       List<Integer> elementOffsets = new ArrayList<>(elementsCount + 1);
       elementOffsets.add(firstElementOffset);
       for (int i = 1; i < elementsCount; i++) {
-        int offset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int offset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));
         elementOffsets.add(offset);
       }
       elementOffsets.add(endOffset);

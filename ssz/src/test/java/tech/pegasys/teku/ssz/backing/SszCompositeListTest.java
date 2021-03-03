@@ -50,8 +50,8 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public int getBitsSize() {
-          return 256;
+        public boolean isPrimitive() {
+          return false;
         }
 
         @Override
@@ -60,12 +60,12 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public int getFixedPartSize() {
+        public int getSszFixedPartSize() {
           return 0;
         }
 
         @Override
-        public int getVariablePartSize(TreeNode node) {
+        public int getSszVariablePartSize(TreeNode node) {
           return 0;
         }
 

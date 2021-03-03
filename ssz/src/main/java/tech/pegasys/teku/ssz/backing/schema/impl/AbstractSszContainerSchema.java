@@ -158,17 +158,17 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int getFixedPartSize() {
+  public int getSszFixedPartSize() {
     int size = 0;
     for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
-      size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
+      size += childType.isFixedSize() ? childType.getSszFixedPartSize() : SSZ_LENGTH_SIZE;
     }
     return size;
   }
 
   @Override
-  public int getVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(TreeNode node) {
     int size = 0;
     for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
@@ -186,16 +186,16 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
-    int variableChildOffset = getFixedPartSize();
+    int variableChildOffset = getSszFixedPartSize();
     int[] variableSizes = new int[getFieldsCount()];
     for (int i = 0; i < getFieldsCount(); i++) {
       TreeNode childSubtree = node.get(getChildGeneralizedIndex(i));
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
         int size = childType.sszSerializeTree(childSubtree, writer);
-        assert size == childType.getFixedPartSize();
+        assert size == childType.getSszFixedPartSize();
       } else {
-        writer.write(SszType.lengthToBytes(variableChildOffset));
+        writer.write(SszType.sszLengthToBytes(variableChildOffset));
         int childSize = childType.getSszSize(childSubtree);
         variableSizes[i] = childSize;
         variableChildOffset += childSize;
@@ -221,12 +221,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     for (int i = 0; i < childCount; i++) {
       SszSchema<?> childType = getChildSchema(i);
       if (childType.isFixedSize()) {
-        try (SszReader sszReader = reader.slice(childType.getFixedPartSize())) {
+        try (SszReader sszReader = reader.slice(childType.getSszFixedPartSize())) {
           TreeNode childNode = childType.sszDeserializeTree(sszReader);
           fixedChildrenSubtrees.add(childNode);
         }
       } else {
-        int childOffset = SszType.bytesToLength(reader.read(SSZ_LENGTH_SIZE));
+        int childOffset = SszType.sszBytesToLength(reader.read(SSZ_LENGTH_SIZE));
         variableChildrenOffsets.add(childOffset);
       }
     }

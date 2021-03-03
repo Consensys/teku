@@ -270,7 +270,7 @@ public class SszListTest {
       SszReader sszReader = SszReader.fromBytes(ssz);
       assertThatThrownBy(() -> sszListSchema.sszDeserialize(sszReader))
           .isInstanceOf(SszDeserializeException.class);
-      if (listElementType.getBitsSize() >= 8 || i > maxLength + 8) {
+      if (listElementType != SszPrimitiveSchemas.BIT_SCHEMA || i > maxLength + 8) {
         assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);
       }
     }

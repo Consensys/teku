@@ -27,8 +27,7 @@ public class AbstractSszImmutableContainerTest extends SszContainerTest {
   @Override
   public Stream<? extends SszData> sszData() {
     return Stream.of(
-        TestContainer.SSZ_SCHEMA.getDefault(),
-        TestByteVectorContainer.SSZ_SCHEMA.getDefault());
+        TestContainer.SSZ_SCHEMA.getDefault(), TestByteVectorContainer.SSZ_SCHEMA.getDefault());
   }
 
   @MethodSource("sszDataArguments")

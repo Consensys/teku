@@ -15,9 +15,7 @@ package tech.pegasys.teku.ssz.backing;
 
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
@@ -44,15 +42,13 @@ public class SszVectorTest implements SszCollectionAbstractTest {
                     SszVectorSchema.create(elementSchema, 33)))
         .flatMap(
             vectorSchema ->
-                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)))
-        ;
+                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
   }
 
-  @Disabled("https://github.com/ConsenSys/teku/issues/3618")
   @Test
   void testContainerSszSerialize() {
     SszVectorSchema<TestSubContainer, ?> schema =
         SszVectorSchema.create(TestSubContainer.SSZ_SCHEMA, 2);
-    Assertions.assertThat(schema.getFixedPartSize()).isEqualTo(80);
+    Assertions.assertThat(schema.getSszFixedPartSize()).isEqualTo(80);
   }
 }

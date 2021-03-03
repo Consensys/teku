@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema.impl;
 
 import static java.util.Collections.emptyList;
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -78,13 +79,13 @@ public abstract class AbstractSszVectorSchema<
       } else {
         return TreeUtil.createDefaultTree(maxChunks(), LeafNode.EMPTY_LEAF);
       }
-    } else if (getElementSchema().getBitsSize() == LeafNode.MAX_BIT_SIZE) {
+    } else if (getElementsPerChunk() == 1) {
       return TreeUtil.createDefaultTree(maxChunks(), getElementSchema().getDefaultTree());
     } else {
       // packed vector
-      int totalBytes = (getLength() * getElementSchema().getBitsSize() + 7) / 8;
-      int lastNodeSizeBytes = totalBytes % LeafNode.MAX_BYTE_SIZE;
-      int fullZeroNodesCount = totalBytes / LeafNode.MAX_BYTE_SIZE;
+      int fullZeroNodesCount = getLength() / getElementsPerChunk();
+      int lastNodeElementCount = getLength() % getElementsPerChunk();
+      int lastNodeSizeBytes = bitsCeilToBytes(lastNodeElementCount * getSszElementBitSize());
       Stream<TreeNode> fullZeroNodes =
           Stream.<TreeNode>generate(() -> LeafNode.ZERO_LEAVES[32]).limit(fullZeroNodesCount);
       Stream<TreeNode> lastZeroNode =
@@ -122,14 +123,14 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int getVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(TreeNode node) {
     return getVariablePartSize(node, getLength());
   }
 
   @Override
-  public int getFixedPartSize() {
-    int bitsPerChild = isFixedSize() ? getElementSchema().getBitsSize() : SSZ_LENGTH_SIZE * 8;
-    return (getLength() * bitsPerChild + 7) / 8;
+  public int getSszFixedPartSize() {
+    int bitsPerChild = isFixedSize() ? getSszElementBitSize() : SSZ_LENGTH_SIZE * 8;
+    return bitsCeilToBytes(getLength() * bitsPerChild);
   }
 
   @Override

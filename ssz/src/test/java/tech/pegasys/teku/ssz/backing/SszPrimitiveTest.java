@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -50,11 +49,12 @@ public class SszPrimitiveTest implements SszDataAbstractTest {
         SszBytes4.of(Bytes4.fromHexString("0x12345678")),
         SszBytes4.of(Bytes4.fromHexString("0xFFFFFFFF")),
         SszBytes32.of(Bytes32.ZERO),
-        SszBytes32.of(Bytes32
-            .fromHexString("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")),
-        SszBytes32.of(Bytes32
-            .fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"))
-    );
+        SszBytes32.of(
+            Bytes32.fromHexString(
+                "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")),
+        SszBytes32.of(
+            Bytes32.fromHexString(
+                "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")));
   }
 
   @MethodSource("sszDataArguments")

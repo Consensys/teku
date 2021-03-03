@@ -437,10 +437,18 @@ public class SszCustomContainerTest {
     ContainerRead c1r = c1w.commitChanges();
 
     // sanity check of equalsByGetters
-    assertThatSszData(c1r).isEqualTo(c1w).isEqualByGettersTo(c1w).isEqualByHashTreeRootTo(c1w);
+    assertThatSszData(c1r)
+        .isEqualTo(c1w)
+        .isEqualByGettersTo(c1w)
+        .isEqualByHashTreeRootTo(c1w)
+        .isEqualBySszTo(c1w);
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(0).setLong1(UInt64.valueOf(293874));
-    assertThatSszData(c1r).isEqualTo(c1w).isEqualByGettersTo(c1w).isEqualByHashTreeRootTo(c1w);
+    assertThatSszData(c1r)
+        .isEqualTo(c1w)
+        .isEqualByGettersTo(c1w)
+        .isEqualByHashTreeRootTo(c1w)
+        .isEqualBySszTo(c1w);
     assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w);
     assertThatSszData(c1r).isNotEqualByAllMeansTo(c2w.commitChanges());
 
@@ -475,7 +483,7 @@ public class SszCustomContainerTest {
 
     ContainerRead c4r = ContainerRead.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
 
-    assertThatSszData(c1r).isEqualTo(c4r).isEqualByGettersTo(c4r).isEqualByHashTreeRootTo(c4r);
+    assertThatSszData(c4r).isEqualByAllMeansTo(c1r);
     // make updated view from the source view in parallel
     // this tests that mutable view caches are merged and transferred
     // in a thread safe way
@@ -489,14 +497,8 @@ public class SszCustomContainerTest {
             512);
 
     List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
-    assertThatSszData(c4r).isEqualTo(c1r).isEqualByGettersTo(c1r).isEqualByHashTreeRootTo(c1r);
+    assertThatSszData(c4r).isEqualByAllMeansTo(c1r);
 
-    assertThat(modified)
-        .allSatisfy(
-            c ->
-                assertThatSszData(c)
-                    .isEqualTo(c3r)
-                    .isEqualByGettersTo(c3r)
-                    .isEqualByHashTreeRootTo(c3r));
+    assertThat(modified).allSatisfy(c -> assertThatSszData(c).isEqualByAllMeansTo(c3r));
   }
 }

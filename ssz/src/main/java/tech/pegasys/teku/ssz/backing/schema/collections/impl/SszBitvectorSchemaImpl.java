@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.backing.schema.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -59,7 +60,7 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
     checkSsz(
-        reader.getAvailableBytes() == (getLength() + 7) / 8,
+        reader.getAvailableBytes() == bitsCeilToBytes(getLength()),
         "SSZ length doesn't match Bitvector size");
 
     DeserializedData data = sszDeserializeVector(reader);

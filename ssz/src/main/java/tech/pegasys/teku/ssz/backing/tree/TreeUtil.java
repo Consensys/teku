@@ -62,6 +62,14 @@ public class TreeUtil {
     }
   }
 
+  public static int bitsCeilToBytes(int bits) {
+    return (bits + 7) / 8;
+  }
+
+  public static long bitsCeilToBytes(long bits) {
+    return (bits + 7) / 8;
+  }
+
   /**
    * Creates a binary tree with `nextPowerOf2(maxLength)` width and following leaf nodes <code>
    * [zeroElement] * maxLength + [ZERO_LEAF] * (nextPowerOf2(maxLength) - maxLength)
