@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
@@ -26,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -234,6 +235,21 @@ public class BeaconStateUtil {
                 getTotalBalance(state, validatorsUtil.getActiveValidatorIndices(state, epoch)));
   }
 
+  public List<UInt64> getEffectiveBalances(final BeaconState state) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getEffectiveBalances()
+        .get(
+            getCurrentEpoch(state),
+            epoch ->
+                state.getValidators().stream()
+                    .map(
+                        validator ->
+                            validatorsUtil.isActiveValidator(validator, epoch)
+                                ? validator.getEffective_balance()
+                                : UInt64.ZERO)
+                    .collect(toUnmodifiableList()));
+  }
+
   public void initiateValidatorExit(MutableBeaconState state, int index) {
     Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
@@ -246,7 +262,7 @@ public class BeaconStateUtil {
         state.getValidators().stream()
             .map(Validator::getExit_epoch)
             .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-            .collect(Collectors.toList());
+            .collect(toList());
     exit_epochs.add(computeActivationExitEpoch(getCurrentEpoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
     final UInt64 final_exit_queue_epoch = exit_queue_epoch;
