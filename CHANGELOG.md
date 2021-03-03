@@ -16,6 +16,7 @@ For information on changes in released versions of Teku, see the [releases page]
   Ansible users should ensure they have the latest version of the ansible role.
   
 ### Additions and Improvements
+- Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be interecepted (e.g. on Windows)
