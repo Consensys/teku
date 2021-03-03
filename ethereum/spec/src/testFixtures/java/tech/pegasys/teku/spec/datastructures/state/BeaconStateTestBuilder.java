@@ -29,7 +29,7 @@ public class BeaconStateTestBuilder {
   private final List<UInt64> balances = new ArrayList<>();
   private UInt64 slot;
   private Fork fork;
-  @org.jetbrains.annotations.NotNull private final DataStructureUtil dataStructureUtil;
+  private final DataStructureUtil dataStructureUtil;
 
   public BeaconStateTestBuilder(final DataStructureUtil dataStructureUtil) {
     this.slot = dataStructureUtil.randomUInt64();
