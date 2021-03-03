@@ -20,3 +20,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be interecepted (e.g. on Windows)
+- Fixed build failure when checked out as a shallow clone. Shallow clones are still not recommended as the version number cannot be determined correctly.
