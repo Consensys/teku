@@ -49,7 +49,6 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return createFromBackingNode(getDefaultTree());
   }
 
-
   boolean isPrimitive();
 
   /**
