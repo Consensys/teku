@@ -197,14 +197,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<UInt64> oldBalances = balances;
-
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
               protoArray.getIndices(),
-              oldBalances,
+              balances,
               justifiedStateBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
