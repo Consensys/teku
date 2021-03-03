@@ -22,6 +22,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -167,5 +168,11 @@ public class SszBitvectorTest {
       assertThat(vector.getBit(i)).isEqualTo(bitsIndexes.contains(i));
     }
     assertThat(vector.getBitCount()).isEqualTo(bitsIndexes.size());
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void get_shouldThrowIndexOutOfBounds(SszBitvector vector) {
+    assertThatThrownBy(() -> vector.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
   }
 }

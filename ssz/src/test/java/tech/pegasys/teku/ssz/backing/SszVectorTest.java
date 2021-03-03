@@ -13,13 +13,40 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public class SszVectorTest {
+public class SszVectorTest implements SszCollectionAbstractTest {
+
+  private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+
+  @Override
+  public Stream<? extends SszData> sszData() {
+    return SszCollectionAbstractTest.elementSchemas()
+        .flatMap(
+            elementSchema ->
+                Stream.of(
+                    SszVectorSchema.create(elementSchema, 1),
+                    SszVectorSchema.create(elementSchema, 2),
+                    SszVectorSchema.create(elementSchema, 3),
+                    SszVectorSchema.create(elementSchema, 4),
+                    SszVectorSchema.create(elementSchema, 5),
+                    SszVectorSchema.create(elementSchema, 15),
+                    SszVectorSchema.create(elementSchema, 16),
+                    SszVectorSchema.create(elementSchema, 17),
+                    SszVectorSchema.create(elementSchema, 31),
+                    SszVectorSchema.create(elementSchema, 32),
+                    SszVectorSchema.create(elementSchema, 33)))
+        .flatMap(
+            vectorSchema ->
+                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)))
+        ;
+  }
 
   @Disabled("https://github.com/ConsenSys/teku/issues/3618")
   @Test

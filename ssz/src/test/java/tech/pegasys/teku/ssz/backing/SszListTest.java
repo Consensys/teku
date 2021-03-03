@@ -19,9 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
-import java.util.Random;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -34,37 +32,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestDoubleSuperContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
-import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class SszListTest {
 
-  private static final Random random = new Random(1);
-  private static final Supplier<SszBit> bitSupplier = () -> SszBit.of(random.nextBoolean());
-  private static final Supplier<SszByte> byteSupplier = () -> SszByte.of(random.nextInt());
-  private static final Supplier<SszBytes4> bytes4Supplier =
-      () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
-  private static final Supplier<SszUInt64> uintSupplier =
-      () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
-  private static final Supplier<SszBytes32> bytes32Supplier =
-      () -> SszBytes32.of(Bytes32.random(random));
+  private RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
   @Test
   void testMutableListReusable() {
@@ -115,56 +96,6 @@ public class SszListTest {
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr2.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
-  }
-
-  static <T extends SszData> T randomData(SszSchema<T> schema) {
-    return randomDataStream(schema).findFirst().orElseThrow();
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
-    if (schema instanceof AbstractSszPrimitiveSchema) {
-      if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
-        return (Stream<T>) Stream.generate(bitSupplier);
-      } else if (schema == SszPrimitiveSchemas.BYTE_SCHEMA) {
-        return (Stream<T>) Stream.generate(byteSupplier);
-      } else if (schema == SszPrimitiveSchemas.UINT64_SCHEMA) {
-        return (Stream<T>) Stream.generate(uintSupplier);
-      } else if (schema == SszPrimitiveSchemas.BYTES4_SCHEMA) {
-        return (Stream<T>) Stream.generate(bytes4Supplier);
-      } else if (schema == SszPrimitiveSchemas.BYTES32_SCHEMA) {
-        return (Stream<T>) Stream.generate(bytes32Supplier);
-      } else {
-        throw new IllegalArgumentException("Unknown primitive schema: " + schema);
-      }
-    } else if (schema instanceof AbstractSszContainerSchema) {
-      AbstractSszContainerSchema<SszContainer> containerSchema =
-          (AbstractSszContainerSchema<SszContainer>) schema;
-      return Stream.generate(
-          () -> {
-            List<SszData> children =
-                containerSchema.getFieldSchemas().stream()
-                    .map(SszListTest::randomData)
-                    .collect(Collectors.toList());
-            return (T) containerSchema.createFromFieldValues(children);
-          });
-    } else if (schema instanceof SszCollectionSchema) {
-      return Stream.generate(
-          () -> {
-            SszCollectionSchema<SszData, ?> collectionSchema =
-                (SszCollectionSchema<SszData, ?>) schema;
-            SszSchema<SszData> elementSchema = collectionSchema.getElementSchema();
-            int maxChildrenToAdd = (int) Long.min(collectionSchema.getMaxLength(), 16 * 1024);
-            List<SszData> children =
-                Stream.generate(() -> randomData(elementSchema))
-                    .limit(maxChildrenToAdd)
-                    .collect(Collectors.toList());
-            SszCollection<SszData> ret = collectionSchema.createFromElements(children);
-            return (T) ret;
-          });
-    } else {
-      throw new IllegalArgumentException("Unknown schema: " + schema);
-    }
   }
 
   static Stream<Arguments> testPrimitiveBitListTypeParameters() {
@@ -289,9 +220,9 @@ public class SszListTest {
     SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
     SszList<T> lr1 = sszListSchema.getDefault();
     SszMutableList<T> lw1 = lr1.createWritableCopy();
-    lw1.append(randomData(listElementType));
+    lw1.append(randomSsz.randomData(listElementType));
     if (maxLength > 1) {
-      lw1.append(randomData(listElementType));
+      lw1.append(randomSsz.randomData(listElementType));
     }
     SszMutableList<T> lw2 = lw1.commitChanges().createWritableCopy();
     lw2.clear();
@@ -300,7 +231,7 @@ public class SszListTest {
 
     SszMutableList<T> lw3 = lw1.commitChanges().createWritableCopy();
     lw3.clear();
-    lw3.append(randomData(listElementType));
+    lw3.append(randomSsz.randomData(listElementType));
     SszList<T> lr3 = lw3.commitChanges();
     assertThat(lr3.size()).isEqualTo(1);
   }
@@ -398,7 +329,10 @@ public class SszListTest {
             size -> {
               SszList<T> list =
                   sszListSchema.createFromElements(
-                      randomDataStream(listElementType).limit(size).collect(Collectors.toList()));
+                      randomSsz
+                          .randomDataStream(listElementType)
+                          .limit(size)
+                          .collect(Collectors.toList()));
               Bytes ssz = list.sszSerialize();
               SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
               assertThatSszData(list1).isEqualByAllMeansTo(list);
