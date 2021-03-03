@@ -124,7 +124,7 @@ public class TransitionCommand implements Runnable {
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconState state = readState(inData);
+      BeaconState state = readState(spec, inData);
 
       try {
         BeaconState result = transition.applyTransition(spec, state);
@@ -161,8 +161,12 @@ public class TransitionCommand implements Runnable {
     }
   }
 
-  private BeaconState readState(final Bytes inData) {
-    return deserialize(inData, BeaconState.getSszSchema(), "pre state");
+  private BeaconState readState(final Spec spec, final Bytes inData) {
+    try {
+      return spec.deserializeBeaconState(inData);
+    } catch (final IllegalArgumentException e) {
+      throw new SSZException("Failed to parse SSZ (pre state): " + e.getMessage(), e);
+    }
   }
 
   private SignedBeaconBlock readBlock(final String path) throws IOException {
