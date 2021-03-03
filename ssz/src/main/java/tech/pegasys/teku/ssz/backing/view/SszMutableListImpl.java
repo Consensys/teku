@@ -76,7 +76,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @Override
   protected void checkIndex(int index, boolean set) {
-    if ((!set && index >= size())
+    if (index < 0
+        || (!set && index >= size())
         || (set && (index > size() || index >= getSchema().getMaxLength()))) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());

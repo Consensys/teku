@@ -50,7 +50,7 @@ public class SszMutableVectorImpl<
 
   @Override
   protected void checkIndex(int index, boolean set) {
-    if (index >= size()) {
+    if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());
     }
