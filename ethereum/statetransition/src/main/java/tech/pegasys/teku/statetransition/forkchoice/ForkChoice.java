@@ -106,11 +106,13 @@ public class ForkChoice {
                       }
                       final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                      final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
+                      final List<UInt64> justifiedEffectiveBalances =
+                          spec.getBeaconStateUtil(justifiedState.getSlot())
+                              .getEffectiveBalances(justifiedState);
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
-                              finalizedCheckpoint,
-                              justifiedCheckpoint,
-                              justifiedCheckpointState.orElseThrow());
+                              finalizedCheckpoint, justifiedCheckpoint, justifiedEffectiveBalances);
 
                       recentChainData.updateHead(
                           headBlockRoot,

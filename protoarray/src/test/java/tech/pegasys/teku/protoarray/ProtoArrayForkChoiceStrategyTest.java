@@ -134,9 +134,14 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
 
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(anchor.getState().getSlot())
+            .getEffectiveBalances(anchor.getState());
     final Bytes32 head =
         forkChoiceStrategy.findHead(
-            store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+            store, anchor.getCheckpoint(), anchor.getCheckpoint(), effectiveBalances);
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -297,12 +302,18 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
 
     final BeaconState block3State = block3.getState();
+
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(block3State.getSlot())
+            .getEffectiveBalances(block3State);
     final Bytes32 bestHead =
         strategy.findHead(
             transaction,
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
-            block3State);
+            effectiveBalances);
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
