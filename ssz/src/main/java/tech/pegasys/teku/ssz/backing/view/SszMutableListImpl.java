@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
@@ -56,7 +57,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   }
 
   private TreeNode createSizeNode() {
-    return SszUInt64.fromLong(size()).getBackingNode();
+    return SszUInt64.of(UInt64.fromLongBits(size())).getBackingNode();
   }
 
   @Override

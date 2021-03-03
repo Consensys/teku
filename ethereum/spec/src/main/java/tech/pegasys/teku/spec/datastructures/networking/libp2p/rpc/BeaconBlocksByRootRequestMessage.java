@@ -48,7 +48,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     super(
         SSZ_SCHEMA,
         SSZ_SCHEMA.createTreeFromElements(
-            roots.stream().map(SszBytes32::new).collect(Collectors.toList())));
+            roots.stream().map(SszBytes32::of).collect(Collectors.toList())));
   }
 
   private BeaconBlocksByRootRequestMessage(TreeNode node) {

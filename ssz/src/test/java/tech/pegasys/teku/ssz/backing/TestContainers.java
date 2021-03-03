@@ -45,7 +45,7 @@ public class TestContainers {
     }
 
     public TestSubContainer(UInt64 long1, Bytes32 bytes1) {
-      super(SSZ_SCHEMA, new SszUInt64(long1), new SszBytes32(bytes1));
+      super(SSZ_SCHEMA, SszUInt64.of(long1), SszBytes32.of(bytes1));
     }
 
     public UInt64 getLong1() {
@@ -69,7 +69,7 @@ public class TestContainers {
     }
 
     public TestContainer(TestSubContainer subContainer, UInt64 long1) {
-      super(SSZ_SCHEMA, subContainer, new SszUInt64(long1));
+      super(SSZ_SCHEMA, subContainer, SszUInt64.of(long1));
     }
 
     public TestSubContainer getSubContainer() {
@@ -91,7 +91,7 @@ public class TestContainers {
     }
 
     public TestSmallContainer(boolean val) {
-      super(SSZ_SCHEMA, SszBit.viewOf(val));
+      super(SSZ_SCHEMA, SszBit.of(val));
     }
   }
 
@@ -117,7 +117,10 @@ public class TestContainers {
 
     public TestByteVectorContainer(long l1, Bytes b1, long l2) {
       super(
-          SSZ_SCHEMA, SszUInt64.fromLong(l1), SszByteVector.fromBytes(b1), SszUInt64.fromLong(l2));
+          SSZ_SCHEMA,
+          SszUInt64.of(UInt64.fromLongBits(l1)),
+          SszByteVector.fromBytes(b1),
+          SszUInt64.of(UInt64.fromLongBits(l2)));
     }
   }
 
@@ -142,11 +145,11 @@ public class TestContainers {
         long l1, TestByteVectorContainer c1, long l2, TestByteVectorContainer c2, long l3) {
       super(
           SSZ_SCHEMA,
-          SszUInt64.fromLong(l1),
+          SszUInt64.of(UInt64.fromLongBits(l1)),
           c1,
-          SszUInt64.fromLong(l2),
+          SszUInt64.of(UInt64.fromLongBits(l2)),
           c2,
-          SszUInt64.fromLong(l3));
+          SszUInt64.of(UInt64.fromLongBits(l3)));
     }
   }
 

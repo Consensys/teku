@@ -60,8 +60,8 @@ public class DepositData
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        new SszBytes32(withdrawal_credentials),
-        new SszUInt64(amount),
+        SszBytes32.of(withdrawal_credentials),
+        SszUInt64.of(amount),
         new SszSignature(signature));
   }
 

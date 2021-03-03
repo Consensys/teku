@@ -383,7 +383,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
 
     SigningData domain_wrapped_object =
-        new SigningData(new SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
+        new SigningData(SszUInt64.of(UInt64.valueOf(number)).hashTreeRoot(), domain);
     return domain_wrapped_object.hashTreeRoot();
   }
 

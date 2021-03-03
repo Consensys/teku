@@ -50,7 +50,7 @@ public class AggregateAndProof
   }
 
   public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
-    super(SSZ_SCHEMA, new SszUInt64(index), aggregate, new SszSignature(selection_proof));
+    super(SSZ_SCHEMA, SszUInt64.of(index), aggregate, new SszSignature(selection_proof));
   }
 
   public UInt64 getIndex() {

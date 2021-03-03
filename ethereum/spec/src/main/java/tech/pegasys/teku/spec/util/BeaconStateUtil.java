@@ -58,7 +58,7 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
@@ -272,8 +272,7 @@ public class BeaconStateUtil {
   }
 
   public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
-    SigningData domainWrappedObject =
-        new SigningData(new SszPrimitives.SszUInt64(number).hashTreeRoot(), domain);
+    SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 

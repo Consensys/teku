@@ -88,13 +88,13 @@ public class Validator
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        new SszBytes32(withdrawal_credentials),
-        new SszUInt64(effective_balance),
-        SszBit.viewOf(slashed),
-        new SszUInt64(activation_eligibility_epoch),
-        new SszUInt64(activation_epoch),
-        new SszUInt64(exit_epoch),
-        new SszUInt64(withdrawable_epoch));
+        SszBytes32.of(withdrawal_credentials),
+        SszUInt64.of(effective_balance),
+        SszBit.of(slashed),
+        SszUInt64.of(activation_eligibility_epoch),
+        SszUInt64.of(activation_epoch),
+        SszUInt64.of(exit_epoch),
+        SszUInt64.of(withdrawable_epoch));
   }
 
   public Validator(
@@ -109,13 +109,13 @@ public class Validator
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
-        new SszBytes32(withdrawal_credentials),
-        new SszUInt64(effective_balance),
-        SszBit.viewOf(slashed),
-        new SszUInt64(activation_eligibility_epoch),
-        new SszUInt64(activation_epoch),
-        new SszUInt64(exit_epoch),
-        new SszUInt64(withdrawable_epoch));
+        SszBytes32.of(withdrawal_credentials),
+        SszUInt64.of(effective_balance),
+        SszBit.of(slashed),
+        SszUInt64.of(activation_eligibility_epoch),
+        SszUInt64.of(activation_epoch),
+        SszUInt64.of(exit_epoch),
+        SszUInt64.of(withdrawable_epoch));
   }
 
   /**

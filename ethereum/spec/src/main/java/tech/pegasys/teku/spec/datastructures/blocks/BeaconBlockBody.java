@@ -156,7 +156,7 @@ public class BeaconBlockBody
         type,
         new SszSignature(randao_reveal),
         eth1_data,
-        new SszBytes32(graffiti),
+        SszBytes32.of(graffiti),
         proposer_slashings,
         attester_slashings,
         attestations,

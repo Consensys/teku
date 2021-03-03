@@ -69,11 +69,11 @@ public class SszContainerTest {
   public interface SubContainerWrite extends SubContainerRead, SszMutableRefContainer {
 
     default void setLong1(UInt64 val) {
-      set(0, new SszUInt64(val));
+      set(0, SszUInt64.of(val));
     }
 
     default void setLong2(UInt64 val) {
-      set(1, new SszUInt64(val));
+      set(1, SszUInt64.of(val));
     }
   }
 
@@ -158,7 +158,7 @@ public class SszContainerTest {
     }
 
     public ImmutableSubContainerImpl(UInt64 long1, Bytes32 bytes1) {
-      super(SSZ_SCHEMA, new SszUInt64(long1), new SszBytes32(bytes1));
+      super(SSZ_SCHEMA, SszUInt64.of(long1), SszBytes32.of(bytes1));
     }
 
     @Override
@@ -271,12 +271,12 @@ public class SszContainerTest {
 
     @Override
     public void setLong1(UInt64 val) {
-      set(0, new SszUInt64(val));
+      set(0, SszUInt64.of(val));
     }
 
     @Override
     public void setLong2(UInt64 val) {
-      set(1, new SszUInt64(val));
+      set(1, SszUInt64.of(val));
     }
   }
 
@@ -306,8 +306,8 @@ public class SszContainerTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(SszUInt64.fromLong(0x333));
-    c1w.getList1().append(SszUInt64.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.of(UInt64.fromLongBits(0x333)));
+    c1w.getList1().append(SszUInt64.of(UInt64.fromLongBits(0x444)));
 
     c1w.getList2()
         .append(
@@ -413,8 +413,8 @@ public class SszContainerTest {
     c1w.getSub1().setLong1(UInt64.valueOf(0x111));
     c1w.getSub1().setLong2(UInt64.valueOf(0x222));
 
-    c1w.getList1().append(SszUInt64.fromLong(0x333));
-    c1w.getList1().append(SszUInt64.fromLong(0x444));
+    c1w.getList1().append(SszUInt64.of(UInt64.fromLongBits(0x333)));
+    c1w.getList1().append(SszUInt64.of(UInt64.fromLongBits(0x444)));
 
     c1w.getList2()
         .append(
@@ -457,8 +457,8 @@ public class SszContainerTest {
         w -> {
           w.setLong2(UInt64.valueOf(0x11111));
           w.getSub1().setLong2(UInt64.valueOf(0x22222));
-          w.getList1().append(SszUInt64.fromLong(0x44444));
-          w.getList1().set(0, SszUInt64.fromLong(0x11111));
+          w.getList1().append(SszUInt64.of(UInt64.fromLongBits(0x44444)));
+          w.getList1().set(0, SszUInt64.of(UInt64.fromLongBits(0x11111)));
           SubContainerWrite sc = w.getList2().append();
           sc.setLong1(UInt64.valueOf(0x77777));
           sc.setLong2(UInt64.valueOf(0x88888));

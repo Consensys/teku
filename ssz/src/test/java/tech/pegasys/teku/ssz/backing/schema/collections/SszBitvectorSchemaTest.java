@@ -97,8 +97,7 @@ public class SszBitvectorSchemaTest {
   @Test
   void createFromElements_shouldReturnSszBitvector() {
     SszBitvectorSchema<SszBitvector> schema = SszBitvectorSchema.create(10);
-    SszBitvector bitvector =
-        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+    SszBitvector bitvector = schema.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(bitvector).isInstanceOf(SszBitvector.class);
   }
 
@@ -108,7 +107,7 @@ public class SszBitvectorSchemaTest {
     assertThat(schema).isInstanceOf(SszBitvectorSchema.class);
     assertThat(schema.getMaxLength()).isEqualTo(10);
     SszVector<SszBit> sszList =
-        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+        schema.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(sszList).isInstanceOf(SszBitvector.class);
     SszBitvector sszBitvector = (SszBitvector) sszList;
     assertThat(sszBitvector.getSchema()).isEqualTo(schema);

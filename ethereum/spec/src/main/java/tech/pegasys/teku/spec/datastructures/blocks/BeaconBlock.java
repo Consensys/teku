@@ -89,10 +89,10 @@ public final class BeaconBlock
       BeaconBlockBody body) {
     super(
         type,
-        new SszUInt64(slot),
-        new SszUInt64(proposer_index),
-        new SszBytes32(parent_root),
-        new SszBytes32(state_root),
+        SszUInt64.of(slot),
+        SszUInt64.of(proposer_index),
+        SszBytes32.of(parent_root),
+        SszBytes32.of(state_root),
         body);
   }
 

@@ -41,15 +41,15 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   // Versioning
 
   default void setGenesis_time(UInt64 genesis_time) {
-    set(GENESIS_TIME_FIELD.getIndex(), new SszUInt64(genesis_time));
+    set(GENESIS_TIME_FIELD.getIndex(), SszUInt64.of(genesis_time));
   }
 
   default void setGenesis_validators_root(Bytes32 genesis_validators_root) {
-    set(GENESIS_VALIDATORS_ROOT_FIELD.getIndex(), new SszBytes32(genesis_validators_root));
+    set(GENESIS_VALIDATORS_ROOT_FIELD.getIndex(), SszBytes32.of(genesis_validators_root));
   }
 
   default void setSlot(UInt64 slot) {
-    set(SLOT_FIELD.getIndex(), new SszUInt64(slot));
+    set(SLOT_FIELD.getIndex(), SszUInt64.of(slot));
   }
 
   default void setFork(Fork fork) {
@@ -103,7 +103,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   default void setEth1_deposit_index(UInt64 eth1_deposit_index) {
-    set(ETH1_DEPOSIT_INDEX_FIELD.getIndex(), new SszUInt64(eth1_deposit_index));
+    set(ETH1_DEPOSIT_INDEX_FIELD.getIndex(), SszUInt64.of(eth1_deposit_index));
   }
 
   // Registry

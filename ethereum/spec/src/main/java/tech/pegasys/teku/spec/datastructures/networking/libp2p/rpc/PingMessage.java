@@ -42,7 +42,7 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
   }
 
   public PingMessage(UInt64 seqNumber) {
-    super(SSZ_SCHEMA, new SszUInt64(seqNumber));
+    super(SSZ_SCHEMA, SszUInt64.of(seqNumber));
   }
 
   public UInt64 getSeqNumber() {

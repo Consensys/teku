@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 

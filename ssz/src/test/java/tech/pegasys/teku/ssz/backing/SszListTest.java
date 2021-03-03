@@ -57,14 +57,14 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 public class SszListTest {
 
   private static final Random random = new Random(1);
-  private static final Supplier<SszBit> bitSupplier = () -> SszBit.viewOf(random.nextBoolean());
-  private static final Supplier<SszByte> byteSupplier = () -> new SszByte((byte) random.nextInt());
+  private static final Supplier<SszBit> bitSupplier = () -> SszBit.of(random.nextBoolean());
+  private static final Supplier<SszByte> byteSupplier = () -> SszByte.of(random.nextInt());
   private static final Supplier<SszBytes4> bytes4Supplier =
-      () -> new SszBytes4(Bytes4.rightPad(Bytes.random(4, random)));
+      () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
   private static final Supplier<SszUInt64> uintSupplier =
-      () -> SszUInt64.fromLong(random.nextLong());
+      () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
   private static final Supplier<SszBytes32> bytes32Supplier =
-      () -> new SszBytes32(Bytes32.random(random));
+      () -> SszBytes32.of(Bytes32.random(random));
 
   @Test
   void testMutableListReusable() {
