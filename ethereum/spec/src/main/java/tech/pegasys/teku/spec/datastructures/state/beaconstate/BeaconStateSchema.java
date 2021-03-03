@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStat
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -179,6 +180,16 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
           invariantIndex,
           actualField.getName());
     }
+  }
+
+  /**
+   * Extract the slot value from any serialized state
+   *
+   * @param bytes A serialized state
+   * @return The slot of the state
+   */
+  public static UInt64 extractSlot(final Bytes bytes) {
+    return BeaconStateInvariants.extractSlot(bytes);
   }
 
   public static BeaconStateSchema create(final SpecConstants specConstants) {

@@ -16,24 +16,14 @@ package tech.pegasys.teku.spec.datastructures.util;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ChainDataLoader {
-  public static BeaconState loadState(final String source) throws IOException {
-    return BeaconState.getSszSchema()
-        .sszDeserialize(
-            ResourceLoader.urlOrFile()
-                .loadBytes(source)
-                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
-  }
-
-  public static SignedBeaconBlock loadBlock(final String source) throws IOException {
-    return SignedBeaconBlock.SSZ_SCHEMA
-        .get()
-        .sszDeserialize(
-            ResourceLoader.urlOrFile()
-                .loadBytes(source)
-                .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
+  public static BeaconState loadState(final Spec spec, final String source) throws IOException {
+    return spec.deserializeBeaconState(
+        ResourceLoader.urlOrFile()
+            .loadBytes(source)
+            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }
 }
