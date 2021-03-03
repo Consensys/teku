@@ -657,6 +657,9 @@ def calculateVersion() {
     return 'UNKNOWN'
   }
   String version = grgit.describe(tags: true)
+  if (version == null) {
+    return "UNKNOWN+g${grgit.head().abbreviatedId}"
+  }
   def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
   def matcher = version =~ versionPattern
   if (matcher.find()) {
