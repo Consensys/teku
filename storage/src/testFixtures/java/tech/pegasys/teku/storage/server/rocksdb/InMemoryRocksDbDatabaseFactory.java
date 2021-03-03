@@ -43,8 +43,8 @@ public class InMemoryRocksDbDatabaseFactory {
         new StubMetricsSystem(),
         hotDb,
         coldDb,
-        V4SchemaHot.INSTANCE,
-        V6SchemaFinalized.INSTANCE,
+        V4SchemaHot.create(spec),
+        V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
         spec);

@@ -163,8 +163,8 @@ public class FileBackedStorageSystemBuilder {
         new StubMetricsSystem(),
         hotConfigDefault.withDatabaseDir(hotDir),
         coldConfig,
-        V4SchemaHot.INSTANCE,
-        V6SchemaFinalized.INSTANCE,
+        V4SchemaHot.create(spec),
+        V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
         spec);
@@ -182,8 +182,8 @@ public class FileBackedStorageSystemBuilder {
         new StubMetricsSystem(),
         hotConfigDefault.withDatabaseDir(hotDir),
         coldConfig,
-        V4SchemaHot.INSTANCE,
-        V6SchemaFinalized.INSTANCE,
+        V4SchemaHot.create(spec),
+        V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
         spec);

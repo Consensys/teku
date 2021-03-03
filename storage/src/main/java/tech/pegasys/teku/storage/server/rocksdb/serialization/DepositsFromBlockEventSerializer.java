@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 
-public class DepositsFromBlockEventSerializer implements RocksDbSerializer<DepositsFromBlockEvent> {
+class DepositsFromBlockEventSerializer implements RocksDbSerializer<DepositsFromBlockEvent> {
 
   @Override
   public DepositsFromBlockEvent deserialize(final byte[] data) {

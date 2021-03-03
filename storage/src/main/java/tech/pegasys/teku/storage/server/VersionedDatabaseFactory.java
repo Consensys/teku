@@ -283,8 +283,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
-          V4SchemaHot.INSTANCE,
-          V6SchemaFinalized.INSTANCE,
+          V4SchemaHot.create(spec),
+          V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
           spec);
@@ -356,8 +356,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
-          V4SchemaHot.INSTANCE,
-          V6SchemaFinalized.INSTANCE,
+          V4SchemaHot.create(spec),
+          V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
           spec);

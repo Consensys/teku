@@ -18,6 +18,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
+import java.util.Objects;
+
 public class RocksDbColumn<TKey, TValue> {
   private final Bytes id;
   private final RocksDbSerializer<TKey> keySerializer;
@@ -50,5 +52,18 @@ public class RocksDbColumn<TKey, TValue> {
 
   public RocksDbSerializer<TValue> getValueSerializer() {
     return valueSerializer;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final RocksDbColumn<?, ?> that = (RocksDbColumn<?, ?>) o;
+    return Objects.equals(id, that.id) && Objects.equals(keySerializer, that.keySerializer) && Objects.equals(valueSerializer, that.valueSerializer);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, keySerializer, valueSerializer);
   }
 }
