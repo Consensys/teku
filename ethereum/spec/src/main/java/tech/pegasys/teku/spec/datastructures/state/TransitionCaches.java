@@ -32,6 +32,7 @@ public class TransitionCaches {
   private static final int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
   private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
+  private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
@@ -41,6 +42,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           ValidatorIndexCache.NO_OP_INSTANCE,
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache()) {
 
         @Override
@@ -66,6 +68,7 @@ public class TransitionCaches {
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
   private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
+  private final Cache<UInt64, List<UInt64>> effectiveBalances;
 
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
@@ -77,6 +80,7 @@ public class TransitionCaches {
     validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = new LRUCache<>(MAX_EFFECTIVE_BALANCE_CACHE);
   }
 
   private TransitionCaches(
@@ -86,7 +90,8 @@ public class TransitionCaches {
       Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
       ValidatorIndexCache validatorIndexCache,
-      Cache<Bytes32, List<Integer>> committeeShuffle) {
+      Cache<Bytes32, List<Integer>> committeeShuffle,
+      Cache<UInt64, List<UInt64>> effectiveBalances) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -94,6 +99,7 @@ public class TransitionCaches {
     this.validatorsPubKeys = validatorsPubKeys;
     this.validatorIndexCache = validatorIndexCache;
     this.committeeShuffle = committeeShuffle;
+    this.effectiveBalances = effectiveBalances;
   }
 
   public void setLatestTotalBalances(TotalBalances totalBalances) {
@@ -146,6 +152,16 @@ public class TransitionCaches {
   }
 
   /**
+   * (epoch) -> (validator effective balances) cache. Note that inactive validators report an
+   * effective balance of 0.
+   *
+   * @return the effective balance cache
+   */
+  public Cache<UInt64, List<UInt64>> getEffectiveBalances() {
+    return effectiveBalances;
+  }
+
+  /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
    */
@@ -157,6 +173,7 @@ public class TransitionCaches {
         totalActiveBalance.copy(),
         validatorsPubKeys,
         validatorIndexCache,
-        committeeShuffle.copy());
+        committeeShuffle.copy(),
+        effectiveBalances.copy());
   }
 }

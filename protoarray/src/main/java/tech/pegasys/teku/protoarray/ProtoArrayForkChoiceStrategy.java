@@ -95,13 +95,13 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       final VoteUpdater voteUpdater,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances) {
     return findHead(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().asList());
+        justifiedCheckpointEffectiveBalances);
   }
 
   @Override

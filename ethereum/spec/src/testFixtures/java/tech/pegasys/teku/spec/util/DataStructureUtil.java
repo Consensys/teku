@@ -744,4 +744,8 @@ public final class DataStructureUtil {
   private <T> T getConstant(final Function<SpecConstants, T> getter) {
     return getter.apply(spec.getGenesisSpec().getConstants());
   }
+
+  public Spec getSpec() {
+    return spec;
+  }
 }
