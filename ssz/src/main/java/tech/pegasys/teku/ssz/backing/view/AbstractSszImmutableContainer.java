@@ -73,6 +73,11 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
   }
 
   @Override
+  public boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   public boolean equals(Object obj) {
     if (Objects.isNull(obj)) {
       return false;

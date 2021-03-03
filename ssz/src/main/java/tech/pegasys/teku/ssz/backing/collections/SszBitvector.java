@@ -27,6 +27,11 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit> {
   }
 
   @Override
+  default boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   SszBitvectorSchema<? extends SszBitvector> getSchema();
 
   // Bitlist methods

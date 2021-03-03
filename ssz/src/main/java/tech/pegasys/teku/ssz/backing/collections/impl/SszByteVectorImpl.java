@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -56,6 +57,16 @@ public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
   @Override
   public SszByteVectorSchemaImpl<?> getSchema() {
     return (SszByteVectorSchemaImpl<?>) super.getSchema();
+  }
+
+  @Override
+  public SszMutablePrimitiveVector<Byte, SszByte> createWritableCopy() {
+    throw new UnsupportedOperationException("SszBitlist is immutable structure");
+  }
+
+  @Override
+  public boolean isWritableSupported() {
+    return false;
   }
 
   @Override

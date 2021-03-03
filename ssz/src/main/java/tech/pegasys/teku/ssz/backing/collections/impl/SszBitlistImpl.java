@@ -154,6 +154,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
+  public boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   public String toString() {
     return "SszBitlist{size=" + this.size() + ", " + value.toString() + "}";
   }

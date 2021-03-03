@@ -34,6 +34,11 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
   }
 
   @Override
+  default boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   SszBitlistSchema<? extends SszBitlist> getSchema();
 
   // Bitlist methods

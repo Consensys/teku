@@ -95,6 +95,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
   public String toString() {
     return "SszBitvector{size=" + this.size() + ", " + value.toString() + "}";
   }
