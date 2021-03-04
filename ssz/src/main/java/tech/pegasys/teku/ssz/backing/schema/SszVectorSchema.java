@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.SszVectorSchemaImpl;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 
 public interface SszVectorSchema<
         ElementDataT extends SszData, SszVectorT extends SszVector<ElementDataT>>
     extends SszCollectionSchema<ElementDataT, SszVectorT> {
+
+  long MAX_VECTOR_LENGTH = 1L << GIndexUtil.MAX_DEPTH;
 
   default int getLength() {
     long maxLength = getMaxLength();
@@ -38,6 +43,7 @@ public interface SszVectorSchema<
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
       SszSchema<ElementDataT> elementSchema, long length, SszSchemaHints hints) {
+    checkArgument(length >= 0 && length <= MAX_VECTOR_LENGTH);
     if (elementSchema instanceof SszPrimitiveSchema) {
       return (SszVectorSchema<ElementDataT, ?>)
           SszPrimitiveVectorSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, length, hints);
