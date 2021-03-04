@@ -39,11 +39,6 @@ public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
   }
 
   @Override
-  public byte getByte(int index) {
-    return data.get(index);
-  }
-
-  @Override
   public Bytes getBytes() {
     return data;
   }

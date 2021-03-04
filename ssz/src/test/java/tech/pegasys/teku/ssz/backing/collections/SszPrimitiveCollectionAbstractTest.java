@@ -63,7 +63,9 @@ public interface SszPrimitiveCollectionAbstractTest extends SszCollectionAbstrac
   default <ElT, SszT extends SszPrimitive<ElT, SszT>> void asListUnboxed_isUnmodifiable(
       SszPrimitiveCollection<ElT, SszT> collection) {
     List<ElT> list = collection.asListUnboxed();
-    assertThatThrownBy(() -> list.set(0, list.get(0))).isInstanceOf(UnsupportedOperationException.class);
+    ElT newElement = collection.getSchema().getElementSchema().getDefault().get();
+    assertThatThrownBy(() -> list.set(0, newElement))
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   @MethodSource("sszDataArguments")

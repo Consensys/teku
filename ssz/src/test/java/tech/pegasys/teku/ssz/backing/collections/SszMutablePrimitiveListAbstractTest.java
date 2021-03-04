@@ -1,11 +1,22 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.backing.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,15 +25,15 @@ import tech.pegasys.teku.ssz.backing.SszListAbstractTest;
 import tech.pegasys.teku.ssz.backing.SszMutableCollectionAbstractTest;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 
-public interface SszMutablePrimitiveListAbstractTest extends SszListAbstractTest,
-    SszMutableCollectionAbstractTest {
+public interface SszMutablePrimitiveListAbstractTest
+    extends SszListAbstractTest, SszMutableCollectionAbstractTest {
 
   RandomSszDataGenerator generator = new RandomSszDataGenerator();
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>>
-  void append_extendsExtendableCollection(SszMutablePrimitiveList<ElT, SszT> collection) {
+  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void append_extendsExtendableCollection(
+      SszMutablePrimitiveList<ElT, SszT> collection) {
     if (collection.size() < collection.getSchema().getMaxLength()) {
       // collection is extendable (List effectively)
       int origSize = collection.size();
@@ -30,34 +41,35 @@ public interface SszMutablePrimitiveListAbstractTest extends SszListAbstractTest
       collection.appendElement(newElement);
 
       assertThat(collection.size()).isEqualTo(origSize + 1);
-      assertThat(collection.get(origSize)).isEqualTo(newElement);
+      assertThat(collection.getElement(origSize)).isEqualTo(newElement);
 
       SszPrimitiveCollection<ElT, SszT> immCollection = collection.commitChanges();
 
       assertThat(immCollection.size()).isEqualTo(origSize + 1);
-      assertThat(immCollection.get(origSize)).isEqualTo(newElement);
+      assertThat(immCollection.getElement(origSize)).isEqualTo(newElement);
     }
   }
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT, SszT>>
-  void appendAllElements_extendsExtendableCollection(SszMutablePrimitiveList<ElT, SszT> collection) {
+      void appendAllElements_extendsExtendableCollection(
+          SszMutablePrimitiveList<ElT, SszT> collection) {
     if (collection.size() < collection.getSchema().getMaxLength()) {
       // collection is extendable (List effectively)
       int origSize = collection.size();
 
       int appendListSize = Integer.min(3, (int) (collection.getSchema().getMaxLength() - origSize));
-      List<ElT> appendList = Stream
-          .generate(() -> generator.randomData(collection.getPrimitiveElementSchema()))
-          .limit(appendListSize)
-          .map(SszPrimitive::get)
-          .collect(Collectors.toList());
+      List<ElT> appendList =
+          Stream.generate(() -> generator.randomData(collection.getPrimitiveElementSchema()))
+              .limit(appendListSize)
+              .map(SszPrimitive::get)
+              .collect(Collectors.toList());
       collection.appendAllElements(appendList);
 
       assertThat(collection.size()).isEqualTo(origSize + appendListSize);
       for (int i = 0; i < appendListSize; i++) {
-        assertThat(collection.get(origSize + i)).isEqualTo(appendList.get(i));
+        assertThat(collection.getElement(origSize + i)).isEqualTo(appendList.get(i));
       }
     }
   }

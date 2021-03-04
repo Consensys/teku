@@ -19,24 +19,29 @@ import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestByteVectorContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 
 public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
 
-  static Stream<SszSchema<?>> elementSchemas() {
+  static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.of(
-        SszPrimitiveSchemas.BIT_SCHEMA,
-        SszPrimitiveSchemas.BYTE_SCHEMA,
-        SszPrimitiveSchemas.BYTES4_SCHEMA,
-        SszPrimitiveSchemas.UINT64_SCHEMA,
-        SszPrimitiveSchemas.BYTES32_SCHEMA,
+        SszBitvectorSchema.create(1),
+        SszBitvectorSchema.create(8),
+        SszBitvectorSchema.create(9),
+        SszBitlistSchema.create(0),
+        SszBitlistSchema.create(1),
+        SszBitlistSchema.create(7),
+        SszBitlistSchema.create(8),
+        SszBitlistSchema.create(9),
+        SszByteVectorSchema.create(3),
         TestSmallContainer.SSZ_SCHEMA,
         TestByteVectorContainer.SSZ_SCHEMA,
         VariableSizeContainer.SSZ_SCHEMA);
@@ -70,6 +75,8 @@ public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
   @ParameterizedTest
   default <C extends SszData> void asList_isUnmodifiable(SszCollection<C> data) {
     List<C> list = data.asList();
-    assertThatThrownBy(() -> list.set(0, data.get(0))).isInstanceOf(UnsupportedOperationException.class);
+    C newElement = data.getSchema().getElementSchema().getDefault();
+    assertThatThrownBy(() -> list.add(newElement))
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 }

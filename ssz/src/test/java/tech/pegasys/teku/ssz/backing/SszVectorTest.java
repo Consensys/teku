@@ -16,10 +16,8 @@ package tech.pegasys.teku.ssz.backing;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
 public class SszVectorTest implements SszCollectionAbstractTest, SszMutableCollectionAbstractTest {
@@ -27,17 +25,15 @@ public class SszVectorTest implements SszCollectionAbstractTest, SszMutableColle
   private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
   @Override
-  public Stream<? extends SszData> sszData() {
-    return SszCollectionAbstractTest.elementSchemas()
+  public Stream<SszVector<?>> sszData() {
+    return SszCollectionAbstractTest.complexElementSchemas()
         .flatMap(
             elementSchema ->
                 Stream.of(
                     SszVectorSchema.create(elementSchema, 1),
                     SszVectorSchema.create(elementSchema, 2),
                     SszVectorSchema.create(elementSchema, 3),
-                    SszVectorSchema.create(elementSchema, 31),
-                    SszVectorSchema.create(elementSchema, 32),
-                    SszVectorSchema.create(elementSchema, 33)))
+                    SszVectorSchema.create(elementSchema, 10)))
         .flatMap(
             vectorSchema ->
                 Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
@@ -47,12 +43,5 @@ public class SszVectorTest implements SszCollectionAbstractTest, SszMutableColle
   @ParameterizedTest
   void size_shouldMatchSchemaLength(SszVector<?> data) {
     assertThat(data.size()).isEqualTo(data.getSchema().getLength());
-  }
-
-  @Test
-  void testContainerSszSerialize() {
-    SszVectorSchema<TestSubContainer, ?> schema =
-        SszVectorSchema.create(TestSubContainer.SSZ_SCHEMA, 2);
-    assertThat(schema.getSszFixedPartSize()).isEqualTo(80);
   }
 }

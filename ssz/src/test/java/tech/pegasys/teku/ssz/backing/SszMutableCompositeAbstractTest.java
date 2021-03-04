@@ -154,11 +154,15 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_shouldThrowWhenSetAboveSizeForExtendableStructures(SszMutableComposite<SszData> data) {
+  default void set_shouldThrowWhenSetAboveSizeForExtendableStructures(
+      SszMutableComposite<SszData> data) {
     if (data.size() < data.getSchema().getMaxLength()) {
       // the structure could be extended (just a List case for now)
-      assertThatThrownBy(() -> data
-          .set(data.size() + 1, data.getSchema().getChildSchema(data.size() + 1).getDefault()))
+      assertThatThrownBy(
+              () ->
+                  data.set(
+                      data.size() + 1,
+                      data.getSchema().getChildSchema(data.size() + 1).getDefault()))
           .isInstanceOf(IndexOutOfBoundsException.class);
     }
   }
@@ -172,13 +176,16 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
       for (int i = data.size(); i < maxLength; i++) {
         data.set(i, data.getSchema().getChildSchema(i).getDefault());
       }
-      assertThatThrownBy(() -> data.set((int) maxLength, data.getSchema().getChildSchema(
-          (int) maxLength).getDefault()))
+      assertThatThrownBy(
+              () ->
+                  data.set(
+                      (int) maxLength,
+                      data.getSchema().getChildSchema((int) maxLength).getDefault()))
           .isInstanceOf(IndexOutOfBoundsException.class);
     }
   }
 
-    @MethodSource("sszMutableCompositeArguments")
+  @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void setInvalidator_shouldBeNotifiedOnSet(SszMutableComposite<SszData> data) {
     if (data.size() == 0) {

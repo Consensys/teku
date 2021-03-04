@@ -25,38 +25,44 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.SszVectorAbstractTest;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 
-public class SszBitvectorTest {
+public class SszBitvectorTest implements SszPrimitiveCollectionAbstractTest, SszVectorAbstractTest {
 
-  private static Random random = new Random(1);
+  private static final Random random = new Random(1);
 
   private static SszBitvector random(SszBitvectorSchema<?> schema) {
     return schema.ofBits(
         IntStream.range(0, schema.getLength()).filter(__ -> random.nextBoolean()).toArray());
   }
 
-  public static Stream<Arguments> bitvectorArgs() {
+  @Override
+  public Stream<SszBitvector> sszData() {
     return Stream.of(
-        Arguments.of(random(SszBitvectorSchema.create(1))),
-        Arguments.of(random(SszBitvectorSchema.create(2))),
-        Arguments.of(random(SszBitvectorSchema.create(7))),
-        Arguments.of(random(SszBitvectorSchema.create(8))),
-        Arguments.of(random(SszBitvectorSchema.create(9))),
-        Arguments.of(random(SszBitvectorSchema.create(15))),
-        Arguments.of(random(SszBitvectorSchema.create(16))),
-        Arguments.of(random(SszBitvectorSchema.create(17))),
-        Arguments.of(random(SszBitvectorSchema.create(255))),
-        Arguments.of(random(SszBitvectorSchema.create(256))),
-        Arguments.of(random(SszBitvectorSchema.create(257))),
-        Arguments.of(random(SszBitvectorSchema.create(511))),
-        Arguments.of(random(SszBitvectorSchema.create(512))),
-        Arguments.of(random(SszBitvectorSchema.create(513))),
-        Arguments.of(random(SszBitvectorSchema.create(1023))),
-        Arguments.of(random(SszBitvectorSchema.create(1024))),
-        Arguments.of(random(SszBitvectorSchema.create(1025))));
+        random(SszBitvectorSchema.create(1)),
+        random(SszBitvectorSchema.create(2)),
+        random(SszBitvectorSchema.create(7)),
+        random(SszBitvectorSchema.create(8)),
+        random(SszBitvectorSchema.create(9)),
+        random(SszBitvectorSchema.create(15)),
+        random(SszBitvectorSchema.create(16)),
+        random(SszBitvectorSchema.create(17)),
+        random(SszBitvectorSchema.create(255)),
+        random(SszBitvectorSchema.create(256)),
+        random(SszBitvectorSchema.create(257)),
+        random(SszBitvectorSchema.create(511)),
+        random(SszBitvectorSchema.create(512)),
+        random(SszBitvectorSchema.create(513)),
+        random(SszBitvectorSchema.create(1023)),
+        random(SszBitvectorSchema.create(1024)),
+        random(SszBitvectorSchema.create(1025)));
+  }
+
+  public Stream<Arguments> bitvectorArgs() {
+    return sszData().map(Arguments::of);
   }
 
   @ParameterizedTest
