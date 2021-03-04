@@ -20,10 +20,14 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 
 public class ProtoArray {
+  private static final Logger LOG = LogManager.getLogger();
 
   private int pruneThreshold;
 
@@ -417,6 +421,27 @@ public class ProtoArray {
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
     indices.remove(blockRoot);
+  }
+
+  public void applyProposerWeighting(final ProposerWeighting weighting) {
+    Optional<Integer> nodeIndex = Optional.ofNullable(indices.get(weighting.getTargetRoot()));
+    if (nodeIndex.isEmpty()) {
+      LOG.warn("Applying proposer weighting for unknown block root {}", weighting.getTargetRoot());
+      return;
+    }
+    while (nodeIndex.isPresent()) {
+      final ProtoNode protoNode = nodes.get(nodeIndex.get());
+
+      // Genesis block is fixed so we don't apply scores to it
+      if (protoNode.getBlockRoot().equals(Bytes32.ZERO)) {
+        break;
+      }
+
+      // TODO: Can total attester balance for a slot / 4 exceed signed long?
+      protoNode.adjustWeight(weighting.getWeight().longValue());
+      updateBestDescendantOfParent(protoNode, nodeIndex.get());
+      nodeIndex = protoNode.getParentIndex();
+    }
   }
 
   private void applyDeltas(final List<Long> deltas) {

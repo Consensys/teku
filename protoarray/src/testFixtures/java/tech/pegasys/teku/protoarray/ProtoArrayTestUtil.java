@@ -31,7 +31,7 @@ public class ProtoArrayTestUtil {
     return BeaconStateUtil.uint_to_bytes32(Integer.toUnsignedLong(i + 1));
   }
 
-  public static ProtoArrayForkChoiceStrategy createProtoArrayForkChoiceStrategy(
+  public static ForkChoiceStrategy createProtoArrayForkChoiceStrategy(
       Bytes32 finalizedBlockRoot,
       UInt64 finalizedBlockSlot,
       UInt64 finalizedCheckpointEpoch,
@@ -40,8 +40,8 @@ public class ProtoArrayTestUtil {
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
+    ForkChoiceStrategy forkChoice =
+        ForkChoiceStrategy.initializeAndMigrateStorage(
                 store, ProtoArrayStorageChannel.NO_OP)
             .join();
 

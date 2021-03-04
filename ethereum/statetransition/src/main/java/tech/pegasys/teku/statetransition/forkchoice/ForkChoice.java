@@ -173,7 +173,7 @@ public class ForkChoice {
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, blockSlotState.get(), result);
+          updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
           applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });
@@ -196,9 +196,10 @@ public class ForkChoice {
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
-      final BlockImportResult result) {
+      final BlockImportResult result,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
-      proposerWeightings.onBlockReceived(block, blockSlotState);
+      proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
       // If the new block builds on our current chain head immediately make it the new head
       // Since fork choice works by walking down the tree selecting the child block with
       // the greatest weight, when a block has only one child it will automatically become
@@ -262,7 +263,12 @@ public class ForkChoice {
         .reportExceptions();
   }
 
+  public void onBlocksDueForSlot(final UInt64 slot) {
+    onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot));
+  }
+
   private ForkChoiceStrategy getForkChoiceStrategy() {
+    forkChoiceExecutor.checkOnEventThread();
     return recentChainData
         .getForkChoiceStrategy()
         .orElseThrow(

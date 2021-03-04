@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
@@ -42,13 +43,17 @@ public class ProposerWeightings {
     maxSlotWhereBlockOverdue = slot;
   }
 
-  public void onBlockReceived(final SignedBeaconBlock block, final BeaconState blockSlotState) {
+  public void onBlockReceived(
+      final SignedBeaconBlock block,
+      final BeaconState blockSlotState,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     eventThread.checkOnEventThread();
     if (isBlockOnTime(block)) {
       final UInt64 priorSlotCommitteeWeight = calculatePriorSlotCommitteeWeight(blockSlotState);
       final UInt64 weight = priorSlotCommitteeWeight.dividedBy(4);
       // weight should be the total weight of attesters to the slot prior to the block slot
       final ProposerWeighting proposerWeighting = new ProposerWeighting(block.getRoot(), weight);
+      forkChoiceStrategy.applyProposerWeighting(proposerWeighting);
       currentProposerWeightings.add(proposerWeighting);
     }
   }
@@ -63,8 +68,6 @@ public class ProposerWeightings {
     final List<ProposerWeighting> oldProposerWeightings = this.currentProposerWeightings;
     currentProposerWeightings = new ArrayList<>();
     return oldProposerWeightings;
-    // TODO: Reverse all extra weight target roots
-    // Might be able to just include this in the deltas to apply as part of the fork choice run
   }
 
   private boolean isBlockOnTime(final SignedBeaconBlock block) {

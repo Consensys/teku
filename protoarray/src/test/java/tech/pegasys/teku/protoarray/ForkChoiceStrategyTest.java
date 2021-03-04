@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
+public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ProtoArrayStorageChannel storageChannel = mock(ProtoArrayStorageChannel.class);
 
@@ -79,7 +79,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
                     blockAndState.getStateRoot(),
                     blockAndState.getState().getCurrent_justified_checkpoint().getEpoch(),
                     blockAndState.getState().getFinalized_checkpoint().getEpoch()));
-    return ProtoArrayForkChoiceStrategy.initialize(protoArray);
+    return ForkChoiceStrategy.initialize(protoArray);
   }
 
   @Test
@@ -87,11 +87,11 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final MutableStore store = new TestStoreFactory().createGenesisStore();
     final int chainSize = 2_000;
     saveChainToStore(chainSize, store);
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
+    final SafeFuture<ForkChoiceStrategy> future =
+        ForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
 
     assertThat(future).isCompleted();
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
+    final ForkChoiceStrategy forkChoiceStrategy = future.join();
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(chainSize + 1);
   }
 
@@ -100,8 +100,8 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final MutableStore store = new TestStoreFactory().createGenesisStore();
     final int chainSize = 5;
     saveChainToStore(chainSize, store);
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
+    final SafeFuture<ForkChoiceStrategy> future =
+        ForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
 
     assertThat(future).isCompleted();
 
@@ -128,10 +128,10 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
     TestStoreImpl store = new TestStoreFactory().createAnchorStore(anchor);
 
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
+    final SafeFuture<ForkChoiceStrategy> future =
+        ForkChoiceStrategy.initializeAndMigrateStorage(store, storageChannel);
     assertThat(future).isCompleted();
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
+    final ForkChoiceStrategy forkChoiceStrategy = future.join();
 
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
     final Bytes32 head =
@@ -144,7 +144,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   void getAncestor_specifiedBlockIsAtSlot() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState block = storageSystem.chainUpdater().addNewBestBlock();
-    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(block.getRoot(), block.getSlot()))
         .contains(block.getRoot());
   }
@@ -156,7 +156,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final SignedBlockAndState ancestor = storageSystem.chainUpdater().advanceChain(2);
     storageSystem.chainUpdater().advanceChain(3);
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
-    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ancestor.getSlot()))
         .contains(ancestor.getRoot());
   }
@@ -165,7 +165,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   void getChainHeads() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
-    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getChainHeads())
         .isEqualTo(Map.of(head.getBlock().getRoot(), head.getBlock().getSlot()));
   }
@@ -173,7 +173,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   @Test
   void getAncestor_headIsUnknown() {
     final StorageSystem storageSystem = initStorageSystem();
-    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(dataStructureUtil.randomBytes32(), ZERO)).isEmpty();
   }
 
@@ -181,7 +181,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   void getAncestor_noBlockAtSlot() {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
-    final ProtoArrayForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ONE)).contains(head.getParentRoot());
   }
 
@@ -191,7 +191,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
 
-    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
     strategy.applyUpdate(
         emptyList(),
         Set.of(block2.getRoot()),
@@ -204,7 +204,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   @Test
   void applyTransaction_shouldAddNewBlocks() {
     final StorageSystem storageSystem = initStorageSystem();
-    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
 
     final SignedBlockAndState block1 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
@@ -228,7 +228,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
 
-    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
     // Genesis = 0, block1 = 1, block2 = 2, block3 = 3, block4 = 4
     strategy.setPruneThreshold(3);
 
@@ -251,7 +251,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   void applyUpdate_shouldPruneBlocksPriorToLatestFinalized() {
     final StorageSystem storageSystem = initStorageSystem();
     storageSystem.chainUpdater().advanceChainUntil(10);
-    final ProtoArrayForkChoiceStrategy forkChoiceStrategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy forkChoiceStrategy = createProtoArray(storageSystem);
 
     final SignedBeaconBlock finalizedBlock = storageSystem.chainBuilder().getBlockAtSlot(4);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
@@ -282,7 +282,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final SignedBlockAndState block2 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
-    final ProtoArrayForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
     final UInt64 block3Epoch = compute_epoch_at_slot(block3.getSlot());
 
     strategy.applyUpdate(
@@ -315,9 +315,9 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     return storageSystem;
   }
 
-  private ProtoArrayForkChoiceStrategy createProtoArray(final StorageSystem storageSystem) {
-    final SafeFuture<ProtoArrayForkChoiceStrategy> future =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
+  private ForkChoiceStrategy createProtoArray(final StorageSystem storageSystem) {
+    final SafeFuture<ForkChoiceStrategy> future =
+        ForkChoiceStrategy.initializeAndMigrateStorage(
             storageSystem.recentChainData().getStore(), storageSystem.createProtoArrayStorage());
     assertThat(future).isCompleted();
     return future.join();
