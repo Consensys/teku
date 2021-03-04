@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,33 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SszSerializerTest {
-
+public class BeaconStateSerializerTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final SszSerializer<SignedBeaconBlock> blockSerializer =
-      new SszSerializer<>(SignedBeaconBlock.getSszSchema());
-  private final SszSerializer<Checkpoint> checkpointSerializer =
-      new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
+  private final RocksDbSerializer<BeaconState> stateSerializer = new BeaconStateSerializer(spec);
 
   @Test
-  public void roundTrip_block() {
-    final SignedBeaconBlock value = dataStructureUtil.randomSignedBeaconBlock(11);
-    final byte[] bytes = blockSerializer.serialize(value);
-    final SignedBeaconBlock deserialized = blockSerializer.deserialize(bytes);
-    assertThat(deserialized).isEqualTo(value);
-  }
-
-  @Test
-  public void roundTrip_checkpoint() {
-    final Checkpoint value = dataStructureUtil.randomCheckpoint();
-    final byte[] bytes = checkpointSerializer.serialize(value);
-    final Checkpoint deserialized = checkpointSerializer.deserialize(bytes);
+  public void roundTrip_state() {
+    final BeaconState value = dataStructureUtil.randomBeaconState(11);
+    final byte[] bytes = stateSerializer.serialize(value);
+    final BeaconState deserialized = stateSerializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 }
