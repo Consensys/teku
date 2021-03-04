@@ -69,11 +69,9 @@ public class ProtoArrayBuilder {
   }
 
   public ProtoArrayBuilder initialCheckpoint(final Optional<Checkpoint> initialCheckpoint) {
-    if (initialCheckpoint.isPresent()) {
-      initialEpoch(initialCheckpoint.get().getEpoch());
-    } else {
-      initialEpoch(SpecConstants.GENESIS_EPOCH);
-    }
+    initialCheckpoint.ifPresentOrElse(
+        checkpoint -> initialEpoch(checkpoint.getEpoch()),
+        () -> initialEpoch(SpecConstants.GENESIS_EPOCH));
     return this;
   }
 

@@ -239,7 +239,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getRootIndices().containsKey(blockRoot);
+      return protoArray.contains(blockRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -319,7 +319,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       }
       ProtoNode currentNode = startingNode.orElseThrow();
 
-      while (protoArray.getRootIndices().containsKey(currentNode.getBlockRoot())) {
+      while (protoArray.contains(currentNode.getBlockRoot())) {
         final boolean shouldContinue =
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
@@ -390,13 +390,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
-    return Optional.ofNullable(protoArray.getRootIndices().get(blockRoot))
-        .flatMap(
-            blockIndex -> {
-              if (blockIndex < getTotalTrackedNodeCount()) {
-                return Optional.of(protoArray.getNodes().get(blockIndex));
-              }
-              return Optional.empty();
-            });
+    return protoArray.getProtoNode(blockRoot);
   }
 }
