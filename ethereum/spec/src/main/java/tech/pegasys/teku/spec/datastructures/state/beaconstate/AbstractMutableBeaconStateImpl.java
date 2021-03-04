@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
@@ -40,8 +39,6 @@ public abstract class AbstractMutableBeaconStateImpl<
   private SSZMutableList<Bytes32> historicalRoots;
   private SSZMutableList<Eth1Data> eth1DataVotes;
   private SSZMutableVector<Bytes32> randaoMixes;
-  private SSZMutableList<PendingAttestation> previousEpochAttestations;
-  private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
   protected AbstractMutableBeaconStateImpl(T backingImmutableView) {
     this(backingImmutableView, false);
@@ -131,22 +128,8 @@ public abstract class AbstractMutableBeaconStateImpl<
   }
 
   @Override
-  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return previousEpochAttestations != null
-        ? previousEpochAttestations
-        : (previousEpochAttestations = MutableBeaconState.super.getPrevious_epoch_attestations());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return currentEpochAttestations != null
-        ? currentEpochAttestations
-        : (currentEpochAttestations = MutableBeaconState.super.getCurrent_epoch_attestations());
-  }
-
-  @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<E1, E2, E3> mutator) {
+      Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
   }
 }

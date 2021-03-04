@@ -29,11 +29,13 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 
-class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
+class BeaconStateGenesisImpl extends SszContainerImpl
+    implements BeaconStateGenesis, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
 
-  public BeaconStateGenesisImpl(final BeaconStateSchema<BeaconState, MutableBeaconState> schema) {
+  public BeaconStateGenesisImpl(
+      final BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> schema) {
     super(schema);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -55,8 +57,17 @@ class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconState, Be
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<E1, E2, E3> mutator) throws E1, E2, E3 {
-    MutableBeaconState writableCopy = createWritableCopyPriv();
+      Mutator<MutableBeaconState, E1, E2, E3> mutator) throws E1, E2, E3 {
+    MutableBeaconStateGenesis writableCopy = createWritableCopyPriv();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
+
+  @Override
+  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateGenesis updatedGenesis(Mutator<MutableBeaconStateGenesis, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    MutableBeaconStateGenesis writableCopy = createWritableCopyPriv();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
@@ -97,7 +108,7 @@ class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconState, Be
     return transitionCaches;
   }
 
-  static String toString(BeaconState state) {
+  static String toString(BeaconStateGenesis state) {
     return MoreObjects.toStringHelper(state)
         .add("genesis_time", state.getGenesis_time())
         .add("genesis_validators_root", state.getGenesis_validators_root())
@@ -133,7 +144,7 @@ class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconState, Be
     return toString(this);
   }
 
-  private MutableBeaconState createWritableCopyPriv() {
+  private MutableBeaconStateGenesis createWritableCopyPriv() {
     return new MutableBeaconStateGenesisImpl(this);
   }
 }

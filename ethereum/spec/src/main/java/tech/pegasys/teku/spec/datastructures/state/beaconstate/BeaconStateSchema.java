@@ -33,7 +33,6 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
   T createEmpty();
 
   T create(
-
       // Versioning
       UInt64 genesis_time,
       Bytes32 genesis_validators_root,

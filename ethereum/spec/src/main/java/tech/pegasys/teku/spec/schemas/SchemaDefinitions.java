@@ -14,9 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateSchemaGenesis;
 
 public class SchemaDefinitions {
@@ -26,7 +24,7 @@ public class SchemaDefinitions {
     this.specConstants = specConstants;
   }
 
-  public BeaconStateSchema<BeaconState, MutableBeaconState> getBeaconStateSchema() {
+  public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return BeaconStateSchemaGenesis.create(specConstants);
   }
 }

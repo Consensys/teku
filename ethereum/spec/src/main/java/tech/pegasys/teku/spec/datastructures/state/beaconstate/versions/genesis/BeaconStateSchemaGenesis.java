@@ -30,11 +30,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -47,13 +45,13 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszField;
 
-public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconState>
-    implements BeaconStateSchema<BeaconState, MutableBeaconState> {
+public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconStateGenesis>
+    implements BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> {
 
   @VisibleForTesting
   BeaconStateSchemaGenesis(final List<SszField> fields) {
     super(
-        "BeaconState",
+        "BeaconStateGenesis",
         fields.stream()
             .map(f -> namedSchema(f.getName(), f.getSchema().get()))
             .collect(Collectors.toList()));
@@ -88,7 +86,7 @@ public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconS
     }
   }
 
-  public static BeaconStateSchema<BeaconState, MutableBeaconState> create(
+  public static BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> create(
       final SpecConstants specConstants) {
     return new BeaconStateSchemaGenesis(getFields(specConstants));
   }
@@ -224,22 +222,22 @@ public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconS
   }
 
   @Override
-  public BeaconState createFromBackingNode(TreeNode node) {
+  public BeaconStateGenesis createFromBackingNode(TreeNode node) {
     return new BeaconStateGenesisImpl(this, node);
   }
 
   @Override
-  public MutableBeaconState createBuilder() {
+  public MutableBeaconStateGenesis createBuilder() {
     return new MutableBeaconStateGenesisImpl(createEmptyBeaconStateImpl(), true);
   }
 
   @Override
-  public BeaconState createEmpty() {
+  public BeaconStateGenesis createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
   @Override
-  public BeaconState create(
+  public BeaconStateGenesis create(
 
       // Versioning
       UInt64 genesis_time,
@@ -279,7 +277,7 @@ public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconS
       Checkpoint finalized_checkpoint) {
 
     return createEmpty()
-        .updated(
+        .updatedGenesis(
             state -> {
               state.setGenesis_time(genesis_time);
               state.setGenesis_validators_root(genesis_validators_root);
