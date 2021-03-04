@@ -15,39 +15,24 @@ package tech.pegasys.teku.protoarray;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ProtoArrayIndices {
-  private final Map<Bytes32, List<Integer>> rootIndices = new HashMap<>();
+  private final Map<Bytes32, Integer> rootIndices = new HashMap<>();
 
   public boolean contains(final Bytes32 root) {
     return rootIndices.containsKey(root);
   }
 
-  public Optional<Integer> indexOf(final Bytes32 root) {
-    if (rootIndices.containsKey(root)) {
-      return Optional.of(rootIndices.get(root).get(0));
-    }
-    return Optional.empty();
-  }
-
   public void add(final Bytes32 blockRoot, final int nodeIndex) {
-    final ArrayList<Integer> indexes = new ArrayList<>();
-    indexes.add(nodeIndex);
-    rootIndices.put(blockRoot, indexes);
+    rootIndices.put(blockRoot, nodeIndex);
   }
 
-  public Optional<Integer> getFirst(final Bytes32 justifiedRoot) {
-    if (!rootIndices.containsKey(justifiedRoot)) {
-      return Optional.empty();
-    }
-    return Optional.of(rootIndices.get(justifiedRoot).get(0));
+  public Optional<Integer> get(final Bytes32 root) {
+    return Optional.ofNullable(rootIndices.get(root));
   }
 
   public void remove(final Bytes32 root) {
@@ -56,17 +41,14 @@ public class ProtoArrayIndices {
 
   public void offsetIndexes(final int finalizedIndex) {
     rootIndices.replaceAll(
-        (key, list) -> {
-          final List<Integer> newIndexes =
-              list.stream().map(i -> i - finalizedIndex).collect(Collectors.toList());
-          checkState(newIndexes.get(0) >= 0, "ProtoArray: New array index less than 0.");
-          return newIndexes;
+        (key, value) -> {
+          int newIndex = value - finalizedIndex;
+          checkState(newIndex >= 0, "ProtoArray: New array index less than 0.");
+          return newIndex;
         });
   }
 
-  public Map<Bytes32, Integer> getBlockIndices() {
-    final Map<Bytes32, Integer> indices = new HashMap<>();
-    rootIndices.forEach((key, value) -> indices.put(key, value.get(0)));
-    return indices;
+  public Map<Bytes32, Integer> getRootIndices() {
+    return rootIndices;
   }
 }

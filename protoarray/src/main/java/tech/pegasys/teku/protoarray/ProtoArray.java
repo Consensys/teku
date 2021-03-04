@@ -76,7 +76,7 @@ public class ProtoArray {
 
   public Optional<ProtoNode> getProtoNode(final Bytes32 root) {
     return protoArrayIndices
-        .indexOf(root)
+        .get(root)
         .flatMap(
             blockIndex -> {
               if (blockIndex < getTotalTrackedNodeCount()) {
@@ -123,7 +123,7 @@ public class ProtoArray {
             stateRoot,
             blockRoot,
             parentRoot,
-            protoArrayIndices.indexOf(parentRoot),
+            protoArrayIndices.get(parentRoot),
             justifiedEpoch,
             finalizedEpoch,
             UInt64.ZERO,
@@ -147,7 +147,7 @@ public class ProtoArray {
    * @return
    */
   public Bytes32 findHead(Bytes32 justifiedRoot) {
-    Optional<Integer> maybeIndex = protoArrayIndices.getFirst(justifiedRoot);
+    Optional<Integer> maybeIndex = protoArrayIndices.get(justifiedRoot);
     checkArgument(
         maybeIndex.isPresent(),
         "ProtoArray: Unknown justified root " + justifiedRoot.toHexString());
@@ -218,7 +218,7 @@ public class ProtoArray {
    * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
-    Optional<Integer> maybeIndex = protoArrayIndices.getFirst(finalizedRoot);
+    Optional<Integer> maybeIndex = protoArrayIndices.get(finalizedRoot);
     checkArgument(
         maybeIndex.isPresent(),
         "ProtoArray: Finalized root is unknown " + finalizedRoot.toHexString());
@@ -467,7 +467,7 @@ public class ProtoArray {
   }
 
   public Map<Bytes32, Integer> getRootIndices() {
-    return protoArrayIndices.getBlockIndices();
+    return protoArrayIndices.getRootIndices();
   }
 
   private interface NodeVisitor {

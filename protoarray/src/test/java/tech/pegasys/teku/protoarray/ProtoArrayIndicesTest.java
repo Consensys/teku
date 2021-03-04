@@ -33,9 +33,9 @@ public class ProtoArrayIndicesTest {
   void shouldAddNodesToMap() {
     indices.add(root1, 1);
     indices.add(root2, 2);
-    assertThat(indices.getBlockIndices().keySet()).containsExactlyInAnyOrder(root1, root2);
-    assertThat(indices.getFirst(root1)).contains(1);
-    assertThat(indices.getFirst(root2)).contains(2);
+    assertThat(indices.getRootIndices().keySet()).containsExactlyInAnyOrder(root1, root2);
+    assertThat(indices.get(root1)).contains(1);
+    assertThat(indices.get(root2)).contains(2);
   }
 
   @Test
@@ -44,19 +44,19 @@ public class ProtoArrayIndicesTest {
     indices.add(root2, 2);
     indices.add(root3, 3);
     indices.remove(root1);
-    assertThat(indices.getBlockIndices().keySet()).containsExactlyInAnyOrder(root2, root3);
+    assertThat(indices.getRootIndices().keySet()).containsExactlyInAnyOrder(root2, root3);
     assertThat(indices.contains(root1)).isFalse();
   }
 
   @Test
   void shouldGetFirstItemSuccessfully() {
     indices.add(root1, 1);
-    assertThat(indices.getFirst(root1)).contains(1);
+    assertThat(indices.get(root1)).contains(1);
   }
 
   @Test
   void shouldGetEmptyIfHashMissing() {
-    assertThat(indices.getFirst(root1)).isEmpty();
+    assertThat(indices.get(root1)).isEmpty();
   }
 
   @Test
