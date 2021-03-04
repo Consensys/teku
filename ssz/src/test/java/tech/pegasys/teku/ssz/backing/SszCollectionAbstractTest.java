@@ -28,6 +28,8 @@ import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 
 public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
 
@@ -42,6 +44,8 @@ public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
         SszBitlistSchema.create(8),
         SszBitlistSchema.create(9),
         SszByteVectorSchema.create(3),
+        SszBytes32VectorSchema.create(3),
+        SszUInt64ListSchema.create(3),
         TestSmallContainer.SSZ_SCHEMA,
         TestByteVectorContainer.SSZ_SCHEMA,
         VariableSizeContainer.SSZ_SCHEMA);

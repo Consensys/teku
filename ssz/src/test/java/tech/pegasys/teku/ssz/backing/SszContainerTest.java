@@ -18,7 +18,8 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 
-public class SszContainerTest implements SszCompositeAbstractTest, SszMutableCompositeAbstractTest {
+public class SszContainerTest
+    implements SszCompositeAbstractTest, SszMutableRefCompositeAbstractTest {
 
   @Override
   public Stream<? extends SszData> sszData() {

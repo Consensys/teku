@@ -39,7 +39,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
-public class SszListTest implements SszListAbstractTest, SszMutableCompositeAbstractTest {
+public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeAbstractTest {
 
   private final RandomSszDataGenerator randomSsz =
       new RandomSszDataGenerator().withMaxListSize(256);

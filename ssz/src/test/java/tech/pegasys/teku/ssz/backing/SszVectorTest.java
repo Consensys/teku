@@ -20,7 +20,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public class SszVectorTest implements SszCollectionAbstractTest, SszMutableCollectionAbstractTest {
+public class SszVectorTest
+    implements SszCollectionAbstractTest,
+        SszMutableCollectionAbstractTest,
+        SszMutableRefCompositeAbstractTest {
 
   private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
