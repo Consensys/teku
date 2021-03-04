@@ -14,47 +14,59 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_TIME_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.GENESIS_VALIDATORS_ROOT_FIELD;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants.SLOT_FIELD;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.sos.SszField;
 
 public class BeaconStateSchemaTest {
 
-  public void tearDown() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
+  @Test
+  public void create_compareDifferentSpecs() {
+    final BeaconStateSchema minimalState =
+        BeaconStateSchema.create(SpecFactory.createMinimal().getGenesisSpecConstants());
+    final BeaconStateSchema mainnetState =
+        BeaconStateSchema.create(SpecFactory.createMainnet().getGenesisSpecConstants());
+
+    assertThat(minimalState).isNotEqualTo(mainnetState);
   }
 
   @Test
-  public void create_minimal() {
-    final Spec spec = setupMinimalSpec();
-    final BeaconStateSchema specA = BeaconStateSchema.create(spec.getGenesisSpecConstants());
-    final BeaconStateSchema specB = BeaconStateSchema.create();
-
-    assertThat(specA).isEqualTo(specB);
+  public void shouldValidateFieldsAreOrdered() {
+    assertThatThrownBy(
+            () ->
+                new BeaconStateSchema(
+                    List.of(GENESIS_TIME_FIELD, SLOT_FIELD, GENESIS_VALIDATORS_ROOT_FIELD)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "fields must be ordered and contiguous.  Encountered unexpected index 2 at fields element 1");
   }
 
   @Test
-  public void create_mainnet() {
-    final Spec spec = setupMainnetSpec();
-    final BeaconStateSchema specA = BeaconStateSchema.create(spec.getGenesisSpecConstants());
-    final BeaconStateSchema specB = BeaconStateSchema.create();
-
-    assertThat(specA).isEqualTo(specB);
+  public void shouldValidateFieldCount() {
+    assertThatThrownBy(
+            () -> new BeaconStateSchema(List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Must provide at least 3 fields");
   }
 
-  private Spec setupMinimalSpec() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
-    return SpecFactory.createMinimal();
-  }
-
-  private Spec setupMainnetSpec() {
-    Constants.setConstants("mainnet");
-    SpecDependent.resetAll();
-    return SpecFactory.createMainnet();
+  @Test
+  public void shouldValidateInvariantFields() {
+    final SszField randomField =
+        new SszField(
+            2, "random", () -> SszVectorSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 10));
+    assertThatThrownBy(
+            () ->
+                new BeaconStateSchema(
+                    List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, randomField)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Expected invariant field 'SLOT' at index 2, but got 'random'");
   }
 }

@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -30,7 +31,6 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   RocksDbSerializer<SignedBeaconBlock> SIGNED_BLOCK_SERIALIZER =
       new SszSerializer<>(SignedBeaconBlock.getSszSchema());
-  RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconState.getSszSchema());
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
@@ -43,6 +43,10 @@ public interface RocksDbSerializer<T> {
       new SlotAndBlockRootSerializer();
   RocksDbSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
       new CheckpointEpochsSerializer();
+
+  static RocksDbSerializer<BeaconState> createStateSerializer(final Spec spec) {
+    return new BeaconStateSerializer(spec);
+  }
 
   T deserialize(final byte[] data);
 

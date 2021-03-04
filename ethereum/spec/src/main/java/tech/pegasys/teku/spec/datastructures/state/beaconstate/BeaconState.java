@@ -33,17 +33,8 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public interface BeaconState extends SszContainer {
-
-  @Deprecated
-  SpecDependent<BeaconStateSchema> SSZ_SCHEMA = SpecDependent.of(BeaconStateSchema::create);
-
-  @Deprecated
-  static BeaconStateSchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
 
   // Versioning
   default UInt64 getGenesis_time() {

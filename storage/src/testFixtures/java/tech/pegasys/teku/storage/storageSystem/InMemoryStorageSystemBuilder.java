@@ -140,10 +140,11 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockRocksDbInstance.createEmpty(
               concat(
-                  V4SchemaHot.INSTANCE.getAllColumns(), V6SchemaFinalized.INSTANCE.getAllColumns()),
+                  V4SchemaHot.create(spec).getAllColumns(),
+                  V6SchemaFinalized.create(spec).getAllColumns()),
               concat(
-                  V4SchemaHot.INSTANCE.getAllVariables(),
-                  V6SchemaFinalized.INSTANCE.getAllVariables()));
+                  V4SchemaHot.create(spec).getAllVariables(),
+                  V6SchemaFinalized.create(spec).getAllVariables()));
       coldDb = hotDb;
     }
     return InMemoryRocksDbDatabaseFactory.createV6(
@@ -159,13 +160,13 @@ public class InMemoryStorageSystemBuilder {
     if (hotDb == null) {
       hotDb =
           MockRocksDbInstance.createEmpty(
-              V4SchemaHot.INSTANCE.getAllColumns(), V4SchemaHot.INSTANCE.getAllVariables());
+              V4SchemaHot.create(spec).getAllColumns(), V4SchemaHot.create(spec).getAllVariables());
     }
     if (coldDb == null) {
       coldDb =
           MockRocksDbInstance.createEmpty(
-              V4SchemaFinalized.INSTANCE.getAllColumns(),
-              V4SchemaFinalized.INSTANCE.getAllVariables());
+              V4SchemaFinalized.create(spec).getAllColumns(),
+              V4SchemaFinalized.create(spec).getAllVariables());
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency, spec);

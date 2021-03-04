@@ -119,13 +119,16 @@ public class RocksDbDatabase implements Database {
       final Spec spec) {
     final RocksDbAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, V4SchemaHot.INSTANCE.getAllColumns());
+            metricsSystem,
+            STORAGE_HOT_DB,
+            hotConfiguration,
+            V4SchemaHot.create(spec).getAllColumns());
     final RocksDbAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,
             STORAGE_FINALIZED_DB,
             finalizedConfiguration,
-            V4SchemaFinalized.INSTANCE.getAllColumns());
+            V4SchemaFinalized.create(spec).getAllColumns());
     return createV4(
         metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, spec);
   }
@@ -178,18 +181,14 @@ public class RocksDbDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final Spec spec) {
+    final List<RocksDbColumn<?, ?>> v4FinalizedColumns =
+        V4SchemaFinalized.create(spec).getAllColumns();
     final RocksDbAccessor hotDb =
         LevelDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            hotConfiguration,
-            V4SchemaFinalized.INSTANCE.getAllColumns());
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, v4FinalizedColumns);
     final RocksDbAccessor finalizedDb =
         LevelDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_FINALIZED_DB,
-            finalizedConfiguration,
-            V4SchemaFinalized.INSTANCE.getAllColumns());
+            metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
     return createV4(
         metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, spec);
   }
@@ -242,9 +241,10 @@ public class RocksDbDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final Spec spec) {
-    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.INSTANCE);
+    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.create(spec));
     final V4FinalizedRocksDbDao finalizedDbDao =
-        new V4FinalizedRocksDbDao(finalizedDb, V4SchemaFinalized.INSTANCE, stateStorageFrequency);
+        new V4FinalizedRocksDbDao(
+            finalizedDb, V4SchemaFinalized.create(spec), stateStorageFrequency);
     return new RocksDbDatabase(
         metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode, spec);
   }

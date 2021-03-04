@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
@@ -38,5 +39,18 @@ public class RocksDbVariable<TValue> {
 
   public RocksDbSerializer<TValue> getSerializer() {
     return serializer;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final RocksDbVariable<?> that = (RocksDbVariable<?>) o;
+    return Objects.equals(id, that.id) && Objects.equals(serializer, that.serializer);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, serializer);
   }
 }
