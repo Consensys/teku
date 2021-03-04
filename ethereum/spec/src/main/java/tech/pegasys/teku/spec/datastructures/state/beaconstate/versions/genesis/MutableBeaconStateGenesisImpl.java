@@ -13,138 +13,30 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.AbstractMutableBeaconStateImpl;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.TransitionCaches;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
-class MutableBeaconStateGenesisImpl extends SszMutableContainerImpl
+class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconStateImpl<BeaconStateGenesisImpl>
     implements MutableBeaconState, BeaconStateCache {
 
-  private final TransitionCaches transitionCaches;
-  private final boolean builder;
-
-  private SSZMutableList<Validator> validators;
-  private SSZMutableList<UInt64> balances;
-  private SSZMutableVector<Bytes32> blockRoots;
-  private SSZMutableVector<Bytes32> stateRoots;
-  private SSZMutableList<Bytes32> historicalRoots;
-  private SSZMutableList<Eth1Data> eth1DataVotes;
-  private SSZMutableVector<Bytes32> randaoMixes;
-  private SSZMutableList<PendingAttestation> previousEpochAttestations;
-  private SSZMutableList<PendingAttestation> currentEpochAttestations;
-
   MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView) {
-    this(backingImmutableView, false);
+    super(backingImmutableView);
   }
 
   MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView, boolean builder) {
-    super(backingImmutableView);
-    this.transitionCaches =
-        builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
-    this.builder = builder;
+    super(backingImmutableView, builder);
   }
 
   @Override
-  protected BeaconStateGenesisImpl createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszData> viewCache) {
-    return new BeaconStateGenesisImpl(
-        getSchema(),
-        backingNode,
-        viewCache,
-        builder ? TransitionCaches.createNewEmpty() : transitionCaches);
-  }
-
-  @Override
-  public TransitionCaches getTransitionCaches() {
-    return transitionCaches;
-  }
-
-  @Override
-  public BeaconState commitChanges() {
-    return (BeaconState) super.commitChanges();
-  }
-
-  @Override
-  public Bytes32 hashTreeRoot() {
-    return commitChanges().hashTreeRoot();
-  }
-
-  @Override
-  public MutableBeaconState createWritableCopy() {
-    return (MutableBeaconState) super.createWritableCopy();
-  }
-
-  @Override
-  public SSZMutableList<Validator> getValidators() {
-    return validators != null
-        ? validators
-        : (validators = MutableBeaconState.super.getValidators());
-  }
-
-  @Override
-  public SSZMutableList<UInt64> getBalances() {
-    return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getBlock_roots() {
-    return blockRoots != null
-        ? blockRoots
-        : (blockRoots = MutableBeaconState.super.getBlock_roots());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getState_roots() {
-    return stateRoots != null
-        ? stateRoots
-        : (stateRoots = MutableBeaconState.super.getState_roots());
-  }
-
-  @Override
-  public SSZMutableList<Bytes32> getHistorical_roots() {
-    return historicalRoots != null
-        ? historicalRoots
-        : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZMutableList<Eth1Data> getEth1_data_votes() {
-    return eth1DataVotes != null
-        ? eth1DataVotes
-        : (eth1DataVotes = MutableBeaconState.super.getEth1_data_votes());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getRandao_mixes() {
-    return randaoMixes != null
-        ? randaoMixes
-        : (randaoMixes = MutableBeaconState.super.getRandao_mixes());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return previousEpochAttestations != null
-        ? previousEpochAttestations
-        : (previousEpochAttestations = MutableBeaconState.super.getPrevious_epoch_attestations());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return currentEpochAttestations != null
-        ? currentEpochAttestations
-        : (currentEpochAttestations = MutableBeaconState.super.getCurrent_epoch_attestations());
+  protected BeaconStateGenesisImpl createImmutableBeaconState(
+      TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
+    return new BeaconStateGenesisImpl(getSchema(), backingNode, viewCache, transitionCache);
   }
 
   @Override
