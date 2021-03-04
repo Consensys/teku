@@ -13,8 +13,14 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.AbstractBeaconStateSchemaTest;
 import tech.pegasys.teku.ssz.sos.SszField;
@@ -32,5 +38,20 @@ public class BeaconStateSchemaGenesisTest
   protected BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> createSchema(
       final List<SszField> fields) {
     return new BeaconStateSchemaGenesis(fields);
+  }
+
+  @Test
+  public void changeSpecConstantsTest_checkGenesisFields() {
+    final Spec standardSpec = SpecFactory.createMinimal();
+    final SpecConstants modifiedConstants =
+        TestConstantsLoader.loadConstantsBuilder("minimal").maxAttestations(123).build();
+
+    BeaconStateGenesis s1 = getSchema(modifiedConstants).createEmpty();
+    BeaconStateGenesis s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+
+    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
+        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
+    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
+        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
   }
 }

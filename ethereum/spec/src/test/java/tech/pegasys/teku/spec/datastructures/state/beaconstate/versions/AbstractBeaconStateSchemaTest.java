@@ -25,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -33,7 +32,6 @@ import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateSchemaGenesis;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -92,14 +90,11 @@ public abstract class AbstractBeaconStateSchemaTest<
     assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
     assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
     assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
-    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
-    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
   }
 
   @Test
   void roundTripViaSsz() {
+    // TODO - generate random version-specific state
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     Bytes bytes = beaconState.sszSerialize();
     BeaconState state = schema.sszDeserialize(bytes);
@@ -108,10 +103,10 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   public void create_compareDifferentSpecs() {
-    final BeaconStateSchema<BeaconState, MutableBeaconState> minimalState =
-        BeaconStateSchemaGenesis.create(SpecFactory.createMinimal().getGenesisSpecConstants());
-    final BeaconStateSchema<BeaconState, MutableBeaconState> mainnetState =
-        BeaconStateSchemaGenesis.create(SpecFactory.createMainnet().getGenesisSpecConstants());
+    final BeaconStateSchema<T, TMutable> minimalState =
+        getSchema(SpecFactory.createMinimal().getGenesisSpecConstants());
+    final BeaconStateSchema<T, TMutable> mainnetState =
+        getSchema(SpecFactory.createMainnet().getGenesisSpecConstants());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }
@@ -146,33 +141,5 @@ public abstract class AbstractBeaconStateSchemaTest<
                     List.of(GENESIS_TIME_FIELD, GENESIS_VALIDATORS_ROOT_FIELD, randomField)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Expected invariant field 'SLOT' at index 2, but got 'random'");
-  }
-
-  @Test
-  void simpleMutableBeaconStateTest() {
-    UInt64 val1 = UInt64.valueOf(0x3333);
-    BeaconState stateR1 =
-        schema
-            .createEmpty()
-            .updated(
-                state -> {
-                  state.getBalances().add(val1);
-                });
-    UInt64 v1 = stateR1.getBalances().get(0);
-
-    assertThat(stateR1.getBalances().size()).isEqualTo(1);
-    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
-
-    BeaconState stateR2 =
-        stateR1.updated(
-            state -> {
-              state.getBalances().add(UInt64.valueOf(0x4444));
-            });
-    UInt64 v2 = stateR2.getBalances().get(0);
-
-    // check that view caching is effectively works and the value
-    // is not recreated from tree node without need
-    assertThat(v1).isSameAs(val1);
-    assertThat(v2).isSameAs(val1);
   }
 }

@@ -1,0 +1,68 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+
+@ExtendWith(BouncyCastleExtension.class)
+public abstract class AbstractBeaconStateTest<
+    T extends BeaconState, TMutable extends MutableBeaconState> {
+
+  private final Spec spec = SpecFactory.createMinimal();
+  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+
+  @Test
+  public void simpleMutableBeaconStateTest() {
+    UInt64 val1 = UInt64.valueOf(0x3333);
+    BeaconState stateR1 =
+        schema
+            .createEmpty()
+            .updated(
+                state -> {
+                  state.getBalances().add(val1);
+                });
+    UInt64 v1 = stateR1.getBalances().get(0);
+
+    assertThat(stateR1.getBalances().size()).isEqualTo(1);
+    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
+
+    BeaconState stateR2 =
+        stateR1.updated(
+            state -> {
+              state.getBalances().add(UInt64.valueOf(0x4444));
+            });
+    UInt64 v2 = stateR2.getBalances().get(0);
+
+    // check that view caching is effectively works and the value
+    // is not recreated from tree node without need
+    assertThat(v1).isSameAs(val1);
+    assertThat(v2).isSameAs(val1);
+  }
+
+  // TODO - add tests for equals(), hashcode()
+}

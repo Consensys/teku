@@ -29,6 +29,8 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
+// TODO(#3564) Make builder generic, create custom builders for specific beacon state versions
+// (genesis, hf1, etc)
 public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
   private final int defaultValidatorCount;
