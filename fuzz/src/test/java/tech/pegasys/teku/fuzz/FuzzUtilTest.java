@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -54,7 +55,7 @@ class FuzzUtilTest {
 
   private final Spec spec = SpecFactory.createMinimal();
   private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
-  private final BeaconStateSchema genesisBeaconStateSchema =
+  private final BeaconStateSchema<BeaconState, MutableBeaconState> genesisBeaconStateSchema =
       genesisSchemaDefinitions.getBeaconStateSchema();
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is

@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.TransitionCaches;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -25,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
-class MutableBeaconStateImpl extends SszMutableContainerImpl
+class MutableBeaconStateGenesisImpl extends SszMutableContainerImpl
     implements MutableBeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
@@ -41,11 +45,11 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   private SSZMutableList<PendingAttestation> previousEpochAttestations;
   private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
-  MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
+  MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView) {
     this(backingImmutableView, false);
   }
 
-  MutableBeaconStateImpl(BeaconStateImpl backingImmutableView, boolean builder) {
+  MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView, boolean builder) {
     super(backingImmutableView);
     this.transitionCaches =
         builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
@@ -53,9 +57,9 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
   }
 
   @Override
-  protected BeaconStateImpl createImmutableSszComposite(
+  protected BeaconStateGenesisImpl createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszData> viewCache) {
-    return new BeaconStateImpl(
+    return new BeaconStateGenesisImpl(
         getSchema(),
         backingNode,
         viewCache,
@@ -145,17 +149,17 @@ class MutableBeaconStateImpl extends SszMutableContainerImpl
 
   @Override
   public String toString() {
-    return BeaconStateImpl.toString(this);
+    return BeaconStateGenesisImpl.toString(this);
   }
 
   @Override
   public boolean equals(Object obj) {
-    return BeaconStateImpl.equals(this, obj);
+    return BeaconStateGenesisImpl.equals(this, obj);
   }
 
   @Override
   public int hashCode() {
-    return BeaconStateImpl.hashCode(this);
+    return BeaconStateGenesisImpl.hashCode(this);
   }
 
   @Override

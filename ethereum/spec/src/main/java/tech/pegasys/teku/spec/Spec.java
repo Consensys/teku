@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -165,7 +165,7 @@ public class Spec {
 
   // Serialization
   public BeaconState deserializeBeaconState(final Bytes serializedState) {
-    final UInt64 slot = BeaconStateSchema.extractSlot(serializedState);
+    final UInt64 slot = BeaconStateInvariants.extractSlot(serializedState);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconStateSchema()

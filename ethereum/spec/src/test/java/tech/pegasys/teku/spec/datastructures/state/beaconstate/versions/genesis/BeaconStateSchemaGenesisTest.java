@@ -11,22 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
+import java.util.List;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateSchemaGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.AbstractBeaconStateSchemaTest;
+import tech.pegasys.teku.ssz.sos.SszField;
 
-public class SchemaDefinitions {
-  private final SpecConstants specConstants;
+public class BeaconStateSchemaGenesisTest
+    extends AbstractBeaconStateSchemaTest<BeaconState, MutableBeaconState> {
 
-  public SchemaDefinitions(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  @Override
+  protected BeaconStateSchema<BeaconState, MutableBeaconState> getSchema(
+      final SpecConstants specConstants) {
+    return BeaconStateSchemaGenesis.create(specConstants);
   }
 
-  public BeaconStateSchema<BeaconState, MutableBeaconState> getBeaconStateSchema() {
-    return BeaconStateSchemaGenesis.create(specConstants);
+  @Override
+  protected BeaconStateSchema<BeaconState, MutableBeaconState> createSchema(
+      final List<SszField> fields) {
+    return new BeaconStateSchemaGenesis(fields);
   }
 }

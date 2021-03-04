@@ -11,10 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.TransitionCaches;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -24,16 +29,16 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 
-class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
+class BeaconStateGenesisImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
 
-  public BeaconStateImpl(final BeaconStateSchema schema) {
+  public BeaconStateGenesisImpl(final BeaconStateSchema<BeaconState, MutableBeaconState> schema) {
     super(schema);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  BeaconStateImpl(
+  BeaconStateGenesisImpl(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -42,7 +47,8 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
     this.transitionCaches = transitionCaches;
   }
 
-  BeaconStateImpl(AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+  BeaconStateGenesisImpl(
+      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -128,6 +134,6 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
   }
 
   private MutableBeaconState createWritableCopyPriv() {
-    return new MutableBeaconStateImpl(this);
+    return new MutableBeaconStateGenesisImpl(this);
   }
 }

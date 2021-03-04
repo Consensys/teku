@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
@@ -68,7 +69,8 @@ public class ForkChoiceTestExecutor {
   private static Optional<? extends Arguments> parseForkChoiceFile(Path path) {
     final File file = path.toFile();
     final SchemaDefinitions schemaDefinitions = SPEC.getGenesisSchemaDefinitions();
-    final BeaconStateSchema beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
+    final BeaconStateSchema<BeaconState, MutableBeaconState> beaconStateSchema =
+        schemaDefinitions.getBeaconStateSchema();
     try {
       @SuppressWarnings("rawtypes")
       Map content = mapper.readValue(file, Map.class);
