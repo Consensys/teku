@@ -37,7 +37,6 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public interface BeaconState extends SszContainer {
 
-  // Versioning
   default UInt64 getGenesis_time() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME.name());
     return ((SszUInt64) get(fieldIndex)).get();

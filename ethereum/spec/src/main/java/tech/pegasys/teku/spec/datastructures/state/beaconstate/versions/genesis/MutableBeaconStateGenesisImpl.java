@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
+import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.AbstractMutableBeaconStateImpl;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -66,21 +67,6 @@ class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconStateImpl<Beaco
   }
 
   @Override
-  public String toString() {
-    return BeaconStateGenesisImpl.toString(this);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    return BeaconStateGenesisImpl.equals(this, obj);
-  }
-
-  @Override
-  public int hashCode() {
-    return BeaconStateGenesisImpl.hashCode(this);
-  }
-
-  @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
       Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
@@ -91,5 +77,10 @@ class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconStateImpl<Beaco
       BeaconStateGenesis updatedGenesis(Mutator<MutableBeaconStateGenesis, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  protected void addCustomFields(ToStringHelper stringBuilder) {
+    BeaconStateGenesisImpl.describeCustomFields(stringBuilder, this);
   }
 }

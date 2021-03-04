@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import com.google.common.base.MoreObjects.ToStringHelper;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -132,4 +133,21 @@ public abstract class AbstractMutableBeaconStateImpl<
       Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public int hashCode() {
+    return BeaconStateInvariants.hashCode(this);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return BeaconStateInvariants.equals(this, obj);
+  }
+
+  @Override
+  public String toString() {
+    return BeaconStateInvariants.toString(this, this::addCustomFields);
+  }
+
+  protected abstract void addCustomFields(ToStringHelper stringBuilder);
 }
