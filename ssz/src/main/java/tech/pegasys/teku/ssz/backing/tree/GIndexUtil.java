@@ -54,9 +54,7 @@ public class GIndexUtil {
     }
   }
 
-  /**
-   * Maximal depth this generalized index implementation can handle
-   */
+  /** Maximal depth this generalized index implementation can handle */
   // with the depth 64 positive long would overflow and we don't want to handle it here
   public static final int MAX_DEPTH = 63;
 

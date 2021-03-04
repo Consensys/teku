@@ -100,7 +100,7 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
     List<Integer> updatedIndexes =
         IntStream.concat(IntStream.range(0, 2), IntStream.of(data.size() - 1))
             .distinct()
-            .filter(i -> i >=0 && i < data.size())
+            .filter(i -> i >= 0 && i < data.size())
             .boxed()
             .collect(Collectors.toList());
 
