@@ -687,7 +687,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void setupInitialState(final RecentChainData client) {
     final Optional<AnchorPoint> initialAnchor =
-        wsInitializer.loadInitialAnchorPoint(beaconConfig.eth2NetworkConfig().getInitialState());
+        wsInitializer.loadInitialAnchorPoint(
+            spec, beaconConfig.eth2NetworkConfig().getInitialState());
     // Validate
     initialAnchor.ifPresent(
         anchor -> {

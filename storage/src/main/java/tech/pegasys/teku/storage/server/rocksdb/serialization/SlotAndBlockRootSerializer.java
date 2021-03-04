@@ -19,7 +19,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBlockRoot> {
+class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBlockRoot> {
   @Override
   public SlotAndBlockRoot deserialize(final byte[] data) {
     return SSZ.decode(
