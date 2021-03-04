@@ -196,12 +196,12 @@ public class GIndexUtilTest {
     assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 0)).isEqualTo(0);
     assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 0)).isEqualTo(0);
     assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 22)).isEqualTo(0);
-    assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, 63)).isEqualTo(0);
+    assertThat(gIdxGetChildIndex(LEFTMOST_G_INDEX, GIndexUtil.MAX_DEPTH)).isEqualTo(0);
     assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 1)).isEqualTo(1);
     assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 2)).isEqualTo(3);
     assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 3)).isEqualTo(7);
     assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 22)).isEqualTo((1 << 22) - 1);
-    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, 63)).isEqualTo(RIGHTMOST_G_INDEX);
+    assertThat(gIdxGetChildIndex(RIGHTMOST_G_INDEX, GIndexUtil.MAX_DEPTH)).isEqualTo(RIGHTMOST_G_INDEX);
     assertThat(gIdxGetChildIndex(0b1100, 0)).isEqualTo(0);
     assertThat(gIdxGetChildIndex(0b1100, 1)).isEqualTo(1);
     assertThat(gIdxGetChildIndex(0b1100, 2)).isEqualTo(2);

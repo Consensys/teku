@@ -25,7 +25,7 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
     extends SszCollectionSchema<ElementDataT, SszListT> {
 
   // we need additional depth level for the length node
-  long MAX_LIST_MAX_LENGTH = 1L << (GIndexUtil.MAX_DEPTH - 1);
+  long MAX_LIST_MAX_LENGTH = 1L << (GIndexUtil.MAX_DEPTH - 2);
 
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(

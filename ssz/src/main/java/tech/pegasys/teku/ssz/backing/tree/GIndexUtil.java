@@ -57,8 +57,8 @@ public class GIndexUtil {
   /**
    * Maximal depth this generalized index implementation can handle
    */
-  // with the depth 63 positive long would overflow and we don't want to handle it here
-  public static final int MAX_DEPTH = 62;
+  // with the depth 64 positive long would overflow and we don't want to handle it here
+  public static final int MAX_DEPTH = 63;
 
   /**
    * The generalized index of either a root tree node or an index of a node relative to the node
@@ -224,7 +224,7 @@ public class GIndexUtil {
       return fromGeneralizedIndex;
     } else {
       int nodeDepth = Long.bitCount(highestOneBit - 1);
-      return fromGeneralizedIndex << (63 - nodeDepth);
+      return fromGeneralizedIndex << (MAX_DEPTH - nodeDepth);
     }
   }
 
@@ -246,7 +246,7 @@ public class GIndexUtil {
       return fromGeneralizedIndex;
     } else {
       int nodeDepth = Long.bitCount(highestOneBit - 1);
-      int shiftN = 63 - nodeDepth;
+      int shiftN = MAX_DEPTH - nodeDepth;
       return (fromGeneralizedIndex << shiftN) | ((1L << shiftN) - 1);
     }
   }

@@ -25,7 +25,7 @@ public interface SszVectorSchema<
         ElementDataT extends SszData, SszVectorT extends SszVector<ElementDataT>>
     extends SszCollectionSchema<ElementDataT, SszVectorT> {
 
-  long MAX_VECTOR_LENGTH = 1L << GIndexUtil.MAX_DEPTH;
+  long MAX_VECTOR_LENGTH = 1L << (GIndexUtil.MAX_DEPTH - 1);
 
   default int getLength() {
     long maxLength = getMaxLength();
