@@ -13,20 +13,21 @@
 
 package tech.pegasys.teku.protoarray;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ForkChoiceStrategy extends ReadOnlyForkChoiceStrategy {
 
   Bytes32 findHead(
-      final VoteUpdater store,
-      final Checkpoint finalizedCheckpoint,
-      final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState);
+      VoteUpdater store,
+      Checkpoint finalizedCheckpoint,
+      Checkpoint justifiedCheckpoint,
+      List<UInt64> justifiedStateEffectiveBalances);
 
   void onAttestation(final VoteUpdater store, final IndexedAttestation attestation);
 }

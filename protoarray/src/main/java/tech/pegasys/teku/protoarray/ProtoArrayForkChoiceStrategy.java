@@ -93,13 +93,13 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       final VoteUpdater voteUpdater,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances) {
     return findHead(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().asList());
+        justifiedCheckpointEffectiveBalances);
   }
 
   @Override
@@ -195,19 +195,16 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<UInt64> oldBalances = balances;
-      List<UInt64> newBalances = justifiedStateBalances;
-
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
               protoArray.getRootIndices(),
-              oldBalances,
-              newBalances);
+              balances,
+              justifiedStateBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = new ArrayList<>(newBalances);
+      balances = justifiedStateBalances;
 
       return protoArray.findHead(justifiedRoot);
     } finally {
