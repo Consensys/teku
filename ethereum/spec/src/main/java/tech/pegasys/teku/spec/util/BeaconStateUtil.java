@@ -415,11 +415,6 @@ public class BeaconStateUtil {
   }
 
   private void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
-    checkArgument(
-        getCurrentEpoch(state).isLessThanOrEqualTo(computeEpochAtSlot(slot)),
-        "Committee information cannot be derived from a state in a later epoch. State at slot %s cannot calculate committee information at slot %s",
-        state.getSlot(),
-        slot);
     final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
     checkArgument(
         state.getSlot().compareTo(oldestQueryableSlot) >= 0,
