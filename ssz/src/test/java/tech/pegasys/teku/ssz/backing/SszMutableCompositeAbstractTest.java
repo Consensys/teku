@@ -58,6 +58,9 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_throwsNPE(SszMutableComposite<SszData> data) {
+    if (data.getSchema().getMaxLength() == 0) {
+      return;
+    }
     assertThatThrownBy(() -> data.set(0, null)).isInstanceOf(NullPointerException.class);
   }
 
@@ -97,7 +100,7 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
     List<Integer> updatedIndexes =
         IntStream.concat(IntStream.range(0, 2), IntStream.of(data.size() - 1))
             .distinct()
-            .filter(i -> i < data.size())
+            .filter(i -> i >=0 && i < data.size())
             .boxed()
             .collect(Collectors.toList());
 

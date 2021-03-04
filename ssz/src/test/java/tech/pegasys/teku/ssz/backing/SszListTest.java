@@ -40,12 +40,13 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
 public class SszListTest implements SszListAbstractTest, SszMutableCompositeAbstractTest {
 
-  private RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+  private RandomSszDataGenerator randomSsz = new RandomSszDataGenerator().withMaxListSize(256);
 
   @Override
   public Stream<? extends SszData> sszData() {
@@ -61,7 +62,7 @@ public class SszListTest implements SszListAbstractTest, SszMutableCompositeAbst
                     SszListSchema.create(elementSchema, 16),
                     SszListSchema.create(elementSchema, 17),
                     SszListSchema.create(elementSchema, Integer.MAX_VALUE),
-                    SszListSchema.create(elementSchema, Long.MAX_VALUE)))
+                    SszListSchema.create(elementSchema, 1L << 33)))
         .flatMap(
             vectorSchema ->
                 Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));

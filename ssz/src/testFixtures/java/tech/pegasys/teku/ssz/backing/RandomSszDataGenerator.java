@@ -40,6 +40,8 @@ public class RandomSszDataGenerator {
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszBytes32> bytes32Supplier;
 
+  private int maxListSize = 16 * 1024;
+
   public RandomSszDataGenerator() {
     this(new Random(1));
   }
@@ -50,6 +52,11 @@ public class RandomSszDataGenerator {
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
     uintSupplier = () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
     bytes32Supplier = () -> SszBytes32.of(Bytes32.random(random));
+  }
+
+  public RandomSszDataGenerator withMaxListSize(int maxListSize) {
+    this.maxListSize = maxListSize;
+    return this;
   }
 
   public <T extends SszData> T randomData(SszSchema<T> schema) {
@@ -89,7 +96,7 @@ public class RandomSszDataGenerator {
             SszCollectionSchema<SszData, ?> collectionSchema =
                 (SszCollectionSchema<SszData, ?>) schema;
             SszSchema<SszData> elementSchema = collectionSchema.getElementSchema();
-            int maxChildrenToAdd = (int) Long.min(collectionSchema.getMaxLength(), 16 * 1024);
+            int maxChildrenToAdd = (int) Long.min(collectionSchema.getMaxLength(), maxListSize);
             List<SszData> children =
                 Stream.generate(() -> randomData(elementSchema))
                     .limit(maxChildrenToAdd)
