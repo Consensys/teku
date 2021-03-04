@@ -60,7 +60,7 @@ public class StorageConfiguration {
     return dataStorageCreateDbVersion;
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 

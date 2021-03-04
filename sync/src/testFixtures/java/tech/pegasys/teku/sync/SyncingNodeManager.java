@@ -86,9 +86,9 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, eventBus);
 
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
     ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
@@ -112,7 +112,7 @@ public class SyncingNodeManager {
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
             .builder()
-            .specProvider(spec)
+            .spec(spec)
             .eventBus(eventBus)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock);

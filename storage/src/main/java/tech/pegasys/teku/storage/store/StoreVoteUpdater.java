@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
@@ -67,7 +66,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState,
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
       final List<ProposerWeighting> removedProposerWeightings) {
 
     // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
@@ -82,7 +81,7 @@ public class StoreVoteUpdater implements VoteUpdater {
               removedProposerWeightings,
               finalizedCheckpoint,
               justifiedCheckpoint,
-              justifiedCheckpointState);
+              justifiedCheckpointEffectiveBalances);
     } finally {
       lock.writeLock().unlock();
     }

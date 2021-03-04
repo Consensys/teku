@@ -37,9 +37,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -54,8 +54,7 @@ public class WeakSubjectivityValidatorTest {
 
   // Set up mocks
   private final WeakSubjectivityCalculator calculator = mock(WeakSubjectivityCalculator.class);
-  private final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
-      mock(ForkChoiceStrategy.class);
+  private final ReadOnlyForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final WeakSubjectivityViolationPolicy policy =
       mock(WeakSubjectivityViolationPolicy.class);
   private final CheckpointState checkpointState = mock(CheckpointState.class);

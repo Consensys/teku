@@ -35,11 +35,12 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -113,12 +114,19 @@ public class ForkChoice {
                       }
                       final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                      final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
+                      final List<UInt64> justifiedEffectiveBalances =
+                          spec.getBeaconStateUtil(justifiedState.getSlot())
+                              .getEffectiveBalances(justifiedState);
+
+                      final List<ProposerWeighting> removedProposerWeightings =
+                          proposerWeightings.clearProposerWeightings();
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
                               finalizedCheckpoint,
                               justifiedCheckpoint,
-                              justifiedCheckpointState.orElseThrow(),
-                              proposerWeightings.clearProposerWeightings());
+                              justifiedEffectiveBalances,
+                              removedProposerWeightings);
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -264,7 +272,7 @@ public class ForkChoice {
   }
 
   public void onBlocksDueForSlot(final UInt64 slot) {
-    onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot));
+    onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {

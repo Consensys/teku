@@ -19,7 +19,7 @@ import java.util.List;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class ChainStateGenerator {
   private final BlockProcessor blockProcessor;

@@ -42,7 +42,6 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -51,8 +50,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -998,8 +997,7 @@ class RecentChainDataTest {
   }
 
   private void disableForkChoicePruneThreshold() {
-    ((ForkChoiceStrategy) recentChainData.getForkChoiceStrategy().orElseThrow())
-        .setPruneThreshold(0);
+    recentChainData.getForkChoiceStrategy().orElseThrow().setPruneThreshold(0);
   }
 
   private long getReorgCountMetric(final StorageSystem storageSystem) {

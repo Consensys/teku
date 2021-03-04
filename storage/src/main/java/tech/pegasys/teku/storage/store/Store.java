@@ -50,9 +50,9 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockMetadataStore;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
@@ -64,10 +64,10 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -235,8 +235,7 @@ class Store implements UpdatableStore {
             checkpointStateTaskQueue);
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ForkChoiceStrategy forkChoiceStrategy =
-          ForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel)
-              .join();
+          ForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel).join();
       store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {

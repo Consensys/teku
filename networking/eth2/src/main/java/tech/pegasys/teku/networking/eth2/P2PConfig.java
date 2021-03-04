@@ -61,7 +61,7 @@ public class P2PConfig {
     return new Builder();
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 

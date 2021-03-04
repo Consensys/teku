@@ -21,7 +21,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 
@@ -35,7 +35,7 @@ public class SanitySlotsTestExecutor implements TestExecutor {
 
     final UInt64 endSlot = preState.getSlot().plus(numberOfSlots);
 
-    final BeaconState result = processSlots(testDefinition.getSpecProvider(), preState, endSlot);
+    final BeaconState result = processSlots(testDefinition.getSpec(), preState, endSlot);
     assertThat(result).isEqualTo(expectedState);
   }
 

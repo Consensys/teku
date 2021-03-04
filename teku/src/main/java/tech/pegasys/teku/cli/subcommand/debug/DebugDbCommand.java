@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -227,7 +227,7 @@ public class DebugDbCommand implements Runnable {
       final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpecProvider();
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),

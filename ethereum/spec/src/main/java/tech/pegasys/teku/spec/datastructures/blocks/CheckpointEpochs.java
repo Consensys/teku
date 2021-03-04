@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class CheckpointEpochs {
   private final UInt64 justifiedEpoch;

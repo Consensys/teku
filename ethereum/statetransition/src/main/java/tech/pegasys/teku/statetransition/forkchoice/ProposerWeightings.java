@@ -21,7 +21,7 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ProposerWeightings {
   private final EventThread eventThread;

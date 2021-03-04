@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class VoluntaryExitGossipIntegrationTest {

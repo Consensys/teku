@@ -363,7 +363,7 @@ public class GossipMessageHandlerIntegrationTest {
         networkFactory,
         validatorKeys,
         c -> {
-          c.specProvider(spec);
+          c.spec(spec);
           networkBuilder.accept(c);
         });
   }

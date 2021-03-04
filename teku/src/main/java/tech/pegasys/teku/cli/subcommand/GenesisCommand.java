@@ -24,9 +24,11 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.MinimalEth2NetworkOptions;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @Command(
     name = "genesis",
@@ -54,27 +56,32 @@ public class GenesisCommand {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void generate(@Mixin MockGenesisParams params) throws IOException {
+  public void generate(
+      @Mixin MockGenesisParams genesisParams, @Mixin MinimalEth2NetworkOptions networkOptions)
+      throws IOException {
     // Output to stdout if no file is specified
-    final boolean outputToFile = params.outputFile != null && !params.outputFile.isBlank();
+    final Spec spec = networkOptions.getSpec();
+    final boolean outputToFile =
+        genesisParams.outputFile != null && !genesisParams.outputFile.isBlank();
     try (final OutputStream fileStream =
-        outputToFile ? new FileOutputStream(params.outputFile) : System.out) {
+        outputToFile ? new FileOutputStream(genesisParams.outputFile) : System.out) {
       if (outputToFile) {
-        SUB_COMMAND_LOG.generatingMockGenesis(params.validatorCount, params.genesisTime);
+        SUB_COMMAND_LOG.generatingMockGenesis(
+            genesisParams.validatorCount, genesisParams.genesisTime);
       }
 
-      final long genesisTime = params.genesisTime;
+      final long genesisTime = genesisParams.genesisTime;
       final List<BLSKeyPair> validatorKeys =
-          new MockStartValidatorKeyPairFactory().generateKeyPairs(0, params.validatorCount);
+          new MockStartValidatorKeyPairFactory().generateKeyPairs(0, genesisParams.validatorCount);
       final BeaconState genesisState =
-          InteropStartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
+          InteropStartupUtil.createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys);
 
       if (outputToFile) {
-        SUB_COMMAND_LOG.storingGenesis(params.outputFile, false);
+        SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, false);
       }
       fileStream.write(genesisState.sszSerialize().toArrayUnsafe());
       if (outputToFile) {
-        SUB_COMMAND_LOG.storingGenesis(params.outputFile, true);
+        SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, true);
       }
     }
   }

@@ -33,9 +33,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
@@ -159,7 +159,10 @@ class BlockProcessorUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
-    return BeaconState.createEmpty()
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             beaconState -> {
               beaconState.setSlot(dataStructureUtil.randomUInt64());

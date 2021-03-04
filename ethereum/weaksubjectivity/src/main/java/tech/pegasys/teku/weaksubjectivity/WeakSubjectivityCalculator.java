@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
@@ -49,7 +49,7 @@ public class WeakSubjectivityCalculator {
 
   public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
     return new WeakSubjectivityCalculator(
-        config.getSpecProvider(), config.getSafetyDecay(), StateCalculator.DEFAULT);
+        config.getSpec(), config.getSafetyDecay(), StateCalculator.DEFAULT);
   }
 
   /**

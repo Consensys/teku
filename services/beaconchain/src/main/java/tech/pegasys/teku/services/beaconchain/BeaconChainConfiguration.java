@@ -63,7 +63,7 @@ public class BeaconChainConfiguration {
     this.spec = spec;
   }
 
-  public Spec getSpecProvider() {
+  public Spec getSpec() {
     return spec;
   }
 

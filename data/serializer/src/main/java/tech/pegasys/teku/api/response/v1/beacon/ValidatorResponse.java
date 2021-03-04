@@ -25,7 +25,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorResponse {
 

@@ -30,7 +30,7 @@ import tech.pegasys.teku.reference.phase0.BlsSetting;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
@@ -69,7 +69,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
       final BeaconState preState,
       final List<SignedBeaconBlock> blocks,
       final Optional<BeaconState> expectedState) {
-    final Spec spec = testDefinition.getSpecProvider();
+    final Spec spec = testDefinition.getSpec();
     expectedState.ifPresentOrElse(
         (state) ->
             assertThat(processor.processBlocks(spec, metaData, preState, blocks)).isEqualTo(state),

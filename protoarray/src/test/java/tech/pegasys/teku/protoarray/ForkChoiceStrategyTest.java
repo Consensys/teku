@@ -44,8 +44,8 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -134,9 +134,14 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy forkChoiceStrategy = future.join();
 
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(anchor.getState().getSlot())
+            .getEffectiveBalances(anchor.getState());
     final Bytes32 head =
         forkChoiceStrategy.findHead(
-            store, emptyList(), anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+            store, emptyList(), anchor.getCheckpoint(), anchor.getCheckpoint(), effectiveBalances);
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -297,13 +302,19 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
 
     final BeaconState block3State = block3.getState();
+
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(block3State.getSlot())
+            .getEffectiveBalances(block3State);
     final Bytes32 bestHead =
         strategy.findHead(
             transaction,
             emptyList(),
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
-            block3State);
+            effectiveBalances);
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());

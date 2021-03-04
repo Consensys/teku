@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -58,7 +58,9 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final Response response = get("head", HEADER_ACCEPT_OCTET);
     assertThat(response.code()).isEqualTo(SC_OK);
     final BeaconState state =
-        BeaconState.getSszSchema().sszDeserialize(Bytes.wrap(response.body().bytes()));
+        spec.getGenesisSchemaDefinitions()
+            .getBeaconStateSchema()
+            .sszDeserialize(Bytes.wrap(response.body().bytes()));
     assertThat(state).isNotNull();
   }
 

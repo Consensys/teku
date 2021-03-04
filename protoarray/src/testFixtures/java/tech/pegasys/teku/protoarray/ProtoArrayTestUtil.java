@@ -41,8 +41,7 @@ public class ProtoArrayTestUtil {
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
     ForkChoiceStrategy forkChoice =
-        ForkChoiceStrategy.initializeAndMigrateStorage(
-                store, ProtoArrayStorageChannel.NO_OP)
+        ForkChoiceStrategy.initializeAndMigrateStorage(store, ProtoArrayStorageChannel.NO_OP)
             .join();
 
     forkChoice.processBlock(

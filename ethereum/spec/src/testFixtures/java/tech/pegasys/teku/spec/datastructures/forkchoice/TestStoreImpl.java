@@ -27,9 +27,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected UInt64 time;
@@ -273,7 +273,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState,
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
       final List<ProposerWeighting> removedProposerWeightings) {
     throw new UnsupportedOperationException("Not implemented");
   }

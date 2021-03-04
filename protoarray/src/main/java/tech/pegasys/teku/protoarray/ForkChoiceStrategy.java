@@ -40,12 +40,11 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
-public class ForkChoiceStrategy
-    implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
+public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
@@ -98,13 +97,13 @@ public class ForkChoiceStrategy
       final List<ProposerWeighting> removedProposerWeightings,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
+      final List<UInt64> justifiedStateEffectiveBalances) {
     return findHead(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().asList(),
+        justifiedStateEffectiveBalances,
         removedProposerWeightings);
   }
 
