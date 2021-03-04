@@ -28,14 +28,10 @@ public interface SszByteVector extends SszPrimitiveVector<Byte, SszByte> {
     return fromBytes(byteVector).hashTreeRoot();
   }
 
-  default byte getByte(int index) {
-    return getElement(index);
-  }
-
   default Bytes getBytes() {
     byte[] data = new byte[size()];
     for (int i = 0; i < size(); i++) {
-      data[i] = getByte(i);
+      data[i] = getElement(i);
     }
     return Bytes.wrap(data);
   }
