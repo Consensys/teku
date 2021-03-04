@@ -45,9 +45,15 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
     processHead(nodeSlot);
   }
 
+  /**
+   * Called at the point in the slot when attestations are due. This is also the point where the
+   * block for that slot must have been received by.
+   *
+   * @param slot the slot attestations are due for
+   */
   @Override
-  public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
-    forkChoice.onBlocksDueForSlot(nodeSlot);
+  public void onAttestationsDueForSlot(final UInt64 slot) {
+    forkChoice.onBlocksDueForSlot(slot);
   }
 
   @Override
