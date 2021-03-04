@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.collections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.SszCollectionAbstractTest;
@@ -44,5 +45,31 @@ public interface SszPrimitiveCollectionAbstractTest extends SszCollectionAbstrac
                 collection.getElement(
                     (int) Long.min(Integer.MAX_VALUE, collection.getSchema().getMaxLength())))
         .isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void asListUnboxed_shouldReturnAllElements(
+      SszPrimitiveCollection<ElT, SszT> collection) {
+    List<ElT> listUnboxed = collection.asListUnboxed();
+    assertThat(listUnboxed.size()).isEqualTo(collection.size());
+    for (int i = 0; i < collection.size(); i++) {
+      assertThat(listUnboxed.get(i)).isEqualTo(collection.getElement(i));
+    }
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void asListUnboxed_isUnmodifiable(
+      SszPrimitiveCollection<ElT, SszT> collection) {
+    List<ElT> list = collection.asListUnboxed();
+    assertThatThrownBy(() -> list.set(0, list.get(0))).isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void streamUnboxed_shouldReturnAllElements(
+      SszPrimitiveCollection<ElT, SszT> collection) {
+    assertThat(collection.streamUnboxed()).containsExactlyElementsOf(collection.asListUnboxed());
   }
 }

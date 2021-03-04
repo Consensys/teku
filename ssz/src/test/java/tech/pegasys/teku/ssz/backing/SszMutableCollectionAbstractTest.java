@@ -13,5 +13,14 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import java.util.stream.Stream;
+import org.junit.jupiter.params.provider.Arguments;
+
 public interface SszMutableCollectionAbstractTest
-    extends SszCollectionAbstractTest, SszMutableCompositeAbstractTest {}
+    extends SszCollectionAbstractTest, SszMutableCompositeAbstractTest {
+
+  default Stream<Arguments> sszMutableCollectionArguments() {
+    return SszDataAbstractTest.passWhenEmpty(
+        sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
+  }
+}

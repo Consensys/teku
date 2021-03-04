@@ -41,11 +41,6 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
         sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
   }
 
-  default Stream<Arguments> sszNonEmptyMutableCompositeArguments() {
-    return SszDataAbstractTest.passWhenEmpty(
-        sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
-  }
-
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_throwsIndexOutOfBounds(SszMutableComposite<SszData> data) {
@@ -139,6 +134,51 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
   }
 
   @MethodSource("sszMutableCompositeArguments")
+  @ParameterizedTest
+  default void set_shouldAppendOnExtendableStructures(SszMutableComposite<SszData> data) {
+    if (data.size() < data.getSchema().getMaxLength()) {
+      // the structure could be extended (just a List for now)
+      int origSize = data.size();
+
+      SszData appendChild = generator.randomData(data.getSchema().getChildSchema(origSize));
+      data.set(origSize, appendChild);
+
+      assertThat(data.size()).isEqualTo(origSize + 1);
+      assertThatSszData(data.get(origSize)).isEqualByAllMeansTo(appendChild);
+
+      SszComposite<SszData> data1 = data.commitChanges();
+      assertThat(data1.size()).isEqualTo(origSize + 1);
+      assertThatSszData(data1.get(origSize)).isEqualByAllMeansTo(appendChild);
+    }
+  }
+
+  @MethodSource("sszMutableCompositeArguments")
+  @ParameterizedTest
+  default void set_shouldThrowWhenSetAboveSizeForExtendableStructures(SszMutableComposite<SszData> data) {
+    if (data.size() < data.getSchema().getMaxLength()) {
+      // the structure could be extended (just a List case for now)
+      assertThatThrownBy(() -> data
+          .set(data.size() + 1, data.getSchema().getChildSchema(data.size() + 1).getDefault()))
+          .isInstanceOf(IndexOutOfBoundsException.class);
+    }
+  }
+
+  @MethodSource("sszMutableCompositeArguments")
+  @ParameterizedTest
+  default void set_shouldThrowWhenAppendingAboveMaxLen(SszMutableComposite<SszData> data) {
+    long maxLength = data.getSchema().getMaxLength();
+    if (maxLength <= 1024) {
+      // don't want to waste too much time appending
+      for (int i = data.size(); i < maxLength; i++) {
+        data.set(i, data.getSchema().getChildSchema(i).getDefault());
+      }
+      assertThatThrownBy(() -> data.set((int) maxLength, data.getSchema().getChildSchema(
+          (int) maxLength).getDefault()))
+          .isInstanceOf(IndexOutOfBoundsException.class);
+    }
+  }
+
+    @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void setInvalidator_shouldBeNotifiedOnSet(SszMutableComposite<SszData> data) {
     if (data.size() == 0) {

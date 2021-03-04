@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
+
+import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,14 +45,31 @@ public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default void size_matchesReturnedData(SszCollection<?> data) {
-    Assertions.assertThat(data.asList()).hasSize(data.size());
-    Assertions.assertThat(data.stream()).hasSize(data.size());
-    Assertions.assertThat(data).hasSize(data.size());
+    assertThat(data.asList()).hasSize(data.size());
+    assertThat(data.stream()).hasSize(data.size());
+    assertThat(data).hasSize(data.size());
   }
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default <C extends SszData> void stream_returnsSameData(SszCollection<C> data) {
-    Assertions.assertThat(data.stream()).containsExactlyElementsOf(data);
+    assertThat(data.stream()).containsExactlyElementsOf(data);
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <C extends SszData> void asList_returnsSameData(SszCollection<C> data) {
+    List<C> list = data.asList();
+    assertThat(list.size()).isEqualTo(data.size());
+    for (int i = 0; i < list.size(); i++) {
+      assertThatSszData(list.get(i)).isEqualByAllMeansTo(data.get(i));
+    }
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <C extends SszData> void asList_isUnmodifiable(SszCollection<C> data) {
+    List<C> list = data.asList();
+    assertThatThrownBy(() -> list.set(0, data.get(0))).isInstanceOf(UnsupportedOperationException.class);
   }
 }
