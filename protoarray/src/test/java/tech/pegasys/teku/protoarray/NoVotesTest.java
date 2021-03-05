@@ -43,7 +43,7 @@ public class NoVotesTest {
 
     // Check that the head is the finalized block.
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(0));
 
@@ -60,7 +60,7 @@ public class NoVotesTest {
     //        /
     //        2 <- head
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
@@ -77,7 +77,7 @@ public class NoVotesTest {
     //        / \
     // head-> 2  1
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
@@ -98,7 +98,7 @@ public class NoVotesTest {
     //           |
     //           3
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(2));
 
@@ -119,7 +119,7 @@ public class NoVotesTest {
     //        |  |
     // head-> 4  3
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(4));
 
@@ -144,7 +144,7 @@ public class NoVotesTest {
     //        |
     //        5
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(4));
 
@@ -159,7 +159,7 @@ public class NoVotesTest {
     //     5 <- starting from 5 with justified epoch 0 should error.
     assertThatThrownBy(
             () ->
-                forkChoice.findHead(
+                forkChoice.applyPendingVotes(
                     store, unsigned(1), getHash(5), unsigned(1), balances, proposerWeightings))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
@@ -173,7 +173,7 @@ public class NoVotesTest {
     //     |
     //     5 <- head
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(5));
 
@@ -202,7 +202,7 @@ public class NoVotesTest {
     //     |
     //     6 <- head
     assertThat(
-            forkChoice.findHead(
+            forkChoice.applyPendingVotes(
                 store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(6));
   }

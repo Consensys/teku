@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -92,13 +93,35 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return new ForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
-  public Bytes32 findHead(
+  public SlotAndBlockRoot findHead(final Checkpoint justifiedCheckpoint) {
+    protoArrayLock.readLock().lock();
+    try {
+      final ProtoNode bestNode = protoArray.findHead(justifiedCheckpoint.getRoot());
+      return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  /**
+   * Applies the weighting changes from any updated votes then finds and returns the best chain
+   * head.
+   *
+   * @param voteUpdater the vote updater to access and update pending votes from
+   * @param removedProposerWeightings expired proposer weightings to be removed
+   * @param finalizedCheckpoint the current finalized checkpoint
+   * @param justifiedCheckpoint the current justified checkpoint
+   * @param justifiedStateEffectiveBalances the effective validator balances at the justified
+   *     checkpoint
+   * @return the best chain head block root
+   */
+  public Bytes32 applyPendingVotes(
       final VoteUpdater voteUpdater,
       final List<ProposerWeighting> removedProposerWeightings,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
-    return findHead(
+    return applyPendingVotes(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
@@ -189,7 +212,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  Bytes32 findHead(
+  Bytes32 applyPendingVotes(
       VoteUpdater voteUpdater,
       UInt64 justifiedEpoch,
       Bytes32 justifiedRoot,
@@ -215,7 +238,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
 
-      return protoArray.findHead(justifiedRoot);
+      return protoArray.findHead(justifiedRoot).getBlockRoot();
     } finally {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();

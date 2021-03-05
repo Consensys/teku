@@ -136,7 +136,7 @@ public class ProtoArray {
    * @param justifiedRoot
    * @return
    */
-  public Bytes32 findHead(Bytes32 justifiedRoot) {
+  public ProtoNode findHead(Bytes32 justifiedRoot) {
     int justifiedIndex =
         checkNotNull(indices.get(justifiedRoot), "ProtoArray: Unknown justified root");
     ProtoNode justifiedNode =
@@ -151,7 +151,7 @@ public class ProtoArray {
       throw new RuntimeException("ProtoArray: Best node is not viable for head");
     }
 
-    return bestNode.getBlockRoot();
+    return bestNode;
   }
 
   /**

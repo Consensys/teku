@@ -76,7 +76,7 @@ public class StoreVoteUpdater implements VoteUpdater {
     try {
       return store
           .getForkChoiceStrategy()
-          .findHead(
+          .applyPendingVotes(
               this,
               removedProposerWeightings,
               finalizedCheckpoint,
