@@ -22,20 +22,22 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
-// TODO(#3564) Make builder generic, create custom builders for specific beacon state versions
-// (genesis, hf1, etc)
-public class BeaconStateBuilder {
-  private final DataStructureUtil dataStructureUtil;
-  private final int defaultValidatorCount;
-  private final int defaultItemsInSSZLists;
-  private final Spec spec;
+@SuppressWarnings("unchecked")
+abstract class AbstractBeaconStateBuilder<
+    TState extends BeaconState,
+    TStateMutable extends MutableBeaconState,
+    TBuilder extends AbstractBeaconStateBuilder<TState, TStateMutable, TBuilder>> {
+  protected final DataStructureUtil dataStructureUtil;
+  protected final int defaultValidatorCount;
+  protected final int defaultItemsInSSZLists;
+  protected final Spec spec;
 
   private UInt64 genesisTime;
   private Bytes32 genesisValidatorsRoot;
@@ -52,14 +54,12 @@ public class BeaconStateBuilder {
   private SSZList<UInt64> balances;
   private SSZVector<Bytes32> randaoMixes;
   private SSZVector<UInt64> slashings;
-  private SSZList<PendingAttestation> previousEpochAttestations;
-  private SSZList<PendingAttestation> currentEpochAttestations;
   private SszBitvector justificationBits;
   private Checkpoint previousJustifiedCheckpoint;
   private Checkpoint currentJustifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
 
-  private BeaconStateBuilder(
+  protected AbstractBeaconStateBuilder(
       final Spec spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
@@ -71,57 +71,41 @@ public class BeaconStateBuilder {
     initDefaults();
   }
 
-  public static BeaconStateBuilder create(
-      final DataStructureUtil dataStructureUtil,
-      final Spec spec,
-      final int defaultValidatorCount,
-      final int defaultItemsInSSZLists) {
-    return new BeaconStateBuilder(
-        spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+  protected abstract TState getEmptyState();
+
+  protected abstract void setUniqueFields(TStateMutable state);
+
+  public TState build() {
+    return (TState)
+        getEmptyState()
+            .updated(
+                state -> {
+                  state.setGenesis_time(genesisTime);
+                  state.setGenesis_validators_root(genesisValidatorsRoot);
+                  state.setSlot(slot);
+                  state.setFork(fork);
+                  state.setLatest_block_header(latestBlockHeader);
+                  state.getBlock_roots().setAll(blockRoots);
+                  state.getState_roots().setAll(stateRoots);
+                  state.getHistorical_roots().setAll(historicalRoots);
+                  state.setEth1_data(eth1Data);
+                  state.getEth1_data_votes().setAll(eth1DataVotes);
+                  state.setEth1_deposit_index(eth1DepositIndex);
+                  state.getValidators().setAll(validators);
+                  state.getBalances().setAll(balances);
+                  state.getRandao_mixes().setAll(randaoMixes);
+                  state.getSlashings().setAll(slashings);
+                  state.setJustification_bits(justificationBits);
+                  state.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
+                  state.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
+                  state.setFinalized_checkpoint(finalizedCheckpoint);
+
+                  setUniqueFields((TStateMutable) state);
+                });
   }
 
-  public BeaconState build() {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .getBeaconStateSchema()
-        .createEmpty()
-        .updated(
-            state -> {
-              state.setGenesis_time(genesisTime);
-              state.setGenesis_validators_root(genesisValidatorsRoot);
-              state.setSlot(slot);
-              state.setFork(fork);
-              state.setLatest_block_header(latestBlockHeader);
-              state.getBlock_roots().setAll(blockRoots);
-              state.getState_roots().setAll(stateRoots);
-              state.getHistorical_roots().setAll(historicalRoots);
-              state.setEth1_data(eth1Data);
-              state.getEth1_data_votes().setAll(eth1DataVotes);
-              state.setEth1_deposit_index(eth1DepositIndex);
-              state.getValidators().setAll(validators);
-              state.getBalances().setAll(balances);
-              state.getRandao_mixes().setAll(randaoMixes);
-              state.getSlashings().setAll(slashings);
-              state.setJustification_bits(justificationBits);
-              state.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
-              state.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
-              state.setFinalized_checkpoint(finalizedCheckpoint);
+  protected void initDefaults() {
 
-              state
-                  .toGenesisVersionMutable()
-                  .ifPresent(
-                      genesisState -> {
-                        genesisState
-                            .getPrevious_epoch_attestations()
-                            .setAll(previousEpochAttestations);
-                        genesisState
-                            .getCurrent_epoch_attestations()
-                            .setAll(currentEpochAttestations);
-                      });
-            });
-  }
-
-  private void initDefaults() {
     genesisTime = dataStructureUtil.randomUInt64();
     genesisValidatorsRoot = dataStructureUtil.randomBytes32();
     slot = dataStructureUtil.randomUInt64();
@@ -172,18 +156,6 @@ public class BeaconStateBuilder {
             UInt64.ZERO,
             dataStructureUtil.getEpochsPerSlashingsVector(),
             dataStructureUtil::randomUInt64);
-    previousEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
-            defaultItemsInSSZLists,
-            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
-            dataStructureUtil::randomPendingAttestation);
-    currentEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
-            defaultItemsInSSZLists,
-            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
-            dataStructureUtil::randomPendingAttestation);
     justificationBits =
         dataStructureUtil.randomSszBitvector(dataStructureUtil.getJustificationBitsLength());
     previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
@@ -191,149 +163,133 @@ public class BeaconStateBuilder {
     finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
   }
 
-  public BeaconStateBuilder genesisTime(final UInt64 genesisTime) {
+  public TBuilder genesisTime(final UInt64 genesisTime) {
     checkNotNull(genesisTime);
     this.genesisTime = genesisTime;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder genesisValidatorsRoot(final Bytes32 genesisValidatorsRoot) {
+  public TBuilder genesisValidatorsRoot(final Bytes32 genesisValidatorsRoot) {
     checkNotNull(genesisValidatorsRoot);
     this.genesisValidatorsRoot = genesisValidatorsRoot;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder slot(final UInt64 slot) {
+  public TBuilder slot(final UInt64 slot) {
     checkNotNull(slot);
     this.slot = slot;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder setSlotToStartOfEpoch(final UInt64 epoch) {
+  public TBuilder setSlotToStartOfEpoch(final UInt64 epoch) {
     checkNotNull(epoch);
     return slot(dataStructureUtil.computeStartSlotAtEpoch(epoch));
   }
 
-  public BeaconStateBuilder fork(final Fork fork) {
+  public TBuilder fork(final Fork fork) {
     checkNotNull(fork);
     this.fork = fork;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder latestBlockHeader(final BeaconBlockHeader latestBlockHeader) {
+  public TBuilder latestBlockHeader(final BeaconBlockHeader latestBlockHeader) {
     checkNotNull(latestBlockHeader);
     this.latestBlockHeader = latestBlockHeader;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder blockRoots(final SSZVector<Bytes32> blockRoots) {
+  public TBuilder blockRoots(final SSZVector<Bytes32> blockRoots) {
     checkNotNull(blockRoots);
     this.blockRoots = blockRoots;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder stateRoots(final SSZVector<Bytes32> stateRoots) {
+  public TBuilder stateRoots(final SSZVector<Bytes32> stateRoots) {
     checkNotNull(stateRoots);
     this.stateRoots = stateRoots;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder historicalRoots(final SSZList<Bytes32> historicalRoots) {
+  public TBuilder historicalRoots(final SSZList<Bytes32> historicalRoots) {
     checkNotNull(historicalRoots);
     this.historicalRoots = historicalRoots;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder eth1Data(final Eth1Data eth1Data) {
+  public TBuilder eth1Data(final Eth1Data eth1Data) {
     checkNotNull(eth1Data);
     this.eth1Data = eth1Data;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder eth1DataVotes(final SSZList<Eth1Data> eth1DataVotes) {
+  public TBuilder eth1DataVotes(final SSZList<Eth1Data> eth1DataVotes) {
     checkNotNull(eth1DataVotes);
     this.eth1DataVotes = eth1DataVotes;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder eth1DepositIndex(final UInt64 eth1DepositIndex) {
+  public TBuilder eth1DepositIndex(final UInt64 eth1DepositIndex) {
     checkNotNull(eth1DepositIndex);
     this.eth1DepositIndex = eth1DepositIndex;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder validators(final SSZList<? extends Validator> validators) {
+  public TBuilder validators(final SSZList<? extends Validator> validators) {
     checkNotNull(validators);
     this.validators = validators;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder balances(final SSZList<UInt64> balances) {
+  public TBuilder balances(final SSZList<UInt64> balances) {
     checkNotNull(balances);
     this.balances = balances;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder randaoMixes(final SSZVector<Bytes32> randaoMixes) {
+  public TBuilder randaoMixes(final SSZVector<Bytes32> randaoMixes) {
     checkNotNull(randaoMixes);
     this.randaoMixes = randaoMixes;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder slashings(final SSZVector<UInt64> slashings) {
+  public TBuilder slashings(final SSZVector<UInt64> slashings) {
     checkNotNull(slashings);
     this.slashings = slashings;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder previousEpochAttestations(
-      final SSZList<PendingAttestation> previousEpochAttestations) {
-    checkNotNull(previousEpochAttestations);
-    this.previousEpochAttestations = previousEpochAttestations;
-    return this;
-  }
-
-  public BeaconStateBuilder currentEpochAttestations(
-      final SSZList<PendingAttestation> currentEpochAttestations) {
-    checkNotNull(currentEpochAttestations);
-    this.currentEpochAttestations = currentEpochAttestations;
-    return this;
-  }
-
-  public BeaconStateBuilder justificationBits(final SszBitvector justificationBits) {
+  public TBuilder justificationBits(final SszBitvector justificationBits) {
     checkNotNull(justificationBits);
     this.justificationBits = justificationBits;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder previousJustifiedCheckpoint(
-      final Checkpoint previousJustifiedCheckpoint) {
+  public TBuilder previousJustifiedCheckpoint(final Checkpoint previousJustifiedCheckpoint) {
     checkNotNull(previousJustifiedCheckpoint);
     this.previousJustifiedCheckpoint = previousJustifiedCheckpoint;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder currentJustifiedCheckpoint(
-      final Checkpoint currentJustifiedCheckpoint) {
+  public TBuilder currentJustifiedCheckpoint(final Checkpoint currentJustifiedCheckpoint) {
     checkNotNull(currentJustifiedCheckpoint);
     this.currentJustifiedCheckpoint = currentJustifiedCheckpoint;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
+  public TBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
     checkNotNull(finalizedCheckpoint);
     this.finalizedCheckpoint = finalizedCheckpoint;
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder setJustifiedCheckpointsToEpoch(final UInt64 epoch) {
+  public TBuilder setJustifiedCheckpointsToEpoch(final UInt64 epoch) {
     final Checkpoint checkpoint = new Checkpoint(epoch, dataStructureUtil.randomBytes32());
     previousJustifiedCheckpoint(checkpoint);
     currentJustifiedCheckpoint(checkpoint);
-    return this;
+    return (TBuilder) this;
   }
 
-  public BeaconStateBuilder setFinalizedCheckpointToEpoch(final UInt64 epoch) {
+  public TBuilder setFinalizedCheckpointToEpoch(final UInt64 epoch) {
     return finalizedCheckpoint(new Checkpoint(epoch, dataStructureUtil.randomBytes32()));
   }
 }
