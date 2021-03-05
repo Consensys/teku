@@ -22,29 +22,18 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.constants.TestConstantsLoader;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -172,32 +161,6 @@ public abstract class AbstractBeaconStateSchemaTest<
 
     @Override
     public BeaconState createEmpty() {
-      return null;
-    }
-
-    @Override
-    public BeaconState create(
-        final UInt64 genesis_time,
-        final Bytes32 genesis_validators_root,
-        final UInt64 slot,
-        final Fork fork,
-        final BeaconBlockHeader latest_block_header,
-        final SSZVector<Bytes32> block_roots,
-        final SSZVector<Bytes32> state_roots,
-        final SSZList<Bytes32> historical_roots,
-        final Eth1Data eth1_data,
-        final SSZList<Eth1Data> eth1_data_votes,
-        final UInt64 eth1_deposit_index,
-        final SSZList<? extends Validator> validators,
-        final SSZList<UInt64> balances,
-        final SSZVector<Bytes32> randao_mixes,
-        final SSZVector<UInt64> slashings,
-        final SSZList<PendingAttestation> previous_epoch_attestations,
-        final SSZList<PendingAttestation> current_epoch_attestations,
-        final SszBitvector justification_bits,
-        final Checkpoint previous_justified_checkpoint,
-        final Checkpoint current_justified_checkpoint,
-        final Checkpoint finalized_checkpoint) {
       return null;
     }
 

@@ -84,28 +84,41 @@ public class BeaconStateBuilder {
     return spec.atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconStateSchema()
-        .create(
-            genesisTime,
-            genesisValidatorsRoot,
-            slot,
-            fork,
-            latestBlockHeader,
-            blockRoots,
-            stateRoots,
-            historicalRoots,
-            eth1Data,
-            eth1DataVotes,
-            eth1DepositIndex,
-            validators,
-            balances,
-            randaoMixes,
-            slashings,
-            previousEpochAttestations,
-            currentEpochAttestations,
-            justificationBits,
-            previousJustifiedCheckpoint,
-            currentJustifiedCheckpoint,
-            finalizedCheckpoint);
+        .createEmpty()
+        .updated(
+            state -> {
+              state.setGenesis_time(genesisTime);
+              state.setGenesis_validators_root(genesisValidatorsRoot);
+              state.setSlot(slot);
+              state.setFork(fork);
+              state.setLatest_block_header(latestBlockHeader);
+              state.getBlock_roots().setAll(blockRoots);
+              state.getState_roots().setAll(stateRoots);
+              state.getHistorical_roots().setAll(historicalRoots);
+              state.setEth1_data(eth1Data);
+              state.getEth1_data_votes().setAll(eth1DataVotes);
+              state.setEth1_deposit_index(eth1DepositIndex);
+              state.getValidators().setAll(validators);
+              state.getBalances().setAll(balances);
+              state.getRandao_mixes().setAll(randaoMixes);
+              state.getSlashings().setAll(slashings);
+              state.setJustification_bits(justificationBits);
+              state.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
+              state.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
+              state.setFinalized_checkpoint(finalizedCheckpoint);
+
+              state
+                  .toGenesisVersionMutable()
+                  .ifPresent(
+                      genesisState -> {
+                        genesisState
+                            .getPrevious_epoch_attestations()
+                            .setAll(previousEpochAttestations);
+                        genesisState
+                            .getCurrent_epoch_attestations()
+                            .setAll(currentEpochAttestations);
+                      });
+            });
   }
 
   private void initDefaults() {
