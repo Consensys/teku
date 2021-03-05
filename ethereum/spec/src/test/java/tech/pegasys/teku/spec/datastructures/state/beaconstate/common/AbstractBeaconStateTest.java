@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateTest<
@@ -33,8 +34,11 @@ public abstract class AbstractBeaconStateTest<
   private final Spec spec = SpecFactory.createMinimal();
   private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
   private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+  protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+
+  protected abstract T randomState();
 
   @Test
   public void simpleMutableBeaconStateTest() {
@@ -64,5 +68,23 @@ public abstract class AbstractBeaconStateTest<
     assertThat(v2).isSameAs(val1);
   }
 
-  // TODO - add tests for equals(), hashcode()
+  @SuppressWarnings("unchecked")
+  public void equals_shouldReturnTrue() {
+    final T state = randomState();
+    final T stateCopy = (T) state.updated(__ -> {});
+
+    assertThat(state == stateCopy).isFalse();
+    assertThat(state).isEqualTo(stateCopy);
+    assertThat(state.hashCode()).isEqualTo(stateCopy.hashCode());
+  }
+
+  @SuppressWarnings("unchecked")
+  public void equals_shouldReturnFalse() {
+    final T state = randomState();
+    final T stateCopy = (T) state.updated(s -> s.setSlot(s.getSlot().plus(1)));
+
+    assertThat(state == stateCopy).isFalse();
+    assertThat(state).isNotEqualTo(stateCopy);
+    assertThat(state.hashCode()).isNotEqualTo(stateCopy.hashCode());
+  }
 }

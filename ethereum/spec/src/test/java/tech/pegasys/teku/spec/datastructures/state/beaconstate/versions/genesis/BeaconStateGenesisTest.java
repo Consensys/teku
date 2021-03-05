@@ -25,4 +25,9 @@ public class BeaconStateGenesisTest
       final SpecConstants specConstants) {
     return BeaconStateSchemaGenesis.create(specConstants);
   }
+
+  @Override
+  protected BeaconStateGenesis randomState() {
+    return dataStructureUtil.stateBuilderGenesis().build();
+  }
 }
