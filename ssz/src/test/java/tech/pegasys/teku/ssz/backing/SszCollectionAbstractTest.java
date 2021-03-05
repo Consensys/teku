@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestByteVectorContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
@@ -34,21 +31,20 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
 
   static Stream<SszSchema<?>> complexElementSchemas() {
-    return Stream.of(
-        SszBitvectorSchema.create(1),
-        SszBitvectorSchema.create(8),
-        SszBitvectorSchema.create(9),
-        SszBitlistSchema.create(0),
-        SszBitlistSchema.create(1),
-        SszBitlistSchema.create(7),
-        SszBitlistSchema.create(8),
-        SszBitlistSchema.create(9),
-        SszByteVectorSchema.create(3),
-        SszBytes32VectorSchema.create(3),
-        SszUInt64ListSchema.create(3),
-        TestSmallContainer.SSZ_SCHEMA,
-        TestByteVectorContainer.SSZ_SCHEMA,
-        VariableSizeContainer.SSZ_SCHEMA);
+    return Stream.concat(
+        SszContainerTest.sszContainerSchemas(),
+        Stream.of(
+            SszBitvectorSchema.create(1),
+            SszBitvectorSchema.create(8),
+            SszBitvectorSchema.create(9),
+            SszBitlistSchema.create(0),
+            SszBitlistSchema.create(1),
+            SszBitlistSchema.create(7),
+            SszBitlistSchema.create(8),
+            SszBitlistSchema.create(9),
+            SszByteVectorSchema.create(3),
+            SszBytes32VectorSchema.create(3),
+            SszUInt64ListSchema.create(3)));
   }
 
   @MethodSource("sszDataArguments")

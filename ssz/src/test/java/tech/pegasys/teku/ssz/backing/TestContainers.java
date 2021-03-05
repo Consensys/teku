@@ -18,26 +18,142 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
+import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class TestContainers {
 
+  public interface ImmutableSubContainer extends SszContainer {
+
+    UInt64 getLong1();
+
+    Bytes32 getBytes1();
+  }
+
+  public interface WritableSubContainer extends SszContainer {
+
+    SszContainerSchema<WritableSubContainer> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "WritableSubContainer",
+            List.of(
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long2", SszPrimitiveSchemas.UINT64_SCHEMA)),
+            SubContainerReadImpl::new);
+
+    default UInt64 getLong1() {
+      return ((SszUInt64) get(0)).get();
+    }
+
+    default UInt64 getLong2() {
+      return ((SszUInt64) get(1)).get();
+    }
+  }
+
+  public interface WritableMutableSubContainer
+      extends WritableSubContainer, SszMutableRefContainer {
+
+    default void setLong1(UInt64 val) {
+      set(0, SszUInt64.of(val));
+    }
+
+    default void setLong2(UInt64 val) {
+      set(1, SszUInt64.of(val));
+    }
+  }
+
+  public interface WritableContainer extends SszContainer {
+
+    SszContainerSchema<ContainerReadImpl> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "WritableContainer",
+            List.of(
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long2", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("sub1", WritableSubContainer.SSZ_SCHEMA),
+                NamedSchema.of(
+                    "list1", SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10)),
+                NamedSchema.of("list2", SszListSchema.create(WritableSubContainer.SSZ_SCHEMA, 2)),
+                NamedSchema.of(
+                    "vector1", SszVectorSchema.create(ImmutableSubContainerImpl.SSZ_SCHEMA, 2))),
+            ContainerReadImpl::new);
+
+    static WritableContainer createDefault() {
+      return ContainerReadImpl.SSZ_SCHEMA.getDefault();
+    }
+
+    default UInt64 getLong1() {
+      return ((SszUInt64) get(0)).get();
+    }
+
+    default UInt64 getLong2() {
+      return ((SszUInt64) get(1)).get();
+    }
+
+    default WritableSubContainer getSub1() {
+      return (WritableSubContainer) get(2);
+    }
+
+    default SszList<SszUInt64> getList1() {
+      return getAny(3);
+    }
+
+    default SszList<WritableSubContainer> getList2() {
+      return getAny(4);
+    }
+
+    default SszVector<ImmutableSubContainer> getVector1() {
+      return getAny(5);
+    }
+
+    @Override
+    WritableMutableContainer createWritableCopy();
+  }
+
+  public interface WritableMutableContainer extends WritableContainer, SszMutableRefContainer {
+
+    void setLong1(UInt64 val);
+
+    void setLong2(UInt64 val);
+
+    @Override
+    WritableMutableSubContainer getSub1();
+
+    @Override
+    SszMutableList<SszUInt64> getList1();
+
+    @Override
+    SszMutableRefList<WritableSubContainer, WritableMutableSubContainer> getList2();
+
+    @Override
+    SszMutableVector<ImmutableSubContainer> getVector1();
+
+    @Override
+    WritableContainer commitChanges();
+  }
+
   public static class TestSubContainer extends AbstractSszImmutableContainer {
 
     public static final SszContainerSchema<TestSubContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
-            List.of(SszPrimitiveSchemas.UINT64_SCHEMA, SszPrimitiveSchemas.BYTES32_SCHEMA),
+            "TestSubContainer",
+            List.of(
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("bytes1", SszPrimitiveSchemas.BYTES32_SCHEMA)),
             TestSubContainer::new);
 
     private TestSubContainer(SszContainerSchema<TestSubContainer> type, TreeNode backingNode) {
@@ -61,7 +177,10 @@ public class TestContainers {
 
     public static final SszContainerSchema<TestContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
-            List.of(TestSubContainer.SSZ_SCHEMA, SszPrimitiveSchemas.UINT64_SCHEMA),
+            "TestContainer",
+            List.of(
+                NamedSchema.of("subContainer", TestSubContainer.SSZ_SCHEMA),
+                NamedSchema.of("long", SszPrimitiveSchemas.UINT64_SCHEMA)),
             TestContainer::new);
 
     private TestContainer(SszContainerSchema<TestContainer> type, TreeNode backingNode) {
@@ -84,7 +203,10 @@ public class TestContainers {
   public static class TestSmallContainer extends AbstractSszImmutableContainer {
 
     public static final SszContainerSchema<TestSmallContainer> SSZ_SCHEMA =
-        SszContainerSchema.create(List.of(SszPrimitiveSchemas.BIT_SCHEMA), TestSmallContainer::new);
+        SszContainerSchema.create(
+            "TestSmallContainer",
+            List.of(NamedSchema.of("bit", SszPrimitiveSchemas.BIT_SCHEMA)),
+            TestSmallContainer::new);
 
     private TestSmallContainer(SszContainerSchema<TestSmallContainer> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -99,10 +221,12 @@ public class TestContainers {
 
     public static final SszContainerSchema<TestByteVectorContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
+            "TestByteVectorContainer",
             List.of(
-                SszPrimitiveSchemas.UINT64_SCHEMA,
-                SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64),
-                SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of(
+                    "bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+                NamedSchema.of("long2", SszPrimitiveSchemas.UINT64_SCHEMA)),
             TestByteVectorContainer::new);
 
     public static TestByteVectorContainer random(Random random) {
@@ -128,12 +252,13 @@ public class TestContainers {
 
     public static final SszContainerSchema<TestDoubleSuperContainer> SSZ_SCHEMA =
         SszContainerSchema.create(
+            "TestDoubleSuperContainer",
             List.of(
-                SszPrimitiveSchemas.UINT64_SCHEMA,
-                TestByteVectorContainer.SSZ_SCHEMA,
-                SszPrimitiveSchemas.UINT64_SCHEMA,
-                TestByteVectorContainer.SSZ_SCHEMA,
-                SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("subContainer1", TestByteVectorContainer.SSZ_SCHEMA),
+                NamedSchema.of("long2", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("subContainer2", TestByteVectorContainer.SSZ_SCHEMA),
+                NamedSchema.of("long3", SszPrimitiveSchemas.UINT64_SCHEMA)),
             TestDoubleSuperContainer::new);
 
     private TestDoubleSuperContainer(
@@ -159,17 +284,164 @@ public class TestContainers {
     public static final ContainerSchema3<
             VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
         SSZ_SCHEMA =
-            ContainerSchema3.create(
-                TestSubContainer.SSZ_SCHEMA,
-                SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10),
-                SszPrimitiveSchemas.UINT64_SCHEMA,
-                VariableSizeContainer::new);
+            new ContainerSchema3<>(
+                "VariableSizeContainer",
+                NamedSchema.of("sub", TestSubContainer.SSZ_SCHEMA),
+                NamedSchema.of("list", SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 10)),
+                NamedSchema.of("long", SszPrimitiveSchemas.UINT64_SCHEMA)) {
+              @Override
+              public VariableSizeContainer createFromBackingNode(TreeNode node) {
+                return new VariableSizeContainer(this, node);
+              }
+            };
 
     private VariableSizeContainer(
         ContainerSchema3<VariableSizeContainer, TestSubContainer, SszList<SszUInt64>, SszUInt64>
             type,
         TreeNode backingNode) {
       super(type, backingNode);
+    }
+  }
+
+  public static class ImmutableSubContainerImpl extends AbstractSszImmutableContainer
+      implements ImmutableSubContainer {
+
+    public static final SszContainerSchema<ImmutableSubContainerImpl> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "ImmutableSubContainer",
+            List.of(
+                NamedSchema.of("long", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("bytes", SszPrimitiveSchemas.BYTES32_SCHEMA)),
+            ImmutableSubContainerImpl::new);
+
+    private ImmutableSubContainerImpl(
+        SszContainerSchema<ImmutableSubContainerImpl> type, TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    public ImmutableSubContainerImpl(UInt64 long1, Bytes32 bytes1) {
+      super(SSZ_SCHEMA, SszUInt64.of(long1), SszBytes32.of(bytes1));
+    }
+
+    @Override
+    public UInt64 getLong1() {
+      return ((SszUInt64) get(0)).get();
+    }
+
+    @Override
+    public Bytes32 getBytes1() {
+      return ((SszBytes32) get(1)).get();
+    }
+  }
+
+  public static class SubContainerReadImpl extends SszContainerImpl
+      implements WritableSubContainer {
+
+    public SubContainerReadImpl(TreeNode backingNode, IntCache<SszData> cache) {
+      super(SSZ_SCHEMA, backingNode, cache);
+    }
+
+    private SubContainerReadImpl(
+        SszContainerSchema<WritableSubContainer> type, TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    @Override
+    public WritableMutableSubContainer createWritableCopy() {
+      return new SubContainerWriteImpl(this);
+    }
+  }
+
+  public static class SubContainerWriteImpl extends SszMutableContainerImpl
+      implements WritableMutableSubContainer {
+
+    public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
+    }
+
+    @Override
+    protected SubContainerReadImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
+      return new SubContainerReadImpl(backingNode, viewCache);
+    }
+
+    @Override
+    public WritableSubContainer commitChanges() {
+      return (WritableSubContainer) super.commitChanges();
+    }
+  }
+
+  public static class ContainerReadImpl extends SszContainerImpl implements WritableContainer {
+
+    public ContainerReadImpl(SszContainerSchema<?> type, TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    public ContainerReadImpl(
+        SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+      super(type, backingNode, cache);
+    }
+
+    @Override
+    public WritableMutableContainer createWritableCopy() {
+      return new ContainerWriteImpl(this);
+    }
+  }
+
+  public static class ContainerWriteImpl extends SszMutableContainerImpl
+      implements WritableMutableContainer {
+
+    public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
+    }
+
+    @Override
+    protected ContainerReadImpl createImmutableSszComposite(
+        TreeNode backingNode, IntCache<SszData> viewCache) {
+      return new ContainerReadImpl(getSchema(), backingNode, viewCache);
+    }
+
+    @Override
+    public WritableContainer commitChanges() {
+      return (WritableContainer) super.commitChanges();
+    }
+
+    @Override
+    public WritableMutableContainer createWritableCopy() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public WritableMutableSubContainer getSub1() {
+      return (WritableMutableSubContainer) getByRef(2);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public SszMutableList<SszUInt64> getList1() {
+      return (SszMutableList<SszUInt64>) getByRef(3);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public SszMutableRefList<WritableSubContainer, WritableMutableSubContainer> getList2() {
+      return (SszMutableRefList<WritableSubContainer, WritableMutableSubContainer>) getByRef(4);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public SszMutableVector<ImmutableSubContainer> getVector1() {
+      return (SszMutableVector<ImmutableSubContainer>) getByRef(5);
+    }
+
+    @Override
+    public void setLong1(UInt64 val) {
+      set(0, SszUInt64.of(val));
+    }
+
+    @Override
+    public void setLong2(UInt64 val) {
+      set(1, SszUInt64.of(val));
     }
   }
 }

@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.view.AbstractSszImmutableContainer;
 public class AbstractSszImmutableContainerTest extends SszContainerTest {
 
   @Override
-  public Stream<? extends SszData> sszData() {
+  public Stream<SszContainer> sszData() {
     return Stream.of(
         TestContainer.SSZ_SCHEMA.getDefault(), TestByteVectorContainer.SSZ_SCHEMA.getDefault());
   }

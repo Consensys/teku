@@ -37,9 +37,13 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 public abstract class AbstractSszContainerSchema<C extends SszContainer>
     implements SszContainerSchema<C> {
 
-  protected static class NamedSchema<T extends SszData> {
+  public static class NamedSchema<T extends SszData> {
     private final String name;
     private final SszSchema<T> schema;
+
+    public static <T extends SszData> NamedSchema<T> of(String name, SszSchema<T> schema) {
+      return new NamedSchema<>(name, schema);
+    }
 
     private NamedSchema(String name, SszSchema<T> schema) {
       this.name = name;

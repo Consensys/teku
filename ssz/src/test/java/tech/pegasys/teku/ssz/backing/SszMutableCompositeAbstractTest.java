@@ -103,8 +103,8 @@ public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTes
 
     SszCompositeSchema<?> schema = data.getSchema();
     List<SszData> newChildren =
-        IntStream.range(0, updatedIndexes.size())
-            .mapToObj(i -> generator.randomData(schema.getChildSchema(i)))
+        updatedIndexes.stream()
+            .map(updatedIndex -> generator.randomData(schema.getChildSchema(updatedIndex)))
             .collect(Collectors.toList());
 
     List<SszComposite<SszData>> updatedData = new ArrayList<>();
