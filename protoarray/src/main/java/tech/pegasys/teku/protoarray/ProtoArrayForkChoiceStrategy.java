@@ -199,7 +199,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
-              protoArray.getRootIndices(),
+              protoArray::getIndexByRoot,
               balances,
               justifiedStateBalances);
 
