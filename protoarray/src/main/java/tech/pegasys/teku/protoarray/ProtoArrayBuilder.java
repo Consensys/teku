@@ -15,8 +15,6 @@ package tech.pegasys.teku.protoarray;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -28,12 +26,11 @@ public class ProtoArrayBuilder {
   private UInt64 justifiedEpoch;
   private UInt64 finalizedEpoch;
   private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
-  private List<ProtoNode> nodes = new ArrayList<>();
 
   public ProtoArray build() {
     checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
     checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
-    return new ProtoArray(pruneThreshold, justifiedEpoch, finalizedEpoch, initialEpoch, nodes);
+    return new ProtoArray(pruneThreshold, justifiedEpoch, finalizedEpoch, initialEpoch);
   }
 
   public ProtoArrayBuilder pruneThreshold(final int pruneThreshold) {
@@ -72,11 +69,6 @@ public class ProtoArrayBuilder {
     initialCheckpoint.ifPresentOrElse(
         checkpoint -> initialEpoch(checkpoint.getEpoch()),
         () -> initialEpoch(SpecConstants.GENESIS_EPOCH));
-    return this;
-  }
-
-  ProtoArrayBuilder nodes(final List<ProtoNode> nodes) {
-    this.nodes = nodes;
     return this;
   }
 }

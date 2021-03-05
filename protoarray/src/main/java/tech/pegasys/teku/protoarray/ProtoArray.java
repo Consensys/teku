@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,26 +45,20 @@ public class ProtoArray {
   private final List<ProtoNode> nodes;
 
   /**
-   * Maps block roots to the index of their node in the {@link #nodes} list. Nodes which are present
-   * in this map are guaranteed to be present in the nodes list, but the nodes list may contain
-   * additional nodes, not present in this map.
+   * protoArrayIndices allows root lookup to retrieve indices of protoNodes without looking through
+   * the nodes list
    *
-   * <p>The {@link #removeBlockRoot(Bytes32)} method removes blocks from this map but does not
-   * change the nodes list to avoid having to adjust all indices.
+   * <p>Needs to be Maintained when nodes are added or removed from the nodes list.
    */
-  private final ProtoArrayIndices protoArrayIndices = new ProtoArrayIndices();
+  private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
   ProtoArray(
-      int pruneThreshold,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch,
-      UInt64 initialEpoch,
-      List<ProtoNode> nodes) {
+      int pruneThreshold, UInt64 justifiedEpoch, UInt64 finalizedEpoch, UInt64 initialEpoch) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
     this.initialEpoch = initialEpoch;
-    this.nodes = nodes;
+    this.nodes = new ArrayList<>();
   }
 
   public static ProtoArrayBuilder builder() {
@@ -71,11 +66,11 @@ public class ProtoArray {
   }
 
   public boolean contains(final Bytes32 root) {
-    return protoArrayIndices.contains(root);
+    return indices.contains(root);
   }
 
   public Optional<ProtoNode> getProtoNode(final Bytes32 root) {
-    return protoArrayIndices
+    return indices
         .get(root)
         .flatMap(
             blockIndex -> {
@@ -111,7 +106,7 @@ public class ProtoArray {
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch) {
-    if (protoArrayIndices.contains(blockRoot)) {
+    if (indices.contains(blockRoot)) {
       return;
     }
 
@@ -123,14 +118,14 @@ public class ProtoArray {
             stateRoot,
             blockRoot,
             parentRoot,
-            protoArrayIndices.get(parentRoot),
+            indices.get(parentRoot),
             justifiedEpoch,
             finalizedEpoch,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 
-    protoArrayIndices.add(blockRoot, nodeIndex);
+    indices.add(blockRoot, nodeIndex);
     nodes.add(node);
 
     updateBestDescendantOfParent(node, nodeIndex);
@@ -147,7 +142,7 @@ public class ProtoArray {
    * @return
    */
   public Bytes32 findHead(Bytes32 justifiedRoot) {
-    Optional<Integer> maybeIndex = protoArrayIndices.get(justifiedRoot);
+    Optional<Integer> maybeIndex = indices.get(justifiedRoot);
     checkArgument(
         maybeIndex.isPresent(),
         "ProtoArray: Unknown justified root " + justifiedRoot.toHexString());
@@ -218,11 +213,13 @@ public class ProtoArray {
    * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
-    Optional<Integer> maybeIndex = protoArrayIndices.get(finalizedRoot);
-    checkArgument(
-        maybeIndex.isPresent(),
-        "ProtoArray: Finalized root is unknown " + finalizedRoot.toHexString());
-    int finalizedIndex = maybeIndex.get();
+    int finalizedIndex =
+        indices
+            .get(finalizedRoot)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "ProtoArray: Finalized root is unknown " + finalizedRoot.toHexString()));
 
     if (finalizedIndex < pruneThreshold) {
       // Pruning at small numbers incurs more cost than benefit.
@@ -233,13 +230,13 @@ public class ProtoArray {
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
       Bytes32 root =
           checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
-      protoArrayIndices.remove(root);
+      indices.remove(root);
     }
 
     // Drop all the nodes prior to finalization.
     nodes.subList(0, finalizedIndex).clear();
 
-    protoArrayIndices.offsetIndexes(finalizedIndex);
+    indices.offsetIndexes(finalizedIndex);
 
     // Iterate through all the existing nodes and adjust their indices to match the
     // new layout of nodes.
@@ -431,7 +428,7 @@ public class ProtoArray {
    * @param blockRoot the block root to remove from the lookup map.
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
-    protoArrayIndices.remove(blockRoot);
+    indices.remove(blockRoot);
   }
 
   private void applyDeltas(final List<Long> deltas) {
@@ -467,7 +464,7 @@ public class ProtoArray {
   }
 
   public Map<Bytes32, Integer> getRootIndices() {
-    return protoArrayIndices.getRootIndices();
+    return indices.getRootIndices();
   }
 
   private interface NodeVisitor {

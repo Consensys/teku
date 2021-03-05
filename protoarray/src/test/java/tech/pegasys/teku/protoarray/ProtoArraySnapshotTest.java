@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -28,12 +26,10 @@ public class ProtoArraySnapshotTest {
 
   @Test
   void shouldProduceEqualProtoArray() {
-    List<ProtoNode> nodes = new ArrayList<>();
     ProtoArray protoArray1 =
         ProtoArray.builder()
             .justifiedEpoch(UInt64.valueOf(10))
             .finalizedEpoch(UInt64.valueOf(9))
-            .nodes(nodes)
             .build();
 
     ProtoNode protoNode1 =
@@ -58,7 +54,7 @@ public class ProtoArraySnapshotTest {
         protoNode1.getFinalizedEpoch());
 
     // sanity check
-    assertThat(nodes.get(0)).isEqualTo(protoNode1);
+    assertThat(protoArray1.getNodes().get(0)).isEqualTo(protoNode1);
 
     ProtoArraySnapshot snaphot = ProtoArraySnapshot.create(protoArray1);
     ProtoArray protoArray2 = snaphot.toProtoArray();
@@ -68,12 +64,10 @@ public class ProtoArraySnapshotTest {
 
   @Test
   void shouldNotBeAlteredByChangesToOriginalProtoArray() {
-    List<ProtoNode> nodes = new ArrayList<>();
     ProtoArray protoArray1 =
         ProtoArray.builder()
             .justifiedEpoch(UInt64.valueOf(10))
             .finalizedEpoch(UInt64.valueOf(9))
-            .nodes(nodes)
             .build();
 
     ProtoNode protoNode1 =
@@ -119,14 +113,14 @@ public class ProtoArraySnapshotTest {
         protoNode1.getFinalizedEpoch());
 
     // sanity check
-    assertThat(nodes.get(0)).isEqualTo(protoNode1);
+    assertThat(protoArray1.getNodes().get(0)).isEqualTo(protoNode1);
 
     ProtoArraySnapshot snaphot = ProtoArraySnapshot.create(protoArray1);
     ProtoArray protoArray2 = snaphot.toProtoArray();
 
     assertThatProtoArrayMatches(protoArray1, protoArray2);
 
-    nodes.set(0, protoNode2);
+    protoArray1.getNodes().set(0, protoNode2);
 
     assertThatThrownBy(() -> assertThatProtoArrayMatches(protoArray1, protoArray2));
   }
