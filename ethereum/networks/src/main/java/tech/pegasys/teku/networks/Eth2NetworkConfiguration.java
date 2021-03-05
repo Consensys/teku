@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MEDALLA;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
+import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.TOLEDO;
@@ -232,6 +233,8 @@ public class Eth2NetworkConfiguration {
           return applyToledoNetworkDefaults();
         case PYRMONT:
           return applyPyrmontNetworkDefaults();
+        case PRATER:
+          return applyPraterNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
@@ -348,6 +351,16 @@ public class Eth2NetworkConfiguration {
 
               // Prysm @protolambda
               "enr:-LK4QAhU5smiLgU0AgrdFv8eCKmDPCBkXCMCIy8Aktaci5qvCYOsW98xVqJS6OoPWt4Sz_YoTdLQBWxd-RZ756vmGPMBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCXm69nAHAe0P__________gmlkgnY0gmlwhDTTDL2Jc2VjcDI1NmsxoQOmSJ0mKsQjab7Zralm1Hi0AEReZ2SEqYdKoOPmoA98DoN0Y3CCIyiDdWRwgiMo");
+    }
+
+    public Builder applyPraterNetworkDefaults() {
+      return reset()
+          .constants(PRATER.constantsName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractAddress("0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b")
+          .eth1DepositContractDeployBlock(4367322)
+          // TODO .initialStateFromClasspath("prater-genesis.ssz")
+          .discoveryBootnodes();
     }
 
     public Builder applyPyrmontNetworkDefaults() {

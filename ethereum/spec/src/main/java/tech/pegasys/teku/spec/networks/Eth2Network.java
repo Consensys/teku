@@ -22,6 +22,7 @@ public enum Eth2Network {
   MEDALLA,
   TOLEDO,
   PYRMONT,
+  PRATER,
   // Test networks
   MINIMAL,
   SWIFT,

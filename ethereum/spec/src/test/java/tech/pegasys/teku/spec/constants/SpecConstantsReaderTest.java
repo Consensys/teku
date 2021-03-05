@@ -217,6 +217,7 @@ public class SpecConstantsReaderTest {
         Arguments.of("medalla", getStandardConfigPath("medalla")),
         Arguments.of("minimal", getStandardConfigPath("minimal")),
         Arguments.of("pyrmont", getStandardConfigPath("pyrmont")),
+        Arguments.of("prater", getStandardConfigPath("prater")),
         Arguments.of("swift", getStandardConfigPath("swift")),
         Arguments.of("toledo", getStandardConfigPath("toledo")));
   }
