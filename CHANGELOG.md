@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
   
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
+- Added a network definition for the prater test network `--netowork prater`
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be interecepted (e.g. on Windows)
