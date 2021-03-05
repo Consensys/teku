@@ -52,6 +52,10 @@ public class ProtoArray {
    */
   private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
+  public Optional<Integer> getIndexByRoot(final Bytes32 root) {
+    return indices.get(root);
+  }
+
   ProtoArray(
       int pruneThreshold, UInt64 justifiedEpoch, UInt64 finalizedEpoch, UInt64 initialEpoch) {
     this.pruneThreshold = pruneThreshold;
