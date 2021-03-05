@@ -18,16 +18,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
@@ -44,7 +44,7 @@ public class BlockFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public BlockFactory(
       final AggregatingAttestationPool attestationPool,
@@ -54,7 +54,7 @@ public class BlockFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -62,7 +62,7 @@ public class BlockFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -84,7 +84,7 @@ public class BlockFactory {
     if (previousState.getSlot().equals(slotBeforeBlock)) {
       blockPreState = previousState;
     } else {
-      blockPreState = specProvider.processSlots(previousState, slotBeforeBlock);
+      blockPreState = spec.processSlots(previousState, slotBeforeBlock);
     }
 
     // Collect attestations to include
@@ -92,7 +92,7 @@ public class BlockFactory {
     if (maybeBlockSlotState.isPresent()) {
       blockSlotState = maybeBlockSlotState.get();
     } else {
-      blockSlotState = specProvider.processSlots(blockPreState, newSlot);
+      blockSlotState = spec.processSlots(blockPreState, newSlot);
     }
     SSZList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
@@ -112,12 +112,11 @@ public class BlockFactory {
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
-    final Bytes32 parentRoot = specProvider.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
-    return specProvider
-        .createNewUnsignedBlock(
+    return spec.createNewUnsignedBlock(
             newSlot,
-            specProvider.getBeaconProposerIndex(blockSlotState, newSlot),
+            spec.getBeaconProposerIndex(blockSlotState, newSlot),
             randaoReveal,
             blockSlotState,
             parentRoot,

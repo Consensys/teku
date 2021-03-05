@@ -30,16 +30,16 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMetadataStore {
@@ -73,13 +73,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
                 maybeSnapshot
                     .map(ProtoArraySnapshot::toProtoArray)
                     .orElse(
-                        new ProtoArray(
-                            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                            store.getJustifiedCheckpoint().getEpoch(),
-                            store.getFinalizedCheckpoint().getEpoch(),
-                            initialEpoch,
-                            new ArrayList<>(),
-                            new HashMap<>())))
+                        ProtoArray.builder()
+                            .justifiedCheckpoint(store.getJustifiedCheckpoint())
+                            .finalizedCheckpoint(store.getFinalizedCheckpoint())
+                            .initialEpoch(initialEpoch)
+                            .build()))
         .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
         .thenPeek(
             protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
@@ -95,13 +93,13 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       final VoteUpdater voteUpdater,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final BeaconState justifiedCheckpointState) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances) {
     return findHead(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointState.getBalances().asList());
+        justifiedCheckpointEffectiveBalances);
   }
 
   @Override
@@ -197,19 +195,16 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<UInt64> oldBalances = balances;
-      List<UInt64> newBalances = justifiedStateBalances;
-
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
-              protoArray.getIndices(),
-              oldBalances,
-              newBalances);
+              protoArray::getIndexByRoot,
+              balances,
+              justifiedStateBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = new ArrayList<>(newBalances);
+      balances = justifiedStateBalances;
 
       return protoArray.findHead(justifiedRoot);
     } finally {
@@ -241,7 +236,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getIndices().containsKey(blockRoot);
+      return protoArray.contains(blockRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -321,7 +316,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       }
       ProtoNode currentNode = startingNode.orElseThrow();
 
-      while (protoArray.getIndices().containsKey(currentNode.getBlockRoot())) {
+      while (protoArray.contains(currentNode.getBlockRoot())) {
         final boolean shouldContinue =
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
@@ -341,7 +336,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   public void processAllInOrder(final NodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
-      final Map<Bytes32, Integer> indices = protoArray.getIndices();
+      final Map<Bytes32, Integer> indices = protoArray.getRootIndices();
       protoArray.getNodes().stream()
           // Filter out nodes that could be pruned but are still in the protoarray
           .filter(node -> indices.containsKey(node.getBlockRoot()))
@@ -392,13 +387,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
-    return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
-        .flatMap(
-            blockIndex -> {
-              if (blockIndex < getTotalTrackedNodeCount()) {
-                return Optional.of(protoArray.getNodes().get(blockIndex));
-              }
-              return Optional.empty();
-            });
+    return protoArray.getProtoNode(blockRoot);
   }
 }

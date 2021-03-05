@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class BlockHeader {
   @Schema(type = "string", example = EXAMPLE_BYTES32, pattern = PATTERN_BYTES32)

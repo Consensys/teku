@@ -16,19 +16,19 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszSerializerTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SszSerializer<SignedBeaconBlock> blockSerializer =
       new SszSerializer<>(SignedBeaconBlock.getSszSchema());
-  private final SszSerializer<BeaconState> stateSerializer =
-      new SszSerializer<>(BeaconState.getSszSchema());
   private final SszSerializer<Checkpoint> checkpointSerializer =
       new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
 
@@ -37,14 +37,6 @@ public class SszSerializerTest {
     final SignedBeaconBlock value = dataStructureUtil.randomSignedBeaconBlock(11);
     final byte[] bytes = blockSerializer.serialize(value);
     final SignedBeaconBlock deserialized = blockSerializer.deserialize(bytes);
-    assertThat(deserialized).isEqualTo(value);
-  }
-
-  @Test
-  public void roundTrip_state() {
-    final BeaconState value = dataStructureUtil.randomBeaconState(11);
-    final byte[] bytes = stateSerializer.serialize(value);
-    final BeaconState deserialized = stateSerializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 

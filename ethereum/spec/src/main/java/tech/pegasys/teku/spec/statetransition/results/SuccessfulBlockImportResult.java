@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.statetransition.results;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SuccessfulBlockImportResult implements BlockImportResult {
 

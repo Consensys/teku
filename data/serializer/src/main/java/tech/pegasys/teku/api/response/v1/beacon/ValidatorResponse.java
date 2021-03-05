@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorResponse {
 
@@ -69,7 +69,7 @@ public class ValidatorResponse {
     if (index >= state.getValidators().size()) {
       return Optional.empty();
     }
-    tech.pegasys.teku.datastructures.state.Validator validatorInternal =
+    tech.pegasys.teku.spec.datastructures.state.Validator validatorInternal =
         state.getValidators().get(index);
     return Optional.of(
         new ValidatorResponse(
@@ -89,7 +89,7 @@ public class ValidatorResponse {
 
   public static ValidatorStatus getValidatorStatus(
       final UInt64 epoch,
-      final tech.pegasys.teku.datastructures.state.Validator validator,
+      final tech.pegasys.teku.spec.datastructures.state.Validator validator,
       final UInt64 farFutureEpoch) {
     // pending
     if (validator.getActivation_epoch().isGreaterThan(epoch)) {

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
 
@@ -47,7 +48,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
         .isEqualTo("Custom Constants");
   }
 
@@ -58,7 +59,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
         .isEqualTo("Custom Constants");
   }
 

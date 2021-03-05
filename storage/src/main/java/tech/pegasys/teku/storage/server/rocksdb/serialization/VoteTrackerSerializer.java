@@ -16,10 +16,10 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
-public class VoteTrackerSerializer implements RocksDbSerializer<VoteTracker> {
+class VoteTrackerSerializer implements RocksDbSerializer<VoteTracker> {
   @Override
   public VoteTracker deserialize(final byte[] data) {
     return SSZ.decode(

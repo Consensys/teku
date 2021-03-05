@@ -32,7 +32,7 @@ public class Checkpoint {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 root;
 
-  public Checkpoint(tech.pegasys.teku.datastructures.state.Checkpoint checkpoint) {
+  public Checkpoint(tech.pegasys.teku.spec.datastructures.state.Checkpoint checkpoint) {
     this.epoch = checkpoint.getEpoch();
     this.root = checkpoint.getRoot();
   }
@@ -44,8 +44,8 @@ public class Checkpoint {
     this.root = root;
   }
 
-  public tech.pegasys.teku.datastructures.state.Checkpoint asInternalCheckpoint() {
-    return new tech.pegasys.teku.datastructures.state.Checkpoint(epoch, root);
+  public tech.pegasys.teku.spec.datastructures.state.Checkpoint asInternalCheckpoint() {
+    return new tech.pegasys.teku.spec.datastructures.state.Checkpoint(epoch, root);
   }
 
   @Override

@@ -15,7 +15,7 @@ package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @FunctionalInterface
 interface StateProvider {

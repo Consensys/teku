@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityFactory {
 
-  private static final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private static final Spec SPEC = SpecFactory.createMinimal();
   private static final WeakSubjectivityConfig wsConfig =
-      WeakSubjectivityConfig.builder().specProvider(specProvider).build();
+      WeakSubjectivityConfig.builder().specProvider(SPEC).build();
 
   public static WeakSubjectivityValidator lenientValidator() {
     return WeakSubjectivityValidator.lenient(wsConfig);

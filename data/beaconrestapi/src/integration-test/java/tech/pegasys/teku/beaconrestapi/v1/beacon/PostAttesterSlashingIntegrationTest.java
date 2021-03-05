@@ -46,7 +46,7 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.AttesterSlashing slashing =
+    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
         dataStructureUtil.randomAttesterSlashing();
 
     final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
@@ -59,7 +59,7 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
 
   @Test
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.AttesterSlashing slashing =
+    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
         dataStructureUtil.randomAttesterSlashing();
 
     final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);

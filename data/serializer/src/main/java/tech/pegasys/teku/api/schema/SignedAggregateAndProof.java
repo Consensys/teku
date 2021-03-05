@@ -35,15 +35,15 @@ public class SignedAggregateAndProof {
   }
 
   public SignedAggregateAndProof(
-      final tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof
+      final tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof
           signedAggregateAndProof) {
     this.message = new AggregateAndProof(signedAggregateAndProof.getMessage());
     this.signature = new BLSSignature(signedAggregateAndProof.getSignature());
   }
 
-  public tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof
+  public tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof
       asInternalSignedAggregateAndProof() {
-    return new tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof(
+    return new tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof(
         message.asInternalAggregateAndProof(), signature.asInternalBLSSignature());
   }
 }

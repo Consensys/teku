@@ -36,16 +36,17 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ForkChoiceTestExecutor {
   private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+  private static final Spec SPEC = SpecFactory.createMinimal();
 
   public static Stream<Arguments> loadForkChoiceTests() {
     Path path = Paths.get("src/integration-test/resources/");
@@ -64,15 +66,16 @@ public class ForkChoiceTestExecutor {
   }
 
   private static Optional<? extends Arguments> parseForkChoiceFile(Path path) {
-    File file = path.toFile();
+    final File file = path.toFile();
+    final SchemaDefinitions schemaDefinitions = SPEC.getGenesisSchemaDefinitions();
+    final BeaconStateSchema beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
     try {
       @SuppressWarnings("rawtypes")
       Map content = mapper.readValue(file, Map.class);
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
-            resolvePart(
-                BeaconState.class, BeaconState.getSszSchema(), file, content.get("genesis"));
+            resolvePart(BeaconState.class, beaconStateSchema, file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
@@ -158,12 +161,12 @@ public class ForkChoiceTestExecutor {
   void runForkChoiceTests(
       BeaconState genesis, List<Object> steps, String testName, boolean protoArrayFC) {
 
-    final SpecProvider specProvider = SpecProviderFactory.createMinimal();
     EventBus eventBus = new EventBus();
-    RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+    RecentChainData storageClient = MemoryOnlyRecentChainData.create(SPEC, eventBus);
     storageClient.initializeFromGenesis(genesis, UInt64.ZERO);
 
-    ForkChoice forkChoice = new ForkChoice(specProvider, new InlineEventThread(), storageClient);
+    final InlineEventThread forkChoiceExecutor = new InlineEventThread();
+    ForkChoice forkChoice = ForkChoice.create(SPEC, forkChoiceExecutor, storageClient);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -171,21 +174,21 @@ public class ForkChoiceTestExecutor {
     List<Attestation> attestationBuffer = new ArrayList<>();
 
     for (Object step : steps) {
-      blockBuffer.removeIf(block -> processBlock(storageClient, forkChoice, block));
+      blockBuffer.removeIf(block -> processBlock(forkChoice, block));
       attestationBuffer.removeIf(attestation -> processAttestation(forkChoice, attestation));
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-        while (specProvider.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
-          specProvider.onTick(transaction, transaction.getTime().plus(UInt64.ONE));
+        while (SPEC.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
+          SPEC.onTick(transaction, transaction.getTime().plus(UInt64.ONE));
         }
-        assertEquals(step, specProvider.getCurrentSlot(transaction));
+        assertEquals(step, SPEC.getCurrentSlot(transaction));
         transaction.commit().join();
       } else if (step instanceof SignedBeaconBlock) {
         for (Attestation attestation :
             ((SignedBeaconBlock) step).getMessage().getBody().getAttestations()) {
           attestationBuffer.add(attestation);
         }
-        if (!processBlock(storageClient, forkChoice, (SignedBeaconBlock) step)) {
+        if (!processBlock(forkChoice, (SignedBeaconBlock) step)) {
           blockBuffer.add((SignedBeaconBlock) step);
         }
       } else if (step instanceof Attestation) {
@@ -217,8 +220,8 @@ public class ForkChoiceTestExecutor {
             case "head":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                forkChoice.processHead();
-                Bytes32 head = storageClient.getBestBlockRoot().get();
+                forkChoice.processHead().join();
+                Bytes32 head = storageClient.getBestBlockRoot().orElseThrow();
                 assertEquals(
                     root,
                     head,
@@ -257,17 +260,8 @@ public class ForkChoiceTestExecutor {
     return attestationProcessingResult.isSuccessful();
   }
 
-  private boolean processBlock(
-      RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
-    BlockImportResult blockImportResult =
-        fc.onBlock(
-                block,
-                recentChainData
-                    .getStore()
-                    .retrieveStateAtSlot(
-                        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-                    .join())
-            .join();
+  private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
+    BlockImportResult blockImportResult = fc.onBlock(block).join();
     return blockImportResult.isSuccessful();
   }
 
@@ -275,6 +269,6 @@ public class ForkChoiceTestExecutor {
     slot,
     block,
     attestation,
-    checks;
+    checks
   }
 }

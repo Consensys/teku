@@ -14,8 +14,8 @@
 package tech.pegasys.teku.sync.forward.multipeer.chains;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class TargetChainTestUtil {
   public static TargetChain chainWith(final SlotAndBlockRoot chainHead, final SyncSource... peers) {

@@ -14,10 +14,10 @@
 package tech.pegasys.teku.spec.statetransition.epoch;
 
 import java.util.List;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.statetransition.epoch.status.InclusionInfo;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatus;

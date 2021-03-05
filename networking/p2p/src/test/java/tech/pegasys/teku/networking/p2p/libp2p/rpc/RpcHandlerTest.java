@@ -20,8 +20,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
@@ -111,6 +113,17 @@ public class RpcHandlerTest {
 
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+  }
+
+  @Test
+  void sendRequest_streamClosedRightBeforeCreateStreamShouldThrowPeerDisconnectedException() {
+
+    when(session.createStream((ProtocolBinding<Controller>) any()))
+        .thenThrow(new ConnectionClosedException());
+    SafeFuture<RpcStream> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(PeerDisconnectedException.class);
   }
 
   @Test

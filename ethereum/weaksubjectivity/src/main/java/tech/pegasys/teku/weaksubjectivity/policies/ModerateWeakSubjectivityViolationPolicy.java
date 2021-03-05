@@ -15,10 +15,10 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 
 import java.util.List;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 
 class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityViolationPolicy {
   private final Throttler<WeakSubjectivityViolationPolicy> warningPolicy =

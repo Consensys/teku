@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,18 +34,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreImpl;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -64,7 +64,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   protected BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder) {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
-        new ProtoArrayBuilder()
+        ProtoArray.builder()
             .finalizedCheckpoint(latestState.getFinalized_checkpoint())
             .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
             .build();
@@ -134,9 +134,14 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     final ProtoArrayForkChoiceStrategy forkChoiceStrategy = future.join();
 
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(anchor.getState().getSlot())
+            .getEffectiveBalances(anchor.getState());
     final Bytes32 head =
         forkChoiceStrategy.findHead(
-            store, anchor.getCheckpoint(), anchor.getCheckpoint(), anchor.getState());
+            store, anchor.getCheckpoint(), anchor.getCheckpoint(), effectiveBalances);
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -297,12 +302,18 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
     strategy.processAttestation(transaction, ZERO, block3.getRoot(), block3Epoch);
 
     final BeaconState block3State = block3.getState();
+
+    final List<UInt64> effectiveBalances =
+        dataStructureUtil
+            .getSpec()
+            .getBeaconStateUtil(block3State.getSlot())
+            .getEffectiveBalances(block3State);
     final Bytes32 bestHead =
         strategy.findHead(
             transaction,
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
-            block3State);
+            effectiveBalances);
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());

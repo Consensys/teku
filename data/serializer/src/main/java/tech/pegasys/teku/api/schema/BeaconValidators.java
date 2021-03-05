@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconValidators {
@@ -33,8 +34,7 @@ public class BeaconValidators {
   }
 
   @VisibleForTesting
-  public BeaconValidators(
-      tech.pegasys.teku.datastructures.state.BeaconState state, final UInt64 farFutureEpoch) {
+  public BeaconValidators(BeaconState state, final UInt64 farFutureEpoch) {
     this(state, false, farFutureEpoch, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
@@ -47,7 +47,7 @@ public class BeaconValidators {
 
   @VisibleForTesting
   public BeaconValidators(
-      tech.pegasys.teku.datastructures.state.BeaconState state,
+      BeaconState state,
       final boolean activeOnly,
       final UInt64 epoch,
       final int pageSize,

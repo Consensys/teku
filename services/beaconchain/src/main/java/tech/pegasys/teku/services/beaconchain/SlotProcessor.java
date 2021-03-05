@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -26,15 +26,15 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.blocks.NodeSlot;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -42,10 +42,10 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class SlotProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final ForwardSync syncService;
-  private final ForkChoice forkChoice;
+  private final ForkChoiceTrigger forkChoiceTrigger;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
@@ -58,34 +58,34 @@ public class SlotProcessor {
 
   @VisibleForTesting
   SlotProcessor(
-      final SpecProvider specProvider,
+      final Spec spec,
       final RecentChainData recentChainData,
       final ForwardSync syncService,
-      final ForkChoice forkChoice,
+      final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EventLogger eventLogger) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.recentChainData = recentChainData;
     this.syncService = syncService;
-    this.forkChoice = forkChoice;
+    this.forkChoiceTrigger = forkChoiceTrigger;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.eventLog = eventLogger;
   }
 
   public SlotProcessor(
-      final SpecProvider specProvider,
+      final Spec spec,
       final RecentChainData recentChainData,
       final ForwardSync syncService,
-      final ForkChoice forkChoice,
+      final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher) {
     this(
-        specProvider,
+        spec,
         recentChainData,
         syncService,
-        forkChoice,
+        forkChoiceTrigger,
         p2pNetwork,
         slotEventsChannelPublisher,
         EventLogger.EVENT_LOG);
@@ -111,7 +111,7 @@ public class SlotProcessor {
       return;
     }
 
-    final UInt64 calculatedSlot = specProvider.getCurrentSlot(currentTime, genesisTime);
+    final UInt64 calculatedSlot = spec.getCurrentSlot(currentTime, genesisTime);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.compareTo(nodeSlot.getValue().plus(ONE)) > 0) {
       eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
@@ -119,8 +119,7 @@ public class SlotProcessor {
     }
 
     final UInt64 epoch = compute_epoch_at_slot(nodeSlot.getValue());
-    final UInt64 nodeSlotStartTime =
-        specProvider.getSlotStartTime(nodeSlot.getValue(), genesisTime);
+    final UInt64 nodeSlotStartTime = spec.getSlotStartTime(nodeSlot.getValue(), genesisTime);
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
     }
@@ -175,13 +174,13 @@ public class SlotProcessor {
 
   private void processSlotWhileSyncing() {
     UInt64 slot = nodeSlot.getValue();
-    this.forkChoice.processHead(slot);
+    this.forkChoiceTrigger.onSlotStartedWhileSyncing(slot);
     eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(slot);
   }
 
   boolean isNextSlotDue(final UInt64 currentTime, final UInt64 genesisTime) {
-    final UInt64 slotStartTime = specProvider.getSlotStartTime(nodeSlot.getValue(), genesisTime);
+    final UInt64 slotStartTime = spec.getSlotStartTime(nodeSlot.getValue(), genesisTime);
     return currentTime.compareTo(slotStartTime) >= 0;
   }
 
@@ -213,8 +212,7 @@ public class SlotProcessor {
       onTickEpochPrecompute = firstSlotOfNextEpoch.minusMinZero(SLOTS_PER_EPOCH);
       return false;
     }
-    final UInt64 nextEpochStartTime =
-        specProvider.getSlotStartTime(firstSlotOfNextEpoch, genesisTime);
+    final UInt64 nextEpochStartTime = spec.getSlotStartTime(firstSlotOfNextEpoch, genesisTime);
     final UInt64 earliestTime = nextEpochStartTime.minusMinZero(oneThirdSlotSeconds);
     final boolean processingDueForSlot =
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
@@ -224,6 +222,7 @@ public class SlotProcessor {
 
   private void processSlotStart(final UInt64 nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
+    forkChoiceTrigger.onSlotStarted(onTickSlotStart);
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
       recentChainData
           .getFinalizedCheckpoint()
@@ -240,7 +239,7 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UInt64 nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    this.forkChoice.processHead(onTickSlotAttestation);
+    forkChoiceTrigger.onAttestationsDueForSlot(onTickSlotAttestation);
     recentChainData
         .getChainHead()
         .ifPresent(

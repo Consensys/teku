@@ -13,17 +13,22 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema() {
+  public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema(
+      final SpecVersion spec) {
     return ContainerSchema2.create(
-        BeaconState.getSszSchema(), Deposit.SSZ_SCHEMA, DepositFuzzInput::new);
+        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        Deposit.SSZ_SCHEMA,
+        DepositFuzzInput::new);
   }
 
   public DepositFuzzInput(
@@ -31,13 +36,8 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
     super(type, backingNode);
   }
 
-  public DepositFuzzInput(final BeaconState state, final Deposit deposit) {
-    super(createSchema(), state, deposit);
-  }
-
-  // NOTE: empty constructor is needed for reflection/introspection
-  public DepositFuzzInput() {
-    super(createSchema());
+  public DepositFuzzInput(final Spec spec, final BeaconState state, final Deposit deposit) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, deposit);
   }
 
   public Deposit getDeposit() {

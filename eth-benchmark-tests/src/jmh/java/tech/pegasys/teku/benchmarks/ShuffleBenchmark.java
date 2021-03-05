@@ -25,11 +25,11 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.SpecProvider;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 @Fork(3)
@@ -44,9 +44,9 @@ public class ShuffleBenchmark {
   private final SpecConstants specConstants = SpecConstants.builder().configName("mainnet").build();
   private final SpecConfiguration specConfiguration =
       SpecConfiguration.builder().constants(specConstants).build();
-  private final SpecProvider specProvider = SpecProvider.create(specConfiguration);
+  private final Spec spec = Spec.create(specConfiguration);
   private final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
-      specProvider.atSlot(UInt64.ZERO).getCommitteeUtil();
+      spec.atSlot(UInt64.ZERO).getCommitteeUtil();
 
   public ShuffleBenchmark() {
     Constants.setConstants("mainnet");
