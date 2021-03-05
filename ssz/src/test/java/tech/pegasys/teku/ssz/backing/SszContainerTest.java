@@ -27,33 +27,20 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.TestContainers.ImmutableSubContainerImpl;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSmallContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.WritableContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.WritableMutableContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.WritableMutableSubContainer;
-import tech.pegasys.teku.ssz.backing.TestContainers.WritableSubContainer;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 public class SszContainerTest
     implements SszCompositeAbstractTest, SszMutableRefCompositeAbstractTest {
 
-  public static Stream<SszContainerSchema<?>> sszContainerSchemas() {
-    return Stream.of(
-        TestSubContainer.SSZ_SCHEMA,
-        TestSmallContainer.SSZ_SCHEMA,
-        VariableSizeContainer.SSZ_SCHEMA,
-        WritableContainer.SSZ_SCHEMA,
-        WritableSubContainer.SSZ_SCHEMA);
-  }
-
   @Override
   public Stream<SszContainer> sszData() {
     RandomSszDataGenerator smallListsGen = new RandomSszDataGenerator().withMaxListSize(1);
     RandomSszDataGenerator largeListsGen = new RandomSszDataGenerator().withMaxListSize(1024);
-    return sszContainerSchemas()
+    return SszContainerSchemaTest.testContainerSchemas()
         .flatMap(
             schema ->
                 Stream.of(

@@ -18,16 +18,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
-public class SszBitvectorSchemaTest {
+public class SszBitvectorSchemaTest implements SszVectorSchemaAbstractTest {
+
+  @Override
+  public Stream<? extends SszSchema<?>> testSchemas() {
+    return Stream.of(
+        SszBitvectorSchema.create(1),
+        SszBitvectorSchema.create(2),
+        SszBitvectorSchema.create(3),
+        SszBitvectorSchema.create(7),
+        SszBitvectorSchema.create(8),
+        SszBitvectorSchema.create(9),
+        SszBitvectorSchema.create(254),
+        SszBitvectorSchema.create(255),
+        SszBitvectorSchema.create(256),
+        SszBitvectorSchema.create(511),
+        SszBitvectorSchema.create(512),
+        SszBitvectorSchema.create(513));
+  }
 
   @Test
   void ofBits_shouldThrowIfLengthNegative() {

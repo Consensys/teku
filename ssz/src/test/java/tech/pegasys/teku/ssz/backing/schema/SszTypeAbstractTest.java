@@ -11,33 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing;
+package tech.pegasys.teku.ssz.backing.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszVectorSchemaAbstractTest;
 
-public class SszVectorTest
-    implements SszCollectionAbstractTest,
-        SszMutableCollectionAbstractTest,
-        SszMutableRefCompositeAbstractTest {
+@TestInstance(Lifecycle.PER_CLASS)
+public interface SszTypeAbstractTest {
 
-  private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+  Stream<? extends SszSchema<?>> testSchemas();
 
-  @Override
-  public Stream<SszVector<?>> sszData() {
-    return SszVectorSchemaAbstractTest.complexVectorSchemas()
-        .flatMap(
-            vectorSchema ->
-                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
+  default Stream<Arguments> testSchemaArguments() {
+    return testSchemas().map(Arguments::of);
   }
 
-  @MethodSource("sszDataArguments")
+  @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void size_shouldMatchSchemaLength(SszVector<?> data) {
-    assertThat(data.size()).isEqualTo(data.getSchema().getLength());
+  default void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
+    Assumptions.assumeTrue(type.isFixedSize());
+    assertThat(type.getSszFixedPartSize()).isNotZero();
   }
 }

@@ -19,15 +19,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
-public class SszBitlistSchemaTest {
+public class SszBitlistSchemaTest implements SszListSchemaAbstractTest {
+
+  @Override
+  public Stream<? extends SszSchema<?>> testSchemas() {
+    return Stream.of(
+        SszBitlistSchema.create(0),
+        SszBitlistSchema.create(1),
+        SszBitlistSchema.create(2),
+        SszBitlistSchema.create(3),
+        SszBitlistSchema.create(7),
+        SszBitlistSchema.create(8),
+        SszBitlistSchema.create(9),
+        SszBitlistSchema.create(254),
+        SszBitlistSchema.create(255),
+        SszBitlistSchema.create(256),
+        SszBitlistSchema.create(511),
+        SszBitlistSchema.create(512),
+        SszBitlistSchema.create(513));
+  }
 
   @Test
   void create_shouldCreateEmptySchema() {

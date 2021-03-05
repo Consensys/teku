@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import static java.lang.Integer.max;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,17 +21,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.sos.SszDeserializeException;
-import tech.pegasys.teku.ssz.sos.SszReader;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszListSchemaAbstractTest;
 
 public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeAbstractTest {
 
@@ -42,19 +34,9 @@ public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeA
 
   @Override
   public Stream<SszList<?>> sszData() {
-    return SszCollectionAbstractTest.complexElementSchemas()
+    return SszListSchemaAbstractTest.complexListSchemas()
         .flatMap(
-            elementSchema ->
-                Stream.of(
-                    SszListSchema.create(elementSchema, 0),
-                    SszListSchema.create(elementSchema, 1),
-                    SszListSchema.create(elementSchema, 2),
-                    SszListSchema.create(elementSchema, 3),
-                    SszListSchema.create(elementSchema, 10),
-                    SszListSchema.create(elementSchema, 1L << 33)))
-        .flatMap(
-            vectorSchema ->
-                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
+            listSchema -> Stream.of(listSchema.getDefault(), randomSsz.randomData(listSchema)));
   }
 
   @Test
@@ -106,46 +88,5 @@ public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeA
 
     assertThat(lw1.sszSerialize()).isEqualTo(lr2.sszSerialize());
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
-  }
-
-  @Disabled // TODO move to schema tests
-  @ParameterizedTest
-  @MethodSource("testAllListTypeParameters")
-  <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
-      SszSchema<T> listElementType, long maxLengthL) {
-
-    if (maxLengthL > 1024) {
-      return;
-    }
-    int maxLength = (int) maxLengthL;
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-    SszListSchema<T, ?> largerSszListSchema = SszListSchema.create(listElementType, maxLength + 10);
-
-    // should normally deserialize smaller lists
-    for (int i = max(0, maxLength - 8); i <= maxLength; i++) {
-      List<T> children =
-          Stream.generate(listElementType::getDefault).limit(i).collect(Collectors.toList());
-      SszList<T> largerList = largerSszListSchema.createFromElements(children);
-      Bytes ssz = largerList.sszSerialize();
-      SszList<T> resList = sszListSchema.sszDeserialize(ssz);
-
-      assertThat(resList.size()).isEqualTo(i);
-    }
-
-    // should fail fast when ssz is longer than max
-    for (int i = maxLength + 1; i < maxLength + 10; i++) {
-      List<T> children =
-          Stream.generate(listElementType::getDefault).limit(i).collect(Collectors.toList());
-      SszList<T> largerList = largerSszListSchema.createFromElements(children);
-      Bytes ssz = largerList.sszSerialize();
-
-      SszReader sszReader = SszReader.fromBytes(ssz);
-      assertThatThrownBy(() -> sszListSchema.sszDeserialize(sszReader))
-          .isInstanceOf(SszDeserializeException.class);
-      if (listElementType != SszPrimitiveSchemas.BIT_SCHEMA || i > maxLength + 8) {
-        assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);
-      }
-    }
   }
 }
