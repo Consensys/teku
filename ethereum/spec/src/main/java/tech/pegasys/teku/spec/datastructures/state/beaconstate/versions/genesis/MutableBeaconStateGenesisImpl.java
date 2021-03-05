@@ -18,14 +18,14 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconStateImpl;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconStateImpl<BeaconStateGenesisImpl>
+class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconStateGenesisImpl>
     implements MutableBeaconStateGenesis, BeaconStateCache {
 
   private SSZMutableList<PendingAttestation> previousEpochAttestations;

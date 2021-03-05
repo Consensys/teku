@@ -27,17 +27,17 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 
-public abstract class AbstractBeaconStateImpl<TMutable extends MutableBeaconState>
+public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
     extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
 
-  protected AbstractBeaconStateImpl(final BeaconStateSchema<?, ?> schema) {
+  protected AbstractBeaconState(final BeaconStateSchema<?, ?> schema) {
     super(schema);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  protected AbstractBeaconStateImpl(
+  protected AbstractBeaconState(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -46,7 +46,7 @@ public abstract class AbstractBeaconStateImpl<TMutable extends MutableBeaconStat
     this.transitionCaches = transitionCaches;
   }
 
-  protected AbstractBeaconStateImpl(
+  protected AbstractBeaconState(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();

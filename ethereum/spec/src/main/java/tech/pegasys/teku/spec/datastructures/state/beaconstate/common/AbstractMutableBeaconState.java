@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
 import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
-public abstract class AbstractMutableBeaconStateImpl<
+public abstract class AbstractMutableBeaconState<
         T extends SszContainerImpl & BeaconState & BeaconStateCache>
     extends SszMutableContainerImpl implements MutableBeaconState, BeaconStateCache {
 
@@ -44,11 +44,11 @@ public abstract class AbstractMutableBeaconStateImpl<
   private SSZMutableList<Eth1Data> eth1DataVotes;
   private SSZMutableVector<Bytes32> randaoMixes;
 
-  protected AbstractMutableBeaconStateImpl(T backingImmutableView) {
+  protected AbstractMutableBeaconState(T backingImmutableView) {
     this(backingImmutableView, false);
   }
 
-  protected AbstractMutableBeaconStateImpl(T backingImmutableView, boolean builder) {
+  protected AbstractMutableBeaconState(T backingImmutableView, boolean builder) {
     super(backingImmutableView);
     this.transitionCaches =
         builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
