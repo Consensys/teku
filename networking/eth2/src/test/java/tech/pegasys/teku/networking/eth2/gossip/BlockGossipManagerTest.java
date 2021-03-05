@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 
 public class BlockGossipManagerTest {

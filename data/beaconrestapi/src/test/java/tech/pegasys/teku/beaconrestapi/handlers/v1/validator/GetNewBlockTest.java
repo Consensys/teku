@@ -45,7 +45,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 
 public class GetNewBlockTest {
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =

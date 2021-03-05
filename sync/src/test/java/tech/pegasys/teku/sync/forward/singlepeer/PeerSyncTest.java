@@ -44,9 +44,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedE
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSyncTest extends AbstractSyncTest {

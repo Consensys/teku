@@ -25,7 +25,7 @@ import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();

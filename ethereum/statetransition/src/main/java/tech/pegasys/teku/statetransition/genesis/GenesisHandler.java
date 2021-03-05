@@ -83,7 +83,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
-    final tech.pegasys.teku.spec.util.BeaconStateUtil beaconStateUtil =
+    final tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil beaconStateUtil =
         spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
     if (beaconStateUtil.isValidGenesisState(
         genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {

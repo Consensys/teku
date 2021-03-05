@@ -28,7 +28,7 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class PostAttesterSlashingTest {

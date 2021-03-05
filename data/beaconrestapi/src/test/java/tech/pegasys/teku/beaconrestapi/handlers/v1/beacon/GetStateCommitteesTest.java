@@ -32,7 +32,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 
 public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

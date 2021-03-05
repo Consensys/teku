@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.util.CommitteeUtil;
+import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 
 public class ShufflingTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> SHUFFLING_TEST_TYPES =

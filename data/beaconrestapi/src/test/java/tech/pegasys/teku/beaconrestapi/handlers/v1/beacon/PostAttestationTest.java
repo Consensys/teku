@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 
 public class PostAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

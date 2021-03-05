@@ -23,8 +23,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingValidatorTest {
