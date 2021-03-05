@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -210,7 +209,7 @@ public class ProfilingRun {
         new DataStructureUtil(1, spec)
             .withPubKeyGenerator(() -> publicKey)
             .randomBeaconState(100_000);
-    final BeaconStateSchema<BeaconState, MutableBeaconState> stateSchema =
+    final BeaconStateSchema<?, ?> stateSchema =
         spec.atSlot(beaconState.getSlot()).getSchemaDefinitions().getBeaconStateSchema();
     System.out.println("Serializing...");
     Bytes bytes = beaconState.sszSerialize();

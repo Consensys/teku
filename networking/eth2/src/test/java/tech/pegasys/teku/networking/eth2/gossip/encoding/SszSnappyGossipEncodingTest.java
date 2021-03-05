@@ -26,9 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -37,7 +35,7 @@ public class SszSnappyGossipEncodingTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final GossipEncoding encoding = createEncoding();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconStateSchema<BeaconState, MutableBeaconState> beaconStateSchema =
+  private final BeaconStateSchema<?, ?> beaconStateSchema =
       spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
   private GossipEncoding createEncoding() {
