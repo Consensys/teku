@@ -147,7 +147,7 @@ public abstract class AbstractBeaconStateSchemaTest<
     return new TestBeaconStateSchema(fields);
   }
 
-  private class TestBeaconStateSchema
+  private static class TestBeaconStateSchema
       extends AbstractBeaconStateSchema<BeaconState, MutableBeaconState> {
 
     TestBeaconStateSchema(final List<SszField> allFields) {

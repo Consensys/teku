@@ -60,7 +60,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
 
-  public AbstractBlockProcessor(
+  protected AbstractBlockProcessor(
       final SpecConstants specConstants,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
