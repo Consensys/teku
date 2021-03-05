@@ -54,7 +54,8 @@ public class WeakSubjectivityValidatorTest {
 
   // Set up mocks
   private final WeakSubjectivityCalculator calculator = mock(WeakSubjectivityCalculator.class);
-  private final ReadOnlyForkChoiceStrategy forkChoiceStrategy = mock(ProtoArrayForkChoiceStrategy.class);
+  private final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
+      mock(ProtoArrayForkChoiceStrategy.class);
   private final WeakSubjectivityViolationPolicy policy =
       mock(WeakSubjectivityViolationPolicy.class);
   private final CheckpointState checkpointState = mock(CheckpointState.class);

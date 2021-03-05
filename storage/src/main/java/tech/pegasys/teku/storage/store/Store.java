@@ -50,9 +50,8 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockMetadataStore;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArrayBuilder;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
@@ -235,7 +234,8 @@ class Store implements UpdatableStore {
             checkpointStateTaskQueue);
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-          ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel).join();
+          ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel)
+              .join();
       store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {
@@ -252,8 +252,8 @@ class Store implements UpdatableStore {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
-        new ProtoArrayBuilder()
-            .anchor(initialCheckpoint)
+        ProtoArray.builder()
+            .initialCheckpoint(initialCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedAnchor.getCheckpoint())
             .build();
