@@ -40,6 +40,8 @@ public interface SszPrimitiveListSchema<
           SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long maxLength, SszSchemaHints hints) {
     if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBitlistSchema.create(maxLength);
+    } else if (elementSchema == SszPrimitiveSchemas.UINT64_SCHEMA) {
+        return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszUInt64ListSchema.create(maxLength);
     } else {
       return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
     }
