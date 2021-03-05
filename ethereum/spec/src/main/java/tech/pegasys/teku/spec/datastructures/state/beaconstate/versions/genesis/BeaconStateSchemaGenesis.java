@@ -14,10 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -28,34 +25,29 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszField;
 
-public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconStateGenesis>
-    implements BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> {
+public class BeaconStateSchemaGenesis
+    extends AbstractBeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> {
 
   @VisibleForTesting
-  BeaconStateSchemaGenesis(final List<SszField> fields) {
-    super(
-        "BeaconStateGenesis",
-        fields.stream()
-            .map(f -> namedSchema(f.getName(), f.getSchema().get()))
-            .collect(Collectors.toList()));
-    BeaconStateSchema.validateFields(fields);
+  BeaconStateSchemaGenesis(final SpecConstants specConstants) {
+    super("BeaconStateGenesis", getUniqueFields(specConstants), specConstants);
   }
 
   public static BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> create(
       final SpecConstants specConstants) {
-    return new BeaconStateSchemaGenesis(getFields(specConstants));
+    return new BeaconStateSchemaGenesis(specConstants);
   }
 
-  private static List<SszField> getFields(final SpecConstants specConstants) {
+  private static List<SszField> getUniqueFields(final SpecConstants specConstants) {
     final SszField previousEpochAttestationsField =
         new SszField(
             15,
@@ -73,13 +65,7 @@ public class BeaconStateSchemaGenesis extends AbstractSszContainerSchema<BeaconS
                     PendingAttestation.SSZ_SCHEMA,
                     (long) specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
 
-    final ArrayList<SszField> fields =
-        new ArrayList<>(BeaconStateSchema.getCommonFields(specConstants));
-    fields.add(previousEpochAttestationsField);
-    fields.add(currentEpochAttestationsField);
-
-    fields.sort(Comparator.comparing(SszField::getIndex));
-    return fields;
+    return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
   }
 
   @Override

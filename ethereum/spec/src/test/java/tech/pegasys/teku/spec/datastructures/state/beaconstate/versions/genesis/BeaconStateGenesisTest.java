@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.AbstractBeaconStateTest;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
 public class BeaconStateGenesisTest
     extends AbstractBeaconStateTest<BeaconStateGenesis, MutableBeaconStateGenesis> {

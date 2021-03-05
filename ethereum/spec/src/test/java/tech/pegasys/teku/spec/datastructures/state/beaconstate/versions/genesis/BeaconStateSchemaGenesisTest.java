@@ -15,15 +15,13 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.AbstractBeaconStateSchemaTest;
-import tech.pegasys.teku.ssz.sos.SszField;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
 public class BeaconStateSchemaGenesisTest
     extends AbstractBeaconStateSchemaTest<BeaconStateGenesis, MutableBeaconStateGenesis> {
@@ -32,12 +30,6 @@ public class BeaconStateSchemaGenesisTest
   protected BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> getSchema(
       final SpecConstants specConstants) {
     return BeaconStateSchemaGenesis.create(specConstants);
-  }
-
-  @Override
-  protected BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> createSchema(
-      final List<SszField> fields) {
-    return new BeaconStateSchemaGenesis(fields);
   }
 
   @Test

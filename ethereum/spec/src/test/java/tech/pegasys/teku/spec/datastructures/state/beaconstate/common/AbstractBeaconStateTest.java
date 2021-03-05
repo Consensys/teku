@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
