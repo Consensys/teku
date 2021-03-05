@@ -17,6 +17,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
@@ -24,6 +25,8 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch.EpochProcessorGenesis;
+import tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch.ValidatorStatusFactoryGenesis;
 import tech.pegasys.teku.spec.logic.versions.genesis.util.BlockProcessorGenesis;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -37,6 +40,7 @@ public class SpecLogicGenesis implements SpecLogic {
   private final StateTransition stateTransition;
   private final ForkChoiceUtil forkChoiceUtil;
   private final BlockProposalUtil blockProposalUtil;
+  private final ValidatorStatusFactoryGenesis validatorStatusFactory;
 
   public SpecLogicGenesis(
       final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
@@ -45,7 +49,11 @@ public class SpecLogicGenesis implements SpecLogic {
     this.beaconStateUtil =
         new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    this.epochProcessor = new EpochProcessor(constants, validatorsUtil, this.beaconStateUtil);
+    this.validatorStatusFactory =
+        new ValidatorStatusFactoryGenesis(beaconStateUtil, attestationUtil, validatorsUtil);
+    this.epochProcessor =
+        new EpochProcessorGenesis(
+            constants, validatorsUtil, this.beaconStateUtil, validatorStatusFactory);
     this.blockProcessorUtil =
         new BlockProcessorGenesis(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =
@@ -99,5 +107,10 @@ public class SpecLogicGenesis implements SpecLogic {
   @Override
   public BlockProposalUtil getBlockProposalUtil() {
     return blockProposalUtil;
+  }
+
+  @Override
+  public ValidatorStatusFactory getValidatorStatusFactory() {
+    return validatorStatusFactory;
   }
 }

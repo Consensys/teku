@@ -28,6 +28,7 @@ import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class RewardsTestExecutor implements TestExecutor {
@@ -42,7 +43,9 @@ public class RewardsTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
 
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
+    final ValidatorStatusFactory statusFactory =
+        testDefinition.getSpec().getGenesisSpec().getValidatorStatusFactory();
+    final ValidatorStatuses validatorStatuses = statusFactory.createValidatorStatuses(preState);
     final RewardsAndPenaltiesCalculator calculator =
         testDefinition
             .getSpec()

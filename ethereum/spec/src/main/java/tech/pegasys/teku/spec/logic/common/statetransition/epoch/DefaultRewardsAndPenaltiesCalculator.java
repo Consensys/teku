@@ -32,7 +32,7 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
   private final BeaconState state;
   private final ValidatorStatuses validatorStatuses;
 
-  DefaultRewardsAndPenaltiesCalculator(
+  public DefaultRewardsAndPenaltiesCalculator(
       final SpecConstants specConstants,
       final BeaconStateUtil beaconStateUtil,
       final BeaconState state,

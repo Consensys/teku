@@ -51,13 +51,7 @@ public final class BlockProcessorGenesis extends AbstractBlockProcessor {
       MutableBeaconState genericState, SSZList<Attestation> attestations)
       throws BlockProcessingException {
     final MutableBeaconStateGenesis state =
-        genericState
-            .toGenesisVersionMutable()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Unable to process non-genesis state: "
-                            + genericState.getClass().getSimpleName()));
+        MutableBeaconStateGenesis.requireGenesisStateMutable(genericState);
 
     try {
       final AttestationDataStateTransitionValidator validator =

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
@@ -73,5 +74,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BlockProposalUtil getBlockProposalUtil() {
     return specLogic.getBlockProposalUtil();
+  }
+
+  @Override
+  public ValidatorStatusFactory getValidatorStatusFactory() {
+    return specLogic.getValidatorStatusFactory();
   }
 }

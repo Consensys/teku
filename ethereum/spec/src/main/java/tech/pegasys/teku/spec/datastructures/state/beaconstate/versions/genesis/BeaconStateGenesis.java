@@ -23,6 +23,15 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public interface BeaconStateGenesis extends BeaconState {
 
+  static BeaconStateGenesis requireGenesisState(final BeaconState state) {
+    return state
+        .toGenesisVersion()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected a genesis state but got: " + state.getClass().getSimpleName()));
+  }
+
   // Attestations
   default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
     final int fieldIndex =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,28 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
-import java.util.List;
-import tech.pegasys.teku.independent.TotalBalances;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ValidatorStatuses {
-  private final List<ValidatorStatus> statuses;
-  private final TotalBalances totalBalances;
+public interface ValidatorStatusFactory {
+  ValidatorStatuses createValidatorStatuses(BeaconState state);
 
-  public ValidatorStatuses(
-      final List<ValidatorStatus> statuses, final TotalBalances totalBalances) {
-    this.statuses = statuses;
-    this.totalBalances = totalBalances;
-  }
-
-  public TotalBalances getTotalBalances() {
-    return totalBalances;
-  }
-
-  public List<ValidatorStatus> getStatuses() {
-    return statuses;
-  }
-
-  public int getValidatorCount() {
-    return statuses.size();
-  }
+  ValidatorStatus createValidatorStatus(
+      final Validator validator, final UInt64 previousEpoch, final UInt64 currentEpoch);
 }

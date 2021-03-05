@@ -22,6 +22,15 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 public interface MutableBeaconStateGenesis extends MutableBeaconState, BeaconStateGenesis {
 
+  static MutableBeaconStateGenesis requireGenesisStateMutable(final MutableBeaconState state) {
+    return state
+        .toGenesisVersionMutable()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected a genesis state but got: " + state.getClass().getSimpleName()));
+  }
+
   // Attestations
   @Override
   default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
