@@ -21,7 +21,8 @@ import static java.lang.Math.toIntExact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +51,7 @@ class ProtoArrayScoreCalculator {
   static List<Long> computeDeltas(
       VoteUpdater store,
       int protoArraySize,
-      Map<Bytes32, Integer> indices,
+      Function<Bytes32, Optional<Integer>> getIndexByRoot,
       List<UInt64> oldBalances,
       List<UInt64> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
@@ -82,23 +83,29 @@ class ProtoArrayScoreCalculator {
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
         // We ignore the vote if it is not known in `indices`. We assume that it is outside
         // of our tree (i.e. pre-finalization) and therefore not interesting.
-        Integer currentDeltaIndex = indices.get(vote.getCurrentRoot());
-        if (currentDeltaIndex != null) {
-          checkState(
-              currentDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-          long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
-          deltas.set(currentDeltaIndex, delta);
-        }
+        getIndexByRoot
+            .apply(vote.getCurrentRoot())
+            .ifPresent(
+                (currentDeltaIndex) -> {
+                  checkState(
+                      currentDeltaIndex < deltas.size(),
+                      "ProtoArrayForkChoice: Invalid node delta index");
+                  long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
+                  deltas.set(currentDeltaIndex, delta);
+                });
 
         // We ignore the vote if it is not known in `indices`. We assume that it is outside
         // of our tree (i.e. pre-finalization) and therefore not interesting.
-        Integer nextDeltaIndex = indices.get(vote.getNextRoot());
-        if (nextDeltaIndex != null) {
-          checkState(
-              nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-          long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
-          deltas.set(nextDeltaIndex, delta);
-        }
+        getIndexByRoot
+            .apply(vote.getNextRoot())
+            .ifPresent(
+                (nextDeltaIndex) -> {
+                  checkState(
+                      nextDeltaIndex < deltas.size(),
+                      "ProtoArrayForkChoice: Invalid node delta index");
+                  long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
+                  deltas.set(nextDeltaIndex, delta);
+                });
 
         VoteTracker newVote =
             new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
