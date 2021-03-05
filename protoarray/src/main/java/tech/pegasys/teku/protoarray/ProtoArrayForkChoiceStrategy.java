@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -43,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy
     implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
@@ -66,10 +66,7 @@ public class ProtoArrayForkChoiceStrategy
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
     final UInt64 initialEpoch =
-        store
-            .getInitialCheckpoint()
-            .map(Checkpoint::getEpoch)
-            .orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
+        store.getInitialCheckpoint().map(Checkpoint::getEpoch).orElse(SpecConstants.GENESIS_EPOCH);
     return storageChannel
         .getProtoArraySnapshot()
         .thenApply(

@@ -437,7 +437,7 @@ public class ProtoArray {
   }
 
   public void applyProposerWeighting(final ProposerWeighting weighting) {
-    Optional<Integer> nodeIndex = Optional.ofNullable(indices.get(weighting.getTargetRoot()));
+    Optional<Integer> nodeIndex = indices.get(weighting.getTargetRoot());
     if (nodeIndex.isEmpty()) {
       LOG.warn("Applying proposer weighting for unknown block root {}", weighting.getTargetRoot());
       return;

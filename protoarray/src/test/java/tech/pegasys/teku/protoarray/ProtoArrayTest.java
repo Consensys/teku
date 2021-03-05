@@ -90,10 +90,12 @@ class ProtoArrayTest {
     addBlock(1, blockRootB, Bytes32.ZERO);
 
     protoArray.applyProposerWeighting(proposerWeightingB);
-    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot())).isEqualTo(blockRootB);
+    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot()).getBlockRoot())
+        .isEqualTo(blockRootB);
 
     protoArray.applyProposerWeighting(proposerWeightingA);
-    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot())).isEqualTo(blockRootA);
+    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot()).getBlockRoot())
+        .isEqualTo(blockRootA);
   }
 
   @Test
@@ -118,7 +120,7 @@ class ProtoArrayTest {
         ProtoArrayScoreCalculator.computeDeltas(
             voteUpdater,
             protoArray.getTotalTrackedNodeCount(),
-            protoArray.getIndices(),
+            protoArray.getRootIndices(),
             Collections.emptyList(),
             Collections.emptyList(),
             List.of(weightings));
@@ -131,6 +133,6 @@ class ProtoArrayTest {
   }
 
   private ProtoNode getNode(final Bytes32 blockRoot) {
-    return protoArray.getNodes().get(protoArray.getIndices().get(blockRoot));
+    return protoArray.getNodes().get(protoArray.getRootIndices().get(blockRoot));
   }
 }
