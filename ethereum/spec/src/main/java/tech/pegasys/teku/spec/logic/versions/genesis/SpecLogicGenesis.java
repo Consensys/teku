@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.genesis.util.BlockProcessorGenesis;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicGenesis implements SpecLogic {
@@ -46,7 +47,7 @@ public class SpecLogicGenesis implements SpecLogic {
     this.attestationUtil = new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
     this.epochProcessor = new EpochProcessor(constants, validatorsUtil, this.beaconStateUtil);
     this.blockProcessorUtil =
-        new BlockProcessorUtil(constants, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorGenesis(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =
         StateTransition.create(
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
