@@ -137,12 +137,8 @@ public class ProtoArray {
   /**
    * Follows the best-descendant links to find the best-block (i.e., head-block).
    *
-   * <p>The result of this function is not guaranteed to be accurate if `onBlock` has been called
-   * without a subsequent `applyScoreChanges` call. This is because `onBlock` does not attempt to
-   * walk backwards through the tree and update the best child / best descendant links.
-   *
-   * @param justifiedRoot
-   * @return
+   * @param justifiedRoot the root of the justified checkpoint
+   * @return the best node according to fork choice
    */
   public ProtoNode findHead(Bytes32 justifiedRoot) {
     int justifiedIndex =
@@ -159,6 +155,16 @@ public class ProtoArray {
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode =
         checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+
+    // Normally the best descendant index would point straight to chain head, but onBlock only
+    // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
+    // change back up and everything works, but we run findHead to determine if the new block should
+    // become the best head so need to follow down the chain.
+    while (bestNode.getBestDescendantIndex().isPresent()) {
+      bestDescendantIndex = bestNode.getBestDescendantIndex().get();
+      bestNode =
+          checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+    }
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode)) {

@@ -67,7 +67,7 @@ public class ForkChoice {
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
-  public static ForkChoice create(
+  public static ForkChoice createWithBalanceAttackEnabled(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
@@ -75,7 +75,15 @@ public class ForkChoice {
         spec,
         forkChoiceExecutor,
         recentChainData,
-        new ProposerWeightings(forkChoiceExecutor, spec));
+        new ActiveProposerWeightings(forkChoiceExecutor, spec));
+  }
+
+  public static ForkChoice create(
+      final Spec spec,
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData) {
+    return new ForkChoice(
+        spec, forkChoiceExecutor, recentChainData, new InactiveProposerWeightings());
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -207,8 +215,6 @@ public class ForkChoice {
       final BlockImportResult result,
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
-      // Apply additional proposer weighting.
-      // TODO: Should only do this when toggled on.
       proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
 
       // Without apply any pending vote updates, check if this block is now the canonical head
