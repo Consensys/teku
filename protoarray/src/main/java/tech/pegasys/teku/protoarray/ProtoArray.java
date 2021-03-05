@@ -42,7 +42,7 @@ public class ProtoArray {
    * because they extended from a now-invalid chain and were removed. This avoids having to update
    * the indices to entries in the list too often.
    */
-  private final List<ProtoNode> nodes;
+  private final List<ProtoNode> nodes = new ArrayList<>();
 
   /**
    * protoArrayIndices allows root lookup to retrieve indices of protoNodes without looking through
@@ -58,7 +58,6 @@ public class ProtoArray {
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
     this.initialEpoch = initialEpoch;
-    this.nodes = new ArrayList<>();
   }
 
   public static ProtoArrayBuilder builder() {
@@ -142,11 +141,13 @@ public class ProtoArray {
    * @return
    */
   public Bytes32 findHead(Bytes32 justifiedRoot) {
-    Optional<Integer> maybeIndex = indices.get(justifiedRoot);
-    checkArgument(
-        maybeIndex.isPresent(),
-        "ProtoArray: Unknown justified root " + justifiedRoot.toHexString());
-    int justifiedIndex = maybeIndex.get();
+    int justifiedIndex =
+        indices
+            .get(justifiedRoot)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "ProtoArray: Unknown justified root " + justifiedRoot.toHexString()));
 
     ProtoNode justifiedNode =
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
