@@ -15,21 +15,11 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszField;
@@ -81,73 +71,6 @@ public class BeaconStateSchemaGenesis
   @Override
   public BeaconStateGenesis createEmpty() {
     return createEmptyBeaconStateImpl();
-  }
-
-  @Override
-  public BeaconStateGenesis create(
-
-      // Versioning
-      UInt64 genesis_time,
-      Bytes32 genesis_validators_root,
-      UInt64 slot,
-      Fork fork,
-
-      // History
-      BeaconBlockHeader latest_block_header,
-      SSZVector<Bytes32> block_roots,
-      SSZVector<Bytes32> state_roots,
-      SSZList<Bytes32> historical_roots,
-
-      // Eth1
-      Eth1Data eth1_data,
-      SSZList<Eth1Data> eth1_data_votes,
-      UInt64 eth1_deposit_index,
-
-      // Registry
-      SSZList<? extends Validator> validators,
-      SSZList<UInt64> balances,
-
-      // Randomness
-      SSZVector<Bytes32> randao_mixes,
-
-      // Slashings
-      SSZVector<UInt64> slashings,
-
-      // Attestations
-      SSZList<PendingAttestation> previous_epoch_attestations,
-      SSZList<PendingAttestation> current_epoch_attestations,
-
-      // Finality
-      SszBitvector justification_bits,
-      Checkpoint previous_justified_checkpoint,
-      Checkpoint current_justified_checkpoint,
-      Checkpoint finalized_checkpoint) {
-
-    return createEmpty()
-        .updatedGenesis(
-            state -> {
-              state.setGenesis_time(genesis_time);
-              state.setGenesis_validators_root(genesis_validators_root);
-              state.setSlot(slot);
-              state.setFork(fork);
-              state.setLatest_block_header(latest_block_header);
-              state.getBlock_roots().setAll(block_roots);
-              state.getState_roots().setAll(state_roots);
-              state.getHistorical_roots().setAll(historical_roots);
-              state.setEth1_data(eth1_data);
-              state.getEth1_data_votes().setAll(eth1_data_votes);
-              state.setEth1_deposit_index(eth1_deposit_index);
-              state.getValidators().setAll(validators);
-              state.getBalances().setAll(balances);
-              state.getRandao_mixes().setAll(randao_mixes);
-              state.getSlashings().setAll(slashings);
-              state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
-              state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
-              state.setJustification_bits(justification_bits);
-              state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
-              state.setCurrent_justified_checkpoint(current_justified_checkpoint);
-              state.setFinalized_checkpoint(finalized_checkpoint);
-            });
   }
 
   private BeaconStateGenesisImpl createEmptyBeaconStateImpl() {
