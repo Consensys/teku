@@ -89,6 +89,10 @@ public class SszBitlistTest implements SszPrimitiveListAbstractTest {
     return sszData().filter(b -> b.size() > 0).map(Arguments::of);
   }
 
+  public Stream<Arguments> emptyBitlistArgs() {
+    return sszData().filter(b -> b.size() == 0).map(Arguments::of);
+  }
+
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testSszRoundtrip(SszBitlist bitlist1) {
@@ -336,5 +340,15 @@ public class SszBitlistTest implements SszPrimitiveListAbstractTest {
     Assertions.assertThatCode(wrappedBytes::toArray).doesNotThrowAnyException();
     Assertions.assertThatCode(() -> Bytes.concatenate(slicedBytes, Bytes.wrap(new byte[1])))
         .doesNotThrowAnyException();
+  }
+
+  @ParameterizedTest
+  @MethodSource("emptyBitlistArgs")
+  void testBitEmptyListSsz(SszBitlist bitlist) {
+
+    assertThat(bitlist.sszSerialize()).isEqualTo(Bytes.of(1));
+
+    SszBitlist emptyList1 = bitlist.getSchema().sszDeserialize(Bytes.of(1));
+    assertThat(emptyList1).isEmpty();
   }
 }

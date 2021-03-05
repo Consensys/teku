@@ -16,16 +16,13 @@ package tech.pegasys.teku.ssz.backing;
 import static java.lang.Integer.max;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,7 +32,6 @@ import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 
@@ -112,34 +108,7 @@ public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeA
     assertThat(lw1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
   }
 
-  @Disabled // TODO either remove or generalize
-  @ParameterizedTest
-  @MethodSource("testAllNonBitListTypeParameters")
-  <T extends SszData> void clearTest1(SszSchema<T> listElementType, long maxLength) {
-    if (maxLength == 0) {
-      return;
-    }
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-    SszList<T> lr1 = sszListSchema.getDefault();
-    SszMutableList<T> lw1 = lr1.createWritableCopy();
-    lw1.append(randomSsz.randomData(listElementType));
-    if (maxLength > 1) {
-      lw1.append(randomSsz.randomData(listElementType));
-    }
-    SszMutableList<T> lw2 = lw1.commitChanges().createWritableCopy();
-    lw2.clear();
-    SszList<T> lr2 = lw2.commitChanges();
-    assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
-
-    SszMutableList<T> lw3 = lw1.commitChanges().createWritableCopy();
-    lw3.clear();
-    lw3.append(randomSsz.randomData(listElementType));
-    SszList<T> lr3 = lw3.commitChanges();
-    assertThat(lr3.size()).isEqualTo(1);
-  }
-
-  @Disabled // TODO either remove or generalize
+  @Disabled // TODO move to schema tests
   @ParameterizedTest
   @MethodSource("testAllListTypeParameters")
   <T extends SszData> void testListSszDeserializeFailsFastWithTooLongData(
@@ -178,72 +147,5 @@ public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeA
         assertThat(sszReader.getAvailableBytes()).isGreaterThan(0);
       }
     }
-  }
-
-  @Disabled // TODO either remove or generalize
-  @ParameterizedTest
-  @MethodSource("testPrimitiveNonBitListTypeParameters")
-  <T extends SszData> void testNonBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-    SszList<T> emptyList = sszListSchema.getDefault();
-
-    assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.EMPTY);
-
-    SszList<T> emptyList1 = sszListSchema.sszDeserialize(Bytes.EMPTY);
-    assertThat(emptyList1).isEmpty();
-  }
-
-  @Disabled // TODO either remove or generalize
-  @ParameterizedTest
-  @MethodSource("testPrimitiveBitListTypeParameters")
-  <T extends SszData> void testBitEmptyListSsz(SszSchema<T> listElementType, long maxLength) {
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-    SszList<T> emptyList = sszListSchema.getDefault();
-
-    assertThat(emptyList.sszSerialize()).isEqualTo(Bytes.of(1));
-
-    SszList<T> emptyList1 = sszListSchema.sszDeserialize(Bytes.of(1));
-    assertThat(emptyList1).isEmpty();
-  }
-
-  @Disabled // TODO either remove or generalize
-  @ParameterizedTest
-  @MethodSource("testAllListTypeParameters")
-  <T extends SszData> void testEmptyListHash(SszSchema<T> listElementType, long maxLength) {
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-    SszList<T> emptyList = sszListSchema.getDefault();
-
-    assertThat(emptyList.hashTreeRoot())
-        .isEqualTo(
-            Hash.sha2_256(
-                Bytes.concatenate(
-                    TreeUtil.ZERO_TREES[sszListSchema.treeDepth()].hashTreeRoot(), Bytes32.ZERO)));
-  }
-
-  @Disabled // TODO either remove or generalize
-  @ParameterizedTest
-  @MethodSource("testAllListTypeParameters")
-  <T extends SszData> void testSszRoundtrip(SszSchema<T> listElementType, long maxLength) {
-
-    SszListSchema<T, ?> sszListSchema = SszListSchema.create(listElementType, maxLength);
-
-    LongStream.of(1, 2, 3, 4, 5, maxLength - 1, maxLength)
-        .takeWhile(i -> i <= maxLength)
-        .takeWhile(i -> i < 1024)
-        .forEach(
-            size -> {
-              SszList<T> list =
-                  sszListSchema.createFromElements(
-                      randomSsz
-                          .randomDataStream(listElementType)
-                          .limit(size)
-                          .collect(Collectors.toList()));
-              Bytes ssz = list.sszSerialize();
-              SszList<T> list1 = sszListSchema.sszDeserialize(ssz);
-              assertThatSszData(list1).isEqualByAllMeansTo(list);
-            });
   }
 }

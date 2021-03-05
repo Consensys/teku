@@ -13,4 +13,37 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-public interface SszListAbstractTest extends SszCollectionAbstractTest {}
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+
+public interface SszListAbstractTest extends SszCollectionAbstractTest {
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default void sszSerialize_emptyNonBitListShouldResultInEmptySsz(SszList<?> data) {
+    Assumptions.assumeTrue(data.isEmpty());
+    Assumptions.assumeTrue(data.getSchema().getElementSchema() != SszPrimitiveSchemas.BIT_SCHEMA);
+    assertThat(data.sszSerialize()).isEqualTo(Bytes.EMPTY);
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default void hashTreeRoot_testEmptyListHash(SszList<?> data) {
+    Assumptions.assumeTrue(data.isEmpty());
+
+    assertThat(data.hashTreeRoot())
+        .isEqualTo(
+            Hash.sha2_256(
+                Bytes.concatenate(
+                    TreeUtil.ZERO_TREES[data.getSchema().treeDepth()].hashTreeRoot(),
+                    Bytes32.ZERO)));
+  }
+}
