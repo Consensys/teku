@@ -360,10 +360,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   }
 
   @Override
-  public abstract void processAttestationsNoValidation(
-      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException;
-
-  @Override
   public void verifyAttestations(
       BeaconState state,
       SSZList<Attestation> attestations,

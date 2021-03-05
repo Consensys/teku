@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.results.ValidatorStats;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public interface BlockProcessorUtil {
@@ -98,4 +100,10 @@ public interface BlockProcessorUtil {
       BeaconState state,
       SSZList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier);
+
+  ValidatorStats getValidatorStatsPreviousEpoch(
+      final BeaconState state, final Bytes32 correctTargetRoot);
+
+  ValidatorStats getValidatorStatsCurrentEpoch(
+      final BeaconState state, final Bytes32 correctTargetRoot);
 }

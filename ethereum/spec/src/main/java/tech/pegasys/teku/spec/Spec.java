@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
+import tech.pegasys.teku.spec.logic.common.util.results.ValidatorStats;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -175,6 +176,10 @@ public class Spec {
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
+  }
+
+  public UInt64 getPreviousEpoch(final BeaconState state) {
+    return atState(state).getBeaconStateUtil().getPreviousEpoch(state);
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
@@ -408,6 +413,20 @@ public class Spec {
     final BlockProcessorUtil blockProcessor = atState(state).getBlockProcessorUtil();
     final long existingVotes = blockProcessor.getVoteCount(state, eth1Data);
     return blockProcessor.isEnoughVotesToUpdateEth1Data(existingVotes + additionalVotes);
+  }
+
+  public ValidatorStats getValidatorStatsPreviousEpoch(
+      final BeaconState state, final Bytes32 correctTargetRoot) {
+    return atState(state)
+        .getBlockProcessorUtil()
+        .getValidatorStatsPreviousEpoch(state, correctTargetRoot);
+  }
+
+  public ValidatorStats getValidatorStatsCurrentEpoch(
+      final BeaconState state, final Bytes32 correctTargetRoot) {
+    return atState(state)
+        .getBlockProcessorUtil()
+        .getValidatorStatsCurrentEpoch(state, correctTargetRoot);
   }
 
   // Validator Utils

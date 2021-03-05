@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
 import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -63,10 +66,11 @@ class BeaconChainMetricsTest {
   private final StateAndBlockSummary chainHead =
       dataStructureUtil.randomSignedBlockAndState(NODE_SLOT_VALUE);
   private final BeaconState randomState = chainHead.getState();
-  private final BeaconState state = mock(BeaconState.class);
+  private final BeaconStateGenesis state = mock(BeaconStateGenesis.class);
 
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
 
+  private final Spec spec = SpecFactory.createMinimal();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final RecentChainData preGenesisChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
@@ -77,7 +81,7 @@ class BeaconChainMetricsTest {
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
-      new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
+      new BeaconChainMetrics(spec, recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
 
   @BeforeEach
   void setUp() {
