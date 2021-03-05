@@ -34,12 +34,12 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -54,7 +54,7 @@ public class Generator {
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-    final SpecProvider specProvider = SpecProviderFactory.createMainnet();
+    final Spec spec = SpecFactory.createMainnet();
     Constants.setConstants("mainnet");
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
@@ -72,14 +72,13 @@ public class Generator {
     RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
     BeaconChainUtil localChain =
         BeaconChainUtil.builder()
-            .specProvider(specProvider)
+            .specProvider(spec)
             .recentChainData(localStorage)
             .validatorKeys(validatorKeys)
             .signDeposits(false)
             .build();
     localChain.initializeStorage();
-    AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
 
     UInt64 currentSlot = localStorage.getHeadSlot();
     List<Attestation> attestations = Collections.emptyList();

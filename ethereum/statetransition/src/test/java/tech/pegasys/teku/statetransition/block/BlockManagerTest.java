@@ -32,8 +32,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -49,8 +49,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
   private final EventBus remoteEventBus = new EventBus();
@@ -63,21 +63,15 @@ public class BlockManagerTest {
       FutureItems.create(SignedBeaconBlock::getSlot);
 
   private final RecentChainData localRecentChainData =
-      MemoryOnlyRecentChainData.builder()
-          .eventBus(localEventBus)
-          .specProvider(specProvider)
-          .build();
+      MemoryOnlyRecentChainData.builder().eventBus(localEventBus).specProvider(spec).build();
   private final RecentChainData remoteRecentChainData =
-      MemoryOnlyRecentChainData.builder()
-          .eventBus(remoteEventBus)
-          .specProvider(specProvider)
-          .build();
+      MemoryOnlyRecentChainData.builder().eventBus(remoteEventBus).specProvider(spec).build();
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(localRecentChainData, validatorKeys);
   private final BeaconChainUtil remoteChain =
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
   private final ForkChoice forkChoice =
-      new ForkChoice(specProvider, new InlineEventThread(), localRecentChainData);
+      ForkChoice.create(spec, new InlineEventThread(), localRecentChainData);
 
   private final BlockImporter blockImporter =
       new BlockImporter(

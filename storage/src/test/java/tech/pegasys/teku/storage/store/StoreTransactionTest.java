@@ -29,9 +29,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -93,7 +93,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Create some blocks that we can finalize
     final UInt64 epoch = UInt64.ONE;
     final SignedBlockAndState finalizedBlock =
-        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(epoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(epoch));
     final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
 
     // Save the finalized block
@@ -111,7 +111,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Create some blocks that we can finalize
     final UInt64 epoch = UInt64.ONE;
     final SignedBlockAndState finalizedBlock =
-        chainBuilder.generateBlockAtSlot(specProvider.computeStartSlotAtEpoch(epoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(epoch));
     final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -243,7 +243,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   public void getCheckpointState_fromBlockInTx() {
     final UpdatableStore store = createGenesisStore();
     final UInt64 epoch = UInt64.ONE;
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(epochStartSlot);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
@@ -258,7 +258,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState_finalizedBlockInMemory() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) - 1);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
@@ -279,7 +279,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState_finalizedBlockInStore() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) - 1);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
@@ -303,7 +303,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState_pullFromStore() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) - 1);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
@@ -327,12 +327,12 @@ public class StoreTransactionTest extends AbstractStoreTest {
   public void retrieveFinalizedCheckpointAndState_finalizedCheckpointPruned() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState finalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) - 1);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) - 1);
     final Checkpoint finalizedCheckpoint =
         new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
 
     final SignedBlockAndState newerFinalizedBlockAndState =
-        chainBuilder.generateBlockAtSlot(specProvider.slotsPerEpoch(ZERO) * 2);
+        chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(ZERO) * 2);
     final Checkpoint newerFinalizedCheckpoint =
         new Checkpoint(UInt64.valueOf(2), newerFinalizedBlockAndState.getRoot());
 

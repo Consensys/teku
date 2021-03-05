@@ -23,26 +23,26 @@ import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 
 class ActiveValidatorTrackerTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final StableSubnetSubscriber stableSubnetSubscriber =
       mock(ValidatorBasedStableSubnetSubscriber.class);
 
   private final ActiveValidatorTracker tracker =
-      new ActiveValidatorTracker(stableSubnetSubscriber, specProvider);
+      new ActiveValidatorTracker(stableSubnetSubscriber, spec);
 
   @Test
   void shouldUpdateValidatorCountAtStartOfEpoch() {
     final UInt64 slot = UInt64.valueOf(500);
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
     tracker.onCommitteeSubscriptionRequest(2, slot);
     tracker.onCommitteeSubscriptionRequest(3, slot);
 
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
@@ -52,12 +52,12 @@ class ActiveValidatorTrackerTest {
   @Test
   void shouldNotCountDuplicateValidators() {
     final UInt64 slot = UInt64.valueOf(500);
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
 
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
@@ -67,14 +67,14 @@ class ActiveValidatorTrackerTest {
   @Test
   void shouldPruneValidatorCountsAtTheEndOfAttestationInclusionRangeEpochs() {
     final UInt64 slot = UInt64.valueOf(500);
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
     tracker.onCommitteeSubscriptionRequest(2, slot);
     tracker.onCommitteeSubscriptionRequest(3, slot);
 
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     final UInt64 afterInclusionRangeStartSlot =
-        specProvider.computeStartSlotAtEpoch(epoch.plus(ATTESTATION_INCLUSION_RANGE).plus(1));
+        spec.computeStartSlotAtEpoch(epoch.plus(ATTESTATION_INCLUSION_RANGE).plus(1));
 
     // For the purpose of testing, we get the slots out of order, so all the requests get dropped
     tracker.onSlot(afterInclusionRangeStartSlot);
@@ -88,14 +88,14 @@ class ActiveValidatorTrackerTest {
   @Test
   void shouldNotPruneBeforeTheEndOfAttestationInclusionRangeEpochs() {
     final UInt64 slot = UInt64.valueOf(500);
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     tracker.onCommitteeSubscriptionRequest(1, slot);
     tracker.onCommitteeSubscriptionRequest(2, slot);
     tracker.onCommitteeSubscriptionRequest(3, slot);
 
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     final UInt64 rightBeforeInclusionRangeStartSlot =
-        specProvider.computeStartSlotAtEpoch(epoch.plus(ATTESTATION_INCLUSION_RANGE));
+        spec.computeStartSlotAtEpoch(epoch.plus(ATTESTATION_INCLUSION_RANGE));
 
     // For the purpose of testing, we get the slots out of order, to see if the requests get dropped
     tracker.onSlot(rightBeforeInclusionRangeStartSlot);

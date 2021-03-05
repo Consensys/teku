@@ -11,9 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -21,10 +25,6 @@ import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
 
 class MutableBeaconStateImpl extends SszMutableContainerImpl
     implements MutableBeaconState, BeaconStateCache {
-
-  static MutableBeaconStateImpl createBuilder() {
-    return new MutableBeaconStateImpl(new BeaconStateImpl(), true);
-  }
 
   private final TransitionCaches transitionCaches;
   private final boolean builder;

@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -46,7 +46,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
@@ -204,8 +204,7 @@ public class GossipMessageHandlerIntegrationTest {
         });
 
     // Propagate attestation from network 1
-    AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary bestBlockAndState =
         node1.storageClient().getChainHead().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
@@ -256,8 +255,7 @@ public class GossipMessageHandlerIntegrationTest {
         });
 
     // Propagate attestation from network 1
-    AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary bestBlockAndState =
         node1.storageClient().getChainHead().orElseThrow();
     ValidateableAttestation validAttestation =
@@ -323,8 +321,7 @@ public class GossipMessageHandlerIntegrationTest {
         });
 
     // Propagate attestation from network 1
-    AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary bestBlockAndState =
         node1.storageClient().getChainHead().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
@@ -366,7 +363,7 @@ public class GossipMessageHandlerIntegrationTest {
         networkFactory,
         validatorKeys,
         c -> {
-          c.specProvider(specProvider);
+          c.spec(spec);
           networkBuilder.accept(c);
         });
   }

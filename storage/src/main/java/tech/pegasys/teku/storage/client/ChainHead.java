@@ -18,29 +18,26 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_blo
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class ChainHead extends StateAndBlockSummary {
   private final UInt64 forkChoiceSlot;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   private ChainHead(
-      BeaconBlockSummary block,
-      BeaconState state,
-      UInt64 forkChoiceSlot,
-      final SpecProvider specProvider) {
+      BeaconBlockSummary block, BeaconState state, UInt64 forkChoiceSlot, final Spec spec) {
     super(block, state);
     this.forkChoiceSlot = forkChoiceSlot;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public static ChainHead create(
-      StateAndBlockSummary blockAndState, UInt64 forkChoiceSlot, final SpecProvider specProvider) {
+      StateAndBlockSummary blockAndState, UInt64 forkChoiceSlot, final Spec spec) {
     return new ChainHead(
-        blockAndState.getBlockSummary(), blockAndState.getState(), forkChoiceSlot, specProvider);
+        blockAndState.getBlockSummary(), blockAndState.getState(), forkChoiceSlot, spec);
   }
 
   /** @return The slot at which the chain head was calculated */
@@ -49,7 +46,7 @@ class ChainHead extends StateAndBlockSummary {
   }
 
   public UInt64 getForkChoiceEpoch() {
-    return specProvider.computeEpochAtSlot(forkChoiceSlot);
+    return spec.computeEpochAtSlot(forkChoiceSlot);
   }
 
   public UInt64 findCommonAncestor(final ChainHead other) {
@@ -61,8 +58,8 @@ class ChainHead extends StateAndBlockSummary {
     final UInt64 longestChainSlot = getSlot().max(other.getSlot());
     UInt64 minSlotWithHistoricRoot =
         longestChainSlot
-            .max(specProvider.getSlotsPerHistoricalRoot(slot)) // Avoid underflow
-            .minus(specProvider.getSlotsPerHistoricalRoot(slot));
+            .max(spec.getSlotsPerHistoricalRoot(slot)) // Avoid underflow
+            .minus(spec.getSlotsPerHistoricalRoot(slot));
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
       if (getBlockRootAtSlot(slot).equals(other.getBlockRootAtSlot(slot))) {
         return slot;

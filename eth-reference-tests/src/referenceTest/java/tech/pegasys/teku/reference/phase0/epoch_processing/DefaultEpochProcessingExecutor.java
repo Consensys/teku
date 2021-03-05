@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.reference.phase0.epoch_processing;
 
-import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;

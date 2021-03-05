@@ -34,27 +34,26 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AttestationGenerator {
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
   private final BLSKeyPair randomKeyPair = BLSTestUtil.randomKeyPair(12345);
 
-  public AttestationGenerator(
-      final SpecProvider specProvider, final List<BLSKeyPair> validatorKeys) {
-    this.specProvider = specProvider;
+  public AttestationGenerator(final Spec spec, final List<BLSKeyPair> validatorKeys) {
+    this.spec = spec;
     this.validatorKeys = validatorKeys;
   }
 
@@ -160,7 +159,7 @@ public class AttestationGenerator {
    */
   public Stream<Attestation> streamAttestations(
       final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
-    return AttestationIterator.create(specProvider, headBlockAndState, assignedSlot, validatorKeys)
+    return AttestationIterator.create(spec, headBlockAndState, assignedSlot, validatorKeys)
         .toStream();
   }
 
@@ -175,7 +174,7 @@ public class AttestationGenerator {
   private Stream<Attestation> streamInvalidAttestations(
       final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.createWithInvalidSignatures(
-            specProvider, headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
+            spec, headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
         .toStream();
   }
 
@@ -184,7 +183,7 @@ public class AttestationGenerator {
    * assigned slot.
    */
   private static class AttestationIterator implements Iterator<Attestation> {
-    private final SpecProvider specProvider;
+    private final Spec spec;
     // The latest block being attested to
     private final BeaconBlockSummary headBlock;
     // The latest state processed through to the current slot
@@ -201,12 +200,12 @@ public class AttestationGenerator {
     private int currentValidatorIndex = 0;
 
     private AttestationIterator(
-        final SpecProvider specProvider,
+        final Spec spec,
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final Function<Integer, BLSKeyPair> validatorKeySupplier) {
-      this.specProvider = specProvider;
+      this.spec = spec;
       this.headBlock = headBlockAndState;
       this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
@@ -222,29 +221,29 @@ public class AttestationGenerator {
       }
 
       try {
-        return specProvider.processSlots(state, slot);
+        return spec.processSlots(state, slot);
       } catch (EpochProcessingException | SlotProcessingException e) {
         throw new IllegalStateException(e);
       }
     }
 
     public static AttestationIterator create(
-        final SpecProvider specProvider,
+        final Spec spec,
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys) {
       return new AttestationIterator(
-          specProvider, headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get);
+          spec, headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get);
     }
 
     public static AttestationIterator createWithInvalidSignatures(
-        final SpecProvider specProvider,
+        final Spec spec,
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final BLSKeyPair invalidKeyPair) {
       return new AttestationIterator(
-          specProvider, headBlockAndState, assignedSlot, validatorKeys, __ -> invalidKeyPair);
+          spec, headBlockAndState, assignedSlot, validatorKeys, __ -> invalidKeyPair);
     }
 
     public Stream<Attestation> toStream() {

@@ -76,7 +76,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.networks.SpecProviderFactory;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -113,7 +113,7 @@ public class BeaconRestApiV1Test {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            SpecProviderFactory.createMinimal(),
+            SpecFactory.createMinimal(),
             storageClient,
             combinedChainDataClient,
             null,

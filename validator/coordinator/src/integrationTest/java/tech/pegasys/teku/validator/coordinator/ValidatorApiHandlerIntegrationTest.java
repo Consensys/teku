@@ -27,8 +27,8 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -55,7 +55,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
   private final EventBus eventBus = storageSystem.eventBus();
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
 
   // Other dependencies are mocked, but these can be updated as needed
   private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
@@ -86,7 +86,7 @@ public class ValidatorApiHandlerIntegrationTest {
           eventBus,
           mock(DutyMetrics.class),
           performanceTracker,
-          specProvider,
+          spec,
           forkChoiceTrigger);
 
   @BeforeEach
@@ -97,7 +97,7 @@ public class ValidatorApiHandlerIntegrationTest {
   @Test
   public void createUnsignedAttestation_withRecentBlockAvailable() {
     final UInt64 targetEpoch = UInt64.valueOf(3);
-    final UInt64 targetEpochStartSlot = specProvider.computeStartSlotAtEpoch(targetEpoch);
+    final UInt64 targetEpochStartSlot = spec.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
@@ -129,9 +129,9 @@ public class ValidatorApiHandlerIntegrationTest {
   @Test
   public void createUnsignedAttestation_withLatestBlockFromAnOldEpoch() {
     final UInt64 latestEpoch = UInt64.valueOf(2);
-    final UInt64 latestSlot = specProvider.computeStartSlotAtEpoch(latestEpoch).plus(ONE);
+    final UInt64 latestSlot = spec.computeStartSlotAtEpoch(latestEpoch).plus(ONE);
     final UInt64 targetEpoch = UInt64.valueOf(latestEpoch.longValue() + 3);
-    final UInt64 targetEpochStartSlot = specProvider.computeStartSlotAtEpoch(targetEpoch);
+    final UInt64 targetEpochStartSlot = spec.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();

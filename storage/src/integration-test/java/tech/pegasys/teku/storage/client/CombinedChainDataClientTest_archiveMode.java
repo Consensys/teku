@@ -25,9 +25,9 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedChainDataClientTest {
@@ -148,7 +148,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
 
     final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual =
         client.getCheckpointStateAtEpoch(finalizedEpoch);
@@ -173,7 +173,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
 
     final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(specProvider, checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual =
         client.getCheckpointStateAtEpoch(finalizedEpoch);

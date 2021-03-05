@@ -34,8 +34,8 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @State(Scope.Thread)
 @Threads(1)
 public abstract class TransitionBenchmark {
-  SpecProvider specProvider;
+  Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
   BeaconChainUtil localChain;
@@ -83,13 +83,13 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    specProvider = SpecProviderFactory.createMainnet();
+    spec = SpecFactory.createMainnet();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
-    recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
-    localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
+    recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
+    localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    ForkChoice forkChoice = new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);

@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;

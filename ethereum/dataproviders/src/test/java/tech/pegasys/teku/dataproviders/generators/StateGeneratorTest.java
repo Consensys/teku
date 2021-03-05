@@ -31,8 +31,8 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   @Test
@@ -61,8 +61,7 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator =
-        StateGenerator.create(specProvider, tree, genesis, blockProvider);
+    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(lastBlockAndState.getRoot());
     assertThat(result).isCompletedWithValue(lastBlockAndState);
@@ -85,8 +84,7 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator =
-        StateGenerator.create(specProvider, tree, genesis, blockProvider);
+    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(genesis.getRoot());
     final StateAndBlockSummary expected = StateAndBlockSummary.create(genesis.getState());
@@ -137,8 +135,7 @@ public class StateGeneratorTest {
     blockMap.remove(missingBlock.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator =
-        StateGenerator.create(specProvider, tree, genesis, blockProvider);
+    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
     processor.accept(generator, missingBlock);
   }
 

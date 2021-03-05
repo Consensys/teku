@@ -56,6 +56,14 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   }
 
   /**
+   * Get the index of a field by name
+   *
+   * @param fieldName
+   * @return The index if it exists, otherwise -1
+   */
+  int getFieldIndex(String fieldName);
+
+  /**
    * Creates the backing tree from container field values
    *
    * @throws IllegalArgumentException if value types doesn't match this scheme field types

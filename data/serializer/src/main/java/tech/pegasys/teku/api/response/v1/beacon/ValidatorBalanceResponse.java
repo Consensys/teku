@@ -22,7 +22,7 @@ import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorBalanceResponse {
   @JsonProperty("index")

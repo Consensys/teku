@@ -18,15 +18,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class ValidatorsUtilTest {
-  private final SpecProvider specProvider = StubSpecProvider.create();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
-  private final ValidatorsUtil validatorsUtil = specProvider.getGenesisSpec().getValidatorsUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
 
   @Test
   void getValidatorIndex_shouldReturnValidatorIndex() {

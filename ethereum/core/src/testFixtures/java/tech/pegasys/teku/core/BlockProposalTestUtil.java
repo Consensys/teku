@@ -24,7 +24,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
@@ -43,10 +43,10 @@ import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionExceptio
 import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BlockProposalTestUtil {
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
-  public BlockProposalTestUtil(final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+  public BlockProposalTestUtil(final Spec spec) {
+    this.spec = spec;
   }
 
   public SignedBlockAndState createNewBlock(
@@ -65,9 +65,9 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState = specProvider.processSlots(state, newSlot);
+    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
-        specProvider.createNewUnsignedBlock(
+        spec.createNewUnsignedBlock(
             newSlot,
             get_beacon_proposer_index(blockSlotState, newSlot),
             randaoReveal,
@@ -124,7 +124,7 @@ public class BlockProposalTestUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = specProvider.processSlots(preState, slot);
+      state = spec.processSlots(preState, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }

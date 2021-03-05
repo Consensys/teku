@@ -28,9 +28,9 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 import tech.pegasys.teku.dataproviders.generators.StreamingStateRegenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
@@ -42,15 +42,15 @@ public class FinalizedStateCache {
   private final NavigableSet<UInt64> availableSlots = new ConcurrentSkipListSet<>();
 
   private final LoadingCache<UInt64, BeaconState> stateCache;
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final Database database;
 
   public FinalizedStateCache(
-      final SpecProvider specProvider,
+      final Spec spec,
       final Database database,
       final int maximumCacheSize,
       final boolean useSoftReferences) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.database = database;
     final CacheBuilder<UInt64, BeaconState> cacheBuilder =
         CacheBuilder.newBuilder()
@@ -110,8 +110,7 @@ public class FinalizedStateCache {
       }
       try (final Stream<SignedBeaconBlock> blocks =
           database.streamFinalizedBlocks(preState.getSlot().plus(ONE), slot)) {
-        final BeaconState state =
-            StreamingStateRegenerator.regenerate(specProvider, preState, blocks);
+        final BeaconState state = StreamingStateRegenerator.regenerate(spec, preState, blocks);
         availableSlots.add(state.getSlot());
         return state;
       }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 public class ValidatorIndexCache {
   private final Cache<BLSPublicKey, Integer> validatorIndexes;

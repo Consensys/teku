@@ -39,8 +39,8 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class CommitteeUtil {
 
@@ -258,7 +258,7 @@ public class CommitteeUtil {
   private static void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
     final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
     checkArgument(
-        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        state.getSlot().isGreaterThanOrEqualTo(oldestQueryableSlot),
         "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
         state.getSlot(),
         oldestQueryableSlot);

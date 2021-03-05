@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -28,7 +28,7 @@ public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
-  public final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  public final Spec spec = SpecFactory.createMinimal();
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
@@ -63,8 +63,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(
-        signDeposits, specProvider.getGenesisSpecConstants().getMaxEffectiveBalance());
+    return initializeGenesis(signDeposits, spec.getGenesisSpecConstants().getMaxEffectiveBalance());
   }
 
   public SignedBlockAndState initializeGenesis(
@@ -140,8 +139,7 @@ public class ChainUpdater {
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {
-    final UInt64 secPerSlot =
-        UInt64.valueOf(specProvider.atSlot(slot).getConstants().getSecondsPerSlot());
+    final UInt64 secPerSlot = UInt64.valueOf(spec.atSlot(slot).getConstants().getSecondsPerSlot());
     return recentChainData.getGenesisTime().plus(slot.times(secPerSlot));
   }
 }

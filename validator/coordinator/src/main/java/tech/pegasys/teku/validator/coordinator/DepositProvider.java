@@ -28,12 +28,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
@@ -53,20 +53,19 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   private final NavigableMap<UInt64, DepositWithIndex> depositNavigableMap = new TreeMap<>();
   private final Counter depositCounter;
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
 
   public DepositProvider(
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
-    this.specProvider = specProvider;
+    this.spec = spec;
     depositMerkleTree =
-        new OptimizedMerkleTree(
-            specProvider.getGenesisSpecConstants().getDepositContractTreeDepth());
+        new OptimizedMerkleTree(spec.getGenesisSpecConstants().getDepositContractTreeDepth());
     depositCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -126,7 +125,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UInt64 eth1DepositCount;
-    if (specProvider.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
+    if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
     } else {
       eth1DepositCount = state.getEth1_data().getDeposit_count();
@@ -138,8 +137,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
-    long maxDeposits = specProvider.getMaxDeposits(state);
-    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(maxDeposits);
+    long maxDeposits = spec.getMaxDeposits(state);
+    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(spec.getMaxDeposits(state));
 
     UInt64 toDepositIndex =
         latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)

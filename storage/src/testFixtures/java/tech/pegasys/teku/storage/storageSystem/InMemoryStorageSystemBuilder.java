@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -37,7 +37,7 @@ public class InMemoryStorageSystemBuilder {
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
 
-  private SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private Spec spec = SpecFactory.createMinimal();
 
   // Internal variables
   MockRocksDbInstance unifiedDb;
@@ -74,12 +74,11 @@ public class InMemoryStorageSystemBuilder {
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
 
-    return StorageSystem.create(
-        database, createRestartSupplier(), storageMode, storeConfig, specProvider);
+    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig, spec);
   }
 
-  public InMemoryStorageSystemBuilder specProvider(final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+  public InMemoryStorageSystemBuilder specProvider(final Spec spec) {
+    this.spec = spec;
     return this;
   }
 
@@ -94,7 +93,7 @@ public class InMemoryStorageSystemBuilder {
     copy.unifiedDb = unifiedDb;
     copy.hotDb = hotDb;
     copy.coldDb = coldDb;
-    copy.specProvider = specProvider;
+    copy.spec = spec;
 
     return copy;
   }
@@ -141,14 +140,15 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockRocksDbInstance.createEmpty(
               concat(
-                  V4SchemaHot.INSTANCE.getAllColumns(), V6SchemaFinalized.INSTANCE.getAllColumns()),
+                  V4SchemaHot.create(spec).getAllColumns(),
+                  V6SchemaFinalized.create(spec).getAllColumns()),
               concat(
-                  V4SchemaHot.INSTANCE.getAllVariables(),
-                  V6SchemaFinalized.INSTANCE.getAllVariables()));
+                  V4SchemaHot.create(spec).getAllVariables(),
+                  V6SchemaFinalized.create(spec).getAllVariables()));
       coldDb = hotDb;
     }
     return InMemoryRocksDbDatabaseFactory.createV6(
-        hotDb, coldDb, storageMode, stateStorageFrequency, specProvider);
+        hotDb, coldDb, storageMode, stateStorageFrequency, spec);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -160,16 +160,16 @@ public class InMemoryStorageSystemBuilder {
     if (hotDb == null) {
       hotDb =
           MockRocksDbInstance.createEmpty(
-              V4SchemaHot.INSTANCE.getAllColumns(), V4SchemaHot.INSTANCE.getAllVariables());
+              V4SchemaHot.create(spec).getAllColumns(), V4SchemaHot.create(spec).getAllVariables());
     }
     if (coldDb == null) {
       coldDb =
           MockRocksDbInstance.createEmpty(
-              V4SchemaFinalized.INSTANCE.getAllColumns(),
-              V4SchemaFinalized.INSTANCE.getAllVariables());
+              V4SchemaFinalized.create(spec).getAllColumns(),
+              V4SchemaFinalized.create(spec).getAllVariables());
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
-        hotDb, coldDb, storageMode, stateStorageFrequency, specProvider);
+        hotDb, coldDb, storageMode, stateStorageFrequency, spec);
   }
 
   private void reopenDatabases() {

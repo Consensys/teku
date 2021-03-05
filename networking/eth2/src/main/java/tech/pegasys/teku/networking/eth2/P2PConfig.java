@@ -21,11 +21,11 @@ import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 
 public class P2PConfig {
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
   private final GossipConfigurator gossipConfigurator;
@@ -37,7 +37,7 @@ public class P2PConfig {
   private final int peerRequestLimit;
 
   private P2PConfig(
-      final SpecProvider specProvider,
+      final Spec spec,
       final NetworkConfig networkConfig,
       final DiscoveryConfig discoveryConfig,
       final GossipConfigurator gossipConfigurator,
@@ -46,7 +46,7 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
     this.gossipConfigurator = gossipConfigurator;
@@ -61,8 +61,8 @@ public class P2PConfig {
     return new Builder();
   }
 
-  public SpecProvider getSpecProvider() {
-    return specProvider;
+  public Spec getSpec() {
+    return spec;
   }
 
   public NetworkConfig getNetworkConfig() {
@@ -104,7 +104,7 @@ public class P2PConfig {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
-    private SpecProvider specProvider;
+    private Spec spec;
     private Boolean isGossipScoringEnabled = false;
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = 2;
@@ -119,18 +119,18 @@ public class P2PConfig {
 
       final GossipConfigurator gossipConfigurator =
           isGossipScoringEnabled
-              ? GossipConfigurator.scoringEnabled(specProvider)
+              ? GossipConfigurator.scoringEnabled(spec)
               : GossipConfigurator.NOOP;
       final Eth2Context eth2Context =
           Eth2Context.builder()
               .activeValidatorCount(
-                  specProvider.getGenesisSpecConstants().getMinGenesisActiveValidatorCount())
+                  spec.getGenesisSpecConstants().getMinGenesisActiveValidatorCount())
               .gossipEncoding(gossipEncoding)
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
 
       return new P2PConfig(
-          specProvider,
+          spec,
           networkConfig.build(),
           discoveryConfig.build(),
           gossipConfigurator,
@@ -142,7 +142,7 @@ public class P2PConfig {
     }
 
     private void validate() {
-      checkNotNull(specProvider);
+      checkNotNull(spec);
     }
 
     public Builder network(final Consumer<NetworkConfig.Builder> consumer) {
@@ -155,9 +155,9 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder specProvider(final SpecProvider specProvider) {
-      checkNotNull(specProvider);
-      this.specProvider = specProvider;
+    public Builder specProvider(final Spec spec) {
+      checkNotNull(spec);
+      this.spec = spec;
       return this;
     }
 

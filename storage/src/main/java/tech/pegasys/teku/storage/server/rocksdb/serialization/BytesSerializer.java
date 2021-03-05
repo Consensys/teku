@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import org.apache.tuweni.bytes.Bytes;
 
-public class BytesSerializer<T extends Bytes> implements RocksDbSerializer<T> {
+class BytesSerializer<T extends Bytes> implements RocksDbSerializer<T> {
 
   private final BytesFactory<T> bytesFactory;
 

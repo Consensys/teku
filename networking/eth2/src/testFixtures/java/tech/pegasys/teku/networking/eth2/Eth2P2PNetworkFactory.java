@@ -63,8 +63,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -128,7 +128,7 @@ public class Eth2P2PNetworkFactory {
     protected Duration eth2RpcPingInterval;
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
-    protected SpecProvider specProvider = SpecProviderFactory.createMinimal();
+    protected Spec spec = SpecFactory.createMinimal();
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
@@ -183,7 +183,7 @@ public class Eth2P2PNetworkFactory {
                 StubTimeProvider.withTimeInSeconds(1000),
                 500,
                 50,
-                specProvider);
+                spec);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -201,7 +201,7 @@ public class Eth2P2PNetworkFactory {
         final AttestationSubnetTopicProvider subnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
-            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, specProvider);
+            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =
@@ -235,10 +235,10 @@ public class Eth2P2PNetworkFactory {
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
                 config.getNetworkConfig(),
-                config.getSpecProvider());
+                config.getSpec());
 
         return new ActiveEth2P2PNetwork(
-            specProvider,
+            spec,
             asyncRunner,
             metricsSystem,
             network,
@@ -269,7 +269,7 @@ public class Eth2P2PNetworkFactory {
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return P2PConfig.builder()
-          .specProvider(specProvider)
+          .specProvider(spec)
           .targetSubnetSubscriberCount(2)
           .network(b -> b.listenPort(port).wireLogs(w -> w.logWireMuxFrames(true)))
           .discovery(
@@ -305,7 +305,7 @@ public class Eth2P2PNetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-        BeaconChainUtil.create(0, recentChainData).initializeStorage();
+        BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
       }
       if (processedAttestationSubscriptionProvider == null) {
         Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);
@@ -345,9 +345,9 @@ public class Eth2P2PNetworkFactory {
       }
     }
 
-    public Eth2P2PNetworkBuilder specProvider(final SpecProvider specProvider) {
-      checkNotNull(specProvider);
-      this.specProvider = specProvider;
+    public Eth2P2PNetworkBuilder spec(final Spec spec) {
+      checkNotNull(spec);
+      this.spec = spec;
       return this;
     }
 

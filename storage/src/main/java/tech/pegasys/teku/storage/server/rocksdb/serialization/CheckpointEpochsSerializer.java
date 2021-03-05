@@ -18,7 +18,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 
-public class CheckpointEpochsSerializer implements RocksDbSerializer<CheckpointEpochs> {
+class CheckpointEpochsSerializer implements RocksDbSerializer<CheckpointEpochs> {
 
   @Override
   public CheckpointEpochs deserialize(final byte[] data) {

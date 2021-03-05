@@ -42,7 +42,7 @@ import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -51,8 +51,8 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
@@ -98,7 +98,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final ForkChoiceTrigger forkChoiceTrigger;
 
   public ValidatorApiHandler(
@@ -114,7 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker,
-      final SpecProvider specProvider,
+      final Spec spec,
       final ForkChoiceTrigger forkChoiceTrigger) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -128,7 +128,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
     this.performanceTracker = performanceTracker;
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
   }
 
@@ -155,8 +155,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       final Map<BLSPublicKey, Integer> results = new HashMap<>();
                       publicKeys.forEach(
                           publicKey ->
-                              specProvider
-                                  .getValidatorIndex(state, publicKey)
+                              spec.getValidatorIndex(state, publicKey)
                                   .ifPresent(index -> results.put(publicKey, index)));
                       return results;
                     })
@@ -172,9 +171,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (epoch.isGreaterThan(
         combinedChainDataClient
             .getCurrentEpoch()
-            .plus(
-                specProvider.getSpecConstants(epoch).getMinSeedLookahead()
-                    + DUTY_EPOCH_TOLERANCE))) {
+            .plus(spec.getSpecConstants(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
@@ -182,10 +179,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     final UInt64 slot =
-        specProvider
-            .atEpoch(epoch)
-            .getBeaconStateUtil()
-            .getEarliestQueryableSlotForTargetEpoch(epoch);
+        spec.atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -209,7 +203,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
-        .getStateAtSlotExact(specProvider.computeStartSlotAtEpoch(epoch))
+        .getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch))
         .thenApply(
             optionalState ->
                 optionalState.map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
@@ -240,7 +234,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     LOG.trace("Creating unsigned block for slot {}", slot);
-    performanceTracker.reportBlockProductionAttempt(specProvider.computeEpochAtSlot(slot));
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -284,8 +278,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
-    final UInt64 minQuerySlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
     return combinedChainDataClient
         .getSignedBlockAndStateInEffectAtSlot(slot)
@@ -326,8 +320,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state,
       final UInt64 slot,
       final int committeeIndex) {
-    final UInt64 epoch = specProvider.computeEpochAtSlot(slot);
-    final int committeeCount = specProvider.getCommitteeCountPerSlot(state, epoch).intValue();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
 
     if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
@@ -338,10 +332,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
     final AttestationData attestationData =
-        specProvider.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+        spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
     final List<Integer> committee =
-        specProvider
-            .atSlot(slot)
+        spec.atSlot(slot)
             .getBeaconStateUtil()
             .getBeaconCommittee(state, slot, committeeIndexUnsigned);
 
@@ -471,16 +464,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuty> result = getProposalSlotsForEpoch(state, epoch);
     return new ProposerDuties(
-        specProvider.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state),
-        result);
+        spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state), result);
   }
 
   private AttesterDuties getAttesterDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     final Bytes32 dependentRoot =
-        epoch.isGreaterThan(specProvider.getCurrentEpoch(state))
-            ? specProvider.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : specProvider.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+        epoch.isGreaterThan(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     return new AttesterDuties(
         dependentRoot,
         validatorIndexes.stream()
@@ -494,14 +486,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
 
     return combine(
-        specProvider.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
+        spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
         CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
           final UInt64 committeeCountPerSlot =
-              specProvider
-                  .atEpoch(epoch)
-                  .getBeaconStateUtil()
-                  .getCommitteeCountPerSlot(state, epoch);
+              spec.atEpoch(epoch).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,
@@ -522,14 +511,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private List<ProposerDuty> getProposalSlotsForEpoch(final BeaconState state, final UInt64 epoch) {
-    final UInt64 epochStartSlot = specProvider.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     final UInt64 startSlot = epochStartSlot.max(GENESIS_SLOT.increment());
-    final UInt64 endSlot = epochStartSlot.plus(specProvider.slotsPerEpoch(epoch));
+    final UInt64 endSlot = epochStartSlot.plus(spec.slotsPerEpoch(epoch));
     final List<ProposerDuty> proposerSlots = new ArrayList<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
-      final int proposerIndex = specProvider.getBeaconProposerIndex(state, slot);
+      final int proposerIndex = spec.getBeaconProposerIndex(state, slot);
       final BLSPublicKey publicKey =
-          specProvider.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
+          spec.getValidatorPubKey(state, UInt64.valueOf(proposerIndex)).orElseThrow();
       proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
     }
     return proposerSlots;

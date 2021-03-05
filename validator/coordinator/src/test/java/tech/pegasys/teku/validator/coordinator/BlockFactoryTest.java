@@ -31,8 +31,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
@@ -56,11 +56,12 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   public static final Eth1Data ETH1_DATA = new Eth1Data();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final RecentChainData recentChainData =
+      MemoryOnlyRecentChainData.create(spec, new EventBus());
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 1, recentChainData);
   private final AggregatingAttestationPool attestationsPool =
       mock(AggregatingAttestationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
@@ -84,7 +85,7 @@ class BlockFactoryTest {
           depositProvider,
           eth1DataCache,
           graffiti,
-          specProvider);
+          spec);
 
   @BeforeEach
   void setUp() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,75 +15,60 @@ package tech.pegasys.teku.protoarray;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayBuilder {
+  private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
+  private UInt64 justifiedEpoch;
+  private UInt64 finalizedEpoch;
+  private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
 
-  private Optional<Checkpoint> anchor = Optional.empty();
-  private Checkpoint justifiedCheckpoint;
-  private Checkpoint finalizedCheckpoint;
-  private Optional<ProtoArraySnapshot> protoArraySnapshot = Optional.empty();
-
-  public static ProtoArray fromAnchorPoint(final AnchorPoint anchor) {
-    final ProtoArray protoArray =
-        new ProtoArrayBuilder()
-            .justifiedCheckpoint(anchor.getCheckpoint())
-            .finalizedCheckpoint(anchor.getCheckpoint())
-            .build();
-    protoArray.onBlock(
-        anchor.getBlockSlot(),
-        anchor.getRoot(),
-        anchor.getParentRoot(),
-        anchor.getStateRoot(),
-        anchor.getEpoch(),
-        anchor.getEpoch());
-    return protoArray;
+  public ProtoArray build() {
+    checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
+    checkNotNull(finalizedEpoch, "finalized epoch must be supplied");
+    return new ProtoArray(pruneThreshold, justifiedEpoch, finalizedEpoch, initialEpoch);
   }
 
-  public ProtoArrayBuilder anchor(final Optional<Checkpoint> anchor) {
-    this.anchor = anchor;
+  public ProtoArrayBuilder pruneThreshold(final int pruneThreshold) {
+    this.pruneThreshold = pruneThreshold;
+    return this;
+  }
+
+  public ProtoArrayBuilder initialEpoch(final UInt64 initialEpoch) {
+    this.initialEpoch = initialEpoch;
     return this;
   }
 
   public ProtoArrayBuilder justifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
-    this.justifiedCheckpoint = justifiedCheckpoint;
+    checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
+    this.justifiedEpoch(justifiedCheckpoint.getEpoch());
     return this;
   }
 
   public ProtoArrayBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-    this.finalizedCheckpoint = finalizedCheckpoint;
+    checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
+    this.finalizedEpoch(finalizedCheckpoint.getEpoch());
     return this;
   }
 
-  public ProtoArrayBuilder protoArraySnapshot(
-      final Optional<ProtoArraySnapshot> protoArraySnapshot) {
-    this.protoArraySnapshot = protoArraySnapshot;
+  public ProtoArrayBuilder justifiedEpoch(final UInt64 justifiedEpoch) {
+    this.justifiedEpoch = justifiedEpoch;
     return this;
   }
 
-  public ProtoArray build() {
-    checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
-    checkNotNull(finalizedCheckpoint, "Finalized checkpoint must be supplied");
+  public ProtoArrayBuilder finalizedEpoch(final UInt64 finalizedEpoch) {
+    this.finalizedEpoch = finalizedEpoch;
+    return this;
+  }
 
-    // If no anchor is explicitly set, default to zero (genesis epoch)
-    final UInt64 anchorEpoch =
-        anchor.map(Checkpoint::getEpoch).orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
-
-    return protoArraySnapshot
-        .map(ProtoArraySnapshot::toProtoArray)
-        .orElse(
-            new ProtoArray(
-                Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                justifiedCheckpoint.getEpoch(),
-                finalizedCheckpoint.getEpoch(),
-                anchorEpoch,
-                new ArrayList<>(),
-                new HashMap<>()));
+  public ProtoArrayBuilder initialCheckpoint(final Optional<Checkpoint> initialCheckpoint) {
+    initialCheckpoint.ifPresentOrElse(
+        checkpoint -> initialEpoch(checkpoint.getEpoch()),
+        () -> initialEpoch(SpecConstants.GENESIS_EPOCH));
+    return this;
   }
 }

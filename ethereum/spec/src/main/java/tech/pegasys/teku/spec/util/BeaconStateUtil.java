@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.util.ByteUtils.uintToBytes;
@@ -26,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,14 +46,15 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.SszList;
@@ -71,14 +74,17 @@ public class BeaconStateUtil {
   public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConstants specConstants;
+  private final SchemaDefinitions schemaDefinitions;
   private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
 
   public BeaconStateUtil(
       final SpecConstants specConstants,
+      final SchemaDefinitions schemaDefinitions,
       final ValidatorsUtil validatorsUtil,
       final CommitteeUtil committeeUtil) {
     this.specConstants = specConstants;
+    this.schemaDefinitions = schemaDefinitions;
     this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
   }
@@ -230,6 +236,21 @@ public class BeaconStateUtil {
                 getTotalBalance(state, validatorsUtil.getActiveValidatorIndices(state, epoch)));
   }
 
+  public List<UInt64> getEffectiveBalances(final BeaconState state) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getEffectiveBalances()
+        .get(
+            getCurrentEpoch(state),
+            epoch ->
+                state.getValidators().stream()
+                    .map(
+                        validator ->
+                            validatorsUtil.isActiveValidator(validator, epoch)
+                                ? validator.getEffective_balance()
+                                : UInt64.ZERO)
+                    .collect(toUnmodifiableList()));
+  }
+
   public void initiateValidatorExit(MutableBeaconState state, int index) {
     Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
@@ -242,7 +263,7 @@ public class BeaconStateUtil {
         state.getValidators().stream()
             .map(Validator::getExit_epoch)
             .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-            .collect(Collectors.toList());
+            .collect(toList());
     exit_epochs.add(computeActivationExitEpoch(getCurrentEpoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
     final UInt64 final_exit_queue_epoch = exit_queue_epoch;
@@ -338,6 +359,28 @@ public class BeaconStateUtil {
 
   public void slashValidator(MutableBeaconState state, int slashed_index) {
     slashValidator(state, slashed_index, -1);
+  }
+
+  public UInt64 getAttestersTotalEffectiveBalance(final BeaconState state, final UInt64 slot) {
+    validateStateForCommitteeQuery(state, slot);
+    return BeaconStateCache.getTransitionCaches(state)
+        .getAttestersTotalBalance()
+        .get(
+            slot,
+            p -> {
+              final SSZList<Validator> validators = state.getValidators();
+              final UInt64 committeeCount =
+                  getCommitteeCountPerSlot(state, computeEpochAtSlot(slot));
+              return UInt64.range(UInt64.ZERO, committeeCount)
+                  .flatMap(committee -> streamEffectiveBalancesForCommittee(state, slot, committee))
+                  .reduce(UInt64.ZERO, UInt64::plus);
+            });
+  }
+
+  private Stream<UInt64> streamEffectiveBalancesForCommittee(
+      final BeaconState state, final UInt64 slot, final UInt64 committeeIndex) {
+    return getBeaconCommittee(state, slot, committeeIndex).stream()
+        .map(validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
   }
 
   public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
@@ -448,7 +491,7 @@ public class BeaconStateUtil {
 
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1_block_hash, UInt64 eth1_timestamp, List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator();
+    final GenesisGenerator genesisGenerator = new GenesisGenerator(schemaDefinitions);
     genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }

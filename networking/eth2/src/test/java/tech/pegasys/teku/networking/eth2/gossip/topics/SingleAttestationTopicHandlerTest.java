@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,13 +53,10 @@ public class SingleAttestationTopicHandlerTest {
   private final OperationProcessor<ValidateableAttestation> processor =
       mock(OperationProcessor.class);
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder()
-          .specProvider(specProvider)
-          .eventBus(mock(EventBus.class))
-          .build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).eventBus(mock(EventBus.class)).build();
   final String topicName = TopicNames.getAttestationSubnetTopicName(SUBNET_ID);
   private final Eth2TopicHandler<?> topicHandler =
       SingleAttestationTopicHandler.createHandler(
@@ -72,13 +69,12 @@ public class SingleAttestationTopicHandlerTest {
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
+    BeaconChainUtil.initializeStorage(spec, recentChainData, validatorKeys);
   }
 
   @Test
   public void handleMessage_valid() {
-    final AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
@@ -95,8 +91,7 @@ public class SingleAttestationTopicHandlerTest {
 
   @Test
   public void handleMessage_ignored() {
-    final AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
@@ -113,8 +108,7 @@ public class SingleAttestationTopicHandlerTest {
 
   @Test
   public void handleMessage_saveForFuture() {
-    final AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
@@ -131,8 +125,7 @@ public class SingleAttestationTopicHandlerTest {
 
   @Test
   public void handleMessage_invalid() {
-    final AttestationGenerator attestationGenerator =
-        new AttestationGenerator(specProvider, validatorKeys);
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(

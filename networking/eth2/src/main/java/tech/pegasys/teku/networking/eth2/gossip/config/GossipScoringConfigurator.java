@@ -25,7 +25,7 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 /**
@@ -40,8 +40,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
   private static final int GOSSIP_D = 8;
   private final ScoringConfig scoringConfig;
 
-  public GossipScoringConfigurator(final SpecProvider specProvider) {
-    this.scoringConfig = ScoringConfig.create(specProvider, GOSSIP_D);
+  public GossipScoringConfigurator(final Spec spec) {
+    this.scoringConfig = ScoringConfig.create(spec, GOSSIP_D);
   }
 
   @Override

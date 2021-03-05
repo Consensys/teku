@@ -19,24 +19,24 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class ChainHeadTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   public void equals_shouldBeEqualToCopy() {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, specProvider);
+    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
 
     final ChainHead otherChainHead = copy(chainHead);
     assertThat(chainHead).isEqualTo(otherChainHead);
@@ -46,10 +46,9 @@ public class ChainHeadTest {
   public void equals_shouldBNotBeEqualWhenForkChoiceSlotDiffers() {
     final SignedBlockAndState block = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, specProvider);
+    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
 
-    final ChainHead otherChainHead =
-        ChainHead.create(chainHead, forkChoiceSlot.plus(1), specProvider);
+    final ChainHead otherChainHead = ChainHead.create(chainHead, forkChoiceSlot.plus(1), spec);
     assertThat(chainHead).isNotEqualTo(otherChainHead);
   }
 
@@ -60,8 +59,8 @@ public class ChainHeadTest {
     assertThat(block).isNotEqualTo(otherBlock);
     final UInt64 forkChoiceSlot = UInt64.valueOf(1L);
 
-    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, specProvider);
-    final ChainHead otherChainHead = ChainHead.create(otherBlock, forkChoiceSlot, specProvider);
+    final ChainHead chainHead = ChainHead.create(block, forkChoiceSlot, spec);
+    final ChainHead otherChainHead = ChainHead.create(otherBlock, forkChoiceSlot, spec);
 
     assertThat(chainHead).isNotEqualTo(otherChainHead);
   }
@@ -71,8 +70,8 @@ public class ChainHeadTest {
     final ChainBuilder chainBuilder = ChainBuilder.createDefault();
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
-    final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10), specProvider);
-    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12), specProvider);
+    final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10), spec);
+    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12), spec);
     assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
@@ -83,8 +82,8 @@ public class ChainHeadTest {
     chainBuilder.generateGenesis();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
-    final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2), specProvider);
-    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(2), specProvider);
+    final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2), spec);
+    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(2), spec);
     assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ONE);
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ONE);
   }
@@ -103,8 +102,8 @@ public class ChainHeadTest {
     fork.generateBlocksUpToSlot(6);
     final SignedBlockAndState forkHead = fork.generateBlockAtSlot(7);
 
-    final ChainHead chainHeadA = ChainHead.create(chainHead, UInt64.valueOf(8), specProvider);
-    final ChainHead chainHeadB = ChainHead.create(forkHead, UInt64.valueOf(9), specProvider);
+    final ChainHead chainHeadA = ChainHead.create(chainHead, UInt64.valueOf(8), spec);
+    final ChainHead chainHeadB = ChainHead.create(forkHead, UInt64.valueOf(9), spec);
     assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.valueOf(2));
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.valueOf(2));
   }
@@ -116,16 +115,15 @@ public class ChainHeadTest {
     final ChainBuilder fork = chainBuilder.fork();
 
     final SignedBlockAndState chainHead =
-        chainBuilder.generateBlockAtSlot(
-            specProvider.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
+        chainBuilder.generateBlockAtSlot(spec.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
 
     // Fork skips slot 1 so the chains are different
     fork.generateBlockAtSlot(1);
     final SignedBlockAndState forkHead =
-        fork.generateBlockAtSlot(specProvider.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
+        fork.generateBlockAtSlot(spec.getSlotsPerHistoricalRoot(fork.getLatestSlot()) + 2);
 
-    final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot(), specProvider);
-    final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot(), specProvider);
+    final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot(), spec);
+    final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot(), spec);
     assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
@@ -133,10 +131,11 @@ public class ChainHeadTest {
   private ChainHead copy(ChainHead original) {
     final SignedBeaconBlock blockCopy =
         copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
-    final BeaconState stateCopy = copy(original.getState(), BeaconState.getSszSchema());
+    final BeaconState stateCopy =
+        copy(original.getState(), spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
-    return ChainHead.create(blockAndStateCopy, forkChoiceCopy, specProvider);
+    return ChainHead.create(blockAndStateCopy, forkChoiceCopy, spec);
   }
 
   private <T extends SszData> T copy(final T original, final SszSchema<T> objType) {

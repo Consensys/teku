@@ -15,23 +15,22 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
-import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
 /**
  * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
  * V4SchemaHot}
  */
 public class V6SchemaFinalized implements SchemaFinalized {
-  public static final SchemaFinalized INSTANCE = new V6SchemaFinalized();
-
   // column ids should be distinct across different DAOs to make possible using
   // schemes both for a single and separated DBs
   private static final int ID_OFFSET = 128;
@@ -40,18 +39,19 @@ public class V6SchemaFinalized implements SchemaFinalized {
       RocksDbColumn.create(ID_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private static final RocksDbColumn<UInt64, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
       RocksDbColumn.create(ID_OFFSET + 2, UINT64_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
-  private static final RocksDbColumn<UInt64, BeaconState> FINALIZED_STATES_BY_SLOT =
-      RocksDbColumn.create(ID_OFFSET + 3, UINT64_SERIALIZER, STATE_SERIALIZER);
+  private final RocksDbColumn<UInt64, BeaconState> finalizedStatesBySlot;
   private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       RocksDbColumn.create(ID_OFFSET + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
-  private static final List<RocksDbColumn<?, ?>> ALL_COLUMNS =
-      List.of(
-          SLOTS_BY_FINALIZED_ROOT,
-          FINALIZED_BLOCKS_BY_SLOT,
-          FINALIZED_STATES_BY_SLOT,
-          SLOTS_BY_FINALIZED_STATE_ROOT);
 
-  private V6SchemaFinalized() {}
+  private V6SchemaFinalized(final Spec spec) {
+    finalizedStatesBySlot =
+        RocksDbColumn.create(
+            ID_OFFSET + 3, UINT64_SERIALIZER, RocksDbSerializer.createStateSerializer(spec));
+  }
+
+  public static SchemaFinalized create(final Spec spec) {
+    return new V6SchemaFinalized(spec);
+  }
 
   @Override
   public RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
@@ -65,7 +65,7 @@ public class V6SchemaFinalized implements SchemaFinalized {
 
   @Override
   public RocksDbColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot() {
-    return FINALIZED_STATES_BY_SLOT;
+    return finalizedStatesBySlot;
   }
 
   @Override
@@ -75,7 +75,11 @@ public class V6SchemaFinalized implements SchemaFinalized {
 
   @Override
   public List<RocksDbColumn<?, ?>> getAllColumns() {
-    return ALL_COLUMNS;
+    return List.of(
+        SLOTS_BY_FINALIZED_ROOT,
+        FINALIZED_BLOCKS_BY_SLOT,
+        finalizedStatesBySlot,
+        SLOTS_BY_FINALIZED_STATE_ROOT);
   }
 
   @Override

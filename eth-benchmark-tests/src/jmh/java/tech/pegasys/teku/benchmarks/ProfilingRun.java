@@ -32,12 +32,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,7 +54,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
-  private SpecProvider specProvider = SpecProviderFactory.createMainnet();
+  private Spec spec = SpecFactory.createMainnet();
 
   @Disabled
   @Test
@@ -79,7 +80,7 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
@@ -87,8 +88,7 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
-      ForkChoice forkChoice =
-          new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+      ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
@@ -151,7 +151,7 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     BeaconState initialState =
-        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
+        InteropStartupUtil.createMockedStartInitialBeaconState(spec, 0, validatorKeys, false);
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
@@ -160,8 +160,7 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
-      ForkChoice forkChoice =
-          new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+      ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
@@ -207,7 +206,11 @@ public class ProfilingRun {
     BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(1);
     System.out.println("Generating state...");
     BeaconState beaconState =
-        new DataStructureUtil(1).withPubKeyGenerator(() -> publicKey).randomBeaconState(100_000);
+        new DataStructureUtil(1, spec)
+            .withPubKeyGenerator(() -> publicKey)
+            .randomBeaconState(100_000);
+    final BeaconStateSchema stateSchema =
+        spec.atSlot(beaconState.getSlot()).getSchemaDefinitions().getBeaconStateSchema();
     System.out.println("Serializing...");
     Bytes bytes = beaconState.sszSerialize();
 
@@ -217,7 +220,7 @@ public class ProfilingRun {
       long s = System.currentTimeMillis();
       long sum = 0;
       for (int i = 0; i < 1; i++) {
-        BeaconState state = BeaconState.getSszSchema().sszDeserialize(bytes);
+        BeaconState state = stateSchema.sszDeserialize(bytes);
         blackHole.accept(state);
         for (Validator validator : state.getValidators()) {
           sum += validator.getEffective_balance().longValue();

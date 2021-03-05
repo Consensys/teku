@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +22,11 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
@@ -30,7 +35,9 @@ import tech.pegasys.teku.util.config.SpecDependent;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
   @Test
   void vectorLengthsTest() {
@@ -41,14 +48,18 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             Constants.JUSTIFICATION_BITS_LENGTH);
-    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(BeaconState.getSszSchema()));
+    assertEquals(
+        vectorLengths, SszTestUtils.getVectorLengths(schemaDefinitions.getBeaconStateSchema()));
   }
 
   @Test
   void simpleMutableBeaconStateTest() {
     UInt64 val1 = UInt64.valueOf(0x3333);
     BeaconState stateR1 =
-        BeaconState.createEmpty()
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconStateSchema()
+            .createEmpty()
             .updated(
                 state -> {
                   state.getBalances().appendElement(val1);
@@ -73,21 +84,23 @@ class BeaconStateTest {
 
   @Test
   public void changeSpecConstantsTest() {
-    try {
-      BeaconState s1 = BeaconState.createEmpty();
+    final Spec standardSpec = SpecFactory.createMinimal();
+    final SpecConstants specConstants =
+        TestConstantsLoader.loadConstantsBuilder("minimal")
+            .slotsPerHistoricalRoot(123)
+            .historicalRootsLimit(123)
+            .epochsPerEth1VotingPeriod(123)
+            .validatorRegistryLimit(123L)
+            .epochsPerHistoricalVector(123)
+            .epochsPerSlashingsVector(123)
+            .maxAttestations(123)
+            .build();
+    final Spec modifiedSpec = SpecFactory.create(specConstants);
+    BeaconState s1 =
+        modifiedSpec.getGenesisSchemaDefinitions().getBeaconStateSchema().createEmpty();
 
-      Constants.SLOTS_PER_HISTORICAL_ROOT = 123;
-      Constants.HISTORICAL_ROOTS_LIMIT = 123;
-      Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 123;
-      Constants.VALIDATOR_REGISTRY_LIMIT = 123;
-      Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
-      Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
-      Constants.MAX_ATTESTATIONS = 123;
-
-      SpecDependent.resetAll();
-
-      // this call should reset all the memorized spec constants
-      BeaconState s2 = BeaconState.createEmpty();
+    BeaconState s2 =
+        standardSpec.getGenesisSchemaDefinitions().getBeaconStateSchema().createEmpty();
 
       assertThat(s1.getBlock_roots().size()).isNotEqualTo(s2.getBlock_roots().size());
       assertThat(s1.getState_roots().size()).isNotEqualTo(s2.getState_roots().size());
@@ -113,7 +126,7 @@ class BeaconStateTest {
   void roundTripViaSsz() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     Bytes bytes = beaconState.sszSerialize();
-    BeaconState state = BeaconState.getSszSchema().sszDeserialize(bytes);
+    BeaconState state = schemaDefinitions.getBeaconStateSchema().sszDeserialize(bytes);
     assertEquals(beaconState, state);
   }
 }

@@ -36,12 +36,12 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -55,15 +55,15 @@ public class AggregateAttestationValidator {
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public AggregateAttestationValidator(
       final RecentChainData recentChainData,
       final AttestationValidator attestationValidator,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public void addSeenAggregate(final ValidateableAttestation attestation) {
@@ -135,8 +135,7 @@ public class AggregateAttestationValidator {
                                 state, aggregateSlot, aggregate.getData().getIndex());
 
                         final int aggregatorModulo =
-                            specProvider
-                                .atSlot(aggregateSlot)
+                            spec.atSlot(aggregateSlot)
                                 .getCommitteeUtil()
                                 .getAggregatorModulo(beaconCommittee.size());
                         if (!isAggregator(

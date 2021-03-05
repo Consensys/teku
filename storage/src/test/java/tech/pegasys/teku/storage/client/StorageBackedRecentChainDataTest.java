@@ -35,14 +35,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -57,9 +57,9 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class StorageBackedRecentChainDataTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final BeaconState INITIAL_STATE =
-      new DataStructureUtil(3, specProvider).randomBeaconState(UInt64.ZERO);
+      new DataStructureUtil(3, spec).randomBeaconState(UInt64.ZERO);
 
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
@@ -90,7 +90,7 @@ public class StorageBackedRecentChainDataTest {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -103,7 +103,7 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
-            specProvider,
+            spec,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
@@ -144,7 +144,7 @@ public class StorageBackedRecentChainDataTest {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -157,7 +157,7 @@ public class StorageBackedRecentChainDataTest {
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
-            .specProvider(specProvider)
+            .specProvider(spec)
             .latestFinalized(anchorPoint)
             .justifiedCheckpoint(anchorPoint.getCheckpoint())
             .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
@@ -208,7 +208,7 @@ public class StorageBackedRecentChainDataTest {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -226,7 +226,7 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
                 SYNC_RUNNER,
                 new StubMetricsSystem(),
-                specProvider,
+                spec,
                 BlockProvider.NOOP,
                 StateAndBlockSummaryProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE),
@@ -260,7 +260,7 @@ public class StorageBackedRecentChainDataTest {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();
@@ -275,7 +275,7 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             SYNC_RUNNER,
             new StubMetricsSystem(),
-            specProvider,
+            spec,
             BlockProvider.NOOP,
             StateAndBlockSummaryProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE),
@@ -307,7 +307,7 @@ public class StorageBackedRecentChainDataTest {
             finalizedCheckpointChannel,
             chainHeadChannel,
             eventBus,
-            specProvider);
+            spec);
 
     // We should have posted a request to get the store from storage
     verify(storageQueryChannel).onStoreRequest();

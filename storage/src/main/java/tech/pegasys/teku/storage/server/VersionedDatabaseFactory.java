@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
@@ -54,14 +54,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
   private final Optional<Eth1Address> eth1Address;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
       final Optional<Eth1Address> depositContractAddress,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this(
         metricsSystem,
         dataPath,
@@ -70,7 +70,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
         depositContractAddress,
-        specProvider);
+        spec);
   }
 
   public VersionedDatabaseFactory(
@@ -80,7 +80,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Optional<Eth1Address> eth1Address,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this(
         metricsSystem,
         dataPath,
@@ -89,7 +89,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         createDatabaseVersion,
         stateStorageFrequency,
         eth1Address,
-        specProvider);
+        spec);
   }
 
   public VersionedDatabaseFactory(
@@ -100,7 +100,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Optional<Eth1Address> eth1Address,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -110,7 +110,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
-    this.specProvider = specProvider;
+    this.spec = spec;
 
     this.createDatabaseVersion = createDatabaseVersion;
   }
@@ -207,16 +207,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(),
-          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
-          eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
           RocksDbConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
-          specProvider);
+          spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
     }
@@ -232,16 +230,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(),
-          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
-          eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
-          specProvider);
+          spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -267,9 +263,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(),
-          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
-          eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
@@ -289,11 +283,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
-          V4SchemaHot.INSTANCE,
-          V6SchemaFinalized.INSTANCE,
+          V4SchemaHot.create(spec),
+          V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
-          specProvider);
+          spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -309,16 +303,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(),
-          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
-          eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
-          specProvider);
+          spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
@@ -344,9 +336,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(),
-          specProvider.getGenesisSpecConstants().getGenesisForkVersion(),
-          eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
@@ -366,11 +356,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
-          V4SchemaHot.INSTANCE,
-          V6SchemaFinalized.INSTANCE,
+          V4SchemaHot.create(spec),
+          V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
-          specProvider);
+          spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }

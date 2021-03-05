@@ -35,12 +35,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -60,14 +60,14 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
+  private final Spec spec = SpecFactory.createMinimal();
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(
-          specProvider,
+          spec,
           recentChainData,
           syncService,
           forkChoiceTrigger,
@@ -85,14 +85,14 @@ public class SlotProcessorTest {
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsNotDue() {
     slotProcessor.setCurrentSlot(desiredSlot.plus(ONE));
-    final UInt64 currentTime = specProvider.getSlotStartTime(desiredSlot, genesisTime);
+    final UInt64 currentTime = spec.getSlotStartTime(desiredSlot, genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isFalse();
   }
 
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsDue() {
     slotProcessor.setCurrentSlot(desiredSlot);
-    final UInt64 currentTime = specProvider.getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
+    final UInt64 currentTime = spec.getSlotStartTime(desiredSlot.plus(ONE), genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isTrue();
   }
 
@@ -280,7 +280,7 @@ public class SlotProcessorTest {
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
-            specProvider,
+            spec,
             recentChainData,
             syncService,
             forkChoiceTrigger,
@@ -288,8 +288,8 @@ public class SlotProcessorTest {
             slotEventsChannel,
             eventLogger);
     slotProcessor.setCurrentSlot(UInt64.valueOf(6));
-    final UInt64 slot6StartTime = specProvider.getSlotStartTime(UInt64.valueOf(6), genesisTime);
-    final UInt64 slot7StartTime = specProvider.getSlotStartTime(UInt64.valueOf(7), genesisTime);
+    final UInt64 slot6StartTime = spec.getSlotStartTime(UInt64.valueOf(6), genesisTime);
+    final UInt64 slot7StartTime = spec.getSlotStartTime(UInt64.valueOf(7), genesisTime);
 
     // Progress through to end of initial epoch
     slotProcessor.onTick(slot6StartTime);

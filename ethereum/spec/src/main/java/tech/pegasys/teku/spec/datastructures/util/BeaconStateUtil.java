@@ -65,13 +65,13 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
 import tech.pegasys.teku.ssz.backing.SszList;
@@ -89,14 +89,6 @@ public class BeaconStateUtil {
    * Setting to <code>false</code> significantly speeds up state initialization
    */
   public static boolean BLS_VERIFY_DEPOSIT = true;
-
-  @Deprecated
-  public static BeaconState initialize_beacon_state_from_eth1(
-      Bytes32 eth1_block_hash, UInt64 eth1_timestamp, List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator();
-    genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
-    return genesisGenerator.getGenesisState();
-  }
 
   /**
    * Processes deposits
