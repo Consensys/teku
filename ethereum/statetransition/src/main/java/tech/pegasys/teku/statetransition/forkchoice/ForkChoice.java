@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -166,7 +166,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
     return onForkChoiceThread(
         () -> {
-          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          final ProtoArrayForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
           final CapturingIndexedAttestationCache indexedAttestationCache =
               IndexedAttestationCache.capturing();
@@ -188,7 +188,7 @@ public class ForkChoice {
   }
 
   private void applyVotesFromBlock(
-      final ForkChoiceStrategy forkChoiceStrategy,
+      final ProtoArrayForkChoiceStrategy forkChoiceStrategy,
       final CapturingIndexedAttestationCache indexedAttestationProvider) {
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
     indexedAttestationProvider.getIndexedAttestations().stream()
@@ -205,7 +205,7 @@ public class ForkChoice {
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
       final BlockImportResult result,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
       // Apply additional proposer weighting.
       proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
@@ -259,7 +259,7 @@ public class ForkChoice {
     onForkChoiceThread(
             () -> {
               final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              final ProtoArrayForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
                   .map(this::getIndexedAttestation)
                   .forEach(
@@ -273,7 +273,7 @@ public class ForkChoice {
     onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
   }
 
-  private ForkChoiceStrategy getForkChoiceStrategy() {
+  private ProtoArrayForkChoiceStrategy getForkChoiceStrategy() {
     forkChoiceExecutor.checkOnEventThread();
     return recentChainData
         .getForkChoiceStrategy()

@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
-public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
+public class ProtoArrayForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
@@ -54,13 +54,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private List<UInt64> balances;
 
-  private ForkChoiceStrategy(ProtoArray protoArray, List<UInt64> balances) {
+  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UInt64> balances) {
     this.protoArray = protoArray;
     this.balances = balances;
   }
 
   // Public
-  public static SafeFuture<ForkChoiceStrategy> initializeAndMigrateStorage(
+  public static SafeFuture<ProtoArrayForkChoiceStrategy> initializeAndMigrateStorage(
       ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
@@ -86,11 +86,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
         .thenPeek(
             protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
-        .thenApply(ForkChoiceStrategy::initialize);
+        .thenApply(ProtoArrayForkChoiceStrategy::initialize);
   }
 
-  public static ForkChoiceStrategy initialize(final ProtoArray protoArray) {
-    return new ForkChoiceStrategy(protoArray, new ArrayList<>());
+  public static ProtoArrayForkChoiceStrategy initialize(final ProtoArray protoArray) {
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
   public SlotAndBlockRoot findHead(final Checkpoint justifiedCheckpoint) {

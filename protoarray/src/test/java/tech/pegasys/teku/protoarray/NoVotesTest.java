@@ -36,7 +36,7 @@ public class NoVotesTest {
   void noVotesTest() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ProtoArrayForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
     List<ProposerWeighting> proposerWeightings = Collections.emptyList();
