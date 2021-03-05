@@ -19,15 +19,17 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
+  @SuppressWarnings("unchecked")
   public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createSchema(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        (SszSchema<BeaconState>) spec.getSchemaDefinitions().getBeaconStateSchema(),
         Attestation.SSZ_SCHEMA,
         AttestationFuzzInput::new);
   }
