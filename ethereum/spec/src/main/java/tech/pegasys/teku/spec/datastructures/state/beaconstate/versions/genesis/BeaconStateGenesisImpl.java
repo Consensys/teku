@@ -60,6 +60,7 @@ class BeaconStateGenesisImpl extends AbstractBeaconState<MutableBeaconStateGenes
     return new MutableBeaconStateGenesisImpl(this);
   }
 
+  @Override
   protected void describeCustomFields(ToStringHelper stringBuilder) {
     describeCustomFields(stringBuilder, this);
   }
