@@ -14,12 +14,9 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshot {
 
@@ -51,14 +48,13 @@ public class ProtoArraySnapshot {
   }
 
   public ProtoArray toProtoArray() {
+
     ProtoArray protoArray =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            justifiedEpoch,
-            finalizedEpoch,
-            initialEpoch,
-            new ArrayList<>(),
-            new HashMap<>());
+        ProtoArray.builder()
+            .initialEpoch(initialEpoch)
+            .justifiedEpoch(justifiedEpoch)
+            .finalizedEpoch(finalizedEpoch)
+            .build();
 
     blockInformationList.forEach(
         blockInformation ->

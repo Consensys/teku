@@ -73,13 +73,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
                 maybeSnapshot
                     .map(ProtoArraySnapshot::toProtoArray)
                     .orElse(
-                        new ProtoArray(
-                            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                            store.getJustifiedCheckpoint().getEpoch(),
-                            store.getFinalizedCheckpoint().getEpoch(),
-                            initialEpoch,
-                            new ArrayList<>(),
-                            new HashMap<>())))
+                        ProtoArray.builder()
+                            .justifiedCheckpoint(store.getJustifiedCheckpoint())
+                            .finalizedCheckpoint(store.getFinalizedCheckpoint())
+                            .initialEpoch(initialEpoch)
+                            .build()))
         .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
         .thenPeek(
             protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
@@ -201,7 +199,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
-              protoArray.getIndices(),
+              protoArray.getRootIndices(),
               balances,
               justifiedStateBalances);
 
@@ -238,7 +236,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getIndices().containsKey(blockRoot);
+      return protoArray.contains(blockRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -318,7 +316,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
       }
       ProtoNode currentNode = startingNode.orElseThrow();
 
-      while (protoArray.getIndices().containsKey(currentNode.getBlockRoot())) {
+      while (protoArray.contains(currentNode.getBlockRoot())) {
         final boolean shouldContinue =
             nodeProcessor.process(
                 currentNode.getBlockRoot(),
@@ -338,7 +336,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   public void processAllInOrder(final NodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
-      final Map<Bytes32, Integer> indices = protoArray.getIndices();
+      final Map<Bytes32, Integer> indices = protoArray.getRootIndices();
       protoArray.getNodes().stream()
           // Filter out nodes that could be pruned but are still in the protoarray
           .filter(node -> indices.containsKey(node.getBlockRoot()))
@@ -389,13 +387,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy, BlockMe
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
-    return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
-        .flatMap(
-            blockIndex -> {
-              if (blockIndex < getTotalTrackedNodeCount()) {
-                return Optional.of(protoArray.getNodes().get(blockIndex));
-              }
-              return Optional.empty();
-            });
+    return protoArray.getProtoNode(blockRoot);
   }
 }

@@ -64,7 +64,7 @@ public class ProtoArrayForkChoiceStrategyTest extends AbstractBlockMetadataStore
   protected BlockMetadataStore createBlockMetadataStore(final ChainBuilder chainBuilder) {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
-        new ProtoArrayBuilder()
+        ProtoArray.builder()
             .finalizedCheckpoint(latestState.getFinalized_checkpoint())
             .justifiedCheckpoint(latestState.getCurrent_justified_checkpoint())
             .build();
