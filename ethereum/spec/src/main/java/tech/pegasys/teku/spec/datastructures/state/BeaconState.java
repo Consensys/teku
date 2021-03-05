@@ -128,11 +128,11 @@ public interface BeaconState extends SszContainer {
   SszField CURRENT_EPOCH_ATTESTATIONS_FIELD =
       new SszField(16, "current_epoch_attestations", CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA::get);
 
+  SpecDependent<SszBitvectorSchema<?>> JUSTIFICATION_BITS_FIELD_SCHEMA =
+      SpecDependent.of(() -> SszBitvectorSchema.create(Constants.JUSTIFICATION_BITS_LENGTH));
   SszField JUSTIFICATION_BITS_FIELD =
-      new SszField(
-          17,
-          "justification_bits",
-          () -> SszBitvectorSchema.create(Constants.JUSTIFICATION_BITS_LENGTH));
+      new SszField(17, "justification_bits", JUSTIFICATION_BITS_FIELD_SCHEMA::get);
+
   SszField PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD =
       new SszField(18, "previous_justified_checkpoint", Checkpoint.SSZ_SCHEMA);
   SszField CURRENT_JUSTIFIED_CHECKPOINT_FIELD =
