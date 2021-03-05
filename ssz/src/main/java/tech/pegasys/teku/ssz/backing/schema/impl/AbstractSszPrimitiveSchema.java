@@ -23,6 +23,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
@@ -105,6 +106,9 @@ public abstract class AbstractSszPrimitiveSchema<
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
     Bytes bytes = reader.read(getSSZBytesSize());
+    if (reader.getAvailableBytes() > 0) {
+      throw new SszDeserializeException("Extra " + reader.getAvailableBytes() + " bytes found");
+    }
     return LeafNode.create(bytes);
   }
 
