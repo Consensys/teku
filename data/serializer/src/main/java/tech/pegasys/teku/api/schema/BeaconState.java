@@ -218,7 +218,9 @@ public class BeaconState {
                     .CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA
                     .get()
                     .collector()),
-        justification_bits,
+        tech.pegasys.teku.spec.datastructures.state.BeaconState.JUSTIFICATION_BITS_FIELD_SCHEMA
+            .get()
+            .ofBits(justification_bits.getAllSetBits()),
         previous_justified_checkpoint.asInternalCheckpoint(),
         current_justified_checkpoint.asInternalCheckpoint(),
         finalized_checkpoint.asInternalCheckpoint());
