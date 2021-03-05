@@ -208,6 +208,7 @@ public class ForkChoice {
       final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
       // Apply additional proposer weighting.
+      // TODO: Should only do this when toggled on.
       proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
 
       // Without apply any pending vote updates, check if this block is now the canonical head

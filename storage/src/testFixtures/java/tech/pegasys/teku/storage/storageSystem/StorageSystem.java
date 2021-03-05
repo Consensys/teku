@@ -36,7 +36,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StorageSystem implements AutoCloseable {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final ChainBuilder chainBuilder;
   private final ChainUpdater chainUpdater;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
@@ -59,7 +59,8 @@ public class StorageSystem implements AutoCloseable {
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
-      final RestartedStorageSupplier restartedSupplier) {
+      final RestartedStorageSupplier restartedSupplier,
+      final ChainBuilder chainBuilder) {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
@@ -70,7 +71,8 @@ public class StorageSystem implements AutoCloseable {
     this.combinedChainDataClient = combinedChainDataClient;
     this.restartedSupplier = restartedSupplier;
 
-    chainUpdater = new ChainUpdater(this.recentChainData, chainBuilder);
+    this.chainBuilder = chainBuilder;
+    chainUpdater = new ChainUpdater(this.recentChainData, this.chainBuilder);
   }
 
   static StorageSystem create(
@@ -78,7 +80,8 @@ public class StorageSystem implements AutoCloseable {
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
-      final Spec spec) {
+      final Spec spec,
+      final ChainBuilder chainBuilder) {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final EventBus eventBus = new EventBus();
 
@@ -118,7 +121,8 @@ public class StorageSystem implements AutoCloseable {
         database,
         recentChainData,
         combinedChainDataClient,
-        restartedSupplier);
+        restartedSupplier,
+        chainBuilder);
   }
 
   public StubMetricsSystem getMetricsSystem() {

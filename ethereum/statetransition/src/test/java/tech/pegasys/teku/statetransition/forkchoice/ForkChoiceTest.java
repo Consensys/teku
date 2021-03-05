@@ -59,6 +59,7 @@ class ForkChoiceTest {
       InMemoryStorageSystemBuilder.create()
           .storageMode(StateStorageMode.PRUNE)
           .specProvider(spec)
+          .numberOfValidators(16)
           .build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -127,30 +128,52 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldUpdateVotesBasedOnAttestationsInBlocks() {
     final ChainBuilder forkChain = chainBuilder.fork();
-    final SignedBlockAndState forkBlock =
+    final SignedBlockAndState forkBlock1 =
         forkChain.generateBlockAtSlot(
             ONE,
             BlockOptions.create()
                 .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
-    final List<SignedBlockAndState> betterChain = chainBuilder.generateBlocksUpToSlot(3);
+    final SignedBlockAndState betterBlock1 = chainBuilder.generateBlockAtSlot(1);
 
-    importBlock(forkBlock);
-    // Should automatically follow the fork
-    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
+    importBlock(forkBlock1);
+    // Should automatically follow the fork as its the first child block
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock1.getRoot());
 
-    betterChain.forEach(this::importBlock);
+    // Add an attestation for the fork so that it initially has higher weight
+    // Otherwise ties are split based on the hash which is too hard to control in the test
+    final BlockOptions forkBlockOptions = BlockOptions.create();
+    forkChain
+        .streamValidAttestationsWithTargetBlock(forkBlock1)
+        .limit(1)
+        .forEach(forkBlockOptions::addAttestation);
+    final SignedBlockAndState forkBlock2 =
+        forkChain.generateBlockAtSlot(forkBlock1.getSlot().plus(1), forkBlockOptions);
+    importBlock(forkBlock2);
+
+    // The fork is still the only option so gets selected
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Now import what will become the canonical chain
+    importBlock(betterBlock1);
+    // Process head to ensure we clear any additional proposer weighting for this first block.
+    // Should still pick forkBlock as it's the best option even though we have a competing chain
+    processHead(ONE);
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Import a block with two attestations which makes this chain better than the fork
     final BlockOptions options = BlockOptions.create();
     chainBuilder
-        .streamValidAttestationsForBlockAtSlot(UInt64.valueOf(4))
-        .limit(3)
+        .streamValidAttestationsWithTargetBlock(betterBlock1)
+        .limit(2)
         .forEach(options::addAttestation);
     final SignedBlockAndState blockWithAttestations =
-        chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), options);
     importBlock(blockWithAttestations);
-    // Haven't run fork choice so won't have re-orged yet
-    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
-    // Should have processed the attestations and switched to this fork
+    // Haven't run fork choice so won't have re-orged yet - fork still has more applied votes
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // When attestations are applied we should switch away from the fork to our better chain
     processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
@@ -277,7 +300,7 @@ class ForkChoiceTest {
     assertBlockImportedSuccessfully(result);
   }
 
-  private void processHead(final UInt64 one) {
-    assertThat(forkChoice.processHead(one)).isCompleted();
+  private void processHead(final UInt64 slot) {
+    assertThat(forkChoice.processHead(slot)).isCompleted();
   }
 }

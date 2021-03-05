@@ -291,8 +291,8 @@ public class ProtoArray {
    *       be removed.
    *   <li>The child is already the best child and the parent is updated with the new best
    *       descendant.
-   *   <li>The child is not the best child but becomes the best child. - The child is not the best
-   *       child and does not become the best child.
+   *   <li>The child is not the best child but becomes the best child.
+   *   <li>The child is not the best child and does not become the best child.
    * </ul>
    *
    * @param parentIndex
