@@ -83,6 +83,9 @@ public abstract class AbstractSszCollectionSchema<
 
   @Override
   public SszSchema<?> getChildSchema(int index) {
+    if (index >= maxLength) {
+      throw new IndexOutOfBoundsException("Child index > maxLength");
+    }
     return getElementSchema();
   }
 
