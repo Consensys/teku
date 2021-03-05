@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 public enum BeaconStateFields {
   GENESIS_TIME,

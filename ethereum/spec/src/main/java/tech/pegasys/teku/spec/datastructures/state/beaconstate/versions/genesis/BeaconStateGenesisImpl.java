@@ -14,10 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.AbstractBeaconStateImpl;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateImpl;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
