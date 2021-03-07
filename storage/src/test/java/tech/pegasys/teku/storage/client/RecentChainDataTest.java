@@ -42,7 +42,7 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -998,7 +998,7 @@ class RecentChainDataTest {
   }
 
   private void disableForkChoicePruneThreshold() {
-    ((ProtoArrayForkChoiceStrategy) recentChainData.getForkChoiceStrategy().orElseThrow())
+    ((ForkChoiceStrategy) recentChainData.getForkChoiceStrategy().orElseThrow())
         .setPruneThreshold(0);
   }
 
