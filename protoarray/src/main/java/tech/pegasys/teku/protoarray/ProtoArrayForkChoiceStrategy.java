@@ -219,20 +219,17 @@ public class ProtoArrayForkChoiceStrategy
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
-      List<UInt64> oldBalances = balances;
-      List<UInt64> newBalances = justifiedStateBalances;
-
       List<Long> deltas =
           ProtoArrayScoreCalculator.computeDeltas(
               voteUpdater,
               getTotalTrackedNodeCount(),
-              protoArray.getRootIndices(),
-              oldBalances,
-              newBalances,
+              protoArray::getIndexByRoot,
+              balances,
+              justifiedStateBalances,
               removedProposerWeightings);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = new ArrayList<>(newBalances);
+      balances = justifiedStateBalances;
 
       return protoArray.findHead(justifiedRoot).getBlockRoot();
     } finally {

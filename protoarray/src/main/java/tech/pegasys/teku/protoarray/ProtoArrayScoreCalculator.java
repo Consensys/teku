@@ -21,7 +21,8 @@ import static java.lang.Math.toIntExact;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,7 +52,7 @@ class ProtoArrayScoreCalculator {
   static List<Long> computeDeltas(
       VoteUpdater store,
       int protoArraySize,
-      Map<Bytes32, Integer> indices,
+      Function<Bytes32, Optional<Integer>> getIndexByRoot,
       List<UInt64> oldBalances,
       List<UInt64> newBalances,
       List<ProposerWeighting> removedProposerWeightings) {
@@ -82,8 +83,8 @@ class ProtoArrayScoreCalculator {
           newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
-        subtractBalance(indices, deltas, vote.getCurrentRoot(), oldBalance);
-        addBalance(indices, deltas, vote.getNextRoot(), newBalance);
+        subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
+        addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
 
         VoteTracker newVote =
             new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
@@ -93,39 +94,47 @@ class ProtoArrayScoreCalculator {
 
     removedProposerWeightings.forEach(
         weighting ->
-            subtractBalance(indices, deltas, weighting.getTargetRoot(), weighting.getWeight()));
+            subtractBalance(
+                getIndexByRoot, deltas, weighting.getTargetRoot(), weighting.getWeight()));
     return deltas;
   }
 
   private static void addBalance(
-      final Map<Bytes32, Integer> indices,
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
       final List<Long> deltas,
       final Bytes32 targetRoot,
       final UInt64 balanceToAdd) {
     // We ignore the vote if it is not known in `indices`. We assume that it is outside
     // of our tree (i.e. pre-finalization) and therefore not interesting.
-    Integer nextDeltaIndex = indices.get(targetRoot);
-    if (nextDeltaIndex != null) {
-      checkState(nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-      long delta = addExact(deltas.get(nextDeltaIndex), balanceToAdd.longValue());
-      deltas.set(nextDeltaIndex, delta);
-    }
+    getIndexByRoot
+        .apply(targetRoot)
+        .ifPresent(
+            nextDeltaIndex -> {
+              checkState(
+                  nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
+              long delta = addExact(deltas.get(nextDeltaIndex), balanceToAdd.longValue());
+              deltas.set(nextDeltaIndex, delta);
+            });
   }
 
   private static void subtractBalance(
-      final Map<Bytes32, Integer> indices,
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
       final List<Long> deltas,
       final Bytes32 targetRoot,
       final UInt64 balanceToRemove) {
 
     // We ignore the change if it is not known in `indices`. We assume that it is outside
     // of our tree (i.e. pre-finalization) and therefore not interesting.
-    Integer currentDeltaIndex = indices.get(targetRoot);
-    if (currentDeltaIndex != null) {
-      checkState(
-          currentDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-      long delta = subtractExact(deltas.get(currentDeltaIndex), balanceToRemove.longValue());
-      deltas.set(currentDeltaIndex, delta);
-    }
+    getIndexByRoot
+        .apply(targetRoot)
+        .ifPresent(
+            currentDeltaIndex -> {
+              checkState(
+                  currentDeltaIndex < deltas.size(),
+                  "ProtoArrayForkChoice: Invalid node delta index");
+              long delta =
+                  subtractExact(deltas.get(currentDeltaIndex), balanceToRemove.longValue());
+              deltas.set(currentDeltaIndex, delta);
+            });
   }
 }

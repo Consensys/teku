@@ -72,6 +72,10 @@ public class ProtoArray {
     return indices.contains(root);
   }
 
+  public Optional<Integer> getIndexByRoot(final Bytes32 root) {
+    return indices.get(root);
+  }
+
   public Optional<ProtoNode> getProtoNode(final Bytes32 root) {
     return indices
         .get(root)
