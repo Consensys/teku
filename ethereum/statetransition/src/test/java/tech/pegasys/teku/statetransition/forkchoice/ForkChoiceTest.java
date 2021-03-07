@@ -65,8 +65,7 @@ class ForkChoiceTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final ForkChoice forkChoice =
-      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+  private ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
 
   @BeforeEach
   public void setup() {
@@ -123,6 +122,42 @@ class ForkChoiceTest {
                 genesis.getRoot(),
                 genesis.getStateRoot(),
                 blockAndState.getSlot().minus(1)));
+  }
+
+  @Test
+  void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain() {
+    forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData, true);
+
+    final ChainBuilder chainB = chainBuilder.fork();
+    final SignedBlockAndState chainBBlock1 =
+        chainB.generateBlockAtSlot(
+            ONE,
+            BlockOptions.create()
+                .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
+    final SignedBlockAndState chainABlock1 = chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState chainABlock2 = chainBuilder.generateBlockAtSlot(2);
+
+    // All blocks received late for slot 1
+    forkChoice.onBlocksDueForSlot(ONE);
+
+    importBlock(chainABlock1);
+    importBlock(chainBBlock1);
+
+    // At this point fork choice is tied with no votes for either chain
+    // The winner is the block with the greatest hash which is hard to control.
+    // So just find which block won and check that we can switch forks based on proposer reward
+    final SignedBlockAndState expectedChainHead;
+    if (recentChainData.getChainHead().orElseThrow().getRoot().equals(chainABlock1.getRoot())) {
+      // ChainA won, so try to switch to chain B
+      expectedChainHead = chainB.generateBlockAtSlot(3);
+    } else {
+      // ChainB won so try to switch to chain A
+      expectedChainHead = chainBuilder.generateBlockAtSlot(3);
+    }
+
+    importBlock(expectedChainHead);
+    // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
+    assertThat(recentChainData.getBestBlockRoot()).contains(expectedChainHead.getRoot());
   }
 
   @Test
