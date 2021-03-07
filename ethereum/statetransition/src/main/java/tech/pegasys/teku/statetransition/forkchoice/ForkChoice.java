@@ -217,9 +217,7 @@ public class ForkChoice {
     if (result.isSuccessful()) {
       proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
 
-      // Without apply any pending vote updates, check if this block is now the canonical head
-      final SlotAndBlockRoot bestHeadBlock =
-          forkChoiceStrategy.findHead(recentChainData.getJustifiedCheckpoint().orElseThrow());
+      final SlotAndBlockRoot bestHeadBlock = findNewChainHead(block, forkChoiceStrategy);
       if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
         recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
         if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
@@ -227,6 +225,28 @@ public class ForkChoice {
         }
       }
     }
+  }
+
+  private SlotAndBlockRoot findNewChainHead(
+      final SignedBeaconBlock block, final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
+    // If the new block builds on our current chain head it must be the new chain head.
+    // Since fork choice works by walking down the tree selecting the child block with
+    // the greatest weight, when a block has only one child it will automatically become
+    // a better choice than the block itself.  So the first block we receive that is a
+    // child of our current chain head, must be the new chain head. If we'd had any other
+    // child of the current chain head we'd have already selected it as head.
+    if (recentChainData
+        .getChainHead()
+        .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
+        .orElse(false)) {
+      return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
+    }
+
+    // Otherwise, use fork choice to find the new chain head as if this block is on time the
+    // proposer weighting may cause us to reorg.
+    // During sync, this may be noticeably slower than just comparing the chain head due to the way
+    // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
+    return forkChoiceStrategy.findHead(recentChainData.getJustifiedCheckpoint().orElseThrow());
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
