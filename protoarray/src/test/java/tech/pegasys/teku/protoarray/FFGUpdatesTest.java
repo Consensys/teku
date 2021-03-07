@@ -36,8 +36,7 @@ public class FFGUpdatesTest {
   void case1() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
     List<ProposerWeighting> proposerWeightings = emptyList();
@@ -110,8 +109,7 @@ public class FFGUpdatesTest {
   void case2() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
     List<ProposerWeighting> proposerWeightings = emptyList();

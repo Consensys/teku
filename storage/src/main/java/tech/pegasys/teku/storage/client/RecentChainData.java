@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -210,7 +210,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 
-  public Optional<ProtoArrayForkChoiceStrategy> getForkChoiceStrategy() {
+  public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
     return Optional.ofNullable(store).map(UpdatableStore::getForkChoiceStrategy);
   }
 

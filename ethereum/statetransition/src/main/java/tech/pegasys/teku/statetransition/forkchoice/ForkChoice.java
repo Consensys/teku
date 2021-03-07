@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -174,7 +174,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
     return onForkChoiceThread(
         () -> {
-          final ProtoArrayForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
           final CapturingIndexedAttestationCache indexedAttestationCache =
               IndexedAttestationCache.capturing();
@@ -196,7 +196,7 @@ public class ForkChoice {
   }
 
   private void applyVotesFromBlock(
-      final ProtoArrayForkChoiceStrategy forkChoiceStrategy,
+      final ForkChoiceStrategy forkChoiceStrategy,
       final CapturingIndexedAttestationCache indexedAttestationProvider) {
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
     indexedAttestationProvider.getIndexedAttestations().stream()
@@ -213,7 +213,7 @@ public class ForkChoice {
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
       final BlockImportResult result,
-      final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
+      final ForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
       proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
 
@@ -228,7 +228,7 @@ public class ForkChoice {
   }
 
   private SlotAndBlockRoot findNewChainHead(
-      final SignedBeaconBlock block, final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {
+      final SignedBeaconBlock block, final ForkChoiceStrategy forkChoiceStrategy) {
     // If the new block builds on our current chain head it must be the new chain head.
     // Since fork choice works by walking down the tree selecting the child block with
     // the greatest weight, when a block has only one child it will automatically become
@@ -286,7 +286,7 @@ public class ForkChoice {
     onForkChoiceThread(
             () -> {
               final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ProtoArrayForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
                   .map(this::getIndexedAttestation)
                   .forEach(
@@ -300,7 +300,7 @@ public class ForkChoice {
     onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
   }
 
-  private ProtoArrayForkChoiceStrategy getForkChoiceStrategy() {
+  private ForkChoiceStrategy getForkChoiceStrategy() {
     forkChoiceExecutor.checkOnEventThread();
     return recentChainData
         .getForkChoiceStrategy()

@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -30,7 +30,7 @@ public class InactiveProposerWeightings implements ProposerWeightings {
   public void onBlockReceived(
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
-      final ProtoArrayForkChoiceStrategy forkChoiceStrategy) {}
+      final ForkChoiceStrategy forkChoiceStrategy) {}
 
   @Override
   public List<ProposerWeighting> clearProposerWeightings() {
