@@ -28,9 +28,6 @@ public class ActiveProposerWeightings implements ProposerWeightings {
   private final Spec spec;
 
   private List<ProposerWeighting> currentProposerWeightings = new ArrayList<>();
-  // TODO: Should this be inited based on current time?
-  // How much do we need to worry about whether a block received in the first slot after startup
-  // gets a boost or not?
   private UInt64 maxSlotWhereBlockOverdue = UInt64.ZERO;
 
   public ActiveProposerWeightings(final EventThread eventThread, final Spec spec) {
@@ -73,8 +70,21 @@ public class ActiveProposerWeightings implements ProposerWeightings {
     return oldProposerWeightings;
   }
 
+  /**
+   * Determine if the block is on time.
+   *
+   * <p>The block is considered on time if it is received prior to {@link
+   * #onBlockDueForSlot(UInt64)} being called for the block's slot or any later slot. Additionally,
+   * if onBlockDueForSlot has not been called all blocks are considered late. This ensures that no
+   * proposer weighting is added when the node first starts. Most likely it is out of sync and
+   * receiving blocks late anyway and it's safer to not apply any weighting.
+   *
+   * @param block the received block
+   * @return true if the block is on time and should have a propopser weighting applied
+   */
   private boolean isBlockOnTime(final SignedBeaconBlock block) {
-    return block.getSlot().isGreaterThan(maxSlotWhereBlockOverdue);
+    return block.getSlot().isGreaterThan(maxSlotWhereBlockOverdue)
+        && !maxSlotWhereBlockOverdue.isZero();
   }
 
   private UInt64 calculatePriorSlotCommitteeWeight(final BeaconState blockSlotState) {
