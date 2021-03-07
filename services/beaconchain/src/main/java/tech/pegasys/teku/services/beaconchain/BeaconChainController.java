@@ -399,9 +399,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final boolean balanceAttackMitigationEnabled =
         beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled();
     forkChoice =
-        balanceAttackMitigationEnabled
-            ? ForkChoice.createWithBalanceAttackEnabled(spec, forkChoiceExecutor, recentChainData)
-            : ForkChoice.create(spec, forkChoiceExecutor, recentChainData);
+        ForkChoice.create(
+            spec, forkChoiceExecutor, recentChainData, balanceAttackMitigationEnabled);
     forkChoiceTrigger = ForkChoiceTrigger.create(forkChoice, balanceAttackMitigationEnabled);
   }
 

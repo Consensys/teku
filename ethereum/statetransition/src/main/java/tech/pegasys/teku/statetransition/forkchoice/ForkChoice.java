@@ -67,23 +67,28 @@ public class ForkChoice {
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
-  public static ForkChoice createWithBalanceAttackEnabled(
+  public static ForkChoice create(
       final Spec spec,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData) {
-    return new ForkChoice(
-        spec,
-        forkChoiceExecutor,
-        recentChainData,
-        new ActiveProposerWeightings(forkChoiceExecutor, spec));
+      final RecentChainData recentChainData,
+      final boolean balanceAttackMitigationEnabled) {
+    final ProposerWeightings proposerWeightings =
+        balanceAttackMitigationEnabled
+            ? new ActiveProposerWeightings(forkChoiceExecutor, spec)
+            : new InactiveProposerWeightings();
+    return new ForkChoice(spec, forkChoiceExecutor, recentChainData, proposerWeightings);
   }
 
+  /**
+   * @deprecated Provided only to avoid having to hard code balanceAttackMitigationEnabled in lots
+   *     of tests. Will be removed when the feature toggle is removed.
+   */
+  @Deprecated
   public static ForkChoice create(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    return new ForkChoice(
-        spec, forkChoiceExecutor, recentChainData, new InactiveProposerWeightings());
+    return create(spec, forkChoiceExecutor, recentChainData, false);
   }
 
   private void initializeProtoArrayForkChoice() {

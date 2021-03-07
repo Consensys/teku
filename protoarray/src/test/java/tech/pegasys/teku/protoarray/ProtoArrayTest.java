@@ -120,7 +120,7 @@ class ProtoArrayTest {
         ProtoArrayScoreCalculator.computeDeltas(
             voteUpdater,
             protoArray.getTotalTrackedNodeCount(),
-            protoArray.getRootIndices(),
+            protoArray::getIndexByRoot,
             Collections.emptyList(),
             Collections.emptyList(),
             List.of(weightings));
