@@ -460,7 +460,6 @@ public class ProtoArray {
         break;
       }
 
-      // TODO: Can total attester balance for a slot / 4 exceed signed long?
       protoNode.adjustWeight(weighting.getWeight().longValue());
       updateBestDescendantOfParent(protoNode, nodeIndex.get());
       nodeIndex = protoNode.getParentIndex();
