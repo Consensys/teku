@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
 
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -36,4 +37,9 @@ public interface MutableBeaconStateGenesis extends MutableBeaconState, BeaconSta
 
   @Override
   BeaconStateGenesis commitChanges();
+
+  @Override
+  default Optional<MutableBeaconStateGenesis> toGenesisVersionMutable() {
+    return Optional.of(this);
+  }
 }
