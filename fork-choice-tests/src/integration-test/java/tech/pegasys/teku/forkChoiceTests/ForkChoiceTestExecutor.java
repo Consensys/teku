@@ -78,7 +78,7 @@ public class ForkChoiceTestExecutor {
         BeaconState genesisState =
             resolvePart(
                 BeaconState.class,
-                (SszSchema<BeaconState>) beaconStateSchema,
+                beaconStateSchema,
                 file,
                 content.get("genesis"));
 
