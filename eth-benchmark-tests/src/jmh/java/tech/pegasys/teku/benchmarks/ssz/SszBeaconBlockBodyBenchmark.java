@@ -15,7 +15,7 @@ package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {

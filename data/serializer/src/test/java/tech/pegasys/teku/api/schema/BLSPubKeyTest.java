@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BLSPubKeyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

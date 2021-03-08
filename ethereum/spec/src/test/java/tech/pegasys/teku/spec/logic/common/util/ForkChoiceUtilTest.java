@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.util.RandomChainBuilder;
+import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
 
 class ForkChoiceUtilTest {
 

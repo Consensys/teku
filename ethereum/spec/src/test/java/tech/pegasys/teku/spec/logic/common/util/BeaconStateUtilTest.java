@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {

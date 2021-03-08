@@ -16,7 +16,7 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBeaconBlockTest {
 
