@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
@@ -173,4 +174,9 @@ public interface BeaconState extends SszContainer {
   default Optional<BeaconStateGenesis> toGenesisVersion() {
     return Optional.empty();
   }
+
+  // Temporaryily keep genesis-specific fields on the main interface
+  SSZList<PendingAttestation> getPrevious_epoch_attestations();
+
+  SSZList<PendingAttestation> getCurrent_epoch_attestations();
 }
