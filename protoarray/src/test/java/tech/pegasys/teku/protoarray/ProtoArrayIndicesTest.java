@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.logic.common.util.DataStructureUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ProtoArrayIndicesTest {
   private final Spec spec = SpecFactory.createMinimal();
