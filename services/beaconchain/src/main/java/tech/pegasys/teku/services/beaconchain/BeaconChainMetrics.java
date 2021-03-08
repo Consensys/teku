@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.logic.common.util.results.ValidatorStats;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -202,15 +202,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     final Bytes32 currentEpochCorrectTarget = getCorrectTargetRoot(head, currentEpoch);
     final Bytes32 previousEpochCorrectTarget = getCorrectTargetRoot(head, previousEpoch);
 
-    ValidatorStats currentEpochValidators =
-        spec.getValidatorStatsCurrentEpoch(state, currentEpochCorrectTarget);
+    CorrectAndLiveValidators currentEpochValidators =
+        state.getValidatorStatsCurrentEpoch(currentEpochCorrectTarget);
     currentLiveValidators.set(currentEpochValidators.getNumberOfLiveValidators());
     currentCorrectValidators.set(currentEpochValidators.getNumberOfCorrectValidators());
     currentActiveValidators.set(
         spec.getActiveValidatorIndices(state, spec.getCurrentEpoch(state)).size());
 
-    ValidatorStats previousEpochValidators =
-        spec.getValidatorStatsPreviousEpoch(state, previousEpochCorrectTarget);
+    CorrectAndLiveValidators previousEpochValidators =
+        state.getValidatorStatsPreviousEpoch(previousEpochCorrectTarget);
     previousLiveValidators.set(previousEpochValidators.getNumberOfLiveValidators());
     previousCorrectValidators.set(previousEpochValidators.getNumberOfCorrectValidators());
     previousActiveValidators.set(
@@ -231,7 +231,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private Bytes32 getCorrectTargetRoot(
       final StateAndBlockSummary stateAndBlock, final UInt64 epoch) {
-    final UInt64 epochStartSlot = spec.computeEpochAtSlot(epoch);
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(epoch);
     return epochStartSlot.isGreaterThanOrEqualTo(stateAndBlock.getSlot())
         ? stateAndBlock.getRoot()
         : spec.getBlockRootAtSlot(stateAndBlock.getState(), epochStartSlot);

@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconStateGenesisImpl>
-    implements MutableBeaconStateGenesis, BeaconStateCache {
+    implements MutableBeaconStateGenesis, BeaconStateCache, AttestationBasedValidatorStats {
 
   private SSZMutableList<PendingAttestation> previousEpochAttestations;
   private SSZMutableList<PendingAttestation> currentEpochAttestations;

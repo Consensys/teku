@@ -15,21 +15,16 @@ package tech.pegasys.teku.spec.logic.versions.genesis.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.MutableBeaconStateGenesis;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
@@ -38,9 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.common.util.results.ValidatorStats;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public final class BlockProcessorGenesis extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -95,66 +88,5 @@ public final class BlockProcessorGenesis extends AbstractBlockProcessor {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
-  }
-
-  @Override
-  public ValidatorStats getValidatorStatsPreviousEpoch(
-      final BeaconState genericState, final Bytes32 correctTargetRoot) {
-    final BeaconStateGenesis state = BeaconStateGenesis.requireGenesisState(genericState);
-    return getValidatorStats(state.getPrevious_epoch_attestations(), correctTargetRoot);
-  }
-
-  @Override
-  public ValidatorStats getValidatorStatsCurrentEpoch(
-      final BeaconState genericState, final Bytes32 correctTargetRoot) {
-    final BeaconStateGenesis state = BeaconStateGenesis.requireGenesisState(genericState);
-    return getValidatorStats(state.getCurrent_epoch_attestations(), correctTargetRoot);
-  }
-
-  private ValidatorStats getValidatorStats(
-      final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
-
-    final Map<UInt64, Map<UInt64, SszBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
-        new HashMap<>();
-    final Map<UInt64, Map<UInt64, SszBitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
-        new HashMap<>();
-
-    attestations.forEach(
-        attestation -> {
-          if (isCorrectAttestation(attestation, correctTargetRoot)) {
-            correctValidatorsAggregationBitsBySlotAndCommittee
-                .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-                .merge(
-                    attestation.getData().getIndex(),
-                    attestation.getAggregation_bits(),
-                    SszBitlist::nullableOr);
-          }
-
-          liveValidatorsAggregationBitsBySlotAndCommittee
-              .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-              .merge(
-                  attestation.getData().getIndex(),
-                  attestation.getAggregation_bits(),
-                  SszBitlist::nullableOr);
-        });
-
-    final int numberOfCorrectValidators =
-        correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
-            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(SszBitlist::getBitCount)
-            .sum();
-
-    final int numberOfLiveValidators =
-        liveValidatorsAggregationBitsBySlotAndCommittee.values().stream()
-            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(SszBitlist::getBitCount)
-            .sum();
-
-    return new ValidatorStats(numberOfCorrectValidators, numberOfLiveValidators);
-  }
-
-  private boolean isCorrectAttestation(
-      final PendingAttestation attestation, final Bytes32 correctTargetRoot) {
-    return attestation.getData().getTarget().getRoot().equals(correctTargetRoot);
   }
 }
