@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTrans
 import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -585,7 +586,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService.getForwardSync(),
             forkChoiceTrigger,
             p2pNetwork,
-            slotEventsChannelPublisher);
+            slotEventsChannelPublisher,
+            new EpochCachePrimer(spec, recentChainData));
   }
 
   @VisibleForTesting
