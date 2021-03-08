@@ -359,7 +359,8 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .eth1DepositContractAddress("0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b")
           .eth1DepositContractDeployBlock(4367322)
-          .initialState("https://github.com/eth2-clients/eth2-testnets/raw/master/shared/prater/genesis.ssz")
+          .initialState(
+              "https://github.com/eth2-clients/eth2-testnets/raw/master/shared/prater/genesis.ssz")
           .discoveryBootnodes();
     }
 
