@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+
 public interface BeaconStateCache {
 
   static TransitionCaches getTransitionCaches(BeaconState state) {

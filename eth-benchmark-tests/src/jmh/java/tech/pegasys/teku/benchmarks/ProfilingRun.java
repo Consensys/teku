@@ -209,7 +209,7 @@ public class ProfilingRun {
         new DataStructureUtil(1, spec)
             .withPubKeyGenerator(() -> publicKey)
             .randomBeaconState(100_000);
-    final BeaconStateSchema stateSchema =
+    final BeaconStateSchema<?, ?> stateSchema =
         spec.atSlot(beaconState.getSlot()).getSchemaDefinitions().getBeaconStateSchema();
     System.out.println("Serializing...");
     Bytes bytes = beaconState.sszSerialize();
