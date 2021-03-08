@@ -135,7 +135,6 @@ class ForkChoiceTest {
             BlockOptions.create()
                 .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
     final SignedBlockAndState chainABlock1 = chainBuilder.generateBlockAtSlot(1);
-    final SignedBlockAndState chainABlock2 = chainBuilder.generateBlockAtSlot(2);
 
     // All blocks received late for slot 1
     forkChoice.onBlocksDueForSlot(ONE);
