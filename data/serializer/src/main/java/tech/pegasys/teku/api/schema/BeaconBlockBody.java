@@ -65,7 +65,8 @@ public class BeaconBlockBody {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public BeaconBlockBody(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody body) {
+  public BeaconBlockBody(
+      tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1_data());
     this.graffiti = body.getGraffiti();
@@ -86,8 +87,9 @@ public class BeaconBlockBody {
             .collect(Collectors.toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody asInternalBeaconBlockBody() {
-    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody(
+  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
+      asInternalBeaconBlockBody() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody(
         randao_reveal.asInternalBLSSignature(),
         new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
             eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
