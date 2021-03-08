@@ -132,7 +132,10 @@ public class ChainHeadTest {
     final SignedBeaconBlock blockCopy =
         copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
     final BeaconState stateCopy =
-        copy(original.getState(), spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
+        copy(
+            original.getState(),
+            SszSchema.as(
+                BeaconState.class, spec.getGenesisSchemaDefinitions().getBeaconStateSchema()));
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy, spec);

@@ -65,10 +65,11 @@ public class ForkChoiceTestExecutor {
     return testFiles.stream().flatMap(file -> parseForkChoiceFile(file.toPath()).stream());
   }
 
+  @SuppressWarnings("unchecked")
   private static Optional<? extends Arguments> parseForkChoiceFile(Path path) {
     final File file = path.toFile();
     final SchemaDefinitions schemaDefinitions = SPEC.getGenesisSchemaDefinitions();
-    final BeaconStateSchema beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
+    final BeaconStateSchema<?, ?> beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
     try {
       @SuppressWarnings("rawtypes")
       Map content = mapper.readValue(file, Map.class);
@@ -137,7 +138,7 @@ public class ForkChoiceTestExecutor {
   }
 
   private static <T extends SszData> T resolvePart(
-      Class<T> clazz, SszSchema<T> type, File testFile, Object value) {
+      Class<T> clazz, SszSchema<? extends T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
