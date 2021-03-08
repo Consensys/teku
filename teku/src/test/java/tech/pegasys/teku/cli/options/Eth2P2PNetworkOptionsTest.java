@@ -39,7 +39,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "medalla", "pyrmont"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "pyrmont"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder(networkName).build();
@@ -144,7 +144,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void initialState_shouldDefaultToNetworkValue() {
-    final String network = "medalla";
+    final String network = "pyrmont";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getInitialState()).isPresent();
@@ -158,7 +158,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void initialState_shouldOverrideNetworkValue() {
     final String state = "state.ssz";
-    final String network = "medalla";
+    final String network = "pyrmont";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getInitialState()).isPresent();
