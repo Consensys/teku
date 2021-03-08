@@ -36,8 +36,7 @@ public class VotesTest {
   void votesTest() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 
