@@ -24,6 +24,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 public interface BeaconStateGenesis extends BeaconState {
 
   // Attestations
+  @Override
   default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
@@ -31,6 +32,7 @@ public interface BeaconStateGenesis extends BeaconState {
         PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
   }
 
+  @Override
   default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
