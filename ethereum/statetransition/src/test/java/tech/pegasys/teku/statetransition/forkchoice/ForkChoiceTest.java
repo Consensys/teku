@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +71,7 @@ class ForkChoiceTest {
 
     storageSystem
         .chainUpdater()
-        .setTime(genesis.getState().getGenesis_time().plus(10L * SECONDS_PER_SLOT));
+        .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
   }
 
   @Test
@@ -281,7 +279,7 @@ class ForkChoiceTest {
             Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(5),
             new AttestationData(
                 targetBlock.getSlot(),
-                compute_epoch_at_slot(targetBlock.getSlot()),
+                spec.computeEpochAtSlot(targetBlock.getSlot()),
                 targetBlock.getRoot(),
                 targetBlock.getState().getCurrent_justified_checkpoint(),
                 targetCheckpoint),
@@ -311,7 +309,7 @@ class ForkChoiceTest {
                     targetBlock.getRoot(),
                     recentChainData.getStore().getJustifiedCheckpoint(),
                     new Checkpoint(
-                        compute_epoch_at_slot(updatedAttestationSlot), targetBlock.getRoot())),
+                        spec.computeEpochAtSlot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
     updatedVote.setIndexedAttestation(
         new IndexedAttestation(
