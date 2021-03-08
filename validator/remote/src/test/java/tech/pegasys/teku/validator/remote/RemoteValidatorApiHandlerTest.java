@@ -49,18 +49,18 @@ import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -116,7 +116,7 @@ class RemoteValidatorApiHandlerTest {
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes4()))));
 
-    SafeFuture<Optional<tech.pegasys.teku.datastructures.genesis.GenesisData>> future =
+    SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
         apiHandler.getGenesisData();
 
     assertThat(unwrapToValue(future).getGenesisTime()).isEqualTo(genesisTime);
@@ -126,7 +126,7 @@ class RemoteValidatorApiHandlerTest {
   public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
     when(apiClient.getGenesis()).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<tech.pegasys.teku.datastructures.genesis.GenesisData>> future =
+    SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> future =
         apiHandler.getGenesisData();
 
     assertThat(unwrapToOptional(future)).isNotPresent();

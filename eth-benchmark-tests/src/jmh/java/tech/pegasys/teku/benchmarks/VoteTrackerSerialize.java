@@ -19,15 +19,15 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.server.rocksdb.serialization.VoteTrackerSerializer;
+import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
   private static Bytes votesSerialized = votes.sszSerialize();
-  private static VoteTrackerSerializer serializer = new VoteTrackerSerializer();
+  private static RocksDbSerializer<VoteTracker> serializer = RocksDbSerializer.VOTES_SERIALIZER;
 
   @Benchmark
   @Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)

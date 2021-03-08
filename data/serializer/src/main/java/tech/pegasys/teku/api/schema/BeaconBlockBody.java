@@ -65,7 +65,7 @@ public class BeaconBlockBody {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public BeaconBlockBody(tech.pegasys.teku.datastructures.blocks.BeaconBlockBody body) {
+  public BeaconBlockBody(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1_data());
     this.graffiti = body.getGraffiti();
@@ -86,32 +86,32 @@ public class BeaconBlockBody {
             .collect(Collectors.toList());
   }
 
-  public tech.pegasys.teku.datastructures.blocks.BeaconBlockBody asInternalBeaconBlockBody() {
-    return new tech.pegasys.teku.datastructures.blocks.BeaconBlockBody(
+  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody asInternalBeaconBlockBody() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody(
         randao_reveal.asInternalBLSSignature(),
-        new tech.pegasys.teku.datastructures.blocks.Eth1Data(
+        new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
             eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
         graffiti,
         SSZList.createMutable(
             proposer_slashings.stream().map(ProposerSlashing::asInternalProposerSlashing),
             MAX_PROPOSER_SLASHINGS,
-            tech.pegasys.teku.datastructures.operations.ProposerSlashing.class),
+            tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing.class),
         SSZList.createMutable(
             attester_slashings.stream().map(AttesterSlashing::asInternalAttesterSlashing),
             MAX_ATTESTER_SLASHINGS,
-            tech.pegasys.teku.datastructures.operations.AttesterSlashing.class),
+            tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.class),
         SSZList.createMutable(
             attestations.stream().map(Attestation::asInternalAttestation),
             MAX_ATTESTATIONS,
-            tech.pegasys.teku.datastructures.operations.Attestation.class),
+            tech.pegasys.teku.spec.datastructures.operations.Attestation.class),
         SSZList.createMutable(
             deposits.stream().map(Deposit::asInternalDeposit),
             MAX_DEPOSITS,
-            tech.pegasys.teku.datastructures.operations.Deposit.class),
+            tech.pegasys.teku.spec.datastructures.operations.Deposit.class),
         SSZList.createMutable(
             voluntary_exits.stream().map(SignedVoluntaryExit::asInternalSignedVoluntaryExit),
             MAX_VOLUNTARY_EXITS,
-            tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit.class));
+            tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit.class));
   }
 
   @Override

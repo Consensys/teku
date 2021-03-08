@@ -21,19 +21,19 @@ import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class ConfigProvider {
-  final SpecProvider specProvider;
+  final Spec spec;
 
-  public ConfigProvider(final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+  public ConfigProvider(final Spec spec) {
+    this.spec = spec;
   }
 
   public GetSpecResponse getConfig() {
     final Map<String, String> configAttributes = new HashMap<>();
-    specProvider
+    spec
         // Display genesis spec, for now
         .atEpoch(UInt64.ZERO)
         .getConstants()
@@ -47,17 +47,17 @@ public class ConfigProvider {
 
   public GetForkScheduleResponse getForkSchedule() {
     final List<Fork> forkList =
-        specProvider.getForkManifest().getForkSchedule().stream()
+        spec.getForkManifest().getForkSchedule().stream()
             .map(Fork::new)
             .collect(Collectors.toList());
     return new GetForkScheduleResponse(forkList);
   }
 
   public SpecConstants getGenesisSpecConstants() {
-    return specProvider.getGenesisSpecConstants();
+    return spec.getGenesisSpecConstants();
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
-    return specProvider.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+    return spec.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
   }
 }

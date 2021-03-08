@@ -14,20 +14,20 @@
 package tech.pegasys.teku.spec.util.operationvalidators;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_slashable_attestation_data;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
+import static tech.pegasys.teku.spec.datastructures.util.AttestationUtil.is_slashable_attestation_data;
+import static tech.pegasys.teku.spec.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.util.operationvalidators.OperationInvalidReason.firstOf;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class AttesterSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<AttesterSlashing> {

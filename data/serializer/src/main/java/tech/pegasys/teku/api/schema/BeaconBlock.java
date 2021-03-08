@@ -37,7 +37,7 @@ public class BeaconBlock {
 
   public final BeaconBlockBody body;
 
-  public BeaconBlock(tech.pegasys.teku.datastructures.blocks.BeaconBlock message) {
+  public BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
     this.proposer_index = message.getProposerIndex();
     this.parent_root = message.getParentRoot();
@@ -59,8 +59,8 @@ public class BeaconBlock {
     this.body = body;
   }
 
-  public tech.pegasys.teku.datastructures.blocks.BeaconBlock asInternalBeaconBlock() {
-    return new tech.pegasys.teku.datastructures.blocks.BeaconBlock(
+  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock(
         slot, proposer_index, parent_root, state_root, body.asInternalBeaconBlockBody());
   }
 

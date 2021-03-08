@@ -22,11 +22,10 @@ import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
-import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculatorImpl;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
@@ -42,27 +41,14 @@ public class RewardsTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-    runStandardTests(testDefinition, preState);
-    runDeprecatedTests(testDefinition, preState);
-  }
 
-  private void runStandardTests(final TestDefinition testDefinition, final BeaconState preState)
-      throws Throwable {
     final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
     final RewardsAndPenaltiesCalculator calculator =
         testDefinition
-            .getSpecProvider()
+            .getSpec()
             .getGenesisSpec()
             .getEpochProcessor()
             .createRewardsAndPenaltiesCalculator(preState, validatorStatuses);
-    runTest(testDefinition, calculator);
-  }
-
-  private void runDeprecatedTests(final TestDefinition testDefinition, final BeaconState preState)
-      throws Throwable {
-    final ValidatorStatuses validatorStatuses = ValidatorStatuses.create(preState);
-    final RewardsAndPenaltiesCalculator calculator =
-        new RewardsAndPenaltiesCalculatorImpl(preState, validatorStatuses);
     runTest(testDefinition, calculator);
   }
 

@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
-public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArraySnapshot> {
+class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArraySnapshot> {
   @Override
   public ProtoArraySnapshot deserialize(final byte[] data) {
     return SSZ.decode(

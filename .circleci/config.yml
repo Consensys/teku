@@ -465,7 +465,7 @@ workflows:
             - spotless
           context:
             - dockerhub-quorumengineering-ro
-            - quorum-gradle
+            - cloudsmith-protocols
       - publishDocker:
           filters:
             branches:

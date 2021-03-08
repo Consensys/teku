@@ -33,9 +33,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -47,17 +44,20 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
@@ -66,7 +66,7 @@ class DiscoveryNetworkTest {
   private final ConnectionManager connectionManager = mock(ConnectionManager.class);
 
   private final DiscoveryNetwork<Peer> discoveryNetwork =
-      new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, specProvider);
+      new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, spec);
 
   @Test
   public void shouldStartConnectionManagerAfterP2pAndDiscoveryStarted() {
@@ -156,7 +156,7 @@ class DiscoveryNetworkTest {
             peerSelectionStrategy,
             discoveryConfig,
             networkConfig,
-            specProvider);
+            spec);
     assertThat(network.getEnr()).isEmpty();
   }
 
@@ -259,13 +259,10 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfoAtInitialization() {
-    final Bytes4 genesisForkVersion =
-        specProvider.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.getGenesisSpecConstants().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
-            specProvider
-                .getGenesisBeaconStateUtil()
-                .computeForkDigest(genesisForkVersion, Bytes32.ZERO),
+            spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConstants.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", enrForkId.sszSerialize());

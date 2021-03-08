@@ -13,4 +13,11 @@
 
 package tech.pegasys.teku.networking.p2p.peer;
 
-public class PeerDisconnectedException extends RuntimeException {}
+public class PeerDisconnectedException extends RuntimeException {
+
+  public PeerDisconnectedException() {}
+
+  public PeerDisconnectedException(Throwable cause) {
+    super(cause);
+  }
+}

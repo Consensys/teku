@@ -46,7 +46,7 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.ProposerSlashing slashing =
+    final tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing slashing =
         dataStructureUtil.randomProposerSlashing();
 
     final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
@@ -59,7 +59,7 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
 
   @Test
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.datastructures.operations.ProposerSlashing slashing =
+    final tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing slashing =
         dataStructureUtil.randomProposerSlashing();
 
     final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);

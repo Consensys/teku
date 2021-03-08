@@ -15,27 +15,29 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
-import static tech.pegasys.teku.networks.Eth2Network.LESS_SWIFT;
-import static tech.pegasys.teku.networks.Eth2Network.MAINNET;
-import static tech.pegasys.teku.networks.Eth2Network.MEDALLA;
-import static tech.pegasys.teku.networks.Eth2Network.MINIMAL;
-import static tech.pegasys.teku.networks.Eth2Network.PYRMONT;
-import static tech.pegasys.teku.networks.Eth2Network.SWIFT;
-import static tech.pegasys.teku.networks.Eth2Network.TOLEDO;
+import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
+import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
+import static tech.pegasys.teku.spec.networks.Eth2Network.MEDALLA;
+import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
+import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
+import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
+import static tech.pegasys.teku.spec.networks.Eth2Network.TOLEDO;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
   private final boolean usingCustomInitialState;
@@ -44,9 +46,10 @@ public class Eth2NetworkConfiguration {
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
+  private final boolean balanceAttackMitigationEnabled;
 
   private Eth2NetworkConfiguration(
-      final SpecProvider specProvider,
+      final Spec spec,
       final String constants,
       final Optional<String> initialState,
       final boolean usingCustomInitialState,
@@ -54,8 +57,9 @@ public class Eth2NetworkConfiguration {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<UInt64> eth1DepositContractDeployBlock) {
-    this.specProvider = specProvider;
+      final Optional<UInt64> eth1DepositContractDeployBlock,
+      final boolean balanceAttackMitigationEnabled) {
+    this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
     this.usingCustomInitialState = usingCustomInitialState;
@@ -64,6 +68,7 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
+    this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -78,12 +83,12 @@ public class Eth2NetworkConfiguration {
     return new Builder();
   }
 
-  public SpecProvider getSpecProvider() {
-    return specProvider;
+  public Spec getSpec() {
+    return spec;
   }
 
   /**
-   * @deprecated Constants should be accessed via {@link Spec}
+   * @deprecated Constants should be accessed via {@link SpecVersion}
    * @return The constants resource name or url
    */
   @Deprecated
@@ -119,6 +124,10 @@ public class Eth2NetworkConfiguration {
     return eth1DepositContractDeployBlock;
   }
 
+  public boolean isBalanceAttackMitigationEnabled() {
+    return balanceAttackMitigationEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -133,12 +142,13 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
+    private boolean balanceAttackMitigationEnabled = false;
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
       return new Eth2NetworkConfiguration(
-          SpecProviderFactory.create(constants),
+          SpecFactory.create(constants),
           constants,
           initialState,
           usingCustomInitialState,
@@ -146,7 +156,8 @@ public class Eth2NetworkConfiguration {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1DepositContractDeployBlock);
+          eth1DepositContractDeployBlock,
+          balanceAttackMitigationEnabled);
     }
 
     public Builder constants(final String constants) {
@@ -195,6 +206,11 @@ public class Eth2NetworkConfiguration {
     public Builder eth1DepositContractDeployBlock(final long eth1DepositContractDeployBlock) {
       this.eth1DepositContractDeployBlock =
           Optional.of(UInt64.valueOf(eth1DepositContractDeployBlock));
+      return this;
+    }
+
+    public Builder balanceAttackMitigationEnabled(final boolean balanceAttackMitigationEnabled) {
+      this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
       return this;
     }
 

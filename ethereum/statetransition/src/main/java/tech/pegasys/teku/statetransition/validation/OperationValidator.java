@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface OperationValidator<T> {
   InternalValidationResult validateFully(T operation);

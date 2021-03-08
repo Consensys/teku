@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
@@ -42,13 +42,13 @@ import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.core.signatures.RejectingSlashingProtector;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -70,7 +70,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
 public class VoluntaryExitCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private OkHttpValidatorRestApiClient apiClient;
-  private tech.pegasys.teku.datastructures.state.Fork fork;
+  private tech.pegasys.teku.spec.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
   private OwnedValidators validators;
   private TekuConfiguration config;
@@ -184,7 +184,7 @@ public class VoluntaryExitCommand implements Runnable {
     return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
   }
 
-  private Optional<tech.pegasys.teku.datastructures.state.Fork> getFork() {
+  private Optional<tech.pegasys.teku.spec.datastructures.state.Fork> getFork() {
     return apiClient.getFork().map(Fork::asInternalFork);
   }
 
@@ -205,7 +205,7 @@ public class VoluntaryExitCommand implements Runnable {
             .map(endpoint -> new OkHttpValidatorRestApiClient(HttpUrl.get(endpoint), okHttpClient))
             .orElseThrow();
 
-    final Optional<tech.pegasys.teku.datastructures.state.Fork> maybeFork = getFork();
+    final Optional<tech.pegasys.teku.spec.datastructures.state.Fork> maybeFork = getFork();
     if (maybeFork.isEmpty()) {
       SUB_COMMAND_LOG.error("Unable to fetch fork, cannot generate an exit.");
       System.exit(1);

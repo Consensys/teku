@@ -21,8 +21,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 
 public class GetIdentityTest extends AbstractBeaconHandlerTest {
 

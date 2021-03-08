@@ -20,15 +20,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForCommittee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.computeSubnetForCommittee;
 
 import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 class AttestationTopicSubscriberTest {
 

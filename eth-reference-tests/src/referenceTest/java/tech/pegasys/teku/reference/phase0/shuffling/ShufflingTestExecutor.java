@@ -14,8 +14,8 @@
 package tech.pegasys.teku.reference.phase0.shuffling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.shuffle_list;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.shuffle_list;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +35,7 @@ public class ShufflingTestExecutor implements TestExecutor {
     final ShufflingData shufflingData =
         loadYaml(testDefinition, "mapping.yaml", ShufflingData.class);
     final CommitteeUtil committeeUtil =
-        testDefinition.getSpecProvider().atSlot(UInt64.ZERO).getCommitteeUtil();
+        testDefinition.getSpec().atSlot(UInt64.ZERO).getCommitteeUtil();
     final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
     IntStream.range(0, shufflingData.getCount())
         .forEach(

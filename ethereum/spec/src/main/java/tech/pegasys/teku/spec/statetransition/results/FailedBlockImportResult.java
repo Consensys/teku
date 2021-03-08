@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.statetransition.results;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;

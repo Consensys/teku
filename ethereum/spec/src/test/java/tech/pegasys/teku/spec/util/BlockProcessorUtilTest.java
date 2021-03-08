@@ -24,32 +24,32 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.MerkleTree;
-import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
+import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {
-  private final SpecProvider specProvider = StubSpecProvider.create();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final Spec spec = specProvider.getGenesisSpec();
-  private final SpecConstants specConstants = spec.getConstants();
-  private final BlockProcessorUtil blockProcessorUtil = spec.getBlockProcessorUtil();
+  private final SpecVersion genesisSpec = spec.getGenesisSpec();
+  private final SpecConstants specConstants = genesisSpec.getConstants();
+  private final BlockProcessorUtil blockProcessorUtil = genesisSpec.getBlockProcessorUtil();
 
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
@@ -159,7 +159,10 @@ class BlockProcessorUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UInt64 amount, Validator knownValidator) {
-    return BeaconState.createEmpty()
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
         .updated(
             beaconState -> {
               beaconState.setSlot(dataStructureUtil.randomUInt64());

@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class AttestationForkChecker {
 

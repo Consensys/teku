@@ -16,14 +16,15 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -32,6 +33,7 @@ public class BeaconStateBuilder {
   private final DataStructureUtil dataStructureUtil;
   private final int defaultValidatorCount;
   private final int defaultItemsInSSZLists;
+  private final Spec spec;
 
   private UInt64 genesisTime;
   private Bytes32 genesisValidatorsRoot;
@@ -56,9 +58,11 @@ public class BeaconStateBuilder {
   private Checkpoint finalizedCheckpoint;
 
   private BeaconStateBuilder(
+      final Spec spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
+    this.spec = spec;
     this.dataStructureUtil = dataStructureUtil;
     this.defaultValidatorCount = defaultValidatorCount;
     this.defaultItemsInSSZLists = defaultItemsInSSZLists;
@@ -67,34 +71,39 @@ public class BeaconStateBuilder {
 
   public static BeaconStateBuilder create(
       final DataStructureUtil dataStructureUtil,
+      final Spec spec,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    return new BeaconStateBuilder(dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    return new BeaconStateBuilder(
+        spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState build() {
-    return BeaconState.create(
-        genesisTime,
-        genesisValidatorsRoot,
-        slot,
-        fork,
-        latestBlockHeader,
-        blockRoots,
-        stateRoots,
-        historicalRoots,
-        eth1Data,
-        eth1DataVotes,
-        eth1DepositIndex,
-        validators,
-        balances,
-        randaoMixes,
-        slashings,
-        previousEpochAttestations,
-        currentEpochAttestations,
-        justificationBits,
-        previousJustifiedCheckpoint,
-        currentJustifiedCheckpoint,
-        finalizedCheckpoint);
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .create(
+            genesisTime,
+            genesisValidatorsRoot,
+            slot,
+            fork,
+            latestBlockHeader,
+            blockRoots,
+            stateRoots,
+            historicalRoots,
+            eth1Data,
+            eth1DataVotes,
+            eth1DepositIndex,
+            validators,
+            balances,
+            randaoMixes,
+            slashings,
+            previousEpochAttestations,
+            currentEpochAttestations,
+            justificationBits,
+            previousJustifiedCheckpoint,
+            currentJustifiedCheckpoint,
+            finalizedCheckpoint);
   }
 
   private void initDefaults() {

@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.events;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class WeakSubjectivityUpdate {
   private final Optional<Checkpoint> weakSubjectivityCheckpoint;

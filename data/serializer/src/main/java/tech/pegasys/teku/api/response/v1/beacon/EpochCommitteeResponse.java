@@ -41,7 +41,7 @@ public class EpochCommitteeResponse {
   public final List<UInt64> validators;
 
   public EpochCommitteeResponse(
-      tech.pegasys.teku.datastructures.state.CommitteeAssignment committeeAssignment) {
+      tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.validators = UInt64Util.intToUInt64List(committeeAssignment.getCommittee());

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.statetransition.results;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface BlockImportResult {
   BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =

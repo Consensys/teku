@@ -23,25 +23,25 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 
 public class AggregateGenerator {
+  private final Spec spec;
   private final AttestationGenerator attestationGenerator;
   private final List<BLSKeyPair> validatorKeys;
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
-  public AggregateGenerator(final List<BLSKeyPair> validatorKeys) {
-    attestationGenerator = new AttestationGenerator(validatorKeys);
+  public AggregateGenerator(final Spec spec, final List<BLSKeyPair> validatorKeys) {
+    this.spec = spec;
+    attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.validatorKeys = validatorKeys;
   }
 
@@ -173,8 +173,7 @@ public class AggregateGenerator {
       final List<Integer> beaconCommittee =
           CommitteeUtil.get_beacon_committee(state, slot, committeeIndex);
       final int aggregatorModulo =
-          specProvider
-              .atSlot(state.getSlot())
+          spec.atSlot(state.getSlot())
               .getCommitteeUtil()
               .getAggregatorModulo(beaconCommittee.size());
       final BLSSignature selectionProof = createSelectionProof(validatorIndex, state, slot);
@@ -207,9 +206,8 @@ public class AggregateGenerator {
         return state;
       }
 
-      StateTransition stateTransition = new StateTransition();
       try {
-        return stateTransition.process_slots(state, slot);
+        return spec.processSlots(state, slot);
       } catch (EpochProcessingException | SlotProcessingException e) {
         throw new IllegalStateException(e);
       }

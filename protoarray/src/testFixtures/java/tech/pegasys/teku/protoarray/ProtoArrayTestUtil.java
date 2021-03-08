@@ -16,12 +16,12 @@ package tech.pegasys.teku.protoarray;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class ProtoArrayTestUtil {
   private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();
@@ -31,7 +31,7 @@ public class ProtoArrayTestUtil {
     return BeaconStateUtil.uint_to_bytes32(Integer.toUnsignedLong(i + 1));
   }
 
-  public static ProtoArrayForkChoiceStrategy createProtoArrayForkChoiceStrategy(
+  public static ForkChoiceStrategy createProtoArrayForkChoiceStrategy(
       Bytes32 finalizedBlockRoot,
       UInt64 finalizedBlockSlot,
       UInt64 finalizedCheckpointEpoch,
@@ -40,9 +40,8 @@ public class ProtoArrayTestUtil {
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(
-                store, ProtoArrayStorageChannel.NO_OP)
+    ForkChoiceStrategy forkChoice =
+        ForkChoiceStrategy.initializeAndMigrateStorage(store, ProtoArrayStorageChannel.NO_OP)
             .join();
 
     forkChoice.processBlock(

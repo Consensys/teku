@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.events.block;
 
 import java.util.Objects;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 /** This event is emitted when a new block is proposed locally */
 public class ProposedBlockEvent {

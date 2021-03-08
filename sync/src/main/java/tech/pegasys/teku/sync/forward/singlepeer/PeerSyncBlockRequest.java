@@ -14,10 +14,10 @@
 package tech.pegasys.teku.sync.forward.singlepeer;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeaconBlock> {
 

@@ -15,9 +15,9 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 
 class CompoundWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;

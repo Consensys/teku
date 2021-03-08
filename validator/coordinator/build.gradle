@@ -8,7 +8,6 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:core')
-  implementation project(':ethereum:datastructures')
   implementation project(':ethereum:spec')
   implementation project(':networking:eth2')
   implementation project(':util')
@@ -27,7 +26,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
 
   testImplementation project(':data')
-  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:networks'))

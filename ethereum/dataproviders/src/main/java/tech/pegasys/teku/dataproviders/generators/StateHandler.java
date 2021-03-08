@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.dataproviders.generators;
 
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 
 public interface StateHandler {
   StateHandler NOOP = (stateAndBlock) -> {};

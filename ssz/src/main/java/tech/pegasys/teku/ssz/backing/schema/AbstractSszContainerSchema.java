@@ -17,7 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -58,15 +60,19 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   private final String containerName;
-  private final List<String> childrenNames;
+  private final List<String> childrenNames = new ArrayList<>();
+  private final Map<String, Integer> childrenNamesToFieldIndex = new HashMap<>();
   private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
 
   protected AbstractSszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
-    this.childrenNames =
-        childrenSchemas.stream().map(NamedSchema::getName).collect(Collectors.toList());
+    for (int i = 0; i < childrenSchemas.size(); i++) {
+      final NamedSchema<?> childSchema = childrenSchemas.get(i);
+      childrenNamesToFieldIndex.put(childSchema.getName(), i);
+      childrenNames.add(childSchema.getName());
+    }
     this.childrenSchemas =
         childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
@@ -75,10 +81,11 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
     this.containerName = "";
-    this.childrenNames =
-        IntStream.range(0, childrenSchemas.size())
-            .mapToObj(i -> "field-" + i)
-            .collect(Collectors.toList());
+    for (int i = 0; i < childrenSchemas.size(); i++) {
+      final String name = "field-" + i;
+      childrenNamesToFieldIndex.put(name, i);
+      childrenNames.add(name);
+    }
     this.childrenSchemas = childrenSchemas;
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
@@ -117,6 +124,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public SszSchema<?> getChildSchema(int index) {
     return childrenSchemas.get(index);
+  }
+
+  /**
+   * Get the index of a field by name
+   *
+   * @param fieldName
+   * @return The index if it exists, otherwise -1
+   */
+  @Override
+  public int getFieldIndex(String fieldName) {
+    final Integer index = childrenNamesToFieldIndex.get(fieldName);
+    return index == null ? -1 : index;
   }
 
   @Override

@@ -13,61 +13,61 @@
 
 package tech.pegasys.teku.reference.phase0.operations;
 
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class DefaultOperationProcessor implements OperationProcessor {
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
-  public DefaultOperationProcessor(final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+  public DefaultOperationProcessor(final Spec spec) {
+    this.spec = spec;
   }
 
   @Override
   public void processAttesterSlashing(
       final MutableBeaconState state, final AttesterSlashing attesterSlashings)
       throws BlockProcessingException {
-    specProvider.processAttesterSlashings(state, SSZList.singleton(attesterSlashings));
+    spec.processAttesterSlashings(state, SSZList.singleton(attesterSlashings));
   }
 
   @Override
   public void processProposerSlashing(
       final MutableBeaconState state, final ProposerSlashing proposerSlashing)
       throws BlockProcessingException {
-    specProvider.processProposerSlashings(state, SSZList.singleton(proposerSlashing));
+    spec.processProposerSlashings(state, SSZList.singleton(proposerSlashing));
   }
 
   @Override
   public void processBlockHeader(
       final MutableBeaconState state, final BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
-    specProvider.processBlockHeader(state, blockHeader);
+    spec.processBlockHeader(state, blockHeader);
   }
 
   @Override
   public void processDeposit(final MutableBeaconState state, final Deposit deposit)
       throws BlockProcessingException {
-    specProvider.processDeposits(state, SSZList.singleton(deposit));
+    spec.processDeposits(state, SSZList.singleton(deposit));
   }
 
   @Override
   public void processVoluntaryExit(
       final MutableBeaconState state, final SignedVoluntaryExit voluntaryExit)
       throws BlockProcessingException {
-    specProvider.processVoluntaryExits(state, SSZList.singleton(voluntaryExit));
+    spec.processVoluntaryExits(state, SSZList.singleton(voluntaryExit));
   }
 
   @Override
   public void processAttestation(final MutableBeaconState state, final Attestation attestation)
       throws BlockProcessingException {
-    specProvider.processAttestations(state, SSZList.singleton(attestation));
+    spec.processAttestations(state, SSZList.singleton(attestation));
   }
 }

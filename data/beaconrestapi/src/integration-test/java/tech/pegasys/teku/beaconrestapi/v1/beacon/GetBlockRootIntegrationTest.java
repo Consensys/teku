@@ -25,7 +25,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetBlockRootIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
