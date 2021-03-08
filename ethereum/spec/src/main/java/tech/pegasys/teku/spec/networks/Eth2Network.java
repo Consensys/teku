@@ -19,8 +19,6 @@ import java.util.Optional;
 public enum Eth2Network {
   // Live networks
   MAINNET,
-  MEDALLA,
-  TOLEDO,
   PYRMONT,
   // Test networks
   MINIMAL,
