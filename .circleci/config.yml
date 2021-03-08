@@ -71,7 +71,7 @@ commands:
           keys:
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
-#            - deps-
+            - deps-
   capture_test_results:
     description: "Capture test results"
     steps:
