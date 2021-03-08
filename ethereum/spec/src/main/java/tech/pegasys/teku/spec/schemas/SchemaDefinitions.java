@@ -16,5 +16,6 @@ package tech.pegasys.teku.spec.schemas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 
 public interface SchemaDefinitions {
+
   BeaconStateSchema<?, ?> getBeaconStateSchema();
 }

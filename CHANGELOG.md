@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 - Binary downloads have been transitioned from Bintray to Cloudsmith.  Please ensure you use links in the documentation or release notes.
   Ansible users should ensure they have the latest version of the ansible role.
+- Removed support for the no longer active Medalla and Toledo test networks.
   
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.

@@ -128,14 +128,14 @@ public class ChainHeadTest {
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
 
-  @SuppressWarnings("unchecked")
   private ChainHead copy(ChainHead original) {
     final SignedBeaconBlock blockCopy =
         copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
     final BeaconState stateCopy =
         copy(
             original.getState(),
-            (SszSchema<BeaconState>) spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
+            SszSchema.as(
+                BeaconState.class, spec.getGenesisSchemaDefinitions().getBeaconStateSchema()));
     final SignedBlockAndState blockAndStateCopy = new SignedBlockAndState(blockCopy, stateCopy);
     final UInt64 forkChoiceCopy = copy(original.getForkChoiceSlot());
     return ChainHead.create(blockAndStateCopy, forkChoiceCopy, spec);

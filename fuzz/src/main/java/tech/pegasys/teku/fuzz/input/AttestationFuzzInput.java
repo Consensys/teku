@@ -25,11 +25,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  @SuppressWarnings("unchecked")
   public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createSchema(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        (SszSchema<BeaconState>) spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         Attestation.SSZ_SCHEMA,
         AttestationFuzzInput::new);
   }

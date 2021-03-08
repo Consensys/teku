@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -38,10 +37,10 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -51,7 +50,8 @@ import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessorTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final BeaconState beaconState = dataStructureUtil.randomBeaconState(ZERO);
   private final EventLogger eventLogger = mock(EventLogger.class);
@@ -60,11 +60,11 @@ public class SlotProcessorTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final Spec spec = SpecFactory.createMinimal();
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
+  private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(
           spec,
@@ -73,6 +73,7 @@ public class SlotProcessorTest {
           forkChoiceTrigger,
           p2pNetwork,
           slotEventsChannel,
+          epochCachePrimer,
           eventLogger);
   private final UInt64 genesisTime = beaconState.getGenesis_time();
   private final UInt64 desiredSlot = UInt64.valueOf(100L);
@@ -286,6 +287,7 @@ public class SlotProcessorTest {
             forkChoiceTrigger,
             p2pNetwork,
             slotEventsChannel,
+            epochCachePrimer,
             eventLogger);
     slotProcessor.setCurrentSlot(UInt64.valueOf(6));
     final UInt64 slot6StartTime = spec.getSlotStartTime(UInt64.valueOf(6), genesisTime);
@@ -303,10 +305,7 @@ public class SlotProcessorTest {
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
     slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3 * 2));
-    verify(recentChainData)
-        .retrieveStateAtSlot(
-            new SlotAndBlockRoot(
-                compute_start_slot_at_epoch(ONE), headBlock.orElseThrow().getRoot()));
+    verify(epochCachePrimer).primeCacheForEpoch(ONE);
 
     // Should not repeat computation
     slotProcessor.onTick(slot7StartTime.plus(SECONDS_PER_SLOT / 3 * 2 + 1));

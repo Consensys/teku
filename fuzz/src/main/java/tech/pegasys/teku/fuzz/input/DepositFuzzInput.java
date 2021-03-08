@@ -24,11 +24,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, Deposit> {
 
-  @SuppressWarnings("unchecked")
   public static ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> createSchema(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        (SszSchema<BeaconState>) spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         Deposit.SSZ_SCHEMA,
         DepositFuzzInput::new);
   }

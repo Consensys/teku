@@ -142,7 +142,7 @@ public class ForkChoiceTestExecutor {
   }
 
   private static <T extends SszData> T resolvePart(
-      Class<T> clazz, SszSchema<T> type, File testFile, Object value) {
+      Class<T> clazz, SszSchema<? extends T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
