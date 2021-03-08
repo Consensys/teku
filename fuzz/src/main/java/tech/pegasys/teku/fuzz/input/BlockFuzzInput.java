@@ -24,11 +24,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
 
-  @SuppressWarnings("unchecked")
   public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createSchema(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        (SszSchema<BeaconState>) spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         SignedBeaconBlock.SSZ_SCHEMA.get(),
         BlockFuzzInput::new);
   }

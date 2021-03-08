@@ -76,11 +76,7 @@ public class ForkChoiceTestExecutor {
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
-            resolvePart(
-                BeaconState.class,
-                (SszSchema<BeaconState>) beaconStateSchema,
-                file,
-                content.get("genesis"));
+            resolvePart(BeaconState.class, beaconStateSchema, file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
@@ -142,7 +138,7 @@ public class ForkChoiceTestExecutor {
   }
 
   private static <T extends SszData> T resolvePart(
-      Class<T> clazz, SszSchema<T> type, File testFile, Object value) {
+      Class<T> clazz, SszSchema<? extends T> type, File testFile, Object value) {
     if (value instanceof String) {
       String path = (String) value;
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {

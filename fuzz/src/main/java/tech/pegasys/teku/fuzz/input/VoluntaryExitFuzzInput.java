@@ -25,11 +25,10 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 public class VoluntaryExitFuzzInput
     extends Container2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> {
 
-  @SuppressWarnings("unchecked")
   public static ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit>
       createSchema(final SpecVersion spec) {
     return ContainerSchema2.create(
-        (SszSchema<BeaconState>) spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         SignedVoluntaryExit.SSZ_SCHEMA,
         VoluntaryExitFuzzInput::new);
   }
