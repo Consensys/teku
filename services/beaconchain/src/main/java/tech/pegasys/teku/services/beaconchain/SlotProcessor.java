@@ -15,12 +15,6 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.stream.IntStream;
@@ -33,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -54,7 +48,6 @@ public class SlotProcessor {
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
   private volatile UInt64 onTickEpochPrecompute;
-  private final UInt64 oneThirdSlotSeconds = UInt64.valueOf(SECONDS_PER_SLOT / 3);
 
   @VisibleForTesting
   SlotProcessor(
@@ -118,7 +111,7 @@ public class SlotProcessor {
       nodeSlot.setValue(calculatedSlot);
     }
 
-    final UInt64 epoch = compute_epoch_at_slot(nodeSlot.getValue());
+    final UInt64 epoch = spec.computeEpochAtSlot(nodeSlot.getValue());
     final UInt64 nodeSlotStartTime = spec.getSlotStartTime(nodeSlot.getValue(), genesisTime);
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
@@ -134,14 +127,17 @@ public class SlotProcessor {
   }
 
   private void processEpochPrecompute(final UInt64 epoch) {
-    final UInt64 firstSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 firstSlot = spec.computeStartSlotAtEpoch(epoch);
     onTickEpochPrecompute = firstSlot;
     recentChainData
         .getHeadBlock()
         // Don't preprocess epoch if we're more than an epoch behind as we likely need to sync
         .filter(
             block ->
-                block.getSlot().plus(SLOTS_PER_EPOCH).isGreaterThanOrEqualTo(firstSlot)
+                block
+                        .getSlot()
+                        .plus(spec.getSlotsPerEpoch(firstSlot))
+                        .isGreaterThanOrEqualTo(firstSlot)
                     && block.getSlot().isLessThan(firstSlot))
         .ifPresent(
             headBlock ->
@@ -153,21 +149,23 @@ public class SlotProcessor {
   }
 
   private void primeEpochStateCaches(final BeaconState state) {
-    IntStream.range(0, SLOTS_PER_EPOCH)
+    IntStream.range(0, spec.getSlotsPerEpoch(state.getSlot()))
         .forEach(
             slotInEpoch -> {
               // Calculate all proposers
-              BeaconStateUtil.get_beacon_proposer_index(state, state.getSlot().plus(slotInEpoch));
+              spec.getBeaconProposerIndex(state, state.getSlot().plus(slotInEpoch));
 
               // Calculate committees for epoch + 1 (assume this epoch was already requested)
-              final UInt64 nextEpoch = get_current_epoch(state).plus(1);
-              final UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(nextEpoch);
+              final BeaconStateUtil beaconStateUtil = spec.getBeaconStateUtil(state.getSlot());
+              final UInt64 nextEpoch = spec.getCurrentEpoch(state).plus(1);
+              final UInt64 nextEpochStartSlot = spec.computeStartSlotAtEpoch(nextEpoch);
               final UInt64 committeeCount =
-                  BeaconStateUtil.get_committee_count_per_slot(state, nextEpoch);
+                  beaconStateUtil.getCommitteeCountPerSlot(state, nextEpoch);
               for (UInt64 index = UInt64.ZERO;
                   index.isLessThan(committeeCount);
                   index = index.increment()) {
-                get_beacon_committee(state, nextEpochStartSlot.plus(slotInEpoch), index);
+                beaconStateUtil.getBeaconCommittee(
+                    state, nextEpochStartSlot.plus(slotInEpoch), index);
               }
             });
   }
@@ -199,7 +197,7 @@ public class SlotProcessor {
   // Attestations are due 1/3 of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot, final UInt64 currentTime, final UInt64 nodeSlotStartTime) {
-    final UInt64 earliestTime = nodeSlotStartTime.plus(oneThirdSlotSeconds);
+    final UInt64 earliestTime = nodeSlotStartTime.plus(oneThirdSlotSeconds(calculatedSlot));
     return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
         && isTimeReached(currentTime, earliestTime);
   }
@@ -207,23 +205,29 @@ public class SlotProcessor {
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
   boolean isEpochPrecalculationDue(
       final UInt64 epoch, final UInt64 currentTime, final UInt64 genesisTime) {
-    final UInt64 firstSlotOfNextEpoch = compute_start_slot_at_epoch(epoch);
+    final UInt64 firstSlotOfNextEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (onTickEpochPrecompute == null) {
-      onTickEpochPrecompute = firstSlotOfNextEpoch.minusMinZero(SLOTS_PER_EPOCH);
+      onTickEpochPrecompute =
+          firstSlotOfNextEpoch.minusMinZero(spec.getSlotsPerEpoch(firstSlotOfNextEpoch));
       return false;
     }
     final UInt64 nextEpochStartTime = spec.getSlotStartTime(firstSlotOfNextEpoch, genesisTime);
-    final UInt64 earliestTime = nextEpochStartTime.minusMinZero(oneThirdSlotSeconds);
+    final UInt64 earliestTime =
+        nextEpochStartTime.minusMinZero(oneThirdSlotSeconds(firstSlotOfNextEpoch));
     final boolean processingDueForSlot =
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
     final boolean timeReached = isTimeReached(currentTime, earliestTime);
     return processingDueForSlot && timeReached;
   }
 
+  private int oneThirdSlotSeconds(final UInt64 slot) {
+    return spec.getSecondsPerSlot(slot) / 3;
+  }
+
   private void processSlotStart(final UInt64 nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
     forkChoiceTrigger.onSlotStarted(onTickSlotStart);
-    if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
+    if (nodeSlot.getValue().equals(spec.computeStartSlotAtEpoch(nodeEpoch))) {
       recentChainData
           .getFinalizedCheckpoint()
           .ifPresent(
