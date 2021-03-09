@@ -42,7 +42,10 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
 
   @Override
   public void onSlotStarted(final UInt64 nodeSlot) {
-    processHead(nodeSlot);
+    // We're technically processing attestations at the end of the previous slot so the fork choice
+    // slot needs to be nodeSlot - 1.  Otherwise we wind up deciding every slot is empty immediately
+    // and then treating the block as a reorg even if it arrives on time.
+    processHead(nodeSlot.minusMinZero(1));
   }
 
   /**

@@ -44,9 +44,15 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
   }
 
   @Test
-  void shouldProcessHeadOnSlotStart() {
+  void shouldProcessHeadForEndingSlotOnSlotStart() {
     trigger.onSlotStarted(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ZERO);
+  }
+
+  @Test
+  void shouldProcessHeadForEndingSlotOnSlotStartAvoidingUnderflow() {
+    trigger.onSlotStarted(UInt64.ZERO);
+    verify(forkChoice).processHead(UInt64.ZERO);
   }
 
   @Test
