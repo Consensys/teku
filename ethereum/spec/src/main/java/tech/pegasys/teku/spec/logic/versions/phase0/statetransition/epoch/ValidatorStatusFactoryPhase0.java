@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
@@ -28,9 +28,9 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
-public class ValidatorStatusFactoryGenesis extends AbstractValidatorStatusFactory {
+public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory {
 
-  public ValidatorStatusFactoryGenesis(
+  public ValidatorStatusFactoryPhase0(
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
@@ -44,7 +44,7 @@ public class ValidatorStatusFactoryGenesis extends AbstractValidatorStatusFactor
       final UInt64 previousEpoch,
       final UInt64 currentEpoch) {
 
-    final BeaconStateGenesis state = BeaconStateGenesis.requireGenesisState(genericState);
+    final BeaconStatePhase0 state = BeaconStatePhase0.required(genericState);
 
     Stream.concat(
             state.getPrevious_epoch_attestations().stream(),

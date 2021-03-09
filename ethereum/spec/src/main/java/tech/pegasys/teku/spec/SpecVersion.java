@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
-import tech.pegasys.teku.spec.logic.versions.genesis.SpecLogicGenesis;
+import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGenesis;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
   private final SpecConstants constants;
@@ -33,9 +33,9 @@ public class SpecVersion extends DelegatingSpecLogic {
     this.schemaDefinitions = schemaDefinitions;
   }
 
-  public static SpecVersion createGenesis(final SpecConstants specConstants) {
-    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsGenesis(specConstants);
-    final SpecLogic specLogic = new SpecLogicGenesis(specConstants, schemaDefinitions);
+  public static SpecVersion createPhase0(final SpecConstants specConstants) {
+    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConstants);
+    final SpecLogic specLogic = new SpecLogicPhase0(specConstants, schemaDefinitions);
     return new SpecVersion(specConstants, schemaDefinitions, specLogic);
   }
 

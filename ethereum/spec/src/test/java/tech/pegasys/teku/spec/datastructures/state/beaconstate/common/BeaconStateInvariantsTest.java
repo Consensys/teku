@@ -47,7 +47,7 @@ public class BeaconStateInvariantsTest {
 
   @Test
   public void extractSlot_zero() {
-    final BeaconState state = dataStructureUtil.stateBuilderGenesis().slot(UInt64.ZERO).build();
+    final BeaconState state = dataStructureUtil.stateBuilderPhase0().slot(UInt64.ZERO).build();
     final Bytes stateBytes = state.sszSerialize();
 
     final UInt64 result = BeaconStateInvariants.extractSlot(stateBytes);
@@ -56,8 +56,7 @@ public class BeaconStateInvariantsTest {
 
   @Test
   public void extractSlot_maxValue() {
-    final BeaconState state =
-        dataStructureUtil.stateBuilderGenesis().slot(UInt64.MAX_VALUE).build();
+    final BeaconState state = dataStructureUtil.stateBuilderPhase0().slot(UInt64.MAX_VALUE).build();
     final Bytes stateBytes = state.sszSerialize();
 
     final UInt64 result = BeaconStateInvariants.extractSlot(stateBytes);

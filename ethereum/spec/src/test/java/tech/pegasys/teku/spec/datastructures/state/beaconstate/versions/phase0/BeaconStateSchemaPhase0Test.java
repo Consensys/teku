@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,13 +23,13 @@ import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
-public class BeaconStateSchemaGenesisTest
-    extends AbstractBeaconStateSchemaTest<BeaconStateGenesis, MutableBeaconStateGenesis> {
+public class BeaconStateSchemaPhase0Test
+    extends AbstractBeaconStateSchemaTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
 
   @Override
-  protected BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> getSchema(
+  protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
       final SpecConstants specConstants) {
-    return BeaconStateSchemaGenesis.create(specConstants);
+    return BeaconStateSchemaPhase0.create(specConstants);
   }
 
   @Test
@@ -38,8 +38,8 @@ public class BeaconStateSchemaGenesisTest
     final SpecConstants modifiedConstants =
         TestConstantsLoader.loadConstantsBuilder("minimal").maxAttestations(123).build();
 
-    BeaconStateGenesis s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStateGenesis s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStatePhase0 s1 = getSchema(modifiedConstants).createEmpty();
+    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
 
     assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
         .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());

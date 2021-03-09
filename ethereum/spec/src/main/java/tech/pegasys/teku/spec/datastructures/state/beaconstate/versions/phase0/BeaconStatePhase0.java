@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -21,15 +21,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface BeaconStateGenesis extends BeaconState {
+public interface BeaconStatePhase0 extends BeaconState {
 
-  static BeaconStateGenesis requireGenesisState(final BeaconState state) {
+  static BeaconStatePhase0 required(final BeaconState state) {
     return state
-        .toGenesisVersion()
+        .toVersionPhase0()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected a genesis state but got: " + state.getClass().getSimpleName()));
+                    "Expected a phase0 state but got: " + state.getClass().getSimpleName()));
   }
 
   // Attestations
@@ -48,11 +48,11 @@ public interface BeaconStateGenesis extends BeaconState {
   }
 
   @Override
-  default Optional<BeaconStateGenesis> toGenesisVersion() {
+  default Optional<BeaconStatePhase0> toVersionPhase0() {
     return Optional.of(this);
   }
 
   <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateGenesis updatedGenesis(Mutator<MutableBeaconStateGenesis, E1, E2, E3> mutator)
+      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3;
 }

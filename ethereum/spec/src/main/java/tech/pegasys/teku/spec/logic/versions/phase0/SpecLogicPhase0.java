@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.genesis;
+package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.SpecLogic;
@@ -25,12 +25,12 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch.EpochProcessorGenesis;
-import tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch.ValidatorStatusFactoryGenesis;
-import tech.pegasys.teku.spec.logic.versions.genesis.util.BlockProcessorGenesis;
+import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class SpecLogicGenesis implements SpecLogic {
+public class SpecLogicPhase0 implements SpecLogic {
   private final CommitteeUtil committeeUtil;
   private final ValidatorsUtil validatorsUtil;
   private final AttestationUtil attestationUtil;
@@ -40,22 +40,21 @@ public class SpecLogicGenesis implements SpecLogic {
   private final StateTransition stateTransition;
   private final ForkChoiceUtil forkChoiceUtil;
   private final BlockProposalUtil blockProposalUtil;
-  private final ValidatorStatusFactoryGenesis validatorStatusFactory;
+  private final ValidatorStatusFactoryPhase0 validatorStatusFactory;
 
-  public SpecLogicGenesis(
-      final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
+  public SpecLogicPhase0(final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
     this.committeeUtil = new CommitteeUtil(constants);
     this.validatorsUtil = new ValidatorsUtil(constants);
     this.beaconStateUtil =
         new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, this.committeeUtil);
     this.attestationUtil = new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
     this.validatorStatusFactory =
-        new ValidatorStatusFactoryGenesis(beaconStateUtil, attestationUtil, validatorsUtil);
+        new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
     this.epochProcessor =
-        new EpochProcessorGenesis(
+        new EpochProcessorPhase0(
             constants, validatorsUtil, this.beaconStateUtil, validatorStatusFactory);
     this.blockProcessorUtil =
-        new BlockProcessorGenesis(constants, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =
         StateTransition.create(
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);

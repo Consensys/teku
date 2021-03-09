@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
-interface AttestationBasedValidatorStats extends BeaconStateGenesis {
+interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
     return getValidatorStats(getPrevious_epoch_attestations(), correctTargetRoot);

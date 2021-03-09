@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -20,15 +20,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
-public interface MutableBeaconStateGenesis extends MutableBeaconState, BeaconStateGenesis {
+public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStatePhase0 {
 
-  static MutableBeaconStateGenesis requireGenesisStateMutable(final MutableBeaconState state) {
+  static MutableBeaconStatePhase0 required(final MutableBeaconState state) {
     return state
-        .toGenesisVersionMutable()
+        .toMutableVersionPhase0()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected a genesis state but got: " + state.getClass().getSimpleName()));
+                    "Expected a phase0 state but got: " + state.getClass().getSimpleName()));
   }
 
   // Attestations
@@ -45,10 +45,10 @@ public interface MutableBeaconStateGenesis extends MutableBeaconState, BeaconSta
   }
 
   @Override
-  BeaconStateGenesis commitChanges();
+  BeaconStatePhase0 commitChanges();
 
   @Override
-  default Optional<MutableBeaconStateGenesis> toGenesisVersionMutable() {
+  default Optional<MutableBeaconStatePhase0> toMutableVersionPhase0() {
     return Optional.of(this);
   }
 }
