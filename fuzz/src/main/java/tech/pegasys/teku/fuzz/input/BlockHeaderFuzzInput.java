@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
@@ -31,7 +32,7 @@ public class BlockHeaderFuzzInput
   public static ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> createType(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         BeaconBlock.SSZ_SCHEMA.get(),
         BlockHeaderFuzzInput::new);
   }
