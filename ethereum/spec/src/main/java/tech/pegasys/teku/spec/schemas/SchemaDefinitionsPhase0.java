@@ -32,6 +32,6 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
 
   @Override
   public BeaconBlockBodySchema getBeaconBlockBodySchema() {
-    return BeaconBlockBodySchema.create(specConstants); 
+    return BeaconBlockBodySchema.create(specConstants);
   }
 }

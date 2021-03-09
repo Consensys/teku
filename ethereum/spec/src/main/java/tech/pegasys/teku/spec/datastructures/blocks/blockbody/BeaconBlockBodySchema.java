@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -20,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
@@ -91,6 +94,27 @@ public class BeaconBlockBodySchema
         SszListSchema.createAsList(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS),
         SszListSchema.createAsList(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS),
         SszListSchema.createAsList(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS));
+  }
+
+  public BeaconBlockBody createBlockBody(
+      BLSSignature randao_reveal,
+      Eth1Data eth1_data,
+      Bytes32 graffiti,
+      SSZList<ProposerSlashing> proposer_slashings,
+      SSZList<AttesterSlashing> attester_slashings,
+      SSZList<Attestation> attestations,
+      SSZList<Deposit> deposits,
+      SSZList<SignedVoluntaryExit> voluntary_exits) {
+    return new BeaconBlockBody(
+        this,
+        randao_reveal,
+        eth1_data,
+        graffiti,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
   }
 
   @Override
