@@ -40,9 +40,9 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 

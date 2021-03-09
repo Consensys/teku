@@ -45,14 +45,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.util.BlockProcessorUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
@@ -75,12 +75,12 @@ public class Spec {
   }
 
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = new SpecVersion(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createGenesis(config.constants());
     return new Spec(initialSpec);
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = new SpecVersion(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createGenesis(config.constants());
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -175,6 +175,10 @@ public class Spec {
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
+  }
+
+  public UInt64 getPreviousEpoch(final BeaconState state) {
+    return atState(state).getBeaconStateUtil().getPreviousEpoch(state);
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {

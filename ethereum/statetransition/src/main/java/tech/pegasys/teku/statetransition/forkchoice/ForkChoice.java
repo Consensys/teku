@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
