@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -25,29 +25,29 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconStateGenesisImpl>
-    implements MutableBeaconStateGenesis, BeaconStateCache, AttestationBasedValidatorStats {
+class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
+    implements MutableBeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
 
   private SSZMutableList<PendingAttestation> previousEpochAttestations;
   private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
-  MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView) {
+  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStateGenesisImpl(BeaconStateGenesisImpl backingImmutableView, boolean builder) {
+  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView, boolean builder) {
     super(backingImmutableView, builder);
   }
 
   @Override
-  protected BeaconStateGenesisImpl createImmutableBeaconState(
+  protected BeaconStatePhase0Impl createImmutableBeaconState(
       TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
-    return new BeaconStateGenesisImpl(getSchema(), backingNode, viewCache, transitionCache);
+    return new BeaconStatePhase0Impl(getSchema(), backingNode, viewCache, transitionCache);
   }
 
   @Override
-  public BeaconStateGenesis commitChanges() {
-    return (BeaconStateGenesis) super.commitChanges();
+  public BeaconStatePhase0 commitChanges() {
+    return (BeaconStatePhase0) super.commitChanges();
   }
 
   @Override
@@ -55,7 +55,7 @@ class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconSta
     return previousEpochAttestations != null
         ? previousEpochAttestations
         : (previousEpochAttestations =
-            MutableBeaconStateGenesis.super.getPrevious_epoch_attestations());
+            MutableBeaconStatePhase0.super.getPrevious_epoch_attestations());
   }
 
   @Override
@@ -63,7 +63,7 @@ class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconSta
     return currentEpochAttestations != null
         ? currentEpochAttestations
         : (currentEpochAttestations =
-            MutableBeaconStateGenesis.super.getCurrent_epoch_attestations());
+            MutableBeaconStatePhase0.super.getCurrent_epoch_attestations());
   }
 
   @Override
@@ -74,13 +74,13 @@ class MutableBeaconStateGenesisImpl extends AbstractMutableBeaconState<BeaconSta
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateGenesis updatedGenesis(Mutator<MutableBeaconStateGenesis, E1, E2, E3> mutator)
+      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     throw new UnsupportedOperationException();
   }
 
   @Override
   protected void addCustomFields(ToStringHelper stringBuilder) {
-    BeaconStateGenesisImpl.describeCustomFields(stringBuilder, this);
+    BeaconStatePhase0Impl.describeCustomFields(stringBuilder, this);
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -25,15 +25,15 @@ import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
-class BeaconStateGenesisImpl extends AbstractBeaconState<MutableBeaconStateGenesis>
-    implements BeaconStateGenesis, BeaconStateCache, AttestationBasedValidatorStats {
+class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0>
+    implements BeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
 
-  BeaconStateGenesisImpl(
-      final BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> schema) {
+  BeaconStatePhase0Impl(
+      final BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> schema) {
     super(schema);
   }
 
-  BeaconStateGenesisImpl(
+  BeaconStatePhase0Impl(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -41,23 +41,23 @@ class BeaconStateGenesisImpl extends AbstractBeaconState<MutableBeaconStateGenes
     super(type, backingNode, cache, transitionCaches);
   }
 
-  BeaconStateGenesisImpl(
+  BeaconStatePhase0Impl(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateGenesis updatedGenesis(Mutator<MutableBeaconStateGenesis, E1, E2, E3> mutator)
+      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3 {
-    MutableBeaconStateGenesis writableCopy = createWritableCopyPriv();
+    MutableBeaconStatePhase0 writableCopy = createWritableCopyPriv();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
 
   @Override
-  protected MutableBeaconStateGenesis createWritableCopyPriv() {
-    return new MutableBeaconStateGenesisImpl(this);
+  protected MutableBeaconStatePhase0 createWritableCopyPriv() {
+    return new MutableBeaconStatePhase0Impl(this);
   }
 
   @Override
@@ -65,7 +65,7 @@ class BeaconStateGenesisImpl extends AbstractBeaconState<MutableBeaconStateGenes
     describeCustomFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateGenesis state) {
+  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStatePhase0 state) {
     stringBuilder
         .add("previous_epoch_attestations", state.getPrevious_epoch_attestations())
         .add("current_epoch_attestations", state.getCurrent_epoch_attestations());

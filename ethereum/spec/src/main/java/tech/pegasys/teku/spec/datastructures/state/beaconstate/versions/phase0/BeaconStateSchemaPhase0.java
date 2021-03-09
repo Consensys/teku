@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -24,17 +24,17 @@ import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszField;
 
-public class BeaconStateSchemaGenesis
-    extends AbstractBeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> {
+public class BeaconStateSchemaPhase0
+    extends AbstractBeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> {
 
   @VisibleForTesting
-  BeaconStateSchemaGenesis(final SpecConstants specConstants) {
+  BeaconStateSchemaPhase0(final SpecConstants specConstants) {
     super("BeaconStateGenesis", getUniqueFields(specConstants), specConstants);
   }
 
-  public static BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> create(
+  public static BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> create(
       final SpecConstants specConstants) {
-    return new BeaconStateSchemaGenesis(specConstants);
+    return new BeaconStateSchemaPhase0(specConstants);
   }
 
   private static List<SszField> getUniqueFields(final SpecConstants specConstants) {
@@ -59,21 +59,21 @@ public class BeaconStateSchemaGenesis
   }
 
   @Override
-  public BeaconStateGenesis createFromBackingNode(TreeNode node) {
-    return new BeaconStateGenesisImpl(this, node);
+  public BeaconStatePhase0 createFromBackingNode(TreeNode node) {
+    return new BeaconStatePhase0Impl(this, node);
   }
 
   @Override
-  public MutableBeaconStateGenesis createBuilder() {
-    return new MutableBeaconStateGenesisImpl(createEmptyBeaconStateImpl(), true);
+  public MutableBeaconStatePhase0 createBuilder() {
+    return new MutableBeaconStatePhase0Impl(createEmptyBeaconStateImpl(), true);
   }
 
   @Override
-  public BeaconStateGenesis createEmpty() {
+  public BeaconStatePhase0 createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStateGenesisImpl createEmptyBeaconStateImpl() {
-    return new BeaconStateGenesisImpl(this);
+  private BeaconStatePhase0Impl createEmptyBeaconStateImpl() {
+    return new BeaconStatePhase0Impl(this);
   }
 }

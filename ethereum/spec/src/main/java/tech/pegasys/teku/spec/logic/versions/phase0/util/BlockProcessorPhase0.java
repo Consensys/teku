@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.genesis.util;
+package tech.pegasys.teku.spec.logic.versions.phase0.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.MutableBeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -35,10 +35,10 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public final class BlockProcessorGenesis extends AbstractBlockProcessor {
+public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
-  public BlockProcessorGenesis(
+  public BlockProcessorPhase0(
       final SpecConstants specConstants,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -50,8 +50,7 @@ public final class BlockProcessorGenesis extends AbstractBlockProcessor {
   public void processAttestationsNoValidation(
       MutableBeaconState genericState, SSZList<Attestation> attestations)
       throws BlockProcessingException {
-    final MutableBeaconStateGenesis state =
-        MutableBeaconStateGenesis.requireGenesisStateMutable(genericState);
+    final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
 
     try {
       final AttestationDataStateTransitionValidator validator =

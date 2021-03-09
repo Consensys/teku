@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.MutableBeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public class EpochProcessorGenesis extends AbstractEpochProcessor {
+public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
-  public EpochProcessorGenesis(
+  public EpochProcessorPhase0(
       final SpecConstants specConstants,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -36,8 +36,7 @@ public class EpochProcessorGenesis extends AbstractEpochProcessor {
   @Override
   public void processParticipationUpdates(MutableBeaconState genericState) {
     // Rotate current/previous epoch attestations
-    final MutableBeaconStateGenesis state =
-        MutableBeaconStateGenesis.requireGenesisStateMutable(genericState);
+    final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
     state
         .getCurrent_epoch_attestations()

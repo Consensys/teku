@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.genesis.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactoryTest;
 
-class ValidatorStatusFactoryGenesisTest extends AbstractValidatorStatusFactoryTest {
+class ValidatorStatusFactoryPhase0Test extends AbstractValidatorStatusFactoryTest {
 
   @Override
   protected AbstractValidatorStatusFactory createFactory() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    return (ValidatorStatusFactoryGenesis) genesisSpec.getValidatorStatusFactory();
+    return (ValidatorStatusFactoryPhase0) genesisSpec.getValidatorStatusFactory();
   }
 }

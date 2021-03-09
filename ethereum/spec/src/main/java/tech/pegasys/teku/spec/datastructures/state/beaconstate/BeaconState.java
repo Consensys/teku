@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -171,7 +171,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     void mutate(TState state) throws E1, E2, E3;
   }
 
-  default Optional<BeaconStateGenesis> toGenesisVersion() {
+  default Optional<BeaconStatePhase0> toVersionPhase0() {
     return Optional.empty();
   }
 }
