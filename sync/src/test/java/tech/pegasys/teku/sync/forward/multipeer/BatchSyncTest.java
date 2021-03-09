@@ -697,7 +697,6 @@ class BatchSyncTest {
 
   @Test
   void shouldFailSyncWhenFindingNewCommonAncestorFailsAfterSwitchingChains() {
-
     // Start sync to first chain
     final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
 
@@ -712,6 +711,7 @@ class BatchSyncTest {
         .thenReturn(
             SafeFuture.failedFuture(new RuntimeException("Failed to find new common ancestor")));
     final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
     assertThat(secondSyncResult).isCompletedExceptionally();
   }
 
