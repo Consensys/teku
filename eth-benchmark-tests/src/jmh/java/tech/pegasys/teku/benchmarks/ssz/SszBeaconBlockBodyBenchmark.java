@@ -44,7 +44,7 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
 
   @Override
   protected SszSchema<BeaconBlockBody> getContainerType() {
-    return BeaconBlockBody.getSszSchema();
+    return spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   @Override

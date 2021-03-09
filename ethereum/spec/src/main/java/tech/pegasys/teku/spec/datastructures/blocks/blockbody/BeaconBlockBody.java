@@ -46,10 +46,9 @@ public class BeaconBlockBody
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>> {
 
-  public static BeaconBlockBodySchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
-
+  // TODO(#3648) - remove this field (version schemas that depend on this field through
+  // SchemaDefinitions)
+  @Deprecated
   public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
       SpecDependent.of(BeaconBlockBodySchema::create);
 
