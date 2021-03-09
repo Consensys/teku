@@ -78,6 +78,7 @@ allprojects {
     jcenter()
     mavenCentral()
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+    maven { url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/" }
     maven { url "https://hyperledger.jfrog.io/artifactory/besu-maven/" }
     maven { url "https://consensys.bintray.com/pegasys-repo/" }
   }
