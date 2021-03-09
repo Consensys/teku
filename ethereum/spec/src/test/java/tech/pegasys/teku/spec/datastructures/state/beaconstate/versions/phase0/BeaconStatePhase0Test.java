@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
-public class BeaconStateGenesisTest
-    extends AbstractBeaconStateTest<BeaconStateGenesis, MutableBeaconStateGenesis> {
+public class BeaconStatePhase0Test
+    extends AbstractBeaconStateTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
 
   @Override
-  protected BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> getSchema(
+  protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
       final SpecConstants specConstants) {
-    return BeaconStateSchemaGenesis.create(specConstants);
+    return BeaconStateSchemaPhase0.create(specConstants);
   }
 
   @Override
-  protected BeaconStateGenesis randomState() {
-    return dataStructureUtil.stateBuilderGenesis().build();
+  protected BeaconStatePhase0 randomState() {
+    return dataStructureUtil.stateBuilderPhase0().build();
   }
 }

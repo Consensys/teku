@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.MutableBeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -137,7 +137,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   @Override
   BeaconState commitChanges();
 
-  default Optional<MutableBeaconStateGenesis> toGenesisVersionMutable() {
+  default Optional<MutableBeaconStatePhase0> toMutableVersionPhase0() {
     return Optional.empty();
   }
 }

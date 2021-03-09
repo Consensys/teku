@@ -75,12 +75,12 @@ public class Spec {
   }
 
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = SpecVersion.createGenesis(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
     return new Spec(initialSpec);
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = SpecVersion.createGenesis(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
     return new Spec(initialSpec, forkManifest);
   }
 

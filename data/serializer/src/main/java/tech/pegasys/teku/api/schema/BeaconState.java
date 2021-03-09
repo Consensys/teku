@@ -31,7 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.BeaconStateGenesis;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
@@ -167,10 +167,10 @@ public class BeaconState {
         new Checkpoint(beaconState.getCurrent_justified_checkpoint());
     this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
 
-    // Optionally set genesis-specific versioned fields
-    final Optional<BeaconStateGenesis> maybeGenesisState = beaconState.toGenesisVersion();
-    if (maybeGenesisState.isPresent()) {
-      final BeaconStateGenesis genesisState = maybeGenesisState.get();
+    // Optionally set phase0-specific versioned fields
+    final Optional<BeaconStatePhase0> maybePhase0State = beaconState.toVersionPhase0();
+    if (maybePhase0State.isPresent()) {
+      final BeaconStatePhase0 genesisState = maybePhase0State.get();
       this.previous_epoch_attestations =
           genesisState.getPrevious_epoch_attestations().stream()
               .map(PendingAttestation::new)
@@ -238,7 +238,7 @@ public class BeaconState {
               state.setFinalized_checkpoint(finalized_checkpoint.asInternalCheckpoint());
 
               state
-                  .toGenesisVersionMutable()
+                  .toMutableVersionPhase0()
                   .ifPresent(
                       genesisState -> {
                         genesisState
