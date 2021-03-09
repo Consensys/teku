@@ -59,28 +59,6 @@ public class BeaconBlockBody
     super(type, backingNode);
   }
 
-  @Deprecated
-  public BeaconBlockBody(
-      BLSSignature randao_reveal,
-      Eth1Data eth1_data,
-      Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposer_slashings,
-      SSZList<AttesterSlashing> attester_slashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntary_exits) {
-    this(
-        SSZ_SCHEMA.get(),
-        randao_reveal,
-        eth1_data,
-        graffiti,
-        proposer_slashings,
-        attester_slashings,
-        attestations,
-        deposits,
-        voluntary_exits);
-  }
-
   BeaconBlockBody(
       BeaconBlockBodySchema type,
       BLSSignature randao_reveal,

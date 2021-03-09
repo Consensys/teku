@@ -31,13 +31,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class BlockProposalUtil {
 
   private final StateTransition stateTransition;
+  private final SchemaDefinitions schemaDefinitions;
 
-  public BlockProposalUtil(final StateTransition stateTransition) {
+  public BlockProposalUtil(
+      final SchemaDefinitions schemaDefinitions, final StateTransition stateTransition) {
+    this.schemaDefinitions = schemaDefinitions;
     this.stateTransition = stateTransition;
   }
 
@@ -62,16 +66,18 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    BeaconBlockBody beaconBlockBody =
-        new BeaconBlockBody(
-            randaoReveal,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+    final BeaconBlockBody beaconBlockBody =
+        schemaDefinitions
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                randaoReveal,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;

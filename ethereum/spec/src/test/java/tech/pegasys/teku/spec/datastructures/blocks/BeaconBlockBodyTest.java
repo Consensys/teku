@@ -24,6 +24,8 @@ import static tech.pegasys.teku.util.config.Constants.MAX_VOLUNTARY_EXITS;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -35,7 +37,8 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 class BeaconBlockBodyTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private BLSSignature blsSignature = dataStructureUtil.randomSignature();
   private Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
   private Bytes32 graffiti = dataStructureUtil.randomBytes32();
@@ -64,15 +67,18 @@ class BeaconBlockBodyTest {
   }
 
   private BeaconBlockBody beaconBlockBody =
-      new BeaconBlockBody(
-          blsSignature,
-          eth1Data,
-          graffiti,
-          proposerSlashings,
-          attesterSlashings,
-          attestations,
-          deposits,
-          voluntaryExits);
+      spec.getGenesisSpec()
+          .getSchemaDefinitions()
+          .getBeaconBlockBodySchema()
+          .createBlockBody(
+              blsSignature,
+              eth1Data,
+              graffiti,
+              proposerSlashings,
+              attesterSlashings,
+              attestations,
+              deposits,
+              voluntaryExits);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -84,15 +90,18 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits);
 
     assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -103,15 +112,18 @@ class BeaconBlockBodyTest {
     SSZList<ProposerSlashing> reverseProposerSlashings = proposerSlashings.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            SSZList.createMutable(reverseProposerSlashings),
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                SSZList.createMutable(reverseProposerSlashings),
+                attesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -124,15 +136,18 @@ class BeaconBlockBodyTest {
             SSZList.singleton(dataStructureUtil.randomAttesterSlashing()), attesterSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            otherAttesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                otherAttesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -143,15 +158,18 @@ class BeaconBlockBodyTest {
     SSZList<Attestation> reverseAttestations = attestations.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            reverseAttestations,
-            deposits,
-            voluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                reverseAttestations,
+                deposits,
+                voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -162,15 +180,18 @@ class BeaconBlockBodyTest {
     SSZList<Deposit> reverseDeposits = deposits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            reverseDeposits,
-            voluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                reverseDeposits,
+                voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -181,15 +202,18 @@ class BeaconBlockBodyTest {
     SSZList<SignedVoluntaryExit> reverseVoluntaryExits = voluntaryExits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            reverseVoluntaryExits);
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                blsSignature,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                deposits,
+                reverseVoluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
