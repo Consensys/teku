@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 class BeaconStateGenesisImpl extends AbstractBeaconState<MutableBeaconStateGenesis>
-    implements BeaconStateGenesis, BeaconStateCache {
+    implements BeaconStateGenesis, BeaconStateCache, AttestationBasedValidatorStats {
 
   BeaconStateGenesisImpl(
       final BeaconStateSchema<BeaconStateGenesis, MutableBeaconStateGenesis> schema) {

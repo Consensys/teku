@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 /**
  * This class is only suitable for regenerating states we have previously performed full validation
