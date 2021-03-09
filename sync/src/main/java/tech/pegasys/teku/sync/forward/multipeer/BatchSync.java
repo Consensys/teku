@@ -126,23 +126,35 @@ public class BatchSync implements Sync {
       final TargetChain targetChain, final SafeFuture<SyncResult> syncResult) {
     LOG.debug("Switching to sync target {}", targetChain.getChainHead());
     eventThread.checkOnEventThread();
-    // If we're starting a sync after the previous has completed, track the import start time
-    // If we're just switching targets, we should still be able to keep imports running
-    final boolean firstChain = this.syncResult.isDone();
-    if (firstChain) {
-      this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
-    }
+
+    final boolean syncRestartRequired = newChainRequiresSyncRestart(targetChain);
+
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
     this.targetChain = targetChain;
-    if (firstChain) {
-      // Only set the common ancestor if we aren't currently syncing a chain
-      // Otherwise we'll optimistically assume the new chain extends the current one and only reset
-      // the common ancestor if we later find out that's not the case
+    if (syncRestartRequired) {
+      // If we already know the new chain doesn't extend the in-progress sync, reset back to the
+      // common ancestor.  Otherwise optimistically assume that the new chain will just carry on
+      // after the last batch we've already requested from the old chain.
+      activeBatches.removeAll();
       this.commonAncestorSlot = getCommonAncestorSlot();
+
+      // Reset the import timer as we may need more time to get imports going again.
+      this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
     }
     this.syncResult = syncResult;
     progressSync();
+  }
+
+  private boolean newChainRequiresSyncRestart(final TargetChain targetChain) {
+    if (this.syncResult.isDone()) {
+      // Can't extend the current sync because it has already completed or failed.
+      return true;
+    }
+    final UInt64 lastBatchEnd = activeBatches.last().map(Batch::getLastSlot).orElse(UInt64.ZERO);
+    // New target might extend the current target chain if the new target is a longer chain
+    // otherwise we know immediately we have to start back at the common ancestor.
+    return targetChain.getChainHead().getSlot().isLessThanOrEqualTo(lastBatchEnd);
   }
 
   private SafeFuture<UInt64> getCommonAncestorSlot() {
