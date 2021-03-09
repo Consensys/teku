@@ -54,7 +54,7 @@ class FuzzUtilTest {
 
   private final Spec spec = SpecFactory.createMinimal();
   private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
-  private final BeaconStateSchema genesisBeaconStateSchema =
+  private final BeaconStateSchema<?, ?> genesisBeaconStateSchema =
       genesisSchemaDefinitions.getBeaconStateSchema();
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
