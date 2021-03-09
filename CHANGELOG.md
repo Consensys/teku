@@ -23,3 +23,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)
 - Fixed build failure when checked out as a shallow clone. Shallow clones are still not recommended as the version number cannot be determined correctly.
 - Logs generated during voluntary exit command processing should no longer contain usernames or passwords.
+- Fixed case where sync could stall when switching to a new target chain that is shorter than the previous target.
