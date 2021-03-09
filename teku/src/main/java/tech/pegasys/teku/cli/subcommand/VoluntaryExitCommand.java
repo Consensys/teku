@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
@@ -28,7 +27,6 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
@@ -56,6 +54,7 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 @CommandLine.Command(
@@ -247,7 +246,7 @@ public class VoluntaryExitCommand implements Runnable {
       HttpUrl apiEndpoint = HttpUrl.get(endpoint);
       final OkHttpClient.Builder httpClientBuilder =
           new OkHttpClient.Builder().readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS);
-      addAuthenticator(apiEndpoint, httpClientBuilder);
+      OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
       // Strip any authentication info from the URL to ensure it doesn't get logged.
       apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
       final OkHttpClient okHttpClient = httpClientBuilder.build();
@@ -295,18 +294,5 @@ public class VoluntaryExitCommand implements Runnable {
             .getBeaconNodeApiEndpoint()
             .orElse(URI.create("http://127.0.0.1:5051"))
             .toString());
-  }
-
-  private static void addAuthenticator(
-      final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
-    final String username = apiEndpoint.username();
-    final String password = apiEndpoint.password();
-    if (!Strings.isNullOrEmpty(apiEndpoint.password())) {
-      final String credentials = Credentials.basic(username, password);
-      httpClientBuilder.addInterceptor(
-          chain ->
-              chain.proceed(
-                  chain.request().newBuilder().header("Authorization", credentials).build()));
-    }
   }
 }
