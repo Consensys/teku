@@ -56,7 +56,6 @@ public enum BeaconStateFields {
 
   static List<SszField> getCommonFields(final SpecConstants specConstants) {
     SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
-    // TODO(#3658) - Use non-static BeaconBlockHeaderSchema
     final BeaconBlockHeader.BeaconBlockHeaderSchema blockHeaderSchema =
         BeaconBlockHeader.SSZ_SCHEMA;
     SszField latestBlockHeaderField =

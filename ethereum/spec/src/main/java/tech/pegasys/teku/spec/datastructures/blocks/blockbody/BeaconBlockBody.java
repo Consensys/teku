@@ -27,16 +27,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 /** A Beacon block body */
@@ -52,84 +46,20 @@ public class BeaconBlockBody
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>> {
 
-  public static class BeaconBlockBodySchema
-      extends ContainerSchema8<
-          BeaconBlockBody,
-          SszVector<SszByte>,
-          Eth1Data,
-          SszBytes32,
-          SszList<ProposerSlashing>,
-          SszList<AttesterSlashing>,
-          SszList<Attestation>,
-          SszList<Deposit>,
-          SszList<SignedVoluntaryExit>> {
-
-    public BeaconBlockBodySchema() {
-      super(
-          "BeaconBlockBody",
-          namedSchema("randao_reveal", SszComplexSchemas.BYTES_96_SCHEMA),
-          namedSchema("eth1_data", Eth1Data.SSZ_SCHEMA),
-          namedSchema("graffiti", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema(
-              "proposer_slashings",
-              SszListSchema.create(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS)),
-          namedSchema(
-              "attester_slashings",
-              SszListSchema.create(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS)),
-          namedSchema(
-              "attestations",
-              SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS)),
-          namedSchema("deposits", SszListSchema.create(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS)),
-          namedSchema(
-              "voluntary_exits",
-              SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS)));
-    }
-
-    @Override
-    public SszSchema<SszList<ProposerSlashing>> getFieldSchema3() {
-      return super.getFieldSchema3();
-    }
-
-    public SszSchema<SszList<ProposerSlashing>> getProposerSlashingsSchema() {
-      return getFieldSchema3();
-    }
-
-    public SszSchema<SszList<AttesterSlashing>> getAttesterSlashingsSchema() {
-      return getFieldSchema4();
-    }
-
-    public SszSchema<SszList<Attestation>> getAttestationsSchema() {
-      return getFieldSchema5();
-    }
-
-    public SszSchema<SszList<Deposit>> getDepositsSchema() {
-      return getFieldSchema6();
-    }
-
-    public SszSchema<SszList<SignedVoluntaryExit>> getVoluntaryExitsSchema() {
-      return getFieldSchema7();
-    }
-
-    @Override
-    public BeaconBlockBody createFromBackingNode(TreeNode node) {
-      return new BeaconBlockBody(this, node);
-    }
-  }
-
   public static BeaconBlockBodySchema getSszSchema() {
     return SSZ_SCHEMA.get();
   }
 
   public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
-      SpecDependent.of(BeaconBlockBodySchema::new);
+      SpecDependent.of(BeaconBlockBodySchema::create);
 
   private BLSSignature randaoRevealCache;
 
-  private BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
+  BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  @Deprecated // Use the constructor with type
+  @Deprecated
   public BeaconBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
@@ -149,10 +79,9 @@ public class BeaconBlockBody
         attestations,
         deposits,
         voluntary_exits);
-    this.randaoRevealCache = randao_reveal;
   }
 
-  public BeaconBlockBody(
+  BeaconBlockBody(
       BeaconBlockBodySchema type,
       BLSSignature randao_reveal,
       Eth1Data eth1_data,

@@ -27,6 +27,14 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
   }
 
   @SuppressWarnings("unchecked")
+  static <ElementDataT extends SszData> SszSchema<SszList<ElementDataT>> createAsList(
+      SszSchema<ElementDataT> elementSchema, long maxLength) {
+    final SszSchema<? extends SszList<ElementDataT>> value =
+        create(elementSchema, maxLength, SszSchemaHints.none());
+    return (SszSchema<SszList<ElementDataT>>) value;
+  }
+
+  @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
           SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
