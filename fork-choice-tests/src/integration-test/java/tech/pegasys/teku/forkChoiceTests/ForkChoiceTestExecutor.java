@@ -76,11 +76,7 @@ public class ForkChoiceTestExecutor {
 
       if (content.containsKey("steps")) {
         BeaconState genesisState =
-            resolvePart(
-                BeaconState.class,
-                beaconStateSchema,
-                file,
-                content.get("genesis"));
+            resolvePart(BeaconState.class, beaconStateSchema, file, content.get("genesis"));
 
         @SuppressWarnings("unchecked")
         List<Object> steps =
