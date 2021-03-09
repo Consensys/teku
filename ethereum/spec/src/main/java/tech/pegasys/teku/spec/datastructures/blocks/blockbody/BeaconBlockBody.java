@@ -60,25 +60,24 @@ public class BeaconBlockBody
 
   BeaconBlockBody(
       BeaconBlockBodySchema type,
-      BLSSignature randao_reveal,
+      SszVector<SszByte> randao_reveal,
       Eth1Data eth1_data,
-      Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposer_slashings,
-      SSZList<AttesterSlashing> attester_slashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntary_exits) {
+      SszBytes32 graffiti,
+      SszList<ProposerSlashing> proposer_slashings,
+      SszList<AttesterSlashing> attester_slashings,
+      SszList<Attestation> attestations,
+      SszList<Deposit> deposits,
+      SszList<SignedVoluntaryExit> voluntary_exits) {
     super(
         type,
-        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
+        randao_reveal,
         eth1_data,
-        new SszBytes32(graffiti),
-        SszUtils.toSszList(type.getProposerSlashingsSchema(), proposer_slashings),
-        SszUtils.toSszList(type.getAttesterSlashingsSchema(), attester_slashings),
-        SszUtils.toSszList(type.getAttestationsSchema(), attestations),
-        SszUtils.toSszList(type.getDepositsSchema(), deposits),
-        SszUtils.toSszList(type.getVoluntaryExitsSchema(), voluntary_exits));
-    this.randaoRevealCache = randao_reveal;
+        graffiti,
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
   }
 
   public BeaconBlockBody() {

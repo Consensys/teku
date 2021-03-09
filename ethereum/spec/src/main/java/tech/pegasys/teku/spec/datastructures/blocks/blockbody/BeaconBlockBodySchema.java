@@ -33,6 +33,7 @@ import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconBlockBodySchema
@@ -107,14 +108,14 @@ public class BeaconBlockBodySchema
       SSZList<SignedVoluntaryExit> voluntary_exits) {
     return new BeaconBlockBody(
         this,
-        randao_reveal,
+        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
         eth1_data,
-        graffiti,
-        proposer_slashings,
-        attester_slashings,
-        attestations,
-        deposits,
-        voluntary_exits);
+        new SszBytes32(graffiti),
+        SszUtils.toSszList(getProposerSlashingsSchema(), proposer_slashings),
+        SszUtils.toSszList(getAttesterSlashingsSchema(), attester_slashings),
+        SszUtils.toSszList(getAttestationsSchema(), attestations),
+        SszUtils.toSszList(getDepositsSchema(), deposits),
+        SszUtils.toSszList(getVoluntaryExitsSchema(), voluntary_exits));
   }
 
   @Override
