@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.genesis.MutableBeaconStateGenesis;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
@@ -141,11 +140,4 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   default Optional<MutableBeaconStateGenesis> toGenesisVersionMutable() {
     return Optional.empty();
   }
-
-  // Temporaryily keep genesis-specific fields on the main interface
-  @Override
-  SSZMutableList<PendingAttestation> getPrevious_epoch_attestations();
-
-  @Override
-  SSZMutableList<PendingAttestation> getCurrent_epoch_attestations();
 }
