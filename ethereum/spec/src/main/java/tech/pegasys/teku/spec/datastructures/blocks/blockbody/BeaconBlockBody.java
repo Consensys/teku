@@ -54,6 +54,15 @@ public class BeaconBlockBody
 
   private BLSSignature randaoRevealCache;
 
+  @Deprecated
+  public BeaconBlockBody() {
+    super(SSZ_SCHEMA.get());
+  }
+
+  BeaconBlockBody(BeaconBlockBodySchema type) {
+    super(type);
+  }
+
   BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
@@ -78,10 +87,6 @@ public class BeaconBlockBody
         attestations,
         deposits,
         voluntary_exits);
-  }
-
-  public BeaconBlockBody() {
-    super(SSZ_SCHEMA.get());
   }
 
   public BLSSignature getRandao_reveal() {

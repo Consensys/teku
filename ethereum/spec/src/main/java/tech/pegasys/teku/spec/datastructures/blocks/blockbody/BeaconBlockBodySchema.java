@@ -97,6 +97,10 @@ public class BeaconBlockBodySchema
         SszListSchema.createAsList(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS));
   }
 
+  public BeaconBlockBody createEmpty() {
+    return new BeaconBlockBody(this);
+  }
+
   public BeaconBlockBody createBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
