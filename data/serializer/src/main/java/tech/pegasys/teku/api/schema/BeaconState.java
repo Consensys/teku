@@ -27,10 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconState {
@@ -153,9 +150,9 @@ public class BeaconState {
     this.eth1_deposit_index = beaconState.getEth1_deposit_index();
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
-    this.balances = beaconState.getBalances().stream().collect(Collectors.toList());
-    this.randao_mixes = beaconState.getRandao_mixes().stream().collect(Collectors.toList());
-    this.slashings = beaconState.getSlashings().stream().collect(Collectors.toList());
+    this.balances = beaconState.getBalances().asListUnboxed();
+    this.randao_mixes = beaconState.getRandao_mixes().asListUnboxed();
+    this.slashings = beaconState.getSlashings().asListUnboxed();
     this.justification_bits = beaconState.getJustification_bits();
     this.previous_justified_checkpoint =
         new Checkpoint(beaconState.getPrevious_justified_checkpoint());
@@ -194,38 +191,26 @@ public class BeaconState {
               state.setSlot(slot);
               state.setFork(fork.asInternalFork());
               state.setLatest_block_header(latest_block_header.asInternalBeaconBlockHeader());
-              state.getBlock_roots().setAll(SSZVector.createMutable(block_roots, Bytes32.class));
-              state.getState_roots().setAll(SSZVector.createMutable(state_roots, Bytes32.class));
-              state
-                  .getHistorical_roots()
-                  .setAll(
-                      SSZList.createMutable(
-                          historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class));
+              state.getBlock_roots().setAllElements(block_roots);
+              state.getState_roots().setAllElements(state_roots);
+              state.getHistorical_roots().setAllElements(historical_roots);
               state.setEth1_data(eth1_data.asInternalEth1Data());
               state
                   .getEth1_data_votes()
                   .setAll(
-                      SSZList.createMutable(
-                          eth1_data_votes.stream()
-                              .map(Eth1Data::asInternalEth1Data)
-                              .collect(Collectors.toList()),
-                          EPOCHS_PER_ETH1_VOTING_PERIOD,
-                          tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.class));
+                      eth1_data_votes.stream()
+                          .map(Eth1Data::asInternalEth1Data)
+                          .collect(Collectors.toList()));
               state.setEth1_deposit_index(eth1_deposit_index);
               state
                   .getValidators()
                   .setAll(
-                      SSZList.createMutable(
-                          validators.stream()
-                              .map(Validator::asInternalValidator)
-                              .collect(Collectors.toList()),
-                          Constants.VALIDATOR_REGISTRY_LIMIT,
-                          tech.pegasys.teku.spec.datastructures.state.Validator.class));
-              state
-                  .getBalances()
-                  .setAll(SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class));
-              state.getRandao_mixes().setAll(SSZVector.createMutable(randao_mixes, Bytes32.class));
-              state.getSlashings().setAll(SSZVector.createMutable(slashings, UInt64.class));
+                      validators.stream()
+                          .map(Validator::asInternalValidator)
+                          .collect(Collectors.toList()));
+              state.getBalances().setAllElements(balances);
+              state.getRandao_mixes().setAllElements(randao_mixes);
+              state.getSlashings().setAllElements(slashings);
               state.setJustification_bits(justification_bits);
               state.setPrevious_justified_checkpoint(
                   previous_justified_checkpoint.asInternalCheckpoint());
@@ -240,23 +225,15 @@ public class BeaconState {
                         genesisState
                             .getPrevious_epoch_attestations()
                             .setAll(
-                                SSZList.createMutable(
-                                    previous_epoch_attestations.stream()
-                                        .map(PendingAttestation::asInternalPendingAttestation)
-                                        .collect(Collectors.toList()),
-                                    MAX_ATTESTATIONS,
-                                    tech.pegasys.teku.spec.datastructures.state.PendingAttestation
-                                        .class));
+                                previous_epoch_attestations.stream()
+                                    .map(PendingAttestation::asInternalPendingAttestation)
+                                    .collect(Collectors.toList()));
                         genesisState
                             .getCurrent_epoch_attestations()
                             .setAll(
-                                SSZList.createMutable(
-                                    current_epoch_attestations.stream()
-                                        .map(PendingAttestation::asInternalPendingAttestation)
-                                        .collect(Collectors.toList()),
-                                    MAX_ATTESTATIONS,
-                                    tech.pegasys.teku.spec.datastructures.state.PendingAttestation
-                                        .class));
+                                current_epoch_attestations.stream()
+                                    .map(PendingAttestation::asInternalPendingAttestation)
+                                    .collect(Collectors.toList()));
                       });
             });
   }

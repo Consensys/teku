@@ -27,8 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;

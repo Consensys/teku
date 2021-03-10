@@ -40,12 +40,11 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {

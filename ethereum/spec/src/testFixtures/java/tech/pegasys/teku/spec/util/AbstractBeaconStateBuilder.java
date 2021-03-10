@@ -208,8 +208,7 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
-  public TBuilder historicalRoots(
-      final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
+  public TBuilder historicalRoots(final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
     checkNotNull(historicalRoots);
     this.historicalRoots = historicalRoots;
     return (TBuilder) this;

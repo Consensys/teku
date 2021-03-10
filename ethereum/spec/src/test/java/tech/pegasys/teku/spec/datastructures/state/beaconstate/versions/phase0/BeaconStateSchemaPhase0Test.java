@@ -41,9 +41,9 @@ public class BeaconStateSchemaPhase0Test
     BeaconStatePhase0 s1 = getSchema(modifiedConstants).createEmpty();
     BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
 
-    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
-    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
+    assertThat(s1.getPrevious_epoch_attestations().getSchema())
+        .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema());
+    assertThat(s1.getCurrent_epoch_attestations().getSchema())
+        .isNotEqualTo(s2.getCurrent_epoch_attestations().getSchema());
   }
 }

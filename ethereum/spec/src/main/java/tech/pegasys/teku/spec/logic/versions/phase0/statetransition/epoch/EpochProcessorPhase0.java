@@ -14,35 +14,33 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorPhase0 extends AbstractEpochProcessor {
+  private final SchemaDefinitions schemaDefinitions;
 
   public EpochProcessorPhase0(
       final SpecConstants specConstants,
+      final SchemaDefinitions schemaDefinitions,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory) {
     super(specConstants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+    this.schemaDefinitions = schemaDefinitions;
   }
 
   @Override
   public void processParticipationUpdates(MutableBeaconState genericState) {
     // Rotate current/previous epoch attestations
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
-    state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
-    state
-        .getCurrent_epoch_attestations()
-        .setAll(
-            SSZList.createMutable(
-                PendingAttestation.class,
-                specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
+    state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
+    state.setCurrent_epoch_attestations(
+        schemaDefinitions.getBeaconStateSchema().getCurrentEpochAttestationsSchema().getDefault());
   }
 }

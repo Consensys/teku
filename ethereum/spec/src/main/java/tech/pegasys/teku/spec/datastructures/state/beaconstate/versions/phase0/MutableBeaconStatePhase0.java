@@ -14,11 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 
 public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStatePhase0 {
 
@@ -33,15 +32,23 @@ public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStat
 
   // Attestations
   @Override
-  default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
+  default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
+    return getAnyByRef(15);
+  }
+
+  default void setPrevious_epoch_attestations(
+      SszList<PendingAttestation> previous_epoch_attestations) {
+    set(15, previous_epoch_attestations);
   }
 
   @Override
-  default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(16), Function.identity(), Function.identity());
+  default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
+    return getAnyByRef(16);
+  }
+
+  default void setCurrent_epoch_attestations(
+      SszList<PendingAttestation> current_epoch_attestations) {
+    set(16, current_epoch_attestations);
   }
 
   @Override

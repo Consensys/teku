@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public interface BlockProcessorUtil {
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -50,52 +50,52 @@ public interface BlockProcessorUtil {
       throws BlockProcessingException;
 
   void processProposerSlashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException;
 
   void processProposerSlashingsNoValidation(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException;
 
   boolean verifyProposerSlashings(
       BeaconState state,
-      SSZList<ProposerSlashing> proposerSlashings,
+      SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier);
 
   void processAttesterSlashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException;
 
-  void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+  void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException;
 
   void processAttestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
-  void processAttestationsNoValidation(MutableBeaconState state, SSZList<Attestation> attestations)
+  void processAttestationsNoValidation(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException;
 
   void verifyAttestations(
       BeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
-  void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException;
 
-  void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException;
 
   void processVoluntaryExitsNoValidation(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits) throws BlockProcessingException;
+      MutableBeaconState state, SszList<SignedVoluntaryExit> exits) throws BlockProcessingException;
 
   boolean verifyVoluntaryExits(
       BeaconState state,
-      SSZList<SignedVoluntaryExit> exits,
+      SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier);
 }

@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public abstract class AbstractBeaconStateSchema<

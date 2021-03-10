@@ -15,9 +15,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -34,7 +31,7 @@ public abstract class AbstractMutableBeaconState<
   private final TransitionCaches transitionCaches;
   private final boolean builder;
 
-  MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
+  protected AbstractMutableBeaconState(T backingImmutableView) {
     this(backingImmutableView, false);
   }
 

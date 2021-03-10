@@ -31,6 +31,14 @@ public interface SszMutablePrimitiveCollection<
     set(index, sszData);
   }
 
+  default void setAllElements(Iterable<ElementT> newChildren) {
+    clear();
+    int idx = 0;
+    for (ElementT newChild : newChildren) {
+      setElement(idx, newChild);
+    }
+  }
+
   @Override
   SszPrimitiveCollection<ElementT, SszElementT> commitChanges();
 }

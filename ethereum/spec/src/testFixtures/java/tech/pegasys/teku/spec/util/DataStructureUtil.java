@@ -776,7 +776,7 @@ public final class DataStructureUtil {
     return spec;
   }
 
-  public BeaconStateSchema getBeaconStateSchema() {
+  public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 

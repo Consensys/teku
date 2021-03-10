@@ -37,13 +37,10 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
