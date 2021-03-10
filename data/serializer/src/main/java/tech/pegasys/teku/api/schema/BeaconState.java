@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
@@ -180,9 +181,9 @@ public class BeaconState {
 
   public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState asInternalBeaconState(
       final Spec spec) {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .getBeaconStateSchema()
+    final BeaconStateSchema<?, ?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconStateSchema();
+    return schema
         .createEmpty()
         .updated(
             state -> {
@@ -211,7 +212,9 @@ public class BeaconState {
               state.getBalances().setAllElements(balances);
               state.getRandao_mixes().setAllElements(randao_mixes);
               state.getSlashings().setAllElements(slashings);
-              state.setJustification_bits(justification_bits);
+              SszBitvector newJustificationBits =
+                  schema.getJustificationBitsSchema().ofBits(justification_bits.getAllSetBits());
+              state.setJustification_bits(newJustificationBits);
               state.setPrevious_justified_checkpoint(
                   previous_justified_checkpoint.asInternalCheckpoint());
               state.setCurrent_justified_checkpoint(
