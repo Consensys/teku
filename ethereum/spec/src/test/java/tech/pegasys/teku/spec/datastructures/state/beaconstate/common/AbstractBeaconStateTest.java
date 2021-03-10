@@ -53,7 +53,7 @@ public abstract class AbstractBeaconStateTest<
     UInt64 v1 = stateR1.getBalances().getElement(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
-    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
+    assertThat(stateR1.getBalances().getElement(0)).isEqualTo(UInt64.valueOf(0x3333));
 
     BeaconState stateR2 =
         stateR1.updated(
