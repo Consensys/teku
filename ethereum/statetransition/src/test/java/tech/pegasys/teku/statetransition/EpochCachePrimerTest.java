@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -61,6 +62,10 @@ class EpochCachePrimerTest {
         .thenAnswer(invocation -> realSpec.getMaxLookaheadEpoch(invocation.getArgument(0)));
     when(mockSpec.computeEpochAtSlot(any()))
         .thenAnswer(invocation -> realSpec.computeEpochAtSlot(invocation.getArgument(0)));
+    when(mockSpec.getCurrentEpoch(any()))
+        .thenAnswer(invocation -> realSpec.getCurrentEpoch(invocation.getArgument(0)));
+    when(mockSpec.getSpecConstants(any()))
+        .thenAnswer(invocation -> realSpec.getSpecConstants(invocation.getArgument(0)));
 
     when(mockSpec.getBeaconStateUtil(any())).thenReturn(beaconStateUtil);
 
@@ -113,14 +118,23 @@ class EpochCachePrimerTest {
     primer.primeCacheForEpoch(epoch);
 
     final BeaconState state = getStateForEpoch(epoch);
-    final UInt64 maxLookaheadEpoch = mockSpec.getMaxLookaheadEpoch(state);
+    final UInt64 lookaheadEpoch = epoch.plus(1);
     forEachSlotInEpoch(
-        maxLookaheadEpoch,
+        lookaheadEpoch,
         slot ->
-            UInt64.range(UInt64.ZERO, realSpec.getCommitteeCountPerSlot(state, maxLookaheadEpoch))
+            UInt64.range(UInt64.ZERO, realSpec.getCommitteeCountPerSlot(state, lookaheadEpoch))
                 .forEach(
                     committeeIndex ->
                         verify(beaconStateUtil).getBeaconCommittee(state, slot, committeeIndex)));
+
+    final UInt64 firstSlotAfterLookAheadPeriod =
+        realSpec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1));
+    // Should not precalculate beyond the end of the look ahead period
+    verify(beaconStateUtil, never())
+        .getBeaconCommittee(
+            any(),
+            argThat(argument -> argument.isGreaterThanOrEqualTo(firstSlotAfterLookAheadPeriod)),
+            any());
   }
 
   private void forEachSlotInEpoch(final UInt64 epoch, final Consumer<UInt64> action) {
