@@ -13,20 +13,28 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-
 public class ValidatorFlag {
   public static final int TIMELY_HEAD_FLAG = 1;
   public static final int TIMELY_SOURCE_FLAG = 2;
   public static final int TIMELY_TARGET_FLAG = 4;
 
-  public static boolean isTimelyTarget(SszBitvector flags) {
-    return flags.getBit(TIMELY_TARGET_FLAG);
+  public static boolean isTimelyTarget(int value) {
+    return areFlagsSet(value, TIMELY_TARGET_FLAG);
   }
 
-  public static boolean isAnyFlagSet(SszBitvector flags) {
-    return flags.getBit(TIMELY_HEAD_FLAG)
-        || flags.getBit(TIMELY_SOURCE_FLAG)
-        || flags.getBit(TIMELY_TARGET_FLAG);
+  public static boolean isAnyFlagSet(int value) {
+    return areFlagsSet(value, TIMELY_HEAD_FLAG, TIMELY_SOURCE_FLAG, TIMELY_TARGET_FLAG);
+  }
+
+  private static boolean areFlagsSet(final int value, final int... flags) {
+    return (value & combineFlags(flags)) != 0;
+  }
+
+  private static int combineFlags(final int... flags) {
+    int combined = 0;
+    for (int flag : flags) {
+      combined = combined | flag;
+    }
+    return combined;
   }
 }

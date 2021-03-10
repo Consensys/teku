@@ -19,7 +19,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
 
@@ -33,18 +33,18 @@ public interface BeaconStateAltair extends BeaconState {
   }
 
   // Attestations
-  default SSZList<SszBitvector> getPreviousEpochParticipation() {
+  default SSZList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
     return new SSZBackingList<>(
-        SszBitvector.class, getAny(fieldIndex), Function.identity(), Function.identity());
+        SszByte.class, getAny(fieldIndex), Function.identity(), Function.identity());
   }
 
-  default SSZList<SszBitvector> getCurrentEpochParticipation() {
+  default SSZList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
     return new SSZBackingList<>(
-        SszBitvector.class, getAny(fieldIndex), Function.identity(), Function.identity());
+        SszByte.class, getAny(fieldIndex), Function.identity(), Function.identity());
   }
 
   @Override

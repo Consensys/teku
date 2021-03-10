@@ -22,14 +22,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Transition
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStateAltairImpl>
     implements MutableBeaconStateAltair, BeaconStateCache, ValidatorStatsAltair {
 
-  private SSZMutableList<SszBitvector> previousEpochParticipation;
-  private SSZMutableList<SszBitvector> currentEpochParticipation;
+  private SSZMutableList<SszByte> previousEpochParticipation;
+  private SSZMutableList<SszByte> currentEpochParticipation;
 
   MutableBeaconStateAltairImpl(BeaconStateAltairImpl backingImmutableView) {
     super(backingImmutableView);
@@ -51,14 +51,14 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   }
 
   @Override
-  public SSZMutableList<SszBitvector> getPreviousEpochParticipation() {
+  public SSZMutableList<SszByte> getPreviousEpochParticipation() {
     return previousEpochParticipation != null
         ? previousEpochParticipation
         : (previousEpochParticipation = getPreviousEpochParticipation());
   }
 
   @Override
-  public SSZMutableList<SszBitvector> getCurrentEpochParticipation() {
+  public SSZMutableList<SszByte> getCurrentEpochParticipation() {
     return currentEpochParticipation != null
         ? currentEpochParticipation
         : (currentEpochParticipation = getCurrentEpochParticipation());
