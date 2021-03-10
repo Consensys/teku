@@ -52,52 +52,69 @@ public class BeaconBlockBodySchemaPhase0
     implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
 
   private BeaconBlockBodySchemaPhase0(
-      SszSchema<SszVector<SszByte>> randaoRevealSchema,
-      SszSchema<Eth1Data> eth1DataSchema,
-      SszSchema<SszBytes32> graffitiSchema,
-      SszSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      SszSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      SszSchema<SszList<Attestation>> attestationsSchema,
-      SszSchema<SszList<Deposit>> depositsSchema,
-      SszSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
+      NamedSchema<SszVector<SszByte>> randaoRevealSchema,
+      NamedSchema<Eth1Data> eth1DataSchema,
+      NamedSchema<SszBytes32> graffitiSchema,
+      NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
+      NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
+      NamedSchema<SszList<Attestation>> attestationsSchema,
+      NamedSchema<SszList<Deposit>> depositsSchema,
+      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
     super(
         "BeaconBlockBody",
-        namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), randaoRevealSchema),
-        namedSchema(BlockBodyFields.ETH1_DATA.name(), eth1DataSchema),
-        namedSchema(BlockBodyFields.GRAFFITI.name(), graffitiSchema),
-        namedSchema(BlockBodyFields.PROPOSER_SLASHINGS.name(), proposerSlashingsSchema),
-        namedSchema(BlockBodyFields.ATTESTER_SLASHINGS.name(), attesterSlashingsSchema),
-        namedSchema(BlockBodyFields.ATTESTATIONS.name(), attestationsSchema),
-        namedSchema(BlockBodyFields.DEPOSITS.name(), depositsSchema),
-        namedSchema(BlockBodyFields.VOLUNTARY_EXITS.name(), voluntaryExitsSchema));
+        randaoRevealSchema,
+        eth1DataSchema,
+        graffitiSchema,
+        proposerSlashingsSchema,
+        attesterSlashingsSchema,
+        attestationsSchema,
+        depositsSchema,
+        voluntaryExitsSchema);
   }
 
   public static BeaconBlockBodySchema<BeaconBlockBodyPhase0> create(final SpecConstants constants) {
-    return new BeaconBlockBodySchemaPhase0(
-        SszComplexSchemas.BYTES_96_SCHEMA,
-        Eth1Data.SSZ_SCHEMA,
-        SszPrimitiveSchemas.BYTES32_SCHEMA,
-        SszListSchema.createAsList(
-            ProposerSlashing.SSZ_SCHEMA, constants.getMaxProposerSlashings()),
-        SszListSchema.createAsList(
-            AttesterSlashing.SSZ_SCHEMA, constants.getMaxAttesterSlashings()),
-        SszListSchema.createAsList(Attestation.SSZ_SCHEMA, constants.getMaxAttestations()),
-        SszListSchema.createAsList(Deposit.SSZ_SCHEMA, constants.getMaxDeposits()),
-        SszListSchema.createAsList(
-            SignedVoluntaryExit.SSZ_SCHEMA, constants.getMaxVoluntaryExits()));
+    return create(
+        constants.getMaxProposerSlashings(),
+        constants.getMaxAttesterSlashings(),
+        constants.getMaxAttestations(),
+        constants.getMaxDeposits(),
+        constants.getMaxVoluntaryExits());
   }
 
   @Deprecated
   public static BeaconBlockBodySchemaPhase0 create() {
+    return create(
+        Constants.MAX_PROPOSER_SLASHINGS,
+        Constants.MAX_ATTESTER_SLASHINGS,
+        Constants.MAX_ATTESTATIONS,
+        Constants.MAX_DEPOSITS,
+        Constants.MAX_VOLUNTARY_EXITS);
+  }
+
+  private static BeaconBlockBodySchemaPhase0 create(
+      final long maxProposerSlashings,
+      final long maxAttesterSlashings,
+      final long maxAttestations,
+      final long maxDeposits,
+      final long maxVoluntaryExits) {
     return new BeaconBlockBodySchemaPhase0(
-        SszComplexSchemas.BYTES_96_SCHEMA,
-        Eth1Data.SSZ_SCHEMA,
-        SszPrimitiveSchemas.BYTES32_SCHEMA,
-        SszListSchema.createAsList(ProposerSlashing.SSZ_SCHEMA, Constants.MAX_PROPOSER_SLASHINGS),
-        SszListSchema.createAsList(AttesterSlashing.SSZ_SCHEMA, Constants.MAX_ATTESTER_SLASHINGS),
-        SszListSchema.createAsList(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS),
-        SszListSchema.createAsList(Deposit.SSZ_SCHEMA, Constants.MAX_DEPOSITS),
-        SszListSchema.createAsList(SignedVoluntaryExit.SSZ_SCHEMA, Constants.MAX_VOLUNTARY_EXITS));
+        namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszComplexSchemas.BYTES_96_SCHEMA),
+        namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
+        namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(
+            BlockBodyFields.PROPOSER_SLASHINGS.name(),
+            SszListSchema.create(ProposerSlashing.SSZ_SCHEMA, maxProposerSlashings)),
+        namedSchema(
+            BlockBodyFields.ATTESTER_SLASHINGS.name(),
+            SszListSchema.create(AttesterSlashing.SSZ_SCHEMA, maxAttesterSlashings)),
+        namedSchema(
+            BlockBodyFields.ATTESTATIONS.name(),
+            SszListSchema.create(Attestation.SSZ_SCHEMA, maxAttestations)),
+        namedSchema(
+            BlockBodyFields.DEPOSITS.name(), SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits)),
+        namedSchema(
+            BlockBodyFields.VOLUNTARY_EXITS.name(),
+            SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)));
   }
 
   @Override
