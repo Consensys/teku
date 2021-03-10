@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.phase0;
+package tech.pegasys.teku.spec.logic.versions.altair;
 
+import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
@@ -25,14 +26,11 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
-import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
-import tech.pegasys.teku.spec.logic.versions.phase0.util.BlockProcessorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class SpecLogicPhase0 extends AbstractSpecLogic {
-
-  private SpecLogicPhase0(
+public class SpecLogicAltair extends AbstractSpecLogic {
+  private SpecLogicAltair(
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -58,36 +56,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
 
   public static SpecLogicPhase0 create(
       final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
-    final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(constants);
-    final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, committeeUtil);
-    final AttestationUtil attestationUtil =
-        new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    final ValidatorStatusFactory validatorStatusFactory =
-        new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
-    final EpochProcessor epochProcessor =
-        new EpochProcessorPhase0(
-            constants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
-    final BlockProcessorUtil blockProcessorUtil =
-        new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
-    final StateTransition stateTransition =
-        StateTransition.create(
-            constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
-    final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(constants, beaconStateUtil, attestationUtil, stateTransition);
-    final BlockProposalUtil blockProposalUtil = new BlockProposalUtil(stateTransition);
-
-    return new SpecLogicPhase0(
-        committeeUtil,
-        validatorsUtil,
-        beaconStateUtil,
-        attestationUtil,
-        validatorStatusFactory,
-        epochProcessor,
-        blockProcessorUtil,
-        stateTransition,
-        forkChoiceUtil,
-        blockProposalUtil);
+    throw new NotImplementedException();
   }
 }
