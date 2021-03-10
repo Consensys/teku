@@ -72,7 +72,7 @@ public class BeaconBlockBodySchemaPhase0
         voluntaryExitsSchema);
   }
 
-  public static BeaconBlockBodySchema<BeaconBlockBodyPhase0> create(final SpecConstants constants) {
+  public static BeaconBlockBodySchemaPhase0 create(final SpecConstants constants) {
     return create(
         constants.getMaxProposerSlashings(),
         constants.getMaxAttesterSlashings(),
