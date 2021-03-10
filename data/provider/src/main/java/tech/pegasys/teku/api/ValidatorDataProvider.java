@@ -124,7 +124,7 @@ public class ValidatorDataProvider {
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
     return validatorApiChannel
-        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
+        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
         .thenApply(
             result -> {
               int responseCode;

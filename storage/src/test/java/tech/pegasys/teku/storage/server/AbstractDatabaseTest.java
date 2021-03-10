@@ -100,7 +100,7 @@ public abstract class AbstractDatabaseTest {
 
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
-    genesisAnchor = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
 
     // Initialize genesis store
     initGenesis();

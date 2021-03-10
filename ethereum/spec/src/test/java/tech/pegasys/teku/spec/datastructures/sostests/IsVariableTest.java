@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -50,7 +49,7 @@ public class IsVariableTest {
 
   static Stream<Arguments> variableSizeTypes() {
     return Stream.of(
-        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get()),
+        Arguments.of(SCHEMA_DEFINITIONS.getBeaconBlockBodySchema()),
         Arguments.of(BeaconBlock.SSZ_SCHEMA.get()),
         Arguments.of(Attestation.SSZ_SCHEMA),
         Arguments.of(AttesterSlashing.SSZ_SCHEMA),

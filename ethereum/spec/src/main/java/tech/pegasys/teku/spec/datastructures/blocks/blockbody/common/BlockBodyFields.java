@@ -11,14 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-
-public interface SchemaDefinitions {
-
-  BeaconStateSchema<?, ?> getBeaconStateSchema();
-
-  BeaconBlockBodySchema<?> getBeaconBlockBodySchema();
+public enum BlockBodyFields {
+  RANDAO_REVEAL,
+  ETH1_DATA,
+  GRAFFITI,
+  PROPOSER_SLASHINGS,
+  ATTESTER_SLASHINGS,
+  ATTESTATIONS,
+  DEPOSITS,
+  VOLUNTARY_EXITS
 }
