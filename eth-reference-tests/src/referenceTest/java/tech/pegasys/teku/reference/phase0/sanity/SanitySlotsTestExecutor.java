@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
 public class SanitySlotsTestExecutor implements TestExecutor {
 

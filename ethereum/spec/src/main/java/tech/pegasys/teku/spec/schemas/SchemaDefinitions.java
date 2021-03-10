@@ -13,17 +13,9 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 
-public class SchemaDefinitions {
-  private final SpecConstants specConstants;
+public interface SchemaDefinitions {
 
-  public SchemaDefinitions(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
-  }
-
-  public BeaconStateSchema getBeaconStateSchema() {
-    return BeaconStateSchema.create(specConstants);
-  }
+  BeaconStateSchema<?, ?> getBeaconStateSchema();
 }

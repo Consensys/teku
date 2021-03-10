@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
-import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -32,6 +30,7 @@ import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
@@ -57,7 +56,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
     HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
-    addAuthenticator(apiEndpoint, httpClientBuilder);
+    OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
@@ -85,19 +84,6 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
-  }
-
-  private static void addAuthenticator(
-      final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
-    final String username = apiEndpoint.username();
-    final String password = apiEndpoint.password();
-    if (!Strings.isNullOrEmpty(apiEndpoint.password())) {
-      final String credentials = Credentials.basic(username, password);
-      httpClientBuilder.addInterceptor(
-          chain ->
-              chain.proceed(
-                  chain.request().newBuilder().header("Authorization", credentials).build()));
-    }
   }
 
   private static int getReadTimeoutInSeconds(

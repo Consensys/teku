@@ -21,12 +21,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 
 public class BeaconState {
@@ -149,57 +153,111 @@ public class BeaconState {
     this.eth1_deposit_index = beaconState.getEth1_deposit_index();
     this.validators =
         beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
-    this.balances = beaconState.getBalances().asListUnboxed();
-    this.randao_mixes = beaconState.getRandao_mixes().asListUnboxed();
-    this.slashings = beaconState.getSlashings().asListUnboxed();
-    this.previous_epoch_attestations =
-        beaconState.getPrevious_epoch_attestations().stream()
-            .map(PendingAttestation::new)
-            .collect(Collectors.toList());
-    this.current_epoch_attestations =
-        beaconState.getCurrent_epoch_attestations().stream()
-            .map(PendingAttestation::new)
-            .collect(Collectors.toList());
+    this.balances = beaconState.getBalances().stream().collect(Collectors.toList());
+    this.randao_mixes = beaconState.getRandao_mixes().stream().collect(Collectors.toList());
+    this.slashings = beaconState.getSlashings().stream().collect(Collectors.toList());
     this.justification_bits = beaconState.getJustification_bits();
     this.previous_justified_checkpoint =
         new Checkpoint(beaconState.getPrevious_justified_checkpoint());
     this.current_justified_checkpoint =
         new Checkpoint(beaconState.getCurrent_justified_checkpoint());
     this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
+
+    // Optionally set phase0-specific versioned fields
+    final Optional<BeaconStatePhase0> maybePhase0State = beaconState.toVersionPhase0();
+    if (maybePhase0State.isPresent()) {
+      final BeaconStatePhase0 genesisState = maybePhase0State.get();
+      this.previous_epoch_attestations =
+          genesisState.getPrevious_epoch_attestations().stream()
+              .map(PendingAttestation::new)
+              .collect(Collectors.toList());
+      this.current_epoch_attestations =
+          genesisState.getCurrent_epoch_attestations().stream()
+              .map(PendingAttestation::new)
+              .collect(Collectors.toList());
+    } else {
+      this.previous_epoch_attestations = null;
+      this.current_epoch_attestations = null;
+    }
   }
 
   public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState asInternalBeaconState(
       final Spec spec) {
-    BeaconStateSchema schema = spec.atSlot(slot).getSchemaDefinitions().getBeaconStateSchema();
-    return schema.create(
-        genesis_time,
-        genesis_validators_root,
-        slot,
-        fork.asInternalFork(),
-        latest_block_header.asInternalBeaconBlockHeader(),
-        schema.getBlockRootsSchema().of(block_roots),
-        schema.getStateRootsSchema().of(state_roots),
-        schema.getHistoricalRootsSchema().of(historical_roots),
-        eth1_data.asInternalEth1Data(),
-        eth1_data_votes.stream()
-            .map(Eth1Data::asInternalEth1Data)
-            .collect(schema.getEth1DataVotesSchema().collector()),
-        eth1_deposit_index,
-        validators.stream()
-            .map(Validator::asInternalValidator)
-            .collect(schema.getValidatorsSchema().collector()),
-        schema.getBalancesSchema().of(balances),
-        schema.getRandaoMixesSchema().of(randao_mixes),
-        schema.getSlashingsSchema().of(slashings),
-        previous_epoch_attestations.stream()
-            .map(PendingAttestation::asInternalPendingAttestation)
-            .collect(schema.getPreviousEpochAttestationsSchema().collector()),
-        current_epoch_attestations.stream()
-            .map(PendingAttestation::asInternalPendingAttestation)
-            .collect(schema.getCurrentEpochAttestationsSchema().collector()),
-        schema.getJustificationBitsSchema().ofBits(justification_bits.getAllSetBits()),
-        previous_justified_checkpoint.asInternalCheckpoint(),
-        current_justified_checkpoint.asInternalCheckpoint(),
-        finalized_checkpoint.asInternalCheckpoint());
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconStateSchema()
+        .createEmpty()
+        .updated(
+            state -> {
+              state.setGenesis_time(genesis_time);
+              state.setGenesis_validators_root(genesis_validators_root);
+              state.setSlot(slot);
+              state.setFork(fork.asInternalFork());
+              state.setLatest_block_header(latest_block_header.asInternalBeaconBlockHeader());
+              state.getBlock_roots().setAll(SSZVector.createMutable(block_roots, Bytes32.class));
+              state.getState_roots().setAll(SSZVector.createMutable(state_roots, Bytes32.class));
+              state
+                  .getHistorical_roots()
+                  .setAll(
+                      SSZList.createMutable(
+                          historical_roots, HISTORICAL_ROOTS_LIMIT, Bytes32.class));
+              state.setEth1_data(eth1_data.asInternalEth1Data());
+              state
+                  .getEth1_data_votes()
+                  .setAll(
+                      SSZList.createMutable(
+                          eth1_data_votes.stream()
+                              .map(Eth1Data::asInternalEth1Data)
+                              .collect(Collectors.toList()),
+                          EPOCHS_PER_ETH1_VOTING_PERIOD,
+                          tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.class));
+              state.setEth1_deposit_index(eth1_deposit_index);
+              state
+                  .getValidators()
+                  .setAll(
+                      SSZList.createMutable(
+                          validators.stream()
+                              .map(Validator::asInternalValidator)
+                              .collect(Collectors.toList()),
+                          Constants.VALIDATOR_REGISTRY_LIMIT,
+                          tech.pegasys.teku.spec.datastructures.state.Validator.class));
+              state
+                  .getBalances()
+                  .setAll(SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class));
+              state.getRandao_mixes().setAll(SSZVector.createMutable(randao_mixes, Bytes32.class));
+              state.getSlashings().setAll(SSZVector.createMutable(slashings, UInt64.class));
+              state.setJustification_bits(justification_bits);
+              state.setPrevious_justified_checkpoint(
+                  previous_justified_checkpoint.asInternalCheckpoint());
+              state.setCurrent_justified_checkpoint(
+                  current_justified_checkpoint.asInternalCheckpoint());
+              state.setFinalized_checkpoint(finalized_checkpoint.asInternalCheckpoint());
+
+              state
+                  .toMutableVersionPhase0()
+                  .ifPresent(
+                      genesisState -> {
+                        genesisState
+                            .getPrevious_epoch_attestations()
+                            .setAll(
+                                SSZList.createMutable(
+                                    previous_epoch_attestations.stream()
+                                        .map(PendingAttestation::asInternalPendingAttestation)
+                                        .collect(Collectors.toList()),
+                                    MAX_ATTESTATIONS,
+                                    tech.pegasys.teku.spec.datastructures.state.PendingAttestation
+                                        .class));
+                        genesisState
+                            .getCurrent_epoch_attestations()
+                            .setAll(
+                                SSZList.createMutable(
+                                    current_epoch_attestations.stream()
+                                        .map(PendingAttestation::asInternalPendingAttestation)
+                                        .collect(Collectors.toList()),
+                                    MAX_ATTESTATIONS,
+                                    tech.pegasys.teku.spec.datastructures.state.PendingAttestation
+                                        .class));
+                      });
+            });
   }
 }

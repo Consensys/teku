@@ -409,6 +409,16 @@ public final class DataStructureUtil {
     final BeaconBlockAndState blockAndState =
         randomBlockAndState(slot, randomBeaconState(slot), parentRoot);
 
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(final BeaconState state) {
+    final BeaconBlockAndState blockAndState = randomBlockAndState(state);
+
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState toSigned(BeaconBlockAndState blockAndState) {
     final SignedBeaconBlock signedBlock =
         new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
@@ -420,11 +430,11 @@ public final class DataStructureUtil {
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
     final BeaconState state = randomBeaconState(slot);
-    return randomBlockAndState(slot, state);
+    return randomBlockAndState(state);
   }
 
-  private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
-    return randomBlockAndState(slot, state, randomBytes32());
+  public BeaconBlockAndState randomBlockAndState(final BeaconState state) {
+    return randomBlockAndState(state.getSlot(), state, randomBytes32());
   }
 
   private BeaconBlockAndState randomBlockAndState(
@@ -681,15 +691,16 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists).build();
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists).build();
   }
 
-  public BeaconStateBuilder stateBuilder() {
-    return BeaconStateBuilder.create(this, spec, 10, 10);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0() {
+    return BeaconStateBuilderPhase0.create(this, spec, 10, 10);
   }
 
-  public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0(
+      final int validatorCount, final int numItemsInSSZLists) {
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {

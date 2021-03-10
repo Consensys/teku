@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
@@ -26,7 +27,7 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
   public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createSchema(
       final SpecVersion spec) {
     return ContainerSchema2.create(
-        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         SignedBeaconBlock.SSZ_SCHEMA.get(),
         BlockFuzzInput::new);
   }

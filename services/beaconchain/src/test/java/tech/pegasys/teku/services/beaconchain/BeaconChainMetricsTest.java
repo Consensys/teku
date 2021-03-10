@@ -19,10 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
@@ -39,6 +35,8 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -47,7 +45,13 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -55,17 +59,20 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 class BeaconChainMetricsTest {
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMainnet();
+  private final int slotsPerHistoricalRoot =
+      spec.getGenesisSpecConstants().getSlotsPerHistoricalRoot();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
   private final Bytes32 root =
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24eFFFFFFFFFFFFFFFF");
   private final Bytes32 root2 =
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24eFFFFFFFFFFFFFF7F");
   private final Bytes32 root3 =
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24e0000000000000080");
-  private final StateAndBlockSummary chainHead =
-      dataStructureUtil.randomSignedBlockAndState(NODE_SLOT_VALUE);
-  private final BeaconState randomState = chainHead.getState();
-  private final BeaconState state = mock(BeaconState.class);
+  private BeaconStatePhase0 state =
+      dataStructureUtil.stateBuilderPhase0().slot(NODE_SLOT_VALUE).build();
+  private StateAndBlockSummary chainHead;
 
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
 
@@ -79,24 +86,49 @@ class BeaconChainMetricsTest {
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
-      new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
-  private final Spec minimal = SpecFactory.create("minimal");
-  private final BeaconStateSchema beaconStateSchema =
-      minimal.getGenesisSchemaDefinitions().getBeaconStateSchema();
+      new BeaconChainMetrics(spec, recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
 
   @BeforeEach
   void setUp() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBlockAndState(state).getBlock();
+    chainHead = mock(SignedBlockAndState.class);
+    when(chainHead.getBeaconBlock()).thenReturn(block.getBeaconBlock());
+    when(chainHead.getRoot()).thenReturn(block.getRoot());
+    when(chainHead.getSlot()).thenAnswer(__ -> state.getSlot());
+    when(chainHead.getState()).thenAnswer(__ -> state);
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
-    when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
-    when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
-    when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
+
+    // Update state
     List<Bytes32> blockRootsList =
-        new ArrayList<>(
-            Collections.nCopies(
-                beaconStateSchema.getBlockRootsSchema().getLength(),
-                dataStructureUtil.randomBytes32()));
-    when(state.getBlock_roots())
-        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
+        new ArrayList<>(Collections.nCopies(1000, dataStructureUtil.randomBytes32()));
+    state =
+        state
+            .updated(
+                s -> {
+                  s.setFinalized_checkpoint(finalizedCheckpoint);
+                  s.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
+                  s.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
+                  setBlockRoots(s, blockRootsList);
+                })
+            .toVersionPhase0()
+            .orElseThrow();
+  }
+
+  private void setBlockRoots(List<Bytes32> newBlockRoots) {
+    state =
+        state
+            .updated(
+                s -> {
+                  setBlockRoots(s, newBlockRoots);
+                })
+            .toVersionPhase0()
+            .orElseThrow();
+  }
+
+  private void setBlockRoots(MutableBeaconState state, List<Bytes32> newBlockRoots) {
+    final SSZMutableVector<Bytes32> blockRoots = state.getBlock_roots();
+    blockRoots.clear();
+    blockRoots.setAll(SSZVector.createMutable(newBlockRoots, Bytes32.class));
   }
 
   @Test
@@ -147,7 +179,7 @@ class BeaconChainMetricsTest {
     when(recentChainData.isPreGenesis()).thenReturn(false);
     beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
     assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue())
-        .isEqualTo(randomState.getFinalized_checkpoint().getEpoch().longValue());
+        .isEqualTo(state.getFinalized_checkpoint().getEpoch().longValue());
   }
 
   @Test
@@ -183,8 +215,7 @@ class BeaconChainMetricsTest {
     beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
 
     assertThat(metricsSystem.getGauge(BEACON, "finalized_root").getValue())
-        .isEqualTo(
-            BeaconChainMetrics.getLongFromRoot(randomState.getFinalized_checkpoint().getRoot()));
+        .isEqualTo(BeaconChainMetrics.getLongFromRoot(state.getFinalized_checkpoint().getRoot()));
   }
 
   @Test
@@ -199,7 +230,7 @@ class BeaconChainMetricsTest {
     beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_epoch").getValue())
-        .isEqualTo(randomState.getPrevious_justified_checkpoint().getEpoch().longValue());
+        .isEqualTo(state.getPrevious_justified_checkpoint().getEpoch().longValue());
   }
 
   @Test
@@ -215,8 +246,7 @@ class BeaconChainMetricsTest {
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_root").getValue())
         .isEqualTo(
-            BeaconChainMetrics.getLongFromRoot(
-                randomState.getPrevious_justified_checkpoint().getRoot()));
+            BeaconChainMetrics.getLongFromRoot(state.getPrevious_justified_checkpoint().getRoot()));
   }
 
   @Test
@@ -231,8 +261,7 @@ class BeaconChainMetricsTest {
     beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_root").getValue())
         .isEqualTo(
-            BeaconChainMetrics.getLongFromRoot(
-                randomState.getCurrent_justified_checkpoint().getRoot()));
+            BeaconChainMetrics.getLongFromRoot(state.getCurrent_justified_checkpoint().getRoot()));
   }
 
   @Test
@@ -246,35 +275,29 @@ class BeaconChainMetricsTest {
   void getJustifiedEpochValue_shouldReturnValueWhenStoreIsPresent() {
     beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
     assertThat(metricsSystem.getGauge(BEACON, "current_justified_epoch").getValue())
-        .isEqualTo(randomState.getCurrent_justified_checkpoint().getEpoch().longValue());
+        .isEqualTo(state.getCurrent_justified_checkpoint().getEpoch().longValue());
   }
 
   @Test
   void getCurrentEpochValue_shouldReturnValueWhenNodeSlotIsSet() {
-    final long epochAtSlot = nodeSlot.longValue() / SLOTS_PER_EPOCH;
-    assertThat(metricsSystem.getGauge(BEACON, "epoch").getValue()).isEqualTo(epochAtSlot);
+    final UInt64 epochAtSlot = spec.computeEpochAtSlot(nodeSlot.getValue());
+    assertThat(metricsSystem.getGauge(BEACON, "epoch").getValue())
+        .isEqualTo(epochAtSlot.longValue());
   }
 
   @Test
   void activeValidators_retrievesCorrectValue() {
-    final UInt64 slotNumber = compute_start_slot_at_epoch(UInt64.valueOf(13));
-    final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
-    when(stateAndBlock.getSlot()).thenReturn(slotNumber);
-    when(stateAndBlock.getState()).thenReturn(state);
-    when(state.getSlot()).thenReturn(slotNumber);
+    final UInt64 slotNumber = spec.computeStartSlotAtEpoch(UInt64.valueOf(13));
     final List<Validator> validators =
         List.of(
             validator(13, 15, false),
             validator(14, 15, false),
             validator(10, 12, false),
             validator(10, 15, true));
-    when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
-    when(state.getCurrent_epoch_attestations())
-        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
-    when(state.getPrevious_epoch_attestations())
-        .thenReturn(beaconStateSchema.getPreviousEpochAttestationsSchema().getDefault());
-    when(state.getValidators())
-        .thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 100).createFromElements(validators));
+
+    withSlotCurrentEpochAttestationsAndValidators(slotNumber, Collections.emptyList(), validators);
+    when(chainHead.getSlot()).thenReturn(slotNumber);
+
     beaconChainMetrics.onSlot(slotNumber);
     assertThat(metricsSystem.getGauge(BEACON, "current_active_validators").getValue()).isEqualTo(2);
     assertThat(metricsSystem.getGauge(BEACON, "previous_active_validators").getValue())
@@ -353,14 +376,13 @@ class BeaconChainMetricsTest {
   @Test
   void currentCorrectValidators_onlyCountValidatorsWithCorrectTarget() {
     Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    Checkpoint target = new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot);
+    Checkpoint target = new Checkpoint(spec.computeEpochAtSlot(UInt64.valueOf(13)), blockRoot);
 
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     blockRootsList.set(
-        target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
-    when(state.getBlock_roots())
-        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
+        target.getEpochStartSlot().mod(slotsPerHistoricalRoot).intValue(), blockRoot);
+    setBlockRoots(blockRootsList);
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -369,7 +391,7 @@ class BeaconChainMetricsTest {
                 createAttestationsWithTargetCheckpoint(
                     13,
                     1,
-                    new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot.not()),
+                    new Checkpoint(spec.computeEpochAtSlot(UInt64.valueOf(13)), blockRoot.not()),
                     bitlist2))
             .collect(toList());
 
@@ -384,14 +406,13 @@ class BeaconChainMetricsTest {
   @Test
   void currentCorrectValidators_withStateAtFirstSlotOfEpoch() {
     Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final UInt64 slot = UInt64.valueOf(SLOTS_PER_EPOCH);
-    Checkpoint target = new Checkpoint(compute_epoch_at_slot(slot), blockRoot);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    Checkpoint target = new Checkpoint(spec.computeEpochAtSlot(slot), blockRoot);
 
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
-    blockRootsList.set(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
-    when(state.getBlock_roots())
-        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
+    blockRootsList.set(slot.mod(slotsPerHistoricalRoot).intValue(), blockRoot);
+    setBlockRoots(blockRootsList);
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -400,7 +421,7 @@ class BeaconChainMetricsTest {
                 createAttestationsWithTargetCheckpoint(
                     slot.intValue(),
                     1,
-                    new Checkpoint(compute_epoch_at_slot(slot), blockRoot.not()),
+                    new Checkpoint(spec.computeEpochAtSlot(slot), blockRoot.not()),
                     bitlist2))
             .collect(toList());
 
@@ -414,14 +435,13 @@ class BeaconChainMetricsTest {
   @Test
   void previousCorrectValidators_onlyCountValidatorsWithCorrectTarget() {
     Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    Checkpoint target = new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot);
+    Checkpoint target = new Checkpoint(spec.computeEpochAtSlot(UInt64.valueOf(13)), blockRoot);
 
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
-    final int blockRootIndex = target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
+    final int blockRootIndex = target.getEpochStartSlot().mod(slotsPerHistoricalRoot).intValue();
     blockRootsList.set(blockRootIndex, blockRoot);
-    when(state.getBlock_roots())
-        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
+    setBlockRoots(blockRootsList);
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -430,11 +450,11 @@ class BeaconChainMetricsTest {
                 createAttestationsWithTargetCheckpoint(
                     15,
                     1,
-                    new Checkpoint(compute_epoch_at_slot(UInt64.valueOf(13)), blockRoot.not()),
+                    new Checkpoint(spec.computeEpochAtSlot(UInt64.valueOf(13)), blockRoot.not()),
                     bitlist2))
             .collect(toList());
 
-    final int slotInNextEpoch = 13 + SLOTS_PER_EPOCH;
+    final int slotInNextEpoch = spec.computeStartSlotAtEpoch(UInt64.ONE).plus(13).intValue();
     withPreviousEpochAttestations(slotInNextEpoch, allAttestations);
 
     beaconChainMetrics.onSlot(UInt64.valueOf(20));
@@ -451,13 +471,7 @@ class BeaconChainMetricsTest {
       final List<PendingAttestation> attestations,
       final UInt64 slot,
       final Bytes32 currentBlockRoot) {
-    when(state.getCurrent_epoch_attestations())
-        .thenReturn(
-            beaconStateSchema.getCurrentEpochAttestationsSchema().createFromElements(attestations));
-    when(state.getPrevious_epoch_attestations())
-        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
-    when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
-    when(state.getSlot()).thenReturn(slot);
+    withSlotCurrentEpochAttestationsAndValidators(slot, attestations, Collections.emptyList());
 
     final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
     when(stateAndBlock.getSlot()).thenReturn(slot);
@@ -468,21 +482,52 @@ class BeaconChainMetricsTest {
 
   private void withPreviousEpochAttestations(
       final int slotAsInt, final List<PendingAttestation> attestations) {
-    when(state.getPrevious_epoch_attestations())
-        .thenReturn(
-            beaconStateSchema
-                .getPreviousEpochAttestationsSchema()
-                .createFromElements(attestations));
-    when(state.getCurrent_epoch_attestations())
-        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
-    when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
-    final UInt64 slot = UInt64.valueOf(slotAsInt);
-    when(state.getSlot()).thenReturn(slot);
+    state =
+        state
+            .updatedPhase0(
+                s -> {
+                  final SSZMutableList<PendingAttestation> previousAtts =
+                      s.getPrevious_epoch_attestations();
+                  previousAtts.clear();
+                  previousAtts.setAll(
+                      SSZList.createMutable(
+                          attestations, attestations.size(), PendingAttestation.class));
 
-    final StateAndBlockSummary stateAndBlock = mock(StateAndBlockSummary.class);
-    when(stateAndBlock.getSlot()).thenReturn(slot);
-    when(stateAndBlock.getState()).thenReturn(state);
-    when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
+                  s.getCurrent_epoch_attestations().clear();
+                  s.setSlot(UInt64.valueOf(slotAsInt));
+                })
+            .toVersionPhase0()
+            .orElseThrow();
+  }
+
+  private void withSlotCurrentEpochAttestationsAndValidators(
+      final UInt64 slot,
+      final List<PendingAttestation> attestations,
+      final List<Validator> validatorsList) {
+    state =
+        state
+            .updatedPhase0(
+                s -> {
+                  final SSZMutableList<PendingAttestation> currentAtts =
+                      s.getCurrent_epoch_attestations();
+                  currentAtts.clear();
+                  if (attestations.size() > 0) {
+                    currentAtts.setAll(
+                        SSZList.createMutable(
+                            attestations, attestations.size(), PendingAttestation.class));
+                  }
+
+                  s.getPrevious_epoch_attestations().clear();
+                  s.setSlot(slot);
+
+                  final SSZMutableList<Validator> validators = s.getValidators();
+                  validators.clear();
+                  if (validatorsList.size() > 0) {
+                    validators.setAll(SSZList.createMutable(validatorsList, 100, Validator.class));
+                  }
+                })
+            .toVersionPhase0()
+            .orElseThrow();
   }
 
   private Stream<PendingAttestation> createAttestations(

@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
@@ -168,35 +170,6 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     set(fieldIndex, slashings);
   }
 
-  // Attestations
-  @Override
-  default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    return getAnyByRef(fieldIndex);
-  }
-
-  default void setPrevious_epoch_attestations(
-      SszList<PendingAttestation> previous_epoch_attestations) {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    set(fieldIndex, previous_epoch_attestations);
-  }
-
-  @Override
-  default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    return getAnyByRef(fieldIndex);
-  }
-
-  default void setCurrent_epoch_attestations(
-      SszList<PendingAttestation> current_epoch_attestations) {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    set(fieldIndex, current_epoch_attestations);
-  }
-
   // Finality
   default void setJustification_bits(SszBitvector justification_bits) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name());
@@ -222,4 +195,8 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   @Override
   BeaconState commitChanges();
+
+  default Optional<MutableBeaconStatePhase0> toMutableVersionPhase0() {
+    return Optional.empty();
+  }
 }

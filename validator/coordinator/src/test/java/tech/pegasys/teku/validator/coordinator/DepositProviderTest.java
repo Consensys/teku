@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;

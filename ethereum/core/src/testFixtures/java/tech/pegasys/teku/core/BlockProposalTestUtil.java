@@ -41,6 +41,9 @@ import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingExceptio
 import tech.pegasys.teku.spec.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
