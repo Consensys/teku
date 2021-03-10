@@ -70,11 +70,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.containerName = name;
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final NamedSchema<?> childSchema = childrenSchemas.get(i);
-      if (childrenNamesToFieldIndex.put(childSchema.getName(), i) == null) {
+      if (childrenNamesToFieldIndex.put(childSchema.getName(), i) != null) {
         throw new IllegalArgumentException(
             "Duplicate field name detected for field " + childSchema.getName() + " at index " + i);
       }
-      ;
       childrenNames.add(childSchema.getName());
     }
     this.childrenSchemas =
