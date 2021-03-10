@@ -36,6 +36,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BeaconState",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconStateSchema))
+          .put(
+              "ssz_static/BeaconBlockBody",
+              new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockBodySchema))
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)
           .put("ssz_generic/bitlist", IGNORE_TESTS)

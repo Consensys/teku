@@ -641,7 +641,7 @@ public class BeaconStateUtil {
     final UInt64 slot = computeStartSlotAtEpoch(epoch).minusMinZero(1);
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root
-        ? BeaconBlock.fromGenesisState(state).getRoot()
+        ? BeaconBlock.fromGenesisState(schemaDefinitions, state).getRoot()
         : getBlockRootAtSlot(state, slot);
   }
 

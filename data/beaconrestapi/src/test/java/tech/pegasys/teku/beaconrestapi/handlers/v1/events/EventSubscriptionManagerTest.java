@@ -61,15 +61,15 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManagerTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private final DataStructureUtil data = new DataStructureUtil();
   private final Spec spec = SpecFactory.createMinimal();
   private final SpecConstants specConstants = spec.getGenesisSpecConstants();
+  private final JsonProvider jsonProvider = new JsonProvider();
+  private final DataStructureUtil data = new DataStructureUtil(spec);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
-  private ConfigProvider configProvider = new ConfigProvider(spec);
+  private final ConfigProvider configProvider = new ConfigProvider(spec);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
   private final UInt64 epoch = spec.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
@@ -335,7 +335,7 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerBlockEvent() {
-    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock());
+    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec));
     asyncRunner.executeQueuedActions();
   }
 

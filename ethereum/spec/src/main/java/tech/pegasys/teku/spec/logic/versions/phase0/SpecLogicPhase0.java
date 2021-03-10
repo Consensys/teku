@@ -60,7 +60,7 @@ public class SpecLogicPhase0 implements SpecLogic {
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     this.forkChoiceUtil =
         new ForkChoiceUtil(constants, beaconStateUtil, attestationUtil, stateTransition);
-    this.blockProposalUtil = new BlockProposalUtil(stateTransition);
+    this.blockProposalUtil = new BlockProposalUtil(schemaDefinitions, stateTransition);
   }
 
   @Override
