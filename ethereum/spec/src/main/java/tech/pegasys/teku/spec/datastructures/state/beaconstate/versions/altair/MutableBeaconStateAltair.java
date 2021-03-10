@@ -32,7 +32,7 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
                     "Expected a altair state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Attestations
+  // Participation
   @Override
   default SSZMutableList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =

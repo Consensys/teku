@@ -32,7 +32,7 @@ public interface BeaconStateAltair extends BeaconState {
                     "Expected a altair state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Attestations
+  // Participation
   default SSZList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
