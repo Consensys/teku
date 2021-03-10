@@ -58,7 +58,7 @@ public interface SszMutableComposite<SszChildT extends SszData>
     clear();
     int idx = 0;
     for (SszChildT newChild : newChildren) {
-      set(idx, newChild);
+      set(idx++, newChild);
     }
   }
 
