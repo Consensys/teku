@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
@@ -95,7 +94,8 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(
             getProvider(BeaconBlock.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(304, 157656)),
         Arguments.of(
-            getProvider(BeaconBlockBody.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(220, 157572)),
+            (SchemaProvider) SchemaDefinitions::getBeaconBlockBodySchema,
+            SszLengthBounds.ofBytes(220, 157572)),
         Arguments.of(getProvider(BeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(112, 112)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconStateSchema,

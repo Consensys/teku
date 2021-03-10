@@ -38,7 +38,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<
-        BeaconBlockBody,
+        BeaconBlockBodyPhase0,
         SszVector<SszByte>,
         Eth1Data,
         SszBytes32,
@@ -47,7 +47,7 @@ public class BeaconBlockBodySchemaPhase0
         SszList<Attestation>,
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>>
-    implements BeaconBlockBodySchema<BeaconBlockBody> {
+    implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
 
   private BeaconBlockBodySchemaPhase0(
       SszSchema<SszVector<SszByte>> randaoRevealSchema,
@@ -99,7 +99,7 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   @Override
-  public BeaconBlockBody createBlockBody(
+  public BeaconBlockBodyPhase0 createBlockBody(
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
@@ -108,7 +108,7 @@ public class BeaconBlockBodySchemaPhase0
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
       SSZList<SignedVoluntaryExit> voluntary_exits) {
-    return new BeaconBlockBody(
+    return new BeaconBlockBodyPhase0(
         this,
         SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
         eth1_data,
@@ -121,8 +121,8 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   @Override
-  public BeaconBlockBody createEmpty() {
-    return new BeaconBlockBody(this);
+  public BeaconBlockBodyPhase0 createEmpty() {
+    return new BeaconBlockBodyPhase0(this);
   }
 
   @Override
@@ -151,7 +151,7 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   @Override
-  public BeaconBlockBody createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBody(this, node);
+  public BeaconBlockBodyPhase0 createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyPhase0(this, node);
   }
 }

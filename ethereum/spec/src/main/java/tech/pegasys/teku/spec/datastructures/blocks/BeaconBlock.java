@@ -17,10 +17,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -41,7 +43,8 @@ public final class BeaconBlock
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("body", BeaconBlockBody.SSZ_SCHEMA.get()));
+          namedSchema(
+              "body", SszSchema.as(BeaconBlockBody.class, BeaconBlockBodyPhase0.SSZ_SCHEMA.get())));
     }
 
     @Override
@@ -56,7 +59,7 @@ public final class BeaconBlock
           UInt64.ZERO,
           Bytes32.ZERO,
           genesisState.hashTreeRoot(),
-          new BeaconBlockBody());
+          new BeaconBlockBodyPhase0());
     }
   }
 
@@ -105,7 +108,7 @@ public final class BeaconBlock
         UInt64.ZERO,
         Bytes32.ZERO,
         genesisState.hashTreeRoot(),
-        new BeaconBlockBody());
+        new BeaconBlockBodyPhase0());
   }
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
