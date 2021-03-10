@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
@@ -46,7 +46,8 @@ public final class BeaconBlock
           namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
-              "body", SszSchema.as(BeaconBlockBody.class, BeaconBlockBodyPhase0.SSZ_SCHEMA.get())));
+              "body",
+              SszSchema.as(BeaconBlockBody.class, BeaconBlockBodySchemaPhase0.SSZ_SCHEMA.get())));
     }
 
     @Override

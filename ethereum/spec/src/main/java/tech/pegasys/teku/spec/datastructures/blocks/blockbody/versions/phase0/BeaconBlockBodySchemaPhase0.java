@@ -37,6 +37,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszUtils;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.SpecDependent;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<
@@ -50,6 +51,12 @@ public class BeaconBlockBodySchemaPhase0
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>>
     implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
+
+  // TODO(#3648) - remove this field (version schemas that depend on this field through
+  // SchemaDefinitions)
+  @Deprecated
+  public static final SpecDependent<BeaconBlockBodySchemaPhase0> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockBodySchemaPhase0::create);
 
   private BeaconBlockBodySchemaPhase0(
       NamedSchema<SszVector<SszByte>> randaoRevealSchema,
