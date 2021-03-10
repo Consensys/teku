@@ -16,9 +16,11 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
@@ -50,16 +52,6 @@ public final class BeaconBlock
     @Override
     public BeaconBlock createFromBackingNode(TreeNode node) {
       return new BeaconBlock(this, node);
-    }
-
-    public BeaconBlock fromGenesisState(final BeaconState genesisState) {
-      return new BeaconBlock(
-          this,
-          UInt64.ZERO,
-          UInt64.ZERO,
-          Bytes32.ZERO,
-          genesisState.hashTreeRoot(),
-          new BeaconBlockBodyPhase0());
     }
   }
 
@@ -100,15 +92,19 @@ public final class BeaconBlock
         body);
   }
 
-  @Deprecated
-  public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
+  public static BeaconBlock fromGenesisState(final Spec spec, final BeaconState genesisState) {
+    return fromGenesisState(spec.getGenesisSpec().getSchemaDefinitions(), genesisState);
+  }
+
+  public static BeaconBlock fromGenesisState(
+      final SchemaDefinitions genesisSchema, final BeaconState genesisState) {
     return new BeaconBlock(
         SSZ_SCHEMA.get(),
         UInt64.ZERO,
         UInt64.ZERO,
         Bytes32.ZERO,
         genesisState.hashTreeRoot(),
-        new BeaconBlockBodyPhase0());
+        genesisSchema.getBeaconBlockBodySchema().createEmpty());
   }
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {

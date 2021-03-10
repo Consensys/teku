@@ -30,7 +30,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -57,8 +56,8 @@ public class GenesisGenerator {
 
   public GenesisGenerator(final SchemaDefinitions schemaDefinitions) {
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
-
-    Bytes32 latestBlockRoot = new BeaconBlockBodyPhase0().hashTreeRoot();
+    Bytes32 latestBlockRoot =
+        schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(

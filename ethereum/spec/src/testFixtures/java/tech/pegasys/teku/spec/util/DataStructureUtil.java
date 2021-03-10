@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -674,7 +673,7 @@ public final class DataStructureUtil {
             UInt64.ZERO,
             anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
-            new BeaconBlockBodyPhase0());
+            spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 

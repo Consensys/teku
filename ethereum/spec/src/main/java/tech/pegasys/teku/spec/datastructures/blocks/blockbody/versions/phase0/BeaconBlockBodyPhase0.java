@@ -56,11 +56,6 @@ public class BeaconBlockBodyPhase0
 
   private BLSSignature randaoRevealCache;
 
-  @Deprecated
-  public BeaconBlockBodyPhase0() {
-    super(SSZ_SCHEMA.get());
-  }
-
   BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type) {
     super(type);
   }
