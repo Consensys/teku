@@ -35,7 +35,7 @@ public interface SszMutablePrimitiveCollection<
     clear();
     int idx = 0;
     for (ElementT newChild : newChildren) {
-      setElement(idx, newChild);
+      setElement(idx++, newChild);
     }
   }
 
