@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
 public enum BlockBodyFields {
   RANDAO_REVEAL,

@@ -11,12 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -70,7 +72,7 @@ public class BeaconBlockBodySchemaPhase0
         namedSchema(BlockBodyFields.VOLUNTARY_EXITS.name(), voluntaryExitsSchema));
   }
 
-  public static BeaconBlockBodySchema create(final SpecConstants constants) {
+  public static BeaconBlockBodySchema<BeaconBlockBodyPhase0> create(final SpecConstants constants) {
     return new BeaconBlockBodySchemaPhase0(
         SszComplexSchemas.BYTES_96_SCHEMA,
         Eth1Data.SSZ_SCHEMA,
