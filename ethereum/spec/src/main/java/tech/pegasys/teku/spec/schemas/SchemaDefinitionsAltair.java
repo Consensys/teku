@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
@@ -27,5 +29,11 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return BeaconStateSchemaAltair.create(specConstants);
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
+    // TODO(#3648) - Implement altair block body
+    throw new NotImplementedException();
   }
 }

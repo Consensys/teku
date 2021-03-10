@@ -56,6 +56,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
 
   public static SpecLogicPhase0 create(
       final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
+    // TODO(#3648), TODO(#3649) - Implement altair logic
     throw new NotImplementedException();
   }
 }

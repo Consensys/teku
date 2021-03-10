@@ -76,7 +76,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(constants, beaconStateUtil, attestationUtil, stateTransition);
-    final BlockProposalUtil blockProposalUtil = new BlockProposalUtil(schemaDefinitions, stateTransition);
+    final BlockProposalUtil blockProposalUtil =
+        new BlockProposalUtil(schemaDefinitions, stateTransition);
 
     return new SpecLogicPhase0(
         committeeUtil,
