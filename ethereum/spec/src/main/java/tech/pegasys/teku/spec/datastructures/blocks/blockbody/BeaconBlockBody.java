@@ -49,8 +49,8 @@ public class BeaconBlockBody
   // TODO(#3648) - remove this field (version schemas that depend on this field through
   // SchemaDefinitions)
   @Deprecated
-  public static final SpecDependent<BeaconBlockBodySchema> SSZ_SCHEMA =
-      SpecDependent.of(BeaconBlockBodySchema::create);
+  public static final SpecDependent<BeaconBlockBodySchemaPhase0> SSZ_SCHEMA =
+      SpecDependent.of(BeaconBlockBodySchemaPhase0::create);
 
   private BLSSignature randaoRevealCache;
 
@@ -59,16 +59,16 @@ public class BeaconBlockBody
     super(SSZ_SCHEMA.get());
   }
 
-  BeaconBlockBody(BeaconBlockBodySchema type) {
+  BeaconBlockBody(BeaconBlockBodySchemaPhase0 type) {
     super(type);
   }
 
-  BeaconBlockBody(BeaconBlockBodySchema type, TreeNode backingNode) {
+  BeaconBlockBody(BeaconBlockBodySchemaPhase0 type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   BeaconBlockBody(
-      BeaconBlockBodySchema type,
+      BeaconBlockBodySchemaPhase0 type,
       SszVector<SszByte> randao_reveal,
       Eth1Data eth1_data,
       SszBytes32 graffiti,
