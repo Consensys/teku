@@ -73,7 +73,7 @@ public class EpochCachePrimer {
               beaconStateUtil.getAttestersTotalEffectiveBalance(state, slot);
             });
 
-    // Calculate committees for max lookahead epoch
+    // Calculate committees for furthest future epoch that can be calculated from this state
     // (assume earlier epochs were already requested)
     final UInt64 stateEpoch = spec.getCurrentEpoch(state);
     final UInt64 lookaheadEpoch =
