@@ -13,17 +13,23 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
 
-  public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createSchema() {
+  public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createSchema(
+      final SpecVersion spec) {
     return ContainerSchema2.create(
-        BeaconState.getSszSchema(), SignedBeaconBlock.SSZ_SCHEMA.get(), BlockFuzzInput::new);
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
+        SignedBeaconBlock.SSZ_SCHEMA.get(),
+        BlockFuzzInput::new);
   }
 
   private BlockFuzzInput(
@@ -31,13 +37,9 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
     super(type, backingNode);
   }
 
-  public BlockFuzzInput(final BeaconState state, final SignedBeaconBlock signed_block) {
-    super(createSchema(), state, signed_block);
-  }
-
-  // NOTE: empty constructor is needed for reflection/introspection
-  public BlockFuzzInput() {
-    super(createSchema());
+  public BlockFuzzInput(
+      final Spec spec, final BeaconState state, final SignedBeaconBlock signed_block) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, signed_block);
   }
 
   public SignedBeaconBlock getSigned_block() {

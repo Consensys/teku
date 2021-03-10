@@ -24,14 +24,14 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchChain;
@@ -126,29 +126,40 @@ public class BatchSync implements Sync {
       final TargetChain targetChain, final SafeFuture<SyncResult> syncResult) {
     LOG.debug("Switching to sync target {}", targetChain.getChainHead());
     eventThread.checkOnEventThread();
-    // If we're starting a sync after the previous has completed, track the import start time
-    // If we're just switching targets, we should still be able to keep imports running
-    final boolean firstChain = this.syncResult.isDone();
-    if (firstChain) {
-      this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
-    }
+
+    final boolean syncRestartRequired = newChainRequiresSyncRestart(targetChain);
+
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
     this.targetChain = targetChain;
-    if (firstChain) {
-      // Only set the common ancestor if we aren't currently syncing a chain
-      // Otherwise we'll optimistically assume the new chain extends the current one and only reset
-      // the common ancestor if we later find out that's not the case
-      this.commonAncestorSlot = getCommonAncestorSlot();
-    }
     this.syncResult = syncResult;
+    if (syncRestartRequired) {
+      // If we already know the new chain doesn't extend the in-progress sync, reset back to the
+      // common ancestor.  Otherwise optimistically assume that the new chain will just carry on
+      // after the last batch we've already requested from the old chain.
+      restartSyncWithNewChain();
+
+      // Reset the import timer as we may need more time to get imports going again.
+      this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
+    }
     progressSync();
   }
 
-  private SafeFuture<UInt64> getCommonAncestorSlot() {
+  private boolean newChainRequiresSyncRestart(final TargetChain targetChain) {
+    if (this.syncResult.isDone()) {
+      // Can't extend the current sync because it has already completed or failed.
+      return true;
+    }
+    final UInt64 lastBatchEnd = activeBatches.last().map(Batch::getLastSlot).orElse(UInt64.ZERO);
+    // New target might extend the current target chain if the new target is a longer chain
+    // otherwise we know immediately we have to start back at the common ancestor.
+    return targetChain.getChainHead().getSlot().isLessThanOrEqualTo(lastBatchEnd);
+  }
+
+  private void findCommonAncestorSlot() {
     final SafeFuture<UInt64> commonAncestor = commonAncestorFinder.findCommonAncestor(targetChain);
+    this.commonAncestorSlot = commonAncestor;
     commonAncestor.thenRunAsync(this::progressSync, eventThread).propagateExceptionTo(syncResult);
-    return commonAncestor;
   }
 
   private void onBatchReceivedBlocks(final Batch batch) {
@@ -292,13 +303,7 @@ public class BatchSync implements Sync {
           "New chain did not extend previous chain. {} and {} did not form chain",
           firstBatch,
           secondBatch);
-      if (importingBatch.isPresent()) {
-        switchingBranches = true;
-      } else {
-        // Nothing importing, can start downloading new chain immediately.
-        commonAncestorSlot = getCommonAncestorSlot();
-      }
-      activeBatches.removeAll();
+      restartSyncWithNewChain();
       return;
     }
 
@@ -311,6 +316,16 @@ public class BatchSync implements Sync {
         secondBatch);
     markBatchesAsContested(contestedBatches);
     // Otherwise there must be a block in firstBatch we haven't received yet
+  }
+
+  private void restartSyncWithNewChain() {
+    activeBatches.removeAll();
+    if (importingBatch.isPresent()) {
+      switchingBranches = true;
+    } else {
+      // Nothing importing, can start downloading new chain immediately.
+      findCommonAncestorSlot();
+    }
   }
 
   private void startNextImport() {
@@ -361,7 +376,7 @@ public class BatchSync implements Sync {
       // We switched to a different chain while this was importing. Can't infer anything about other
       // batches from this result but should still penalise the peer that sent it to us.
       switchingBranches = false;
-      commonAncestorSlot = getCommonAncestorSlot();
+      findCommonAncestorSlot();
       if (result.isFailure()) {
         importedBatch.markAsInvalid();
       }

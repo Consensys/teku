@@ -14,9 +14,9 @@
 package tech.pegasys.teku.benchmarks.gen;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beacon_committee;
 
 import com.google.common.eventbus.EventBus;
 import java.io.File;
@@ -33,12 +33,14 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -52,7 +54,7 @@ public class Generator {
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-
+    final Spec spec = SpecFactory.createMainnet();
     Constants.setConstants("mainnet");
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
@@ -68,9 +70,15 @@ public class Generator {
 
     EventBus localEventBus = mock(EventBus.class);
     RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-    BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
+    BeaconChainUtil localChain =
+        BeaconChainUtil.builder()
+            .specProvider(spec)
+            .recentChainData(localStorage)
+            .validatorKeys(validatorKeys)
+            .signDeposits(false)
+            .build();
     localChain.initializeStorage();
-    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
 
     UInt64 currentSlot = localStorage.getHeadSlot();
     List<Attestation> attestations = Collections.emptyList();

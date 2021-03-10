@@ -29,10 +29,10 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -52,15 +52,15 @@ public class ValidatorDataProvider {
   private static final int SC_INTERNAL_ERROR = 500;
   private static final int SC_ACCEPTED = 202;
   private static final int SC_OK = 200;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public ValidatorDataProvider(
-      final SpecProvider specProvider,
+      final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   public boolean isStoreAvailable() {
@@ -75,7 +75,7 @@ public class ValidatorDataProvider {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    final int slotsPerEpoch = specProvider.atSlot(slot).getConstants().getSlotsPerEpoch();
+    final int slotsPerEpoch = spec.atSlot(slot).getConstants().getSlotsPerEpoch();
     final UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
     if (currentSlot.plus(slotsPerEpoch).isLessThan(slot)) {
       throw new IllegalArgumentException(

@@ -14,14 +14,10 @@
 package tech.pegasys.teku.spec.util;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -35,46 +31,46 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -84,34 +80,32 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public final class DataStructureUtil {
+  private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
+
+  private final Spec spec;
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
-  private Optional<SpecProvider> maybeSpecProvider;
 
   @Deprecated
   public DataStructureUtil() {
-    this(92892824, Optional.empty());
+    this(92892824, DEFAULT_SPEC_PROVIDER);
   }
 
+  @Deprecated
   public DataStructureUtil(final int seed) {
-    this(seed, Optional.empty());
+    this(seed, DEFAULT_SPEC_PROVIDER);
   }
 
-  public DataStructureUtil(final SpecProvider specProvider) {
-    this(92892824, Optional.of(specProvider));
+  public DataStructureUtil(final Spec spec) {
+    this(92892824, spec);
   }
 
-  public DataStructureUtil(final int seed, final SpecProvider specProvider) {
-    this(seed, Optional.of(specProvider));
-  }
-
-  private DataStructureUtil(final int seed, final Optional<SpecProvider> maybeSpecProvider) {
+  public DataStructureUtil(final int seed, final Spec spec) {
     this.seed = seed;
-    this.maybeSpecProvider = maybeSpecProvider;
+    this.spec = spec;
   }
 
   public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
@@ -367,8 +361,24 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockAndState randomSignedBlockAndState(final UInt64 slot) {
-    final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
+    return randomSignedBlockAndState(slot, randomBytes32());
+  }
 
+  public SignedBlockAndState randomSignedBlockAndState(
+      final UInt64 slot, final Bytes32 parentRoot) {
+    final BeaconBlockAndState blockAndState =
+        randomBlockAndState(slot, randomBeaconState(slot), parentRoot);
+
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(final BeaconState state) {
+    final BeaconBlockAndState blockAndState = randomBlockAndState(state);
+
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState toSigned(BeaconBlockAndState blockAndState) {
     final SignedBeaconBlock signedBlock =
         new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
@@ -380,11 +390,15 @@ public final class DataStructureUtil {
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
     final BeaconState state = randomBeaconState(slot);
-    return randomBlockAndState(slot, state);
+    return randomBlockAndState(state);
   }
 
-  private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
-    final Bytes32 parentRoot = randomBytes32();
+  public BeaconBlockAndState randomBlockAndState(final BeaconState state) {
+    return randomBlockAndState(state.getSlot(), state, randomBytes32());
+  }
+
+  private BeaconBlockAndState randomBlockAndState(
+      final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final UInt64 proposer_index = randomUInt64();
     final BeaconBlockHeader latestHeader =
@@ -614,15 +628,16 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists).build();
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists).build();
   }
 
-  public BeaconStateBuilder stateBuilder() {
-    return BeaconStateBuilder.create(this, 10, 10);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0() {
+    return BeaconStateBuilderPhase0.create(this, spec, 10, 10);
   }
 
-  public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, validatorCount, numItemsInSSZLists);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0(
+      final int validatorCount, final int numItemsInSSZLists) {
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -652,121 +667,97 @@ public final class DataStructureUtil {
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
-    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
-  public Optional<SpecProvider> getSpecProvider() {
-    return maybeSpecProvider;
-  }
-
   int getSlotsPerHistoricalRoot() {
-    return getConstant(
-        SpecConstants::getSlotsPerHistoricalRoot, Constants.SLOTS_PER_HISTORICAL_ROOT);
+    return getConstant(SpecConstants::getSlotsPerHistoricalRoot);
   }
 
   int getHistoricalRootsLimit() {
-    return getConstant(SpecConstants::getHistoricalRootsLimit, Constants.HISTORICAL_ROOTS_LIMIT);
+    return getConstant(SpecConstants::getHistoricalRootsLimit);
   }
 
   int getEpochsPerEth1VotingPeriod() {
-    return getConstant(
-        SpecConstants::getEpochsPerEth1VotingPeriod, Constants.EPOCHS_PER_ETH1_VOTING_PERIOD);
+    return getConstant(SpecConstants::getEpochsPerEth1VotingPeriod);
   }
 
   int getSlotsPerEpoch() {
-    return getConstant(SpecConstants::getSlotsPerEpoch, Constants.SLOTS_PER_EPOCH);
+    return getConstant(SpecConstants::getSlotsPerEpoch);
   }
 
   long getValidatorRegistryLimit() {
-    return getConstant(
-        SpecConstants::getValidatorRegistryLimit, Constants.VALIDATOR_REGISTRY_LIMIT);
+    return getConstant(SpecConstants::getValidatorRegistryLimit);
   }
 
   long getEpochsPerHistoricalVector() {
-    return getConstant(
-        SpecConstants::getEpochsPerHistoricalVector, Constants.EPOCHS_PER_HISTORICAL_VECTOR);
+    return getConstant(SpecConstants::getEpochsPerHistoricalVector);
   }
 
   long getEpochsPerSlashingsVector() {
-    return getConstant(
-        SpecConstants::getEpochsPerSlashingsVector, Constants.EPOCHS_PER_SLASHINGS_VECTOR);
+    return getConstant(SpecConstants::getEpochsPerSlashingsVector);
   }
 
   private int getMaxProposerSlashings() {
-    return getConstant(SpecConstants::getMaxProposerSlashings, Constants.MAX_PROPOSER_SLASHINGS);
+    return getConstant(SpecConstants::getMaxProposerSlashings);
   }
 
   int getJustificationBitsLength() {
-    return getConstant(
-        SpecConstants::getJustificationBitsLength, Constants.JUSTIFICATION_BITS_LENGTH);
+    return getConstant(SpecConstants::getJustificationBitsLength);
   }
 
   private int getMaxAttesterSlashings() {
-    return getConstant(SpecConstants::getMaxAttesterSlashings, Constants.MAX_ATTESTER_SLASHINGS);
+    return getConstant(SpecConstants::getMaxAttesterSlashings);
   }
 
   int getMaxAttestations() {
-    return getConstant(SpecConstants::getMaxAttestations, Constants.MAX_ATTESTATIONS);
+    return getConstant(SpecConstants::getMaxAttestations);
   }
 
   private int getMaxDeposits() {
-    return getConstant(SpecConstants::getMaxDeposits, Constants.MAX_DEPOSITS);
+    return getConstant(SpecConstants::getMaxDeposits);
   }
 
   private int getMaxVoluntaryExits() {
-    return getConstant(SpecConstants::getMaxVoluntaryExits, Constants.MAX_VOLUNTARY_EXITS);
+    return getConstant(SpecConstants::getMaxVoluntaryExits);
   }
 
   private int getMaxValidatorsPerCommittee() {
-    return getConstant(
-        SpecConstants::getMaxValidatorsPerCommittee, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    return getConstant(SpecConstants::getMaxValidatorsPerCommittee);
   }
 
   private UInt64 getMaxEffectiveBalance() {
-    return getConstant(SpecConstants::getMaxEffectiveBalance, Constants.MAX_EFFECTIVE_BALANCE);
+    return getConstant(SpecConstants::getMaxEffectiveBalance);
   }
 
   private int getDepositContractTreeDepth() {
-    return getConstant(
-        SpecConstants::getDepositContractTreeDepth, Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+    return getConstant(SpecConstants::getDepositContractTreeDepth);
   }
 
   private Bytes32 computeDomain() {
-    return maybeSpecProvider
-        .map(
-            specProvider -> {
-              final Spec spec = specProvider.getGenesisSpec();
-              final Bytes4 domain = spec.getConstants().getDomainDeposit();
-              return spec.getBeaconStateUtil().computeDomain(domain);
-            })
-        .orElse(compute_domain(Constants.DOMAIN_DEPOSIT));
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 domain = genesisSpec.getConstants().getDomainDeposit();
+    return genesisSpec.getBeaconStateUtil().computeDomain(domain);
   }
 
   private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return maybeSpecProvider
-        .map(
-            specProvider ->
-                specProvider
-                    .getGenesisSpec()
-                    .getBeaconStateUtil()
-                    .computeSigningRoot(proofOfPossessionData, domain))
-        .orElse(compute_signing_root(proofOfPossessionData, domain));
+    return spec.getGenesisSpec()
+        .getBeaconStateUtil()
+        .computeSigningRoot(proofOfPossessionData, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return maybeSpecProvider
-        .map(
-            specProvider ->
-                specProvider.getGenesisSpec().getBeaconStateUtil().computeStartSlotAtEpoch(epoch))
-        .orElse(compute_start_slot_at_epoch(epoch));
+    return spec.computeStartSlotAtEpoch(epoch);
   }
 
-  private <T> T getConstant(final Function<SpecConstants, T> getter, final T defaultValue) {
-    return maybeSpecProvider
-        .map(specProvider -> getter.apply(specProvider.getGenesisSpec().getConstants()))
-        .orElse(defaultValue);
+  public Spec getSpec() {
+    return spec;
+  }
+
+  private <T> T getConstant(final Function<SpecConstants, T> getter) {
+    return getter.apply(spec.getGenesisSpec().getConstants());
   }
 }

@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Optional;
 import java.util.stream.Stream;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 
 public enum DisconnectReason {
   IRRELEVANT_NETWORK(GoodbyeMessage.REASON_IRRELEVANT_NETWORK, true),

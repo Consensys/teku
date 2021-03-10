@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.events;
 
 import java.util.Objects;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class GossipedBlockEvent {
   private final SignedBeaconBlock block;

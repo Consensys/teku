@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.unsigned;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -131,7 +132,7 @@ class UInt64Test {
   void compareTo_shouldCompareUnsigned() {
     final Long[] inputs = {1451L, Long.MAX_VALUE, -124234L, Long.MIN_VALUE, 0L, -1L, -5L, 1L};
     final List<UInt64> sortedUInt64s =
-        Stream.of(inputs).map(UInt64::fromLongBits).sorted().collect(Collectors.toList());
+        Stream.of(inputs).map(UInt64::fromLongBits).sorted().collect(toList());
     assertThat(sortedUInt64s)
         .containsExactly(
             UInt64.fromLongBits(0),
@@ -619,6 +620,23 @@ class UInt64Test {
   void minLong_shouldThrowWhenValueIsNegative() {
     assertThatThrownBy(() -> UInt64.valueOf(1).min(-1))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("rangeNumbers")
+  void range_shouldCreateStreamIncludingStartAndExcludingEnd(int from, int to) {
+    assertThat(UInt64.range(UInt64.valueOf(from), UInt64.valueOf(to)))
+        .containsExactlyElementsOf(
+            IntStream.range(from, to).mapToObj(UInt64::valueOf).collect(toList()));
+  }
+
+  static List<Arguments> rangeNumbers() {
+    return List.of(
+        Arguments.of(0, 1),
+        Arguments.of(1, 5),
+        Arguments.of(0, 6),
+        Arguments.of(6, 3),
+        Arguments.of(1, 1));
   }
 
   static List<Arguments> timesOverflowCases() {

@@ -14,8 +14,8 @@
 package tech.pegasys.teku.spec.cache;
 
 import java.util.function.Supplier;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
 public interface IndexedAttestationCache {
   IndexedAttestationCache NOOP = (att, supplier) -> supplier.get();

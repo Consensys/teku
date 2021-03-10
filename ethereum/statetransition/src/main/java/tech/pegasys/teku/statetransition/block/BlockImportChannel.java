@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public interface BlockImportChannel extends ChannelInterface {
   SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block);

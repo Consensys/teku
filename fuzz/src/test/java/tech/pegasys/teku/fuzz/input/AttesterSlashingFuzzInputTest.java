@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class AttesterSlashingFuzzInputTest
@@ -22,13 +22,13 @@ public class AttesterSlashingFuzzInputTest
 
   @Override
   protected SszSchema<AttesterSlashingFuzzInput> getInputType() {
-    return AttesterSlashingFuzzInput.createType();
+    return AttesterSlashingFuzzInput.createType(spec.getGenesisSpec());
   }
 
   @Override
   protected AttesterSlashingFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    return new AttesterSlashingFuzzInput(state, slashing);
+    return new AttesterSlashingFuzzInput(spec, state, slashing);
   }
 }

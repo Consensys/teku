@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ForkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final tech.pegasys.teku.datastructures.state.Fork forkInternal =
+  private final tech.pegasys.teku.spec.datastructures.state.Fork forkInternal =
       dataStructureUtil.randomFork();
 
   @Test

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.reference.phase0.epoch_processing;
 
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public interface EpochProcessingExecutor {
   void processSlashings(MutableBeaconState state);

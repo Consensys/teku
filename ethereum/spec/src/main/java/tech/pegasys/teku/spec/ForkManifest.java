@@ -21,10 +21,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.TreeMap;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class ForkManifest {
@@ -81,5 +82,18 @@ public class ForkManifest {
 
   public List<Fork> getForkSchedule() {
     return new ArrayList<>(forkSchedule.values());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ForkManifest that = (ForkManifest) o;
+    return Objects.equals(forkSchedule, that.forkSchedule);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(forkSchedule);
   }
 }

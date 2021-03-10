@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
@@ -26,7 +26,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszTestUtils {
 
-  public static List<Integer> getVectorLengths(AbstractSszContainerSchema<?> sszContainerSchema) {
+  public static List<Integer> getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
     return sszContainerSchema.getFieldSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
         .map(t -> (SszVectorSchema<?, ?>) t)

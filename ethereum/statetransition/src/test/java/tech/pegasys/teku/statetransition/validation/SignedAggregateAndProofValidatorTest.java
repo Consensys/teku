@@ -20,10 +20,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assignment;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -37,21 +37,21 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -96,7 +96,8 @@ class SignedAggregateAndProofValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -105,12 +106,11 @@ class SignedAggregateAndProofValidatorTest {
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
   private final AggregateGenerator generator =
-      new AggregateGenerator(chainBuilder.getValidatorKeys());
+      new AggregateGenerator(spec, chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
 
   private final AggregateAttestationValidator validator =
-      new AggregateAttestationValidator(recentChainData, attestationValidator, specProvider);
+      new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 
@@ -130,7 +130,7 @@ class SignedAggregateAndProofValidatorTest {
     bestBlock = chainUpdater.addNewBestBlock();
 
     final AttestationValidator realAttestationValidator =
-        new AttestationValidator(specProvider, recentChainData);
+        new AttestationValidator(spec, recentChainData);
     when(attestationValidator.resolveStateForAttestation(any(), any()))
         .thenAnswer(
             i ->
@@ -408,7 +408,7 @@ class SignedAggregateAndProofValidatorTest {
     // Sanity check
     final int committeeLength = committeeAssignment.getCommittee().size();
     final int aggregatorModulo =
-        specProvider.atEpoch(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
+        spec.atEpoch(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
     assertThat(aggregatorModulo).isGreaterThan(1);
     assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();

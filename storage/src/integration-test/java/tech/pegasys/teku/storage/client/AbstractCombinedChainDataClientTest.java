@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,14 +31,16 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -47,6 +49,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
+  protected final Spec spec = SpecFactory.createMinimal();
   protected StorageSystem storageSystem;
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;
@@ -62,7 +65,10 @@ public abstract class AbstractCombinedChainDataClientTest {
   protected abstract StateStorageMode getStorageMode();
 
   protected StorageSystem createStorageSystem() {
-    return InMemoryStorageSystemBuilder.buildDefault(getStorageMode());
+    return InMemoryStorageSystemBuilder.create()
+        .storageMode(getStorageMode())
+        .specProvider(spec)
+        .build();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -286,7 +292,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
     assertThat(actual).isCompletedWithValue(Optional.of(expected));
@@ -307,7 +313,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
     final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+        CheckpointStateGenerator.generate(spec, checkpoint, checkpointBlockAndState);
 
     final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
     assertThat(actual).isCompletedWithValue(Optional.of(expected));

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 public class AggregatorUtil {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.sync.forward.multipeer;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;

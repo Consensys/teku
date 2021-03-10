@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
@@ -37,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -87,7 +89,13 @@ public class RpcHandler implements ProtocolBinding<Controller> {
                     .thenWaitFor(rpcStream -> rpcStream.writeBytes(initialPayload))
                     .orInterrupt(closeInterruptor, timeoutInterruptor)
                     // closing the stream in case of any errors or interruption
-                    .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join())));
+                    .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join())))
+        .catchAndRethrow(
+            err -> {
+              if (ExceptionUtil.getCause(err, ConnectionClosedException.class).isPresent()) {
+                throw new PeerDisconnectedException(err);
+              }
+            });
   }
 
   private void closeStreamAbruptly(Stream stream) {

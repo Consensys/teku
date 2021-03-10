@@ -21,8 +21,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import com.google.common.collect.Streams;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,18 +33,18 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
-import tech.pegasys.teku.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -345,13 +343,11 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     // init ProtoArray
     final ProtoArray protoArray =
-        new ProtoArray(
-            10000,
-            UInt64.valueOf(100),
-            UInt64.valueOf(99),
-            UInt64.ZERO,
-            new ArrayList<>(),
-            new HashMap<>());
+        ProtoArray.builder()
+            .pruneThreshold(10000)
+            .justifiedEpoch(UInt64.valueOf(100))
+            .finalizedEpoch(UInt64.valueOf(99))
+            .build();
 
     // add block 1
     final Bytes32 block1Root = Bytes32.fromHexString("0xdeadbeef");

@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.api;
 
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -36,7 +36,7 @@ public class DataProvider {
   private final ConfigProvider configProvider;
 
   public DataProvider(
-      final SpecProvider specProvider,
+      final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final Eth2P2PNetwork p2pNetwork,
@@ -48,7 +48,7 @@ public class DataProvider {
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
-    this.configProvider = new ConfigProvider(specProvider);
+    this.configProvider = new ConfigProvider(spec);
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     nodeDataProvider =
         new NodeDataProvider(
@@ -58,11 +58,10 @@ public class DataProvider {
             voluntaryExitPool,
             blockManager,
             attestationManager);
-    chainDataProvider =
-        new ChainDataProvider(specProvider, recentChainData, combinedChainDataClient);
+    chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
-        new ValidatorDataProvider(specProvider, validatorApiChannel, combinedChainDataClient);
+        new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
   }
 
   public ConfigProvider getConfigProvider() {

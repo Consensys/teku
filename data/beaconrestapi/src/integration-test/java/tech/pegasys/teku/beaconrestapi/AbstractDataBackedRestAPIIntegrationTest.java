@@ -39,22 +39,21 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.networks.SpecProviderFactory;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -73,8 +72,8 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
-  protected final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  protected final SpecConstants specConstants = specProvider.getGenesisSpecConstants();
+  protected final Spec spec = SpecFactory.createMinimal();
+  protected final SpecConstants specConstants = spec.getGenesisSpecConstants();
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =
@@ -124,7 +123,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
-  protected final StateTransition stateTransition = new StateTransition();
   protected ForkChoice forkChoice;
 
   private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {
@@ -139,16 +137,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
-            : new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+            : ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     beaconChainUtil =
-        BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
+        BeaconChainUtil.create(
+            spec, recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
-            specProvider,
+            spec,
             recentChainData,
             combinedChainDataClient,
             eth2P2PNetwork,
@@ -232,7 +231,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     assertThat(beaconChainUtil).isNotNull();
     final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
     for (UInt64 slot : slots) {
-      final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
           beaconChainUtil.createAndImportBlockAtSlot(slot.longValue());
       results.add(
           new BeaconBlockAndState(

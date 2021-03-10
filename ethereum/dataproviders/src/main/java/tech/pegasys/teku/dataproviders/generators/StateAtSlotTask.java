@@ -17,17 +17,17 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue.CacheableTask;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
 public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconState> {
 
@@ -38,21 +38,27 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
    */
   private final UInt64 INTERIM_SLOTS_TO_SEARCH = UInt64.valueOf(640);
 
+  private final Spec spec;
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final AsyncStateProvider stateProvider;
   private final Optional<BeaconState> baseState;
 
   public StateAtSlotTask(
-      final SlotAndBlockRoot slotAndBlockRoot, final AsyncStateProvider stateProvider) {
+      final Spec spec,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final AsyncStateProvider stateProvider) {
+    this.spec = spec;
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.stateProvider = stateProvider;
     baseState = Optional.empty();
   }
 
   private StateAtSlotTask(
+      final Spec spec,
       final SlotAndBlockRoot slotAndBlockRoot,
       final AsyncStateProvider stateProvider,
       final BeaconState baseState) {
+    this.spec = spec;
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.stateProvider = stateProvider;
     this.baseState = Optional.of(baseState);
@@ -82,7 +88,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
 
   @Override
   public CacheableTask<SlotAndBlockRoot, BeaconState> rebase(final BeaconState newBaseValue) {
-    return new StateAtSlotTask(slotAndBlockRoot, stateProvider, newBaseValue);
+    return new StateAtSlotTask(spec, slotAndBlockRoot, stateProvider, newBaseValue);
   }
 
   @Override
@@ -108,7 +114,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
         return state;
       }
 
-      return new StateTransition().process_slots(state, slotAndBlockRoot.getSlot());
+      return spec.processSlots(state, slotAndBlockRoot.getSlot());
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

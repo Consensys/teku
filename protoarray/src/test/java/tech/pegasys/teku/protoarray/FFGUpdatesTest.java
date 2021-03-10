@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 public class FFGUpdatesTest {
 
@@ -34,8 +34,7 @@ public class FFGUpdatesTest {
   void case1() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 
@@ -99,8 +98,7 @@ public class FFGUpdatesTest {
   void case2() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 

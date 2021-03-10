@@ -13,18 +13,24 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttestationFuzzInput
     extends Container2<AttestationFuzzInput, BeaconState, Attestation> {
 
-  public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createSchema() {
+  public static ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> createSchema(
+      final SpecVersion spec) {
     return ContainerSchema2.create(
-        BeaconState.getSszSchema(), Attestation.SSZ_SCHEMA, AttestationFuzzInput::new);
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
+        Attestation.SSZ_SCHEMA,
+        AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
@@ -32,13 +38,9 @@ public class AttestationFuzzInput
     super(type, backingNode);
   }
 
-  public AttestationFuzzInput(final BeaconState state, final Attestation attestation) {
-    super(createSchema(), state, attestation);
-  }
-
-  // NOTE: empty constructor is needed for reflection/introspection
-  public AttestationFuzzInput() {
-    super(createSchema());
+  public AttestationFuzzInput(
+      final Spec spec, final BeaconState state, final Attestation attestation) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, attestation);
   }
 
   public Attestation getAttestation() {

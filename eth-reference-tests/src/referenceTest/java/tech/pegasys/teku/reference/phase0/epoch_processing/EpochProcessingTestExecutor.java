@@ -17,12 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public class EpochProcessingTestExecutor implements TestExecutor {
 
@@ -63,25 +65,12 @@ public class EpochProcessingTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz");
-    runStandardTest(testDefinition, preState, expectedPostState);
-    runDeprecatedTest(preState, expectedPostState);
-  }
 
-  private void runStandardTest(
-      final TestDefinition testDefinition,
-      final BeaconState preState,
-      final BeaconState expectedPostState)
-      throws EpochProcessingException {
-    final EpochProcessor epochProcessor =
-        testDefinition.getSpecProvider().getGenesisSpec().getEpochProcessor();
-    final EpochProcessingExecutor processor = new DefaultEpochProcessingExecutor(epochProcessor);
-    final BeaconState result = preState.updated(state -> executeOperation(processor, state));
-    assertThat(result).isEqualTo(expectedPostState);
-  }
-
-  private void runDeprecatedTest(BeaconState preState, BeaconState expectedPostState)
-      throws EpochProcessingException {
-    final EpochProcessingExecutor processor = new DeprecatedEpochProcessingExecutor();
+    final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
+    final EpochProcessor epochProcessor = genesisSpec.getEpochProcessor();
+    final ValidatorStatusFactory validatorStatusFactory = genesisSpec.getValidatorStatusFactory();
+    final EpochProcessingExecutor processor =
+        new DefaultEpochProcessingExecutor(epochProcessor, validatorStatusFactory);
     final BeaconState result = preState.updated(state -> executeOperation(processor, state));
     assertThat(result).isEqualTo(expectedPostState);
   }

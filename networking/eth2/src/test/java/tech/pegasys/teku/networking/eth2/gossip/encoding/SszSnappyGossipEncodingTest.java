@@ -18,23 +18,27 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class SszSnappyGossipEncodingTest {
+  private final Spec spec = SpecFactory.createMinimal();
+  private final GossipEncoding encoding = createEncoding();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final BeaconStateSchema<?, ?> beaconStateSchema =
+      spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
-  protected final GossipEncoding encoding = createEncoding();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-  protected GossipEncoding createEncoding() {
+  private GossipEncoding createEncoding() {
     return GossipEncoding.SSZ_SNAPPY;
   }
 
@@ -86,14 +90,14 @@ public class SszSnappyGossipEncodingTest {
 
   @Test
   public void decode_emptyValue() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.EMPTY, BeaconState.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, Bytes.EMPTY, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_invalidData() {
     final Bytes data = Bytes.fromHexString("0xB1AB1A");
-    assertThatThrownBy(() -> decode(encoding, data, BeaconState.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, data, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -102,7 +106,7 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(block);
-    assertThatThrownBy(() -> decode(encoding, encoded, BeaconState.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, encoded, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -111,7 +115,7 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = Bytes.concatenate(encoding.encode(block), Bytes.fromHexString("0x01"));
-    assertThatThrownBy(() -> decode(encoding, encoded, BeaconState.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, encoded, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 

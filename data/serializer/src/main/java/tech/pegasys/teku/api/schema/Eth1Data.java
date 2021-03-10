@@ -32,7 +32,7 @@ public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 block_hash;
 
-  public Eth1Data(final tech.pegasys.teku.datastructures.blocks.Eth1Data eth1Data) {
+  public Eth1Data(final tech.pegasys.teku.spec.datastructures.blocks.Eth1Data eth1Data) {
     deposit_count = eth1Data.getDeposit_count();
     deposit_root = eth1Data.getDeposit_root();
     block_hash = eth1Data.getBlock_hash();
@@ -48,8 +48,8 @@ public class Eth1Data {
     this.block_hash = block_hash;
   }
 
-  public tech.pegasys.teku.datastructures.blocks.Eth1Data asInternalEth1Data() {
-    return new tech.pegasys.teku.datastructures.blocks.Eth1Data(
+  public tech.pegasys.teku.spec.datastructures.blocks.Eth1Data asInternalEth1Data() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
         deposit_root, deposit_count, block_hash);
   }
 

@@ -26,7 +26,8 @@ public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
   public final UInt64 validator_index;
 
-  public VoluntaryExit(tech.pegasys.teku.datastructures.operations.VoluntaryExit voluntaryExit) {
+  public VoluntaryExit(
+      tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
     this.epoch = voluntaryExit.getEpoch();
     this.validator_index = voluntaryExit.getValidator_index();
   }
@@ -39,8 +40,9 @@ public class VoluntaryExit {
     this.validator_index = validator_index;
   }
 
-  public tech.pegasys.teku.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
-    return new tech.pegasys.teku.datastructures.operations.VoluntaryExit(epoch, validator_index);
+  public tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
+    return new tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit(
+        epoch, validator_index);
   }
 
   @Override

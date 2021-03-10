@@ -21,17 +21,17 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.DepositUtil;
-import tech.pegasys.teku.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
+import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -39,16 +39,15 @@ public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final TimeProvider timeProvider;
-  private final GenesisGenerator genesisGenerator = new GenesisGenerator();
-  private final SpecProvider specProvider;
+  private final GenesisGenerator genesisGenerator;
+  private final Spec spec;
 
   public GenesisHandler(
-      final RecentChainData recentChainData,
-      final TimeProvider timeProvider,
-      final SpecProvider specProvider) {
+      final RecentChainData recentChainData, final TimeProvider timeProvider, final Spec spec) {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
-    this.specProvider = specProvider;
+    this.spec = spec;
+    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSchemaDefinitions());
   }
 
   @Override
@@ -84,8 +83,8 @@ public class GenesisHandler implements Eth1EventsChannel {
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
-    final tech.pegasys.teku.spec.util.BeaconStateUtil beaconStateUtil =
-        specProvider.atSlot(UInt64.ZERO).getBeaconStateUtil();
+    final tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil beaconStateUtil =
+        spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
     if (beaconStateUtil.isValidGenesisState(
         genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {
       eth2Genesis(genesisGenerator.getGenesisState());
