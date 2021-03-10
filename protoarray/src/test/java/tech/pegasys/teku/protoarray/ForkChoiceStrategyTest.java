@@ -120,7 +120,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final UInt64 initialEpoch = UInt64.valueOf(100);
     final BeaconState anchorState =
         dataStructureUtil
-            .stateBuilder()
+            .stateBuilderPhase0()
             .setJustifiedCheckpointsToEpoch(initialEpoch.minus(2))
             .setFinalizedCheckpointToEpoch(initialEpoch.minus(3))
             .setSlotToStartOfEpoch(initialEpoch)

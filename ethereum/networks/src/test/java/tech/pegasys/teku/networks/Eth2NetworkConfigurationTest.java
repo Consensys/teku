@@ -108,8 +108,6 @@ public class Eth2NetworkConfigurationTest {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(Eth2Network.MEDALLA, (NetworkDefinition) b -> b.applyMedallaNetworkDefaults()),
-        Arguments.of(Eth2Network.TOLEDO, (NetworkDefinition) b -> b.applyToledoNetworkDefaults()),
         Arguments.of(Eth2Network.PYRMONT, (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(

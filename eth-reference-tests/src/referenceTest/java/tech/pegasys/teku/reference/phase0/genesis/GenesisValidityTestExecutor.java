@@ -23,7 +23,7 @@ import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 public class GenesisValidityTestExecutor implements TestExecutor {
 

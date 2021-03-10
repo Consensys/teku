@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -20,8 +21,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -116,19 +117,6 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
         UInt64.class, getAnyByRef(14), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
-  // Attestations
-  @Override
-  default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
-  }
-
-  @Override
-  default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(16), Function.identity(), Function.identity());
-  }
-
   // Finality
   default void setJustification_bits(SszBitvector justification_bits) {
     set(17, justification_bits);
@@ -148,4 +136,8 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
 
   @Override
   BeaconState commitChanges();
+
+  default Optional<MutableBeaconStatePhase0> toMutableVersionPhase0() {
+    return Optional.empty();
+  }
 }

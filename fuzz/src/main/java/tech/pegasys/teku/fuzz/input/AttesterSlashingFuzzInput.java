@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttesterSlashingFuzzInput
@@ -27,7 +28,7 @@ public class AttesterSlashingFuzzInput
   public static ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
       createType(final SpecVersion spec) {
     return ContainerSchema2.create(
-        spec.getSchemaDefinitions().getBeaconStateSchema(),
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         AttesterSlashing.SSZ_SCHEMA,
         AttesterSlashingFuzzInput::new);
   }
