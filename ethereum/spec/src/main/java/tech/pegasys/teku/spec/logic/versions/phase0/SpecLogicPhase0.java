@@ -52,11 +52,7 @@ public class SpecLogicPhase0 implements SpecLogic {
         new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
     this.epochProcessor =
         new EpochProcessorPhase0(
-            constants,
-            schemaDefinitions,
-            validatorsUtil,
-            this.beaconStateUtil,
-            validatorStatusFactory);
+            constants, validatorsUtil, this.beaconStateUtil, validatorStatusFactory);
     this.blockProcessorUtil =
         new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     this.stateTransition =

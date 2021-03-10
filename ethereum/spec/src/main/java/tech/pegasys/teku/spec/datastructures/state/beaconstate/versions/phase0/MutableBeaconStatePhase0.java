@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 
 public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStatePhase0 {
@@ -33,22 +33,16 @@ public interface MutableBeaconStatePhase0 extends MutableBeaconState, BeaconStat
   // Attestations
   @Override
   default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return getAnyByRef(15);
-  }
-
-  default void setPrevious_epoch_attestations(
-      SszList<PendingAttestation> previous_epoch_attestations) {
-    set(15, previous_epoch_attestations);
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+    return getAnyByRef(fieldIndex);
   }
 
   @Override
   default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return getAnyByRef(16);
-  }
-
-  default void setCurrent_epoch_attestations(
-      SszList<PendingAttestation> current_epoch_attestations) {
-    set(16, current_epoch_attestations);
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
+    return getAnyByRef(fieldIndex);
   }
 
   @Override
