@@ -31,16 +31,25 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
@@ -53,6 +62,67 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
             .map(f -> namedSchema(f.getName(), f.getSchema().get()))
             .collect(Collectors.toList()));
     validateFields(fields);
+  }
+
+  public SszBytes32VectorSchema<?> getBlockRootsSchema() {
+    return (SszBytes32VectorSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.BLOCK_ROOTS.name()));
+  }
+
+  public SszBytes32VectorSchema<?> getStateRootsSchema() {
+    return (SszBytes32VectorSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.STATE_ROOTS.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszPrimitiveListSchema<Bytes32, SszBytes32, ?> getHistoricalRootsSchema() {
+    return (SszPrimitiveListSchema<Bytes32, SszBytes32, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<Eth1Data, ?> getEth1DataVotesSchema() {
+    return (SszListSchema<Eth1Data, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<Validator, ?> getValidatorsSchema() {
+    return (SszListSchema<Validator, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.VALIDATORS.name()));
+  }
+
+  public SszUInt64ListSchema<?> getBalancesSchema() {
+    return (SszUInt64ListSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.BALANCES.name()));
+  }
+
+  public SszBytes32VectorSchema<?> getRandaoMixesSchema() {
+    return (SszBytes32VectorSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.RANDAO_MIXES.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getSlashingsSchema() {
+    return (SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingAttestation, ?> getPreviousEpochAttestationsSchema() {
+    return (SszListSchema<PendingAttestation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
+    return (SszListSchema<PendingAttestation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name()));
+  }
+
+  public SszBitvectorSchema<?> getJustificationBitsSchema() {
+    return (SszBitvectorSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name()));
   }
 
   private void validateFields(final List<SszField> fields) {
@@ -250,28 +320,28 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
 
       // History
       BeaconBlockHeader latest_block_header,
-      SSZVector<Bytes32> block_roots,
-      SSZVector<Bytes32> state_roots,
-      SSZList<Bytes32> historical_roots,
+      SszBytes32Vector block_roots,
+      SszBytes32Vector state_roots,
+      SszPrimitiveList<Bytes32, SszBytes32> historical_roots,
 
       // Eth1
       Eth1Data eth1_data,
-      SSZList<Eth1Data> eth1_data_votes,
+      SszList<Eth1Data> eth1_data_votes,
       UInt64 eth1_deposit_index,
 
       // Registry
-      SSZList<? extends Validator> validators,
-      SSZList<UInt64> balances,
+      SszList<Validator> validators,
+      SszUInt64List balances,
 
       // Randomness
-      SSZVector<Bytes32> randao_mixes,
+      SszBytes32Vector randao_mixes,
 
       // Slashings
-      SSZVector<UInt64> slashings,
+      SszPrimitiveVector<UInt64, SszUInt64> slashings,
 
       // Attestations
-      SSZList<PendingAttestation> previous_epoch_attestations,
-      SSZList<PendingAttestation> current_epoch_attestations,
+      SszList<PendingAttestation> previous_epoch_attestations,
+      SszList<PendingAttestation> current_epoch_attestations,
 
       // Finality
       SszBitvector justification_bits,
@@ -287,18 +357,18 @@ public class BeaconStateSchema extends AbstractSszContainerSchema<BeaconState> {
               state.setSlot(slot);
               state.setFork(fork);
               state.setLatest_block_header(latest_block_header);
-              state.getBlock_roots().setAll(block_roots);
-              state.getState_roots().setAll(state_roots);
-              state.getHistorical_roots().setAll(historical_roots);
+              state.setBlock_roots(block_roots);
+              state.setState_roots(state_roots);
+              state.setHistorical_roots(historical_roots);
               state.setEth1_data(eth1_data);
-              state.getEth1_data_votes().setAll(eth1_data_votes);
+              state.setEth1_data_votes(eth1_data_votes);
               state.setEth1_deposit_index(eth1_deposit_index);
-              state.getValidators().setAll(validators);
-              state.getBalances().setAll(balances);
-              state.getRandao_mixes().setAll(randao_mixes);
-              state.getSlashings().setAll(slashings);
-              state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
-              state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
+              state.setValidators(validators);
+              state.setBalances(balances);
+              state.setRandao_mixes(randao_mixes);
+              state.setSlashings(slashings);
+              state.setPrevious_epoch_attestations(previous_epoch_attestations);
+              state.setCurrent_epoch_attestations(current_epoch_attestations);
               state.setJustification_bits(justification_bits);
               state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
               state.setCurrent_justified_checkpoint(current_justified_checkpoint);

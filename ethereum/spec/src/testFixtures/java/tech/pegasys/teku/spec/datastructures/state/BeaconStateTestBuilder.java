@@ -73,8 +73,8 @@ public class BeaconStateTestBuilder {
             state -> {
               state.setSlot(slot);
               state.setFork(fork);
-              state.getValidators().addAll(validators);
-              state.getBalances().addAll(balances);
+              state.getValidators().appendAll(validators);
+              state.getBalances().appendAllElements(balances);
             });
   }
 }

@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
@@ -119,46 +119,50 @@ public class BeaconStateBuilder {
     latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     blockRoots =
         dataStructureUtil.randomSszBytes32Vector(
-            BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
+            dataStructureUtil.getBeaconStateSchema().getBlockRootsSchema(),
+            dataStructureUtil::randomBytes32);
     stateRoots =
         dataStructureUtil.randomSszBytes32Vector(
-            BeaconState.STATE_ROOTS_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
+            dataStructureUtil.getBeaconStateSchema().getStateRootsSchema(),
+            dataStructureUtil::randomBytes32);
     historicalRoots =
         dataStructureUtil.randomSszPrimitiveList(
-            BeaconState.HISTORICAL_ROOTS_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getHistoricalRootsSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
     eth1DataVotes =
         dataStructureUtil.randomSszList(
-            BeaconState.ETH1_DATA_VOTES_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getEth1DataVotesSchema(),
             dataStructureUtil.getEpochsPerEth1VotingPeriod() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
     validators =
         dataStructureUtil.randomSszList(
-            BeaconState.VALIDATORS_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
             defaultValidatorCount,
             dataStructureUtil::randomValidator);
     balances =
         dataStructureUtil.randomSszUInt64List(
-            BeaconState.BALANCES_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getBalancesSchema(),
             defaultValidatorCount,
             dataStructureUtil::randomUInt64);
     randaoMixes =
         dataStructureUtil.randomSszBytes32Vector(
-            BeaconState.RANDAO_MIXES_FIELD_SCHEMA.get(), dataStructureUtil::randomBytes32);
+            dataStructureUtil.getBeaconStateSchema().getRandaoMixesSchema(),
+            dataStructureUtil::randomBytes32);
     slashings =
         dataStructureUtil.randomSszPrimitiveVector(
-            BeaconState.SLASHINGS_FIELD_SCHEMA.get(), dataStructureUtil::randomUInt64);
+            dataStructureUtil.getBeaconStateSchema().getSlashingsSchema(),
+            dataStructureUtil::randomUInt64);
     previousEpochAttestations =
         dataStructureUtil.randomSszList(
-            BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getPreviousEpochAttestationsSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomPendingAttestation);
     currentEpochAttestations =
         dataStructureUtil.randomSszList(
-            BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get(),
+            dataStructureUtil.getBeaconStateSchema().getCurrentEpochAttestationsSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomPendingAttestation);
     justificationBits =

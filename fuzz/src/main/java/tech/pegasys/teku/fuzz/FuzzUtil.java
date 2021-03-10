@@ -27,17 +27,14 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.BeaconState;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.statetransition.exceptions.BlockProcessingException;
@@ -83,7 +80,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
+    AttestationFuzzInput structuredInput =
+        deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
     SszList<Attestation> attestations =
         BeaconBlockBody.getSszSchema().getAttestationsSchema().of(structuredInput.getAttestation());
     // process and return post state
@@ -165,7 +163,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
+    DepositFuzzInput structuredInput =
+        deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
     SszList<Deposit> deposits =
         BeaconBlockBody.getSszSchema().getDepositsSchema().of(structuredInput.getDeposit());
 
@@ -250,7 +249,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processVoluntaryExits(state, voluntaryExits);
+                    spec.processVoluntaryExits(state, voluntaryExits);
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());

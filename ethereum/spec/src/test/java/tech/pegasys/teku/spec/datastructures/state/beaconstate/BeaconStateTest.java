@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -102,24 +101,21 @@ class BeaconStateTest {
     BeaconState s2 =
         standardSpec.getGenesisSchemaDefinitions().getBeaconStateSchema().createEmpty();
 
-      assertThat(s1.getBlock_roots().size()).isNotEqualTo(s2.getBlock_roots().size());
-      assertThat(s1.getState_roots().size()).isNotEqualTo(s2.getState_roots().size());
-      assertThat(s1.getHistorical_roots().getSchema().getMaxLength())
-          .isNotEqualTo(s2.getHistorical_roots().getSchema().getMaxLength());
-      assertThat(s1.getEth1_data_votes().getSchema())
-          .isNotEqualTo(s2.getEth1_data_votes().getSchema());
-      assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
-      assertThat(s1.getBalances().getSchema().getMaxLength())
-          .isNotEqualTo(s2.getBalances().getSchema().getMaxLength());
-      assertThat(s1.getRandao_mixes().size()).isNotEqualTo(s2.getRandao_mixes().size());
-      assertThat(s1.getSlashings().size()).isNotEqualTo(s2.getSlashings().size());
-      assertThat(s1.getPrevious_epoch_attestations().getSchema().getMaxLength())
-          .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema().getMaxLength());
-      assertThat(s1.getCurrent_epoch_attestations().getSchema().getMaxLength())
-          .isNotEqualTo(s2.getCurrent_epoch_attestations().getSchema().getMaxLength());
-    } finally {
-      Constants.setConstants("minimal");
-    }
+    assertThat(s1.getBlock_roots().size()).isNotEqualTo(s2.getBlock_roots().size());
+    assertThat(s1.getState_roots().size()).isNotEqualTo(s2.getState_roots().size());
+    assertThat(s1.getHistorical_roots().getSchema().getMaxLength())
+        .isNotEqualTo(s2.getHistorical_roots().getSchema().getMaxLength());
+    assertThat(s1.getEth1_data_votes().getSchema())
+        .isNotEqualTo(s2.getEth1_data_votes().getSchema());
+    assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
+    assertThat(s1.getBalances().getSchema().getMaxLength())
+        .isNotEqualTo(s2.getBalances().getSchema().getMaxLength());
+    assertThat(s1.getRandao_mixes().size()).isNotEqualTo(s2.getRandao_mixes().size());
+    assertThat(s1.getSlashings().size()).isNotEqualTo(s2.getSlashings().size());
+    assertThat(s1.getPrevious_epoch_attestations().getSchema().getMaxLength())
+        .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema().getMaxLength());
+    assertThat(s1.getCurrent_epoch_attestations().getSchema().getMaxLength())
+        .isNotEqualTo(s2.getCurrent_epoch_attestations().getSchema().getMaxLength());
   }
 
   @Test

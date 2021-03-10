@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -89,7 +90,6 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
@@ -725,14 +725,6 @@ public final class DataStructureUtil {
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
-  int getSlotsPerHistoricalRoot() {
-    return getConstant(SpecConstants::getSlotsPerHistoricalRoot);
-  }
-
-  int getHistoricalRootsLimit() {
-    return getConstant(SpecConstants::getHistoricalRootsLimit);
-  }
-
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConstants::getEpochsPerEth1VotingPeriod);
   }
@@ -741,40 +733,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConstants::getSlotsPerEpoch);
   }
 
-  long getValidatorRegistryLimit() {
-    return getConstant(SpecConstants::getValidatorRegistryLimit);
-  }
-
-  long getEpochsPerHistoricalVector() {
-    return getConstant(SpecConstants::getEpochsPerHistoricalVector);
-  }
-
-  long getEpochsPerSlashingsVector() {
-    return getConstant(SpecConstants::getEpochsPerSlashingsVector);
-  }
-
-  private int getMaxProposerSlashings() {
-    return getConstant(SpecConstants::getMaxProposerSlashings);
-  }
-
   int getJustificationBitsLength() {
     return getConstant(SpecConstants::getJustificationBitsLength);
-  }
-
-  private int getMaxAttesterSlashings() {
-    return getConstant(SpecConstants::getMaxAttesterSlashings);
-  }
-
-  int getMaxAttestations() {
-    return getConstant(SpecConstants::getMaxAttestations);
-  }
-
-  private int getMaxDeposits() {
-    return getConstant(SpecConstants::getMaxDeposits);
-  }
-
-  private int getMaxVoluntaryExits() {
-    return getConstant(SpecConstants::getMaxVoluntaryExits);
   }
 
   private int getMaxValidatorsPerCommittee() {
@@ -783,10 +743,6 @@ public final class DataStructureUtil {
 
   private UInt64 getMaxEffectiveBalance() {
     return getConstant(SpecConstants::getMaxEffectiveBalance);
-  }
-
-  private int getDepositContractTreeDepth() {
-    return getConstant(SpecConstants::getDepositContractTreeDepth);
   }
 
   private Bytes32 computeDomain() {
@@ -807,6 +763,10 @@ public final class DataStructureUtil {
 
   public Spec getSpec() {
     return spec;
+  }
+
+  public BeaconStateSchema getBeaconStateSchema() {
+    return spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
   private <T> T getConstant(final Function<SpecConstants, T> getter) {

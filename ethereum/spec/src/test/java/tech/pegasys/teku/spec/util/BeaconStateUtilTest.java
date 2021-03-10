@@ -47,9 +47,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.internal.StubSpecProvider;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -373,9 +370,6 @@ public class BeaconStateUtilTest {
     assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
   }
 
-              beaconState.getValidators().appendAll(validatorList);
-              beaconState.getBalances().appendAllElements(balanceList);
-            });
   @Test
   void getAttestersTotalEffectiveBalance_shouldCalculateTotalsFromEarlierEpoch() {
     final BeaconState state =
@@ -439,9 +433,9 @@ public class BeaconStateUtilTest {
     assertEquals(2, state.getValidators().size());
     assertEquals(
         deposits.get(0).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(0).getPubkey());
+        state.getValidators().get(0).getPubkeyBytes());
     assertEquals(
         deposits.get(2).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(1).getPubkey());
+        state.getValidators().get(1).getPubkeyBytes());
   }
 }

@@ -368,7 +368,7 @@ public class BeaconStateUtil {
         .get(
             slot,
             p -> {
-              final SSZList<Validator> validators = state.getValidators();
+              final SszList<Validator> validators = state.getValidators();
               final UInt64 committeeCount =
                   getCommitteeCountPerSlot(state, computeEpochAtSlot(slot));
               return UInt64.range(UInt64.ZERO, committeeCount)

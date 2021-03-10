@@ -15,26 +15,14 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
@@ -56,73 +44,6 @@ class BeaconStateImpl extends SszContainerImpl implements BeaconState, BeaconSta
 
   BeaconStateImpl(AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
-    transitionCaches = TransitionCaches.createNewEmpty();
-  }
-
-  public BeaconStateImpl(
-      // Versioning
-      UInt64 genesis_time,
-      Bytes32 genesis_validators_root,
-      UInt64 slot,
-      Fork fork,
-
-      // History
-      BeaconBlockHeader latest_block_header,
-      SszBytes32Vector block_roots,
-      SszBytes32Vector state_roots,
-      SszPrimitiveList<Bytes32, SszBytes32> historical_roots,
-
-      // Eth1
-      Eth1Data eth1_data,
-      SszList<Eth1Data> eth1_data_votes,
-      UInt64 eth1_deposit_index,
-
-      // Registry
-      SszList<Validator> validators,
-      SszUInt64List balances,
-
-      // Randomness
-      SszBytes32Vector randao_mixes,
-
-      // Slashings
-      SszMutablePrimitiveVector<UInt64, SszUInt64> slashings,
-
-      // Attestations
-      SszList<PendingAttestation> previous_epoch_attestations,
-      SszList<PendingAttestation> current_epoch_attestations,
-
-      // Finality
-      SszBitvector justification_bits,
-      Checkpoint previous_justified_checkpoint,
-      Checkpoint current_justified_checkpoint,
-      Checkpoint finalized_checkpoint) {
-
-    super(
-        BeaconState.getSszSchema(),
-        BeaconState.create(
-                genesis_time,
-                genesis_validators_root,
-                slot,
-                fork,
-                latest_block_header,
-                block_roots,
-                state_roots,
-                historical_roots,
-                eth1_data,
-                eth1_data_votes,
-                eth1_deposit_index,
-                validators,
-                balances,
-                randao_mixes,
-                slashings,
-                previous_epoch_attestations,
-                current_epoch_attestations,
-                justification_bits,
-                previous_justified_checkpoint,
-                current_justified_checkpoint,
-                finalized_checkpoint)
-            .getBackingNode());
-
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 

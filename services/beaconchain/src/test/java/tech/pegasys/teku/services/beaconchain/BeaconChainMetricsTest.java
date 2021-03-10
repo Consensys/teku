@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
@@ -77,6 +80,9 @@ class BeaconChainMetricsTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
       new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
+  private final Spec minimal = SpecFactory.create("minimal");
+  private final BeaconStateSchema beaconStateSchema =
+      minimal.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
   @BeforeEach
   void setUp() {
@@ -87,10 +93,10 @@ class BeaconChainMetricsTest {
     List<Bytes32> blockRootsList =
         new ArrayList<>(
             Collections.nCopies(
-                BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().getLength(),
+                beaconStateSchema.getBlockRootsSchema().getLength(),
                 dataStructureUtil.randomBytes32()));
     when(state.getBlock_roots())
-        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
+        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
   }
 
   @Test
@@ -264,9 +270,9 @@ class BeaconChainMetricsTest {
             validator(10, 15, true));
     when(recentChainData.getChainHead()).thenReturn(Optional.of(stateAndBlock));
     when(state.getCurrent_epoch_attestations())
-        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
     when(state.getPrevious_epoch_attestations())
-        .thenReturn(BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+        .thenReturn(beaconStateSchema.getPreviousEpochAttestationsSchema().getDefault());
     when(state.getValidators())
         .thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 100).createFromElements(validators));
     beaconChainMetrics.onSlot(slotNumber);
@@ -354,7 +360,7 @@ class BeaconChainMetricsTest {
     blockRootsList.set(
         target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
     when(state.getBlock_roots())
-        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
+        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -385,7 +391,7 @@ class BeaconChainMetricsTest {
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     blockRootsList.set(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue(), blockRoot);
     when(state.getBlock_roots())
-        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
+        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -415,7 +421,7 @@ class BeaconChainMetricsTest {
     final int blockRootIndex = target.getEpochStartSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     blockRootsList.set(blockRootIndex, blockRoot);
     when(state.getBlock_roots())
-        .thenReturn(BeaconState.BLOCK_ROOTS_FIELD_SCHEMA.get().of(blockRootsList));
+        .thenReturn(beaconStateSchema.getBlockRootsSchema().of(blockRootsList));
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
     List<PendingAttestation> allAttestations =
@@ -447,11 +453,9 @@ class BeaconChainMetricsTest {
       final Bytes32 currentBlockRoot) {
     when(state.getCurrent_epoch_attestations())
         .thenReturn(
-            BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA
-                .get()
-                .createFromElements(attestations));
+            beaconStateSchema.getCurrentEpochAttestationsSchema().createFromElements(attestations));
     when(state.getPrevious_epoch_attestations())
-        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
     when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     when(state.getSlot()).thenReturn(slot);
 
@@ -466,11 +470,11 @@ class BeaconChainMetricsTest {
       final int slotAsInt, final List<PendingAttestation> attestations) {
     when(state.getPrevious_epoch_attestations())
         .thenReturn(
-            BeaconState.PREVIOUS_EPOCH_ATTESTATIONS_FIELD_SCHEMA
-                .get()
+            beaconStateSchema
+                .getPreviousEpochAttestationsSchema()
                 .createFromElements(attestations));
     when(state.getCurrent_epoch_attestations())
-        .thenReturn(BeaconState.CURRENT_EPOCH_ATTESTATIONS_FIELD_SCHEMA.get().getDefault());
+        .thenReturn(beaconStateSchema.getCurrentEpochAttestationsSchema().getDefault());
     when(state.getValidators()).thenReturn(SszListSchema.create(Validator.SSZ_SCHEMA, 0).of());
     final UInt64 slot = UInt64.valueOf(slotAsInt);
     when(state.getSlot()).thenReturn(slot);
