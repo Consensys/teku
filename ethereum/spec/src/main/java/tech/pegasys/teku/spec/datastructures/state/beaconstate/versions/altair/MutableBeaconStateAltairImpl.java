@@ -54,14 +54,16 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   public SSZMutableList<SszByte> getPreviousEpochParticipation() {
     return previousEpochParticipation != null
         ? previousEpochParticipation
-        : (previousEpochParticipation = getPreviousEpochParticipation());
+        : (previousEpochParticipation =
+            MutableBeaconStateAltair.super.getPreviousEpochParticipation());
   }
 
   @Override
   public SSZMutableList<SszByte> getCurrentEpochParticipation() {
     return currentEpochParticipation != null
         ? currentEpochParticipation
-        : (currentEpochParticipation = getCurrentEpochParticipation());
+        : (currentEpochParticipation =
+            MutableBeaconStateAltair.super.getCurrentEpochParticipation());
   }
 
   @Override
