@@ -58,13 +58,19 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
   @Test
   void shouldProcessHeadOnSlotWhileSyncing() {
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ZERO);
+  }
+
+  @Test
+  void shouldProcessHeadOnSlotWhileSyncingAvoidingUnderflow() {
+    trigger.onSlotStartedWhileSyncing(UInt64.ZERO);
+    verify(forkChoice).processHead(UInt64.ZERO);
   }
 
   @Test
   void shouldNotRunForkChoiceAgainForTheSameSlot() {
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ZERO);
 
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
     verifyNoMoreInteractions(forkChoice);
@@ -72,7 +78,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
 
   @Test
   void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRun() {
-    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
+    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(3));
     verify(forkChoice).processHead(UInt64.valueOf(2));
 
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
@@ -81,7 +87,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
 
   @Test
   void requireForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
-    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
+    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(3));
 
     final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
     assertThat(result).isCompleted();
@@ -89,7 +95,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
 
   @Test
   void requireForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSame() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
     verify(forkChoice).processHead(UInt64.ONE);
 
     final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
@@ -102,7 +108,7 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
 
   @Test
   void requiredForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ZERO);
+    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ZERO);
 
     final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
