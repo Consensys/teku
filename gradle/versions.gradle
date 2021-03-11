@@ -151,7 +151,7 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.15.0-rc2"
     dependency "org.testcontainers:junit-jupiter:1.15.0-rc2"
 
-    dependency 'tech.pegasys.discovery:discovery:0.4.3'
+    dependency 'tech.pegasys.discovery:discovery:0.4.4'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 
