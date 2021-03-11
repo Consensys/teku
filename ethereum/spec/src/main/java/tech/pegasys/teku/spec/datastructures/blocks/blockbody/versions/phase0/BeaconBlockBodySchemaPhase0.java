@@ -147,22 +147,32 @@ public class BeaconBlockBodySchemaPhase0
     return new BeaconBlockBodyPhase0(this);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
     return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
     return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<Attestation, ?> getAttestationsSchema() {
     return (SszListSchema<Attestation, ?>) getFieldSchema5();
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<Deposit, ?> getDepositsSchema() {
     return (SszListSchema<Deposit, ?>) getFieldSchema6();
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
     return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
   }

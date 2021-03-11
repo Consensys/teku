@@ -86,7 +86,6 @@ public class BeaconBlockBody {
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
-    final SpecConstants constants = spec.getConstants();
     BeaconBlockBodySchema<?> schema = spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
         randao_reveal.asInternalBLSSignature(),
