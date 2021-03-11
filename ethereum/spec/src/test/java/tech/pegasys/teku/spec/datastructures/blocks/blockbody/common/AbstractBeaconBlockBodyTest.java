@@ -107,8 +107,8 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
-  private <T extends SszData> SszList<T> reversed(SszList<T> list) {
-    List<T> reversedList = list.stream().collect(Collectors.toList());
+  private <C extends SszData> SszList<C> reversed(SszList<C> list) {
+    List<C> reversedList = list.stream().collect(Collectors.toList());
     Collections.reverse(reversedList);
     return list.getSchema().createFromElements(reversedList);
   }
