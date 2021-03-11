@@ -143,6 +143,30 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public TreeNode updateBackingNode(TreeNode srcNode, int[] internalIndexes,
+            SszData[] newValues) {
+          if (internalIndexes.length == 4) {
+            byte[] data = new byte[32];
+            for (int i = 0; i < newValues.length; i++) {
+              long longValue = ((SszUInt64) newValues[i]).longValue();
+              int off = i * 8;
+              data[off + 0] = (byte) longValue;
+              data[off + 1] = (byte) (longValue >> 8);
+              data[off + 2] = (byte) (longValue >> 16);
+              data[off + 3] = (byte) (longValue >> 24);
+              data[off + 4] = (byte) (longValue >> 32);
+              data[off + 5] = (byte) (longValue >> 40);
+              data[off + 6] = (byte) (longValue >> 48);
+              data[off + 7] = (byte) (longValue >> 56);
+            }
+            return LeafNode.create(Bytes.wrap(data));
+          } else {
+            return super.updateBackingNode(srcNode, internalIndexes, newValues);
+          }
+        }
+
+
+        @Override
         public SszUInt64 boxed(UInt64 rawValue) {
           return SszUInt64.of(rawValue);
         }

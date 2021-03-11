@@ -74,6 +74,15 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return newValue.getBackingNode();
   }
 
+
+  default TreeNode updateBackingNode(TreeNode srcNode, int[] internalIndexes, SszData[] newValues) {
+    TreeNode res = srcNode;
+    for (int i = 0; i < internalIndexes.length; i++) {
+      res = updateBackingNode(res, internalIndexes[i], newValues[i]);
+    }
+    return res;
+  }
+
   default Bytes sszSerialize(SszDataT view) {
     return sszSerializeTree(view.getBackingNode());
   }
