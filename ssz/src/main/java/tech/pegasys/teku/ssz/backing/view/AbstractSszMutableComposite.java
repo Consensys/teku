@@ -150,20 +150,19 @@ public abstract class AbstractSszMutableComposite<
       return backingImmutableData;
     } else {
       IntCache<SszChildT> cache = backingImmutableData.transferCache();
-      List<Map.Entry<Integer, SszChildT>> changesList =
+      Stream<Map.Entry<Integer, SszChildT>> changesList =
           Stream.concat(
                   childrenChanges.entrySet().stream(),
                   childrenRefsChanged.stream()
                       .map(
                           idx ->
-                              new SimpleImmutableEntry<>(
+                              Map.entry(
                                   idx,
                                   (SszChildT)
                                       ((SszMutableData) childrenRefs.get(idx)).commitChanges())))
               .sorted(Map.Entry.comparingByKey())
-              .collect(Collectors.toList());
-      // pre-fill the read cache with changed values
-      changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
+              // pre-fill the read cache with changed values
+              .peek(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();
       TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
@@ -178,11 +177,11 @@ public abstract class AbstractSszMutableComposite<
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
-      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
+      Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
     SszCompositeSchema<?> type = getSchema();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
-      return newChildValues.stream()
+      return newChildValues
           .map(
               e ->
                   new TreeUpdates.Update(
@@ -198,7 +197,7 @@ public abstract class AbstractSszMutableComposite<
    * which support packed values (i.e. several child views per backing tree node)
    */
   protected abstract TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original);
+      Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original);
 
   /**
    * Should be implemented by subclasses to create respectful immutable view with backing tree and
