@@ -39,13 +39,13 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -479,46 +479,44 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
-    return new BeaconBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomSszList(
-            BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(),
-            this::randomProposerSlashing,
-            1),
-        randomSszList(
-            BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema(),
-            this::randomAttesterSlashing,
-            1),
-        randomSszList(
-            BeaconBlockBody.getSszSchema().getAttestationsSchema(), this::randomAttestation, 3),
-        randomSszList(
-            BeaconBlockBody.getSszSchema().getDepositsSchema(), this::randomDepositWithoutIndex, 1),
-        randomSszList(
-            BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema(),
-            this::randomSignedVoluntaryExit,
-            1));
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            randomSignature(),
+            randomEth1Data(),
+            Bytes32.ZERO,
+            randomSSZList(
+                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing, 1),
+            randomSSZList(
+                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing, 1),
+            randomSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation, 3),
+            randomSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex, 1),
+            randomSSZList(
+                SignedVoluntaryExit.class,
+                getMaxVoluntaryExits(),
+                this::randomSignedVoluntaryExit,
+                1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
-    return new BeaconBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomFullSszList(
-            BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(),
-            this::randomProposerSlashing),
-        randomFullSszList(
-            BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema(),
-            this::randomAttesterSlashing),
-        randomFullSszList(
-            BeaconBlockBody.getSszSchema().getAttestationsSchema(), this::randomAttestation),
-        randomFullSszList(
-            BeaconBlockBody.getSszSchema().getDepositsSchema(), this::randomDepositWithoutIndex),
-        randomFullSszList(
-            BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema(),
-            this::randomSignedVoluntaryExit));
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            randomSignature(),
+            randomEth1Data(),
+            Bytes32.ZERO,
+            randomFullSSZList(
+                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing),
+            randomFullSSZList(
+                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing),
+            randomFullSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation),
+            randomFullSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex),
+            randomFullSSZList(
+                SignedVoluntaryExit.class,
+                getMaxVoluntaryExits(),
+                this::randomSignedVoluntaryExit));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -725,7 +723,7 @@ public final class DataStructureUtil {
             UInt64.ZERO,
             anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
-            new BeaconBlockBody());
+            spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 

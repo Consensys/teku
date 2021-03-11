@@ -238,7 +238,7 @@ public class ChainBuilder {
             .createInitialBeaconState(genesisTime, initialDepositData);
 
     // Generate genesis block
-    BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(genesisState);
+    BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);

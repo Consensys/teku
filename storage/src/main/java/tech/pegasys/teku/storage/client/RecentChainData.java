@@ -129,7 +129,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState, final UInt64 currentTime) {
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(spec, genesisState);
     initializeFromAnchorPoint(genesis, currentTime);
   }
 

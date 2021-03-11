@@ -25,7 +25,6 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -70,9 +69,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
               "ssz_static/AttesterSlashing",
               new SszTestExecutorDeprecated<>(AttesterSlashing.SSZ_SCHEMA))
           .put("ssz_static/BeaconBlock", new SszTestExecutorDeprecated<>(BeaconBlock.SSZ_SCHEMA))
-          .put(
-              "ssz_static/BeaconBlockBody",
-              new SszTestExecutorDeprecated<>(BeaconBlockBody.SSZ_SCHEMA))
           .put(
               "ssz_static/BeaconBlockHeader",
               new SszTestExecutorDeprecated<>(BeaconBlockHeader.SSZ_SCHEMA))

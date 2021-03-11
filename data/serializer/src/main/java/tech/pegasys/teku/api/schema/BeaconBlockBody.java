@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -59,7 +61,8 @@ public class BeaconBlockBody {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public BeaconBlockBody(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody body) {
+  public BeaconBlockBody(
+      tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1_data());
     this.graffiti = body.getGraffiti();
@@ -80,8 +83,12 @@ public class BeaconBlockBody {
             .collect(Collectors.toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody asInternalBeaconBlockBody() {
-    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody(
+  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
+      asInternalBeaconBlockBody(final SpecVersion spec) {
+    final SpecConstants constants = spec.getConstants();
+    BeaconBlockBodySchema schema = spec.getSchemaDefinitions()
+        .getBeaconBlockBodySchema();
+    return  schema.createBlockBody(
         randao_reveal.asInternalBLSSignature(),
         new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
             eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
@@ -89,31 +96,31 @@ public class BeaconBlockBody {
         proposer_slashings.stream()
             .map(ProposerSlashing::asInternalProposerSlashing)
             .collect(
-                tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody.getSszSchema()
+                schema.
                     .getProposerSlashingsSchema()
                     .collector()),
         attester_slashings.stream()
             .map(AttesterSlashing::asInternalAttesterSlashing)
             .collect(
-                tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody.getSszSchema()
+                schema.
                     .getAttesterSlashingsSchema()
                     .collector()),
         attestations.stream()
             .map(Attestation::asInternalAttestation)
             .collect(
-                tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody.getSszSchema()
+                schema.
                     .getAttestationsSchema()
                     .collector()),
         deposits.stream()
             .map(Deposit::asInternalDeposit)
             .collect(
-                tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody.getSszSchema()
+                schema.
                     .getDepositsSchema()
                     .collector()),
         voluntary_exits.stream()
             .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
             .collect(
-                tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody.getSszSchema()
+                schema.
                     .getVoluntaryExitsSchema()
                     .collector()));
   }

@@ -16,10 +16,15 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.backing.containers.Container5;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
@@ -40,22 +45,14 @@ public final class BeaconBlock
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("body", BeaconBlockBody.SSZ_SCHEMA.get()));
+          namedSchema(
+              "body",
+              SszSchema.as(BeaconBlockBody.class, BeaconBlockBodySchemaPhase0.SSZ_SCHEMA.get())));
     }
 
     @Override
     public BeaconBlock createFromBackingNode(TreeNode node) {
       return new BeaconBlock(this, node);
-    }
-
-    public BeaconBlock fromGenesisState(final BeaconState genesisState) {
-      return new BeaconBlock(
-          this,
-          UInt64.ZERO,
-          UInt64.ZERO,
-          Bytes32.ZERO,
-          genesisState.hashTreeRoot(),
-          new BeaconBlockBody());
     }
   }
 
@@ -96,15 +93,19 @@ public final class BeaconBlock
         body);
   }
 
-  @Deprecated
-  public static BeaconBlock fromGenesisState(final BeaconState genesisState) {
+  public static BeaconBlock fromGenesisState(final Spec spec, final BeaconState genesisState) {
+    return fromGenesisState(spec.getGenesisSpec().getSchemaDefinitions(), genesisState);
+  }
+
+  public static BeaconBlock fromGenesisState(
+      final SchemaDefinitions genesisSchema, final BeaconState genesisState) {
     return new BeaconBlock(
         SSZ_SCHEMA.get(),
         UInt64.ZERO,
         UInt64.ZERO,
         Bytes32.ZERO,
         genesisState.hashTreeRoot(),
-        new BeaconBlockBody());
+        genesisSchema.getBeaconBlockBodySchema().createEmpty());
   }
 
   public BeaconBlock withStateRoot(Bytes32 stateRoot) {
