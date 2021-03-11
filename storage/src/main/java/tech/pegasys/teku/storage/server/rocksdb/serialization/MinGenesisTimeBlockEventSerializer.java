@@ -19,8 +19,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
-public class MinGenesisTimeBlockEventSerializer
-    implements RocksDbSerializer<MinGenesisTimeBlockEvent> {
+class MinGenesisTimeBlockEventSerializer implements RocksDbSerializer<MinGenesisTimeBlockEvent> {
   @Override
   public MinGenesisTimeBlockEvent deserialize(final byte[] data) {
     return SSZ.decode(

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.bls.impl.blst;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.impl.blst.swig.P2;
+import supranational.blst.P2;
 
 class HashToCurve {
   // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag
@@ -27,11 +27,6 @@ class HashToCurve {
 
   static P2 hashToG2(Bytes message, String dst) {
     P2 p2Hash = new P2();
-    try {
-      return p2Hash.hash_to(message.toArray(), dst, new byte[0]);
-    } catch (Exception e) {
-      p2Hash.delete();
-      throw e;
-    }
+    return p2Hash.hash_to(message.toArray(), dst, new byte[0]);
   }
 }

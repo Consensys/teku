@@ -32,7 +32,7 @@ public class Deposit {
 
   public final DepositData data;
 
-  public Deposit(tech.pegasys.teku.datastructures.operations.Deposit deposit) {
+  public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().stream().collect(Collectors.toList());
     this.data = new DepositData(deposit.getData());
   }
@@ -45,8 +45,8 @@ public class Deposit {
     this.data = data;
   }
 
-  public tech.pegasys.teku.datastructures.operations.Deposit asInternalDeposit() {
-    return new tech.pegasys.teku.datastructures.operations.Deposit(
+  public tech.pegasys.teku.spec.datastructures.operations.Deposit asInternalDeposit() {
+    return new tech.pegasys.teku.spec.datastructures.operations.Deposit(
         SSZVector.createMutable(proof, Bytes32.class), data.asInternalDepositData());
   }
 

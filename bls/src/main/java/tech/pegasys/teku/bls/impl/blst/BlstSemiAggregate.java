@@ -15,9 +15,9 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import supranational.blst.BLST_ERROR;
+import supranational.blst.Pairing;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
-import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
 
 final class BlstSemiAggregate implements BatchSemiAggregate {
 
@@ -56,9 +56,6 @@ final class BlstSemiAggregate implements BatchSemiAggregate {
       throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
     }
     released = true;
-    if (ctx != null) {
-      ctx.delete();
-    }
   }
 
   void mergeWith(BlstSemiAggregate other) {
@@ -68,7 +65,6 @@ final class BlstSemiAggregate implements BatchSemiAggregate {
         throw new IllegalStateException("Error merging Blst pairing contexts: " + ret);
       }
     } else {
-      ctx.delete();
       ctx = null;
     }
   }

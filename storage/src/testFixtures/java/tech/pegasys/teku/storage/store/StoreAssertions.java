@@ -38,7 +38,6 @@ public class StoreAssertions {
             "checkpointStateRequestRegenerateCounter",
             "checkpointStateRequestMissCounter",
             "metricsSystem",
-            "specProvider",
             "states",
             "stateProvider",
             "checkpointStates",

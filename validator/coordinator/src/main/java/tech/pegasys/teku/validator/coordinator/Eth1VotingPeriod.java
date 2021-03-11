@@ -16,15 +16,15 @@ package tech.pegasys.teku.validator.coordinator;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 
 public class Eth1VotingPeriod {
 
   private final UInt64 cacheDuration;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
-  public Eth1VotingPeriod(final SpecProvider specProvider) {
-    this.specProvider = specProvider;
+  public Eth1VotingPeriod(final Spec spec) {
+    this.spec = spec;
     cacheDuration = calculateEth1DataCacheDurationPriorToFollowDistance();
   }
 
@@ -32,17 +32,14 @@ public class Eth1VotingPeriod {
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        specProvider
-            .getEth1FollowDistance(slot)
-            .times(specProvider.getSecondsPerEth1Block(slot))
-            .times(2));
+        spec.getEth1FollowDistance(slot).times(spec.getSecondsPerEth1Block(slot)).times(2));
   }
 
   public UInt64 getSpecRangeUpperBound(final UInt64 slot, final UInt64 genesisTime) {
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        specProvider.getEth1FollowDistance(slot).times(specProvider.getSecondsPerEth1Block(slot)));
+        spec.getEth1FollowDistance(slot).times(spec.getSecondsPerEth1Block(slot)));
   }
 
   private UInt64 secondsBeforeCurrentVotingPeriodStartTime(
@@ -57,15 +54,12 @@ public class Eth1VotingPeriod {
 
   private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
     final UInt64 eth1VotingPeriodStartSlot =
-        slot.minus(
-            slot.mod(
-                specProvider.getEpochsPerEth1VotingPeriod(slot)
-                    * specProvider.getSlotsPerEpoch(slot)));
+        slot.minus(slot.mod(spec.getEpochsPerEth1VotingPeriod(slot) * spec.getSlotsPerEpoch(slot)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 
   private UInt64 computeTimeAtSlot(final UInt64 slot, final UInt64 genesisTime) {
-    return genesisTime.plus(slot.times(specProvider.getSecondsPerSlot(slot)));
+    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
   }
 
   public UInt64 getCacheDurationInSeconds() {

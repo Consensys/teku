@@ -2,7 +2,6 @@ import java.text.SimpleDateFormat
 
 plugins {
   id 'com.diffplug.gradle.spotless' version '4.5.1'
-  id 'com.jfrog.bintray' version '1.8.5'
   id 'com.github.ben-manes.versions' version '0.28.0'
   id 'com.github.hierynomus.license' version '0.15.0'
   id 'io.spring.dependency-management' version '1.0.9.RELEASE'
@@ -50,29 +49,8 @@ gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
 def userHome = System.getProperty("user.home")
 
-apply plugin: 'com.jfrog.bintray'
-
-def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
-
 def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
 def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
-
-def bintrayPackage = bintray.pkg {
-  repo = 'pegasys-repo'
-  name = 'teku'
-  userOrg = 'consensys'
-  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
-  licenses = ['Apache-2.0']
-  websiteUrl = 'https://github.com/ConsenSys/teku'
-  issueTrackerUrl = 'https://github.com/ConsenSys/teku/issues'
-  vcsUrl = 'https://github.com/ConsenSys/teku.git'
-
-  version {
-    name = project.version
-    released = new Date()
-  }
-}
 
 allprojects {
   apply plugin: 'java-library'
@@ -100,9 +78,8 @@ allprojects {
     jcenter()
     mavenCentral()
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
-    maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
-    maven { url "https://consensys.bintray.com/pegasys-repo/" }
-    maven { url "https://artifacts.consensys.net/public/maven/maven/"}
+    maven { url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/" }
+    maven { url "https://hyperledger.jfrog.io/artifactory/besu-maven/" }
   }
 
   dependencies {
@@ -148,6 +125,7 @@ allprojects {
     ]
 
     options.errorprone {
+      enabled = !'true'.equalsIgnoreCase(System.getProperty('avt.disableErrorProne'))
       disableWarningsInGeneratedCode
       // Our equals need to be symmetric, this checker doesn't respect that.
       check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
@@ -472,7 +450,6 @@ subprojects {
   }
 
   if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testFixtures")) {
-    apply plugin: 'com.jfrog.bintray'
     apply plugin: 'maven-publish'
 
     publishing {
@@ -518,18 +495,6 @@ subprojects {
           }
         }
       }
-    }
-
-    bintray {
-      user = bintrayUser
-      key = bintrayKey
-
-      publications = ['mavenJava']
-      override = isDevelopBuild
-
-      publish = true
-
-      pkg = bintrayPackage
     }
   }
 
@@ -692,6 +657,9 @@ def calculateVersion() {
     return 'UNKNOWN'
   }
   String version = grgit.describe(tags: true)
+  if (version == null) {
+    return "UNKNOWN+g${grgit.head().abbreviatedId}"
+  }
   def versionPattern = ~/^(?<lastVersion>.*)-(?<devVersion>[0-9]+-g[a-z0-9]+)$/
   def matcher = version =~ versionPattern
   if (matcher.find()) {
@@ -749,25 +717,6 @@ task cloudsmithUpload {
     }
   }
 }
-
-bintray {
-  user = bintrayUser
-  key = bintrayKey
-
-  filesSpec {
-    from distTar.destinationDir.path
-    from distZip.destinationDir.path
-    into '.'
-  }
-
-  publish = true
-  override = isDevelopBuild
-
-  pkg = bintrayPackage
-}
-
-bintrayUpload.mustRunAfter(distTar)
-bintrayUpload.mustRunAfter(distZip)
 
 task dockerUpload {
   dependsOn([distDocker])

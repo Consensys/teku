@@ -13,24 +13,24 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
@@ -44,7 +44,7 @@ public class WeakSubjectivityValidator {
   private final WeakSubjectivityViolationPolicy violationPolicy;
 
   private final WeakSubjectivityConfig config;
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
   private final Throttler<WeakSubjectivityLogger> wsChecksSuppressedLogger;
   private final Throttler<WeakSubjectivityLogger> deferValidationLogger;
@@ -62,7 +62,7 @@ public class WeakSubjectivityValidator {
       WeakSubjectivityCalculator calculator,
       WeakSubjectivityViolationPolicy violationPolicy,
       final Optional<BeaconStateUtil> maybeBeaconStateUtil) {
-    this.specProvider = config.getSpecProvider();
+    this.spec = config.getSpec();
     this.calculator = calculator;
     this.violationPolicy = violationPolicy;
     this.config = config;
@@ -204,7 +204,7 @@ public class WeakSubjectivityValidator {
     } else if (blockEpoch.isGreaterThanOrEqualTo(wsCheckpoint.getEpoch())) {
       // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
       final Optional<Bytes32> ancestor =
-          specProvider.getAncestor(
+          spec.getAncestor(
               forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot());
       // If ancestor is not present, the chain must have moved passed the wsCheckpoint
       return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);

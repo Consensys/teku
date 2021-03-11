@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 
 public class MetadataMessageHandler
     extends PeerRequiredLocalMessageHandler<EmptyMessage, MetadataMessage> {

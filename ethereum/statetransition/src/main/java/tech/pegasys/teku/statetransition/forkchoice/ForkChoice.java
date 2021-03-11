@@ -22,25 +22,26 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -48,36 +49,43 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
 
-  public ForkChoice(
-      final SpecProvider specProvider,
+  private ForkChoice(
+      final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    this.specProvider = specProvider;
+    this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
+  public static ForkChoice create(
+      final Spec spec,
+      final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData) {
+    return new ForkChoice(spec, forkChoiceExecutor, recentChainData);
+  }
+
   private void initializeProtoArrayForkChoice() {
-    processHead();
+    processHead().join();
   }
 
-  public void processHead() {
-    processHead(Optional.empty());
+  public SafeFuture<Boolean> processHead() {
+    return processHead(Optional.empty());
   }
 
-  public void processHead(UInt64 nodeSlot) {
-    processHead(Optional.of(nodeSlot));
+  public SafeFuture<Boolean> processHead(UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot));
   }
 
-  private void processHead(Optional<UInt64> nodeSlot) {
+  private SafeFuture<Boolean> processHead(Optional<UInt64> nodeSlot) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
-    recentChainData
+    return recentChainData
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
             justifiedCheckpointState ->
@@ -94,15 +102,17 @@ public class ForkChoice {
                             retrievedJustifiedCheckpoint.getRoot(),
                             justifiedCheckpoint.getEpoch(),
                             justifiedCheckpoint.getRoot());
-                        return;
+                        return false;
                       }
                       final VoteUpdater transaction = recentChainData.startVoteUpdate();
                       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                      final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
+                      final List<UInt64> justifiedEffectiveBalances =
+                          spec.getBeaconStateUtil(justifiedState.getSlot())
+                              .getEffectiveBalances(justifiedState);
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
-                              finalizedCheckpoint,
-                              justifiedCheckpoint,
-                              justifiedCheckpointState.orElseThrow());
+                              finalizedCheckpoint, justifiedCheckpoint, justifiedEffectiveBalances);
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -115,15 +125,22 @@ public class ForkChoice {
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
                       transaction.commit();
-                    }))
-        .join();
+                      return true;
+                    }));
+  }
+
+  /** Import a block to the store. */
+  public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
+    return recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+        .thenCompose(blockSlotState -> onBlock(block, blockSlotState));
   }
 
   /**
    * Import a block to the store. The supplied blockSlotState must already have empty slots
    * processed to the same slot as the block.
    */
-  public SafeFuture<BlockImportResult> onBlock(
+  private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -143,8 +160,7 @@ public class ForkChoice {
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              specProvider.onBlock(
-                  transaction, block, blockSlotState.get(), indexedAttestationCache);
+              spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
 
           if (!result.isSuccessful()) {
             return result;
@@ -198,7 +214,7 @@ public class ForkChoice {
             maybeTargetState -> {
               final UpdatableStore store = recentChainData.getStore();
               final AttestationProcessingResult validationResult =
-                  specProvider.validateAttestation(store, attestation, maybeTargetState);
+                  spec.validateAttestation(store, attestation, maybeTargetState);
 
               if (!validationResult.isSuccessful()) {
                 return SafeFuture.completedFuture(validationResult);

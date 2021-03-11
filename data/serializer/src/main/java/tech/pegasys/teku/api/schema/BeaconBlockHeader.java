@@ -53,7 +53,8 @@ public class BeaconBlockHeader {
     this.body_root = body_root;
   }
 
-  public BeaconBlockHeader(final tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader header) {
+  public BeaconBlockHeader(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader header) {
     this.slot = header.getSlot();
     this.proposer_index = header.getProposerIndex();
     this.parent_root = header.getParentRoot();
@@ -61,8 +62,9 @@ public class BeaconBlockHeader {
     this.body_root = header.getBodyRoot();
   }
 
-  public tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader asInternalBeaconBlockHeader() {
-    return new tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader(
+  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader
+      asInternalBeaconBlockHeader() {
+    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader(
         slot, proposer_index, parent_root, state_root, body_root);
   }
 

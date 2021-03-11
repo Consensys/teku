@@ -13,17 +13,15 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
-import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -32,6 +30,7 @@ import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
@@ -50,15 +49,14 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final ServiceConfig serviceConfig,
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
-      final SpecProvider specProvider,
+      final Spec spec,
       final boolean useIndependentAttestationTiming) {
 
-    final int readTimeoutInSeconds =
-        getReadTimeoutInSeconds(specProvider, useIndependentAttestationTiming);
+    final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
     HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
-    addAuthenticator(apiEndpoint, httpClientBuilder);
+    OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
@@ -68,7 +66,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             serviceConfig.getMetricsSystem(),
-            new RemoteValidatorApiHandler(apiClient, asyncRunner));
+            new RemoteValidatorApiHandler(spec, apiClient, asyncRunner));
 
     final ValidatorTimingChannel validatorTimingChannel =
         serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
@@ -82,32 +80,19 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel,
                 useIndependentAttestationTiming,
-                specProvider),
+                spec),
             validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
   }
 
-  private static void addAuthenticator(
-      final HttpUrl apiEndpoint, final OkHttpClient.Builder httpClientBuilder) {
-    final String username = apiEndpoint.username();
-    final String password = apiEndpoint.password();
-    if (!Strings.isNullOrEmpty(apiEndpoint.password())) {
-      final String credentials = Credentials.basic(username, password);
-      httpClientBuilder.addInterceptor(
-          chain ->
-              chain.proceed(
-                  chain.request().newBuilder().header("Authorization", credentials).build()));
-    }
-  }
-
   private static int getReadTimeoutInSeconds(
-      final SpecProvider specProvider, final boolean useIndependentAttestationTiming) {
+      final Spec spec, final boolean useIndependentAttestationTiming) {
     // We should get at least one event per slot so give the read timeout 2 slots to be safe
     // but when using independent timing we only get head events on each new block so they may be
     // much rarer
     final int readTimeoutInSlots = useIndependentAttestationTiming ? 5 : 2;
-    return readTimeoutInSlots * specProvider.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
+    return readTimeoutInSlots * spec.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
   }
 
   @Override

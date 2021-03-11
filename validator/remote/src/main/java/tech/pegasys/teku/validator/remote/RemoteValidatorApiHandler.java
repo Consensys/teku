@@ -34,19 +34,20 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -63,11 +64,13 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 10;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
+  private final Spec spec;
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
 
   public RemoteValidatorApiHandler(
-      final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
+      final Spec spec, final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
+    this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
   }
@@ -244,7 +247,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
           return apiClient
               .createUnsignedBlock(slot, schemaBLSSignature, graffiti)
-              .map(tech.pegasys.teku.api.schema.BeaconBlock::asInternalBeaconBlock);
+              .map(block -> block.asInternalBeaconBlock(spec));
         });
   }
 

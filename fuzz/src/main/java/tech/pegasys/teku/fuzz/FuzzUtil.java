@@ -19,10 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSConstants;
-import tech.pegasys.teku.core.StateTransitionException;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
@@ -31,8 +27,12 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -43,7 +43,7 @@ public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
@@ -52,10 +52,7 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
-    specProvider =
-        useMainnetConfig
-            ? SpecProviderFactory.createMainnet()
-            : SpecProviderFactory.createMinimal();
+    spec = useMainnetConfig ? SpecFactory.createMainnet() : SpecFactory.createMinimal();
 
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;
@@ -77,7 +74,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
-    AttestationFuzzInput structuredInput = deserialize(input, AttestationFuzzInput.createSchema());
+    AttestationFuzzInput structuredInput =
+        deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
 
     // process and return post state
     try {
@@ -86,7 +84,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state ->
-                      specProvider.processAttestations(
+                      spec.processAttestations(
                           state, SSZList.singleton(structuredInput.getAttestation())));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -98,7 +96,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzAttesterSlashing(final byte[] input) {
     AttesterSlashingFuzzInput structuredInput =
-        deserialize(input, AttesterSlashingFuzzInput.createType());
+        deserialize(input, AttesterSlashingFuzzInput.createType(spec.getGenesisSpec()));
 
     // process and return post state
     try {
@@ -107,7 +105,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processAttesterSlashings(
+                    spec.processAttesterSlashings(
                         state, SSZList.singleton(structuredInput.getAttester_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -119,12 +117,13 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlock(final byte[] input) {
-    BlockFuzzInput structuredInput = deserialize(input, BlockFuzzInput.createSchema());
+    BlockFuzzInput structuredInput =
+        deserialize(input, BlockFuzzInput.createSchema(spec.getGenesisSpec()));
 
     boolean validate_root_and_sigs = !disable_bls;
     try {
       BeaconState postState =
-          specProvider.initiateStateTransition(
+          spec.initiateStateTransition(
               structuredInput.getState(),
               structuredInput.getSigned_block(),
               validate_root_and_sigs);
@@ -137,7 +136,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzBlockHeader(final byte[] input) {
-    BlockHeaderFuzzInput structuredInput = deserialize(input, BlockHeaderFuzzInput.createType());
+    BlockHeaderFuzzInput structuredInput =
+        deserialize(input, BlockHeaderFuzzInput.createType(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =
@@ -145,7 +145,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processBlockHeader(state, structuredInput.getBlock());
+                    spec.processBlockHeader(state, structuredInput.getBlock());
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -156,7 +156,8 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzDeposit(final byte[] input) {
-    DepositFuzzInput structuredInput = deserialize(input, DepositFuzzInput.createSchema());
+    DepositFuzzInput structuredInput =
+        deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =
@@ -164,8 +165,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processDeposits(
-                        state, SSZList.singleton(structuredInput.getDeposit()));
+                    spec.processDeposits(state, SSZList.singleton(structuredInput.getDeposit()));
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -177,7 +177,7 @@ public class FuzzUtil {
 
   public Optional<byte[]> fuzzProposerSlashing(final byte[] input) {
     ProposerSlashingFuzzInput structuredInput =
-        deserialize(input, ProposerSlashingFuzzInput.createType());
+        deserialize(input, ProposerSlashingFuzzInput.createType(spec.getGenesisSpec()));
 
     // process and return post state
     try {
@@ -186,7 +186,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processProposerSlashings(
+                    spec.processProposerSlashings(
                         state, SSZList.singleton(structuredInput.getProposer_slashing()));
                   });
       Bytes output = postState.sszSerialize();
@@ -220,14 +220,14 @@ public class FuzzUtil {
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
       result_bb.putLong(
-          specProvider.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
+          spec.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
     }
     return Optional.of(result_bb.array());
   }
 
   public Optional<byte[]> fuzzVoluntaryExit(final byte[] input) {
     VoluntaryExitFuzzInput structuredInput =
-        deserialize(input, VoluntaryExitFuzzInput.createSchema());
+        deserialize(input, VoluntaryExitFuzzInput.createSchema(spec.getGenesisSpec()));
 
     try {
       BeaconState postState =
@@ -235,8 +235,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state -> {
-                    specProvider.processVoluntaryExits(
-                        state, SSZList.singleton(structuredInput.getExit()));
+                    spec.processVoluntaryExits(state, SSZList.singleton(structuredInput.getExit()));
                   });
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());

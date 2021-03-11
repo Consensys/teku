@@ -16,31 +16,30 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatusFactory {
 
   private final Random random;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
-  private PeerStatusFactory(final long seed, final SpecProvider specProvider) {
+  private PeerStatusFactory(final long seed, final Spec spec) {
     random = new Random(seed);
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
-  public static PeerStatusFactory create(final long seed, final SpecProvider specProvider) {
-    return new PeerStatusFactory(seed, specProvider);
+  public static PeerStatusFactory create(final long seed, final Spec spec) {
+    return new PeerStatusFactory(seed, spec);
   }
 
   public PeerStatus random() {
-    final Bytes4 fork = specProvider.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 fork = spec.getGenesisSpecConstants().getGenesisForkVersion();
     final Bytes32 finalizedRoot = randomBytes32();
     final UInt64 finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();
     final long minHeadSlot =
-        (finalizedEpoch.longValue() + 2)
-            * specProvider.getGenesisSpecConstants().getSlotsPerEpoch();
+        (finalizedEpoch.longValue() + 2) * spec.getGenesisSpecConstants().getSlotsPerEpoch();
     final UInt64 headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
     return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }

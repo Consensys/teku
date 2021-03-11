@@ -13,19 +13,24 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class AttesterSlashingFuzzInput
     extends Container2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> {
 
   public static ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing>
-      createType() {
+      createType(final SpecVersion spec) {
     return ContainerSchema2.create(
-        BeaconState.getSszSchema(), AttesterSlashing.SSZ_SCHEMA, AttesterSlashingFuzzInput::new);
+        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
+        AttesterSlashing.SSZ_SCHEMA,
+        AttesterSlashingFuzzInput::new);
   }
 
   private AttesterSlashingFuzzInput(
@@ -35,8 +40,8 @@ public class AttesterSlashingFuzzInput
   }
 
   public AttesterSlashingFuzzInput(
-      final BeaconState state, final AttesterSlashing attester_slashing) {
-    super(createType(), state, attester_slashing);
+      final Spec spec, final BeaconState state, final AttesterSlashing attester_slashing) {
+    super(createType(spec.atSlot(state.getSlot())), state, attester_slashing);
   }
 
   public AttesterSlashing getAttester_slashing() {

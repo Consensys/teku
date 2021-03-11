@@ -26,6 +26,11 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
  */
 public interface SszSchema<SszDataT extends SszData> extends SszType {
 
+  @SuppressWarnings("unchecked")
+  static <X extends SszData> SszSchema<X> as(final Class<X> clazz, final SszSchema<?> schema) {
+    return (SszSchema<X>) schema;
+  }
+
   /**
    * Creates a default backing binary tree for this schema
    *

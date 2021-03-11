@@ -17,11 +17,11 @@ import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import supranational.blst.P1;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
-import tech.pegasys.teku.bls.impl.blst.swig.P1;
 
-public class BlstSecretKey implements SecretKey {
+class BlstSecretKey implements SecretKey {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
 
   public static BlstSecretKey fromBytes(Bytes32 bytes) {
@@ -33,8 +33,7 @@ public class BlstSecretKey implements SecretKey {
   }
 
   private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
-    tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey =
-        new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
+    supranational.blst.SecretKey secretKey = new supranational.blst.SecretKey();
     secretKey.from_bendian(bytes.toArrayUnsafe());
     return new BlstSecretKey(secretKey);
   }
@@ -42,19 +41,18 @@ public class BlstSecretKey implements SecretKey {
   public static BlstSecretKey generateNew(Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
-    tech.pegasys.teku.bls.impl.blst.swig.SecretKey sk =
-        new tech.pegasys.teku.bls.impl.blst.swig.SecretKey();
+    supranational.blst.SecretKey sk = new supranational.blst.SecretKey();
     sk.keygen(ikm);
     return new BlstSecretKey(sk);
   }
 
-  private final tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey;
+  private final supranational.blst.SecretKey secretKey;
 
-  public BlstSecretKey(tech.pegasys.teku.bls.impl.blst.swig.SecretKey secretKey) {
+  public BlstSecretKey(supranational.blst.SecretKey secretKey) {
     this.secretKey = secretKey;
   }
 
-  public tech.pegasys.teku.bls.impl.blst.swig.SecretKey getKey() {
+  public supranational.blst.SecretKey getKey() {
     return secretKey;
   }
 
@@ -75,15 +73,8 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public BlstPublicKey derivePublicKey() {
-    P1 pk = null;
-    try {
-      pk = new P1(secretKey);
-      return new BlstPublicKey(pk.to_affine());
-    } finally {
-      if (pk != null) {
-        pk.delete();
-      }
-    }
+    P1 pk = new P1(secretKey);
+    return new BlstPublicKey(pk.to_affine());
   }
 
   @SuppressWarnings("ReferenceEquality")

@@ -17,8 +17,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /**
  * Tracks the set of potential target chains to sync. Designed to be usable for either finalized and

@@ -28,10 +28,10 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,16 +43,16 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Random random;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
       final Random random,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   @Override
@@ -88,7 +88,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       UInt64 currentSlot, int validatorCount) {
 
     final int randomSubnetsPerValidator =
-        specProvider.atSlot(currentSlot).getConstants().getRandomSubnetsPerValidator();
+        spec.atSlot(currentSlot).getConstants().getRandomSubnetsPerValidator();
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
 
@@ -154,7 +154,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   }
 
   private UInt64 getRandomSubscriptionLength(final UInt64 currentSlot) {
-    final SpecConstants constants = specProvider.atSlot(currentSlot).getConstants();
+    final SpecConstants constants = spec.atSlot(currentSlot).getConstants();
 
     return UInt64.valueOf(
         (constants.getEpochsPerRandomSubnetSubscription()

@@ -28,8 +28,6 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -39,6 +37,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.Sta
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 
 public class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
@@ -185,6 +185,54 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get)
         .hasRootCause(new ExtraDataAppendedException());
+  }
+
+  @Test
+  public void sendAllChunksPlusUnexpectedExtraData() throws Exception {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    Bytes extraBytes = Bytes.fromHexString("0x112233445566");
+    deliverBytes(extraBytes);
+    complete();
+    close();
+
+    asyncRequestRunner.waitForExactly(maxChunks);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    verify(rpcStream).closeAbruptly();
+    assertThat(blocks.size()).isEqualTo(maxChunks);
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
+    assertThatThrownBy(finishedProcessingFuture::get)
+        .hasRootCauseInstanceOf(ExtraDataAppendedException.class)
+        .hasMessageContaining(extraBytes.toString());
+  }
+
+  @Test
+  public void shouldWorkWhenSendAllChunksPlusEmptyExtraChunk() throws Exception {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    deliverBytes(Bytes.EMPTY);
+    complete();
+    close();
+
+    asyncRequestRunner.waitForExactly(maxChunks);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    verify(rpcStream, never()).closeAbruptly();
+    assertThat(blocks.size()).isEqualTo(maxChunks);
+    assertThat(finishedProcessingFuture).isCompleted();
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test

@@ -1,7 +1,6 @@
 dependencies {
     implementation project(':bls')
     implementation project(':ethereum:core')
-    implementation project(':ethereum:datastructures')
     implementation project(':ethereum:networks')
     implementation project(':ethereum:spec')
     implementation project(':ssz')
@@ -9,7 +8,6 @@ dependencies {
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 
-    testImplementation testFixtures(project(':ethereum:datastructures'))
     testImplementation testFixtures(project(':ethereum:spec'))
 }
 

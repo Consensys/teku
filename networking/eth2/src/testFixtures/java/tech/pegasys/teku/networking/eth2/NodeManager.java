@@ -21,11 +21,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class NodeManager {
+  private static final Spec DEFAULT_SPEC = SpecFactory.createMinimal();
+
   private final EventBus eventBus;
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
@@ -43,23 +47,34 @@ public class NodeManager {
   }
 
   public static NodeManager create(
-      Eth2P2PNetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
-    return create(networkFactory, validatorKeys, c -> {});
+      final Spec spec, Eth2P2PNetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys)
+      throws Exception {
+    return create(spec, networkFactory, validatorKeys, c -> {});
   }
 
+  @Deprecated
   public static NodeManager create(
       Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
-    final EventBus eventBus = new EventBus();
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+    return create(DEFAULT_SPEC, networkFactory, validatorKeys, configureNetwork);
+  }
 
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
+  public static NodeManager create(
+      final Spec spec,
+      Eth2P2PNetworkFactory networkFactory,
+      final List<BLSKeyPair> validatorKeys,
+      Consumer<Eth2P2PNetworkBuilder> configureNetwork)
+      throws Exception {
+    final EventBus eventBus = new EventBus();
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec, eventBus);
+
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
     chainUtil.initializeStorage();
 
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).recentChainData(storageClient);
+        networkFactory.builder().spec(spec).eventBus(eventBus).recentChainData(storageClient);
 
     configureNetwork.accept(networkBuilder);
 

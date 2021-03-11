@@ -20,15 +20,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import supranational.blst.BLST_ERROR;
+import supranational.blst.P2;
+import supranational.blst.P2_Affine;
+import supranational.blst.Pairing;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
-import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.P2;
-import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
-import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
 
-public class BlstSignature implements Signature {
+class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
   public static BlstSignature fromBytes(Bytes compressed) {
@@ -62,15 +62,11 @@ public class BlstSignature implements Signature {
     }
 
     P2 sum = new P2();
-    try {
-      for (BlstSignature finiteSignature : signatures) {
-        sum.aggregate(finiteSignature.ec2Point);
-      }
-
-      return new BlstSignature(sum.to_affine(), true);
-    } finally {
-      sum.delete();
+    for (BlstSignature finiteSignature : signatures) {
+      sum.aggregate(finiteSignature.ec2Point);
     }
+
+    return new BlstSignature(sum.to_affine(), true);
   }
 
   private static void blstPrepareVerifyAggregated(
@@ -88,12 +84,8 @@ public class BlstSignature implements Signature {
   }
 
   private static boolean blstCompleteVerifyAggregated(Pairing ctx) {
-    try {
-      ctx.commit();
-      return ctx.finalverify();
-    } finally {
-      ctx.delete();
-    }
+    ctx.commit();
+    return ctx.finalverify();
   }
 
   final P2_Affine ec2Point;
@@ -121,17 +113,13 @@ public class BlstSignature implements Signature {
 
     Pairing ctx = new Pairing(true, HashToCurve.ETH2_DST);
 
-    try {
-      for (int i = 0; i < keysToMessages.size(); i++) {
-        BlstPublicKey publicKey = BlstPublicKey.fromPublicKey(keysToMessages.get(i).getPublicKey());
-        Bytes message = keysToMessages.get(i).getMessage();
-        BlstSignature signature = i == 0 ? this : null;
-        blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
-      }
-      return blstCompleteVerifyAggregated(ctx);
-    } finally {
-      ctx.delete();
+    for (int i = 0; i < keysToMessages.size(); i++) {
+      BlstPublicKey publicKey = BlstPublicKey.fromPublicKey(keysToMessages.get(i).getPublicKey());
+      Bytes message = keysToMessages.get(i).getMessage();
+      BlstSignature signature = i == 0 ? this : null;
+      blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
     }
+    return blstCompleteVerifyAggregated(ctx);
   }
 
   @Override

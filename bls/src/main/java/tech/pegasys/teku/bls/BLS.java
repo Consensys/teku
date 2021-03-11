@@ -30,7 +30,7 @@ import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
+import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 /**
@@ -56,8 +56,8 @@ public class BLS {
   }
 
   public static void resetBlsImplementation() {
-    if (BlstBLS12381.INSTANCE.isPresent()) {
-      BLS_IMPL = BlstBLS12381.INSTANCE.get();
+    if (BlstLoader.INSTANCE.isPresent()) {
+      BLS_IMPL = BlstLoader.INSTANCE.get();
       LOG.info("BLS: loaded BLST library");
     } else {
       BLS_IMPL = MikuliBLS12381.INSTANCE;

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -21,10 +21,10 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -39,7 +39,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
-  private final SpecProvider specProvider;
+  private final Spec spec;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
@@ -48,12 +48,12 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
-      final SpecProvider specProvider) {
+      final Spec spec) {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
-    this.specProvider = specProvider;
+    this.spec = spec;
   }
 
   @Override
@@ -81,8 +81,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     }
     final Validator validator = maybeValidator.get();
     final int aggregatorModulo =
-        specProvider
-            .atSlot(duty.getSlot())
+        spec.atSlot(duty.getSlot())
             .getCommitteeUtil()
             .getAggregatorModulo(duty.getCommitteeLength());
 

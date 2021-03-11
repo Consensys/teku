@@ -38,8 +38,8 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.7.0-RELEASE'
-    dependency 'tech.pegasys:jblst:0.3.3-20210223.200954-2'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.0-RELEASE'
+    dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -55,7 +55,6 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.51.Final') {
@@ -146,15 +145,15 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependency 'org.hyperledger.besu.internal:metrics-core:20.10.4'
-    dependency 'org.hyperledger.besu:plugin-api:20.10.4'
+    dependency 'org.hyperledger.besu.internal:metrics-core:21.1.1'
+    dependency 'org.hyperledger.besu:plugin-api:21.1.1'
 
     dependency "org.testcontainers:testcontainers:1.15.0-rc2"
     dependency "org.testcontainers:junit-jupiter:1.15.0-rc2"
 
     dependency 'tech.pegasys.discovery:discovery:0.4.3'
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.13'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 
     dependency 'org.jupnp:org.jupnp.support:2.5.2'
     dependency 'org.jupnp:org.jupnp:2.5.2'

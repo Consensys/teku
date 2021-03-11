@@ -14,7 +14,7 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
+import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
@@ -23,9 +23,9 @@ public abstract class BlsTestExecutor implements TestExecutor {
 
   @Override
   public final void runTest(TestDefinition testDefinition) throws Throwable {
-    if (BlstBLS12381.INSTANCE.isPresent()) {
+    if (BlstLoader.INSTANCE.isPresent()) {
       try {
-        BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
+        BLS.setBlsImplementation(BlstLoader.INSTANCE.get());
         runTestImpl(testDefinition);
       } finally {
         BLS.resetBlsImplementation();

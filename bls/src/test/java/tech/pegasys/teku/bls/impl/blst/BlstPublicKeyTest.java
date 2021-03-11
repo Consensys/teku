@@ -24,7 +24,7 @@ public class BlstPublicKeyTest {
 
   @BeforeAll
   static void setup() {
-    assertThat(BlstBLS12381.INSTANCE).isNotEmpty();
+    assertThat(BlstLoader.INSTANCE).isNotEmpty();
   }
 
   // Blst library doesn't handle infinity pubkeys at the moment.

@@ -18,8 +18,8 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 
 class CheckpointEpochsSerializerTest {
 

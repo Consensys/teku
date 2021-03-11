@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.fuzz.input;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
 public class AttestationFuzzInputTest extends AbstractFuzzInputTest<AttestationFuzzInput> {
 
   @Override
   protected SszSchema<AttestationFuzzInput> getInputType() {
-    return AttestationFuzzInput.createSchema();
+    return AttestationFuzzInput.createSchema(spec.getGenesisSpec());
   }
 
   @Override
   protected AttestationFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    return new AttestationFuzzInput(state, attestation);
+    return new AttestationFuzzInput(spec, state, attestation);
   }
 }

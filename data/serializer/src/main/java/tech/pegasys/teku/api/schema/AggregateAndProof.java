@@ -41,15 +41,15 @@ public class AggregateAndProof {
   }
 
   public AggregateAndProof(
-      tech.pegasys.teku.datastructures.operations.AggregateAndProof aggregateAndProof) {
+      tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof aggregateAndProof) {
     aggregator_index = aggregateAndProof.getIndex();
     aggregate = new Attestation(aggregateAndProof.getAggregate());
     selection_proof = new BLSSignature(aggregateAndProof.getSelection_proof());
   }
 
-  public tech.pegasys.teku.datastructures.operations.AggregateAndProof
+  public tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof
       asInternalAggregateAndProof() {
-    return new tech.pegasys.teku.datastructures.operations.AggregateAndProof(
+    return new tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof(
         aggregator_index,
         aggregate.asInternalAttestation(),
         selection_proof.asInternalBLSSignature());

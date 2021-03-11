@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -22,12 +22,13 @@ import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -38,13 +39,14 @@ class WeakSubjectivityInitializer {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public Optional<AnchorPoint> loadInitialAnchorPoint(final Optional<String> initialStateResource) {
+  public Optional<AnchorPoint> loadInitialAnchorPoint(
+      final Spec spec, final Optional<String> initialStateResource) {
     return initialStateResource.map(
         stateResource -> {
           try {
             STATUS_LOG.loadingInitialStateResource(stateResource);
-            final BeaconState state = ChainDataLoader.loadState(stateResource);
-            final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
+            final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
+            final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
             STATUS_LOG.loadedInitialStateResource(
                 state.hashTreeRoot(),
                 anchor.getRoot(),

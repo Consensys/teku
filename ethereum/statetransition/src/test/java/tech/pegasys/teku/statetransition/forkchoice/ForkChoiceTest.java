@@ -15,16 +15,14 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -32,23 +30,20 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -58,19 +53,19 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
-  private final SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
           .storageMode(StateStorageMode.PRUNE)
-          .specProvider(specProvider)
+          .specProvider(spec)
           .build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final ForkChoice forkChoice =
-      new ForkChoice(specProvider, new InlineEventThread(), recentChainData);
+      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
 
   @BeforeEach
   public void setup() {
@@ -84,11 +79,11 @@ class ForkChoiceTest {
   @Test
   void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
-    forkChoice.processHead(ONE);
+    processHead(ONE);
 
     // Then rerun with a filled slot 1
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
-    forkChoice.processHead(ONE);
+    processHead(ONE);
 
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
@@ -99,9 +94,7 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.of(processSlots(blockAndState, genesis.getState())));
+    final SafeFuture<BlockImportResult> importResult = forkChoice.onBlock(blockAndState.getBlock());
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -112,12 +105,10 @@ class ForkChoiceTest {
   void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
-    forkChoice.processHead(nodeSlot);
+    processHead(nodeSlot);
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.of(processSlots(blockAndState, genesis.getState())));
+    final SafeFuture<BlockImportResult> importResult = forkChoice.onBlock(blockAndState.getBlock());
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -143,11 +134,11 @@ class ForkChoiceTest {
                 .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
     final List<SignedBlockAndState> betterChain = chainBuilder.generateBlocksUpToSlot(3);
 
-    importBlock(forkChain, forkBlock);
+    importBlock(forkBlock);
     // Should automatically follow the fork
     assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
-    betterChain.forEach(blockAndState -> importBlock(chainBuilder, blockAndState));
+    betterChain.forEach(this::importBlock);
     final BlockOptions options = BlockOptions.create();
     chainBuilder
         .streamValidAttestationsForBlockAtSlot(UInt64.valueOf(4))
@@ -155,12 +146,12 @@ class ForkChoiceTest {
         .forEach(options::addAttestation);
     final SignedBlockAndState blockWithAttestations =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
-    importBlock(chainBuilder, blockWithAttestations);
+    importBlock(blockWithAttestations);
     // Haven't run fork choice so won't have re-orged yet
     assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
     // Should have processed the attestations and switched to this fork
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
 
@@ -176,7 +167,7 @@ class ForkChoiceTest {
 
     // Now create the canonical chain and import.
     final List<SignedBlockAndState> betterChain = chainBuilder.generateBlocksUpToSlot(3);
-    betterChain.forEach(blockAndState -> importBlock(chainBuilder, blockAndState));
+    betterChain.forEach(this::importBlock);
 
     // And create a block containing an attestation for forkBlock
     final BlockOptions options = BlockOptions.create();
@@ -203,14 +194,14 @@ class ForkChoiceTest {
     options.addAttestation(attestation);
     final SignedBlockAndState blockWithAttestations =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
-    importBlock(chainBuilder, blockWithAttestations);
+    importBlock(blockWithAttestations);
 
     // Apply these votes
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
 
     // Now we import the fork block
-    importBlock(forkChain, forkBlock);
+    importBlock(forkBlock);
 
     // Then we get a later attestation from the same validator pointing to a different chain
     final UInt64 updatedAttestationSlot =
@@ -224,7 +215,7 @@ class ForkChoiceTest {
   @Test
   void onAttestation_shouldBeInvalidWhenInvalidCheckpointThrown() {
     final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(5);
-    importBlock(chainBuilder, targetBlock);
+    importBlock(targetBlock);
 
     // Attestation where the target checkpoint has a slot prior to the block it references
     final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
@@ -281,24 +272,12 @@ class ForkChoiceTest {
     assertThat(result.isSuccessful()).describedAs(result.toString()).isTrue();
   }
 
-  private void importBlock(final ChainBuilder chainBuilder, final SignedBlockAndState block) {
-    BeaconState preState =
-        processSlots(
-            block,
-            chainBuilder.getLatestBlockAndStateAtSlot(block.getSlot().minus(ONE)).getState());
-    final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.of(preState));
+  private void importBlock(final SignedBlockAndState block) {
+    final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block.getBlock());
     assertBlockImportedSuccessfully(result);
   }
 
-  private BeaconState processSlots(final SignedBlockAndState block, final BeaconState preState) {
-    if (preState.getSlot().isLessThan(block.getSlot())) {
-      try {
-        return specProvider.processSlots(preState, block.getSlot());
-      } catch (final SlotProcessingException | EpochProcessingException e) {
-        Assertions.fail("State transition failed", e);
-      }
-    }
-    return preState;
+  private void processHead(final UInt64 one) {
+    assertThat(forkChoice.processHead(one)).isCompleted();
   }
 }

@@ -22,30 +22,29 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAtte
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networks.SpecProviderFactory;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth2GossipTopicFilterTest {
-  protected SpecProvider specProvider = SpecProviderFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(specProvider);
+  protected Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final Fork nextFork = dataStructureUtil.randomFork();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Bytes4 nextForkDigest =
-      specProvider
-          .atEpoch(nextFork.getEpoch())
+      spec.atEpoch(nextFork.getEpoch())
           .getBeaconStateUtil()
           .computeForkDigest(nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot());
 
   private final Eth2GossipTopicFilter filter =
-      new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, specProvider);
+      new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
 
   @BeforeEach
   void setUp() {

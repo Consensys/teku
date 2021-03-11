@@ -4,7 +4,7 @@ dependencies {
     integrationTestImplementation project(':bls')
     integrationTestImplementation project(':data')
     integrationTestImplementation project(':ethereum:core')
-    integrationTestImplementation project(':ethereum:datastructures')
+    integrationTestImplementation project(':ethereum:spec')
     integrationTestImplementation project(':ethereum:statetransition')
     integrationTestImplementation project(':eth-tests')
     integrationTestImplementation project(':protoarray')

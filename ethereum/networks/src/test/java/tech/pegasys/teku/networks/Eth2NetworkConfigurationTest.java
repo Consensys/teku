@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
 
@@ -47,7 +48,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
         .isEqualTo("Custom Constants");
   }
 
@@ -58,7 +59,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpecProvider().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
         .isEqualTo("Custom Constants");
   }
 
@@ -107,8 +108,6 @@ public class Eth2NetworkConfigurationTest {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(Eth2Network.MEDALLA, (NetworkDefinition) b -> b.applyMedallaNetworkDefaults()),
-        Arguments.of(Eth2Network.TOLEDO, (NetworkDefinition) b -> b.applyToledoNetworkDefaults()),
         Arguments.of(Eth2Network.PYRMONT, (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(

@@ -15,32 +15,29 @@ package tech.pegasys.teku.core.stategenerator;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.SpecProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
 public abstract class CheckpointStateGenerator {
 
   public static CheckpointState generate(
-      final SpecProvider specProvider,
-      final Checkpoint checkpoint,
-      final SignedBlockAndState blockAndState) {
+      final Spec spec, final Checkpoint checkpoint, final SignedBlockAndState blockAndState) {
     checkArgument(
         blockAndState.getRoot().equals(checkpoint.getRoot()), "Block must match checkpoint root");
 
     // Derive checkpoint state
-    final BeaconState state =
-        regenerateCheckpointState(specProvider, checkpoint, blockAndState.getState());
+    final BeaconState state = regenerateCheckpointState(spec, checkpoint, blockAndState.getState());
     return CheckpointState.create(checkpoint, blockAndState.getBlock(), state);
   }
 
   public static BeaconState regenerateCheckpointState(
-      final SpecProvider specProvider, final Checkpoint checkpoint, BeaconState baseState) {
+      final Spec spec, final Checkpoint checkpoint, BeaconState baseState) {
     if (baseState.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
       throw new InvalidCheckpointException(
           "Checkpoint state must be at or prior to checkpoint slot boundary");
@@ -50,7 +47,7 @@ public abstract class CheckpointStateGenerator {
         return baseState;
       }
 
-      return specProvider.processSlots(baseState, checkpoint.getEpochStartSlot());
+      return spec.processSlots(baseState, checkpoint.getEpochStartSlot());
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

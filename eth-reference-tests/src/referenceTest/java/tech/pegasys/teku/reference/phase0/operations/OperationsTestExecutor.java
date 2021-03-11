@@ -21,18 +21,18 @@ import com.google.common.collect.ImmutableMap;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.backing.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
@@ -82,11 +82,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final Path dataPath = testDefinition.getTestDirectory().resolve(dataFileName);
 
     final DefaultOperationProcessor standardProcessor =
-        new DefaultOperationProcessor(testDefinition.getSpecProvider());
+        new DefaultOperationProcessor(testDefinition.getSpec());
     runProcessor(standardProcessor, testDefinition, preState, dataPath);
-
-    final DeprecatedOperationProcessor deprecatedProcessor = new DeprecatedOperationProcessor();
-    runProcessor(deprecatedProcessor, testDefinition, preState, dataPath);
   }
 
   private void runProcessor(

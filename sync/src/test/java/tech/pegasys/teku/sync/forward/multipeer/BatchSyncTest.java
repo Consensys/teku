@@ -20,10 +20,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
 import static tech.pegasys.teku.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
@@ -33,14 +33,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -670,6 +670,49 @@ class BatchSyncTest {
     final Batch batch5 = batches.get(5);
     assertThatBatch(batch5).hasFirstSlot(batch4.getLastSlot().plus(1));
     assertThat(secondSyncResult).isNotDone();
+  }
+
+  @Test
+  void shouldRestartSyncFromCommonAncestorWhenNewChainShorterThanCurrentBatches() {
+    // Start sync to first chain
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(5);
+    final Batch batch0 = batches.get(0);
+    final Batch batch4 = batches.get(4);
+    batches.clearBatchList();
+
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(batch4.getLastSlot().minus(2), dataStructureUtil.randomBytes32()),
+            syncSource);
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
+
+    // There's no way the new chain extends the previous one so it should start from scratch
+    assertThat(batches).hasSize(5);
+    assertThat(batches.get(0)).isNotEqualTo(batch0);
+    assertThat(secondSyncResult).isNotDone();
+  }
+
+  @Test
+  void shouldFailSyncWhenFindingNewCommonAncestorFailsAfterSwitchingChains() {
+    // Start sync to first chain
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(5);
+    final Batch batch4 = batches.get(4);
+
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(batch4.getLastSlot().minus(2), dataStructureUtil.randomBytes32()),
+            syncSource);
+    when(commonAncestor.findCommonAncestor(targetChain))
+        .thenReturn(
+            SafeFuture.failedFuture(new RuntimeException("Failed to find new common ancestor")));
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
+    assertThat(secondSyncResult).isCompletedExceptionally();
   }
 
   @Test

@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 import com.google.common.primitives.Longs;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class UInt64Serializer implements RocksDbSerializer<UInt64> {
+class UInt64Serializer implements RocksDbSerializer<UInt64> {
 
   @Override
   public UInt64 deserialize(final byte[] data) {

@@ -17,44 +17,25 @@ import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import supranational.blst.BLST_ERROR;
+import supranational.blst.P2;
+import supranational.blst.P2_Affine;
+import supranational.blst.Pairing;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.Signature;
-import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.P2;
-import tech.pegasys.teku.bls.impl.blst.swig.P2_Affine;
-import tech.pegasys.teku.bls.impl.blst.swig.Pairing;
 
-public class BlstBLS12381 implements BLS12381 {
-  private static final Logger LOG = LogManager.getLogger();
-
-  public static final Optional<BlstBLS12381> INSTANCE;
+class BlstBLS12381 implements BLS12381 {
 
   private static final int BATCH_RANDOM_BYTES = 8;
-
-  static {
-    boolean libraryLoaded;
-    try {
-      JBlst.loadNativeLibrary();
-      libraryLoaded = true;
-      LOG.debug("Successfully loaded native BLS library");
-    } catch (UnsupportedOperationException e) {
-      LOG.debug("Couldn't load native BLS library: " + e);
-      libraryLoaded = false;
-    }
-    INSTANCE = libraryLoaded ? Optional.of(new BlstBLS12381()) : Optional.empty();
-  }
 
   private static Random getRND() {
     // Milagro RAND has some issues with generating 'small' random numbers
@@ -79,7 +60,6 @@ public class BlstBLS12381 implements BLS12381 {
     p2.hash_to(message.toArrayUnsafe(), dst, new byte[0]).sign_with(secretKey.getKey());
 
     P2_Affine p2_affine = p2.to_affine();
-    p2.delete();
     return new BlstSignature(p2_affine, true);
   }
 
@@ -141,30 +121,21 @@ public class BlstBLS12381 implements BLS12381 {
       BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
 
     Pairing ctx = new Pairing(true, ETH2_DST);
-    try {
-      BLST_ERROR ret =
-          ctx.mul_n_aggregate(
-              pubKey.ecPoint,
-              blstSignature.ec2Point,
-              nextBatchRandomMultiplier(),
-              message.toArray());
+    BLST_ERROR ret =
+        ctx.mul_n_aggregate(
+            pubKey.ecPoint, blstSignature.ec2Point, nextBatchRandomMultiplier(), message.toArray());
 
-      if (ret != BLST_ERROR.BLST_SUCCESS) {
-        if (ret == BLST_ERROR.BLST_PK_IS_INFINITY) {
-          ctx.delete();
-          return BlstSemiAggregate.createInvalid();
-        } else {
-          throw new IllegalArgumentException("Error: " + ret);
-        }
+    if (ret != BLST_ERROR.BLST_SUCCESS) {
+      if (ret == BLST_ERROR.BLST_PK_IS_INFINITY) {
+        return BlstSemiAggregate.createInvalid();
+      } else {
+        throw new IllegalArgumentException("Error: " + ret);
       }
-
-      ctx.commit();
-
-      return new BlstSemiAggregate(ctx);
-    } catch (Exception e) {
-      ctx.delete();
-      throw e;
     }
+
+    ctx.commit();
+
+    return new BlstSemiAggregate(ctx);
   }
 
   @Override

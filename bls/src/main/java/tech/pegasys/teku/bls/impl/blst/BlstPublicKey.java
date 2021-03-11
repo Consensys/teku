@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
+import supranational.blst.P1;
+import supranational.blst.P1_Affine;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
-import tech.pegasys.teku.bls.impl.blst.swig.P1;
-import tech.pegasys.teku.bls.impl.blst.swig.P1_Affine;
 
-public class BlstPublicKey implements PublicKey {
+class BlstPublicKey implements PublicKey {
   private static final Bytes48 INFINITY_COMPRESSED_BYTES =
       Bytes48.fromHexString(
           "0x"
@@ -63,15 +63,11 @@ public class BlstPublicKey implements PublicKey {
     }
 
     P1 sum = new P1();
-    try {
-      for (BlstPublicKey publicKey : publicKeys) {
-        sum.aggregate(publicKey.ecPoint);
-      }
-
-      return new BlstPublicKey(sum.to_affine());
-    } finally {
-      sum.delete();
+    for (BlstPublicKey publicKey : publicKeys) {
+      sum.aggregate(publicKey.ecPoint);
     }
+
+    return new BlstPublicKey(sum.to_affine());
   }
 
   final P1_Affine ecPoint;

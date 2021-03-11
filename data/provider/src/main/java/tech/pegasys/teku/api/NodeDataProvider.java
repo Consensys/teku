@@ -20,10 +20,10 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -33,22 +33,22 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class NodeDataProvider {
 
   private final AggregatingAttestationPool attestationPool;
-  private final OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
       attesterSlashingPool;
-  private final OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
       proposerSlashingPool;
-  private final OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+  private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
       voluntaryExitPool;
   private final BlockManager blockManager;
   private final AttestationManager attestationManager;
 
   public NodeDataProvider(
       AggregatingAttestationPool attestationPool,
-      OperationPool<tech.pegasys.teku.datastructures.operations.AttesterSlashing>
+      OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
           attesterSlashingsPool,
-      OperationPool<tech.pegasys.teku.datastructures.operations.ProposerSlashing>
+      OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
           proposerSlashingPool,
-      OperationPool<tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+      OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
           voluntaryExitPool,
       BlockManager blockManager,
       AttestationManager attestationManager) {
@@ -108,7 +108,7 @@ public class NodeDataProvider {
 
   public void subscribeToNewVoluntaryExits(
       OperationPool.OperationAddedSubscriber<
-              tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit>
+              tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
           listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
