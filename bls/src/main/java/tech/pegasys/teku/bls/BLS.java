@@ -99,7 +99,7 @@ public class BLS {
     }
     try {
       return signature.getSignature().verify(publicKey.getPublicKey(), message);
-    } catch (RuntimeException e) {
+    } catch (DeserializeException e) {
       return false;
     }
   }
