@@ -68,16 +68,17 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
           dataStructureUtil.randomSignedVoluntaryExit());
 
   private final T defaultBlockBody = createDefaultBlockBody();
+  BeaconBlockBodySchema<?> blockBodySchema = defaultBlockBody.getSchema();
 
   protected abstract T createBlockBody(
       BLSSignature randaoReveal,
       Eth1Data eth1Data,
       Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposerSlashings,
-      SSZList<AttesterSlashing> attesterSlashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntaryExits);
+      SszList<ProposerSlashing> proposerSlashings,
+      SszList<AttesterSlashing> attesterSlashings,
+      SszList<Attestation> attestations,
+      SszList<Deposit> deposits,
+      SszList<SignedVoluntaryExit> voluntaryExits);
 
   protected abstract BeaconBlockBodySchema<T> getBlockBodySchema();
 
@@ -135,7 +136,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     SszList<AttesterSlashing> otherAttesterSlashings =
         Stream.concat(
                 Stream.of(dataStructureUtil.randomAttesterSlashing()), attesterSlashings.stream())
-            .collect(BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema().collector());
+            .collect(blockBodySchema.getAttesterSlashingsSchema().collector());
 
     T testBeaconBlockBody =
         createBlockBody(

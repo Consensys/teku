@@ -88,7 +88,8 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
-      BeaconChainUtil localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
+      BeaconChainUtil localChain =
+          BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
