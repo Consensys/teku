@@ -36,6 +36,7 @@ interface ValidatorStatsAltair extends BeaconStateAltair {
                 .map(SszByte::get)
                 .filter(ValidatorFlag::isTimelyTarget)
                 .count());
+
     final int numberOfLiveValidators =
         Math.toIntExact(
             validatorFlags.stream().map(SszByte::get).filter(ValidatorFlag::isAnyFlagSet).count());

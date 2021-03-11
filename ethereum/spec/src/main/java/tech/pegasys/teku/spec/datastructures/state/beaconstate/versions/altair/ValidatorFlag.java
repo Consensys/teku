@@ -18,16 +18,19 @@ public class ValidatorFlag {
   public static final int TIMELY_SOURCE_FLAG = 2;
   public static final int TIMELY_TARGET_FLAG = 4;
 
+  private static final int ALL_FLAGS =
+      combineFlags(TIMELY_HEAD_FLAG, TIMELY_SOURCE_FLAG, TIMELY_TARGET_FLAG);
+
   public static boolean isTimelyTarget(int value) {
-    return areFlagsSet(value, TIMELY_TARGET_FLAG);
+    return checkIfAnyFlagIsSet(value, TIMELY_TARGET_FLAG);
   }
 
   public static boolean isAnyFlagSet(int value) {
-    return areFlagsSet(value, TIMELY_HEAD_FLAG, TIMELY_SOURCE_FLAG, TIMELY_TARGET_FLAG);
+    return checkIfAnyFlagIsSet(value, ALL_FLAGS);
   }
 
-  private static boolean areFlagsSet(final int value, final int... flags) {
-    return (value & combineFlags(flags)) != 0;
+  private static boolean checkIfAnyFlagIsSet(final int value, final int flags) {
+    return (value & flags) != 0;
   }
 
   private static int combineFlags(final int... flags) {

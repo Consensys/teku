@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
@@ -54,7 +53,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProposalUtil);
   }
 
-  public static SpecLogicPhase0 create(
+  public static SpecLogicAltair create(
       final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
     // TODO(#3648), TODO(#3649) - Implement altair logic
     throw new NotImplementedException();

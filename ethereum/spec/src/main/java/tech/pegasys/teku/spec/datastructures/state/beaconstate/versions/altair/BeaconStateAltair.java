@@ -29,7 +29,7 @@ public interface BeaconStateAltair extends BeaconState {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected a altair state but got: " + state.getClass().getSimpleName()));
+                    "Expected an altair state but got: " + state.getClass().getSimpleName()));
   }
 
   // Participation

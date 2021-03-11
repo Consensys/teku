@@ -25,10 +25,12 @@ public class ValidatorFlagTest {
     assertThat(ValidatorFlag.isTimelyTarget(5)).isTrue();
     assertThat(ValidatorFlag.isTimelyTarget(6)).isTrue();
     assertThat(ValidatorFlag.isTimelyTarget(7)).isTrue();
+    assertThat(ValidatorFlag.isTimelyTarget(12)).isTrue();
 
     assertThat(ValidatorFlag.isTimelyTarget(1)).isFalse();
     assertThat(ValidatorFlag.isTimelyTarget(2)).isFalse();
     assertThat(ValidatorFlag.isTimelyTarget(3)).isFalse();
+    assertThat(ValidatorFlag.isTimelyTarget(8)).isFalse();
   }
 
   @Test
@@ -40,6 +42,7 @@ public class ValidatorFlagTest {
     assertThat(ValidatorFlag.isAnyFlagSet(5)).isTrue();
     assertThat(ValidatorFlag.isAnyFlagSet(6)).isTrue();
     assertThat(ValidatorFlag.isAnyFlagSet(7)).isTrue();
+    assertThat(ValidatorFlag.isAnyFlagSet(9)).isTrue();
 
     assertThat(ValidatorFlag.isAnyFlagSet(0)).isFalse();
     assertThat(ValidatorFlag.isAnyFlagSet(8)).isFalse();
