@@ -202,14 +202,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public int getSszVariablePartSize(TreeNode node) {
-    int size = 0;
-    for (int i = 0; i < getFieldsCount(); i++) {
-      SszSchema<?> childType = getChildSchema(i);
-      if (!childType.isFixedSize()) {
-        size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
+    if (isFixedSize()) {
+      return 0;
+    } else {
+      int size = 0;
+      for (int i = 0; i < getFieldsCount(); i++) {
+        SszSchema<?> childType = getChildSchema(i);
+        if (!childType.isFixedSize()) {
+          size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
+        }
       }
+      return size;
     }
-    return size;
   }
 
   @Override
