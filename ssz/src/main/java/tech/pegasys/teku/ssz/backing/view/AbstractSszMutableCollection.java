@@ -15,7 +15,9 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -38,16 +40,15 @@ public abstract class AbstractSszMutableCollection<
 
   @Override
   protected TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
+      Stream<Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
     SszCollectionSchema<?, ?> type = getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
-    return newChildValues.stream()
+    return newChildValues
         .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
         .entrySet()
         .stream()
-        .sorted(Map.Entry.comparingByKey())
         .map(
             e -> {
               int nodeIndex = e.getKey();
