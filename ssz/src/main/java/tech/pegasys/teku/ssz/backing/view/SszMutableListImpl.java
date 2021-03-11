@@ -30,10 +30,12 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
     implements SszMutableRefList<SszElementT, SszMutableElementT> {
 
   private int cachedSize;
+  private final long cachedMaxLength;
 
   public SszMutableListImpl(SszListImpl<SszElementT> backingImmutableList) {
     super(backingImmutableList);
     cachedSize = backingImmutableList.size();
+    cachedMaxLength = getSchema().getMaxLength();
   }
 
   @Override
@@ -78,7 +80,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   protected void checkIndex(int index, boolean set) {
     if (index < 0
         || (!set && index >= size())
-        || (set && (index > size() || index >= getSchema().getMaxLength()))) {
+        || (set && (index > size() || index >= cachedMaxLength))) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());
     }
