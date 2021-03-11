@@ -57,9 +57,15 @@ public abstract class AbstractSszMutableCollection<
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               if (nodeVals.size() == elementsPerChunk) {
-                int[] idxs = nodeVals.stream().mapToInt(Entry::getKey).toArray();
-                SszData[] newVals = nodeVals.stream().map(Entry::getValue)
-                    .toArray(SszData[]::new);
+                int[] idxs = new int[elementsPerChunk];
+                int firstIdx = nodeVals.get(0).getKey();
+                for (int i = 0; i < elementsPerChunk; i++) {
+                  idxs[i] = firstIdx + i;
+                }
+                SszData[] newVals = new SszData[elementsPerChunk];
+                for (int i = 0; i < elementsPerChunk; i++) {
+                  newVals[i] = nodeVals.get(i).getValue();
+                }
                 TreeNode newNode = elementType
                     .updateBackingNode(LeafNode.EMPTY_LEAF, idxs, newVals);
                 return new TreeUpdates.Update(gIndex, newNode);
