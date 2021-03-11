@@ -16,8 +16,10 @@ package tech.pegasys.teku.spec;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -35,7 +37,13 @@ public class SpecVersion extends DelegatingSpecLogic {
 
   public static SpecVersion createPhase0(final SpecConstants specConstants) {
     final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConstants);
-    final SpecLogic specLogic = new SpecLogicPhase0(specConstants, schemaDefinitions);
+    final SpecLogic specLogic = SpecLogicPhase0.create(specConstants, schemaDefinitions);
+    return new SpecVersion(specConstants, schemaDefinitions, specLogic);
+  }
+
+  public static SpecVersion createAltair(final SpecConstants specConstants) {
+    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsAltair(specConstants);
+    final SpecLogic specLogic = SpecLogicAltair.create(specConstants, schemaDefinitions);
     return new SpecVersion(specConstants, schemaDefinitions, specLogic);
   }
 

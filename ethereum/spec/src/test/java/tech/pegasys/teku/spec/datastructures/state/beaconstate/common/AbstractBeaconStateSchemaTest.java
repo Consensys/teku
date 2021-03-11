@@ -44,11 +44,13 @@ public abstract class AbstractBeaconStateSchemaTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
   private final Spec spec = SpecFactory.createMinimal();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
   private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
 
   protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+
+  protected abstract T randomState();
 
   @Test
   void vectorLengthsTest() {
@@ -94,7 +96,7 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   void roundTripViaSsz() {
     // TODO - generate random version-specific state
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+    BeaconState beaconState = randomState();
     Bytes bytes = beaconState.sszSerialize();
     BeaconState state = schema.sszDeserialize(bytes);
     assertEquals(beaconState, state);
