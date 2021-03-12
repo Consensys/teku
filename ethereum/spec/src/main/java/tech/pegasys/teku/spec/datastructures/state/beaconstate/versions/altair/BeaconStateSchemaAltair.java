@@ -11,69 +11,67 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.sos.SszField;
 
-public class BeaconStateSchemaPhase0
-    extends AbstractBeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> {
+public class BeaconStateSchemaAltair
+    extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {
 
   @VisibleForTesting
-  BeaconStateSchemaPhase0(final SpecConstants specConstants) {
-    super("BeaconStatePhase0", getUniqueFields(specConstants), specConstants);
+  BeaconStateSchemaAltair(final SpecConstants specConstants) {
+    super("BeaconStateAltair", getUniqueFields(specConstants), specConstants);
   }
 
-  public static BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> create(
+  public static BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> create(
       final SpecConstants specConstants) {
-    return new BeaconStateSchemaPhase0(specConstants);
+    return new BeaconStateSchemaAltair(specConstants);
   }
 
   private static List<SszField> getUniqueFields(final SpecConstants specConstants) {
     final SszField previousEpochAttestationsField =
         new SszField(
             15,
-            BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name(),
+            BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
-                    (long) specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
+                    SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
     final SszField currentEpochAttestationsField =
         new SszField(
             16,
-            BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name(),
+            BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
-                    (long) specConstants.getMaxAttestations() * specConstants.getSlotsPerEpoch()));
+                    SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
 
     return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
   }
 
   @Override
-  public BeaconStatePhase0 createFromBackingNode(TreeNode node) {
-    return new BeaconStatePhase0Impl(this, node);
+  public BeaconStateAltair createFromBackingNode(TreeNode node) {
+    return new BeaconStateAltairImpl(this, node);
   }
 
   @Override
-  public MutableBeaconStatePhase0 createBuilder() {
-    return new MutableBeaconStatePhase0Impl(createEmptyBeaconStateImpl(), true);
+  public MutableBeaconStateAltair createBuilder() {
+    return new MutableBeaconStateAltairImpl(createEmptyBeaconStateImpl(), true);
   }
 
   @Override
-  public BeaconStatePhase0 createEmpty() {
+  public BeaconStateAltair createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStatePhase0Impl createEmptyBeaconStateImpl() {
-    return new BeaconStatePhase0Impl(this);
+  private BeaconStateAltairImpl createEmptyBeaconStateImpl() {
+    return new BeaconStateAltairImpl(this);
   }
 }
