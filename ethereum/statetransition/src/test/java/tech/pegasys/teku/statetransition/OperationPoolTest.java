@@ -23,6 +23,7 @@ import com.google.common.base.Function;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -47,6 +48,11 @@ public class OperationPoolTest {
   Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
       slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   BeaconState state = mock(BeaconState.class);
+
+  @BeforeEach
+  void init() {
+    when(state.getSlot()).thenReturn(UInt64.ZERO);
+  }
 
   @Test
   void emptyPoolShouldReturnEmptyList() {
