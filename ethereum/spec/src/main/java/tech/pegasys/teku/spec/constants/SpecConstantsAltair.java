@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.constants;
 
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -76,5 +77,34 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
 
   public Bytes4 getDomainSyncCommittee() {
     return domainSyncCommittee;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final SpecConstantsAltair that = (SpecConstantsAltair) o;
+    return Objects.equals(specConstants, that.specConstants)
+        && Objects.equals(altairInactivityPenaltyQuotient, that.altairInactivityPenaltyQuotient)
+        && Objects.equals(altairMinSlashingPenaltyQuotient, that.altairMinSlashingPenaltyQuotient)
+        && Objects.equals(
+            altairProportionalSlashingMultiplier, that.altairProportionalSlashingMultiplier)
+        && Objects.equals(syncCommitteeSize, that.syncCommitteeSize)
+        && Objects.equals(syncSubcommitteeSize, that.syncSubcommitteeSize)
+        && Objects.equals(epochsPerSyncCommitteePeriod, that.epochsPerSyncCommitteePeriod)
+        && Objects.equals(domainSyncCommittee, that.domainSyncCommittee);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        specConstants,
+        altairInactivityPenaltyQuotient,
+        altairMinSlashingPenaltyQuotient,
+        altairProportionalSlashingMultiplier,
+        syncCommitteeSize,
+        syncSubcommitteeSize,
+        epochsPerSyncCommitteePeriod,
+        domainSyncCommittee);
   }
 }

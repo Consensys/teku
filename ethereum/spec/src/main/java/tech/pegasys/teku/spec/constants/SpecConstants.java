@@ -155,10 +155,4 @@ public interface SpecConstants {
   int getDepositNetworkId();
 
   Bytes getDepositContractAddress();
-
-  @Override
-  boolean equals(Object o);
-
-  @Override
-  int hashCode();
 }

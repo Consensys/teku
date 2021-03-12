@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class DelegatingSpecConstants implements SpecConstants {
-  private final SpecConstants specConstants;
+  protected final SpecConstants specConstants;
 
   public DelegatingSpecConstants(final SpecConstants specConstants) {
     this.specConstants = specConstants;
