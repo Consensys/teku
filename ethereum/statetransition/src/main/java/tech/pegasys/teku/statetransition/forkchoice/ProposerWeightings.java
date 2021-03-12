@@ -11,27 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.forkchoice;
+package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.List;
-import java.util.Set;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface VoteUpdater {
+public interface ProposerWeightings {
 
-  VoteTracker getVote(final UInt64 validatorIndex);
+  void onBlockDueForSlot(UInt64 slot);
 
-  Set<UInt64> getVotedValidatorIndices();
+  void onBlockReceived(
+      SignedBeaconBlock block, BeaconState blockSlotState, ForkChoiceStrategy forkChoiceStrategy);
 
-  void putVote(UInt64 validatorIndex, VoteTracker vote);
-
-  Bytes32 applyForkChoiceScoreChanges(
-      Checkpoint finalizedCheckpoint,
-      Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances,
-      List<ProposerWeighting> removedProposerWeightings);
-
-  void commit();
+  List<ProposerWeighting> clearProposerWeightings();
 }
