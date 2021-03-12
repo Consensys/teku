@@ -85,7 +85,7 @@ public class ProfilingRun {
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
-      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BeaconChainUtil localChain =
