@@ -15,9 +15,11 @@ package tech.pegasys.teku.statetransition;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.backing.SszCollection;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -30,12 +32,14 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T extends SszData> {
   private final Set<T> operations = LimitedSet.create(Constants.OPERATION_POOL_SIZE);
-  private final SszListSchema<T, ?> schema;
+  private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
 
-  public OperationPool(SszListSchema<T, ?> schema, OperationValidator<T> operationValidator) {
-    this.schema = schema;
+  public OperationPool(
+      Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      OperationValidator<T> operationValidator) {
+    this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
   }
 
@@ -44,6 +48,7 @@ public class OperationPool<T extends SszData> {
   }
 
   public SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot) {
+    SszListSchema<T, ?> schema = slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
     return operations.stream()

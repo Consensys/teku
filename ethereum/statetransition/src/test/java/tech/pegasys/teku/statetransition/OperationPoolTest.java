@@ -19,11 +19,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Function;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -38,7 +42,10 @@ import tech.pegasys.teku.util.config.Constants;
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class OperationPoolTest {
 
-  DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  Spec spec = SpecFactory.createMinimal();
+  DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
+      slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   BeaconState state = mock(BeaconState.class);
 
   @Test
@@ -46,7 +53,9 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
 
     OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(), validator);
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
+            validator);
     assertThat(pool.getItemsForBlock(state)).isEmpty();
   }
 
@@ -54,7 +63,9 @@ public class OperationPoolTest {
   void shouldAddMaxItemsToPool() {
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
-        new OperationPool<>(BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema(), validator);
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
+            validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     for (int i = 0; i < Constants.MAX_VOLUNTARY_EXITS + 1; i++) {
@@ -67,8 +78,11 @@ public class OperationPoolTest {
   void shouldRemoveAllItemsFromPool() {
     OperationValidator<AttesterSlashing> validator = mock(OperationValidator.class);
     SszListSchema<AttesterSlashing, ?> attesterSlashingsSchema =
-        BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema();
-    OperationPool<AttesterSlashing> pool = new OperationPool<>(attesterSlashingsSchema, validator);
+        beaconBlockSchemaSupplier
+            .andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema)
+            .apply(state.getSlot());
+    OperationPool<AttesterSlashing> pool =
+        new OperationPool<>(__ -> attesterSlashingsSchema, validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateForStateTransition(any(), any())).thenReturn(true);
     SszList<AttesterSlashing> attesterSlashings =
@@ -83,7 +97,9 @@ public class OperationPoolTest {
   void shouldNotIncludeInvalidatedItemsFromPool() {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(), validator);
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
+            validator);
 
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
@@ -103,7 +119,9 @@ public class OperationPoolTest {
   void subscribeOperationAdded() {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(BeaconBlockBody.getSszSchema().getProposerSlashingsSchema(), validator);
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
+            validator);
 
     // Set up subscriber
     final Map<ProposerSlashing, InternalValidationResult> addedSlashings = new HashMap<>();

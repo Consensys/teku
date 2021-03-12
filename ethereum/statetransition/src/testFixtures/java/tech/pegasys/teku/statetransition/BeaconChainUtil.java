@@ -31,11 +31,11 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -56,6 +56,7 @@ public class BeaconChainUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
 
   private final Spec spec;
+  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final BlockProposalTestUtil blockCreator;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
@@ -69,6 +70,8 @@ public class BeaconChainUtil {
       final ForkChoice forkChoice,
       boolean signDeposits) {
     this.spec = spec;
+    this.beaconBlockBodySchema =
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
@@ -193,7 +196,7 @@ public class BeaconChainUtil {
         exits.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema().createFromElements(exits));
+                beaconBlockBodySchema.getVoluntaryExitsSchema().createFromElements(exits));
 
     return createAndImportBlockAtSlot(
         slot, Optional.empty(), Optional.empty(), exitsSSZList, Optional.empty());
@@ -204,8 +207,7 @@ public class BeaconChainUtil {
     Optional<SszList<Deposit>> depositsSSZlist =
         deposits.isEmpty()
             ? Optional.empty()
-            : Optional.of(
-                BeaconBlockBody.getSszSchema().getDepositsSchema().createFromElements(deposits));
+            : Optional.of(beaconBlockBodySchema.getDepositsSchema().createFromElements(deposits));
 
     return createAndImportBlockAtSlot(
         slot, Optional.empty(), depositsSSZlist, Optional.empty(), Optional.empty());
@@ -217,9 +219,7 @@ public class BeaconChainUtil {
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                BeaconBlockBody.getSszSchema()
-                    .getAttestationsSchema()
-                    .createFromElements(attestations));
+                beaconBlockBodySchema.getAttestationsSchema().createFromElements(attestations));
 
     return createAndImportBlockAtSlot(
         slot, attestationsSSZList, Optional.empty(), Optional.empty(), Optional.empty());
@@ -313,7 +313,7 @@ public class BeaconChainUtil {
       StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
       UInt64 slot = recentChainData.getHeadSlot();
       SszList<Attestation> currentSlotAssignments =
-          BeaconBlockBody.getSszSchema()
+          beaconBlockBodySchema
               .getAttestationsSchema()
               .createFromElements(attestationGenerator.getAttestationsForSlot(head, slot));
       createAndImportBlockAtSlot(

@@ -29,7 +29,7 @@ import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -50,6 +50,7 @@ public class FuzzUtil {
   // "FuzzHarness" interface
 
   private final Spec spec;
+  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
 
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
@@ -59,7 +60,7 @@ public class FuzzUtil {
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disable_bls) {
     spec = useMainnetConfig ? SpecFactory.createMainnet() : SpecFactory.createMinimal();
-
+    beaconBlockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(useMainnetConfig, disable_bls);
     this.disable_bls = disable_bls;
   }
@@ -83,7 +84,7 @@ public class FuzzUtil {
     AttestationFuzzInput structuredInput =
         deserialize(input, AttestationFuzzInput.createSchema(spec.getGenesisSpec()));
     SszList<Attestation> attestations =
-        BeaconBlockBody.getSszSchema().getAttestationsSchema().of(structuredInput.getAttestation());
+        beaconBlockBodySchema.getAttestationsSchema().of(structuredInput.getAttestation());
     // process and return post state
     try {
       BeaconState postState =
@@ -102,7 +103,7 @@ public class FuzzUtil {
     AttesterSlashingFuzzInput structuredInput =
         deserialize(input, AttesterSlashingFuzzInput.createType(spec.getGenesisSpec()));
     SszList<AttesterSlashing> slashings =
-        BeaconBlockBody.getSszSchema()
+        beaconBlockBodySchema
             .getAttesterSlashingsSchema()
             .of(structuredInput.getAttester_slashing());
 
@@ -166,7 +167,7 @@ public class FuzzUtil {
     DepositFuzzInput structuredInput =
         deserialize(input, DepositFuzzInput.createSchema(spec.getGenesisSpec()));
     SszList<Deposit> deposits =
-        BeaconBlockBody.getSszSchema().getDepositsSchema().of(structuredInput.getDeposit());
+        beaconBlockBodySchema.getDepositsSchema().of(structuredInput.getDeposit());
 
     try {
       BeaconState postState =
@@ -188,7 +189,7 @@ public class FuzzUtil {
     ProposerSlashingFuzzInput structuredInput =
         deserialize(input, ProposerSlashingFuzzInput.createType(spec.getGenesisSpec()));
     SszList<ProposerSlashing> proposerSlashings =
-        BeaconBlockBody.getSszSchema()
+        beaconBlockBodySchema
             .getProposerSlashingsSchema()
             .of(structuredInput.getProposer_slashing());
 
@@ -241,7 +242,7 @@ public class FuzzUtil {
     VoluntaryExitFuzzInput structuredInput =
         deserialize(input, VoluntaryExitFuzzInput.createSchema(spec.getGenesisSpec()));
     SszList<SignedVoluntaryExit> voluntaryExits =
-        BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema().of(structuredInput.getExit());
+        beaconBlockBodySchema.getVoluntaryExitsSchema().of(structuredInput.getExit());
 
     try {
       BeaconState postState =
