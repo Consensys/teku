@@ -32,8 +32,13 @@ public class BeaconStateSchemaPhase0Test
     return BeaconStateSchemaPhase0.create(specConstants);
   }
 
+  @Override
+  protected BeaconStatePhase0 randomState() {
+    return dataStructureUtil.stateBuilderPhase0().build();
+  }
+
   @Test
-  public void changeSpecConstantsTest_checkGenesisFields() {
+  public void changeSpecConstantsTest_checkPhase0Fields() {
     final Spec standardSpec = SpecFactory.createMinimal();
     final SpecConstants modifiedConstants =
         TestConstantsLoader.loadConstantsBuilder("minimal").maxAttestations(123).build();

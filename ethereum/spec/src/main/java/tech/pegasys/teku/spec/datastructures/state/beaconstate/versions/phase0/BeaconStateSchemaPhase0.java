@@ -29,7 +29,7 @@ public class BeaconStateSchemaPhase0
 
   @VisibleForTesting
   BeaconStateSchemaPhase0(final SpecConstants specConstants) {
-    super("BeaconStateGenesis", getUniqueFields(specConstants), specConstants);
+    super("BeaconStatePhase0", getUniqueFields(specConstants), specConstants);
   }
 
   public static BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> create(

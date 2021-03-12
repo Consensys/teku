@@ -146,7 +146,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
@@ -166,7 +166,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
@@ -188,7 +188,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
