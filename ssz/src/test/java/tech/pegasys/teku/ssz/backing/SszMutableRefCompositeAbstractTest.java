@@ -118,25 +118,6 @@ public interface SszMutableRefCompositeAbstractTest extends SszMutableCompositeA
         .isEqualByAllMeansTo(newChildValueByRef);
   }
 
-  @Disabled("https://github.com/ConsenSys/teku/issues/3680")
-  @MethodSource("sszMutableByRefCompositeArguments")
-  @ParameterizedTest
-  default void getByRef_childUpdateByRefThenSetShouldWork(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
-    SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
-
-    SszMutableData byRef = data.getByRef(updateChildIndex);
-    SszData newChildValueByRef = updateSomething(byRef);
-    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValueByRef);
-
-    SszData newChildValue = generator.randomData(childSchema);
-    data.set(updateChildIndex, newChildValue);
-
-    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValue);
-    assertThatSszData(data.commitChanges().get(updateChildIndex))
-        .isEqualByAllMeansTo(newChildValue);
-  }
-
   @SuppressWarnings("unchecked")
   static SszData updateSomething(SszMutableData mutableData) {
     Assumptions.assumeTrue(mutableData instanceof SszMutableComposite);
