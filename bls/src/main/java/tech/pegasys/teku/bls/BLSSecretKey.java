@@ -76,6 +76,11 @@ public final class BLSSecretKey {
     return secretKey.toBytes();
   }
 
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  public void destroy() {
+    secretKey.destroy();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;

@@ -85,6 +85,12 @@ public class MikuliSecretKey implements SecretKey {
     return scalarValue;
   }
 
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  @Override
+  public void destroy() {
+    scalarValue.destroy();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -92,9 +98,6 @@ public class MikuliSecretKey implements SecretKey {
     MikuliSecretKey secretKey = MikuliSecretKey.fromSecretKey((SecretKey) o);
     return Objects.equals(scalarValue, secretKey.scalarValue);
   }
-
-  @Override
-  public void destroy() {}
 
   @Override
   public int hashCode() {

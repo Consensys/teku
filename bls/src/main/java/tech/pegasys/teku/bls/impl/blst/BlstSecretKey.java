@@ -88,7 +88,9 @@ class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public void destroy() {}
+  public void destroy() {
+    secretKey.from_bendian(Bytes32.ZERO.toArrayUnsafe());
+  }
 
   @Override
   public boolean equals(Object o) {
