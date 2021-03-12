@@ -222,7 +222,7 @@ public final class DataStructureUtil {
   }
 
   public SszByte randomSszByte() {
-    return new SszByte(randomByte());
+    return SszByte.of(randomByte());
   }
 
   public SszBitlist randomBitlist() {

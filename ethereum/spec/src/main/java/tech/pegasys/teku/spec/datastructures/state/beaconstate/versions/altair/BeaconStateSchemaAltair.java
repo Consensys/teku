@@ -21,11 +21,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {
+
+  private static final int PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX = 15;
+  private static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
 
   @VisibleForTesting
   BeaconStateSchemaAltair(final SpecConstants specConstants) {
@@ -40,20 +45,32 @@ public class BeaconStateSchemaAltair
   private static List<SszField> getUniqueFields(final SpecConstants specConstants) {
     final SszField previousEpochAttestationsField =
         new SszField(
-            15,
+            PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
     final SszField currentEpochAttestationsField =
         new SszField(
-            16,
+            CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
 
     return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
+    return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+        getChildSchema(PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
+    return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+        getChildSchema(CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX);
   }
 
   @Override

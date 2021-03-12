@@ -19,15 +19,16 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public class BeaconStateBuilderAltair
     extends AbstractBeaconStateBuilder<
         BeaconStateAltair, MutableBeaconStateAltair, BeaconStateBuilderAltair> {
 
-  private SSZList<SszByte> previousEpochParticipation;
-  private SSZList<SszByte> currentEpochParticipation;
+  private SszList<SszByte> previousEpochParticipation;
+  private SszList<SszByte> currentEpochParticipation;
+  private final BeaconStateSchemaAltair beaconStateSchema;
 
   private BeaconStateBuilderAltair(
       final Spec spec,
@@ -35,6 +36,9 @@ public class BeaconStateBuilderAltair
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+    this.beaconStateSchema =
+        (BeaconStateSchemaAltair)
+            spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
   @Override
@@ -62,26 +66,24 @@ public class BeaconStateBuilderAltair
     super.initDefaults();
 
     previousEpochParticipation =
-        dataStructureUtil.randomSSZList(
-            SszByte.class,
+        dataStructureUtil.randomSszList(
+            beaconStateSchema.getPreviousEpochParticipationSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomSszByte);
     currentEpochParticipation =
-        dataStructureUtil.randomSSZList(
-            SszByte.class,
+        dataStructureUtil.randomSszList(
+            beaconStateSchema.getCurrentEpochParticipationSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomSszByte);
   }
 
-  public BeaconStateBuilderAltair previousEpochAttestations(final SSZList<SszByte> value) {
+  public BeaconStateBuilderAltair previousEpochAttestations(final SszList<SszByte> value) {
     checkNotNull(value);
     this.previousEpochParticipation = value;
     return this;
   }
 
-  public BeaconStateBuilderAltair currentEpochAttestations(final SSZList<SszByte> value) {
+  public BeaconStateBuilderAltair currentEpochAttestations(final SszList<SszByte> value) {
     checkNotNull(value);
     this.currentEpochParticipation = value;
     return this;

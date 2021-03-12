@@ -46,9 +46,9 @@ public class BeaconStateSchemaAltairTest
     BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
     BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
 
-    assertThat(s1.getPreviousEpochParticipation().getMaxSize())
-        .isNotEqualTo(s2.getPreviousEpochParticipation().getMaxSize());
-    assertThat(s1.getCurrentEpochParticipation().getMaxSize())
-        .isNotEqualTo(s2.getCurrentEpochParticipation().getMaxSize());
+    assertThat(s1.getPreviousEpochParticipation().getSchema())
+        .isNotEqualTo(s2.getPreviousEpochParticipation().getSchema());
+    assertThat(s1.getCurrentEpochParticipation().getSchema())
+        .isNotEqualTo(s2.getCurrentEpochParticipation().getSchema());
   }
 }
