@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair;
 
 import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.constants.SpecConstantsAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -54,7 +54,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   public static SpecLogicAltair create(
-      final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
+      final SpecConstantsAltair constants, final SchemaDefinitions schemaDefinitions) {
     // TODO(#3648), TODO(#3649) - Implement altair logic
     throw new NotImplementedException();
   }
