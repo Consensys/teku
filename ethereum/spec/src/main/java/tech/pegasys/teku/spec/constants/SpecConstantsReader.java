@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.constants;
 
+import static tech.pegasys.teku.spec.constants.SpecConstantsFormatter.camelToSnakeCase;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.CaseFormat;
-import com.google.common.base.Converter;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,8 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstantsReader {
-  protected final Converter<String, String> camelToSnakeCase =
-      CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, this::parseInt)
@@ -60,13 +59,25 @@ public class SpecConstantsReader {
     final Map<String, Object> rawValues = readValues(source);
     final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
 
+    // Process phase0 constants
     constantsBuilder.rawConstants(rawValues);
-    streamConstantSetters()
+    streamConstantSetters(constantsBuilder.getClass())
         .forEach(
             setter -> {
-              final String constantKey = camelToSnakeCase.convert(setter.getName());
+              final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConstants.get(constantKey);
-              invokeSetter(setter, constantsBuilder, constantKey, rawValue);
+              invokeSetter(
+                  setter, BuilderSupplier.fromBuilder(constantsBuilder), constantKey, rawValue);
+              unprocessedConstants.remove(constantKey);
+            });
+
+    // Process altair constants
+    streamConstantSetters(SpecConstantsBuilder.AltairBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConstants.get(constantKey);
+              invokeSetter(setter, constantsBuilder::altairBuilder, constantKey, rawValue);
               unprocessedConstants.remove(constantKey);
             });
 
@@ -96,33 +107,36 @@ public class SpecConstantsReader {
     }
   }
 
-  private Stream<Method> streamConstantSetters() {
+  private Stream<Method> streamConstantSetters(Class<?> builderClass) {
     // Ignore any setters that aren't for individual constants
     final Set<String> nonConstantSetters = Set.of("rawConstants");
 
-    return Arrays.stream(SpecConstantsBuilder.class.getMethods())
+    return Arrays.stream(builderClass.getMethods())
         .filter(m -> Modifier.isPublic(m.getModifiers()))
-        .filter(m -> m.getReturnType() == SpecConstantsBuilder.class)
+        .filter(m -> m.getReturnType() == builderClass)
         .filter(m -> m.getParameterTypes().length == 1)
         .filter(m -> !nonConstantSetters.contains(m.getName()));
   }
 
-  private void invokeSetter(
+  private <T> void invokeSetter(
       final Method setterMethod,
-      final Object builder,
+      final BuilderSupplier<T> builder,
       final String constantKey,
       final Object rawValue) {
     if (rawValue == null) {
-      throw new IllegalArgumentException("Missing value for constant " + constantKey);
+      return;
     }
 
     final Class<?> valueType = setterMethod.getParameterTypes()[0];
     final Object value = parseValue(valueType, constantKey, rawValue);
-    try {
-      setterMethod.invoke(builder, value);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
+    builder.updateBuilder(
+        b -> {
+          try {
+            setterMethod.invoke(b, value);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private Object parseValue(final Class<?> valueType, final String key, final Object value) {
@@ -171,5 +185,13 @@ public class SpecConstantsReader {
 
   private <T> Function<Object, T> fromString(final Function<String, T> function) {
     return value -> function.apply(value.toString());
+  }
+
+  private interface BuilderSupplier<TBuilder> {
+    static <T> BuilderSupplier<T> fromBuilder(T builder) {
+      return (consumer) -> consumer.accept(builder);
+    }
+
+    void updateBuilder(final Consumer<TBuilder> consumer);
   }
 }

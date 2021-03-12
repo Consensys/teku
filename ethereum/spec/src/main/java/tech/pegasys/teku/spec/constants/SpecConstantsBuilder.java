@@ -15,9 +15,12 @@ package tech.pegasys.teku.spec.constants;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.constants.SpecConstantsFormatter.camelToSnakeCase;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -27,7 +30,7 @@ public class SpecConstantsBuilder {
   private String configName = "Custom (unknown)";
 
   // Misc
-  private UInt64 eth1FollowDistance = UInt64.valueOf(1024);
+  private UInt64 eth1FollowDistance;
   private Integer maxCommitteesPerSlot;
   private Integer targetCommitteeSize;
   private Integer maxValidatorsPerCommittee;
@@ -48,12 +51,12 @@ public class SpecConstantsBuilder {
   private UInt64 effectiveBalanceIncrement;
 
   // Initial values
-  private Bytes4 genesisForkVersion = Bytes4.fromHexString("0x00000000");
+  private Bytes4 genesisForkVersion;
   private Bytes blsWithdrawalPrefix;
 
   // Time parameters
   private UInt64 genesisDelay;
-  private Integer secondsPerSlot = 12;
+  private Integer secondsPerSlot;
   private Integer minAttestationInclusionDelay;
   private Integer slotsPerEpoch;
   private Integer minSeedLookahead;
@@ -82,185 +85,185 @@ public class SpecConstantsBuilder {
   private Integer maxAttesterSlashings;
   private Integer maxAttestations;
   private Integer maxDeposits;
-  private Integer maxVoluntaryExits = 16;
+  private Integer maxVoluntaryExits;
 
   // Signature domains
-  private Bytes4 domainBeaconProposer = new Bytes4(Bytes.fromHexString("0x00000000"));
-  private Bytes4 domainBeaconAttester = new Bytes4(Bytes.fromHexString("0x01000000"));
-  private Bytes4 domainRandao = new Bytes4(Bytes.fromHexString("0x02000000"));
-  private Bytes4 domainDeposit = new Bytes4(Bytes.fromHexString("0x03000000"));
-  private Bytes4 domainVoluntaryExit = new Bytes4(Bytes.fromHexString("0x04000000"));
+  private Bytes4 domainBeaconProposer;
+  private Bytes4 domainBeaconAttester;
+  private Bytes4 domainRandao;
+  private Bytes4 domainDeposit;
+  private Bytes4 domainVoluntaryExit;
   private Bytes4 domainSelectionProof;
   private Bytes4 domainAggregateAndProof;
 
   // Validator
-  private Integer targetAggregatorsPerCommittee = 16;
-  private UInt64 secondsPerEth1Block = UInt64.valueOf(14L);
-  private Integer randomSubnetsPerValidator = 1;
-  private Integer epochsPerRandomSubnetSubscription = 256;
+  private Integer targetAggregatorsPerCommittee;
+  private UInt64 secondsPerEth1Block;
+  private Integer randomSubnetsPerValidator;
+  private Integer epochsPerRandomSubnetSubscription;
 
   // Fork Choice
-  private Integer safeSlotsToUpdateJustified = 8;
+  private Integer safeSlotsToUpdateJustified;
 
   // Deposit Contract
   private Integer depositChainId;
   private Integer depositNetworkId;
   private Bytes depositContractAddress;
 
+  // Altair
+  private Optional<AltairBuilder> altairBuilder = Optional.empty();
+
   public SpecConstants build() {
     validate();
-    return new SpecConstants(
-        rawConstants,
-        configName,
-        eth1FollowDistance,
-        maxCommitteesPerSlot,
-        targetCommitteeSize,
-        maxValidatorsPerCommittee,
-        minPerEpochChurnLimit,
-        churnLimitQuotient,
-        shuffleRoundCount,
-        minGenesisActiveValidatorCount,
-        minGenesisTime,
-        hysteresisQuotient,
-        hysteresisDownwardMultiplier,
-        hysteresisUpwardMultiplier,
-        proportionalSlashingMultiplier,
-        minDepositAmount,
-        maxEffectiveBalance,
-        ejectionBalance,
-        effectiveBalanceIncrement,
-        genesisForkVersion,
-        blsWithdrawalPrefix,
-        genesisDelay,
-        secondsPerSlot,
-        minAttestationInclusionDelay,
-        slotsPerEpoch,
-        minSeedLookahead,
-        maxSeedLookahead,
-        minEpochsToInactivityPenalty,
-        epochsPerEth1VotingPeriod,
-        slotsPerHistoricalRoot,
-        minValidatorWithdrawabilityDelay,
-        shardCommitteePeriod,
-        epochsPerHistoricalVector,
-        epochsPerSlashingsVector,
-        historicalRootsLimit,
-        validatorRegistryLimit,
-        baseRewardFactor,
-        whistleblowerRewardQuotient,
-        proposerRewardQuotient,
-        inactivityPenaltyQuotient,
-        minSlashingPenaltyQuotient,
-        maxProposerSlashings,
-        maxAttesterSlashings,
-        maxAttestations,
-        maxDeposits,
-        maxVoluntaryExits,
-        domainBeaconProposer,
-        domainBeaconAttester,
-        domainRandao,
-        domainDeposit,
-        domainVoluntaryExit,
-        domainSelectionProof,
-        domainAggregateAndProof,
-        targetAggregatorsPerCommittee,
-        secondsPerEth1Block,
-        randomSubnetsPerValidator,
-        epochsPerRandomSubnetSubscription,
-        safeSlotsToUpdateJustified,
-        depositChainId,
-        depositNetworkId,
-        depositContractAddress);
+    final SpecConstants phase0 =
+        new SpecConstantsPhase0(
+            rawConstants,
+            configName,
+            eth1FollowDistance,
+            maxCommitteesPerSlot,
+            targetCommitteeSize,
+            maxValidatorsPerCommittee,
+            minPerEpochChurnLimit,
+            churnLimitQuotient,
+            shuffleRoundCount,
+            minGenesisActiveValidatorCount,
+            minGenesisTime,
+            hysteresisQuotient,
+            hysteresisDownwardMultiplier,
+            hysteresisUpwardMultiplier,
+            proportionalSlashingMultiplier,
+            minDepositAmount,
+            maxEffectiveBalance,
+            ejectionBalance,
+            effectiveBalanceIncrement,
+            genesisForkVersion,
+            blsWithdrawalPrefix,
+            genesisDelay,
+            secondsPerSlot,
+            minAttestationInclusionDelay,
+            slotsPerEpoch,
+            minSeedLookahead,
+            maxSeedLookahead,
+            minEpochsToInactivityPenalty,
+            epochsPerEth1VotingPeriod,
+            slotsPerHistoricalRoot,
+            minValidatorWithdrawabilityDelay,
+            shardCommitteePeriod,
+            epochsPerHistoricalVector,
+            epochsPerSlashingsVector,
+            historicalRootsLimit,
+            validatorRegistryLimit,
+            baseRewardFactor,
+            whistleblowerRewardQuotient,
+            proposerRewardQuotient,
+            inactivityPenaltyQuotient,
+            minSlashingPenaltyQuotient,
+            maxProposerSlashings,
+            maxAttesterSlashings,
+            maxAttestations,
+            maxDeposits,
+            maxVoluntaryExits,
+            domainBeaconProposer,
+            domainBeaconAttester,
+            domainRandao,
+            domainDeposit,
+            domainVoluntaryExit,
+            domainSelectionProof,
+            domainAggregateAndProof,
+            targetAggregatorsPerCommittee,
+            secondsPerEth1Block,
+            randomSubnetsPerValidator,
+            epochsPerRandomSubnetSubscription,
+            safeSlotsToUpdateJustified,
+            depositChainId,
+            depositNetworkId,
+            depositContractAddress);
+
+    return altairBuilder.map(b -> (SpecConstants) b.build(phase0)).orElse(phase0);
   }
 
   private void validate() {
     checkArgument(rawConstants.size() > 0, "Raw constants must be provided");
-    validateConstant(configName);
-    validateConstant(eth1FollowDistance);
-    validateConstant(maxCommitteesPerSlot);
-    validateConstant(targetCommitteeSize);
-    validateConstant(maxValidatorsPerCommittee);
-    validateConstant(minPerEpochChurnLimit);
-    validateConstant(churnLimitQuotient);
-    validateConstant(shuffleRoundCount);
-    validateConstant(minGenesisActiveValidatorCount);
-    validateConstant(minGenesisTime);
-    validateConstant(hysteresisQuotient);
-    validateConstant(hysteresisDownwardMultiplier);
-    validateConstant(hysteresisUpwardMultiplier);
-    validateConstant(proportionalSlashingMultiplier);
-    validateConstant(minDepositAmount);
-    validateConstant(maxEffectiveBalance);
-    validateConstant(ejectionBalance);
-    validateConstant(effectiveBalanceIncrement);
-    validateConstant(genesisForkVersion);
-    validateConstant(blsWithdrawalPrefix);
-    validateConstant(genesisDelay);
-    validateConstant(secondsPerSlot);
-    validateConstant(minAttestationInclusionDelay);
-    validateConstant(slotsPerEpoch);
-    validateConstant(minSeedLookahead);
-    validateConstant(maxSeedLookahead);
-    validateConstant(minEpochsToInactivityPenalty);
-    validateConstant(epochsPerEth1VotingPeriod);
-    validateConstant(slotsPerHistoricalRoot);
-    validateConstant(minValidatorWithdrawabilityDelay);
-    validateConstant(shardCommitteePeriod);
-    validateConstant(epochsPerHistoricalVector);
-    validateConstant(epochsPerSlashingsVector);
-    validateConstant(historicalRootsLimit);
-    validateConstant(validatorRegistryLimit);
-    validateConstant(baseRewardFactor);
-    validateConstant(whistleblowerRewardQuotient);
-    validateConstant(proposerRewardQuotient);
-    validateConstant(inactivityPenaltyQuotient);
-    validateConstant(minSlashingPenaltyQuotient);
-    validateConstant(maxProposerSlashings);
-    validateConstant(maxAttesterSlashings);
-    validateConstant(maxAttestations);
-    validateConstant(maxDeposits);
-    validateConstant(maxVoluntaryExits);
-    validateConstant(domainBeaconProposer);
-    validateConstant(domainBeaconAttester);
-    validateConstant(domainRandao);
-    validateConstant(domainDeposit);
-    validateConstant(domainVoluntaryExit);
-    validateConstant(domainSelectionProof);
-    validateConstant(domainAggregateAndProof);
-    validateConstant(targetAggregatorsPerCommittee);
-    validateConstant(secondsPerEth1Block);
-    validateConstant(randomSubnetsPerValidator);
-    validateConstant(epochsPerRandomSubnetSubscription);
-    validateConstant(safeSlotsToUpdateJustified);
-    validateConstant(depositChainId);
-    validateConstant(depositNetworkId);
-    validateConstant(depositContractAddress);
+    validateConstant("configName", configName);
+    validateConstant("eth1FollowDistance", eth1FollowDistance);
+    validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
+    validateConstant("targetCommitteeSize", targetCommitteeSize);
+    validateConstant("maxValidatorsPerCommittee", maxValidatorsPerCommittee);
+    validateConstant("minPerEpochChurnLimit", minPerEpochChurnLimit);
+    validateConstant("churnLimitQuotient", churnLimitQuotient);
+    validateConstant("shuffleRoundCount", shuffleRoundCount);
+    validateConstant("minGenesisActiveValidatorCount", minGenesisActiveValidatorCount);
+    validateConstant("minGenesisTime", minGenesisTime);
+    validateConstant("hysteresisQuotient", hysteresisQuotient);
+    validateConstant("hysteresisDownwardMultiplier", hysteresisDownwardMultiplier);
+    validateConstant("hysteresisUpwardMultiplier", hysteresisUpwardMultiplier);
+    validateConstant("proportionalSlashingMultiplier", proportionalSlashingMultiplier);
+    validateConstant("minDepositAmount", minDepositAmount);
+    validateConstant("maxEffectiveBalance", maxEffectiveBalance);
+    validateConstant("ejectionBalance", ejectionBalance);
+    validateConstant("effectiveBalanceIncrement", effectiveBalanceIncrement);
+    validateConstant("genesisForkVersion", genesisForkVersion);
+    validateConstant("blsWithdrawalPrefix", blsWithdrawalPrefix);
+    validateConstant("genesisDelay", genesisDelay);
+    validateConstant("secondsPerSlot", secondsPerSlot);
+    validateConstant("minAttestationInclusionDelay", minAttestationInclusionDelay);
+    validateConstant("slotsPerEpoch", slotsPerEpoch);
+    validateConstant("minSeedLookahead", minSeedLookahead);
+    validateConstant("maxSeedLookahead", maxSeedLookahead);
+    validateConstant("minEpochsToInactivityPenalty", minEpochsToInactivityPenalty);
+    validateConstant("epochsPerEth1VotingPeriod", epochsPerEth1VotingPeriod);
+    validateConstant("slotsPerHistoricalRoot", slotsPerHistoricalRoot);
+    validateConstant("minValidatorWithdrawabilityDelay", minValidatorWithdrawabilityDelay);
+    validateConstant("shardCommitteePeriod", shardCommitteePeriod);
+    validateConstant("epochsPerHistoricalVector", epochsPerHistoricalVector);
+    validateConstant("epochsPerSlashingsVector", epochsPerSlashingsVector);
+    validateConstant("historicalRootsLimit", historicalRootsLimit);
+    validateConstant("validatorRegistryLimit", validatorRegistryLimit);
+    validateConstant("baseRewardFactor", baseRewardFactor);
+    validateConstant("whistleblowerRewardQuotient", whistleblowerRewardQuotient);
+    validateConstant("proposerRewardQuotient", proposerRewardQuotient);
+    validateConstant("inactivityPenaltyQuotient", inactivityPenaltyQuotient);
+    validateConstant("minSlashingPenaltyQuotient", minSlashingPenaltyQuotient);
+    validateConstant("maxProposerSlashings", maxProposerSlashings);
+    validateConstant("maxAttesterSlashings", maxAttesterSlashings);
+    validateConstant("maxAttestations", maxAttestations);
+    validateConstant("maxDeposits", maxDeposits);
+    validateConstant("maxVoluntaryExits", maxVoluntaryExits);
+    validateConstant("domainBeaconProposer", domainBeaconProposer);
+    validateConstant("domainBeaconAttester", domainBeaconAttester);
+    validateConstant("domainRandao", domainRandao);
+    validateConstant("domainDeposit", domainDeposit);
+    validateConstant("domainVoluntaryExit", domainVoluntaryExit);
+    validateConstant("domainSelectionProof", domainSelectionProof);
+    validateConstant("domainAggregateAndProof", domainAggregateAndProof);
+    validateConstant("targetAggregatorsPerCommittee", targetAggregatorsPerCommittee);
+    validateConstant("secondsPerEth1Block", secondsPerEth1Block);
+    validateConstant("randomSubnetsPerValidator", randomSubnetsPerValidator);
+    validateConstant("epochsPerRandomSubnetSubscription", epochsPerRandomSubnetSubscription);
+    validateConstant("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
+    validateConstant("depositChainId", depositChainId);
+    validateConstant("depositNetworkId", depositNetworkId);
+    validateConstant("depositContractAddress", depositContractAddress);
+
+    altairBuilder.ifPresent(AltairBuilder::validate);
   }
 
-  private void validateConstant(final String value) {
-    checkNotNull(value);
+  private void validateConstant(final String name, final Object value) {
+    validateNotNull(name, value);
   }
 
-  private void validateConstant(final Bytes value) {
-    checkNotNull(value);
-  }
-
-  private void validateConstant(final Bytes4 value) {
-    checkNotNull(value);
-  }
-
-  private void validateConstant(final UInt64 value) {
-    checkNotNull(value);
-  }
-
-  private void validateConstant(final Long value) {
-    checkNotNull(value);
+  private void validateConstant(final String name, final Long value) {
+    validateNotNull(name, value);
     checkArgument(value >= 0, "Long values must be positive");
   }
 
-  private void validateConstant(final Integer value) {
-    checkNotNull(value);
+  private void validateConstant(final String name, final Integer value) {
+    validateNotNull(name, value);
     checkArgument(value >= 0, "Integer values must be positive");
+  }
+
+  private void validateNotNull(final String name, final Object value) {
+    checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
   }
 
   public SpecConstantsBuilder rawConstants(final Map<String, Object> rawConstants) {
@@ -636,5 +639,100 @@ public class SpecConstantsBuilder {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
     return this;
+  }
+
+  // Altair
+  public SpecConstantsBuilder altairBuilder(final Consumer<AltairBuilder> consumer) {
+    if (altairBuilder.isEmpty()) {
+      altairBuilder = Optional.of(new AltairBuilder());
+    }
+    consumer.accept(altairBuilder.get());
+    return this;
+  }
+
+  class AltairBuilder {
+    // Updated penalties
+    private UInt64 altairInactivityQuotient;
+    private Integer altairMinSlashingPenaltyQuotient;
+    private Integer altairProportionalSlashingMultiplier;
+
+    // Sync committees
+    private Integer syncCommitteeSize;
+    private Integer syncSubcommitteeSize;
+
+    // Time
+    private Integer epochsPerSyncCommitteePeriod;
+
+    // Signature domains
+    private Bytes4 domainSyncCommittee;
+
+    private AltairBuilder() {}
+
+    SpecConstantsAltair build(final SpecConstants specConstants) {
+      return new SpecConstantsAltair(
+          specConstants,
+          altairInactivityQuotient,
+          altairMinSlashingPenaltyQuotient,
+          altairProportionalSlashingMultiplier,
+          syncCommitteeSize,
+          syncSubcommitteeSize,
+          epochsPerSyncCommitteePeriod,
+          domainSyncCommittee);
+    }
+
+    void validate() {
+      validateConstant("altairInactivityQuotient", altairInactivityQuotient);
+      validateConstant("altairMinSlashingPenaltyQuotient", altairMinSlashingPenaltyQuotient);
+      validateConstant(
+          "altairProportionalSlashingMultiplier", altairProportionalSlashingMultiplier);
+      validateConstant("syncCommitteeSize", syncCommitteeSize);
+      validateConstant("syncSubcommitteeSize", syncSubcommitteeSize);
+      validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
+      validateConstant("domainSyncCommittee", domainSyncCommittee);
+    }
+
+    public AltairBuilder altairInactivityQuotient(final UInt64 altairInactivityQuotient) {
+      checkNotNull(altairInactivityQuotient);
+      this.altairInactivityQuotient = altairInactivityQuotient;
+      return this;
+    }
+
+    public AltairBuilder altairMinSlashingPenaltyQuotient(
+        final Integer altairMinSlashingPenaltyQuotient) {
+      checkNotNull(altairMinSlashingPenaltyQuotient);
+      this.altairMinSlashingPenaltyQuotient = altairMinSlashingPenaltyQuotient;
+      return this;
+    }
+
+    public AltairBuilder altairProportionalSlashingMultiplier(
+        final Integer altairProportionalSlashingMultiplier) {
+      checkNotNull(altairProportionalSlashingMultiplier);
+      this.altairProportionalSlashingMultiplier = altairProportionalSlashingMultiplier;
+      return this;
+    }
+
+    public AltairBuilder syncCommitteeSize(final Integer syncCommitteeSize) {
+      checkNotNull(syncCommitteeSize);
+      this.syncCommitteeSize = syncCommitteeSize;
+      return this;
+    }
+
+    public AltairBuilder syncSubcommitteeSize(final Integer syncSubcommitteeSize) {
+      checkNotNull(syncSubcommitteeSize);
+      this.syncSubcommitteeSize = syncSubcommitteeSize;
+      return this;
+    }
+
+    public AltairBuilder epochsPerSyncCommitteePeriod(final Integer epochsPerSyncCommitteePeriod) {
+      checkNotNull(epochsPerSyncCommitteePeriod);
+      this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
+      return this;
+    }
+
+    public AltairBuilder domainSyncCommittee(final Bytes4 domainSyncCommittee) {
+      checkNotNull(domainSyncCommittee);
+      this.domainSyncCommittee = domainSyncCommittee;
+      return this;
+    }
   }
 }
