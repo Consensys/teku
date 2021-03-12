@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -73,7 +74,13 @@ public class FileBackedStorageSystemBuilder {
     }
 
     validate();
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig, spec);
+    return StorageSystem.create(
+        database,
+        createRestartSupplier(),
+        storageMode,
+        storeConfig,
+        spec,
+        ChainBuilder.createDefault());
   }
 
   private FileBackedStorageSystemBuilder copy() {

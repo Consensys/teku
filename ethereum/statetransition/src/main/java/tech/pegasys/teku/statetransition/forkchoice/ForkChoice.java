@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -52,22 +53,42 @@ public class ForkChoice {
   private final Spec spec;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
+  private final ProposerWeightings proposerWeightings;
 
   private ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final ProposerWeightings proposerWeightings) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
+    this.proposerWeightings = proposerWeightings;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
   public static ForkChoice create(
       final Spec spec,
       final EventThread forkChoiceExecutor,
+      final RecentChainData recentChainData,
+      final boolean balanceAttackMitigationEnabled) {
+    final ProposerWeightings proposerWeightings =
+        balanceAttackMitigationEnabled
+            ? new ActiveProposerWeightings(forkChoiceExecutor, spec)
+            : new InactiveProposerWeightings();
+    return new ForkChoice(spec, forkChoiceExecutor, recentChainData, proposerWeightings);
+  }
+
+  /**
+   * @deprecated Provided only to avoid having to hard code balanceAttackMitigationEnabled in lots
+   *     of tests. Will be removed when the feature toggle is removed.
+   */
+  @Deprecated
+  public static ForkChoice create(
+      final Spec spec,
+      final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData) {
-    return new ForkChoice(spec, forkChoiceExecutor, recentChainData);
+    return create(spec, forkChoiceExecutor, recentChainData, false);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -110,9 +131,15 @@ public class ForkChoice {
                       final List<UInt64> justifiedEffectiveBalances =
                           spec.getBeaconStateUtil(justifiedState.getSlot())
                               .getEffectiveBalances(justifiedState);
+
+                      final List<ProposerWeighting> removedProposerWeightings =
+                          proposerWeightings.clearProposerWeightings();
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
-                              finalizedCheckpoint, justifiedCheckpoint, justifiedEffectiveBalances);
+                              finalizedCheckpoint,
+                              justifiedCheckpoint,
+                              justifiedEffectiveBalances,
+                              removedProposerWeightings);
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -167,7 +194,7 @@ public class ForkChoice {
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, result);
+          updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
           applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
           return result;
         });
@@ -188,22 +215,43 @@ public class ForkChoice {
   }
 
   private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block, final BlockImportResult result) {
+      final SignedBeaconBlock block,
+      final BeaconState blockSlotState,
+      final BlockImportResult result,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     if (result.isSuccessful()) {
-      // If the new block builds on our current chain head immediately make it the new head
-      // Since fork choice works by walking down the tree selecting the child block with
-      // the greatest weight, when a block has only one child it will automatically become
-      // a better choice than the block itself.  So the first block we receive that is a
-      // child of our current chain head, must be the new chain head. If we'd had any other
-      // child of the current chain head we'd have already selected it as head.
-      if (recentChainData
-          .getChainHead()
-          .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
-          .orElse(false)) {
-        recentChainData.updateHead(block.getRoot(), block.getSlot());
-        result.markAsCanonical();
+      proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
+
+      final SlotAndBlockRoot bestHeadBlock = findNewChainHead(block, forkChoiceStrategy);
+      if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
+        recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
+        if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
+          result.markAsCanonical();
+        }
       }
     }
+  }
+
+  private SlotAndBlockRoot findNewChainHead(
+      final SignedBeaconBlock block, final ForkChoiceStrategy forkChoiceStrategy) {
+    // If the new block builds on our current chain head it must be the new chain head.
+    // Since fork choice works by walking down the tree selecting the child block with
+    // the greatest weight, when a block has only one child it will automatically become
+    // a better choice than the block itself.  So the first block we receive that is a
+    // child of our current chain head, must be the new chain head. If we'd had any other
+    // child of the current chain head we'd have already selected it as head.
+    if (recentChainData
+        .getChainHead()
+        .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
+        .orElse(false)) {
+      return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
+    }
+
+    // Otherwise, use fork choice to find the new chain head as if this block is on time the
+    // proposer weighting may cause us to reorg.
+    // During sync, this may be noticeably slower than just comparing the chain head due to the way
+    // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
+    return forkChoiceStrategy.findHead(recentChainData.getJustifiedCheckpoint().orElseThrow());
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -253,7 +301,12 @@ public class ForkChoice {
         .reportExceptions();
   }
 
+  public void onBlocksDueForSlot(final UInt64 slot) {
+    onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
+  }
+
   private ForkChoiceStrategy getForkChoiceStrategy() {
+    forkChoiceExecutor.checkOnEventThread();
     return recentChainData
         .getForkChoiceStrategy()
         .orElseThrow(

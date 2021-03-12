@@ -32,8 +32,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -41,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.util.config.Constants;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,10 +65,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
     final UInt64 initialEpoch =
-        store
-            .getInitialCheckpoint()
-            .map(Checkpoint::getEpoch)
-            .orElse(UInt64.valueOf(Constants.GENESIS_EPOCH));
+        store.getInitialCheckpoint().map(Checkpoint::getEpoch).orElse(SpecConstants.GENESIS_EPOCH);
     return storageChannel
         .getProtoArraySnapshot()
         .thenApply(
@@ -89,17 +88,41 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return new ForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
-  public Bytes32 findHead(
+  public SlotAndBlockRoot findHead(final Checkpoint justifiedCheckpoint) {
+    protoArrayLock.readLock().lock();
+    try {
+      final ProtoNode bestNode = protoArray.findHead(justifiedCheckpoint.getRoot());
+      return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  /**
+   * Applies the weighting changes from any updated votes then finds and returns the best chain
+   * head.
+   *
+   * @param voteUpdater the vote updater to access and update pending votes from
+   * @param removedProposerWeightings expired proposer weightings to be removed
+   * @param finalizedCheckpoint the current finalized checkpoint
+   * @param justifiedCheckpoint the current justified checkpoint
+   * @param justifiedStateEffectiveBalances the effective validator balances at the justified
+   *     checkpoint
+   * @return the best chain head block root
+   */
+  public Bytes32 applyPendingVotes(
       final VoteUpdater voteUpdater,
+      final List<ProposerWeighting> removedProposerWeightings,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances) {
-    return findHead(
+      final List<UInt64> justifiedStateEffectiveBalances) {
+    return applyPendingVotes(
         voteUpdater,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
-        justifiedCheckpointEffectiveBalances);
+        justifiedStateEffectiveBalances,
+        removedProposerWeightings);
   }
 
   public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
@@ -185,12 +208,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  Bytes32 findHead(
+  Bytes32 applyPendingVotes(
       VoteUpdater voteUpdater,
       UInt64 justifiedEpoch,
       Bytes32 justifiedRoot,
       UInt64 finalizedEpoch,
-      List<UInt64> justifiedStateBalances) {
+      List<UInt64> justifiedStateBalances,
+      final List<ProposerWeighting> removedProposerWeightings) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -201,12 +225,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               getTotalTrackedNodeCount(),
               protoArray::getIndexByRoot,
               balances,
-              justifiedStateBalances);
+              justifiedStateBalances,
+              removedProposerWeightings);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = justifiedStateBalances;
 
-      return protoArray.findHead(justifiedRoot);
+      return protoArray.findHead(justifiedRoot).getBlockRoot();
     } finally {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();
@@ -373,6 +398,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArrayLock.writeLock().unlock();
     }
     return this;
+  }
+
+  public void applyProposerWeighting(final ProposerWeighting proposerWeighting) {
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.applyProposerWeighting(proposerWeighting);
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
   }
 
   @VisibleForTesting

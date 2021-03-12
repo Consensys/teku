@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,32 +23,32 @@ import tech.pegasys.teku.spec.constants.TestConstantsLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
-public class BeaconStateSchemaPhase0Test
-    extends AbstractBeaconStateSchemaTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
+public class BeaconStateSchemaAltairTest
+    extends AbstractBeaconStateSchemaTest<BeaconStateAltair, MutableBeaconStateAltair> {
 
   @Override
-  protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
+  protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
       final SpecConstants specConstants) {
-    return BeaconStateSchemaPhase0.create(specConstants);
+    return BeaconStateSchemaAltair.create(specConstants);
   }
 
   @Override
-  protected BeaconStatePhase0 randomState() {
-    return dataStructureUtil.stateBuilderPhase0().build();
+  protected BeaconStateAltair randomState() {
+    return dataStructureUtil.stateBuilderAltair().build();
   }
 
   @Test
-  public void changeSpecConstantsTest_checkPhase0Fields() {
+  public void changeSpecConstantsTest_checkAltairFields() {
     final Spec standardSpec = SpecFactory.createMinimal();
     final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal").maxAttestations(123).build();
+        TestConstantsLoader.loadConstantsBuilder("minimal").validatorRegistryLimit(123L).build();
 
-    BeaconStatePhase0 s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
+    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
 
-    assertThat(s1.getPrevious_epoch_attestations().getSchema())
-        .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema());
-    assertThat(s1.getCurrent_epoch_attestations().getSchema())
-        .isNotEqualTo(s2.getCurrent_epoch_attestations().getSchema());
+    assertThat(s1.getPreviousEpochParticipation().getMaxSize())
+        .isNotEqualTo(s2.getPreviousEpochParticipation().getMaxSize());
+    assertThat(s1.getCurrentEpochParticipation().getMaxSize())
+        .isNotEqualTo(s2.getCurrentEpochParticipation().getMaxSize());
   }
 }

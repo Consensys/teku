@@ -91,6 +91,7 @@ import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
@@ -130,6 +131,12 @@ public final class DataStructureUtil {
 
   public long randomLong() {
     return new Random(nextSeed()).nextLong();
+  }
+
+  public byte randomByte() {
+    final byte[] bytes = new byte[1];
+    new Random(nextSeed()).nextBytes(bytes);
+    return bytes[0];
   }
 
   public UInt64 randomUInt64() {
@@ -212,6 +219,10 @@ public final class DataStructureUtil {
             Stream.generate(valueGenerator).limit(numItems),
             Stream.generate(() -> defaultElement).limit(schema.getLength() - numItems))
         .collect(schema.collector());
+  }
+
+  public SszByte randomSszByte() {
+    return new SszByte(randomByte());
   }
 
   public SszBitlist randomBitlist() {
@@ -687,6 +698,10 @@ public final class DataStructureUtil {
   public BeaconStateBuilderPhase0 stateBuilderPhase0(
       final int validatorCount, final int numItemsInSSZLists) {
     return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderAltair stateBuilderAltair() {
+    return BeaconStateBuilderAltair.create(this, spec, 10, 10);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
