@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
@@ -20,26 +22,29 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszPublicKey extends SszByteVectorImpl {
 
-  private BLSPublicKey publicKey;
+  private final Supplier<BLSPublicKey> publicKey;
 
   public SszPublicKey(Bytes48 publicKeyBytes) {
     super(SszPublicKeySchema.INSTANCE, publicKeyBytes);
+    this.publicKey = Suppliers.memoize(this::createBLSPublicKey);
   }
 
   public SszPublicKey(BLSPublicKey publicKey) {
     super(SszPublicKeySchema.INSTANCE, publicKey.toBytesCompressed());
-    this.publicKey = publicKey;
+    this.publicKey = () -> publicKey;
   }
 
   SszPublicKey(TreeNode backingNode) {
     super(SszPublicKeySchema.INSTANCE, backingNode);
+    this.publicKey = Suppliers.memoize(this::createBLSPublicKey);
   }
 
   public BLSPublicKey getBLSPublicKey() {
-    if (publicKey == null) {
-      publicKey = BLSPublicKey.fromBytesCompressed(getBytes());
-    }
-    return publicKey;
+    return publicKey.get();
+  }
+
+  private BLSPublicKey createBLSPublicKey() {
+    return BLSPublicKey.fromBytesCompressed(getBytes());
   }
 
   @Override

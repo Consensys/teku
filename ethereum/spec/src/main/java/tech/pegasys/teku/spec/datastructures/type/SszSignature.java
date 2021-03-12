@@ -13,27 +13,31 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ssz.backing.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 public class SszSignature extends SszByteVectorImpl {
 
-  private BLSSignature signature;
+  private final Supplier<BLSSignature> signature;
 
   public SszSignature(BLSSignature signature) {
     super(SszSignatureSchema.INSTANCE, signature.toBytesCompressed());
-    this.signature = signature;
+    this.signature = () -> signature;
   }
 
   SszSignature(TreeNode backingNode) {
     super(SszSignatureSchema.INSTANCE, backingNode);
+    signature = Suppliers.memoize(this::createBLSSignature);
   }
 
   public BLSSignature getSignature() {
-    if (signature == null) {
-      signature = BLSSignature.fromBytesCompressed(getBytes());
-    }
-    return signature;
+    return signature.get();
+  }
+
+  private BLSSignature createBLSSignature() {
+    return BLSSignature.fromBytesCompressed(getBytes());
   }
 }
