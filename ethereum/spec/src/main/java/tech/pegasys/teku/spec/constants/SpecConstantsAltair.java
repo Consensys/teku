@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.constants;
 
 import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -51,6 +52,16 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
     this.domainSyncCommittee = domainSyncCommittee;
   }
 
+  public static SpecConstantsAltair required(final SpecConstants specConstants) {
+    return specConstants
+        .toVersionAltair()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected altair constants but got: "
+                        + specConstants.getClass().getSimpleName()));
+  }
+
   public UInt64 getAltairInactivityPenaltyQuotient() {
     return altairInactivityPenaltyQuotient;
   }
@@ -77,6 +88,11 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
 
   public Bytes4 getDomainSyncCommittee() {
     return domainSyncCommittee;
+  }
+
+  @Override
+  public Optional<SpecConstantsAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 
   @Override

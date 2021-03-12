@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.constants;
 
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -155,4 +156,8 @@ public interface SpecConstants {
   int getDepositNetworkId();
 
   Bytes getDepositContractAddress();
+
+  default Optional<SpecConstantsAltair> toVersionAltair() {
+    return Optional.empty();
+  }
 }
