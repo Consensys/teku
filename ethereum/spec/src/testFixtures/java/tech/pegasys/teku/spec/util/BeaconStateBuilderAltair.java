@@ -28,7 +28,6 @@ public class BeaconStateBuilderAltair
 
   private SszList<SszByte> previousEpochParticipation;
   private SszList<SszByte> currentEpochParticipation;
-  private final BeaconStateSchemaAltair beaconStateSchema;
 
   private BeaconStateBuilderAltair(
       final Spec spec,
@@ -36,9 +35,6 @@ public class BeaconStateBuilderAltair
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     super(spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
-    this.beaconStateSchema =
-        (BeaconStateSchemaAltair)
-            spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
   @Override
@@ -61,18 +57,22 @@ public class BeaconStateBuilderAltair
         spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
+  private BeaconStateSchemaAltair getBeaconStateSchemaAltair() {
+    return (BeaconStateSchemaAltair) getEmptyState().getSchema();
+  }
+
   @Override
   protected void initDefaults() {
     super.initDefaults();
 
     previousEpochParticipation =
         dataStructureUtil.randomSszList(
-            beaconStateSchema.getPreviousEpochParticipationSchema(),
+            getBeaconStateSchemaAltair().getPreviousEpochParticipationSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomSszByte);
     currentEpochParticipation =
         dataStructureUtil.randomSszList(
-            beaconStateSchema.getCurrentEpochParticipationSchema(),
+            getBeaconStateSchemaAltair().getCurrentEpochParticipationSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomSszByte);
   }
