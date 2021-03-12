@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
@@ -192,7 +193,9 @@ public class Constants {
 
   public static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS.toArray(String[]::new))
+            Constants.class,
+            name -> List.of(name + ".yaml", name + "/phase0.yaml"),
+            NETWORK_DEFINITIONS.toArray(String[]::new))
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

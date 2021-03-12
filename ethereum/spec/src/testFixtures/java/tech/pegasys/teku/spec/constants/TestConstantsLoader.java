@@ -13,28 +13,16 @@
 
 package tech.pegasys.teku.spec.constants;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.util.config.Constants;
 
 public class TestConstantsLoader {
   public static SpecConstantsBuilder loadConstantsBuilder(final String constants) {
-    try (final InputStream inputStream = createInputStream(constants)) {
+    try (final InputStream inputStream = SpecConstantsLoader.createInputStream(constants)) {
       final SpecConstantsReader reader = new SpecConstantsReader();
       return reader.readToBuilder(inputStream);
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load constants", e);
     }
-  }
-
-  private static InputStream createInputStream(final String source) throws IOException {
-    return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            name -> name + ".yaml",
-            Constants.NETWORK_DEFINITIONS.toArray(String[]::new))
-        .load(source)
-        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
 }

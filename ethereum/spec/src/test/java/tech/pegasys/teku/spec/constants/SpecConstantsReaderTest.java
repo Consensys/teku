@@ -15,14 +15,11 @@ package tech.pegasys.teku.spec.constants;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllPhase0FieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,6 +38,16 @@ public class SpecConstantsReaderTest {
     final SpecConstants result = reader.read(inputStream);
     assertThat(result).isNotNull();
     assertAllPhase0FieldsSet(result);
+  }
+
+  @Test
+  public void read_altair() throws Exception {
+    final InputStream inputStream =
+        getFileFromResourceAsStream(getStandardConfigPath("mainnetAltair"));
+
+    final SpecConstants result = reader.read(inputStream);
+    assertThat(result).isNotNull();
+    assertAllAltairFieldsSet(result);
   }
 
   @Test
@@ -85,6 +92,15 @@ public class SpecConstantsReaderTest {
     assertThatThrownBy(() -> reader.read(stream))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'MIN_PER_EPOCH_CHURN_LIMIT'");
+  }
+
+  @Test
+  public void read_missingAltairConstant() throws IOException {
+    final String path = getInvalidConfigPath("missingAltairField");
+    final InputStream stream = getFileFromResourceAsStream(path);
+    assertThatThrownBy(() -> reader.read(stream))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }
 
   @Test
@@ -243,25 +259,5 @@ public class SpecConstantsReaderTest {
     }
 
     return inputStream;
-  }
-
-  private void assertAllPhase0FieldsSet(final SpecConstants constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConstantsPhase0.class);
-  }
-
-  private void assertAllFieldsSet(final SpecConstants constants, Class<?> targetConstants)
-      throws Exception {
-    for (Method method : listGetters(targetConstants)) {
-      final Object value = method.invoke(constants);
-      Assertions.assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
-    }
-  }
-
-  private List<Method> listGetters(final Class<?> clazz) {
-    return Arrays.stream(clazz.getMethods())
-        .filter(m -> Modifier.isPublic(m.getModifiers()))
-        .filter(m -> m.getParameterTypes().length == 0)
-        .filter(m -> m.getName().startsWith("get"))
-        .collect(Collectors.toList());
   }
 }

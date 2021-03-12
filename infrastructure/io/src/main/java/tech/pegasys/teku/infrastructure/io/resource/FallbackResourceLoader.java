@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class FallbackResourceLoader implements ResourceLoader {
@@ -34,5 +36,16 @@ public class FallbackResourceLoader implements ResourceLoader {
       }
     }
     return Optional.empty();
+  }
+
+  @Override
+  public List<InputStream> loadAll(final String source) throws IOException {
+    for (ResourceLoader loader : loaders) {
+      final List<InputStream> resources = loader.loadAll(source);
+      if (!resources.isEmpty()) {
+        return resources;
+      }
+    }
+    return Collections.emptyList();
   }
 }

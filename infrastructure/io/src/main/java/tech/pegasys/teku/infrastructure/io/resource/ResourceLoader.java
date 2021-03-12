@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,7 +29,7 @@ public interface ResourceLoader {
 
   static ResourceLoader classpathUrlOrFile(
       final Class<?> referenceClass,
-      final Function<String, String> nameToFilenameMapper,
+      final Function<String, List<String>> nameToFilenameMapper,
       final String... availableResourceNames) {
     return new FallbackResourceLoader(
         new ClasspathResourceLoader(referenceClass, nameToFilenameMapper, availableResourceNames),
@@ -36,6 +38,19 @@ public interface ResourceLoader {
   }
 
   Optional<InputStream> load(String source) throws IOException;
+
+  /**
+   * Where multiple matching input streams are found, return all values as a list
+   *
+   * @param source Where to look for the resource
+   * @return A list of matching resources
+   * @throws IOException
+   */
+  default List<InputStream> loadAll(String source) throws IOException {
+    final List<InputStream> streams = new ArrayList<>();
+    load(source).ifPresent(streams::add);
+    return streams;
+  }
 
   default Optional<Bytes> loadBytes(String source) throws IOException {
     final Optional<InputStream> maybeStream = load(source);
