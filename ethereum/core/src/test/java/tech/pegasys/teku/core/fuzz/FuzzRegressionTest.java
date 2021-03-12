@@ -38,7 +38,8 @@ public class FuzzRegressionTest {
         load("issue2345/state.ssz", spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
     final AttesterSlashing slashing =
         load("issue2345/attester_slashing.ssz", AttesterSlashing.SSZ_SCHEMA);
-    SszList<AttesterSlashing> slashings = BeaconBlockBodyLists.createAttesterSlashings(slashing);
+    SszList<AttesterSlashing> slashings =
+        BeaconBlockBodyLists.ofSpec(spec).createAttesterSlashings(slashing);
 
     assertThatThrownBy(
             () ->

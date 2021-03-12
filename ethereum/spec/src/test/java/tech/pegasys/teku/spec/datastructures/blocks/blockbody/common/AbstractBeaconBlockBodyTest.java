@@ -41,28 +41,30 @@ import tech.pegasys.teku.ssz.backing.SszList;
 
 public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected final Spec spec = SpecFactory.createMinimal();
+  private final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
+
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final BLSSignature blsSignature = dataStructureUtil.randomSignature();
   private final Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final SszList<ProposerSlashing> proposerSlashings =
-      BeaconBlockBodyLists.createProposerSlashings(
+      blockBodyLists.createProposerSlashings(
           dataStructureUtil.randomProposerSlashing(),
           dataStructureUtil.randomProposerSlashing(),
           dataStructureUtil.randomProposerSlashing());
   private final SszList<AttesterSlashing> attesterSlashings =
-      BeaconBlockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
+      blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
   private final SszList<Attestation> attestations =
-      BeaconBlockBodyLists.createAttestations(
+      blockBodyLists.createAttestations(
           dataStructureUtil.randomAttestation(),
           dataStructureUtil.randomAttestation(),
           dataStructureUtil.randomAttestation());
   private final SszList<Deposit> deposits =
-      BeaconBlockBodyLists.createDeposits(
+      blockBodyLists.createDeposits(
           dataStructureUtil.randomDeposits(MAX_DEPOSITS).toArray(new Deposit[0]));
   private final SszList<SignedVoluntaryExit> voluntaryExits =
-      BeaconBlockBodyLists.createVoluntaryExits(
+      blockBodyLists.createVoluntaryExits(
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit());

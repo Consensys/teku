@@ -44,9 +44,11 @@ import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
+  private final BeaconBlockBodyLists blockBodyLists;
 
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
+    blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   }
 
   public SignedBlockAndState createNewBlock(
@@ -77,7 +79,7 @@ public class BlockProposalTestUtil {
             Bytes32.ZERO,
             attestations,
             slashings,
-            BeaconBlockBodyLists.createAttesterSlashings(),
+            blockBodyLists.createAttesterSlashings(),
             deposits,
             exits);
 
@@ -106,10 +108,10 @@ public class BlockProposalTestUtil {
         previousState,
         parentBlockSigningRoot,
         eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
-        attestations.orElse(BeaconBlockBodyLists.createAttestations()),
-        BeaconBlockBodyLists.createProposerSlashings(),
-        deposits.orElse(BeaconBlockBodyLists.createDeposits()),
-        exits.orElse(BeaconBlockBodyLists.createVoluntaryExits()));
+        attestations.orElse(blockBodyLists.createAttestations()),
+        blockBodyLists.createProposerSlashings(),
+        deposits.orElse(blockBodyLists.createDeposits()),
+        exits.orElse(blockBodyLists.createVoluntaryExits()));
   }
 
   private static Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {

@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -23,26 +24,33 @@ import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BeaconBlockBodyLists {
 
-  public static SszList<ProposerSlashing> createProposerSlashings(
-      ProposerSlashing... proposerSlashings) {
-    return BeaconBlockBody.getSszSchema().getProposerSlashingsSchema().of(proposerSlashings);
+  public static BeaconBlockBodyLists ofSpec(Spec spec) {
+    return new BeaconBlockBodyLists(spec);
   }
 
-  public static SszList<AttesterSlashing> createAttesterSlashings(
-      AttesterSlashing... attesterSlashings) {
-    return BeaconBlockBody.getSszSchema().getAttesterSlashingsSchema().of(attesterSlashings);
+  private final BeaconBlockBodySchema<?> blockBodySchema;
+
+  public BeaconBlockBodyLists(Spec spec) {
+    blockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  public static SszList<Attestation> createAttestations(Attestation... attestations) {
-    return BeaconBlockBody.getSszSchema().getAttestationsSchema().of(attestations);
+  public SszList<ProposerSlashing> createProposerSlashings(ProposerSlashing... proposerSlashings) {
+    return blockBodySchema.getProposerSlashingsSchema().of(proposerSlashings);
   }
 
-  public static SszList<Deposit> createDeposits(Deposit... deposits) {
-    return BeaconBlockBody.getSszSchema().getDepositsSchema().of(deposits);
+  public SszList<AttesterSlashing> createAttesterSlashings(AttesterSlashing... attesterSlashings) {
+    return blockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings);
   }
 
-  public static SszList<SignedVoluntaryExit> createVoluntaryExits(
-      SignedVoluntaryExit... voluntaryExits) {
-    return BeaconBlockBody.getSszSchema().getVoluntaryExitsSchema().of(voluntaryExits);
+  public SszList<Attestation> createAttestations(Attestation... attestations) {
+    return blockBodySchema.getAttestationsSchema().of(attestations);
+  }
+
+  public SszList<Deposit> createDeposits(Deposit... deposits) {
+    return blockBodySchema.getDepositsSchema().of(deposits);
+  }
+
+  public SszList<SignedVoluntaryExit> createVoluntaryExits(SignedVoluntaryExit... voluntaryExits) {
+    return blockBodySchema.getVoluntaryExitsSchema().of(voluntaryExits);
   }
 }

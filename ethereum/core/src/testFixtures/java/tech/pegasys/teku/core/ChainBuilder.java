@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
@@ -378,13 +377,16 @@ public class ChainBuilder {
     final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
+      SszList<Attestation> attestations =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createAttestations(options.getAttestations().toArray(new Attestation[0]));
       nextBlockAndState =
           blockProposalTestUtil.createBlock(
               signer,
               slot,
               preState,
               parentRoot,
-              Optional.of(options.getAttestations()),
+              Optional.of(attestations),
               Optional.empty(),
               Optional.empty(),
               options.getEth1Data());
@@ -408,8 +410,8 @@ public class ChainBuilder {
   }
 
   public static final class BlockOptions {
-    private SszMutableList<Attestation> attestations =
-        BeaconBlockBodyLists.createAttestations().createWritableCopy();
+
+    private List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
@@ -419,7 +421,7 @@ public class ChainBuilder {
     }
 
     public BlockOptions addAttestation(final Attestation attestation) {
-      attestations.append(attestation);
+      attestations.add(attestation);
       return this;
     }
 
@@ -428,7 +430,7 @@ public class ChainBuilder {
       return this;
     }
 
-    private SszList<Attestation> getAttestations() {
+    private List<Attestation> getAttestations() {
       return attestations;
     }
 
