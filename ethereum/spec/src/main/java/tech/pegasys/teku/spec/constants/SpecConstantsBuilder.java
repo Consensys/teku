@@ -652,7 +652,7 @@ public class SpecConstantsBuilder {
 
   class AltairBuilder {
     // Updated penalties
-    private UInt64 altairInactivityQuotient;
+    private UInt64 altairInactivityPenaltyQuotient;
     private Integer altairMinSlashingPenaltyQuotient;
     private Integer altairProportionalSlashingMultiplier;
 
@@ -671,7 +671,7 @@ public class SpecConstantsBuilder {
     SpecConstantsAltair build(final SpecConstants specConstants) {
       return new SpecConstantsAltair(
           specConstants,
-          altairInactivityQuotient,
+          altairInactivityPenaltyQuotient,
           altairMinSlashingPenaltyQuotient,
           altairProportionalSlashingMultiplier,
           syncCommitteeSize,
@@ -681,7 +681,7 @@ public class SpecConstantsBuilder {
     }
 
     void validate() {
-      validateConstant("altairInactivityQuotient", altairInactivityQuotient);
+      validateConstant("altairInactivityPenaltyQuotient", altairInactivityPenaltyQuotient);
       validateConstant("altairMinSlashingPenaltyQuotient", altairMinSlashingPenaltyQuotient);
       validateConstant(
           "altairProportionalSlashingMultiplier", altairProportionalSlashingMultiplier);
@@ -691,9 +691,10 @@ public class SpecConstantsBuilder {
       validateConstant("domainSyncCommittee", domainSyncCommittee);
     }
 
-    public AltairBuilder altairInactivityQuotient(final UInt64 altairInactivityQuotient) {
-      checkNotNull(altairInactivityQuotient);
-      this.altairInactivityQuotient = altairInactivityQuotient;
+    public AltairBuilder altairInactivityPenaltyQuotient(
+        final UInt64 altairInactivityPenaltyQuotient) {
+      checkNotNull(altairInactivityPenaltyQuotient);
+      this.altairInactivityPenaltyQuotient = altairInactivityPenaltyQuotient;
       return this;
     }
 

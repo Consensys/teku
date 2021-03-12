@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SpecConstantsAltair extends DelegatingSpecConstants {
-  private final UInt64 altairInactivityQuotient;
+  private final UInt64 altairInactivityPenaltyQuotient;
   private final Integer altairMinSlashingPenaltyQuotient;
   private final Integer altairProportionalSlashingMultiplier;
 
@@ -33,7 +33,7 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
 
   public SpecConstantsAltair(
       final SpecConstants specConstants,
-      final UInt64 altairInactivityQuotient,
+      final UInt64 altairInactivityPenaltyQuotient,
       final Integer altairMinSlashingPenaltyQuotient,
       final Integer altairProportionalSlashingMultiplier,
       final Integer syncCommitteeSize,
@@ -41,7 +41,7 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
       final Integer epochsPerSyncCommitteePeriod,
       final Bytes4 domainSyncCommittee) {
     super(specConstants);
-    this.altairInactivityQuotient = altairInactivityQuotient;
+    this.altairInactivityPenaltyQuotient = altairInactivityPenaltyQuotient;
     this.altairMinSlashingPenaltyQuotient = altairMinSlashingPenaltyQuotient;
     this.altairProportionalSlashingMultiplier = altairProportionalSlashingMultiplier;
     this.syncCommitteeSize = syncCommitteeSize;
@@ -50,8 +50,8 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
     this.domainSyncCommittee = domainSyncCommittee;
   }
 
-  public UInt64 getAltairInactivityQuotient() {
-    return altairInactivityQuotient;
+  public UInt64 getAltairInactivityPenaltyQuotient() {
+    return altairInactivityPenaltyQuotient;
   }
 
   public Integer getAltairMinSlashingPenaltyQuotient() {
