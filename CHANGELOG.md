@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
   
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
+- Support loading Altair constants. Versioned constants may be loaded from a single file or a directory containing files: phase0.yaml, altair.yaml.
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)
