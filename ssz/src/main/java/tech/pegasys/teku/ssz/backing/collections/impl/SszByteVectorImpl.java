@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.cache.NoopIntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
@@ -46,7 +45,7 @@ public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>
   @Override
   protected IntCache<SszByte> createCache() {
     // caching with Bytes in this class
-    return new NoopIntCache<>();
+    return IntCache.noop();
   }
 
   @Override

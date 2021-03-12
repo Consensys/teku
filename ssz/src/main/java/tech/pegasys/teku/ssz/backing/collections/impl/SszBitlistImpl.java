@@ -92,7 +92,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   @Override
   protected IntCache<SszBit> createCache() {
     // BitlistImpl is far more effective cache than caching individual bits
-    return new NoopIntCache<>();
+    return IntCache.noop();
   }
 
   private BitlistImpl toBitlistImpl(SszBitlist bl) {
