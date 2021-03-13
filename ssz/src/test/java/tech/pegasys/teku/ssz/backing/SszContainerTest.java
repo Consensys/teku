@@ -33,8 +33,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.WritableMutableSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class SszContainerTest
-    implements SszCompositeAbstractTest, SszMutableRefCompositeAbstractTest {
+public class SszContainerTest implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
 
   @Override
   public Stream<SszContainer> sszData() {

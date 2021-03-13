@@ -14,13 +14,13 @@
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchemaAbstractTest;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public interface SszVectorSchemaAbstractTest extends SszCompositeSchemaAbstractTest {
+public interface SszVectorSchemaTestBase extends SszCompositeSchemaTestBase {
 
   static Stream<SszVectorSchema<?, ?>> complexVectorSchemas() {
-    return SszCollectionSchemaAbstractTest.complexElementSchemas()
+    return SszCollectionSchemaTestBase.complexElementSchemas()
         .flatMap(
             elementSchema ->
                 Stream.of(

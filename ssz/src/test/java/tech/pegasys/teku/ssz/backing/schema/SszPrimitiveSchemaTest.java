@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.backing.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 
-public class SszPrimitiveSchemaTest implements SszSchemaAbstractTest {
+public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
 
   private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 

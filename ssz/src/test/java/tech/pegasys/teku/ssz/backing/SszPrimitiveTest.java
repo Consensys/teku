@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class SszPrimitiveTest implements SszDataAbstractTest {
+public class SszPrimitiveTest implements SszDataTestBase {
 
   @Override
   public Stream<? extends SszData> sszData() {

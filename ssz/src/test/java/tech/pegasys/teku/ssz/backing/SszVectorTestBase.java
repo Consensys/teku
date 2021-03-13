@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import java.util.stream.Stream;
-import org.junit.jupiter.params.provider.Arguments;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public interface SszMutableCollectionAbstractTest
-    extends SszCollectionAbstractTest, SszMutableCompositeAbstractTest {
+public interface SszVectorTestBase extends SszCollectionTestBase {
 
-  default Stream<Arguments> sszMutableCollectionArguments() {
-    return SszDataAbstractTest.passWhenEmpty(
-        sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  default <C extends SszData> void size_shouldBeEqualToSchemaLength(SszVector<C> data) {
+    Assertions.assertThat(data.size()).isEqualTo(data.getSchema().getLength());
   }
 }

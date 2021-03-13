@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public class SszPrimitiveVectorSchemaTest implements SszVectorSchemaAbstractTest {
+public class SszPrimitiveVectorSchemaTest implements SszVectorSchemaTestBase {
 
   @Override
   public Stream<SszPrimitiveVectorSchema<?, ?, ?>> testSchemas() {

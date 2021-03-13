@@ -14,25 +14,28 @@
 package tech.pegasys.teku.ssz.backing.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.assertj.core.api.Assumptions;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public interface SszCompositeSchemaAbstractTest extends SszSchemaAbstractTest {
+@TestInstance(Lifecycle.PER_CLASS)
+public interface SszTypeTestBase {
 
-  @MethodSource("testSchemaArguments")
-  @ParameterizedTest
-  default void isPrimitive_shouldReturnFalse(SszCompositeSchema<?> schema) {
-    assertThat(schema.isPrimitive()).isFalse();
+  Stream<? extends SszSchema<?>> testSchemas();
+
+  default Stream<Arguments> testSchemaArguments() {
+    return testSchemas().map(Arguments::of);
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getChildSchema_shouldThrowIndexOutOfBounds(SszCompositeSchema<?> schema) {
-    Assumptions.assumeThat(schema.getMaxLength()).isLessThan(Integer.MAX_VALUE);
-    assertThatThrownBy(() -> schema.getChildSchema((int) schema.getMaxLength()))
-        .isInstanceOf(IndexOutOfBoundsException.class);
+  default void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
+    Assumptions.assumeTrue(type.isFixedSize());
+    assertThat(type.getSszFixedPartSize()).isNotZero();
   }
 }

@@ -37,7 +37,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
-public class SszBitlistTest implements SszPrimitiveListAbstractTest {
+public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   static Random random = new Random(1);
   static SszBitlistSchema<SszBitlist> emptySchema = SszBitlistSchema.create(0);

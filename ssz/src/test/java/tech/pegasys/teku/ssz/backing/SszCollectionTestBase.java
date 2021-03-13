@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public interface SszCollectionAbstractTest extends SszCompositeAbstractTest {
+public interface SszCollectionTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest

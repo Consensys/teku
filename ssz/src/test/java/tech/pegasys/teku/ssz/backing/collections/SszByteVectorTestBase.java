@@ -11,31 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.schema;
+package tech.pegasys.teku.ssz.backing.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.stream.Stream;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(Lifecycle.PER_CLASS)
-public interface SszTypeAbstractTest {
+public interface SszByteVectorTestBase extends SszPrimitiveCollectionTestBase {
 
-  Stream<? extends SszSchema<?>> testSchemas();
-
-  default Stream<Arguments> testSchemaArguments() {
-    return testSchemas().map(Arguments::of);
-  }
-
-  @MethodSource("testSchemaArguments")
+  @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
-    Assumptions.assumeTrue(type.isFixedSize());
-    assertThat(type.getSszFixedPartSize()).isNotZero();
+  default void getBytes_shouldReturnAllBytes(SszByteVector vector) {
+    Bytes bytes = vector.getBytes();
+
+    assertThat(bytes.size()).isEqualTo(vector.size());
+    for (int i = 0; i < bytes.size(); i++) {
+      assertThat(bytes.get(i)).isEqualTo(vector.getElement(i));
+    }
   }
 }

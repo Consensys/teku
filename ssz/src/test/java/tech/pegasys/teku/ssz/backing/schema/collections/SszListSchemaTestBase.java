@@ -18,10 +18,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 
-public interface SszListSchemaAbstractTest extends SszCollectionSchemaAbstractTest {
+public interface SszListSchemaTestBase extends SszCollectionSchemaTestBase {
 
   static Stream<SszListSchema<?, ?>> complexListSchemas() {
-    return SszCollectionSchemaAbstractTest.complexElementSchemas()
+    return SszCollectionSchemaTestBase.complexElementSchemas()
         .flatMap(
             elementSchema ->
                 Stream.of(

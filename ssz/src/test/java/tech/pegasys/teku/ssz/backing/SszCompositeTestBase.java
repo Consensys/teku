@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
-public interface SszCompositeAbstractTest extends SszDataAbstractTest {
+public interface SszCompositeTestBase extends SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest

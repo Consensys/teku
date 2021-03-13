@@ -11,24 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.backing.collections;
+package tech.pegasys.teku.ssz.backing.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.apache.tuweni.bytes.Bytes;
+import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public interface SszByteVectorAbstractTest extends SszPrimitiveCollectionAbstractTest {
+public interface SszCompositeSchemaTestBase extends SszSchemaTestBase {
 
-  @MethodSource("sszDataArguments")
+  @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getBytes_shouldReturnAllBytes(SszByteVector vector) {
-    Bytes bytes = vector.getBytes();
+  default void isPrimitive_shouldReturnFalse(SszCompositeSchema<?> schema) {
+    assertThat(schema.isPrimitive()).isFalse();
+  }
 
-    assertThat(bytes.size()).isEqualTo(vector.size());
-    for (int i = 0; i < bytes.size(); i++) {
-      assertThat(bytes.get(i)).isEqualTo(vector.getElement(i));
-    }
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  default void getChildSchema_shouldThrowIndexOutOfBounds(SszCompositeSchema<?> schema) {
+    Assumptions.assumeThat(schema.getMaxLength()).isLessThan(Integer.MAX_VALUE);
+    assertThatThrownBy(() -> schema.getChildSchema((int) schema.getMaxLength()))
+        .isInstanceOf(IndexOutOfBoundsException.class);
   }
 }

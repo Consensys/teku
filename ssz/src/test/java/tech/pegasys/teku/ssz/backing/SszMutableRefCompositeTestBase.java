@@ -25,11 +25,11 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
-public interface SszMutableRefCompositeAbstractTest extends SszMutableCompositeAbstractTest {
+public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestBase {
   RandomSszDataGenerator generator = new RandomSszDataGenerator();
 
   default Stream<Arguments> sszMutableByRefCompositeArguments() {
-    return SszDataAbstractTest.passWhenEmpty(
+    return SszDataTestBase.passWhenEmpty(
         sszWritableData()
             .map(d -> (SszComposite<?>) d)
             .flatMap(

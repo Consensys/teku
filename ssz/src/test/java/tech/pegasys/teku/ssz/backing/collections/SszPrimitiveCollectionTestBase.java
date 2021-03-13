@@ -19,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.SszCollectionAbstractTest;
+import tech.pegasys.teku.ssz.backing.SszCollectionTestBase;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 
-public interface SszPrimitiveCollectionAbstractTest extends SszCollectionAbstractTest {
+public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest

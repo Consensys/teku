@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszByteVectorSchema;
 
-public class SszByteVectorTest implements SszByteVectorAbstractTest {
+public class SszByteVectorTest implements SszByteVectorTestBase {
   private final RandomSszDataGenerator generator = new RandomSszDataGenerator();
 
   public Stream<SszByteVectorSchema<?>> sszSchemas() {

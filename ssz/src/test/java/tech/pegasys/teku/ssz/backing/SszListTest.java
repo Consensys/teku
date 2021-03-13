@@ -25,16 +25,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszListSchemaAbstractTest;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszListSchemaTestBase;
 
-public class SszListTest implements SszListAbstractTest, SszMutableRefCompositeAbstractTest {
+public class SszListTest implements SszListTestBase, SszMutableRefCompositeTestBase {
 
   private final RandomSszDataGenerator randomSsz =
       new RandomSszDataGenerator().withMaxListSize(256);
 
   @Override
   public Stream<SszList<?>> sszData() {
-    return SszListSchemaAbstractTest.complexListSchemas()
+    return SszListSchemaTestBase.complexListSchemas()
         .flatMap(
             listSchema -> Stream.of(listSchema.getDefault(), randomSsz.randomData(listSchema)));
   }

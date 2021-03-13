@@ -14,11 +14,11 @@
 package tech.pegasys.teku.ssz.backing.schema.collections;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchemaAbstractTest;
+import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.ssz.backing.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
-public interface SszCollectionSchemaAbstractTest extends SszCompositeSchemaAbstractTest {
+public interface SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
 
   static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.concat(

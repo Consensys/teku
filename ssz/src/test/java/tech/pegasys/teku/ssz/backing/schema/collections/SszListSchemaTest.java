@@ -20,11 +20,11 @@ import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 
-public class SszListSchemaTest implements SszListSchemaAbstractTest {
+public class SszListSchemaTest implements SszListSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {
-    return SszListSchemaAbstractTest.complexListSchemas();
+    return SszListSchemaTestBase.complexListSchemas();
   }
 
   @Test

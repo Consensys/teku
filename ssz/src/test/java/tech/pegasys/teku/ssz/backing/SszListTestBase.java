@@ -24,7 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
-public interface SszListAbstractTest extends SszCollectionAbstractTest {
+public interface SszListTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest

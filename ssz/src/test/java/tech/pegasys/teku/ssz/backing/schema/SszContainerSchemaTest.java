@@ -20,7 +20,7 @@ import tech.pegasys.teku.ssz.backing.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.WritableContainer;
 import tech.pegasys.teku.ssz.backing.TestContainers.WritableSubContainer;
 
-public class SszContainerSchemaTest implements SszCompositeSchemaAbstractTest {
+public class SszContainerSchemaTest implements SszCompositeSchemaTestBase {
 
   public static Stream<SszContainerSchema<?>> testContainerSchemas() {
     return Stream.of(

@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.sos.SimpleSszReader;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
-public interface SszSchemaAbstractTest extends SszTypeAbstractTest {
+public interface SszSchemaTestBase extends SszTypeTestBase {
 
   RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 

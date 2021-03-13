@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
 
-public class SszPrimitiveListTest implements SszMutablePrimitiveListAbstractTest {
+public class SszPrimitiveListTest implements SszMutablePrimitiveListTestBase {
 
   public Stream<SszPrimitiveListSchema<?, ?, ?>> sszSchemas() {
     return Stream.of(

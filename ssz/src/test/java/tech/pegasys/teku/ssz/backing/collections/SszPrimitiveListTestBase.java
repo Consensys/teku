@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.collections;
 
-import tech.pegasys.teku.ssz.backing.SszListAbstractTest;
+import tech.pegasys.teku.ssz.backing.SszListTestBase;
 
-public interface SszPrimitiveListAbstractTest
-    extends SszPrimitiveCollectionAbstractTest, SszListAbstractTest {}
+public interface SszPrimitiveListTestBase extends SszPrimitiveCollectionTestBase, SszListTestBase {}

@@ -30,7 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public interface SszDataAbstractTest {
+public interface SszDataTestBase {
 
   // workaround for https://github.com/junit-team/junit5/issues/1477
   static Stream<Arguments> passWhenEmpty(Stream<Arguments> args) {

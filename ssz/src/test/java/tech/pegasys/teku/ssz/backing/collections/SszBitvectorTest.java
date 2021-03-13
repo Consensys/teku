@@ -25,12 +25,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.SszVectorAbstractTest;
+import tech.pegasys.teku.ssz.backing.SszVectorTestBase;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 
-public class SszBitvectorTest implements SszPrimitiveCollectionAbstractTest, SszVectorAbstractTest {
+public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVectorTestBase {
 
   private static final Random random = new Random(1);
 

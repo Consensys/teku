@@ -18,18 +18,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszVectorSchemaAbstractTest;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszVectorSchemaTestBase;
 
 public class SszVectorTest
-    implements SszCollectionAbstractTest,
-        SszMutableCollectionAbstractTest,
-        SszMutableRefCompositeAbstractTest {
+    implements SszCollectionTestBase, SszMutableCollectionTestBase, SszMutableRefCompositeTestBase {
 
   private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
   @Override
   public Stream<SszVector<?>> sszData() {
-    return SszVectorSchemaAbstractTest.complexVectorSchemas()
+    return SszVectorSchemaTestBase.complexVectorSchemas()
         .flatMap(
             vectorSchema ->
                 Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));

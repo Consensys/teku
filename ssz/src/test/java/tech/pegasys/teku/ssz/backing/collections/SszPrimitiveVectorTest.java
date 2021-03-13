@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.backing.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
 
-public class SszPrimitiveVectorTest implements SszMutablePrimitiveCollectionAbstractTest {
+public class SszPrimitiveVectorTest implements SszMutablePrimitiveCollectionTestBase {
 
   public Stream<SszPrimitiveVectorSchema<?, ?, ?>> sszSchemas() {
     return Stream.of(

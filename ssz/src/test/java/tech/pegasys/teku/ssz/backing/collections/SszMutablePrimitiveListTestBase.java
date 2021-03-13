@@ -21,12 +21,12 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.RandomSszDataGenerator;
-import tech.pegasys.teku.ssz.backing.SszListAbstractTest;
-import tech.pegasys.teku.ssz.backing.SszMutableCollectionAbstractTest;
+import tech.pegasys.teku.ssz.backing.SszListTestBase;
+import tech.pegasys.teku.ssz.backing.SszMutableCollectionTestBase;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 
-public interface SszMutablePrimitiveListAbstractTest
-    extends SszListAbstractTest, SszMutableCollectionAbstractTest {
+public interface SszMutablePrimitiveListTestBase
+    extends SszListTestBase, SszMutableCollectionTestBase {
 
   RandomSszDataGenerator generator = new RandomSszDataGenerator();
 

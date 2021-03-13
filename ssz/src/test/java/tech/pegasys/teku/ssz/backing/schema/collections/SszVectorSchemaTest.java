@@ -20,11 +20,11 @@ import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 
-public class SszVectorSchemaTest implements SszVectorSchemaAbstractTest {
+public class SszVectorSchemaTest implements SszVectorSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {
-    return SszVectorSchemaAbstractTest.complexVectorSchemas();
+    return SszVectorSchemaTestBase.complexVectorSchemas();
   }
 
   @Test

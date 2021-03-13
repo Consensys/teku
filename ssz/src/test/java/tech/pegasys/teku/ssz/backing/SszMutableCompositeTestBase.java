@@ -30,14 +30,14 @@ import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 
-public interface SszMutableCompositeAbstractTest extends SszCompositeAbstractTest {
+public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   SszSchema<?> NON_EXISTING_SCHEMA = SszUInt64ListSchema.create(9283496234L);
   SszData NON_EXISTING_SCHEMA_DATA = NON_EXISTING_SCHEMA.getDefault();
   RandomSszDataGenerator generator = new RandomSszDataGenerator();
 
   default Stream<Arguments> sszMutableCompositeArguments() {
-    return SszDataAbstractTest.passWhenEmpty(
+    return SszDataTestBase.passWhenEmpty(
         sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
   }
 
