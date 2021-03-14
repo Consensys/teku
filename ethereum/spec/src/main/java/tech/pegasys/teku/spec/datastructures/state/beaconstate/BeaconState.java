@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -21,8 +22,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -34,9 +38,8 @@ import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
-public interface BeaconState extends SszContainer {
+public interface BeaconState extends SszContainer, ValidatorStats {
 
-  // Versioning
   default UInt64 getGenesis_time() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME.name());
     return ((SszUInt64) get(fieldIndex)).get();
@@ -129,21 +132,6 @@ public interface BeaconState extends SszContainer {
         UInt64.class, getAny(fieldIndex), SszUInt64::new, AbstractSszPrimitive::get);
   }
 
-  // Attestations
-  default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
-  }
-
-  default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
-  }
-
   // Finality
   default SszBitvector getJustification_bits() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name());
@@ -173,10 +161,22 @@ public interface BeaconState extends SszContainer {
   }
 
   <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<E1, E2, E3> mutator) throws E1, E2, E3;
+      Mutator<MutableBeaconState, E1, E2, E3> mutator) throws E1, E2, E3;
 
-  interface Mutator<E1 extends Exception, E2 extends Exception, E3 extends Exception> {
+  interface Mutator<
+      TState extends MutableBeaconState,
+      E1 extends Exception,
+      E2 extends Exception,
+      E3 extends Exception> {
 
-    void mutate(MutableBeaconState state) throws E1, E2, E3;
+    void mutate(TState state) throws E1, E2, E3;
+  }
+
+  default Optional<BeaconStatePhase0> toVersionPhase0() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconStateAltair> toVersionAltair() {
+    return Optional.empty();
   }
 }

@@ -60,7 +60,6 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -827,24 +826,6 @@ public class BeaconStateUtil {
   @Deprecated
   public static UInt64 bytes_to_int64(Bytes data) {
     return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
-  }
-
-  @Deprecated
-  public static Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
-    final UInt64 slot = compute_start_slot_at_epoch(get_current_epoch(state)).minusMinZero(1);
-    // No previous block, use algorithm for calculating the genesis block root
-    return slot.equals(state.getSlot())
-        ? BeaconBlock.fromGenesisState(state).getRoot()
-        : get_block_root_at_slot(state, slot);
-  }
-
-  @Deprecated
-  public static Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
-    final UInt64 slot = compute_start_slot_at_epoch(get_previous_epoch(state)).minusMinZero(1);
-    return slot.equals(state.getSlot())
-        // No previous block, use algorithm for calculating the genesis block root
-        ? BeaconBlock.fromGenesisState(state).getRoot()
-        : get_block_root_at_slot(state, slot);
   }
 
   /**

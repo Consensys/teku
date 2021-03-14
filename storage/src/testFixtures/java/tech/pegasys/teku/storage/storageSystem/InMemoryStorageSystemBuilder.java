@@ -18,8 +18,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -35,6 +38,7 @@ public class InMemoryStorageSystemBuilder {
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
   private StoreConfig storeConfig = StoreConfig.createDefault();
+  private int numberOfValidators = 3;
   private long stateStorageFrequency = 1L;
 
   private Spec spec = SpecFactory.createMinimal();
@@ -74,7 +78,15 @@ public class InMemoryStorageSystemBuilder {
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
 
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig, spec);
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numberOfValidators);
+    return StorageSystem.create(
+        database,
+        createRestartSupplier(),
+        storageMode,
+        storeConfig,
+        spec,
+        ChainBuilder.create(spec, validatorKeys));
   }
 
   public InMemoryStorageSystemBuilder specProvider(final Spec spec) {
@@ -118,6 +130,11 @@ public class InMemoryStorageSystemBuilder {
   public InMemoryStorageSystemBuilder storeConfig(final StoreConfig storeConfig) {
     checkNotNull(storeConfig);
     this.storeConfig = storeConfig;
+    return this;
+  }
+
+  public InMemoryStorageSystemBuilder numberOfValidators(final int numberOfValidators) {
+    this.numberOfValidators = numberOfValidators;
     return this;
   }
 

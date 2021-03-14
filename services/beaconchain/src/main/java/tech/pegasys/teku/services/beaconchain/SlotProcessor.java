@@ -17,24 +17,18 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.BeaconStateUtil;
+import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessor {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
@@ -43,6 +37,7 @@ public class SlotProcessor {
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
+  private final EpochCachePrimer epochCachePrimer;
   private final EventLogger eventLog;
 
   private volatile UInt64 onTickSlotStart;
@@ -57,6 +52,7 @@ public class SlotProcessor {
       final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
+      final EpochCachePrimer epochCachePrimer,
       final EventLogger eventLogger) {
     this.spec = spec;
     this.recentChainData = recentChainData;
@@ -64,6 +60,7 @@ public class SlotProcessor {
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
+    this.epochCachePrimer = epochCachePrimer;
     this.eventLog = eventLogger;
   }
 
@@ -73,7 +70,8 @@ public class SlotProcessor {
       final ForwardSync syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
       final Eth2P2PNetwork p2pNetwork,
-      final SlotEventsChannel slotEventsChannelPublisher) {
+      final SlotEventsChannel slotEventsChannelPublisher,
+      final EpochCachePrimer epochCachePrimer) {
     this(
         spec,
         recentChainData,
@@ -81,6 +79,7 @@ public class SlotProcessor {
         forkChoiceTrigger,
         p2pNetwork,
         slotEventsChannelPublisher,
+        epochCachePrimer,
         EventLogger.EVENT_LOG);
   }
 
@@ -127,47 +126,8 @@ public class SlotProcessor {
   }
 
   private void processEpochPrecompute(final UInt64 epoch) {
-    final UInt64 firstSlot = spec.computeStartSlotAtEpoch(epoch);
-    onTickEpochPrecompute = firstSlot;
-    recentChainData
-        .getHeadBlock()
-        // Don't preprocess epoch if we're more than an epoch behind as we likely need to sync
-        .filter(
-            block ->
-                block
-                        .getSlot()
-                        .plus(spec.getSlotsPerEpoch(firstSlot))
-                        .isGreaterThanOrEqualTo(firstSlot)
-                    && block.getSlot().isLessThan(firstSlot))
-        .ifPresent(
-            headBlock ->
-                recentChainData
-                    .retrieveStateAtSlot(new SlotAndBlockRoot(firstSlot, headBlock.getRoot()))
-                    .finish(
-                        maybeState -> maybeState.ifPresent(this::primeEpochStateCaches),
-                        error -> LOG.warn("Failed to precompute epoch transition", error)));
-  }
-
-  private void primeEpochStateCaches(final BeaconState state) {
-    IntStream.range(0, spec.getSlotsPerEpoch(state.getSlot()))
-        .forEach(
-            slotInEpoch -> {
-              // Calculate all proposers
-              spec.getBeaconProposerIndex(state, state.getSlot().plus(slotInEpoch));
-
-              // Calculate committees for epoch + 1 (assume this epoch was already requested)
-              final BeaconStateUtil beaconStateUtil = spec.getBeaconStateUtil(state.getSlot());
-              final UInt64 nextEpoch = spec.getCurrentEpoch(state).plus(1);
-              final UInt64 nextEpochStartSlot = spec.computeStartSlotAtEpoch(nextEpoch);
-              final UInt64 committeeCount =
-                  beaconStateUtil.getCommitteeCountPerSlot(state, nextEpoch);
-              for (UInt64 index = UInt64.ZERO;
-                  index.isLessThan(committeeCount);
-                  index = index.increment()) {
-                beaconStateUtil.getBeaconCommittee(
-                    state, nextEpochStartSlot.plus(slotInEpoch), index);
-              }
-            });
+    onTickEpochPrecompute = spec.computeStartSlotAtEpoch(epoch);
+    epochCachePrimer.primeCacheForEpoch(epoch);
   }
 
   private void processSlotWhileSyncing() {

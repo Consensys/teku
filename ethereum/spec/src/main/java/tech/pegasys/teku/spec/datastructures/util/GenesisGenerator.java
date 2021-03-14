@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -57,8 +56,8 @@ public class GenesisGenerator {
 
   public GenesisGenerator(final SchemaDefinitions schemaDefinitions) {
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
-
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hashTreeRoot();
+    Bytes32 latestBlockRoot =
+        schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(

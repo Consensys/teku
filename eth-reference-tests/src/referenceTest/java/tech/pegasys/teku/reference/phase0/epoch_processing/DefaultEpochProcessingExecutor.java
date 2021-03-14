@@ -14,27 +14,32 @@
 package tech.pegasys.teku.reference.phase0.epoch_processing;
 
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
   private final EpochProcessor epochProcessor;
+  private final ValidatorStatusFactory validatorStatusFactory;
 
-  public DefaultEpochProcessingExecutor(final EpochProcessor epochProcessor) {
+  public DefaultEpochProcessingExecutor(
+      final EpochProcessor epochProcessor, final ValidatorStatusFactory validatorStatusFactory) {
     this.epochProcessor = epochProcessor;
+    this.validatorStatusFactory = validatorStatusFactory;
   }
 
   @Override
   public void processSlashings(final MutableBeaconState state) {
     epochProcessor.processSlashings(
-        state, ValidatorStatuses.create(state).getTotalBalances().getCurrentEpoch());
+        state,
+        validatorStatusFactory.createValidatorStatuses(state).getTotalBalances().getCurrentEpoch());
   }
 
   @Override
   public void processRegistryUpdates(final MutableBeaconState state)
       throws EpochProcessingException {
-    epochProcessor.processRegistryUpdates(state, ValidatorStatuses.create(state).getStatuses());
+    epochProcessor.processRegistryUpdates(
+        state, validatorStatusFactory.createValidatorStatuses(state).getStatuses());
   }
 
   @Override
@@ -45,13 +50,14 @@ public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
   @Override
   public void processRewardsAndPenalties(final MutableBeaconState state)
       throws EpochProcessingException {
-    epochProcessor.processRewardsAndPenalties(state, ValidatorStatuses.create(state));
+    epochProcessor.processRewardsAndPenalties(
+        state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
   @Override
   public void processJustificationAndFinalization(final MutableBeaconState state)
       throws EpochProcessingException {
     epochProcessor.processJustificationAndFinalization(
-        state, ValidatorStatuses.create(state).getTotalBalances());
+        state, validatorStatusFactory.createValidatorStatuses(state).getTotalBalances());
   }
 }

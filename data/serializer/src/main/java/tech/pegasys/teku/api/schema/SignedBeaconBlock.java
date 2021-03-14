@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import tech.pegasys.teku.spec.Spec;
 
 public class SignedBeaconBlock {
   public final BeaconBlock message;
@@ -40,10 +41,10 @@ public class SignedBeaconBlock {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock
-      asInternalSignedBeaconBlock() {
+  public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock asInternalSignedBeaconBlock(
+      final Spec spec) {
     return new tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock(
-        message.asInternalBeaconBlock(), signature.asInternalBLSSignature());
+        message.asInternalBeaconBlock(spec), signature.asInternalBLSSignature());
   }
 
   @Override

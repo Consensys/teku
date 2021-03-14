@@ -21,10 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 
 public class ProtoArray {
+  private static final Logger LOG = LogManager.getLogger();
 
   private int pruneThreshold;
 
@@ -52,10 +56,6 @@ public class ProtoArray {
    */
   private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
-  public Optional<Integer> getIndexByRoot(final Bytes32 root) {
-    return indices.get(root);
-  }
-
   ProtoArray(
       int pruneThreshold, UInt64 justifiedEpoch, UInt64 finalizedEpoch, UInt64 initialEpoch) {
     this.pruneThreshold = pruneThreshold;
@@ -70,6 +70,10 @@ public class ProtoArray {
 
   public boolean contains(final Bytes32 root) {
     return indices.contains(root);
+  }
+
+  public Optional<Integer> getIndexByRoot(final Bytes32 root) {
+    return indices.get(root);
   }
 
   public Optional<ProtoNode> getProtoNode(final Bytes32 root) {
@@ -137,14 +141,10 @@ public class ProtoArray {
   /**
    * Follows the best-descendant links to find the best-block (i.e., head-block).
    *
-   * <p>The result of this function is not guaranteed to be accurate if `onBlock` has been called
-   * without a subsequent `applyScoreChanges` call. This is because `onBlock` does not attempt to
-   * walk backwards through the tree and update the best child / best descendant links.
-   *
-   * @param justifiedRoot
-   * @return
+   * @param justifiedRoot the root of the justified checkpoint
+   * @return the best node according to fork choice
    */
-  public Bytes32 findHead(Bytes32 justifiedRoot) {
+  public ProtoNode findHead(Bytes32 justifiedRoot) {
     int justifiedIndex =
         indices
             .get(justifiedRoot)
@@ -160,12 +160,22 @@ public class ProtoArray {
     ProtoNode bestNode =
         checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
 
+    // Normally the best descendant index would point straight to chain head, but onBlock only
+    // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
+    // change back up and everything works, but we run findHead to determine if the new block should
+    // become the best head so need to follow down the chain.
+    while (bestNode.getBestDescendantIndex().isPresent()) {
+      bestDescendantIndex = bestNode.getBestDescendantIndex().get();
+      bestNode =
+          checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+    }
+
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode)) {
       throw new RuntimeException("ProtoArray: Best node is not viable for head");
     }
 
-    return bestNode.getBlockRoot();
+    return bestNode;
   }
 
   /**
@@ -291,8 +301,8 @@ public class ProtoArray {
    *       be removed.
    *   <li>The child is already the best child and the parent is updated with the new best
    *       descendant.
-   *   <li>The child is not the best child but becomes the best child. - The child is not the best
-   *       child and does not become the best child.
+   *   <li>The child is not the best child but becomes the best child.
+   *   <li>The child is not the best child and does not become the best child.
    * </ul>
    *
    * @param parentIndex
@@ -434,6 +444,26 @@ public class ProtoArray {
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
     indices.remove(blockRoot);
+  }
+
+  public void applyProposerWeighting(final ProposerWeighting weighting) {
+    Optional<Integer> nodeIndex = indices.get(weighting.getTargetRoot());
+    if (nodeIndex.isEmpty()) {
+      LOG.warn("Applying proposer weighting for unknown block root {}", weighting.getTargetRoot());
+      return;
+    }
+    while (nodeIndex.isPresent()) {
+      final ProtoNode protoNode = nodes.get(nodeIndex.get());
+
+      // Genesis block is fixed so we don't apply scores to it
+      if (protoNode.getBlockRoot().equals(Bytes32.ZERO)) {
+        break;
+      }
+
+      protoNode.adjustWeight(weighting.getWeight().longValue());
+      updateBestDescendantOfParent(protoNode, nodeIndex.get());
+      nodeIndex = protoNode.getParentIndex();
+    }
   }
 
   private void applyDeltas(final List<Long> deltas) {

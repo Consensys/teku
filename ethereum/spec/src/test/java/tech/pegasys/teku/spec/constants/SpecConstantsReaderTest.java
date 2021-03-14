@@ -214,12 +214,10 @@ public class SpecConstantsReaderTest {
   public static Stream<Arguments> getConstantsArgs() {
     return Stream.of(
         Arguments.of("mainnet", getStandardConfigPath("mainnet")),
-        Arguments.of("medalla", getStandardConfigPath("medalla")),
         Arguments.of("minimal", getStandardConfigPath("minimal")),
         Arguments.of("pyrmont", getStandardConfigPath("pyrmont")),
         Arguments.of("prater", getStandardConfigPath("prater")),
-        Arguments.of("swift", getStandardConfigPath("swift")),
-        Arguments.of("toledo", getStandardConfigPath("toledo")));
+        Arguments.of("swift", getStandardConfigPath("swift")));
   }
 
   private static String getInvalidConfigPath(final String name) {

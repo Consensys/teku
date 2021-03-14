@@ -62,12 +62,13 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.util.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.util.operationvalidators.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.util.operationvalidators.AttesterSlashingStateTransitionValidator;
-import tech.pegasys.teku.spec.util.operationvalidators.ProposerSlashingStateTransitionValidator;
-import tech.pegasys.teku.spec.util.operationvalidators.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -396,10 +397,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoice = ForkChoice.create(spec, forkChoiceExecutor, recentChainData);
-    forkChoiceTrigger =
-        ForkChoiceTrigger.create(
-            forkChoice, beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled());
+    final boolean balanceAttackMitigationEnabled =
+        beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled();
+    forkChoice =
+        ForkChoice.create(
+            spec, forkChoiceExecutor, recentChainData, balanceAttackMitigationEnabled);
+    forkChoiceTrigger = ForkChoiceTrigger.create(forkChoice, balanceAttackMitigationEnabled);
   }
 
   public void initMetrics() {
@@ -407,7 +410,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(
         SlotEventsChannel.class,
         new BeaconChainMetrics(
-            recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
+            spec, recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
   }
 
   public void initDepositProvider() {
@@ -585,7 +588,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService.getForwardSync(),
             forkChoiceTrigger,
             p2pNetwork,
-            slotEventsChannelPublisher);
+            slotEventsChannelPublisher,
+            new EpochCachePrimer(spec, recentChainData));
   }
 
   @VisibleForTesting

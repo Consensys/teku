@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -68,10 +69,10 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
 
-  public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
+  public static AnchorPoint fromGenesisState(final Spec spec, final BeaconState genesisState) {
     checkArgument(isGenesisState(genesisState), "Invalid genesis state supplied");
 
-    final BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(genesisState);
+    final BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedGenesisBlock =
         new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
@@ -82,9 +83,9 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(genesisCheckpoint, genesisState, signedGenesisBlock);
   }
 
-  public static AnchorPoint fromInitialState(final BeaconState state) {
+  public static AnchorPoint fromInitialState(final Spec spec, final BeaconState state) {
     if (isGenesisState(state)) {
-      return fromGenesisState(state);
+      return fromGenesisState(spec, state);
     } else {
       final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
 

@@ -45,7 +45,7 @@ public class ShuffleBenchmark {
   private final SpecConfiguration specConfiguration =
       SpecConfiguration.builder().constants(specConstants).build();
   private final Spec spec = Spec.create(specConfiguration);
-  private final tech.pegasys.teku.spec.util.CommitteeUtil committeeUtil =
+  private final tech.pegasys.teku.spec.logic.common.util.CommitteeUtil committeeUtil =
       spec.atSlot(UInt64.ZERO).getCommitteeUtil();
 
   public ShuffleBenchmark() {

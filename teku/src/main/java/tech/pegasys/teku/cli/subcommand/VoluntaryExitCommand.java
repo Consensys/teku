@@ -54,6 +54,7 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 @CommandLine.Command(
@@ -193,16 +194,13 @@ public class VoluntaryExitCommand implements Runnable {
     final AsyncRunnerFactory asyncRunnerFactory =
         new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
-    final OkHttpClient okHttpClient =
-        new OkHttpClient.Builder()
-            .readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS)
-            .build();
+
     apiClient =
         config
             .validatorClient()
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .map(endpoint -> new OkHttpValidatorRestApiClient(HttpUrl.get(endpoint), okHttpClient))
+            .map(this::buildHttpEndpoint)
             .orElseThrow();
 
     final Optional<tech.pegasys.teku.spec.datastructures.state.Fork> maybeFork = getFork();
@@ -240,6 +238,19 @@ public class VoluntaryExitCommand implements Runnable {
     if (validators.hasNoValidators()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
+    }
+  }
+
+  private OkHttpValidatorRestApiClient buildHttpEndpoint(final URI endpoint) {
+    {
+      HttpUrl apiEndpoint = HttpUrl.get(endpoint);
+      final OkHttpClient.Builder httpClientBuilder =
+          new OkHttpClient.Builder().readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS);
+      OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
+      // Strip any authentication info from the URL to ensure it doesn't get logged.
+      apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
+      final OkHttpClient okHttpClient = httpClientBuilder.build();
+      return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
     }
   }
 
