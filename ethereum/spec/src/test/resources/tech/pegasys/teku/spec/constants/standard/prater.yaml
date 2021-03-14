@@ -78,8 +78,8 @@ BLS_WITHDRAWAL_PREFIX: 0x00
 
 # Time parameters
 # ---------------------------------------------------------------
-# Customized for Prater: 1314388 seconds (Mar-16-2021 02:00:00 PM +UTC)
-GENESIS_DELAY: 1314388
+# Customized for Prater: 1919188 seconds (Mar-23-2021 02:00:00 PM +UTC)
+GENESIS_DELAY: 1919188
 # 12 seconds
 SECONDS_PER_SLOT: 12
 # 2**0 (= 1) slots 12 seconds
