@@ -40,7 +40,6 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "minimal", "swift", "pyrmont", "prater"})
-
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder(networkName).build();
