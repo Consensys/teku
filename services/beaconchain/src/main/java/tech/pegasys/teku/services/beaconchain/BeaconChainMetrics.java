@@ -181,17 +181,16 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "previous_epoch_total_weight",
             "Total effective balance of all active validators in the previous epoch");
 
-    final String versionLabel =
-        VersionProvider.IMPLEMENTATION_VERSION
-            .replaceAll("[\\.\\+]", "_")
-            .replaceAll("[^0-9A-Za-z_]", "");
+    final String version =
+        VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "").replaceAll("\\+.*$", "");
     final LabelledMetric<Counter> versionCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
             VersionProvider.CLIENT_IDENTITY + "_version",
             "Teku version in use",
-            versionLabel);
-    versionCounter.labels(versionLabel).inc();
+            "version",
+            "release");
+    versionCounter.labels(version, VersionProvider.IMPLEMENTATION_VERSION).inc();
   }
 
   @Override
