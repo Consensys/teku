@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
   
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
+- Added a labelled counter to metrics to display teku version, under `beacon_teku_version`. On startup the version being run will report as the label name, with a value of '1'.
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)
