@@ -53,6 +53,34 @@ public class SpecConstantsReaderTest {
   }
 
   @Test
+  public void read_multiFileFormat() throws Exception {
+    final InputStream phase0 =
+        getFileFromResourceAsStream(getStandardConfigPath("multifile/phase0"));
+    final InputStream altair =
+        getFileFromResourceAsStream(getStandardConfigPath("multifile/altair"));
+    reader.read(phase0);
+    reader.read(altair);
+    final SpecConstants result = reader.build();
+
+    assertThat(result).isNotNull();
+    assertAllAltairFieldsSet(result);
+  }
+
+  @Test
+  public void read_multiFileFormat_mismatchedDuplicateFields() throws Exception {
+    final InputStream phase0 =
+        getFileFromResourceAsStream(getInvalidConfigPath("multifile_dupFields/phase0"));
+    final InputStream altair =
+        getFileFromResourceAsStream(getInvalidConfigPath("multifile_dupFields/altair"));
+    reader.read(phase0);
+
+    assertThatThrownBy(() -> reader.read(altair))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Found duplicate declarations for spec constant 'MAX_COMMITTEES_PER_SLOT' with divergent values: '64' and '62'");
+  }
+
+  @Test
   public void read_mainnet() throws Exception {
     final SpecConstants constants = readMainnet();
     assertThat(constants).isNotNull();
