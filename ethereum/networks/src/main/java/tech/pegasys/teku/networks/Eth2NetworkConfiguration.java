@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
+import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
@@ -226,6 +227,8 @@ public class Eth2NetworkConfiguration {
           return applyMinimalNetworkDefaults();
         case PYRMONT:
           return applyPyrmontNetworkDefaults();
+        case PRATER:
+          return applyPraterNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
@@ -287,6 +290,17 @@ public class Eth2NetworkConfiguration {
               // Nimbus
               "enr:-LK4QA8FfhaAjlb_BXsXxSfiysR7R52Nhi9JBt4F8SPssu8hdE1BXQQEtVDC3qStCW60LSO7hEsVHv5zm8_6Vnjhcn0Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAN4aBKJc2VjcDI1NmsxoQJerDhsJ-KxZ8sHySMOCmTO6sHM3iCFQ6VMvLTe948MyYN0Y3CCI4yDdWRwgiOM",
               "enr:-LK4QKWrXTpV9T78hNG6s8AM6IO4XH9kFT91uZtFg1GcsJ6dKovDOr1jtAAFPnS2lvNltkOGA9k29BUN7lFh_sjuc9QBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhANAdd-Jc2VjcDI1NmsxoQLQa6ai7y9PMN5hpLe5HmiJSlYzMuzP7ZhwRiwHvqNXdoN0Y3CCI4yDdWRwgiOM");
+    }
+
+    public Builder applyPraterNetworkDefaults() {
+      return reset()
+          .constants(PRATER.constantsName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractAddress("0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b")
+          .eth1DepositContractDeployBlock(4367322)
+          .initialState(
+              "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
+          .discoveryBootnodes();
     }
 
     public Builder applyPyrmontNetworkDefaults() {
