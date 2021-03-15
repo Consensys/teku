@@ -44,6 +44,10 @@ public abstract class AbstractSszMutableCollection<
     SszCollectionSchema<?, ?> type = getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
+    int[] internalIdxs = new int[elementsPerChunk];
+    for (int i = 0; i < elementsPerChunk; i++) {
+      internalIdxs[i] = i;
+    }
 
     return newChildValues
         .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
@@ -54,20 +58,13 @@ public abstract class AbstractSszMutableCollection<
               int nodeIndex = e.getKey();
               List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
               long gIndex = type.getChildGeneralizedIndex(nodeIndex);
-              // optimization: when all packed values changed no need to retrieve original node to
-              // merge with
               if (nodeVals.size() == elementsPerChunk) {
-                int[] idxs = new int[elementsPerChunk];
-                int firstIdx = nodeVals.get(0).getKey();
-                for (int i = 0; i < elementsPerChunk; i++) {
-                  idxs[i] = firstIdx + i;
-                }
                 SszData[] newVals = new SszData[elementsPerChunk];
                 for (int i = 0; i < elementsPerChunk; i++) {
                   newVals[i] = nodeVals.get(i).getValue();
                 }
                 TreeNode newNode = elementType
-                    .updateBackingNode(LeafNode.EMPTY_LEAF, idxs, newVals);
+                    .updateBackingNode(LeafNode.EMPTY_LEAF, internalIdxs, newVals);
                 return new TreeUpdates.Update(gIndex, newNode);
               } else {
                 TreeNode node = original.get(gIndex);
