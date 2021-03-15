@@ -146,8 +146,14 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
+      final Spec spec = SpecFactory.create(constants);
+      // if the deposit contract was not set, default from constants
+      if (eth1DepositContractAddress.isEmpty()) {
+        eth1DepositContractAddress(
+            spec.getGenesisSpec().getConstants().getDepositContractAddress().toHexString());
+      }
       return new Eth2NetworkConfiguration(
-          SpecFactory.create(constants),
+          spec,
           constants,
           initialState,
           usingCustomInitialState,
