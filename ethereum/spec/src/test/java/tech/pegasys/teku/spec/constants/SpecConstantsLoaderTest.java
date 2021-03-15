@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec.constants;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllPhase0FieldsSet;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConstantsLoaderTest {
 
@@ -40,6 +43,28 @@ public class SpecConstantsLoaderTest {
   @Test
   public void shouldLoadMainnet() throws Exception {
     final SpecConstants constants = SpecConstantsLoader.loadConstants("mainnet");
+    assertAllAltairFieldsSet(constants);
+  }
+
+  @Test
+  public void shouldLoadMainnetFromFileUrl() throws Exception {
+    final URL url =
+        Constants.class
+            .getClassLoader()
+            .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml");
+    final SpecConstants constants = SpecConstantsLoader.loadConstants(url.toString());
+    assertAllPhase0FieldsSet(constants);
+  }
+
+  @Test
+  public void shouldLoadMainnetFromDirectoryUrl() throws Exception {
+    final String filePath =
+        Constants.class
+            .getClassLoader()
+            .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml")
+            .toString();
+    final String directoryPath = filePath.replace("/phase0.yaml", "");
+    final SpecConstants constants = SpecConstantsLoader.loadConstants(directoryPath);
     assertAllAltairFieldsSet(constants);
   }
 

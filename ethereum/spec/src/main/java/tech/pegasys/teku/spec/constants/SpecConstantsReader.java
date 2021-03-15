@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,13 +51,21 @@ public class SpecConstantsReader {
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 
-  public SpecConstants read(final InputStream source) throws IOException {
-    return readToBuilder(source).build();
+  final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
+  final HashMap<String, Object> seenValues = new HashMap<>();
+
+  public SpecConstants build() {
+    return constantsBuilder.build();
   }
 
-  public SpecConstantsBuilder readToBuilder(final InputStream source) throws IOException {
-    final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
+  public SpecConstants build(Consumer<SpecConstantsBuilder> modifier) {
+    modifier.accept(constantsBuilder);
+    return build();
+  }
+
+  public void read(final InputStream source) throws IOException {
     final Map<String, Object> rawValues = readValues(source);
+    processSeenValues(rawValues);
     final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
 
     // Process phase0 constants
@@ -85,7 +94,25 @@ public class SpecConstantsReader {
       final String unknownKeys = String.join(",", unprocessedConstants.keySet());
       throw new IllegalArgumentException("Detected unknown constants: " + unknownKeys);
     }
-    return constantsBuilder;
+  }
+
+  private void processSeenValues(final Map<String, Object> rawValues) {
+    if (seenValues.isEmpty()) {
+      seenValues.putAll(rawValues);
+      return;
+    }
+
+    for (String key : rawValues.keySet()) {
+      final Object newValue = rawValues.get(key);
+      final Object existingValue = seenValues.get(key);
+      if (existingValue != null && !Objects.equals(existingValue, newValue)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Found duplicate declarations for spec constant '%s' with divergent values: '%s' and '%s'",
+                key, existingValue, newValue));
+      }
+      seenValues.put(key, newValue);
+    }
   }
 
   @SuppressWarnings("unchecked")

@@ -14,59 +14,21 @@
 package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class ClasspathResourceLoader implements ResourceLoader {
+public class ClasspathResourceLoader extends ResourceLoader {
 
   private final Class<?> referenceClass;
-  private final Function<String, List<String>> nameToFilenameMapper;
-  private final Collection<String> availableResourceNames;
 
   public ClasspathResourceLoader(
-      final Class<?> referenceClass,
-      final Function<String, List<String>> nameToFilenameMapper,
-      final String... availableResourceNames) {
+      final Class<?> referenceClass, final Predicate<String> resourceFilter) {
+    super(resourceFilter);
     this.referenceClass = referenceClass;
-    this.nameToFilenameMapper = nameToFilenameMapper;
-    this.availableResourceNames = Set.of(availableResourceNames);
   }
 
   @Override
-  public Optional<InputStream> load(final String source) {
-    Optional<InputStream> resource = Optional.empty();
-    if (!availableResourceNames.contains(source)) {
-      return resource;
-    }
-
-    final List<String> filenameOptions = nameToFilenameMapper.apply(source);
-    for (String filenameOption : filenameOptions) {
-      resource = Optional.ofNullable(referenceClass.getResourceAsStream(filenameOption));
-      if (resource.isPresent()) {
-        break;
-      }
-    }
-
-    return resource;
-  }
-
-  @Override
-  public List<InputStream> loadAll(final String source) {
-    List<InputStream> resources = new ArrayList<>();
-    if (!availableResourceNames.contains(source)) {
-      return resources;
-    }
-
-    final List<String> filenameOptions = nameToFilenameMapper.apply(source);
-    for (String filenameOption : filenameOptions) {
-      Optional.ofNullable(referenceClass.getResourceAsStream(filenameOption))
-          .ifPresent(resources::add);
-    }
-
-    return resources;
+  Optional<InputStream> loadSource(final String source) {
+    return Optional.ofNullable(referenceClass.getResourceAsStream(source));
   }
 }

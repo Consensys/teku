@@ -13,57 +13,57 @@
 
 package tech.pegasys.teku.spec.constants;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConstantsLoader {
 
   public static SpecConstants loadConstants(final String constants) {
-    try (final InputStream inputStream = createInputStream(constants)) {
-      final SpecConstantsReader reader = new SpecConstantsReader();
-      return reader.read(inputStream);
+    final SpecConstantsReader reader = new SpecConstantsReader();
+    processConstants(constants, reader::read);
+    return reader.build();
+  }
+
+  static void processConstants(final String source, final InputStreamProcessor processor) {
+    // TODO(#3394) - move Constants resources from util to this module
+    final ResourceLoader loader =
+        ResourceLoader.classpathUrlOrFile(
+            Constants.class, s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+
+    try {
+      // Try to load single file format
+      final Optional<InputStream> singleFileInput = loader.load(source + ".yaml", source);
+      if (singleFileInput.isPresent()) {
+        processor.process(singleFileInput.get());
+        return;
+      }
+
+      // Otherwise, try multi-file format
+      // Phase0 is required
+      final InputStream phase0Input =
+          loader
+              .load(source + File.separator + "phase0.yaml", source + File.separator + "phase0.yml")
+              .orElseThrow(
+                  () -> new FileNotFoundException("Could not load constants from " + source));
+      processor.process(phase0Input);
+      // Altair is optional
+      final Optional<InputStream> altairInput =
+          loader.load(
+              source + File.separator + "altair.yaml", source + File.separator + "altair.yml");
+      if (altairInput.isPresent()) {
+        processor.process(altairInput.get());
+      }
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load constants", e);
     }
   }
 
-  static InputStream createInputStream(final String source) throws IOException {
-    // TODO(#3394) - move Constants resources from util to this module
-    final List<InputStream> inputStreams =
-        ResourceLoader.classpathUrlOrFile(
-                Constants.class,
-                name -> List.of(name + ".yaml", name + "/phase0.yaml", name + "/altair.yaml"),
-                networkOptions())
-            .loadAll(source);
-
-    if (inputStreams.isEmpty()) {
-      throw new FileNotFoundException("Could not load constants from " + source);
-    }
-
-    // Make sure we have newline separators between input streams
-    final List<InputStream> inputStreamsWithNewLines = new ArrayList<>();
-    for (InputStream inputStream : inputStreams) {
-      inputStreamsWithNewLines.add(inputStream);
-      inputStreamsWithNewLines.add(new ByteArrayInputStream("\n".getBytes(UTF_8)));
-    }
-    return new SequenceInputStream(Collections.enumeration(inputStreamsWithNewLines));
-  }
-
-  private static String[] networkOptions() {
-    return Arrays.stream(Eth2Network.values())
-        .map(Eth2Network::constantsName)
-        .toArray(String[]::new);
+  interface InputStreamProcessor {
+    void process(InputStream inputStream) throws IOException;
   }
 }

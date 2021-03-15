@@ -28,7 +28,8 @@ class FallbackResourceLoaderTest {
   private final ResourceLoader loader1 = mock(ResourceLoader.class);
   private final ResourceLoader loader2 = mock(ResourceLoader.class);
 
-  private final ResourceLoader fallbackLoader = new FallbackResourceLoader(loader1, loader2);
+  private final ResourceLoader fallbackLoader =
+      new FallbackResourceLoader(__ -> true, loader1, loader2);
 
   @Test
   public void shouldLoadFromFirstLoaderIfBothCouldLoad() throws Exception {

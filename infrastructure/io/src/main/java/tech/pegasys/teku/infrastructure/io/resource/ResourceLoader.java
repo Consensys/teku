@@ -15,45 +15,57 @@ package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
-public interface ResourceLoader {
+public abstract class ResourceLoader {
+  private final Predicate<String> sourceFilter;
 
-  static ResourceLoader urlOrFile() {
-    return new FallbackResourceLoader(new URLResourceLoader(), new FileResourceLoader());
+  protected ResourceLoader(final Predicate<String> sourceFilter) {
+    this.sourceFilter = sourceFilter;
   }
 
-  static ResourceLoader classpathUrlOrFile(
-      final Class<?> referenceClass,
-      final Function<String, List<String>> nameToFilenameMapper,
-      final String... availableResourceNames) {
+  public static ResourceLoader urlOrFile() {
+    return urlOrFile(__ -> true);
+  }
+
+  public static ResourceLoader urlOrFile(final Predicate<String> sourceFilter) {
     return new FallbackResourceLoader(
-        new ClasspathResourceLoader(referenceClass, nameToFilenameMapper, availableResourceNames),
-        new URLResourceLoader(),
-        new FileResourceLoader());
+        sourceFilter, new URLResourceLoader(sourceFilter), new FileResourceLoader(sourceFilter));
   }
 
-  Optional<InputStream> load(String source) throws IOException;
-
-  /**
-   * Where multiple matching input streams are found, return all values as a list
-   *
-   * @param source Where to look for the resource
-   * @return A list of matching resources
-   * @throws IOException
-   */
-  default List<InputStream> loadAll(String source) throws IOException {
-    final List<InputStream> streams = new ArrayList<>();
-    load(source).ifPresent(streams::add);
-    return streams;
+  public static ResourceLoader classpathUrlOrFile(
+      final Class<?> referenceClass, final Predicate<String> sourceFilter) {
+    return new FallbackResourceLoader(
+        sourceFilter,
+        new ClasspathResourceLoader(referenceClass, sourceFilter),
+        new URLResourceLoader(sourceFilter),
+        new FileResourceLoader(sourceFilter));
   }
 
-  default Optional<Bytes> loadBytes(String source) throws IOException {
-    final Optional<InputStream> maybeStream = load(source);
+  public Optional<InputStream> load(final String... sources) throws IOException {
+    final List<String> validSources =
+        Arrays.stream(sources).filter(sourceFilter).collect(Collectors.toList());
+
+    Optional<InputStream> result = Optional.empty();
+    for (String validSource : validSources) {
+      result = loadSource(validSource);
+      if (result.isPresent()) {
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  abstract Optional<InputStream> loadSource(String source) throws IOException;
+
+  public Optional<Bytes> loadBytes(String... sources) throws IOException {
+    final Optional<InputStream> maybeStream = load(sources);
     if (maybeStream.isEmpty()) {
       return Optional.empty();
     }

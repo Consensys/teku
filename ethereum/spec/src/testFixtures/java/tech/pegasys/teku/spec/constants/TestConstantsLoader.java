@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.spec.constants;
 
-import java.io.IOException;
-import java.io.InputStream;
+import static tech.pegasys.teku.spec.constants.SpecConstantsLoader.processConstants;
+
+import java.util.function.Consumer;
 
 public class TestConstantsLoader {
-  public static SpecConstantsBuilder loadConstantsBuilder(final String constants) {
-    try (final InputStream inputStream = SpecConstantsLoader.createInputStream(constants)) {
-      final SpecConstantsReader reader = new SpecConstantsReader();
-      return reader.readToBuilder(inputStream);
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants", e);
-    }
+  public static SpecConstants loadConstants(
+      final String constants, final Consumer<SpecConstantsBuilder> modifier) {
+    final SpecConstantsReader reader = new SpecConstantsReader();
+    processConstants(constants, reader::read);
+    return reader.build(modifier);
   }
 }

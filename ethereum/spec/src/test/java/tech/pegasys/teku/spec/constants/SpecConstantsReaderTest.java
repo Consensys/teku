@@ -34,8 +34,9 @@ public class SpecConstantsReaderTest {
   @MethodSource("getConstantsArgs")
   public void read_standardConfigs(final String network, final String filePath) throws Exception {
     final InputStream inputStream = getFileFromResourceAsStream(filePath);
+    reader.read(inputStream);
+    final SpecConstants result = reader.build();
 
-    final SpecConstants result = reader.read(inputStream);
     assertThat(result).isNotNull();
     assertAllPhase0FieldsSet(result);
   }
@@ -44,8 +45,9 @@ public class SpecConstantsReaderTest {
   public void read_altair() throws Exception {
     final InputStream inputStream =
         getFileFromResourceAsStream(getStandardConfigPath("mainnetAltair"));
+    reader.read(inputStream);
+    final SpecConstants result = reader.build();
 
-    final SpecConstants result = reader.read(inputStream);
     assertThat(result).isNotNull();
     assertAllAltairFieldsSet(result);
   }
@@ -86,10 +88,11 @@ public class SpecConstantsReaderTest {
   }
 
   @Test
-  public void read_missingConstants() {
+  public void read_missingConstants() throws Exception {
     final String path = getInvalidConfigPath("missingChurnLimit");
     final InputStream stream = getFileFromResourceAsStream(path);
-    assertThatThrownBy(() -> reader.read(stream))
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'MIN_PER_EPOCH_CHURN_LIMIT'");
   }
@@ -98,7 +101,8 @@ public class SpecConstantsReaderTest {
   public void read_missingAltairConstant() throws IOException {
     final String path = getInvalidConfigPath("missingAltairField");
     final InputStream stream = getFileFromResourceAsStream(path);
-    assertThatThrownBy(() -> reader.read(stream))
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }
@@ -113,10 +117,11 @@ public class SpecConstantsReaderTest {
   }
 
   @Test
-  public void read_almostEmptyFile() {
+  public void read_almostEmptyFile() throws Exception {
     final String path = getInvalidConfigPath("almostEmpty");
     final InputStream stream = getFileFromResourceAsStream(path);
-    assertThatThrownBy(() -> reader.read(stream))
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant");
   }
@@ -227,8 +232,10 @@ public class SpecConstantsReaderTest {
   }
 
   private SpecConstants readConstants(final String path) throws IOException {
+    final SpecConstantsReader reader = new SpecConstantsReader();
     final InputStream stream = getFileFromResourceAsStream(path);
-    return reader.read(stream);
+    reader.read(stream);
+    return reader.build();
   }
 
   public static Stream<Arguments> getConstantsArgs() {
