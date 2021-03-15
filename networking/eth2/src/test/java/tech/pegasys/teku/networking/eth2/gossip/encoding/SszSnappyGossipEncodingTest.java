@@ -35,7 +35,7 @@ public class SszSnappyGossipEncodingTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final GossipEncoding encoding = createEncoding();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconStateSchema beaconStateSchema =
+  private final BeaconStateSchema<?, ?> beaconStateSchema =
       spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
   private GossipEncoding createEncoding() {

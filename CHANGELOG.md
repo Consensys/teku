@@ -14,10 +14,14 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 - Binary downloads have been transitioned from Bintray to Cloudsmith.  Please ensure you use links in the documentation or release notes.
   Ansible users should ensure they have the latest version of the ansible role.
+- Removed support for the no longer active Medalla and Toledo test networks.
   
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
+- Added a labelled counter to metrics to display teku version and release, under `beacon_teku_version`. On startup the version being run will report as the label 'version' and the full release as the label 'release', each with a value of '1'.
 
 ### Bug Fixes
-- Reduced verbosity of warning message when SIGHUP can't be interecepted (e.g. on Windows)
+- Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)
 - Fixed build failure when checked out as a shallow clone. Shallow clones are still not recommended as the version number cannot be determined correctly.
+- Logs generated during voluntary exit command processing should no longer contain usernames or passwords.
+- Fixed case where sync could stall when switching to a new target chain that is shorter than the previous target.

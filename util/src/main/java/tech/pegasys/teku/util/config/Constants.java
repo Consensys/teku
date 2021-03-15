@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "medalla", "toledo", "pyrmont", "less-swift");
+      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "less-swift");
 
   @Deprecated public static String CONFIG_NAME;
 

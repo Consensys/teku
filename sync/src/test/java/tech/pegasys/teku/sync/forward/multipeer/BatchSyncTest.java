@@ -673,6 +673,49 @@ class BatchSyncTest {
   }
 
   @Test
+  void shouldRestartSyncFromCommonAncestorWhenNewChainShorterThanCurrentBatches() {
+    // Start sync to first chain
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(5);
+    final Batch batch0 = batches.get(0);
+    final Batch batch4 = batches.get(4);
+    batches.clearBatchList();
+
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(batch4.getLastSlot().minus(2), dataStructureUtil.randomBytes32()),
+            syncSource);
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
+
+    // There's no way the new chain extends the previous one so it should start from scratch
+    assertThat(batches).hasSize(5);
+    assertThat(batches.get(0)).isNotEqualTo(batch0);
+    assertThat(secondSyncResult).isNotDone();
+  }
+
+  @Test
+  void shouldFailSyncWhenFindingNewCommonAncestorFailsAfterSwitchingChains() {
+    // Start sync to first chain
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(5);
+    final Batch batch4 = batches.get(4);
+
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(batch4.getLastSlot().minus(2), dataStructureUtil.randomBytes32()),
+            syncSource);
+    when(commonAncestor.findCommonAncestor(targetChain))
+        .thenReturn(
+            SafeFuture.failedFuture(new RuntimeException("Failed to find new common ancestor")));
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
+    assertThat(secondSyncResult).isCompletedExceptionally();
+  }
+
+  @Test
   void shouldRestartSyncFromCommonAncestorWhenBatchFromNewChainDoesNotLineUp() {
     // Start sync to first chain
     final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);

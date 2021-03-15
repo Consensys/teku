@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -166,5 +167,21 @@ public class ProtoNode {
         getParentIndex(),
         getBestChildIndex(),
         getBestDescendantIndex());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("blockSlot", blockSlot)
+        .add("stateRoot", stateRoot)
+        .add("blockRoot", blockRoot)
+        .add("parentRoot", parentRoot)
+        .add("justifiedEpoch", justifiedEpoch)
+        .add("finalizedEpoch", finalizedEpoch)
+        .add("weight", weight)
+        .add("parentIndex", parentIndex)
+        .add("bestChildIndex", bestChildIndex)
+        .add("bestDescendantIndex", bestDescendantIndex)
+        .toString();
   }
 }

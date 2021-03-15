@@ -52,7 +52,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockMetadataStore;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
@@ -98,7 +97,7 @@ class Store implements UpdatableStore {
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   final Map<UInt64, VoteTracker> votes;
-  private ProtoArrayForkChoiceStrategy forkChoiceStrategy;
+  private ForkChoiceStrategy forkChoiceStrategy;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -188,9 +187,9 @@ class Store implements UpdatableStore {
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
 
-    final Optional<ProtoArrayForkChoiceStrategy> maybeForkChoiceStrategy =
+    final Optional<ForkChoiceStrategy> maybeForkChoiceStrategy =
         buildProtoArray(blockInfoByRoot, initialCheckpoint, justifiedCheckpoint, finalizedAnchor)
-            .map(ProtoArrayForkChoiceStrategy::initialize);
+            .map(ForkChoiceStrategy::initialize);
 
     final BlockMetadataStore blockMetadataStore =
         maybeForkChoiceStrategy
@@ -234,9 +233,8 @@ class Store implements UpdatableStore {
             blocks,
             checkpointStateTaskQueue);
     if (maybeForkChoiceStrategy.isEmpty()) {
-      final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-          ProtoArrayForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel)
-              .join();
+      final ForkChoiceStrategy forkChoiceStrategy =
+          ForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel).join();
       store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {

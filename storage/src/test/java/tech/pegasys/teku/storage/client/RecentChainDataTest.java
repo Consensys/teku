@@ -42,7 +42,6 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
@@ -147,7 +146,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
@@ -167,7 +166,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
@@ -189,7 +188,7 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(anchor.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint
             .getBlockSlot()
@@ -998,8 +997,7 @@ class RecentChainDataTest {
   }
 
   private void disableForkChoicePruneThreshold() {
-    ((ProtoArrayForkChoiceStrategy) recentChainData.getForkChoiceStrategy().orElseThrow())
-        .setPruneThreshold(0);
+    recentChainData.getForkChoiceStrategy().orElseThrow().setPruneThreshold(0);
   }
 
   private long getReorgCountMetric(final StorageSystem storageSystem) {

@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -59,13 +57,13 @@ class ForkChoiceTest {
       InMemoryStorageSystemBuilder.create()
           .storageMode(StateStorageMode.PRUNE)
           .specProvider(spec)
+          .numberOfValidators(16)
           .build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final ForkChoice forkChoice =
-      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+  private ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
 
   @BeforeEach
   public void setup() {
@@ -73,7 +71,7 @@ class ForkChoiceTest {
 
     storageSystem
         .chainUpdater()
-        .setTime(genesis.getState().getGenesis_time().plus(10L * SECONDS_PER_SLOT));
+        .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
   }
 
   @Test
@@ -125,32 +123,89 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain() {
+    forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData, true);
+
+    final ChainBuilder chainB = chainBuilder.fork();
+    final SignedBlockAndState chainBBlock1 =
+        chainB.generateBlockAtSlot(
+            ONE,
+            BlockOptions.create()
+                .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
+    final SignedBlockAndState chainABlock1 = chainBuilder.generateBlockAtSlot(1);
+
+    // All blocks received late for slot 1
+    forkChoice.onBlocksDueForSlot(ONE);
+
+    importBlock(chainABlock1);
+    importBlock(chainBBlock1);
+
+    // At this point fork choice is tied with no votes for either chain
+    // The winner is the block with the greatest hash which is hard to control.
+    // So just find which block won and check that we can switch forks based on proposer reward
+    final SignedBlockAndState expectedChainHead;
+    if (recentChainData.getChainHead().orElseThrow().getRoot().equals(chainABlock1.getRoot())) {
+      // ChainA won, so try to switch to chain B
+      expectedChainHead = chainB.generateBlockAtSlot(3);
+    } else {
+      // ChainB won so try to switch to chain A
+      expectedChainHead = chainBuilder.generateBlockAtSlot(3);
+    }
+
+    importBlock(expectedChainHead);
+    // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
+    assertThat(recentChainData.getBestBlockRoot()).contains(expectedChainHead.getRoot());
+  }
+
+  @Test
   void onBlock_shouldUpdateVotesBasedOnAttestationsInBlocks() {
     final ChainBuilder forkChain = chainBuilder.fork();
-    final SignedBlockAndState forkBlock =
+    final SignedBlockAndState forkBlock1 =
         forkChain.generateBlockAtSlot(
             ONE,
             BlockOptions.create()
                 .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
-    final List<SignedBlockAndState> betterChain = chainBuilder.generateBlocksUpToSlot(3);
+    final SignedBlockAndState betterBlock1 = chainBuilder.generateBlockAtSlot(1);
 
-    importBlock(forkBlock);
-    // Should automatically follow the fork
-    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
+    importBlock(forkBlock1);
+    // Should automatically follow the fork as its the first child block
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock1.getRoot());
 
-    betterChain.forEach(this::importBlock);
+    // Add an attestation for the fork so that it initially has higher weight
+    // Otherwise ties are split based on the hash which is too hard to control in the test
+    final BlockOptions forkBlockOptions = BlockOptions.create();
+    forkChain
+        .streamValidAttestationsWithTargetBlock(forkBlock1)
+        .limit(1)
+        .forEach(forkBlockOptions::addAttestation);
+    final SignedBlockAndState forkBlock2 =
+        forkChain.generateBlockAtSlot(forkBlock1.getSlot().plus(1), forkBlockOptions);
+    importBlock(forkBlock2);
+
+    // The fork is still the only option so gets selected
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Now import what will become the canonical chain
+    importBlock(betterBlock1);
+    // Process head to ensure we clear any additional proposer weighting for this first block.
+    // Should still pick forkBlock as it's the best option even though we have a competing chain
+    processHead(ONE);
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // Import a block with two attestations which makes this chain better than the fork
     final BlockOptions options = BlockOptions.create();
     chainBuilder
-        .streamValidAttestationsForBlockAtSlot(UInt64.valueOf(4))
-        .limit(3)
+        .streamValidAttestationsWithTargetBlock(betterBlock1)
+        .limit(2)
         .forEach(options::addAttestation);
     final SignedBlockAndState blockWithAttestations =
-        chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), options);
     importBlock(blockWithAttestations);
-    // Haven't run fork choice so won't have re-orged yet
-    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
-    // Should have processed the attestations and switched to this fork
+    // Haven't run fork choice so won't have re-orged yet - fork still has more applied votes
+    assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock2.getRoot());
+
+    // When attestations are applied we should switch away from the fork to our better chain
     processHead(blockWithAttestations.getSlot());
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
@@ -224,7 +279,7 @@ class ForkChoiceTest {
             Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(5),
             new AttestationData(
                 targetBlock.getSlot(),
-                compute_epoch_at_slot(targetBlock.getSlot()),
+                spec.computeEpochAtSlot(targetBlock.getSlot()),
                 targetBlock.getRoot(),
                 targetBlock.getState().getCurrent_justified_checkpoint(),
                 targetCheckpoint),
@@ -254,7 +309,7 @@ class ForkChoiceTest {
                     targetBlock.getRoot(),
                     recentChainData.getStore().getJustifiedCheckpoint(),
                     new Checkpoint(
-                        compute_epoch_at_slot(updatedAttestationSlot), targetBlock.getRoot())),
+                        spec.computeEpochAtSlot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
     updatedVote.setIndexedAttestation(
         new IndexedAttestation(
@@ -277,7 +332,7 @@ class ForkChoiceTest {
     assertBlockImportedSuccessfully(result);
   }
 
-  private void processHead(final UInt64 one) {
-    assertThat(forkChoice.processHead(one)).isCompleted();
+  private void processHead(final UInt64 slot) {
+    assertThat(forkChoice.processHead(slot)).isCompleted();
   }
 }

@@ -40,13 +40,13 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -80,6 +80,7 @@ import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
@@ -119,6 +120,12 @@ public final class DataStructureUtil {
 
   public long randomLong() {
     return new Random(nextSeed()).nextLong();
+  }
+
+  public byte randomByte() {
+    final byte[] bytes = new byte[1];
+    new Random(nextSeed()).nextBytes(bytes);
+    return bytes[0];
   }
 
   public UInt64 randomUInt64() {
@@ -171,6 +178,10 @@ public final class DataStructureUtil {
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszvector.set(toIntExact(i), valueGenerator.get()));
     return sszvector;
+  }
+
+  public SszByte randomSszByte() {
+    return new SszByte(randomByte());
   }
 
   public SszBitlist randomBitlist() {
@@ -369,6 +380,16 @@ public final class DataStructureUtil {
     final BeaconBlockAndState blockAndState =
         randomBlockAndState(slot, randomBeaconState(slot), parentRoot);
 
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(final BeaconState state) {
+    final BeaconBlockAndState blockAndState = randomBlockAndState(state);
+
+    return toSigned(blockAndState);
+  }
+
+  public SignedBlockAndState toSigned(BeaconBlockAndState blockAndState) {
     final SignedBeaconBlock signedBlock =
         new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
@@ -380,11 +401,11 @@ public final class DataStructureUtil {
 
   public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
     final BeaconState state = randomBeaconState(slot);
-    return randomBlockAndState(slot, state);
+    return randomBlockAndState(state);
   }
 
-  private BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
-    return randomBlockAndState(slot, state, randomBytes32());
+  public BeaconBlockAndState randomBlockAndState(final BeaconState state) {
+    return randomBlockAndState(state.getSlot(), state, randomBytes32());
   }
 
   private BeaconBlockAndState randomBlockAndState(
@@ -429,33 +450,44 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
-    return new BeaconBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomSSZList(
-            ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing, 1),
-        randomSSZList(
-            AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing, 1),
-        randomSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation, 3),
-        randomSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex, 1),
-        randomSSZList(
-            SignedVoluntaryExit.class, getMaxVoluntaryExits(), this::randomSignedVoluntaryExit, 1));
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            randomSignature(),
+            randomEth1Data(),
+            Bytes32.ZERO,
+            randomSSZList(
+                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing, 1),
+            randomSSZList(
+                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing, 1),
+            randomSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation, 3),
+            randomSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex, 1),
+            randomSSZList(
+                SignedVoluntaryExit.class,
+                getMaxVoluntaryExits(),
+                this::randomSignedVoluntaryExit,
+                1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
-    return new BeaconBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomFullSSZList(
-            ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing),
-        randomFullSSZList(
-            AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing),
-        randomFullSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation),
-        randomFullSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex),
-        randomFullSSZList(
-            SignedVoluntaryExit.class, getMaxVoluntaryExits(), this::randomSignedVoluntaryExit));
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            randomSignature(),
+            randomEth1Data(),
+            Bytes32.ZERO,
+            randomFullSSZList(
+                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing),
+            randomFullSSZList(
+                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing),
+            randomFullSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation),
+            randomFullSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex),
+            randomFullSSZList(
+                SignedVoluntaryExit.class,
+                getMaxVoluntaryExits(),
+                this::randomSignedVoluntaryExit));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -618,15 +650,20 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists).build();
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists).build();
   }
 
-  public BeaconStateBuilder stateBuilder() {
-    return BeaconStateBuilder.create(this, spec, 10, 10);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0() {
+    return BeaconStateBuilderPhase0.create(this, spec, 10, 10);
   }
 
-  public BeaconStateBuilder stateBuilder(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilder.create(this, spec, validatorCount, numItemsInSSZLists);
+  public BeaconStateBuilderPhase0 stateBuilderPhase0(
+      final int validatorCount, final int numItemsInSSZLists) {
+    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderAltair stateBuilderAltair() {
+    return BeaconStateBuilderAltair.create(this, spec, 10, 10);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -651,7 +688,7 @@ public final class DataStructureUtil {
             UInt64.ZERO,
             anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
-            new BeaconBlockBody());
+            spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
 

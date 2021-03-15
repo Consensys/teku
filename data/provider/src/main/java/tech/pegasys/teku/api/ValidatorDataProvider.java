@@ -32,7 +32,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -124,7 +124,7 @@ public class ValidatorDataProvider {
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
     return validatorApiChannel
-        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
+        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
         .thenApply(
             result -> {
               int responseCode;
