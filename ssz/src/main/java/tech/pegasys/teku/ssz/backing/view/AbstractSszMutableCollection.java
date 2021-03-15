@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,38 +45,46 @@ public abstract class AbstractSszMutableCollection<
     SszCollectionSchema<?, ?> type = getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
+
+    List<Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
     int[] internalIdxs = new int[elementsPerChunk];
-    for (int i = 0; i < elementsPerChunk; i++) {
-      internalIdxs[i] = i;
+    SszData[] newVals = new SszData[elementsPerChunk];
+    int nodeUpdatesCount = 0;
+    int prevChildNodeIndex = 0;
+    List<Long> gIndexes = new ArrayList<>();
+    List<TreeNode> newValues = new ArrayList<>();
+    for (int i = 0; i < newChildren.size(); i++) {
+      Entry<Integer, SszElementT> entry = newChildren.get(i);
+      int childIndex = entry.getKey();
+      int childNodeIndex = childIndex / elementsPerChunk;
+
+      if (childNodeIndex != prevChildNodeIndex && nodeUpdatesCount > 0) {
+        long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
+        TreeNode originalNode =
+            nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
+        TreeNode newNode = elementType
+            .updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
+        newValues.add(newNode);
+        gIndexes.add(gIndex);
+        nodeUpdatesCount = 0;
+        prevChildNodeIndex = childNodeIndex;
+      }
+
+      internalIdxs[nodeUpdatesCount] = childIndex % elementsPerChunk;
+      newVals[nodeUpdatesCount] = entry.getValue();
+      nodeUpdatesCount++;
     }
 
-    return newChildValues
-        .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
-        .entrySet()
-        .stream()
-        .map(
-            e -> {
-              int nodeIndex = e.getKey();
-              List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
-              long gIndex = type.getChildGeneralizedIndex(nodeIndex);
-              if (nodeVals.size() == elementsPerChunk) {
-                SszData[] newVals = new SszData[elementsPerChunk];
-                for (int i = 0; i < elementsPerChunk; i++) {
-                  newVals[i] = nodeVals.get(i).getValue();
-                }
-                TreeNode newNode = elementType
-                    .updateBackingNode(LeafNode.EMPTY_LEAF, internalIdxs, newVals);
-                return new TreeUpdates.Update(gIndex, newNode);
-              } else {
-                TreeNode node = original.get(gIndex);
-                for (Map.Entry<Integer, SszElementT> entry : nodeVals) {
-                  node =
-                      elementType.updateBackingNode(
-                          node, entry.getKey() % elementsPerChunk, entry.getValue());
-                }
-                return new TreeUpdates.Update(gIndex, node);
-              }
-            })
-        .collect(TreeUpdates.collector());
+    if (nodeUpdatesCount > 0) {
+      long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
+      TreeNode originalNode =
+          nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
+      TreeNode newNode = elementType
+          .updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
+      newValues.add(newNode);
+      gIndexes.add(gIndex);
+    }
+
+    return new TreeUpdates(gIndexes, newValues);
   }
 }
