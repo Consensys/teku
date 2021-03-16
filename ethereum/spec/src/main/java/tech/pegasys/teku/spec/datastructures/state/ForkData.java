@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
