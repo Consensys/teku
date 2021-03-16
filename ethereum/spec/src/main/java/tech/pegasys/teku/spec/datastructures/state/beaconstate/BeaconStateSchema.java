@@ -19,15 +19,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.backing.schema.SszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
 
 public interface BeaconStateSchema<T extends BeaconState, TMutable extends MutableBeaconState>
     extends SszContainerSchema<T> {

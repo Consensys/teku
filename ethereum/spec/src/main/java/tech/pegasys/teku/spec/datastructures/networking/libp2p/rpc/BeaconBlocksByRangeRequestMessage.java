@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public final class BeaconBlocksByRangeRequestMessage
     extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>

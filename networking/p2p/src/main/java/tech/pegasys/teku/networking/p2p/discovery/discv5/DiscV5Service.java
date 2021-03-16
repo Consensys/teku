@@ -35,8 +35,8 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscV5Service extends Service implements DiscoveryService {

@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public enum BeaconStateFields {

@@ -25,14 +25,14 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
 
 @SuppressWarnings("unchecked")
 abstract class AbstractBeaconStateBuilder<

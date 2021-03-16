@@ -39,8 +39,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @Command(

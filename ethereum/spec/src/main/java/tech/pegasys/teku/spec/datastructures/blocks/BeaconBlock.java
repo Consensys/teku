@@ -21,13 +21,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container5;
+import tech.pegasys.teku.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public final class BeaconBlock

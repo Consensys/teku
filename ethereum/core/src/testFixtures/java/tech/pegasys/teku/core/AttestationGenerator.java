@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 public class AttestationGenerator {
   private final Spec spec;

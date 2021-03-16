@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
 

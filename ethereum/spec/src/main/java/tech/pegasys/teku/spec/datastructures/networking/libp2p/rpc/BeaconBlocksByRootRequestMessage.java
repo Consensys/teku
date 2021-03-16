@@ -18,12 +18,12 @@ import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszListSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszListImpl;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.impl.SszListImpl;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {

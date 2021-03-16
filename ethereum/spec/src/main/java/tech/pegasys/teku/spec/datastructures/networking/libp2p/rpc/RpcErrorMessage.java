@@ -16,13 +16,13 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszListSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszListImpl;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.impl.SszListImpl;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.impl.SszUtils;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<SszByte> {
 
