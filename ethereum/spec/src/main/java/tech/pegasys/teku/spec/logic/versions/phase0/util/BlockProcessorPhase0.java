@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,7 +48,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processAttestationsNoValidation(
-      MutableBeaconState genericState, SSZList<Attestation> attestations)
+      MutableBeaconState genericState, SszList<Attestation> attestations)
       throws BlockProcessingException {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
 
@@ -78,9 +78,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
                 UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
         if (data.getTarget().getEpoch().equals(beaconStateUtil.getCurrentEpoch(state))) {
-          state.getCurrent_epoch_attestations().add(pendingAttestation);
+          state.getCurrent_epoch_attestations().append(pendingAttestation);
         } else {
-          state.getPrevious_epoch_attestations().add(pendingAttestation);
+          state.getPrevious_epoch_attestations().append(pendingAttestation);
         }
       }
     } catch (IllegalArgumentException e) {

@@ -21,13 +21,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container5;
+import tech.pegasys.teku.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public final class BeaconBlock
@@ -86,10 +86,10 @@ public final class BeaconBlock
       BeaconBlockBody body) {
     super(
         type,
-        new SszUInt64(slot),
-        new SszUInt64(proposer_index),
-        new SszBytes32(parent_root),
-        new SszBytes32(state_root),
+        SszUInt64.of(slot),
+        SszUInt64.of(proposer_index),
+        SszBytes32.of(parent_root),
+        SszBytes32.of(state_root),
         body);
   }
 

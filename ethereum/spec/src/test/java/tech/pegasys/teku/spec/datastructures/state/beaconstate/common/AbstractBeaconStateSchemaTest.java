@@ -33,11 +33,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszTestUtils;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateSchemaTest<
@@ -82,16 +82,16 @@ public abstract class AbstractBeaconStateSchemaTest<
     BeaconState s1 = getSchema(modifiedConstants).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
 
-    assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
-    assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
-    assertThat(s1.getHistorical_roots().getMaxSize())
-        .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
-    assertThat(s1.getEth1_data_votes().getMaxSize())
-        .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
-    assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
-    assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
-    assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
-    assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
+    assertThat(s1.getBlock_roots().getSchema()).isNotEqualTo(s2.getBlock_roots().getSchema());
+    assertThat(s1.getState_roots().getSchema()).isNotEqualTo(s2.getState_roots().getSchema());
+    assertThat(s1.getHistorical_roots().getSchema())
+        .isNotEqualTo(s2.getHistorical_roots().getSchema());
+    assertThat(s1.getEth1_data_votes().getSchema())
+        .isNotEqualTo(s2.getEth1_data_votes().getSchema());
+    assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
+    assertThat(s1.getBalances().getSchema()).isNotEqualTo(s2.getBalances().getSchema());
+    assertThat(s1.getRandao_mixes().getSchema()).isNotEqualTo(s2.getRandao_mixes().getSchema());
+    assertThat(s1.getSlashings().getSchema()).isNotEqualTo(s2.getSlashings().getSchema());
   }
 
   @Test

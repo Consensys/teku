@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,8 +28,8 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 
 public class Eth1DataCacheTest {
 
@@ -229,8 +228,8 @@ public class Eth1DataCacheTest {
   }
 
   private BeaconState createBeaconStateWithVotes(final Eth1Data... votes) {
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(votes), votes.length, Eth1Data.class);
+    SszList<Eth1Data> eth1DataVotes =
+        SszListSchema.create(Eth1Data.SSZ_SCHEMA, votes.length).of(votes);
     final BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getSlot()).thenReturn(SLOT);
     when(beaconState.getGenesis_time()).thenReturn(GENESIS_TIME);

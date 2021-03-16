@@ -18,7 +18,7 @@ import java.util.List;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(

@@ -35,7 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConstantsReader {
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =

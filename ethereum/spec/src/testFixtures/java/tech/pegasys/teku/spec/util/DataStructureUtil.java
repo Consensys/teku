@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -70,17 +70,28 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszPrimitive;
+import tech.pegasys.teku.ssz.SszVector;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
@@ -149,39 +160,69 @@ public final class DataStructureUtil {
     return BLSTestUtil.randomSignature(nextSeed());
   }
 
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
-    return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
+  public <T extends SszData> SszList<T> randomSszList(
+      SszListSchema<T, ?> schema, Supplier<T> valueGenerator, long numItems) {
+    return randomSszList(schema, numItems, valueGenerator);
   }
 
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator, long numItems) {
-    return randomSSZList(classInfo, numItems, maxSize, valueGenerator);
+  public <T extends SszData> SszList<T> randomFullSszList(
+      SszListSchema<T, ?> schema, Supplier<T> valueGenerator) {
+    return randomSszList(schema, schema.getMaxLength(), valueGenerator);
   }
 
-  public <T> SSZList<T> randomFullSSZList(
-      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
-    return randomSSZList(classInfo, maxSize, maxSize, valueGenerator);
+  public <T extends SszData> SszList<T> randomSszList(
+      SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
+    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
   }
 
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo, final long numItems, long maxSize, Supplier<T> valueGenerator) {
-    SSZMutableList<T> sszList = SSZList.createMutable(classInfo, maxSize);
-    LongStream.range(0, numItems).forEach(i -> sszList.add(valueGenerator.get()));
-    return sszList;
+  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+      SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
+          SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
+          final long numItems,
+          Supplier<ElementT> valueGenerator) {
+    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
-  public <T> SSZVector<T> randomSSZVector(
-      T defaultClassObject, long maxSize, Supplier<T> valueGenerator) {
-    SSZMutableVector<T> sszvector =
-        SSZVector.createMutable(toIntExact(maxSize), defaultClassObject);
-    long numItems = maxSize / 10;
-    LongStream.range(0, numItems).forEach(i -> sszvector.set(toIntExact(i), valueGenerator.get()));
-    return sszvector;
+  public SszUInt64List randomSszUInt64List(
+      SszUInt64ListSchema<?> schema, final long numItems, Supplier<UInt64> valueGenerator) {
+    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
+  }
+
+  public SszBytes32Vector randomSszBytes32Vector(
+      SszBytes32VectorSchema<?> schema, Supplier<Bytes32> valueGenerator) {
+    int numItems = schema.getLength() / 10;
+    Bytes32 defaultElement = schema.getPrimitiveElementSchema().getDefault().get();
+    return Stream.concat(
+            Stream.generate(valueGenerator).limit(numItems),
+            Stream.generate(() -> defaultElement).limit(schema.getLength() - numItems))
+        .collect(schema.collectorUnboxed());
+  }
+
+  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+      SszPrimitiveVector<ElementT, SszElementT> randomSszPrimitiveVector(
+          SszPrimitiveVectorSchema<ElementT, SszElementT, ?> schema,
+          Supplier<ElementT> valueGenerator) {
+    int numItems = schema.getLength() / 10;
+    ElementT defaultElement = schema.getPrimitiveElementSchema().getDefault().get();
+    return Stream.concat(
+            Stream.generate(valueGenerator).limit(numItems),
+            Stream.generate(() -> defaultElement).limit(schema.getLength() - numItems))
+        .collect(schema.collectorUnboxed());
+  }
+
+  public <SszElementT extends SszData, VectorT extends SszVector<SszElementT>>
+      VectorT randomSszVector(
+          SszVectorSchema<SszElementT, VectorT> schema, Supplier<SszElementT> valueGenerator) {
+    int numItems = schema.getLength() / 10;
+    SszElementT defaultElement = schema.getElementSchema().getDefault();
+    return Stream.concat(
+            Stream.generate(valueGenerator).limit(numItems),
+            Stream.generate(() -> defaultElement).limit(schema.getLength() - numItems))
+        .collect(schema.collector());
   }
 
   public SszByte randomSszByte() {
-    return new SszByte(randomByte());
+    return SszByte.of(randomByte());
   }
 
   public SszBitlist randomBitlist() {
@@ -450,44 +491,31 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
-    return spec.getGenesisSpec()
-        .getSchemaDefinitions()
-        .getBeaconBlockBodySchema()
-        .createBlockBody(
-            randomSignature(),
-            randomEth1Data(),
-            Bytes32.ZERO,
-            randomSSZList(
-                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing, 1),
-            randomSSZList(
-                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing, 1),
-            randomSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation, 3),
-            randomSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex, 1),
-            randomSSZList(
-                SignedVoluntaryExit.class,
-                getMaxVoluntaryExits(),
-                this::randomSignedVoluntaryExit,
-                1));
+    BeaconBlockBodySchema<?> schema =
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema.createBlockBody(
+        randomSignature(),
+        randomEth1Data(),
+        Bytes32.ZERO,
+        randomSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1),
+        randomSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1),
+        randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3),
+        randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1),
+        randomSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
-    return spec.getGenesisSpec()
-        .getSchemaDefinitions()
-        .getBeaconBlockBodySchema()
-        .createBlockBody(
-            randomSignature(),
-            randomEth1Data(),
-            Bytes32.ZERO,
-            randomFullSSZList(
-                ProposerSlashing.class, getMaxProposerSlashings(), this::randomProposerSlashing),
-            randomFullSSZList(
-                AttesterSlashing.class, getMaxAttesterSlashings(), this::randomAttesterSlashing),
-            randomFullSSZList(Attestation.class, getMaxAttestations(), this::randomAttestation),
-            randomFullSSZList(Deposit.class, getMaxDeposits(), this::randomDepositWithoutIndex),
-            randomFullSSZList(
-                SignedVoluntaryExit.class,
-                getMaxVoluntaryExits(),
-                this::randomSignedVoluntaryExit));
+    BeaconBlockBodySchema<?> schema =
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema.createBlockBody(
+        randomSignature(),
+        randomEth1Data(),
+        Bytes32.ZERO,
+        randomFullSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing),
+        randomFullSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing),
+        randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation),
+        randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex),
+        randomFullSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit));
   }
 
   public ProposerSlashing randomProposerSlashing() {
@@ -495,11 +523,10 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation() {
-    SSZMutableList<UInt64> attesting_indices =
-        SSZList.createMutable(UInt64.class, getMaxValidatorsPerCommittee());
-    attesting_indices.add(randomUInt64());
-    attesting_indices.add(randomUInt64());
-    attesting_indices.add(randomUInt64());
+    SszUInt64List attesting_indices =
+        IndexedAttestation.SSZ_SCHEMA
+            .getAttestingIndicesSchema()
+            .of(randomUInt64(), randomUInt64(), randomUInt64());
     return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
   }
 
@@ -524,8 +551,12 @@ public final class DataStructureUtil {
   }
 
   public DepositWithIndex randomDepositWithIndex(long depositIndex) {
+    Bytes32 randomBytes32 = randomBytes32();
+    SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new DepositWithIndex(
-        SSZVector.createMutable(32, randomBytes32()),
+        Stream.generate(() -> randomBytes32)
+            .limit(proofSchema.getLength())
+            .collect(proofSchema.collectorUnboxed()),
         randomDepositData(),
         UInt64.valueOf(depositIndex));
   }
@@ -552,14 +583,22 @@ public final class DataStructureUtil {
   }
 
   public Deposit randomDepositWithoutIndex() {
+    Bytes32 randomBytes32 = randomBytes32();
+    SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new Deposit(
-        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
+        Stream.generate(() -> randomBytes32)
+            .limit(proofSchema.getLength())
+            .collect(proofSchema.collectorUnboxed()),
         randomDepositData());
   }
 
   public Deposit randomDeposit() {
+    Bytes32 randomBytes32 = randomBytes32();
+    SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new Deposit(
-        SSZVector.createMutable(getDepositContractTreeDepth() + 1, randomBytes32()),
+        Stream.generate(() -> randomBytes32)
+            .limit(proofSchema.getLength())
+            .collect(proofSchema.collectorUnboxed()),
         randomDepositData());
   }
 
@@ -598,9 +637,8 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUInt64(), randomUInt64());
   }
 
-  public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, getMaxDeposits());
+  public List<DepositWithIndex> newDeposits(int numDeposits) {
+    List<DepositWithIndex> deposits = new ArrayList<>();
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
@@ -609,9 +647,9 @@ public final class DataStructureUtil {
           depositGenerator.createDepositData(
               keypair, getMaxEffectiveBalance(), keypair.getPublicKey());
 
-      SSZVector<Bytes32> proof =
-          SSZVector.createMutable(getDepositContractTreeDepth() + 1, Bytes32.ZERO);
-      DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UInt64.valueOf(i));
+      DepositWithIndex deposit =
+          new DepositWithIndex(
+              Deposit.SSZ_SCHEMA.getProofSchema().getDefault(), depositData, UInt64.valueOf(i));
       deposits.add(deposit);
     }
     return deposits;
@@ -699,14 +737,6 @@ public final class DataStructureUtil {
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
-  int getSlotsPerHistoricalRoot() {
-    return getConstant(SpecConstants::getSlotsPerHistoricalRoot);
-  }
-
-  int getHistoricalRootsLimit() {
-    return getConstant(SpecConstants::getHistoricalRootsLimit);
-  }
-
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConstants::getEpochsPerEth1VotingPeriod);
   }
@@ -715,40 +745,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConstants::getSlotsPerEpoch);
   }
 
-  long getValidatorRegistryLimit() {
-    return getConstant(SpecConstants::getValidatorRegistryLimit);
-  }
-
-  long getEpochsPerHistoricalVector() {
-    return getConstant(SpecConstants::getEpochsPerHistoricalVector);
-  }
-
-  long getEpochsPerSlashingsVector() {
-    return getConstant(SpecConstants::getEpochsPerSlashingsVector);
-  }
-
-  private int getMaxProposerSlashings() {
-    return getConstant(SpecConstants::getMaxProposerSlashings);
-  }
-
   int getJustificationBitsLength() {
     return getConstant(SpecConstants::getJustificationBitsLength);
-  }
-
-  private int getMaxAttesterSlashings() {
-    return getConstant(SpecConstants::getMaxAttesterSlashings);
-  }
-
-  int getMaxAttestations() {
-    return getConstant(SpecConstants::getMaxAttestations);
-  }
-
-  private int getMaxDeposits() {
-    return getConstant(SpecConstants::getMaxDeposits);
-  }
-
-  private int getMaxVoluntaryExits() {
-    return getConstant(SpecConstants::getMaxVoluntaryExits);
   }
 
   private int getMaxValidatorsPerCommittee() {
@@ -757,10 +755,6 @@ public final class DataStructureUtil {
 
   private UInt64 getMaxEffectiveBalance() {
     return getConstant(SpecConstants::getMaxEffectiveBalance);
-  }
-
-  private int getDepositContractTreeDepth() {
-    return getConstant(SpecConstants::getDepositContractTreeDepth);
   }
 
   private Bytes32 computeDomain() {
@@ -781,6 +775,10 @@ public final class DataStructureUtil {
 
   public Spec getSpec() {
     return spec;
+  }
+
+  public BeaconStateSchema<?, ?> getBeaconStateSchema() {
+    return spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
   private <T> T getConstant(final Function<SpecConstants, T> getter) {

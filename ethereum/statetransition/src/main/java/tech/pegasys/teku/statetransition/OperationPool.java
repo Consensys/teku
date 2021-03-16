@@ -14,38 +14,32 @@
 package tech.pegasys.teku.statetransition;
 
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszCollection;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.util.config.Constants;
 
-public class OperationPool<T> {
-
-  private static final Map<Class<?>, Integer> MAX_NUMBER_OF_ELEMENTS_IN_BLOCK =
-      Map.of(
-          SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS,
-          ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS,
-          AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
-
+public class OperationPool<T extends SszData> {
   private final Set<T> operations = LimitedSet.create(Constants.OPERATION_POOL_SIZE);
-  private final Class<T> clazz;
+  private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
 
-  public OperationPool(Class<T> clazz, OperationValidator<T> operationValidator) {
-    this.clazz = clazz;
+  public OperationPool(
+      Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      OperationValidator<T> operationValidator) {
+    this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
   }
 
@@ -53,22 +47,14 @@ public class OperationPool<T> {
     this.subscribers.subscribe(subscriber);
   }
 
-  public SSZList<T> getItemsForBlock(BeaconState stateAtBlockSlot) {
-    SSZMutableList<T> itemsToPutInBlock =
-        SSZList.createMutable(clazz, MAX_NUMBER_OF_ELEMENTS_IN_BLOCK.get(clazz));
+  public SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot) {
+    SszListSchema<T, ?> schema = slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
-    Iterator<T> iter = operations.iterator();
-    int count = 0;
-    int numberOfElementsToGet = MAX_NUMBER_OF_ELEMENTS_IN_BLOCK.get(clazz);
-    while (count < numberOfElementsToGet && iter.hasNext()) {
-      T item = iter.next();
-      if (operationValidator.validateForStateTransition(stateAtBlockSlot, item)) {
-        itemsToPutInBlock.add(item);
-        count++;
-      }
-    }
-    return itemsToPutInBlock;
+    return operations.stream()
+        .limit(schema.getMaxLength())
+        .filter(item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item))
+        .collect(schema.collector());
   }
 
   public SafeFuture<InternalValidationResult> add(T item) {
@@ -82,11 +68,11 @@ public class OperationPool<T> {
     return SafeFuture.completedFuture(result);
   }
 
-  public void addAll(SSZList<T> items) {
+  public void addAll(SszCollection<T> items) {
     operations.addAll(items.asList());
   }
 
-  public void removeAll(SSZList<T> items) {
+  public void removeAll(SszCollection<T> items) {
     operations.removeAll(items.asList());
   }
 

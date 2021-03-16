@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 public abstract class MerkleTree {
   protected final List<List<Bytes32>> tree;
@@ -52,7 +51,7 @@ public abstract class MerkleTree {
     return zeroHashes;
   }
 
-  public SSZVector<Bytes32> getProof(Bytes32 value) {
+  public List<Bytes32> getProof(Bytes32 value) {
     int index = tree.get(0).indexOf(value);
     if (index == -1) {
       throw new IllegalArgumentException("Leaf value is missing from the MerkleTree");
@@ -60,7 +59,7 @@ public abstract class MerkleTree {
     return getProof(index);
   }
 
-  public SSZVector<Bytes32> getProof(int itemIndex) {
+  public List<Bytes32> getProof(int itemIndex) {
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
 
@@ -82,7 +81,7 @@ public abstract class MerkleTree {
       itemIndex /= 2;
     }
     proof.add(calcMixInValue());
-    return SSZVector.createMutable(proof, Bytes32.class);
+    return proof;
   }
 
   private Bytes32 calcViewBoundaryRoot(int depth, int viewLimit) {
@@ -107,7 +106,7 @@ public abstract class MerkleTree {
    * @param viewLimit number of leaves in the tree
    * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
-  public SSZVector<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
+  public List<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
     return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
   }
 
@@ -116,7 +115,7 @@ public abstract class MerkleTree {
    * @param viewLimit number of leaves in the tree
    * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
-  public SSZVector<Bytes32> getProofWithViewBoundary(int itemIndex, int viewLimit) {
+  public List<Bytes32> getProofWithViewBoundary(int itemIndex, int viewLimit) {
     checkArgument(itemIndex < viewLimit, "MerkleTree: Index must be less than the view limit");
 
     List<Bytes32> proof = new ArrayList<>();
@@ -146,7 +145,7 @@ public abstract class MerkleTree {
       itemIndex /= 2;
     }
     proof.add(calcMixInValue(viewLimit));
-    return SSZVector.createMutable(proof, Bytes32.class);
+    return proof;
   }
 
   public Bytes32 calcMixInValue(int viewLimit) {

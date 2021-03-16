@@ -24,12 +24,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "less-swift");
+      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
 
   @Deprecated public static String CONFIG_NAME;
 

@@ -16,12 +16,12 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container5;
+import tech.pegasys.teku.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BeaconBlockHeader
     extends Container5<BeaconBlockHeader, SszUInt64, SszUInt64, SszBytes32, SszBytes32, SszBytes32>
@@ -61,11 +61,11 @@ public class BeaconBlockHeader
       Bytes32 body_root) {
     super(
         SSZ_SCHEMA,
-        new SszUInt64(slot),
-        new SszUInt64(proposer_index),
-        new SszBytes32(parent_root),
-        new SszBytes32(state_root),
-        new SszBytes32(body_root));
+        SszUInt64.of(slot),
+        SszUInt64.of(proposer_index),
+        SszBytes32.of(parent_root),
+        SszBytes32.of(state_root),
+        SszBytes32.of(body_root));
   }
 
   public BeaconBlockHeader(BeaconBlockHeader header) {

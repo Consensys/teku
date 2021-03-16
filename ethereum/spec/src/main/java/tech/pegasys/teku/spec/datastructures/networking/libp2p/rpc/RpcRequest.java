@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.SszData;
 
 public interface RpcRequest extends SszData {
+
   int getMaximumRequestChunks();
 }

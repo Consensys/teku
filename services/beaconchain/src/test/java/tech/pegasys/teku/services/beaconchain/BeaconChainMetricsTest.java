@@ -43,14 +43,9 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -105,7 +100,7 @@ class BeaconChainMetricsTest {
                   s.setFinalized_checkpoint(finalizedCheckpoint);
                   s.setCurrent_justified_checkpoint(currentJustifiedCheckpoint);
                   s.setPrevious_justified_checkpoint(previousJustifiedCheckpoint);
-                  setBlockRoots(s, blockRootsList);
+                  s.getBlock_roots().setAllElements(blockRootsList);
                 })
             .toVersionPhase0()
             .orElseThrow();
@@ -116,16 +111,10 @@ class BeaconChainMetricsTest {
         state
             .updated(
                 s -> {
-                  setBlockRoots(s, newBlockRoots);
+                  s.getBlock_roots().setAllElements(newBlockRoots);
                 })
             .toVersionPhase0()
             .orElseThrow();
-  }
-
-  private void setBlockRoots(MutableBeaconState state, List<Bytes32> newBlockRoots) {
-    final SSZMutableVector<Bytes32> blockRoots = state.getBlock_roots();
-    blockRoots.clear();
-    blockRoots.setAll(SSZVector.createMutable(newBlockRoots, Bytes32.class));
   }
 
   @Test
@@ -483,12 +472,7 @@ class BeaconChainMetricsTest {
         state
             .updatedPhase0(
                 s -> {
-                  final SSZMutableList<PendingAttestation> previousAtts =
-                      s.getPrevious_epoch_attestations();
-                  previousAtts.clear();
-                  previousAtts.setAll(
-                      SSZList.createMutable(
-                          attestations, attestations.size(), PendingAttestation.class));
+                  s.getPrevious_epoch_attestations().setAll(attestations);
 
                   s.getCurrent_epoch_attestations().clear();
                   s.setSlot(UInt64.valueOf(slotAsInt));
@@ -505,22 +489,17 @@ class BeaconChainMetricsTest {
         state
             .updatedPhase0(
                 s -> {
-                  final SSZMutableList<PendingAttestation> currentAtts =
-                      s.getCurrent_epoch_attestations();
-                  currentAtts.clear();
+                  s.getCurrent_epoch_attestations().clear();
                   if (attestations.size() > 0) {
-                    currentAtts.setAll(
-                        SSZList.createMutable(
-                            attestations, attestations.size(), PendingAttestation.class));
+                    s.getCurrent_epoch_attestations().setAll(attestations);
                   }
 
                   s.getPrevious_epoch_attestations().clear();
                   s.setSlot(slot);
 
-                  final SSZMutableList<Validator> validators = s.getValidators();
-                  validators.clear();
+                  s.getValidators().clear();
                   if (validatorsList.size() > 0) {
-                    validators.setAll(SSZList.createMutable(validatorsList, 100, Validator.class));
+                    s.getValidators().setAll(validatorsList);
                   }
                 })
             .toVersionPhase0()

@@ -18,12 +18,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszContainer;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.cache.IntCache;
+import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair>
     implements BeaconStateAltair, BeaconStateCache, ValidatorStatsAltair {
