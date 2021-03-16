@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.SSZTypes;
+package tech.pegasys.teku.benchmarks.ssz;
 
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;

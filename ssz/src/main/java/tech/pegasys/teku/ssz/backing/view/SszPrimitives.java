@@ -15,9 +15,9 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 /** Collection of {@link SszPrimitive} classes */
 public class SszPrimitives {
