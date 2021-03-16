@@ -20,6 +20,7 @@ public enum Eth2Network {
   // Live networks
   MAINNET,
   PYRMONT,
+  PRATER,
   // Test networks
   MINIMAL,
   SWIFT,
