@@ -14,21 +14,32 @@
 package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
 public class ClasspathResourceLoader extends ResourceLoader {
 
   private final Class<?> referenceClass;
+  // We should constrain resource loading via an explicit whitelist
+  // This helps guard against unintentionally loading sensitive resources from the file
+  // system (which may be a part of the classpath)
+  private final List<String> availableResources;
 
   public ClasspathResourceLoader(
-      final Class<?> referenceClass, final Predicate<String> resourceFilter) {
+      final Class<?> referenceClass,
+      final List<String> availableResources,
+      final Predicate<String> resourceFilter) {
     super(resourceFilter);
     this.referenceClass = referenceClass;
+    this.availableResources = availableResources;
   }
 
   @Override
   Optional<InputStream> loadSource(final String source) {
+    if (!availableResources.contains(source)) {
+      return Optional.empty();
+    }
     return Optional.ofNullable(referenceClass.getResourceAsStream(source));
   }
 }

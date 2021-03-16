@@ -39,10 +39,12 @@ public abstract class ResourceLoader {
   }
 
   public static ResourceLoader classpathUrlOrFile(
-      final Class<?> referenceClass, final Predicate<String> sourceFilter) {
+      final Class<?> referenceClass,
+      final List<String> availableResources,
+      final Predicate<String> sourceFilter) {
     return new FallbackResourceLoader(
         sourceFilter,
-        new ClasspathResourceLoader(referenceClass, sourceFilter),
+        new ClasspathResourceLoader(referenceClass, availableResources, sourceFilter),
         new URLResourceLoader(sourceFilter),
         new FileResourceLoader(sourceFilter));
   }
