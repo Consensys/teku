@@ -2,25 +2,27 @@
 
 CONFIG_NAME: "mainnet"
 
-# Try to change phase0 field
+# Duplicate, divergent field
 MAX_COMMITTEES_PER_SLOT: 62
 
 # Updated penalty values
 # ---------------------------------------------------------------
-# 3 * 2**24) (= 50,331,648)
-ALTAIR_INACTIVITY_PENALTY_QUOTIENT: 50331648
+# 3 * 2**24 (= 50,331,648)
+INACTIVITY_PENALTY_QUOTIENT_ALTAIR: 50331648
 # 2**6 (= 64)
-ALTAIR_MIN_SLASHING_PENALTY_QUOTIENT: 64
+MIN_SLASHING_PENALTY_QUOTIENT_ALTAIR: 64
 # 2
-ALTAIR_PROPORTIONAL_SLASHING_MULTIPLIER: 2
+PROPORTIONAL_SLASHING_MULTIPLIER_ALTAIR: 2
 
 
 # Misc
 # ---------------------------------------------------------------
-# 2**10 (=1,024)
+# 2**10 (= 1,024)
 SYNC_COMMITTEE_SIZE: 1024
-# 2**6 (=64)
+# 2**6 (= 64)
 SYNC_SUBCOMMITTEE_SIZE: 64
+# 2**2 (= 4)
+INACTIVITY_SCORE_BIAS: 4
 
 
 # Time parameters
@@ -32,3 +34,18 @@ EPOCHS_PER_SYNC_COMMITTEE_PERIOD: 256
 # Signature domains
 # ---------------------------------------------------------------
 DOMAIN_SYNC_COMMITTEE: 0x07000000
+
+
+# Fork
+# ---------------------------------------------------------------
+ALTAIR_FORK_VERSION: 0x01000000
+
+
+# Sync protocol
+# ---------------------------------------------------------------
+# 1
+MIN_SYNC_COMMITTEE_PARTICIPANTS: 1
+# 2**13
+MAX_VALID_LIGHT_CLIENT_UPDATES: 8192
+# 2**13 (=8192)
+LIGHT_CLIENT_UPDATE_TIMEOUT: 8192

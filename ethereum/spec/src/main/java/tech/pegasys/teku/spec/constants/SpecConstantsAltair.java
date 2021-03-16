@@ -19,37 +19,57 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConstantsAltair extends DelegatingSpecConstants {
-  private final UInt64 altairInactivityPenaltyQuotient;
-  private final Integer altairMinSlashingPenaltyQuotient;
-  private final Integer altairProportionalSlashingMultiplier;
+  // Updated penalties
+  private final UInt64 inactivityPenaltyQuotientAltair;
+  private final int minSlashingPenaltyQuotientAltair;
+  private final int proportionalSlashingMultiplierAltair;
 
-  // Sync committees
-  private final Integer syncCommitteeSize;
-  private final Integer syncSubcommitteeSize;
+  // Misc
+  private final int syncCommitteeSize;
+  private final int syncSubcommitteeSize;
+  private final int inactivityScoreBias;
 
   // Time
-  private final Integer epochsPerSyncCommitteePeriod;
+  private final int epochsPerSyncCommitteePeriod;
 
   // Signature domains
-  private Bytes4 domainSyncCommittee;
+  private final Bytes4 domainSyncCommittee;
+
+  // Fork
+  private final Bytes4 altairForkVersion;
+
+  // Sync protocol
+  private final int minSyncCommitteeParticipants;
+  private final int maxValidLightClientUpdates;
+  private final int lightClientUpdateTimeout;
 
   public SpecConstantsAltair(
       final SpecConstants specConstants,
-      final UInt64 altairInactivityPenaltyQuotient,
-      final Integer altairMinSlashingPenaltyQuotient,
-      final Integer altairProportionalSlashingMultiplier,
-      final Integer syncCommitteeSize,
-      final Integer syncSubcommitteeSize,
-      final Integer epochsPerSyncCommitteePeriod,
-      final Bytes4 domainSyncCommittee) {
+      final UInt64 inactivityPenaltyQuotientAltair,
+      final int altairMinSlashingPenaltyQuotient,
+      final int proportionalSlashingMultiplierAltair,
+      final int syncCommitteeSize,
+      final int syncSubcommitteeSize,
+      final int inactivityScoreBias,
+      final int epochsPerSyncCommitteePeriod,
+      final Bytes4 domainSyncCommittee,
+      final Bytes4 altairForkVersion,
+      final int minSyncCommitteeParticipants,
+      final int maxValidLightClientUpdates,
+      final int lightClientUpdateTimeout) {
     super(specConstants);
-    this.altairInactivityPenaltyQuotient = altairInactivityPenaltyQuotient;
-    this.altairMinSlashingPenaltyQuotient = altairMinSlashingPenaltyQuotient;
-    this.altairProportionalSlashingMultiplier = altairProportionalSlashingMultiplier;
+    this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
+    this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
+    this.proportionalSlashingMultiplierAltair = proportionalSlashingMultiplierAltair;
     this.syncCommitteeSize = syncCommitteeSize;
     this.syncSubcommitteeSize = syncSubcommitteeSize;
+    this.inactivityScoreBias = inactivityScoreBias;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
     this.domainSyncCommittee = domainSyncCommittee;
+    this.altairForkVersion = altairForkVersion;
+    this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
+    this.maxValidLightClientUpdates = maxValidLightClientUpdates;
+    this.lightClientUpdateTimeout = lightClientUpdateTimeout;
   }
 
   public static SpecConstantsAltair required(final SpecConstants specConstants) {
@@ -62,27 +82,27 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
                         + specConstants.getClass().getSimpleName()));
   }
 
-  public UInt64 getAltairInactivityPenaltyQuotient() {
-    return altairInactivityPenaltyQuotient;
+  public UInt64 getInactivityPenaltyQuotientAltair() {
+    return inactivityPenaltyQuotientAltair;
   }
 
-  public Integer getAltairMinSlashingPenaltyQuotient() {
-    return altairMinSlashingPenaltyQuotient;
+  public int getMinSlashingPenaltyQuotientAltair() {
+    return minSlashingPenaltyQuotientAltair;
   }
 
-  public Integer getAltairProportionalSlashingMultiplier() {
-    return altairProportionalSlashingMultiplier;
+  public int getProportionalSlashingMultiplierAltair() {
+    return proportionalSlashingMultiplierAltair;
   }
 
-  public Integer getSyncCommitteeSize() {
+  public int getSyncCommitteeSize() {
     return syncCommitteeSize;
   }
 
-  public Integer getSyncSubcommitteeSize() {
+  public int getSyncSubcommitteeSize() {
     return syncSubcommitteeSize;
   }
 
-  public Integer getEpochsPerSyncCommitteePeriod() {
+  public int getEpochsPerSyncCommitteePeriod() {
     return epochsPerSyncCommitteePeriod;
   }
 
@@ -101,26 +121,35 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
     if (o == null || getClass() != o.getClass()) return false;
     final SpecConstantsAltair that = (SpecConstantsAltair) o;
     return Objects.equals(specConstants, that.specConstants)
-        && Objects.equals(altairInactivityPenaltyQuotient, that.altairInactivityPenaltyQuotient)
-        && Objects.equals(altairMinSlashingPenaltyQuotient, that.altairMinSlashingPenaltyQuotient)
-        && Objects.equals(
-            altairProportionalSlashingMultiplier, that.altairProportionalSlashingMultiplier)
-        && Objects.equals(syncCommitteeSize, that.syncCommitteeSize)
-        && Objects.equals(syncSubcommitteeSize, that.syncSubcommitteeSize)
-        && Objects.equals(epochsPerSyncCommitteePeriod, that.epochsPerSyncCommitteePeriod)
-        && Objects.equals(domainSyncCommittee, that.domainSyncCommittee);
+        && minSlashingPenaltyQuotientAltair == that.minSlashingPenaltyQuotientAltair
+        && proportionalSlashingMultiplierAltair == that.proportionalSlashingMultiplierAltair
+        && syncCommitteeSize == that.syncCommitteeSize
+        && syncSubcommitteeSize == that.syncSubcommitteeSize
+        && inactivityScoreBias == that.inactivityScoreBias
+        && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
+        && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
+        && maxValidLightClientUpdates == that.maxValidLightClientUpdates
+        && lightClientUpdateTimeout == that.lightClientUpdateTimeout
+        && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
+        && Objects.equals(domainSyncCommittee, that.domainSyncCommittee)
+        && Objects.equals(altairForkVersion, that.altairForkVersion);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
         specConstants,
-        altairInactivityPenaltyQuotient,
-        altairMinSlashingPenaltyQuotient,
-        altairProportionalSlashingMultiplier,
+        inactivityPenaltyQuotientAltair,
+        minSlashingPenaltyQuotientAltair,
+        proportionalSlashingMultiplierAltair,
         syncCommitteeSize,
         syncSubcommitteeSize,
+        inactivityScoreBias,
         epochsPerSyncCommitteePeriod,
-        domainSyncCommittee);
+        domainSyncCommittee,
+        altairForkVersion,
+        minSyncCommitteeParticipants,
+        maxValidLightClientUpdates,
+        lightClientUpdateTimeout);
   }
 }

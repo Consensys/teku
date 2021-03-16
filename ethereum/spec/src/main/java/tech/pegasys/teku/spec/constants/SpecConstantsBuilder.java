@@ -652,13 +652,14 @@ public class SpecConstantsBuilder {
 
   class AltairBuilder {
     // Updated penalties
-    private UInt64 altairInactivityPenaltyQuotient;
-    private Integer altairMinSlashingPenaltyQuotient;
-    private Integer altairProportionalSlashingMultiplier;
+    private UInt64 inactivityPenaltyQuotientAltair;
+    private Integer minSlashingPenaltyQuotientAltair;
+    private Integer proportionalSlashingMultiplierAltair;
 
-    // Sync committees
+    // Misc
     private Integer syncCommitteeSize;
     private Integer syncSubcommitteeSize;
+    private Integer inactivityScoreBias;
 
     // Time
     private Integer epochsPerSyncCommitteePeriod;
@@ -666,49 +667,67 @@ public class SpecConstantsBuilder {
     // Signature domains
     private Bytes4 domainSyncCommittee;
 
+    // Fork
+    private Bytes4 altairForkVersion;
+
+    // Sync protocol
+    private Integer minSyncCommitteeParticipants;
+    private Integer maxValidLightClientUpdates;
+    private Integer lightClientUpdateTimeout;
+
     private AltairBuilder() {}
 
     SpecConstantsAltair build(final SpecConstants specConstants) {
       return new SpecConstantsAltair(
           specConstants,
-          altairInactivityPenaltyQuotient,
-          altairMinSlashingPenaltyQuotient,
-          altairProportionalSlashingMultiplier,
+          inactivityPenaltyQuotientAltair,
+          minSlashingPenaltyQuotientAltair,
+          proportionalSlashingMultiplierAltair,
           syncCommitteeSize,
           syncSubcommitteeSize,
+          inactivityScoreBias,
           epochsPerSyncCommitteePeriod,
-          domainSyncCommittee);
+          domainSyncCommittee,
+          altairForkVersion,
+          minSyncCommitteeParticipants,
+          maxValidLightClientUpdates,
+          lightClientUpdateTimeout);
     }
 
     void validate() {
-      validateConstant("altairInactivityPenaltyQuotient", altairInactivityPenaltyQuotient);
-      validateConstant("altairMinSlashingPenaltyQuotient", altairMinSlashingPenaltyQuotient);
+      validateConstant("inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
+      validateConstant("minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
       validateConstant(
-          "altairProportionalSlashingMultiplier", altairProportionalSlashingMultiplier);
+          "proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
       validateConstant("syncCommitteeSize", syncCommitteeSize);
       validateConstant("syncSubcommitteeSize", syncSubcommitteeSize);
+      validateConstant("inactivityScoreBias", inactivityScoreBias);
       validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
       validateConstant("domainSyncCommittee", domainSyncCommittee);
+      validateConstant("altairForkVersion", altairForkVersion);
+      validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+      validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
+      validateConstant("lightClientUpdateTimeout", lightClientUpdateTimeout);
     }
 
-    public AltairBuilder altairInactivityPenaltyQuotient(
-        final UInt64 altairInactivityPenaltyQuotient) {
-      checkNotNull(altairInactivityPenaltyQuotient);
-      this.altairInactivityPenaltyQuotient = altairInactivityPenaltyQuotient;
+    public AltairBuilder inactivityPenaltyQuotientAltair(
+        final UInt64 inactivityPenaltyQuotientAltair) {
+      checkNotNull(inactivityPenaltyQuotientAltair);
+      this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
       return this;
     }
 
-    public AltairBuilder altairMinSlashingPenaltyQuotient(
-        final Integer altairMinSlashingPenaltyQuotient) {
-      checkNotNull(altairMinSlashingPenaltyQuotient);
-      this.altairMinSlashingPenaltyQuotient = altairMinSlashingPenaltyQuotient;
+    public AltairBuilder minSlashingPenaltyQuotientAltair(
+        final Integer minSlashingPenaltyQuotientAltair) {
+      checkNotNull(minSlashingPenaltyQuotientAltair);
+      this.minSlashingPenaltyQuotientAltair = minSlashingPenaltyQuotientAltair;
       return this;
     }
 
-    public AltairBuilder altairProportionalSlashingMultiplier(
-        final Integer altairProportionalSlashingMultiplier) {
-      checkNotNull(altairProportionalSlashingMultiplier);
-      this.altairProportionalSlashingMultiplier = altairProportionalSlashingMultiplier;
+    public AltairBuilder proportionalSlashingMultiplierAltair(
+        final Integer proportionalSlashingMultiplierAltair) {
+      checkNotNull(proportionalSlashingMultiplierAltair);
+      this.proportionalSlashingMultiplierAltair = proportionalSlashingMultiplierAltair;
       return this;
     }
 
@@ -733,6 +752,36 @@ public class SpecConstantsBuilder {
     public AltairBuilder domainSyncCommittee(final Bytes4 domainSyncCommittee) {
       checkNotNull(domainSyncCommittee);
       this.domainSyncCommittee = domainSyncCommittee;
+      return this;
+    }
+
+    public AltairBuilder inactivityScoreBias(final Integer inactivityScoreBias) {
+      checkNotNull(inactivityScoreBias);
+      this.inactivityScoreBias = inactivityScoreBias;
+      return this;
+    }
+
+    public AltairBuilder altairForkVersion(final Bytes4 altairForkVersion) {
+      checkNotNull(altairForkVersion);
+      this.altairForkVersion = altairForkVersion;
+      return this;
+    }
+
+    public AltairBuilder minSyncCommitteeParticipants(final Integer minSyncCommitteeParticipants) {
+      checkNotNull(minSyncCommitteeParticipants);
+      this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
+      return this;
+    }
+
+    public AltairBuilder maxValidLightClientUpdates(final Integer maxValidLightClientUpdates) {
+      checkNotNull(maxValidLightClientUpdates);
+      this.maxValidLightClientUpdates = maxValidLightClientUpdates;
+      return this;
+    }
+
+    public AltairBuilder lightClientUpdateTimeout(final Integer lightClientUpdateTimeout) {
+      checkNotNull(lightClientUpdateTimeout);
+      this.lightClientUpdateTimeout = lightClientUpdateTimeout;
       return this;
     }
   }
