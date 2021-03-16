@@ -16,11 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
@@ -36,9 +33,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final EpochProcessor epochProcessor,
-      final BlockProcessorUtil blockProcessorUtil,
+      final ValidatorStatusFactoryAltair validatorStatusFactory,
+      final EpochProcessorAltair epochProcessor,
+      final BlockProcessorAltair blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -63,12 +60,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, committeeUtil);
     final AttestationUtil attestationUtil =
         new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    final ValidatorStatusFactory validatorStatusFactory =
+    final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(beaconStateUtil, attestationUtil, validatorsUtil);
-    final EpochProcessor epochProcessor =
+    final EpochProcessorAltair epochProcessor =
         new EpochProcessorAltair(
             constants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
-    final BlockProcessorUtil blockProcessorUtil =
+    final BlockProcessorAltair blockProcessorUtil =
         new BlockProcessorAltair(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     final StateTransition stateTransition =
         StateTransition.create(
