@@ -143,8 +143,8 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int[] internalIndexes,
-            SszData[] newValues, int count) {
+        public TreeNode updateBackingNode(
+            TreeNode srcNode, int[] internalIndexes, SszData[] newValues, int count) {
           if (count == 4) {
             byte[] data = new byte[32];
             for (int i = 0; i < newValues.length; i++) {
@@ -164,7 +164,6 @@ public interface SszPrimitiveSchemas {
             return super.updateBackingNode(srcNode, internalIndexes, newValues, count);
           }
         }
-
 
         @Override
         public SszUInt64 boxed(UInt64 rawValue) {

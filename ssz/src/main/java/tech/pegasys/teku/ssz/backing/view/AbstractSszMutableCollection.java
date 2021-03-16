@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.backing.view;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -41,12 +40,12 @@ public abstract class AbstractSszMutableCollection<
 
   @Override
   protected TreeUpdates packChanges(
-      Stream<Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
+      Stream<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
     SszCollectionSchema<?, ?> type = getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
-    List<Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
+    List<Map.Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
     int[] internalIdxs = new int[elementsPerChunk];
     SszData[] newVals = new SszData[elementsPerChunk];
     int nodeUpdatesCount = 0;
@@ -54,7 +53,7 @@ public abstract class AbstractSszMutableCollection<
     List<Long> gIndexes = new ArrayList<>();
     List<TreeNode> newValues = new ArrayList<>();
     for (int i = 0; i < newChildren.size(); i++) {
-      Entry<Integer, SszElementT> entry = newChildren.get(i);
+      Map.Entry<Integer, SszElementT> entry = newChildren.get(i);
       int childIndex = entry.getKey();
       int childNodeIndex = childIndex / elementsPerChunk;
 
@@ -62,8 +61,8 @@ public abstract class AbstractSszMutableCollection<
         long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
         TreeNode originalNode =
             nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
-        TreeNode newNode = elementType
-            .updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
+        TreeNode newNode =
+            elementType.updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
         newValues.add(newNode);
         gIndexes.add(gIndex);
         nodeUpdatesCount = 0;
@@ -79,8 +78,8 @@ public abstract class AbstractSszMutableCollection<
       long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
       TreeNode originalNode =
           nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
-      TreeNode newNode = elementType
-          .updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
+      TreeNode newNode =
+          elementType.updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
       newValues.add(newNode);
       gIndexes.add(gIndex);
     }

@@ -15,14 +15,11 @@ package tech.pegasys.teku.ssz.backing.view;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.backing.SszComposite;
