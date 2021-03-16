@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 class AttestationSubnetScorerTest {
   @Test

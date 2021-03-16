@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class BeaconStateBuilderPhase0
     extends AbstractBeaconStateBuilder<

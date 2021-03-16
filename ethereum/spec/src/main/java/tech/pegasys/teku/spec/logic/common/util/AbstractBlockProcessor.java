@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   private static final Logger LOG = LogManager.getLogger();

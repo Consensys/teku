@@ -18,8 +18,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
 

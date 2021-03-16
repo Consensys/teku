@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
-import tech.pegasys.teku.ssz.backing.schema.collections.impl.SszByteVectorSchemaImpl;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszSignatureSchema extends SszByteVectorSchemaImpl<SszSignature> {
   private static final int BLS_COMPRESSED_SIGNATURE_SIZE = 96;

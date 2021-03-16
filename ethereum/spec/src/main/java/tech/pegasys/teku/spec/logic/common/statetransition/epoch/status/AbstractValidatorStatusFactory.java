@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractValidatorStatusFactory implements ValidatorStatusFactory {
   protected final BeaconStateUtil beaconStateUtil;

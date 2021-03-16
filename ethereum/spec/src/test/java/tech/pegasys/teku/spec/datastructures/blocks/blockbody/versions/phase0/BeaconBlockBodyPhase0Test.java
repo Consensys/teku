@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
 

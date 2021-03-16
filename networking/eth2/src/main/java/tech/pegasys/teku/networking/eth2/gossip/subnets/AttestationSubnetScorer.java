@@ -17,7 +17,7 @@ import java.util.function.IntUnaryOperator;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class AttestationSubnetScorer implements PeerScorer {
   private static final int MAX_SUBNET_SCORE = 1000;

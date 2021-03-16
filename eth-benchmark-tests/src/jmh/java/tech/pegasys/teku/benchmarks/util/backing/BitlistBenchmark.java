@@ -19,8 +19,8 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 
 public class BitlistBenchmark {
 

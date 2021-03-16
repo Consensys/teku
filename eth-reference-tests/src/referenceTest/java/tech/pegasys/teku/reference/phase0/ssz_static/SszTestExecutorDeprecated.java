@@ -48,8 +48,8 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SszTestExecutorDeprecated<T extends SszData> implements TestExecutor {

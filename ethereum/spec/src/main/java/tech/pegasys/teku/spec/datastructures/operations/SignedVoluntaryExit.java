@@ -17,9 +17,9 @@ import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SignedVoluntaryExit
     extends Container2<SignedVoluntaryExit, VoluntaryExit, SszSignature> {

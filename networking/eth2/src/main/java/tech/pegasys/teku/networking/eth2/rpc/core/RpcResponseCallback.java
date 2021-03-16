@@ -22,7 +22,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorExcept
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.SszData;
 
 class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();

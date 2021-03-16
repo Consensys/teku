@@ -19,9 +19,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.cache.IntCache;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
     implements MutableBeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {

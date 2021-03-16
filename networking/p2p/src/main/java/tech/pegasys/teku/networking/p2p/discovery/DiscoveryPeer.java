@@ -19,7 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;

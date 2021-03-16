@@ -36,8 +36,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected final Spec spec = SpecFactory.createMinimal();

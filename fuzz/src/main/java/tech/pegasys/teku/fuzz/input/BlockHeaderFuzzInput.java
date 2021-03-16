@@ -17,10 +17,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /**
  * Note: BlockHeader fuzzing target accepts a block as input (not a SignedBeaconBlock or

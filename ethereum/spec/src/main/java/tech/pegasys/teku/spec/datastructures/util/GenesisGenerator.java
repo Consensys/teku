@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {

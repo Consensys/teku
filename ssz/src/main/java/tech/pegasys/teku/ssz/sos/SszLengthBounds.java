@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ssz.sos;
 
-import static tech.pegasys.teku.ssz.backing.tree.TreeUtil.bitsCeilToBytes;
+import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
