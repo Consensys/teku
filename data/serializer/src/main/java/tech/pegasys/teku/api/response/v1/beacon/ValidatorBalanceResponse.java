@@ -52,7 +52,7 @@ public class ValidatorBalanceResponse {
       return Optional.empty();
     }
     return Optional.of(
-        new ValidatorBalanceResponse(UInt64.valueOf(index), state.getBalances().get(index)));
+        new ValidatorBalanceResponse(UInt64.valueOf(index), state.getBalances().getElement(index)));
   }
 
   @Override

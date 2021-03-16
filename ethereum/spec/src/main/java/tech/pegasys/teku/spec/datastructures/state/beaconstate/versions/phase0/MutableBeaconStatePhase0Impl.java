@@ -14,22 +14,17 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.cache.IntCache;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
     implements MutableBeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
-
-  private SSZMutableList<PendingAttestation> previousEpochAttestations;
-  private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
   MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView) {
     super(backingImmutableView);
@@ -48,22 +43,6 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
   @Override
   public BeaconStatePhase0 commitChanges() {
     return (BeaconStatePhase0) super.commitChanges();
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return previousEpochAttestations != null
-        ? previousEpochAttestations
-        : (previousEpochAttestations =
-            MutableBeaconStatePhase0.super.getPrevious_epoch_attestations());
-  }
-
-  @Override
-  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return currentEpochAttestations != null
-        ? currentEpochAttestations
-        : (currentEpochAttestations =
-            MutableBeaconStatePhase0.super.getCurrent_epoch_attestations());
   }
 
   @Override

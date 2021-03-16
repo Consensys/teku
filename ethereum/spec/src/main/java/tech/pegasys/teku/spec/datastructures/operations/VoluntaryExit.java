@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt64> {
 
@@ -45,7 +45,7 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
   }
 
   public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszUInt64(validator_index));
+    super(SSZ_SCHEMA, SszUInt64.of(epoch), SszUInt64.of(validator_index));
   }
 
   public UInt64 getEpoch() {

@@ -62,7 +62,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -237,7 +237,7 @@ class ValidatorApiHandlerTest {
   public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
-        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
     when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
@@ -253,7 +253,7 @@ class ValidatorApiHandlerTest {
   public void getAttestationDuties_shouldAllowOneEpochTolerance() {
     final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
-        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkey());
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
     when(chainDataClient.getStateAtSlotExact(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
@@ -615,7 +615,7 @@ class ValidatorApiHandlerTest {
   void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final BLSPublicKey validator0 =
-        BLSPublicKey.fromBytesCompressed(state.getValidators().get(0).getPubkey());
+        BLSPublicKey.fromBytesCompressed(state.getValidators().get(0).getPubkeyBytes());
     final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
     when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
 
@@ -639,7 +639,7 @@ class ValidatorApiHandlerTest {
         .updated(
             state -> {
               state.setSlot(slot);
-              final SSZMutableList<Validator> validators = state.getValidators();
+              final SszMutableList<Validator> validators = state.getValidators();
               for (int i = 0; i < validators.size(); i++) {
                 validators.update(
                     i,

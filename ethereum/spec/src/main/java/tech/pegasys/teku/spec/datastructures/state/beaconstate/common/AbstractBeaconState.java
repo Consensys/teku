@@ -18,14 +18,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
-import tech.pegasys.teku.ssz.backing.schema.AbstractSszContainerSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
+import tech.pegasys.teku.ssz.SszContainer;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.cache.IntCache;
+import tech.pegasys.teku.ssz.cache.SoftRefIntCache;
+import tech.pegasys.teku.ssz.impl.SszContainerImpl;
+import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
     extends SszContainerImpl implements BeaconState, BeaconStateCache {

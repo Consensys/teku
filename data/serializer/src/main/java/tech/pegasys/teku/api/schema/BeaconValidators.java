@@ -54,7 +54,7 @@ public class BeaconValidators {
       final int pageToken) {
     this(
         state.getValidators().stream().map(Validator::new).collect(Collectors.toList()),
-        state.getBalances().stream().collect(Collectors.toList()),
+        state.getBalances().streamUnboxed().collect(Collectors.toList()),
         activeOnly,
         epoch,
         pageSize,

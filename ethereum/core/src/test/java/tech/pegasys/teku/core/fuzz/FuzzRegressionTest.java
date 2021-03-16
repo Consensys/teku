@@ -23,10 +23,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class FuzzRegressionTest {
   private final Spec spec = SpecFactory.createMinimal();
@@ -37,12 +38,13 @@ public class FuzzRegressionTest {
         load("issue2345/state.ssz", spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
     final AttesterSlashing slashing =
         load("issue2345/attester_slashing.ssz", AttesterSlashing.SSZ_SCHEMA);
+    SszList<AttesterSlashing> slashings =
+        BeaconBlockBodyLists.ofSpec(spec).createAttesterSlashings(slashing);
 
     assertThatThrownBy(
             () ->
                 state.updated(
-                    mutableState ->
-                        spec.processAttesterSlashings(mutableState, SSZList.singleton(slashing))))
+                    mutableState -> spec.processAttesterSlashings(mutableState, slashings)))
         .isInstanceOf(BlockProcessingException.class);
   }
 

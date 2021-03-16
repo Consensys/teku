@@ -14,12 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public interface BeaconStatePhase0 extends BeaconState {
 
@@ -33,18 +31,16 @@ public interface BeaconStatePhase0 extends BeaconState {
   }
 
   // Attestations
-  default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
+  default SszList<PendingAttestation> getPrevious_epoch_attestations() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
-  default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
+  default SszList<PendingAttestation> getCurrent_epoch_attestations() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    return new SSZBackingList<>(
-        PendingAttestation.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
   @Override

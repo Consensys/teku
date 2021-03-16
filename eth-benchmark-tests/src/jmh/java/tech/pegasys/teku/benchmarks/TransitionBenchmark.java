@@ -86,10 +86,10 @@ public abstract class TransitionBenchmark {
     spec = SpecFactory.createMainnet();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
+    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);

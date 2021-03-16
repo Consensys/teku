@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -317,7 +317,7 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final String key = internalState.getValidators().get(12).getPubkey().toString();
+    final String key = internalState.getValidators().get(12).getPubkeyBytes().toString();
     final String missingKey = data.randomPublicKey().toString();
     List<String> pubkeys =
         provider.getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())

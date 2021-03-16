@@ -55,7 +55,7 @@ public class BeaconStateBenchmark {
   public void iterateValidatorsWithMethods(Blackhole bh) {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator.isSlashed());
-      bh.consume(validator.getPubkey());
+      bh.consume(validator.getPubkeyBytes());
       bh.consume(validator.getEffective_balance());
       bh.consume(validator.getActivation_epoch());
       bh.consume(validator.getExit_epoch());
@@ -67,7 +67,7 @@ public class BeaconStateBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateBalances(Blackhole bh) {
-    for (UInt64 balance : beaconState.getBalances()) {
+    for (UInt64 balance : beaconState.getBalances().asListUnboxed()) {
       bh.consume(balance);
     }
   }
@@ -82,7 +82,7 @@ public class BeaconStateBenchmark {
               int size = state.getBalances().size();
               UInt64 balance = UInt64.valueOf(777);
               for (int i = 0; i < size; i++) {
-                state.getBalances().set(i, balance);
+                state.getBalances().setElement(i, balance);
               }
             });
     bh.consume(stateW.hashTreeRoot());

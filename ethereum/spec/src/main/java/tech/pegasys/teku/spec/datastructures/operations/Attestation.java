@@ -18,22 +18,20 @@ import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Attestation
-    extends Container3<Attestation, SszBitlist, AttestationData, SszVector<SszByte>> {
+    extends Container3<Attestation, SszBitlist, AttestationData, SszSignature> {
 
   public static class AttestationSchema
-      extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszVector<SszByte>> {
+      extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszSignature> {
 
     public AttestationSchema() {
       super(
@@ -41,7 +39,7 @@ public class Attestation
           namedSchema(
               "aggregation_bits", SszBitlistSchema.create(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
-          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+          namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
 
     public SszBitlistSchema<?> getAggregationBitsSchema() {
@@ -56,19 +54,12 @@ public class Attestation
 
   public static final AttestationSchema SSZ_SCHEMA = new AttestationSchema();
 
-  private BLSSignature signatureCache;
-
   private Attestation(AttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Attestation(SszBitlist aggregation_bits, AttestationData data, BLSSignature signature) {
-    super(
-        SSZ_SCHEMA,
-        aggregation_bits,
-        data,
-        SszUtils.toSszByteVector(signature.toBytesCompressed()));
-    signatureCache = signature;
+    super(SSZ_SCHEMA, aggregation_bits, data, new SszSignature(signature));
   }
 
   public Attestation() {
@@ -96,9 +87,6 @@ public class Attestation
   }
 
   public BLSSignature getAggregate_signature() {
-    if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField2()));
-    }
-    return signatureCache;
+    return getField2().getSignature();
   }
 }

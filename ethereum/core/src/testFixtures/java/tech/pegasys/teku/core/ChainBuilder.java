@@ -51,8 +51,7 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
@@ -378,13 +377,16 @@ public class ChainBuilder {
     final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
+      SszList<Attestation> attestations =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createAttestations(options.getAttestations().toArray(new Attestation[0]));
       nextBlockAndState =
           blockProposalTestUtil.createBlock(
               signer,
               slot,
               preState,
               parentRoot,
-              Optional.of(options.getAttestations()),
+              Optional.of(attestations),
               Optional.empty(),
               Optional.empty(),
               options.getEth1Data());
@@ -408,7 +410,8 @@ public class ChainBuilder {
   }
 
   public static final class BlockOptions {
-    private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+
+    private List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
@@ -427,7 +430,7 @@ public class ChainBuilder {
       return this;
     }
 
-    private SSZList<Attestation> getAttestations() {
+    private List<Attestation> getAttestations() {
       return attestations;
     }
 
