@@ -48,19 +48,4 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
   }
-
-  @Test
-  public void eth1Deposit_requiredIfEth1Endpoint() {
-    final String[] args = {
-      "--network", "minimal", "--eth1-endpoint", "http://example.com:1234/path/"
-    };
-
-    beaconNodeCommand.parse(args);
-    final String str = getCommandLineOutput();
-    assertThat(str)
-        .contains("Eth1 deposit contract address is required if an eth1 endpoint is specified");
-    assertThat(str).contains("To display full help:");
-    assertThat(str).contains("--help");
-    assertThat(str).doesNotContain("Default");
-  }
 }
