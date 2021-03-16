@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
+package tech.pegasys.teku.spec.constants;
 
-public class ValidatorFlag {
+public class ParticipationFlags {
   public static final int TIMELY_HEAD_FLAG = 1;
   public static final int TIMELY_SOURCE_FLAG = 2;
   public static final int TIMELY_TARGET_FLAG = 4;
