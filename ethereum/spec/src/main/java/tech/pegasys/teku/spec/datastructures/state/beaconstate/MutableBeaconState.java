@@ -24,20 +24,20 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.SszMutableRefContainer;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszMutableBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.SszMutableRefContainer;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszMutableBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 

@@ -28,7 +28,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.SszData;
 
 public class Eth2IncomingRequestHandler<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>
