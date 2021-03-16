@@ -72,26 +72,26 @@
     <script>
 
       // default version list in case of JSON loading issue
-      var versions = {'latest':{'spec':'latest','source':'master'}};
-      const DEFAULT_VERSION = Object.keys(versions)[0];
+      let versions = {'latest':{'spec':'latest','source':'master'}};
+      let defaultVersion = Object.keys(versions)[0];
 
       // return the json OPENAPI spec path to load for a version
       // or a default version (first one in list) if no matching version.
       function getSpecPath(version){
-        var spec = (version in versions) ? versions[version].spec : versions[Object.keys(versions)[0]].spec;
+        let spec = (version in versions) ? versions[version].spec : versions[defaultVersion].spec;
         return `teku-${spec}.json`;
       }
 
       // is the version passed as param the one displayed accoring to the url
       function isDisplayedVersion(version){
-         return getVersionFromURL() == version || (getVersionFromURL() == '' && version == DEFAULT_VERSION);
+         return getVersionFromURL() === version || (getVersionFromURL() === '' && version === defaultVersion);
       }
 
       // Update the redoc element and run the redoc display
       function updateSpec(){
         const element = $( `<redoc spec-url="${getSpecPath(getVersionFromURL())}"></redoc>` );
         element.appendTo( "main.container" );
-        Redoc.init(element.attr('spec-url'), {hideHostname: true});
+        Redoc.init(`${element.attr('spec-url')}?ts=${Date.now()}`, {hideHostname: true});
         updateVersionsDropDown();
       }
 
@@ -99,7 +99,7 @@
       function updateVersionsDropDown(){
         $("#versionsList").empty();
         $.each( versions, function( version, infos ) {
-          var sourceText = (version == infos.source) ? '' : ` (${infos.source})`;
+          var sourceText = (version === infos.source) ? '' : ` (${infos.source})`;
 
           var item = $( `<a class="version-number-item dropdown-item" href="#${version}">${version}${sourceText}</a>" `);
 
@@ -125,7 +125,13 @@
       function getVersionsFromJsonFile(){
         $.ajaxSetup({ cache: false });
         $.getJSON( 'versions.json', function( data ) {
-          if(!jQuery.isEmptyObject(data)){ versions = data; }
+          if(!jQuery.isEmptyObject(data)){
+            versions = data;
+            // Makes stable the default version if available
+            if ('stable' in versions) {
+              defaultVersion = 'stable';
+            }
+          }
         })
         .always(function() { updateSpec(); });
       }
