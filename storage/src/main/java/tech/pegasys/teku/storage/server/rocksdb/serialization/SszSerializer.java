@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 class SszSerializer<T extends SszData> implements RocksDbSerializer<T> {
 

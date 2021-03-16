@@ -26,16 +26,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableContainer;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.SszContainer;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszMutableContainer;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
 
 public interface BeaconState extends SszContainer, ValidatorStats {
 
