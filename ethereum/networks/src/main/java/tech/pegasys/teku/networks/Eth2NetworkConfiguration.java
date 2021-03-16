@@ -273,7 +273,6 @@ public class Eth2NetworkConfiguration {
           .constants(MAINNET.constantsName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
-          .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
               // PegaSys Teku
@@ -302,7 +301,6 @@ public class Eth2NetworkConfiguration {
       return reset()
           .constants(PRATER.constantsName())
           .startupTimeoutSeconds(120)
-          .eth1DepositContractAddress("0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b")
           .eth1DepositContractDeployBlock(4367322)
           .initialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
@@ -313,7 +311,6 @@ public class Eth2NetworkConfiguration {
       return reset()
           .constants(PYRMONT.constantsName())
           .startupTimeoutSeconds(120)
-          .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
           .eth1DepositContractDeployBlock(3743587)
           .initialStateFromClasspath("pyrmont-genesis.ssz")
           .discoveryBootnodes(
