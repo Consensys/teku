@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.collections.impl.SszBitlistImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;

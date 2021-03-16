@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszMutableRefList;
 import tech.pegasys.teku.ssz.cache.IntCache;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
