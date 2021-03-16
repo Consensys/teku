@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.schema.collections;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 
 public interface SszByteVectorSchema<SszVectorT extends SszByteVector>

@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 interface ValidatorStatsAltair extends BeaconStateAltair {
   @Override

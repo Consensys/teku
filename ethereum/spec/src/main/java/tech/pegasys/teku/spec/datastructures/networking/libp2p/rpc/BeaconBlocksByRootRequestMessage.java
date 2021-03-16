@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.impl.SszListImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;

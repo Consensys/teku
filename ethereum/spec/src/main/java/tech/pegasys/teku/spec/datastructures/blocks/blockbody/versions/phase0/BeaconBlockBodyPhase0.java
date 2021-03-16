@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.containers.Container8;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.impl.SszUtils;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */

@@ -11,13 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.collections;
+package tech.pegasys.teku.ssz.primitive;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 
-public interface SszBytes32Vector extends SszPrimitiveVector<Bytes32, SszBytes32> {
+public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
 
-  @Override
-  SszMutableBytes32Vector createWritableCopy();
+  public static SszByte of(int value) {
+    return new SszByte((byte) value);
+  }
+
+  public static SszByte of(byte value) {
+    return new SszByte(value);
+  }
+
+  private SszByte(Byte value) {
+    super(value, SszPrimitiveSchemas.BYTE_SCHEMA);
+  }
 }

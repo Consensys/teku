@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.schema.collections.impl;
 
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.collections.impl.SszBytes32VectorImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszVectorSchema;

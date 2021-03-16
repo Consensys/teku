@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.schema.collections.impl;
 
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.collections.impl.SszUInt64ListImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
