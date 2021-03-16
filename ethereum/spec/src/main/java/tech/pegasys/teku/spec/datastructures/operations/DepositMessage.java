@@ -20,8 +20,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.ssz.containers.Container3;
 import tech.pegasys.teku.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

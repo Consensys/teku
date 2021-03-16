@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 
 public class SszPrimitiveListSchemaTest implements SszListSchemaTestBase {

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.ssz.collections.impl.SszBitlistImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 
 /** Specialized implementation of {@code SszList<SszBit>} */

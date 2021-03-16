@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.ssz.impl.SszListImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;

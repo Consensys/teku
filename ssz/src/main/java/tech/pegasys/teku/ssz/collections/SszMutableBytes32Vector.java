@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.collections;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
 public interface SszMutableBytes32Vector
     extends SszMutablePrimitiveVector<Bytes32, SszBytes32>, SszBytes32Vector {

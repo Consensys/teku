@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszMutableList;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStateAltair {
 
