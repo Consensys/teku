@@ -49,6 +49,12 @@ public abstract class ResourceLoader {
         new FileResourceLoader(sourceFilter));
   }
 
+  /**
+   * Given a list of potential sources, returns a stream of the first available source
+   *
+   * @param sources A list of potential sources
+   * @return The first source that can be successfully read
+   */
   public Optional<InputStream> load(final String... sources) throws IOException {
     final List<String> validSources =
         Arrays.stream(sources).filter(sourceFilter).collect(Collectors.toList());
