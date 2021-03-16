@@ -30,6 +30,7 @@ public interface SszCollection<ElementT extends SszData>
   default List<ElementT> asList() {
     return new AbstractList<>() {
       private final int cachedSize = SszCollection.this.size();
+
       @Override
       public ElementT get(int index) {
         return SszCollection.this.get(index);

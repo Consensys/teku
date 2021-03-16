@@ -134,7 +134,6 @@ public abstract class AbstractSszVectorSchema<
     return fixedPartSize;
   }
 
-
   private int calcSszFixedPartSize() {
     if (isListBacking) {
       return 0;

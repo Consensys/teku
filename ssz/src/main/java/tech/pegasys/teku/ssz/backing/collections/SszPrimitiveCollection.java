@@ -37,6 +37,7 @@ public interface SszPrimitiveCollection<
   default List<ElementT> asListUnboxed() {
     return new AbstractList<>() {
       private final int cachedSize = SszPrimitiveCollection.this.size();
+
       @Override
       public ElementT get(int index) {
         return SszPrimitiveCollection.this.getElement(index);

@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
@@ -66,7 +64,7 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
 
   @Override
   protected TreeUpdates packChanges(
-      Stream<Entry<Integer, SszData>> newChildValues, TreeNode original) {
+      Stream<Map.Entry<Integer, SszData>> newChildValues, TreeNode original) {
     throw new UnsupportedOperationException("Packed values are not supported");
   }
 }

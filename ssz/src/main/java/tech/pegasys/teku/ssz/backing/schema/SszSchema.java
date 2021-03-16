@@ -74,8 +74,8 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return newValue.getBackingNode();
   }
 
-
-  default TreeNode updateBackingNode(TreeNode srcNode, int[] internalIndexes, SszData[] newValues, int count) {
+  default TreeNode updateBackingNode(
+      TreeNode srcNode, int[] internalIndexes, SszData[] newValues, int count) {
     assert internalIndexes.length >= count && newValues.length >= count;
     TreeNode res = srcNode;
     for (int i = 0; i < count; i++) {
