@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common;
 
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -36,6 +37,7 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final StateTransition stateTransition;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+  protected final MiscHelpers miscHelpers;
 
   public AbstractSpecLogic(
       final CommitteeUtil committeeUtil,
@@ -47,7 +49,8 @@ public class AbstractSpecLogic implements SpecLogic {
       final BlockProcessorUtil blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final MiscHelpers miscHelpers) {
     this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
@@ -58,6 +61,7 @@ public class AbstractSpecLogic implements SpecLogic {
     this.stateTransition = stateTransition;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.miscHelpers = miscHelpers;
   }
 
   @Override
@@ -108,5 +112,10 @@ public class AbstractSpecLogic implements SpecLogic {
   @Override
   public ValidatorStatusFactory getValidatorStatusFactory() {
     return validatorStatusFactory;
+  }
+
+  @Override
+  public MiscHelpers getMiscLogic() {
+    return miscHelpers;
   }
 }

@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
@@ -38,7 +39,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final BlockProcessorAltair blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final MiscHelpersAltair miscHelpers) {
     super(
         committeeUtil,
         validatorsUtil,
@@ -49,7 +51,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        miscHelpers);
   }
 
   public static SpecLogicAltair create(
@@ -73,6 +76,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
+    final MiscHelpersAltair miscHelpersAltair = new MiscHelpersAltair();
 
     return new SpecLogicAltair(
         committeeUtil,
@@ -84,6 +88,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        miscHelpersAltair);
   }
 }

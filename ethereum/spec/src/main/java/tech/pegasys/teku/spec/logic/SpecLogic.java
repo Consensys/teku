@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic;
 
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -44,4 +45,6 @@ public interface SpecLogic {
   BlockProposalUtil getBlockProposalUtil();
 
   ValidatorStatusFactory getValidatorStatusFactory();
+
+  MiscHelpers getMiscLogic();
 }
