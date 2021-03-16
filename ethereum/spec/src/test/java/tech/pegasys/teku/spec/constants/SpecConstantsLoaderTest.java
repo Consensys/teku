@@ -18,12 +18,16 @@ import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAll
 import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllFieldsSet;
 import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllPhase0FieldsSet;
 
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -69,6 +73,35 @@ public class SpecConstantsLoaderTest {
   }
 
   @Test
+  public void shouldLoadMainnetFromFile(@TempDir Path tempDir) throws Exception {
+    writeMainnetToFile(tempDir, "phase0.yaml");
+
+    final Path file = tempDir.resolve("phase0.yaml");
+    final SpecConstants constants =
+        SpecConstantsLoader.loadConstants(file.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(constants);
+  }
+
+  @Test
+  public void shouldLoadMainnetFromDirectory(@TempDir Path tempDir) throws Exception {
+    writeMainnetToFile(tempDir, "phase0.yaml");
+    writeMainnetToFile(tempDir, "altair.yaml");
+
+    final SpecConstants constants =
+        SpecConstantsLoader.loadConstants(tempDir.toAbsolutePath().toString());
+    assertAllAltairFieldsSet(constants);
+  }
+
+  @Test
+  public void shouldLoadMainnetPhase0FromDirectory(@TempDir Path tempDir) throws Exception {
+    writeMainnetToFile(tempDir, "phase0.yaml");
+
+    final SpecConstants constants =
+        SpecConstantsLoader.loadConstants(tempDir.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(constants);
+  }
+
+  @Test
   public void shouldTestAllKnownNetworks() {
     final List<String> testedNetworks =
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
@@ -85,8 +118,21 @@ public class SpecConstantsLoaderTest {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET.constantsName(), SpecConstantsAltair.class),
         Arguments.of(Eth2Network.PYRMONT.constantsName(), SpecConstantsPhase0.class),
+        Arguments.of(Eth2Network.PRATER.constantsName(), SpecConstantsPhase0.class),
         Arguments.of(Eth2Network.MINIMAL.constantsName(), SpecConstantsAltair.class),
         Arguments.of(Eth2Network.SWIFT.constantsName(), SpecConstantsPhase0.class),
         Arguments.of(Eth2Network.LESS_SWIFT.constantsName(), SpecConstantsPhase0.class));
+  }
+
+  private void writeMainnetToFile(final Path directory, final String constantsFile)
+      throws Exception {
+    final Path file = directory.resolve(constantsFile);
+    final InputStream constantsStream =
+        Constants.class
+            .getClassLoader()
+            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + constantsFile);
+    byte[] buffer = new byte[constantsStream.available()];
+    constantsStream.read(buffer);
+    Files.write(file, buffer);
   }
 }
