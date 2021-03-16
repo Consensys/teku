@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.constants;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConstantsAltair extends DelegatingSpecConstants {
   private final UInt64 altairInactivityPenaltyQuotient;
