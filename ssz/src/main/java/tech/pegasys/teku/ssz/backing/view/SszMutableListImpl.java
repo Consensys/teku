@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableRefList;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
@@ -37,8 +39,12 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   @Override
   protected SszListImpl<SszElementT> createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszElementT> childrenCache) {
-    TreeNode nodeWithUpdatedSize = updateSize(backingNode);
-    return new SszListImpl<>(getSchema(), nodeWithUpdatedSize, childrenCache);
+    return new SszListImpl<>(getSchema(), backingNode, childrenCache);
+  }
+
+  @Override
+  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+    return updateSize(updatedTree);
   }
 
   @Override
@@ -51,7 +57,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   }
 
   private TreeNode createSizeNode() {
-    return SszUInt64.fromLong(size()).getBackingNode();
+    return SszUInt64.of(UInt64.fromLongBits(size())).getBackingNode();
   }
 
   @Override
@@ -70,7 +76,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @Override
   protected void checkIndex(int index, boolean set) {
-    if ((!set && index >= size())
+    if (index < 0
+        || (!set && index >= size())
         || (set && (index > size() || index >= getSchema().getMaxLength()))) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());
@@ -85,8 +92,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListImpl<SszElementT> commitChanges() {
-    return (SszListImpl<SszElementT>) super.commitChanges();
+  public SszList<SszElementT> commitChanges() {
+    return (SszList<SszElementT>) super.commitChanges();
   }
 
   @Override

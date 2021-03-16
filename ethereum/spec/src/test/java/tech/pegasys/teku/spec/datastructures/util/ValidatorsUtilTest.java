@@ -33,7 +33,7 @@ class ValidatorsUtilTest {
       final Validator validator = state.getValidators().get(i);
       assertThat(
               ValidatorsUtil.getValidatorIndex(
-                  state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+                  state, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
           .contains(i);
     }
   }
@@ -54,15 +54,15 @@ class ValidatorsUtilTest {
     // more validators, if the validator isn't actually in the target state.
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final Validator validator = dataStructureUtil.randomValidator();
-    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
+    final BeaconState nextState = state.updated(s -> s.getValidators().append(validator));
 
     assertThat(
             ValidatorsUtil.getValidatorIndex(
-                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
         .contains(nextState.getValidators().size() - 1);
     assertThat(
             ValidatorsUtil.getValidatorIndex(
-                state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+                state, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
         .isEmpty();
   }
 
@@ -74,14 +74,14 @@ class ValidatorsUtilTest {
     // Lookup the validator before it's in the list.
     assertThat(
             ValidatorsUtil.getValidatorIndex(
-                state, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+                state, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
         .isEmpty();
 
     // Then add it to the list and we should be able to find the index.
-    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
+    final BeaconState nextState = state.updated(s -> s.getValidators().append(validator));
     assertThat(
             ValidatorsUtil.getValidatorIndex(
-                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkey())))
+                nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
         .contains(nextState.getValidators().size() - 1);
   }
 }

@@ -49,7 +49,7 @@ public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
   }
 
   public Checkpoint(UInt64 epoch, Bytes32 root) {
-    super(SSZ_SCHEMA, new SszUInt64(epoch), new SszBytes32(root));
+    super(SSZ_SCHEMA, SszUInt64.of(epoch), SszBytes32.of(root));
   }
 
   public UInt64 getEpoch() {

@@ -20,21 +20,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.SszTestUtils;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private SSZVector<Bytes32> branch = setupMerkleBranch();
+  private SszBytes32Vector branch = setupMerkleBranch();
   private DepositData depositData = dataStructureUtil.randomDepositData();
 
   private Deposit deposit = new Deposit(branch, depositData);
@@ -56,11 +56,12 @@ class DepositTest {
   @Test
   void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes32> reverseBranch = new ArrayList<>(branch.asList());
+
+    List<Bytes32> reverseBranch = new ArrayList<>(branch.asListUnboxed());
     Collections.reverse(reverseBranch);
 
     Deposit testDeposit =
-        new Deposit(SSZVector.createMutable(reverseBranch, Bytes32.class), depositData);
+        new Deposit(Deposit.SSZ_SCHEMA.getProofSchema().of(reverseBranch), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
@@ -93,14 +94,9 @@ class DepositTest {
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.SSZ_SCHEMA));
   }
 
-  private SSZVector<Bytes32> setupMerkleBranch() {
-    SSZMutableVector<Bytes32> branch =
-        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-
-    for (int i = 0; i < branch.size(); ++i) {
-      branch.set(i, Bytes32.random());
-    }
-
-    return branch;
+  private SszBytes32Vector setupMerkleBranch() {
+    return new DataStructureUtil()
+        .randomSszBytes32Vector(
+            Deposit.SSZ_SCHEMA.getProofSchema(), (Supplier<Bytes32>) Bytes32::random);
   }
 }

@@ -67,8 +67,8 @@ public class PendingAttestation
         SSZ_SCHEMA,
         aggregation_bitfield,
         data,
-        new SszUInt64(inclusion_delay),
-        new SszUInt64(proposer_index));
+        SszUInt64.of(inclusion_delay),
+        SszUInt64.of(proposer_index));
   }
 
   public PendingAttestation() {

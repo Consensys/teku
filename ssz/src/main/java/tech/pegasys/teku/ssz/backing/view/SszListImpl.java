@@ -67,7 +67,7 @@ public class SszListImpl<SszElementT extends SszData> extends AbstractSszCollect
 
   @Override
   protected void checkIndex(int index) {
-    if (index >= size()) {
+    if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());
     }

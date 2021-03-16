@@ -84,7 +84,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   }
 
   @Override
-  default int getBitsSize() {
-    return 256;
+  default boolean isPrimitive() {
+    return false;
   }
 }

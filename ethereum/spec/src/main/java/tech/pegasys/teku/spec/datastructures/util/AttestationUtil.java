@@ -23,8 +23,9 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_dom
 import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValidatorPubKey;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.collect.Comparators;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -42,8 +43,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 
 @Deprecated
 public class AttestationUtil {
@@ -85,10 +86,10 @@ public class AttestationUtil {
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
 
     return new IndexedAttestation(
-        SSZList.createMutable(
-            attesting_indices.stream().sorted().map(UInt64::valueOf).collect(toList()),
-            MAX_VALIDATORS_PER_COMMITTEE,
-            UInt64.class),
+        attesting_indices.stream()
+            .sorted()
+            .map(UInt64::valueOf)
+            .collect(IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
@@ -165,15 +166,18 @@ public class AttestationUtil {
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
-    SSZList<UInt64> indices = indexed_attestation.getAttesting_indices();
+    SszUInt64List indices = indexed_attestation.getAttesting_indices();
 
-    List<UInt64> bit_0_indices_sorted = indices.stream().sorted().distinct().collect(toList());
-    if (indices.isEmpty() || !indices.equals(bit_0_indices_sorted)) {
+    if (indices.isEmpty()
+        || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 
     List<BLSPublicKey> pubkeys =
-        indices.stream().flatMap(i -> getValidatorPubKey(state, i).stream()).collect(toList());
+        indices
+            .streamUnboxed()
+            .flatMap(i -> getValidatorPubKey(state, i).stream())
+            .collect(toList());
     if (pubkeys.size() < indices.size()) {
       return AttestationProcessingResult.invalid(
           "Attesting indices include non-existent validator");

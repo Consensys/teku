@@ -54,16 +54,7 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return createFromBackingNode(getDefaultTree());
   }
 
-  /**
-   * Returns the number of bits the element of this schema occupies in a tree node.
-   *
-   * <p>More strict definition is: how many elements of this type one tree node may contain.
-   *
-   * <p>Any structure of a complex schema occupies the whole tree node and their bitsize assumed to
-   * be 256 Normally the bitsize < 256 is for primitive schemas that can be packed into a single
-   * leaf node
-   */
-  int getBitsSize();
+  boolean isPrimitive();
 
   /**
    * For packed primitive values. Extracts a packed value from the tree node by its 'internal

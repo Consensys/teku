@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.view;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableRefVector;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
+import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -43,13 +44,13 @@ public class SszMutableVectorImpl<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorImpl<SszElementT> commitChanges() {
-    return (SszVectorImpl<SszElementT>) super.commitChanges();
+  public SszVector<SszElementT> commitChanges() {
+    return (SszVector<SszElementT>) super.commitChanges();
   }
 
   @Override
   protected void checkIndex(int index, boolean set) {
-    if (index >= size()) {
+    if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());
     }

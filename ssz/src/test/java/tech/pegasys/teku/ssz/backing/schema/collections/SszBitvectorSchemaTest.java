@@ -18,16 +18,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.backing.SszVector;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
-public class SszBitvectorSchemaTest {
+public class SszBitvectorSchemaTest implements SszVectorSchemaTestBase {
+
+  @Override
+  public Stream<? extends SszSchema<?>> testSchemas() {
+    return Stream.of(
+        SszBitvectorSchema.create(1),
+        SszBitvectorSchema.create(2),
+        SszBitvectorSchema.create(3),
+        SszBitvectorSchema.create(7),
+        SszBitvectorSchema.create(8),
+        SszBitvectorSchema.create(9),
+        SszBitvectorSchema.create(254),
+        SszBitvectorSchema.create(255),
+        SszBitvectorSchema.create(256),
+        SszBitvectorSchema.create(511),
+        SszBitvectorSchema.create(512),
+        SszBitvectorSchema.create(513));
+  }
 
   @Test
   void ofBits_shouldThrowIfLengthNegative() {
@@ -97,8 +116,7 @@ public class SszBitvectorSchemaTest {
   @Test
   void createFromElements_shouldReturnSszBitvector() {
     SszBitvectorSchema<SszBitvector> schema = SszBitvectorSchema.create(10);
-    SszBitvector bitvector =
-        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+    SszBitvector bitvector = schema.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(bitvector).isInstanceOf(SszBitvector.class);
   }
 
@@ -108,7 +126,7 @@ public class SszBitvectorSchemaTest {
     assertThat(schema).isInstanceOf(SszBitvectorSchema.class);
     assertThat(schema.getMaxLength()).isEqualTo(10);
     SszVector<SszBit> sszList =
-        schema.createFromElements(List.of(SszBit.viewOf(false), SszBit.viewOf(true)));
+        schema.createFromElements(List.of(SszBit.of(false), SszBit.of(true)));
     assertThat(sszList).isInstanceOf(SszBitvector.class);
     SszBitvector sszBitvector = (SszBitvector) sszList;
     assertThat(sszBitvector.getSchema()).isEqualTo(schema);

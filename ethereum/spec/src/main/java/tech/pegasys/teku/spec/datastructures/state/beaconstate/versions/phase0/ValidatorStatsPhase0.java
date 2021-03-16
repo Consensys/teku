@@ -18,7 +18,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
 
 interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
@@ -33,7 +33,7 @@ interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
   }
 
   private CorrectAndLiveValidators getValidatorStats(
-      final SSZList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
+      final SszList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
 
     final Map<UInt64, Map<UInt64, SszBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
         new HashMap<>();

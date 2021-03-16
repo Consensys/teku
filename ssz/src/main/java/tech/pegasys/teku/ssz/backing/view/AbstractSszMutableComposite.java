@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,6 +24,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ssz.backing.InvalidValueSchemaException;
+import tech.pegasys.teku.ssz.backing.SszComposite;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszMutableComposite;
 import tech.pegasys.teku.ssz.backing.SszMutableData;
@@ -66,6 +70,14 @@ public abstract class AbstractSszMutableComposite<
   @Override
   public void set(int index, SszChildT value) {
     checkIndex(index, true);
+    checkNotNull(value);
+    if (!value.getSchema().equals(getSchema().getChildSchema(index))) {
+      throw new InvalidValueSchemaException(
+          "Expected child to have schema "
+              + getSchema().getChildSchema(index)
+              + ", but value has schema "
+              + value.getSchema());
+    }
     if (childrenRefs.containsKey(index)) {
       throw new IllegalStateException(
           "A child couldn't be simultaneously modified by value and accessed by ref");
@@ -133,7 +145,7 @@ public abstract class AbstractSszMutableComposite<
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszData commitChanges() {
+  public SszComposite<SszChildT> commitChanges() {
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableData;
     } else {
@@ -155,8 +167,13 @@ public abstract class AbstractSszMutableComposite<
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();
       TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
-      return createImmutableSszComposite(newBackingTree, cache);
+      TreeNode finalBackingTree = doFinalTreeUpdates(newBackingTree);
+      return createImmutableSszComposite(finalBackingTree, cache);
     }
+  }
+
+  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+    return updatedTree;
   }
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */

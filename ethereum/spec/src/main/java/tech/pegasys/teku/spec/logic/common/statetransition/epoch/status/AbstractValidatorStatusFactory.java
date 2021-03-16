@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public abstract class AbstractValidatorStatusFactory implements ValidatorStatusFactory {
   protected final BeaconStateUtil beaconStateUtil;
@@ -49,7 +49,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
   @Override
   public ValidatorStatuses createValidatorStatuses(final BeaconState state) {
-    final SSZList<Validator> validators = state.getValidators();
+    final SszList<Validator> validators = state.getValidators();
 
     final UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
     final UInt64 previousEpoch = beaconStateUtil.getPreviousEpoch(state);

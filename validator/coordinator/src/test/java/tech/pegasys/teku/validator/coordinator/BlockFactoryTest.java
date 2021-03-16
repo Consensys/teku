@@ -18,11 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists.createAttestations;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists.createAttesterSlashings;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists.createDeposits;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists.createProposerSlashings;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists.createVoluntaryExits;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
@@ -42,11 +37,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -57,6 +53,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class BlockFactoryTest {
 
   private final Spec spec = SpecFactory.createMinimal();
+  private final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   public static final Eth1Data ETH1_DATA = new Eth1Data();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData =
@@ -69,11 +66,13 @@ class BlockFactoryTest {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private final SSZMutableList<Deposit> deposits = createDeposits();
-  private final SSZMutableList<Attestation> attestations = createAttestations();
-  private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
-  private final SSZMutableList<ProposerSlashing> proposerSlashings = createProposerSlashings();
-  private final SSZMutableList<SignedVoluntaryExit> voluntaryExits = createVoluntaryExits();
+  private final SszList<Deposit> deposits = blockBodyLists.createDeposits();
+  private final SszList<Attestation> attestations = blockBodyLists.createAttestations();
+  private final SszList<AttesterSlashing> attesterSlashings =
+      blockBodyLists.createAttesterSlashings();
+  private final SszList<ProposerSlashing> proposerSlashings =
+      blockBodyLists.createProposerSlashings();
+  private final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
 
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =

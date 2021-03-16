@@ -49,9 +49,9 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
   public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
         SSZ_SCHEMA,
-        new SszBytes4(previous_version),
-        new SszBytes4(current_version),
-        new SszUInt64(epoch));
+        SszBytes4.of(previous_version),
+        SszBytes4.of(current_version),
+        SszUInt64.of(epoch));
   }
 
   public Bytes4 getPrevious_version() {

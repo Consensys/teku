@@ -100,7 +100,7 @@ public class GenesisGenerator {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
-    UInt64 balance = state.getBalances().get(index);
+    UInt64 balance = state.getBalances().getElement(index);
     UInt64 effective_balance =
         balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
 
@@ -115,7 +115,7 @@ public class GenesisGenerator {
 
     Validator modifiedValidator =
         new Validator(
-            validator.getPubkey(),
+            validator.getPubkeyBytes(),
             validator.getWithdrawal_credentials(),
             effective_balance,
             validator.isSlashed(),
@@ -148,12 +148,12 @@ public class GenesisGenerator {
     calculateRandaoMixes();
     calculateDepositRoot();
     final BeaconState readOnlyState = state.commitChanges();
-    state.setGenesis_validators_root(readOnlyState.getValidators().hash_tree_root());
+    state.setGenesis_validators_root(readOnlyState.getValidators().hashTreeRoot());
   }
 
   private void calculateRandaoMixes() {
     for (int i = 0; i < state.getRandao_mixes().size(); i++) {
-      state.getRandao_mixes().set(i, state.getEth1_data().getBlock_hash());
+      state.getRandao_mixes().setElement(i, state.getEth1_data().getBlock_hash());
     }
   }
 

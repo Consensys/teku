@@ -55,7 +55,7 @@ public class MetadataMessage extends Container2<MetadataMessage, SszUInt64, SszB
   }
 
   public MetadataMessage(UInt64 seqNumber, SszBitvector attnets) {
-    super(SSZ_SCHEMA, new SszUInt64(seqNumber), attnets);
+    super(SSZ_SCHEMA, SszUInt64.of(seqNumber), attnets);
   }
 
   public UInt64 getSeqNumber() {

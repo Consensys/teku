@@ -51,9 +51,9 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
       final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
     super(
         SSZ_SCHEMA,
-        new SszBytes4(forkDigest),
-        new SszBytes4(nextForkVersion),
-        new SszUInt64(nextForkEpoch));
+        SszBytes4.of(forkDigest),
+        SszBytes4.of(nextForkVersion),
+        SszUInt64.of(nextForkEpoch));
   }
 
   public Bytes4 getForkDigest() {

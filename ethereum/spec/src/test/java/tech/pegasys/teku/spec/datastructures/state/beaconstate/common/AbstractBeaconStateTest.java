@@ -48,19 +48,19 @@ public abstract class AbstractBeaconStateTest<
             .createEmpty()
             .updated(
                 state -> {
-                  state.getBalances().add(val1);
+                  state.getBalances().appendElement(val1);
                 });
-    UInt64 v1 = stateR1.getBalances().get(0);
+    UInt64 v1 = stateR1.getBalances().getElement(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
-    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
+    assertThat(stateR1.getBalances().getElement(0)).isEqualTo(UInt64.valueOf(0x3333));
 
     BeaconState stateR2 =
         stateR1.updated(
             state -> {
-              state.getBalances().add(UInt64.valueOf(0x4444));
+              state.getBalances().appendElement(UInt64.valueOf(0x4444));
             });
-    UInt64 v2 = stateR2.getBalances().get(0);
+    UInt64 v2 = stateR2.getBalances().getElement(0);
 
     // check that view caching is effectively works and the value
     // is not recreated from tree node without need

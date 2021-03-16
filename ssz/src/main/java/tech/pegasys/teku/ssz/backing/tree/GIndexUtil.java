@@ -54,6 +54,10 @@ public class GIndexUtil {
     }
   }
 
+  /** Maximal depth this generalized index implementation can handle */
+  // with the depth 64 positive long would overflow and we don't want to handle it here
+  public static final int MAX_DEPTH = 63;
+
   /**
    * The generalized index of either a root tree node or an index of a node relative to the node
    * itself. Effectively this is <code>1L</code>
@@ -173,9 +177,9 @@ public class GIndexUtil {
    */
   public static long gIdxChildGIndex(long generalizedIndex, long childIdx, int childDepth) {
     checkGIndex(generalizedIndex);
-    assert childDepth >= 0 && childDepth < 64;
+    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
     assert childIdx >= 0 && childIdx < (1L << childDepth);
-    assert gIdxGetDepth(generalizedIndex) + childDepth < 64;
+    assert gIdxGetDepth(generalizedIndex) + childDepth <= MAX_DEPTH;
     return (generalizedIndex << childDepth) | childIdx;
   }
 
@@ -193,7 +197,7 @@ public class GIndexUtil {
   public static long gIdxCompose(long parentGeneralizedIndex, long childGeneralizedIndex) {
     checkGIndex(parentGeneralizedIndex);
     checkGIndex(childGeneralizedIndex);
-    assert gIdxGetDepth(parentGeneralizedIndex) + gIdxGetDepth(childGeneralizedIndex) < 64;
+    assert gIdxGetDepth(parentGeneralizedIndex) + gIdxGetDepth(childGeneralizedIndex) <= MAX_DEPTH;
 
     long childAnchor = Long.highestOneBit(childGeneralizedIndex);
     int childDepth = Long.bitCount(childAnchor - 1);
@@ -218,7 +222,7 @@ public class GIndexUtil {
       return fromGeneralizedIndex;
     } else {
       int nodeDepth = Long.bitCount(highestOneBit - 1);
-      return fromGeneralizedIndex << (63 - nodeDepth);
+      return fromGeneralizedIndex << (MAX_DEPTH - nodeDepth);
     }
   }
 
@@ -240,7 +244,7 @@ public class GIndexUtil {
       return fromGeneralizedIndex;
     } else {
       int nodeDepth = Long.bitCount(highestOneBit - 1);
-      int shiftN = 63 - nodeDepth;
+      int shiftN = MAX_DEPTH - nodeDepth;
       return (fromGeneralizedIndex << shiftN) | ((1L << shiftN) - 1);
     }
   }
@@ -263,7 +267,7 @@ public class GIndexUtil {
    */
   public static int gIdxGetChildIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    assert childDepth >= 0 && childDepth < 64;
+    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     int indexBitCount = Long.bitCount(anchor - 1);
@@ -287,7 +291,7 @@ public class GIndexUtil {
    */
   public static long gIdxGetRelativeGIndex(long generalizedIndex, int childDepth) {
     checkGIndex(generalizedIndex);
-    assert childDepth >= 0 && childDepth < 64;
+    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
 
     long anchor = Long.highestOneBit(generalizedIndex);
     long pivot = anchor >>> childDepth;

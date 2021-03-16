@@ -23,7 +23,6 @@ import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.SszMutableVector;
 import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
@@ -62,16 +61,6 @@ public class SszUtils {
       idx++;
     }
     return ret.commitChanges();
-  }
-
-  /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
-  public static SszVector<SszByte> toSszByteVector(Bytes bytes) {
-    SszVectorSchema<SszByte, ?> type = new SszByteVectorSchema(bytes.size());
-    return type.sszDeserialize(SszReader.fromBytes(bytes));
-  }
-
-  public static SszVector<SszByte> toSszByteVector(SszVectorSchema<SszByte, ?> type, Bytes bytes) {
-    return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
   public static SszList<SszByte> toSszByteList(SszListSchema<SszByte, ?> type, Bytes bytes) {

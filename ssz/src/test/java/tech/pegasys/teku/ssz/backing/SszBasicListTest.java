@@ -31,22 +31,22 @@ public class SszBasicListTest {
         SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 7);
     SszMutableList<SszUInt64> listView = listType.getDefault().createWritableCopy();
     TreeNode n0 = listView.commitChanges().getBackingNode();
-    listView.append(new SszUInt64(UInt64.valueOf(0x111)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x111)));
     TreeNode n1 = listView.commitChanges().getBackingNode();
-    listView.append(new SszUInt64(UInt64.valueOf(0x222)));
-    listView.append(new SszUInt64(UInt64.valueOf(0x333)));
-    listView.append(new SszUInt64(UInt64.valueOf(0x444)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x222)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x333)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x444)));
     TreeNode n2 = listView.commitChanges().getBackingNode();
-    listView.append(new SszUInt64(UInt64.valueOf(0x555)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x555)));
     TreeNode n3 = listView.commitChanges().getBackingNode();
-    listView.append(new SszUInt64(UInt64.valueOf(0x666)));
-    listView.append(new SszUInt64(UInt64.valueOf(0x777)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x666)));
+    listView.append(SszUInt64.of(UInt64.valueOf(0x777)));
     TreeNode n4 = listView.commitChanges().getBackingNode();
-    listView.set(0, new SszUInt64(UInt64.valueOf(0x800)));
+    listView.set(0, SszUInt64.of(UInt64.valueOf(0x800)));
     TreeNode n5 = listView.commitChanges().getBackingNode();
-    listView.set(1, new SszUInt64(UInt64.valueOf(0x801)));
-    listView.set(2, new SszUInt64(UInt64.valueOf(0x802)));
-    listView.set(3, new SszUInt64(UInt64.valueOf(0x803)));
+    listView.set(1, SszUInt64.of(UInt64.valueOf(0x801)));
+    listView.set(2, SszUInt64.of(UInt64.valueOf(0x802)));
+    listView.set(3, SszUInt64.of(UInt64.valueOf(0x803)));
     TreeNode n6 = listView.commitChanges().getBackingNode();
 
     assertThat(listType.createFromBackingNode(n0).size()).isEqualTo(0);
@@ -81,15 +81,15 @@ public class SszBasicListTest {
                 listType
                     .createFromBackingNode(n3)
                     .createWritableCopy()
-                    .set(7, new SszUInt64(UInt64.valueOf(0xaaa))));
+                    .set(7, SszUInt64.of(UInt64.valueOf(0xaaa))));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
         .isThrownBy(() -> listType.createFromBackingNode(n3).get(7));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
         .isThrownBy(() -> listType.createFromBackingNode(n3).get(8));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
-        .isThrownBy(() -> listView.set(7, new SszUInt64(UInt64.valueOf(0xaaa))));
+        .isThrownBy(() -> listView.set(7, SszUInt64.of(UInt64.valueOf(0xaaa))));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
-        .isThrownBy(() -> listView.append(new SszUInt64(UInt64.valueOf(0xaaa))));
+        .isThrownBy(() -> listView.append(SszUInt64.of(UInt64.valueOf(0xaaa))));
 
     listView.clear();
     assertThat(listView.commitChanges().hashTreeRoot()).isEqualTo(n0.hashTreeRoot());

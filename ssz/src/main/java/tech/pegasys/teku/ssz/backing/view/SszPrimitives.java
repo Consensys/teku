@@ -26,7 +26,7 @@ public class SszPrimitives {
     private static final SszBit TRUE_VIEW = new SszBit(true);
     private static final SszBit FALSE_VIEW = new SszBit(false);
 
-    public static SszBit viewOf(boolean value) {
+    public static SszBit of(boolean value) {
       return value ? TRUE_VIEW : FALSE_VIEW;
     }
 
@@ -42,18 +42,26 @@ public class SszPrimitives {
   }
 
   public static class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
-    public SszByte(Byte value) {
+    public static SszByte of(int value) {
+      return new SszByte((byte) value);
+    }
+
+    public static SszByte of(byte value) {
+      return new SszByte(value);
+    }
+
+    private SszByte(Byte value) {
       super(value, SszPrimitiveSchemas.BYTE_SCHEMA);
     }
   }
 
   public static class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
 
-    public static SszUInt64 fromLong(long val) {
-      return new SszUInt64(UInt64.fromLongBits(val));
+    public static SszUInt64 of(UInt64 val) {
+      return new SszUInt64(val);
     }
 
-    public SszUInt64(UInt64 val) {
+    private SszUInt64(UInt64 val) {
       super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
     }
 
@@ -64,14 +72,22 @@ public class SszPrimitives {
 
   public static class SszBytes4 extends AbstractSszPrimitive<Bytes4, SszBytes4> {
 
-    public SszBytes4(Bytes4 val) {
+    public static SszBytes4 of(Bytes4 val) {
+      return new SszBytes4(val);
+    }
+
+    private SszBytes4(Bytes4 val) {
       super(val, SszPrimitiveSchemas.BYTES4_SCHEMA);
     }
   }
 
   public static class SszBytes32 extends AbstractSszPrimitive<Bytes32, SszBytes32> {
 
-    public SszBytes32(Bytes32 val) {
+    public static SszBytes32 of(Bytes32 val) {
+      return new SszBytes32(val);
+    }
+
+    private SszBytes32(Bytes32 val) {
       super(val, SszPrimitiveSchemas.BYTES32_SCHEMA);
     }
   }
