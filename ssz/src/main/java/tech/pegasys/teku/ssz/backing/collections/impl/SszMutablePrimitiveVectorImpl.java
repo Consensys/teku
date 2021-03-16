@@ -17,6 +17,7 @@ import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszComposite;
 import tech.pegasys.teku.ssz.backing.view.SszMutableVectorImpl;
@@ -26,8 +27,16 @@ public class SszMutablePrimitiveVectorImpl<
     extends SszMutableVectorImpl<SszElementT, SszElementT>
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
 
+  private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
+
   public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
+    elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
+  }
+
+  @Override
+  public SszPrimitiveSchema<ElementT, SszElementT> getPrimitiveElementSchema() {
+    return elementSchemaCache;
   }
 
   @Override
