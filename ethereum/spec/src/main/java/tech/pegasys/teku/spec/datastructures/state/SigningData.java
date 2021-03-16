@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
