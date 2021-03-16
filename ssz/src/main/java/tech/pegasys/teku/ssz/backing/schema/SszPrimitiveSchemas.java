@@ -18,9 +18,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.backing.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.backing.tree.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -32,11 +35,11 @@ import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 /** The collection of commonly used basic types */
 public interface SszPrimitiveSchemas {
-  AbstractSszPrimitiveSchema<SszBit> BIT_SCHEMA =
+  AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
         public SszBit createFromLeafBackingNode(LeafDataNode node, int idx) {
-          return SszBit.viewOf((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
+          return SszBit.of((node.getData().get(idx / 8) & (1 << (idx % 8))) != 0);
         }
 
         @Override
@@ -56,6 +59,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public SszBit boxed(Boolean rawValue) {
+          return SszBit.of(rawValue);
+        }
+
+        @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
         }
@@ -66,11 +74,11 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<SszByte> BYTE_SCHEMA =
+  AbstractSszPrimitiveSchema<Byte, SszByte> BYTE_SCHEMA =
       new AbstractSszPrimitiveSchema<>(8) {
         @Override
         public SszByte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return new SszByte(node.getData().get(internalIndex));
+          return SszByte.of(node.getData().get(internalIndex));
         }
 
         @Override
@@ -79,6 +87,11 @@ public interface SszPrimitiveSchemas {
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
           return LeafNode.create(newBytes);
+        }
+
+        @Override
+        public SszByte boxed(Byte rawValue) {
+          return SszByte.of(rawValue);
         }
 
         @Override
@@ -92,14 +105,14 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<SszUInt64> UINT64_SCHEMA =
+  AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
       new AbstractSszPrimitiveSchema<>(64) {
         @Override
         public SszUInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           Bytes leafNodeBytes = node.getData();
           try {
             Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
-            return SszUInt64.fromLong(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
+            return SszUInt64.of(UInt64.fromLongBits(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN)));
           } catch (Exception e) {
             // additional info to track down the bug https://github.com/PegaSysEng/teku/issues/2579
             String info =
@@ -130,6 +143,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public SszUInt64 boxed(UInt64 rawValue) {
+          return SszUInt64.of(rawValue);
+        }
+
+        @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[8];
         }
@@ -140,11 +158,11 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<SszBytes4> BYTES4_SCHEMA =
+  AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
       new AbstractSszPrimitiveSchema<>(32) {
         @Override
         public SszBytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return new SszBytes4(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
+          return SszBytes4.of(new Bytes4(node.getData().slice(internalIndex * 4, 4)));
         }
 
         @Override
@@ -158,6 +176,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
+        public SszBytes4 boxed(Bytes4 rawValue) {
+          return SszBytes4.of(rawValue);
+        }
+
+        @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[4];
         }
@@ -168,16 +191,21 @@ public interface SszPrimitiveSchemas {
         }
       };
 
-  AbstractSszPrimitiveSchema<SszBytes32> BYTES32_SCHEMA =
+  AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
         public SszBytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return new SszBytes32(node.hashTreeRoot());
+          return SszBytes32.of(node.hashTreeRoot());
         }
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
           return LeafNode.create(((SszBytes32) newValue).get());
+        }
+
+        @Override
+        public SszBytes32 boxed(Bytes32 rawValue) {
+          return SszBytes32.of(rawValue);
         }
 
         @Override

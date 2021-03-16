@@ -53,4 +53,15 @@ public interface SszMutableComposite<SszChildT extends SszData>
   default void update(int index, Function<SszChildT, SszChildT> mutator) {
     set(index, mutator.apply(get(index)));
   }
+
+  default void setAll(Iterable<SszChildT> newChildren) {
+    clear();
+    int idx = 0;
+    for (SszChildT newChild : newChildren) {
+      set(idx++, newChild);
+    }
+  }
+
+  @Override
+  SszComposite<SszChildT> commitChanges();
 }

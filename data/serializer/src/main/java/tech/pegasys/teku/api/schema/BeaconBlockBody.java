@@ -24,8 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -86,34 +85,27 @@ public class BeaconBlockBody {
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
-    final SpecConstants constants = spec.getConstants();
-    return spec.getSchemaDefinitions()
-        .getBeaconBlockBodySchema()
-        .createBlockBody(
-            randao_reveal.asInternalBLSSignature(),
-            new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
-                eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
-            graffiti,
-            SSZList.createMutable(
-                proposer_slashings.stream().map(ProposerSlashing::asInternalProposerSlashing),
-                constants.getMaxProposerSlashings(),
-                tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing.class),
-            SSZList.createMutable(
-                attester_slashings.stream().map(AttesterSlashing::asInternalAttesterSlashing),
-                constants.getMaxAttesterSlashings(),
-                tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.class),
-            SSZList.createMutable(
-                attestations.stream().map(Attestation::asInternalAttestation),
-                constants.getMaxAttestations(),
-                tech.pegasys.teku.spec.datastructures.operations.Attestation.class),
-            SSZList.createMutable(
-                deposits.stream().map(Deposit::asInternalDeposit),
-                constants.getMaxDeposits(),
-                tech.pegasys.teku.spec.datastructures.operations.Deposit.class),
-            SSZList.createMutable(
-                voluntary_exits.stream().map(SignedVoluntaryExit::asInternalSignedVoluntaryExit),
-                constants.getMaxVoluntaryExits(),
-                tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit.class));
+    BeaconBlockBodySchema<?> schema = spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema.createBlockBody(
+        randao_reveal.asInternalBLSSignature(),
+        new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
+            eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
+        graffiti,
+        proposer_slashings.stream()
+            .map(ProposerSlashing::asInternalProposerSlashing)
+            .collect(schema.getProposerSlashingsSchema().collector()),
+        attester_slashings.stream()
+            .map(AttesterSlashing::asInternalAttesterSlashing)
+            .collect(schema.getAttesterSlashingsSchema().collector()),
+        attestations.stream()
+            .map(Attestation::asInternalAttestation)
+            .collect(schema.getAttestationsSchema().collector()),
+        deposits.stream()
+            .map(Deposit::asInternalDeposit)
+            .collect(schema.getDepositsSchema().collector()),
+        voluntary_exits.stream()
+            .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
+            .collect(schema.getVoluntaryExitsSchema().collector()));
   }
 
   @Override

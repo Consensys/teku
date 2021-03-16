@@ -22,6 +22,12 @@ import java.util.function.IntFunction;
  * @param <V> type of values
  */
 public interface IntCache<V> extends Cache<Integer, V> {
+
+  @SuppressWarnings("unchecked")
+  static <V> IntCache<V> noop() {
+    return (IntCache<V>) NoopIntCache.INSTANCE;
+  }
+
   /**
    * Queries value from the cache. If it's not found there, fallback function is used to calculate
    * value. After calculation result is put in cache and returned.

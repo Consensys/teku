@@ -18,6 +18,10 @@ import java.util.function.IntFunction;
 
 public class NoopIntCache<V> implements IntCache<V> {
 
+  static final IntCache<?> INSTANCE = new NoopIntCache<>();
+
+  private NoopIntCache() {}
+
   @Override
   public V getInt(int key, IntFunction<V> fallback) {
     return fallback.apply(key);

@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
+
 /**
  * A wrapper class for SSZ primitive values. {@link SszPrimitive} classes has no mutable versions
  */
-public interface SszPrimitive<ValueType> extends SszData {
+public interface SszPrimitive<ValueType, SszType extends SszPrimitive<ValueType, SszType>>
+    extends SszData {
 
   /** Returns wrapped primitive value */
   ValueType get();
@@ -26,4 +29,12 @@ public interface SszPrimitive<ValueType> extends SszData {
   default SszMutableData createWritableCopy() {
     throw new UnsupportedOperationException("Basic view instances are immutable");
   }
+
+  @Override
+  default boolean isWritableSupported() {
+    return false;
+  }
+
+  @Override
+  SszPrimitiveSchema<ValueType, SszType> getSchema();
 }

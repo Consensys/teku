@@ -13,19 +13,29 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ssz.backing.TestContainers.TestSubContainer;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class SszVectorTest {
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszVectorSchemaTestBase;
 
-  @Disabled("https://github.com/ConsenSys/teku/issues/3618")
-  @Test
-  void testContainerSszSerialize() {
-    SszVectorSchema<TestSubContainer, ?> schema =
-        SszVectorSchema.create(TestSubContainer.SSZ_SCHEMA, 2);
-    Assertions.assertThat(schema.getFixedPartSize()).isEqualTo(80);
+public class SszVectorTest
+    implements SszCollectionTestBase, SszMutableCollectionTestBase, SszMutableRefCompositeTestBase {
+
+  private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+
+  @Override
+  public Stream<SszVector<?>> sszData() {
+    return SszVectorSchemaTestBase.complexVectorSchemas()
+        .flatMap(
+            vectorSchema ->
+                Stream.of(vectorSchema.getDefault(), randomSsz.randomData(vectorSchema)));
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  void size_shouldMatchSchemaLength(SszVector<?> data) {
+    assertThat(data.size()).isEqualTo(data.getSchema().getLength());
   }
 }

@@ -317,7 +317,7 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final String key = internalState.getValidators().get(12).getPubkey().toString();
+    final String key = internalState.getValidators().get(12).getPubkeyBytes().toString();
     final String missingKey = data.randomPublicKey().toString();
     List<String> pubkeys =
         provider.getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())

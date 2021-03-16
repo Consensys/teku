@@ -65,11 +65,11 @@ public class StatusMessage
       UInt64 headSlot) {
     super(
         SSZ_SCHEMA,
-        new SszBytes4(forkDigest),
-        new SszBytes32(finalizedRoot),
-        new SszUInt64(finalizedEpoch),
-        new SszBytes32(headRoot),
-        new SszUInt64(headSlot));
+        SszBytes4.of(forkDigest),
+        SszBytes32.of(finalizedRoot),
+        SszUInt64.of(finalizedEpoch),
+        SszBytes32.of(headRoot),
+        SszUInt64.of(headSlot));
   }
 
   public static StatusMessage createPreGenesisStatus() {

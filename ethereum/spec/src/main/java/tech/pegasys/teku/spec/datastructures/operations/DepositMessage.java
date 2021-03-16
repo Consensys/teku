@@ -14,30 +14,27 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.ssz.backing.containers.Container3;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class DepositMessage
-    extends Container3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
+    extends Container3<DepositMessage, SszPublicKey, SszBytes32, SszUInt64> {
 
   public static class DepositMessageSchema
-      extends ContainerSchema3<DepositMessage, SszVector<SszByte>, SszBytes32, SszUInt64> {
+      extends ContainerSchema3<DepositMessage, SszPublicKey, SszBytes32, SszUInt64> {
 
     public DepositMessageSchema() {
       super(
           "DepositMessage",
-          namedSchema("pubkey", SszComplexSchemas.BYTES_48_SCHEMA),
+          namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
           namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
@@ -58,13 +55,13 @@ public class DepositMessage
       final BLSPublicKey pubkey, final Bytes32 withdrawal_credentials, final UInt64 amount) {
     super(
         SSZ_SCHEMA,
-        SszUtils.toSszByteVector(pubkey.toBytesCompressed()),
-        new SszBytes32(withdrawal_credentials),
-        new SszUInt64(amount));
+        new SszPublicKey(pubkey),
+        SszBytes32.of(withdrawal_credentials),
+        SszUInt64.of(amount));
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(SszUtils.getAllBytes(getField0())));
+    return getField0().getBLSPublicKey();
   }
 
   public Bytes32 getWithdrawal_credentials() {

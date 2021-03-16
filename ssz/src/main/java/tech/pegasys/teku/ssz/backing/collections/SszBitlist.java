@@ -16,13 +16,12 @@ package tech.pegasys.teku.ssz.backing.collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
+import tech.pegasys.teku.ssz.backing.collections.impl.SszBitlistImpl;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
 /** Specialized implementation of {@code SszList<SszBit>} */
-public interface SszBitlist extends SszList<SszBit> {
+public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
 
   static SszBitlist nullableOr(
       @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
@@ -30,8 +29,13 @@ public interface SszBitlist extends SszList<SszBit> {
   }
 
   @Override
-  default SszMutableList<SszBit> createWritableCopy() {
+  default SszMutablePrimitiveList<Boolean, SszBit> createWritableCopy() {
     throw new UnsupportedOperationException("SszBitlist is immutable structure");
+  }
+
+  @Override
+  default boolean isWritableSupported() {
+    return false;
   }
 
   @Override
@@ -70,5 +74,10 @@ public interface SszBitlist extends SszList<SszBit> {
   /** Streams indexes of all bits set in this {@link SszBitlist} */
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
+  }
+
+  @Override
+  default Boolean getElement(int index) {
+    return getBit(index);
   }
 }

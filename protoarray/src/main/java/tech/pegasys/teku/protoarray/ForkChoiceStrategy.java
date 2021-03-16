@@ -130,6 +130,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     try {
       attestation
           .getAttesting_indices()
+          .streamUnboxed()
           .forEach(
               validatorIndex ->
                   processAttestation(

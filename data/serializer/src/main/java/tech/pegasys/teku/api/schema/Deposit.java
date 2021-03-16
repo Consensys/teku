@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 public class Deposit {
   @ArraySchema(
@@ -33,7 +32,7 @@ public class Deposit {
   public final DepositData data;
 
   public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
-    this.proof = deposit.getProof().stream().collect(Collectors.toList());
+    this.proof = deposit.getProof().streamUnboxed().collect(Collectors.toList());
     this.data = new DepositData(deposit.getData());
   }
 
@@ -47,7 +46,10 @@ public class Deposit {
 
   public tech.pegasys.teku.spec.datastructures.operations.Deposit asInternalDeposit() {
     return new tech.pegasys.teku.spec.datastructures.operations.Deposit(
-        SSZVector.createMutable(proof, Bytes32.class), data.asInternalDepositData());
+        tech.pegasys.teku.spec.datastructures.operations.Deposit.SSZ_SCHEMA
+            .getProofSchema()
+            .of(proof),
+        data.asInternalDepositData());
   }
 
   @Override

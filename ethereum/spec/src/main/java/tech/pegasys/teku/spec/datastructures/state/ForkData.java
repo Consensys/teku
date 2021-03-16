@@ -46,7 +46,7 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
   }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    super(SSZ_SCHEMA, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
+    super(SSZ_SCHEMA, SszBytes4.of(currentVersion), SszBytes32.of(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {

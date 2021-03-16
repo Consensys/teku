@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing;
 
-import java.util.Collection;
-
 /**
  * Mutable SSZ List with immutable elements. This type of list can be modified by setting or
  * appending immutable elements
@@ -39,7 +37,7 @@ public interface SszMutableList<SszElementT extends SszData>
     set(size(), value);
   }
 
-  default void appendAll(Collection<SszElementT> elements) {
+  default void appendAll(Iterable<SszElementT> elements) {
     elements.forEach(this::append);
   }
 }

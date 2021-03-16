@@ -47,8 +47,8 @@ import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DepositProviderTest {
@@ -86,7 +86,7 @@ public class DepositProviderTest {
     mockStateEth1DepositIndex(2);
     mockEth1DataDepositCount(2);
     mockDepositsFromEth1Block(0, 10);
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).isEmpty();
   }
 
@@ -99,7 +99,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).hasSize(15);
     checkThatDepositProofIsValid(deposits);
   }
@@ -118,11 +118,13 @@ public class DepositProviderTest {
             * spec.slotsPerEpoch(SpecConstants.GENESIS_EPOCH);
     UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
-    SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
-    IntStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
+    SszList<Eth1Data> et1hDataVotes =
+        Stream.generate(() -> newEth1Data)
+            .limit(enoughVoteCount)
+            .collect(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 50).collector());
     when(state.getEth1_data_votes()).thenReturn(et1hDataVotes);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
     assertThat(deposits).hasSize(25);
     checkThatDepositProofIsValid(deposits);
   }
@@ -136,7 +138,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SSZList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
     assertThat(deposits).hasSize(10);
     checkThatDepositProofIsValid(deposits);
   }
@@ -248,7 +250,7 @@ public class DepositProviderTest {
         .hasMessageContaining("7 to 9");
   }
 
-  private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
+  private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     deposits.forEach(
         deposit ->
@@ -294,6 +296,6 @@ public class DepositProviderTest {
   }
 
   private void mockStateEth1DataVotes() {
-    when(state.getEth1_data_votes()).thenReturn(SSZList.empty(Eth1Data.class));
+    when(state.getEth1_data_votes()).thenReturn(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 0).of());
   }
 }

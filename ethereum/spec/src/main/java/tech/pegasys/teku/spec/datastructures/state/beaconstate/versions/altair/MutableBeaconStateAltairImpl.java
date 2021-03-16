@@ -19,17 +19,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
 
 class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStateAltairImpl>
     implements MutableBeaconStateAltair, BeaconStateCache, ValidatorStatsAltair {
-
-  private SSZMutableList<SszByte> previousEpochParticipation;
-  private SSZMutableList<SszByte> currentEpochParticipation;
 
   MutableBeaconStateAltairImpl(BeaconStateAltairImpl backingImmutableView) {
     super(backingImmutableView);
@@ -48,22 +43,6 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   @Override
   public BeaconStateAltair commitChanges() {
     return (BeaconStateAltair) super.commitChanges();
-  }
-
-  @Override
-  public SSZMutableList<SszByte> getPreviousEpochParticipation() {
-    return previousEpochParticipation != null
-        ? previousEpochParticipation
-        : (previousEpochParticipation =
-            MutableBeaconStateAltair.super.getPreviousEpochParticipation());
-  }
-
-  @Override
-  public SSZMutableList<SszByte> getCurrentEpochParticipation() {
-    return currentEpochParticipation != null
-        ? currentEpochParticipation
-        : (currentEpochParticipation =
-            MutableBeaconStateAltair.super.getCurrentEpochParticipation());
   }
 
   @Override

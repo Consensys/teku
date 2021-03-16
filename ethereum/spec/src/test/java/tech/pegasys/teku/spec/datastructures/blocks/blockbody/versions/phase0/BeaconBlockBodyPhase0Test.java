@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
 
@@ -32,11 +32,11 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
       final BLSSignature randaoReveal,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
-      final SSZList<ProposerSlashing> proposerSlashings,
-      final SSZList<AttesterSlashing> attesterSlashings,
-      final SSZList<Attestation> attestations,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> voluntaryExits) {
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits) {
     return getBlockBodySchema()
         .createBlockBody(
             randaoReveal,

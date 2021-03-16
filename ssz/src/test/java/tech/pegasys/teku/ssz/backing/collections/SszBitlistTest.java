@@ -37,7 +37,7 @@ import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBit;
 
-public class SszBitlistTest {
+public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   static Random random = new Random(1);
   static SszBitlistSchema<SszBitlist> emptySchema = SszBitlistSchema.create(0);
@@ -49,43 +49,48 @@ public class SszBitlistTest {
         size, IntStream.range(0, size).filter(__ -> random.nextBoolean()).toArray());
   }
 
-  static Stream<Arguments> emptyBitlistArgs() {
+  @Override
+  public Stream<SszBitlist> sszData() {
     return Stream.of(
-        Arguments.of(emptySchema.empty()),
-        Arguments.of(schema.empty()),
-        Arguments.of(hugeSchema.empty()));
+        emptySchema.empty(),
+        schema.empty(),
+        hugeSchema.empty(),
+        random(schema, 1),
+        random(hugeSchema, 1),
+        random(schema, 2),
+        random(hugeSchema, 2),
+        random(schema, 254),
+        schema.ofBits(254),
+        schema.ofBits(254, IntStream.range(0, 254).toArray()),
+        random(hugeSchema, 254),
+        random(schema, 255),
+        schema.ofBits(255),
+        schema.ofBits(255, IntStream.range(0, 255).toArray()),
+        random(hugeSchema, 255),
+        random(schema, 256),
+        schema.ofBits(256),
+        schema.ofBits(256, IntStream.range(0, 256).toArray()),
+        random(hugeSchema, 256),
+        random(schema, 257),
+        random(hugeSchema, 257),
+        random(schema, 499),
+        random(schema, 500),
+        random(hugeSchema, 511),
+        random(hugeSchema, 512),
+        random(hugeSchema, 513),
+        random(hugeSchema, 10000));
   }
 
-  static Stream<Arguments> nonEmptyBitlistArgs() {
-    return Stream.of(
-        Arguments.of(random(schema, 1)),
-        Arguments.of(random(hugeSchema, 1)),
-        Arguments.of(random(schema, 2)),
-        Arguments.of(random(hugeSchema, 2)),
-        Arguments.of(random(schema, 254)),
-        Arguments.of(schema.ofBits(254)),
-        Arguments.of(schema.ofBits(254, IntStream.range(0, 254).toArray())),
-        Arguments.of(random(hugeSchema, 254)),
-        Arguments.of(random(schema, 255)),
-        Arguments.of(schema.ofBits(255)),
-        Arguments.of(schema.ofBits(255, IntStream.range(0, 255).toArray())),
-        Arguments.of(random(hugeSchema, 255)),
-        Arguments.of(random(schema, 256)),
-        Arguments.of(schema.ofBits(256)),
-        Arguments.of(schema.ofBits(256, IntStream.range(0, 256).toArray())),
-        Arguments.of(random(hugeSchema, 256)),
-        Arguments.of(random(schema, 257)),
-        Arguments.of(random(hugeSchema, 257)),
-        Arguments.of(random(schema, 499)),
-        Arguments.of(random(schema, 500)),
-        Arguments.of(random(hugeSchema, 511)),
-        Arguments.of(random(hugeSchema, 512)),
-        Arguments.of(random(hugeSchema, 513)),
-        Arguments.of(random(hugeSchema, 10000)));
+  public Stream<Arguments> bitlistArgs() {
+    return sszData().map(Arguments::of);
   }
 
-  static Stream<Arguments> bitlistArgs() {
-    return Stream.concat(emptyBitlistArgs(), nonEmptyBitlistArgs());
+  public Stream<Arguments> nonEmptyBitlistArgs() {
+    return sszData().filter(b -> b.size() > 0).map(Arguments::of);
+  }
+
+  public Stream<Arguments> emptyBitlistArgs() {
+    return sszData().filter(b -> b.size() == 0).map(Arguments::of);
   }
 
   @ParameterizedTest
@@ -335,5 +340,15 @@ public class SszBitlistTest {
     Assertions.assertThatCode(wrappedBytes::toArray).doesNotThrowAnyException();
     Assertions.assertThatCode(() -> Bytes.concatenate(slicedBytes, Bytes.wrap(new byte[1])))
         .doesNotThrowAnyException();
+  }
+
+  @ParameterizedTest
+  @MethodSource("emptyBitlistArgs")
+  void testBitEmptyListSsz(SszBitlist bitlist) {
+
+    assertThat(bitlist.sszSerialize()).isEqualTo(Bytes.of(1));
+
+    SszBitlist emptyList1 = bitlist.getSchema().sszDeserialize(Bytes.of(1));
+    assertThat(emptyList1).isEmpty();
   }
 }

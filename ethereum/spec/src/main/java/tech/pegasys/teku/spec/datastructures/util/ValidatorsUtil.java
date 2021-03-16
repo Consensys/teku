@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated
@@ -76,10 +76,7 @@ public class ValidatorsUtil {
             .get(
                 validatorIndex,
                 i -> {
-                  BLSPublicKey pubKey =
-                      BLSPublicKey.fromBytesCompressed(
-                          state.getValidators().get(i.intValue()).getPubkey());
-
+                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
                   // eagerly pre-cache pubKey => validatorIndex mapping
                   BeaconStateCache.getTransitionCaches(state)
                       .getValidatorIndexCache()
@@ -109,7 +106,7 @@ public class ValidatorsUtil {
         .get(
             epoch,
             e -> {
-              SSZList<Validator> validators = state.getValidators();
+              SszList<Validator> validators = state.getValidators();
               return IntStream.range(0, validators.size())
                   .filter(index -> is_active_validator(validators.get(index), epoch))
                   .boxed()
@@ -145,7 +142,9 @@ public class ValidatorsUtil {
    */
   @Deprecated
   public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
+    state
+        .getBalances()
+        .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
   }
 
   /**
@@ -159,7 +158,7 @@ public class ValidatorsUtil {
    */
   @Deprecated
   public static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).plus(delta));
+    state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
   }
 
   /**

@@ -64,8 +64,9 @@ public class BeaconStateInvariants {
     checkState(SLOT_SCHEMA.isFixedSize(), "Expected slot field to be a fixed size");
 
     final int offset =
-        GENESIS_TIME_SCHEMA.getFixedPartSize() + GENESIS_VALIDATORS_ROOT_SCHEMA.getFixedPartSize();
-    final int size = SLOT_SCHEMA.getFixedPartSize();
+        GENESIS_TIME_SCHEMA.getSszFixedPartSize()
+            + GENESIS_VALIDATORS_ROOT_SCHEMA.getSszFixedPartSize();
+    final int size = SLOT_SCHEMA.getSszFixedPartSize();
 
     // Extract slot data
     final Bytes slotData = bytes.slice(offset, size);

@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 import tech.pegasys.teku.ssz.backing.SszContainer;
 import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
@@ -34,6 +36,18 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
       List<SszSchema<?>> childrenSchemas,
       BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
     return new AbstractSszContainerSchema<C>(childrenSchemas) {
+      @Override
+      public C createFromBackingNode(TreeNode node) {
+        return instanceCtor.apply(this, node);
+      }
+    };
+  }
+
+  static <C extends SszContainer> SszContainerSchema<C> create(
+      String containerName,
+      List<NamedSchema<?>> childrenSchemas,
+      BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+    return new AbstractSszContainerSchema<C>(containerName, childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {
         return instanceCtor.apply(this, node);

@@ -32,9 +32,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConstants specConstants;
@@ -54,10 +56,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   }
 
   private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
-    final SSZMutableList<UInt64> balances = state.getBalances();
+    final SszMutableUInt64List balances = state.getBalances();
     for (int i = 0; i < state.getValidators().size(); i++) {
       final Deltas.Delta delta = attestationDeltas.getDelta(i);
-      balances.set(i, balances.get(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
   }
 
@@ -195,7 +198,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     try {
 
       // Process activation eligibility and ejections
-      SSZMutableList<Validator> validators = state.getValidators();
+      SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
@@ -282,12 +285,14 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   public void processSlashings(MutableBeaconState state, final UInt64 totalBalance) {
     UInt64 epoch = beaconStateUtil.getCurrentEpoch(state);
     UInt64 adjustedTotalSlashingBalance =
-        state.getSlashings().stream()
+        state
+            .getSlashings()
+            .streamUnboxed()
             .reduce(UInt64.ZERO, UInt64::plus)
             .times(specConstants.getProportionalSlashingMultiplier())
             .min(totalBalance);
 
-    SSZList<Validator> validators = state.getValidators();
+    SszList<Validator> validators = state.getValidators();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
       if (validator.isSlashed()
@@ -324,11 +329,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
 
     // Update effective balances with hysteresis
-    SSZMutableList<Validator> validators = state.getValidators();
-    SSZList<UInt64> balances = state.getBalances();
+    SszMutableList<Validator> validators = state.getValidators();
+    SszUInt64List balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
-      UInt64 balance = balances.get(index);
+      UInt64 balance = balances.getElement(index);
 
       final UInt64 hysteresisIncrement =
           specConstants
@@ -353,11 +358,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
     // Reset slashings
     int index = nextEpoch.mod(specConstants.getEpochsPerSlashingsVector()).intValue();
-    state.getSlashings().set(index, UInt64.ZERO);
+    state.getSlashings().setElement(index, UInt64.ZERO);
 
     // Set randao mix
     final int randaoIndex = nextEpoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-    state.getRandao_mixes().set(randaoIndex, beaconStateUtil.getRandaoMix(state, currentEpoch));
+    state
+        .getRandao_mixes()
+        .setElement(randaoIndex, beaconStateUtil.getRandaoMix(state, currentEpoch));
 
     // Set historical root accumulator
     if (nextEpoch
@@ -365,7 +372,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         .equals(UInt64.ZERO)) {
       HistoricalBatch historicalBatch =
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
-      state.getHistorical_roots().add(historicalBatch.hashTreeRoot());
+      state.getHistorical_roots().appendElement(historicalBatch.hashTreeRoot());
     }
 
     processParticipationUpdates(state);

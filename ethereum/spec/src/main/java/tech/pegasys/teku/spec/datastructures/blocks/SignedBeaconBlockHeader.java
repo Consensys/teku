@@ -14,25 +14,23 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.SszVector;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.backing.containers.Container2;
 import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
 
 public class SignedBeaconBlockHeader
-    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
+    extends Container2<SignedBeaconBlockHeader, BeaconBlockHeader, SszSignature> {
 
   public static class SignedBeaconBlockHeaderSchema
-      extends ContainerSchema2<SignedBeaconBlockHeader, BeaconBlockHeader, SszVector<SszByte>> {
+      extends ContainerSchema2<SignedBeaconBlockHeader, BeaconBlockHeader, SszSignature> {
 
     public SignedBeaconBlockHeaderSchema() {
       super(
           "SignedBeaconBlockHeader",
           namedSchema("message", BeaconBlockHeader.SSZ_SCHEMA),
-          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+          namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
 
     @Override
@@ -44,15 +42,12 @@ public class SignedBeaconBlockHeader
   public static final SignedBeaconBlockHeaderSchema SSZ_SCHEMA =
       new SignedBeaconBlockHeaderSchema();
 
-  private BLSSignature signatureCache;
-
   private SignedBeaconBlockHeader(SignedBeaconBlockHeaderSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedBeaconBlockHeader(final BeaconBlockHeader message, final BLSSignature signature) {
-    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
-    signatureCache = signature;
+    super(SSZ_SCHEMA, message, new SszSignature(signature));
   }
 
   public BeaconBlockHeader getMessage() {
@@ -60,9 +55,6 @@ public class SignedBeaconBlockHeader
   }
 
   public BLSSignature getSignature() {
-    if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
-    }
-    return signatureCache;
+    return getField1().getSignature();
   }
 }

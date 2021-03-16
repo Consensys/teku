@@ -54,11 +54,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(
-        SSZ_SCHEMA,
-        new SszBytes32(currentRoot),
-        new SszBytes32(nextRoot),
-        new SszUInt64(nextEpoch));
+    super(SSZ_SCHEMA, SszBytes32.of(currentRoot), SszBytes32.of(nextRoot), SszUInt64.of(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

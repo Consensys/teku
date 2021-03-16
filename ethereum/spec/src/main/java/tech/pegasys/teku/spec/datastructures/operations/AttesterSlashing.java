@@ -52,8 +52,8 @@ public class AttesterSlashing
                   new TreeSet<>(
                       getAttestation_1()
                           .getAttesting_indices()
-                          .asList()), // TreeSet as must be sorted
-                  new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
+                          .asListUnboxed()), // TreeSet as must be sorted
+                  new HashSet<>(getAttestation_2().getAttesting_indices().asListUnboxed())));
 
   private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);

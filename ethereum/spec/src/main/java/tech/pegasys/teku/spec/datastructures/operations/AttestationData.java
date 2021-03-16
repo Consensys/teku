@@ -56,9 +56,9 @@ public class AttestationData
       UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
     super(
         SSZ_SCHEMA,
-        new SszUInt64(slot),
-        new SszUInt64(index),
-        new SszBytes32(beacon_block_root),
+        SszUInt64.of(slot),
+        SszUInt64.of(index),
+        SszBytes32.of(beacon_block_root),
         source,
         target);
   }

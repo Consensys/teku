@@ -56,15 +56,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.Merkleizable;
+import tech.pegasys.teku.ssz.backing.SszList;
 import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
+import tech.pegasys.teku.ssz.backing.collections.SszByteVector;
+import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
 
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
+
   private static final Logger LOG = LogManager.getLogger();
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -132,7 +133,7 @@ public class BeaconStateUtil {
         slot,
         state.getSlot());
     int latestBlockRootIndex = slot.mod(specConstants.getSlotsPerHistoricalRoot()).intValue();
-    return state.getBlock_roots().get(latestBlockRootIndex);
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
   }
 
   public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
@@ -155,7 +156,7 @@ public class BeaconStateUtil {
 
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-    return state.getRandao_mixes().get(index);
+    return state.getRandao_mixes().getElement(index);
   }
 
   public int getBeaconProposerIndex(BeaconState state) {
@@ -219,7 +220,7 @@ public class BeaconStateUtil {
 
   public UInt64 getTotalBalance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
-    SSZList<Validator> validator_registry = state.getValidators();
+    SszList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
@@ -292,8 +293,7 @@ public class BeaconStateUtil {
   }
 
   public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
-    SigningData domainWrappedObject =
-        new SigningData(new SszPrimitives.SszUInt64(number).hashTreeRoot(), domain);
+    SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
@@ -368,7 +368,7 @@ public class BeaconStateUtil {
         .get(
             slot,
             p -> {
-              final SSZList<Validator> validators = state.getValidators();
+              final SszList<Validator> validators = state.getValidators();
               final UInt64 committeeCount =
                   getCommitteeCountPerSlot(state, computeEpochAtSlot(slot));
               return UInt64.range(UInt64.ZERO, committeeCount)
@@ -448,7 +448,8 @@ public class BeaconStateUtil {
     int index = epoch.mod(specConstants.getEpochsPerSlashingsVector()).intValue();
     state
         .getSlashings()
-        .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
+        .setElement(
+            index, state.getSlashings().getElement(index).plus(validator.getEffective_balance()));
     validatorsUtil.decreaseBalance(
         state,
         slashedIndex,
@@ -471,22 +472,18 @@ public class BeaconStateUtil {
 
   private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
     SigningData domainWrappedObject =
-        new SigningData(
-            new SszComplexSchemas.SszByteVectorSchema(bytes.size())
-                .createVector(bytes)
-                .hashTreeRoot(),
-            domain);
+        new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
   public static boolean isValidMerkleBranch(
-      Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
+      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.get(i), value));
+        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
       } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.get(i)));
+        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
       }
     }
     return value.equals(root);
@@ -556,7 +553,7 @@ public class BeaconStateUtil {
           pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SSZList<Validator> validators = state.getValidators();
+      SszList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
           index -> validatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
@@ -599,8 +596,8 @@ public class BeaconStateUtil {
       if (pubKeyToIndexMap == null) {
         LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
-      state.getValidators().add(getValidatorFromDeposit(deposit));
-      state.getBalances().add(amount);
+      state.getValidators().append(getValidatorFromDeposit(deposit));
+      state.getBalances().appendElement(amount);
     } else {
       validatorsUtil.increaseBalance(state, existingIndex.getAsInt(), amount);
     }
@@ -613,7 +610,7 @@ public class BeaconStateUtil {
             .minus(amount.mod(specConstants.getEffectiveBalanceIncrement()))
             .min(specConstants.getMaxEffectiveBalance());
     return new Validator(
-        deposit.getData().getPubkey().toBytesCompressed(),
+        deposit.getData().getPubkey(),
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,

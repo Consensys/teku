@@ -13,12 +13,19 @@
 
 package tech.pegasys.teku.ssz.backing.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.backing.schema.impl.SszListSchemaImpl;
+import tech.pegasys.teku.ssz.backing.tree.GIndexUtil;
 
 public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
     extends SszCollectionSchema<ElementDataT, SszListT> {
+
+  // we need additional depth level for the length node
+  long MAX_LIST_MAX_LENGTH = 1L << (GIndexUtil.MAX_DEPTH - 2);
 
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
@@ -30,9 +37,10 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
           SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
-    if (elementSchema == SszPrimitiveSchemas.BIT_SCHEMA) {
-      return (SszListSchema<ElementDataT, ? extends SszList<ElementDataT>>)
-          SszBitlistSchema.create(maxLength);
+    checkArgument(maxLength >= 0 && maxLength <= MAX_LIST_MAX_LENGTH);
+    if (elementSchema instanceof SszPrimitiveSchema) {
+      return (SszListSchema<ElementDataT, ?>)
+          SszPrimitiveListSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, maxLength, hints);
     } else {
       return new SszListSchemaImpl<>(elementSchema, maxLength, hints);
     }

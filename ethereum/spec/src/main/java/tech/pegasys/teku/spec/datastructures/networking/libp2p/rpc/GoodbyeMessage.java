@@ -54,7 +54,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   }
 
   public GoodbyeMessage(UInt64 reason) {
-    super(SSZ_SCHEMA, new SszUInt64(reason));
+    super(SSZ_SCHEMA, SszUInt64.of(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)
