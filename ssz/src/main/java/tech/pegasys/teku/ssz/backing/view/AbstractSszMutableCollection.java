@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ssz.backing.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.backing.SszData;
 import tech.pegasys.teku.ssz.backing.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -29,13 +30,33 @@ public abstract class AbstractSszMutableCollection<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
     extends AbstractSszMutableComposite<SszElementT, SszMutableElementT> {
 
+  private final SszSchema<SszElementT> elementSchema;
+
   protected AbstractSszMutableCollection(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
+    elementSchema = getSchema().getElementSchema();
+  }
+
+  private SszSchema<SszElementT> getElementSchema() {
+    return elementSchema;
   }
 
   @Override
-  public SszCollectionSchema<?, ?> getSchema() {
-    return (SszCollectionSchema<?, ?>) super.getSchema();
+  @SuppressWarnings("unchecked")
+  public SszCollectionSchema<SszElementT, ?> getSchema() {
+    return (SszCollectionSchema<SszElementT, ?>) super.getSchema();
+  }
+
+  @Override
+  public void set(int index, SszElementT value) {
+    if (!value.getSchema().equals(getElementSchema())) {
+      throw new InvalidValueSchemaException(
+          "Expected element to have schema "
+              + getSchema().getChildSchema(index)
+              + ", but value has schema "
+              + value.getSchema());
+    }
+    setUnsafe(index, value);
   }
 
   @Override

@@ -110,8 +110,6 @@ public abstract class AbstractSszMutableComposite<
 
   @Override
   public void set(int index, SszChildT value) {
-    checkIndex(index, true);
-    checkNotNull(value);
     if (!value.getSchema().equals(getSchema().getChildSchema(index))) {
       throw new InvalidValueSchemaException(
           "Expected child to have schema "
@@ -119,6 +117,12 @@ public abstract class AbstractSszMutableComposite<
               + ", but value has schema "
               + value.getSchema());
     }
+    setUnsafe(index, value);
+  }
+
+  protected void setUnsafe(int index, SszChildT value) {
+    checkIndex(index, true);
+    checkNotNull(value);
     ChildChangeRecord<SszChildT, SszMutableChildT> oldChangeRecord =
         childrenChanges.put(index, createChangeRecordByValue(value));
     if (oldChangeRecord != null && oldChangeRecord.isByRef()) {
