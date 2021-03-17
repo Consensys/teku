@@ -21,19 +21,30 @@ import tech.pegasys.teku.ssz.schema.SszType;
 
 public class BeaconBlockInvariants {
 
-  /** Extract the slot value from any SignedBeaconBlock */
+  /**
+   * Extract the slot value from any SignedBeaconBlock.
+   *
+   * <p>Slot is the first field and recorded directly because it's fixed length. So just read the
+   * first UInt64 worth of bytes.
+   *
+   * @param bytes the beacon block SSZ to extract a slot from
+   */
   public static UInt64 extractBeaconBlockSlot(final Bytes bytes) {
-    // Slot is the first field and recorded directly because it's fixed length.
     final int size = UINT64_SCHEMA.getSszFixedPartSize();
     final Bytes slotData = bytes.slice(0, size);
     return UINT64_SCHEMA.sszDeserialize(slotData).get();
   }
 
-  /** Extract the slot value from any BeaconBlock */
+  /**
+   * Extract the slot value from any BeaconBlock.
+   *
+   * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
+   * offset to the start of the beacon block data is recorded. Use that prefix to get the beacon
+   * block data and then find the slot as for an unsigned block
+   *
+   * @param bytes the signed beacon block slot to extract a slot from
+   */
   public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
-    // The slot is the first field but is inside the variable length beacon block so a 4 byte offset
-    // to the start of the beacon block data is recorded.
-    // Use that prefix to get the beacon block data and then find the slot as for an unsigned block
     final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, 4));
     return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
   }
