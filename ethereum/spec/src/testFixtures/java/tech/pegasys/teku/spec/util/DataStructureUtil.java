@@ -396,7 +396,7 @@ public final class DataStructureUtil {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final Bytes32 stateRoot = state.hashTreeRoot();
 
-    final BeaconBlockSchema<?> blockSchema =
+    final BeaconBlockSchema blockSchema =
         spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema();
     final BeaconBlock block =
         new BeaconBlock(blockSchema, slotNum, randomUInt64(), randomBytes32(), stateRoot, body);

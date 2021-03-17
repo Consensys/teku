@@ -29,12 +29,12 @@ public final class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary {
 
-  BeaconBlock(final BeaconBlockSchema<?> type, TreeNode backingNode) {
+  BeaconBlock(final BeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BeaconBlock(
-      BeaconBlockSchema<?> type,
+      BeaconBlockSchema type,
       UInt64 slot,
       UInt64 proposer_index,
       Bytes32 parent_root,
@@ -70,8 +70,8 @@ public final class BeaconBlock
   }
 
   @Override
-  public BeaconBlockSchema<?> getSchema() {
-    return (BeaconBlockSchema<?>) super.getSchema();
+  public BeaconBlockSchema getSchema() {
+    return (BeaconBlockSchema) super.getSchema();
   }
 
   @Override

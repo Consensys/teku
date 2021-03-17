@@ -56,7 +56,7 @@ class FuzzUtilTest {
 
   private final Spec spec = SpecFactory.createMinimal();
   private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
-  private final BeaconBlockSchema<?> beaconBlockSchema =
+  private final BeaconBlockSchema beaconBlockSchema =
       genesisSchemaDefinitions.getBeaconBlockSchema();
   private final BeaconStateSchema<?, ?> genesisBeaconStateSchema =
       genesisSchemaDefinitions.getBeaconStateSchema();

@@ -36,7 +36,7 @@ class BeaconBlockTest {
   private final Bytes32 previous_root = dataStructureUtil.randomBytes32();
   private final Bytes32 state_root = dataStructureUtil.randomBytes32();
   private final BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
-  private final BeaconBlockSchema<?> blockSchema =
+  private final BeaconBlockSchema blockSchema =
       spec.getGenesisSchemaDefinitions().getBeaconBlockSchema();
 
   private final BeaconBlock beaconBlock =

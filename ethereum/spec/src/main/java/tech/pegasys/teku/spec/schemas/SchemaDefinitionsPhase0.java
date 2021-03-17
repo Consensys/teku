@@ -39,8 +39,8 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
   }
 
   @Override
-  public BeaconBlockSchema<?> getBeaconBlockSchema() {
-    return new BeaconBlockSchema<>(getBeaconBlockBodySchema());
+  public BeaconBlockSchema getBeaconBlockSchema() {
+    return new BeaconBlockSchema(getBeaconBlockBodySchema());
   }
 
   @Override

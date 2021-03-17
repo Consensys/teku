@@ -24,11 +24,11 @@ import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class BeaconBlockSchema<BodyT extends BeaconBlockBody>
+public class BeaconBlockSchema
     extends ContainerSchema5<
         BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
 
-  public BeaconBlockSchema(final BeaconBlockBodySchema<BodyT> blockBodySchema) {
+  public BeaconBlockSchema(final BeaconBlockBodySchema<?> blockBodySchema) {
     super(
         "BeaconBlock",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),

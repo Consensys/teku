@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 public class SignedBeaconBlockSchema
     extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszSignature> {
 
-  public SignedBeaconBlockSchema(final BeaconBlockSchema<?> beaconBlockSchema) {
+  public SignedBeaconBlockSchema(final BeaconBlockSchema beaconBlockSchema) {
     super(
         "SignedBeaconBlock",
         namedSchema("message", beaconBlockSchema),
