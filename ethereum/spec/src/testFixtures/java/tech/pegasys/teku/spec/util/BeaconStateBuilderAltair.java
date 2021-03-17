@@ -39,7 +39,7 @@ public class BeaconStateBuilderAltair
 
   @Override
   protected BeaconStateAltair getEmptyState() {
-    return BeaconStateSchemaAltair.create(spec.getGenesisSpecConstants()).createEmpty();
+    return BeaconStateSchemaAltair.create(spec.getGenesisSpecConfig()).createEmpty();
   }
 
   @Override

@@ -59,9 +59,8 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     data.forEach(
         committee -> {
           assertThat(committee.slot)
-              .isGreaterThanOrEqualTo(UInt64.valueOf(specConstants.getSlotsPerEpoch()));
-          assertThat(committee.slot)
-              .isLessThan(UInt64.valueOf(specConstants.getSlotsPerEpoch() * 2L));
+              .isGreaterThanOrEqualTo(UInt64.valueOf(specConfig.getSlotsPerEpoch()));
+          assertThat(committee.slot).isLessThan(UInt64.valueOf(specConfig.getSlotsPerEpoch() * 2L));
         });
     assertThat(data.size()).isEqualTo(8);
   }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +36,11 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -72,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -131,6 +133,10 @@ public final class DataStructureUtil {
 
   public long randomLong() {
     return new Random(nextSeed()).nextLong();
+  }
+
+  public int randomPositiveInt() {
+    return new Random(nextSeed()).nextInt(Integer.MAX_VALUE);
   }
 
   public byte randomByte() {
@@ -366,7 +372,7 @@ public final class DataStructureUtil {
 
   public SignedBeaconBlock randomSignedBeaconBlock(UInt64 slotNum) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum);
-    return new SignedBeaconBlock(beaconBlock, randomSignature());
+    return signedBlock(beaconBlock);
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, Bytes32 parentRoot) {
@@ -375,11 +381,15 @@ public final class DataStructureUtil {
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, Bytes32 parentRoot, boolean full) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, full);
-    return new SignedBeaconBlock(beaconBlock, randomSignature());
+    return signedBlock(beaconBlock);
   }
 
   public SignedBeaconBlock signedBlock(final BeaconBlock block) {
-    return new SignedBeaconBlock(block, randomSignature());
+    return signedBlock(block, randomSignature());
+  }
+
+  public SignedBeaconBlock signedBlock(final BeaconBlock block, final BLSSignature signature) {
+    return SignedBeaconBlock.create(spec, block, signature);
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, BeaconState state) {
@@ -390,9 +400,11 @@ public final class DataStructureUtil {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final Bytes32 stateRoot = state.hashTreeRoot();
 
+    final BeaconBlockSchema blockSchema =
+        spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema();
     final BeaconBlock block =
-        new BeaconBlock(slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
-    return new SignedBeaconBlock(block, randomSignature());
+        new BeaconBlock(blockSchema, slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
+    return signedBlock(block);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum) {
@@ -405,7 +417,13 @@ public final class DataStructureUtil {
     Bytes32 state_root = randomBytes32();
     BeaconBlockBody body = randomBeaconBlockBody();
 
-    return new BeaconBlock(slotNum, proposer_index, previous_root, state_root, body);
+    return new BeaconBlock(
+        spec.atSlot(slotNum).getSchemaDefinitions().getBeaconBlockSchema(),
+        slotNum,
+        proposer_index,
+        previous_root,
+        state_root,
+        body);
   }
 
   public SignedBlockAndState randomSignedBlockAndState(final long slot) {
@@ -431,8 +449,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockAndState toSigned(BeaconBlockAndState blockAndState) {
-    final SignedBeaconBlock signedBlock =
-        new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
+    final SignedBeaconBlock signedBlock = signedBlock(blockAndState.getBlock());
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
   }
 
@@ -458,7 +475,13 @@ public final class DataStructureUtil {
 
     final BeaconState matchingState = state.updated(s -> s.setLatest_block_header(latestHeader));
     final BeaconBlock block =
-        new BeaconBlock(slot, proposer_index, parentRoot, matchingState.hashTreeRoot(), body);
+        new BeaconBlock(
+            spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
+            slot,
+            proposer_index,
+            parentRoot,
+            matchingState.hashTreeRoot(),
+            body);
 
     return new BeaconBlockAndState(block, matchingState);
   }
@@ -474,7 +497,13 @@ public final class DataStructureUtil {
     final UInt64 proposer_index = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
-    return new BeaconBlock(slot, proposer_index, parentRoot, stateRoot, body);
+    return new BeaconBlock(
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
+        slot,
+        proposer_index,
+        parentRoot,
+        stateRoot,
+        body);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {
@@ -720,15 +749,18 @@ public final class DataStructureUtil {
 
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
     // Create corresponding block
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(anchorState.getSlot()).getSchemaDefinitions();
     final BeaconBlock anchorBlock =
         new BeaconBlock(
+            schemaDefinitions.getBeaconBlockSchema(),
             anchorState.getSlot(),
             UInt64.ZERO,
             anchorState.getLatest_block_header().getParentRoot(),
             anchorState.hashTreeRoot(),
             spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
+        SignedBeaconBlock.create(spec, anchorBlock, BLSSignature.empty());
 
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
     final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
@@ -738,28 +770,28 @@ public final class DataStructureUtil {
   }
 
   int getEpochsPerEth1VotingPeriod() {
-    return getConstant(SpecConstants::getEpochsPerEth1VotingPeriod);
+    return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
 
   int getSlotsPerEpoch() {
-    return getConstant(SpecConstants::getSlotsPerEpoch);
+    return getConstant(SpecConfig::getSlotsPerEpoch);
   }
 
   int getJustificationBitsLength() {
-    return getConstant(SpecConstants::getJustificationBitsLength);
+    return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
   private int getMaxValidatorsPerCommittee() {
-    return getConstant(SpecConstants::getMaxValidatorsPerCommittee);
+    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
   }
 
   private UInt64 getMaxEffectiveBalance() {
-    return getConstant(SpecConstants::getMaxEffectiveBalance);
+    return getConstant(SpecConfig::getMaxEffectiveBalance);
   }
 
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    final Bytes4 domain = genesisSpec.getConstants().getDomainDeposit();
+    final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
     return genesisSpec.getBeaconStateUtil().computeDomain(domain);
   }
 
@@ -781,7 +813,7 @@ public final class DataStructureUtil {
     return spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
-  private <T> T getConstant(final Function<SpecConstants, T> getter) {
-    return getter.apply(spec.getGenesisSpec().getConstants());
+  private <T> T getConstant(final Function<SpecConfig, T> getter) {
+    return getter.apply(spec.getGenesisSpec().getConfig());
   }
 }

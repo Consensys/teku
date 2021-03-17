@@ -128,9 +128,11 @@ public class ChainHeadTest {
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
 
+  @SuppressWarnings("unchecked")
   private ChainHead copy(ChainHead original) {
+    final SignedBeaconBlock originalBlock = original.getSignedBeaconBlock().orElseThrow();
     final SignedBeaconBlock blockCopy =
-        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
+        copy(originalBlock, (SszSchema<SignedBeaconBlock>) originalBlock.getSchema());
     final BeaconState stateCopy =
         copy(
             original.getState(),

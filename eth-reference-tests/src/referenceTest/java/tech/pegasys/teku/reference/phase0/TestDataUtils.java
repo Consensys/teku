@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -32,9 +33,16 @@ public class TestDataUtils {
 
   public static <T extends SszData> T loadSsz(
       final TestDefinition testDefinition, final String fileName, final SszSchema<T> type) {
+    return loadSsz(testDefinition, fileName, type::sszDeserialize);
+  }
+
+  public static <T extends SszData> T loadSsz(
+      final TestDefinition testDefinition,
+      final String fileName,
+      final Function<Bytes, T> deserializer) {
     try {
       final Path path = testDefinition.getTestDirectory().resolve(fileName);
-      return type.sszDeserialize(Bytes.wrap(Files.readAllBytes(path)));
+      return deserializer.apply(Bytes.wrap(Files.readAllBytes(path)));
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }

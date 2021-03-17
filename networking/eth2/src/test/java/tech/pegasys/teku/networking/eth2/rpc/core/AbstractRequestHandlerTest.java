@@ -34,12 +34,15 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  protected final Spec spec = SpecFactory.createMinimal();
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   protected final PeerLookup peerLookup = mock(PeerLookup.class);
   protected final CombinedChainDataClient combinedChainDataClient =
@@ -57,6 +60,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   public void setup() {
     beaconChainMethods =
         BeaconChainMethods.create(
+            spec,
             asyncRunner,
             peerLookup,
             combinedChainDataClient,

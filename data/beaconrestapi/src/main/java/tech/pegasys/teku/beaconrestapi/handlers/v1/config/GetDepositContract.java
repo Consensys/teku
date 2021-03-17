@@ -61,7 +61,7 @@ public class GetDepositContract implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    final int depositChainId = configProvider.getGenesisSpecConstants().getDepositChainId();
+    final int depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
     if (depositContractResponse.isEmpty()) {
       this.depositContractResponse =
           Optional.of(

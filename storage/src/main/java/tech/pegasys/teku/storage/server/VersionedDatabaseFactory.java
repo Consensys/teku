@@ -207,7 +207,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
@@ -230,7 +230,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -263,7 +263,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
@@ -303,7 +303,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -336,7 +336,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()

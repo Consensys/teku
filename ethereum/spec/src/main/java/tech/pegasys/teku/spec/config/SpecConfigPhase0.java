@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
@@ -19,14 +19,9 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstants {
-  private final Map<String, Object> rawConstants;
+public class SpecConfigPhase0 implements SpecConfig {
+  private final Map<String, Object> rawConfig;
   private final String configName;
-
-  // Non-configurable constants
-  public static final UInt64 GENESIS_SLOT = UInt64.ZERO;
-  public static final UInt64 GENESIS_EPOCH = UInt64.ZERO;
-  public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
 
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
@@ -113,8 +108,8 @@ public class SpecConstants {
   private final int depositNetworkId;
   private final Bytes depositContractAddress;
 
-  SpecConstants(
-      final Map<String, Object> rawConstants,
+  public SpecConfigPhase0(
+      final Map<String, Object> rawConfig,
       final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
@@ -175,7 +170,7 @@ public class SpecConstants {
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
-    this.rawConstants = rawConstants;
+    this.rawConfig = rawConfig;
     this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -238,262 +233,322 @@ public class SpecConstants {
     this.depositContractAddress = depositContractAddress;
   }
 
-  public static SpecConstantsBuilder builder() {
-    return new SpecConstantsBuilder();
+  @Override
+  public Map<String, Object> getRawConfig() {
+    return rawConfig;
   }
 
-  public Map<String, Object> getRawConstants() {
-    return rawConstants;
-  }
-
+  @Override
   public String getConfigName() {
     return configName;
   }
 
+  @Override
   public UInt64 getBaseRewardsPerEpoch() {
     return baseRewardsPerEpoch;
   }
 
+  @Override
   public int getDepositContractTreeDepth() {
     return depositContractTreeDepth;
   }
 
+  @Override
   public int getJustificationBitsLength() {
     return justificationBitsLength;
   }
 
+  @Override
   public UInt64 getEth1FollowDistance() {
     return eth1FollowDistance;
   }
 
+  @Override
   public int getMaxCommitteesPerSlot() {
     return maxCommitteesPerSlot;
   }
 
+  @Override
   public int getTargetCommitteeSize() {
     return targetCommitteeSize;
   }
 
+  @Override
   public int getMaxValidatorsPerCommittee() {
     return maxValidatorsPerCommittee;
   }
 
+  @Override
   public int getMinPerEpochChurnLimit() {
     return minPerEpochChurnLimit;
   }
 
+  @Override
   public int getChurnLimitQuotient() {
     return churnLimitQuotient;
   }
 
+  @Override
   public int getShuffleRoundCount() {
     return shuffleRoundCount;
   }
 
+  @Override
   public int getMinGenesisActiveValidatorCount() {
     return minGenesisActiveValidatorCount;
   }
 
+  @Override
   public UInt64 getMinGenesisTime() {
     return minGenesisTime;
   }
 
+  @Override
   public UInt64 getHysteresisQuotient() {
     return hysteresisQuotient;
   }
 
+  @Override
   public UInt64 getHysteresisDownwardMultiplier() {
     return hysteresisDownwardMultiplier;
   }
 
+  @Override
   public UInt64 getHysteresisUpwardMultiplier() {
     return hysteresisUpwardMultiplier;
   }
 
+  @Override
   public int getProportionalSlashingMultiplier() {
     return proportionalSlashingMultiplier;
   }
 
+  @Override
   public UInt64 getMinDepositAmount() {
     return minDepositAmount;
   }
 
+  @Override
   public UInt64 getMaxEffectiveBalance() {
     return maxEffectiveBalance;
   }
 
+  @Override
   public UInt64 getEjectionBalance() {
     return ejectionBalance;
   }
 
+  @Override
   public UInt64 getEffectiveBalanceIncrement() {
     return effectiveBalanceIncrement;
   }
 
+  @Override
   public Bytes4 getGenesisForkVersion() {
     return genesisForkVersion;
   }
 
+  @Override
   public Bytes getBlsWithdrawalPrefix() {
     return blsWithdrawalPrefix;
   }
 
+  @Override
   public UInt64 getGenesisDelay() {
     return genesisDelay;
   }
 
+  @Override
   public int getSecondsPerSlot() {
     return secondsPerSlot;
   }
 
+  @Override
   public int getMinAttestationInclusionDelay() {
     return minAttestationInclusionDelay;
   }
 
+  @Override
   public int getSlotsPerEpoch() {
     return slotsPerEpoch;
   }
 
+  @Override
   public int getMinSeedLookahead() {
     return minSeedLookahead;
   }
 
+  @Override
   public int getMaxSeedLookahead() {
     return maxSeedLookahead;
   }
 
+  @Override
   public UInt64 getMinEpochsToInactivityPenalty() {
     return minEpochsToInactivityPenalty;
   }
 
+  @Override
   public int getEpochsPerEth1VotingPeriod() {
     return epochsPerEth1VotingPeriod;
   }
 
+  @Override
   public int getSlotsPerHistoricalRoot() {
     return slotsPerHistoricalRoot;
   }
 
+  @Override
   public int getMinValidatorWithdrawabilityDelay() {
     return minValidatorWithdrawabilityDelay;
   }
 
+  @Override
   public UInt64 getShardCommitteePeriod() {
     return shardCommitteePeriod;
   }
 
+  @Override
   public int getEpochsPerHistoricalVector() {
     return epochsPerHistoricalVector;
   }
 
+  @Override
   public int getEpochsPerSlashingsVector() {
     return epochsPerSlashingsVector;
   }
 
+  @Override
   public int getHistoricalRootsLimit() {
     return historicalRootsLimit;
   }
 
+  @Override
   public long getValidatorRegistryLimit() {
     return validatorRegistryLimit;
   }
 
+  @Override
   public int getBaseRewardFactor() {
     return baseRewardFactor;
   }
 
+  @Override
   public int getWhistleblowerRewardQuotient() {
     return whistleblowerRewardQuotient;
   }
 
+  @Override
   public UInt64 getProposerRewardQuotient() {
     return proposerRewardQuotient;
   }
 
+  @Override
   public UInt64 getInactivityPenaltyQuotient() {
     return inactivityPenaltyQuotient;
   }
 
+  @Override
   public int getMinSlashingPenaltyQuotient() {
     return minSlashingPenaltyQuotient;
   }
 
+  @Override
   public int getMaxProposerSlashings() {
     return maxProposerSlashings;
   }
 
+  @Override
   public int getMaxAttesterSlashings() {
     return maxAttesterSlashings;
   }
 
+  @Override
   public int getMaxAttestations() {
     return maxAttestations;
   }
 
+  @Override
   public int getMaxDeposits() {
     return maxDeposits;
   }
 
+  @Override
   public int getMaxVoluntaryExits() {
     return maxVoluntaryExits;
   }
 
+  @Override
   public Bytes4 getDomainBeaconProposer() {
     return domainBeaconProposer;
   }
 
+  @Override
   public Bytes4 getDomainBeaconAttester() {
     return domainBeaconAttester;
   }
 
+  @Override
   public Bytes4 getDomainRandao() {
     return domainRandao;
   }
 
+  @Override
   public Bytes4 getDomainDeposit() {
     return domainDeposit;
   }
 
+  @Override
   public Bytes4 getDomainVoluntaryExit() {
     return domainVoluntaryExit;
   }
 
+  @Override
   public Bytes4 getDomainSelectionProof() {
     return domainSelectionProof;
   }
 
+  @Override
   public Bytes4 getDomainAggregateAndProof() {
     return domainAggregateAndProof;
   }
 
+  @Override
   public int getTargetAggregatorsPerCommittee() {
     return targetAggregatorsPerCommittee;
   }
 
+  @Override
   public UInt64 getSecondsPerEth1Block() {
     return secondsPerEth1Block;
   }
 
+  @Override
   public int getRandomSubnetsPerValidator() {
     return randomSubnetsPerValidator;
   }
 
+  @Override
   public int getEpochsPerRandomSubnetSubscription() {
     return epochsPerRandomSubnetSubscription;
   }
 
+  @Override
   public int getSafeSlotsToUpdateJustified() {
     return safeSlotsToUpdateJustified;
   }
 
+  @Override
   public int getDepositChainId() {
     return depositChainId;
   }
 
+  @Override
   public int getDepositNetworkId() {
     return depositNetworkId;
   }
 
+  @Override
   public Bytes getDepositContractAddress() {
     return depositContractAddress;
   }
@@ -502,7 +557,7 @@ public class SpecConstants {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpecConstants that = (SpecConstants) o;
+    final SpecConfigPhase0 that = (SpecConfigPhase0) o;
     return depositContractTreeDepth == that.depositContractTreeDepth
         && justificationBitsLength == that.justificationBitsLength
         && maxCommitteesPerSlot == that.maxCommitteesPerSlot

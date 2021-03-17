@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -37,6 +38,8 @@ public class SszSnappyGossipEncodingTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateSchema<?, ?> beaconStateSchema =
       spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
+  private final SignedBeaconBlockSchema signedBeaconBlockSchema =
+      spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
 
   private GossipEncoding createEncoding() {
     return GossipEncoding.SSZ_SNAPPY;
@@ -53,7 +56,7 @@ public class SszSnappyGossipEncodingTest {
     final Bytes data =
         Bytes.concatenate(hugeLength, Bytes.fromHexString("000000000000000000000000"));
 
-    assertThatThrownBy(() -> decode(encoding, data, SignedBeaconBlock.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, data, signedBeaconBlockSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -83,7 +86,7 @@ public class SszSnappyGossipEncodingTest {
     final SignedBeaconBlock original = dataStructureUtil.randomSignedBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(original);
-    final SignedBeaconBlock decoded = decode(encoding, encoded, SignedBeaconBlock.SSZ_SCHEMA.get());
+    final SignedBeaconBlock decoded = decode(encoding, encoded, signedBeaconBlockSchema);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -121,8 +124,7 @@ public class SszSnappyGossipEncodingTest {
 
   @Test
   public void decode_rejectMessageShorterThanValidLength() {
-    assertThatThrownBy(
-            () -> decode(encoding, Bytes.of(1, 2, 3), SignedBeaconBlock.SSZ_SCHEMA.get()))
+    assertThatThrownBy(() -> decode(encoding, Bytes.of(1, 2, 3), signedBeaconBlockSchema))
         .isInstanceOf(DecodingException.class);
   }
 

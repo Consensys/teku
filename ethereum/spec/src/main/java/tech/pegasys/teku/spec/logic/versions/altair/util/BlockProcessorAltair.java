@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair.util;
 
 import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -26,11 +26,11 @@ import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
   public BlockProcessorAltair(
-      final SpecConstants specConstants,
+      final SpecConfigAltair specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    super(specConstants, beaconStateUtil, attestationUtil, validatorsUtil);
+    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   @Override

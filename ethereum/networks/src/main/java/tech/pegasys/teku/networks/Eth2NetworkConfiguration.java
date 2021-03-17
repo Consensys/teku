@@ -153,7 +153,7 @@ public class Eth2NetworkConfiguration {
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
-            spec.getGenesisSpec().getConstants().getDepositContractAddress().toHexString());
+            spec.getGenesisSpec().getConfig().getDepositContractAddress().toHexString());
       }
       return new Eth2NetworkConfiguration(
           spec,
@@ -243,7 +243,7 @@ public class Eth2NetworkConfiguration {
         case LESS_SWIFT:
           return applyLessSwiftNetworkDefaults();
         default:
-          return reset().constants(network.constantsName());
+          return reset().constants(network.configName());
       }
     }
 
@@ -260,20 +260,20 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return reset().constants(MINIMAL.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(MINIMAL.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
-      return reset().constants(SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyLessSwiftNetworkDefaults() {
-      return reset().constants(LESS_SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(LESS_SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyMainnetNetworkDefaults() {
       return reset()
-          .constants(MAINNET.constantsName())
+          .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
@@ -302,17 +302,20 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyPraterNetworkDefaults() {
       return reset()
-          .constants(PRATER.constantsName())
+          .constants(PRATER.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
           .initialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
-          .discoveryBootnodes();
+          .discoveryBootnodes(
+              // q9f Bootnodes
+              "enr:-LK4QH1xnjotgXwg25IDPjrqRGFnH1ScgNHA3dv1Z8xHCp4uP3N3Jjl_aYv_WIxQRdwZvSukzbwspXZ7JjpldyeVDzMCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhIe1te-Jc2VjcDI1NmsxoQOkcGXqbCJYbcClZ3z5f6NWhX_1YPFRYRRWQpJjwSHpVIN0Y3CCIyiDdWRwgiMo",
+              "enr:-KG4QCIzJZTY_fs_2vqWEatJL9RrtnPwDCv-jRBuO5FQ2qBrfJubWOWazri6s9HsyZdu-fRUfEzkebhf1nvO42_FVzwDhGV0aDKQed8EKAAAECD__________4JpZIJ2NIJpcISHtbYziXNlY3AyNTZrMaED4m9AqVs6F32rSCGsjtYcsyfQE2K8nDiGmocUY_iq-TSDdGNwgiMog3VkcIIjKA");
     }
 
     public Builder applyPyrmontNetworkDefaults() {
       return reset()
-          .constants(PYRMONT.constantsName())
+          .constants(PYRMONT.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(3743587)
           .initialStateFromClasspath("pyrmont-genesis.ssz")
