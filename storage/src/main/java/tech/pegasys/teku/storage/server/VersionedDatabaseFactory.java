@@ -53,14 +53,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
-  private final Optional<Eth1Address> eth1Address;
+  private final Eth1Address eth1Address;
   private final Spec spec;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final Optional<Eth1Address> depositContractAddress,
+      final Eth1Address depositContractAddress,
       final Spec spec) {
     this(
         metricsSystem,
@@ -79,7 +79,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address,
+      final Eth1Address eth1Address,
       final Spec spec) {
     this(
         metricsSystem,
@@ -99,7 +99,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address,
+      final Eth1Address eth1Address,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();

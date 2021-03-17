@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -48,11 +47,9 @@ public class DatabaseNetwork {
   }
 
   public static DatabaseNetwork init(
-      final File source, Bytes4 forkVersion, Optional<Eth1Address> depositContract)
-      throws IOException {
+      final File source, Bytes4 forkVersion, Eth1Address depositContract) throws IOException {
     final String forkVersionString = forkVersion.toHexString().toLowerCase();
-    final String depositContractString =
-        depositContract.map(c -> c.toHexString().toLowerCase()).orElse("");
+    final String depositContractString = depositContract.toHexString().toLowerCase();
     final ObjectMapper objectMapper =
         new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
     if (source.exists()) {

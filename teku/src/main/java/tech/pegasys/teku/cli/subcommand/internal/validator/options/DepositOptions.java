@@ -114,13 +114,11 @@ public class DepositOptions {
   }
 
   private Eth1Address getContractAddress(final Eth2NetworkConfiguration networkConfig) {
-    return Optional.ofNullable(this.contractAddress)
-        .or(networkConfig::getEth1DepositContractAddress)
-        .orElseThrow(
-            () ->
-                new ParameterException(
-                    spec.commandLine(),
-                    "Selected network does not define a deposit contract address. Please specify one with --eth1-deposit-contract-address"));
+    if (this.contractAddress != null) {
+      return this.contractAddress;
+    }
+
+    return networkConfig.getEth1DepositContractAddress();
   }
 
   Credentials getEth1Credentials() {

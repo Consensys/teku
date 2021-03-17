@@ -70,7 +70,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     // Powchain
     assertThat(tekuConfig.powchain().getDepositContract())
-        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress().orElse(null));
+        .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
     assertThat(tekuConfig.powchain().getDepositContractDeployBlock())
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractDeployBlock());
   }
@@ -85,10 +85,10 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
           "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
         });
 
-    final Optional<Eth1Address> configuredDepositContract =
+    final Eth1Address configuredDepositContract =
         getResultingTekuConfiguration().eth2NetworkConfiguration().getEth1DepositContractAddress();
     assertThat(configuredDepositContract)
-        .contains(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"));
+        .isEqualTo(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"));
   }
 
   @Test
