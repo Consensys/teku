@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added a network definition for the prater test network `--network prater`.
 - Added a labelled counter to metrics to display teku version under `beacon_teku_version`. On startup the version being run will report as the label 'version', with a value of '1'.
 - Support loading Altair constants. Versioned constants may be loaded from a single file or a directory containing files: phase0.yaml, altair.yaml. Constants files are now required to end in a YAML extension (.yaml or .yml).
+- Improved handling of mplex connections.
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)
