@@ -18,45 +18,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements BeaconBlockSummary {
 
-  public static class SignedBeaconBlockSchema
-      extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszSignature> {
-
-    public SignedBeaconBlockSchema() {
-      super(
-          "SignedBeaconBlock",
-          namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
-          namedSchema("signature", SszSignatureSchema.INSTANCE));
-    }
-
-    @Override
-    public SignedBeaconBlock createFromBackingNode(TreeNode node) {
-      return new SignedBeaconBlock(this, node);
-    }
-  }
-
-  public static SignedBeaconBlockSchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
-
-  public static final SpecDependent<SignedBeaconBlockSchema> SSZ_SCHEMA =
-      SpecDependent.of(SignedBeaconBlockSchema::new);
-
-  private SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
+  SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
-  }
-
-  @Deprecated
-  public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    this(SSZ_SCHEMA.get(), message, signature);
   }
 
   public SignedBeaconBlock(

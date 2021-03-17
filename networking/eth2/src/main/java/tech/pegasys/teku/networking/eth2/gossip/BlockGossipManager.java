@@ -23,7 +23,9 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 
@@ -37,6 +39,7 @@ public class BlockGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public BlockGossipManager(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -45,6 +48,11 @@ public class BlockGossipManager {
       final OperationProcessor<SignedBeaconBlock> processor) {
     this.gossipEncoding = gossipEncoding;
 
+    // Gossip topics are specific to a fork so use the schema for the current fork.
+    final SignedBeaconBlockSchema signedBeaconBlockSchema =
+        spec.atEpoch(forkInfo.getFork().getEpoch())
+            .getSchemaDefinitions()
+            .getSignedBeaconBlockSchema();
     final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
         new Eth2TopicHandler<>(
             asyncRunner,
@@ -52,7 +60,7 @@ public class BlockGossipManager {
             gossipEncoding,
             forkInfo.getForkDigest(),
             TOPIC_NAME,
-            SignedBeaconBlock.SSZ_SCHEMA.get());
+            signedBeaconBlockSchema);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

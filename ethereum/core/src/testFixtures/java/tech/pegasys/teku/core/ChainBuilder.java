@@ -238,7 +238,11 @@ public class ChainBuilder {
 
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
-    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
+    final SignedBeaconBlock signedBlock =
+        new SignedBeaconBlock(
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+            genesisBlock,
+            BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);

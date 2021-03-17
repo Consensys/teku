@@ -13,12 +13,18 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 
 public interface SchemaDefinitions {
 
   BeaconStateSchema<?, ?> getBeaconStateSchema();
+
+  SignedBeaconBlockSchema getSignedBeaconBlockSchema();
+
+  BeaconBlockSchema<?> getBeaconBlockSchema();
 
   BeaconBlockBodySchema<?> getBeaconBlockBodySchema();
 }

@@ -87,7 +87,11 @@ public class BlockProposalTestUtil {
     final BeaconBlock block = newBlockAndState.getBlock();
     BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
 
-    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
+    final SignedBeaconBlock signedBlock =
+        new SignedBeaconBlock(
+            spec.atSlot(block.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
+            block,
+            blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
   }
 

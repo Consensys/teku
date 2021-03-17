@@ -22,20 +22,25 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BeaconBlockTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UInt64 slot = dataStructureUtil.randomUInt64();
-  private UInt64 proposer_index = dataStructureUtil.randomUInt64();
-  private Bytes32 previous_root = dataStructureUtil.randomBytes32();
-  private Bytes32 state_root = dataStructureUtil.randomBytes32();
-  private BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 proposer_index = dataStructureUtil.randomUInt64();
+  private final Bytes32 previous_root = dataStructureUtil.randomBytes32();
+  private final Bytes32 state_root = dataStructureUtil.randomBytes32();
+  private final BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
+  private final BeaconBlockSchema<?> blockSchema =
+      spec.getGenesisSchemaDefinitions().getBeaconBlockSchema();
 
-  private BeaconBlock beaconBlock =
-      new BeaconBlock(slot, proposer_index, previous_root, state_root, body);
+  private final BeaconBlock beaconBlock =
+      new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, body);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -47,7 +52,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, proposer_index, previous_root, state_root, body);
+        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, body);
 
     assertEquals(beaconBlock, testBeaconBlock);
   }
@@ -55,7 +60,8 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot.plus(UInt64.ONE), proposer_index, previous_root, state_root, body);
+        new BeaconBlock(
+            blockSchema, slot.plus(UInt64.ONE), proposer_index, previous_root, state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -63,7 +69,8 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenProposersAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, proposer_index.plus(UInt64.ONE), previous_root, state_root, body);
+        new BeaconBlock(
+            blockSchema, slot, proposer_index.plus(UInt64.ONE), previous_root, state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -71,7 +78,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenParentRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, proposer_index, previous_root.not(), state_root, body);
+        new BeaconBlock(blockSchema, slot, proposer_index, previous_root.not(), state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -79,7 +86,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, proposer_index, previous_root, state_root.not(), body);
+        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root.not(), body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -95,7 +102,7 @@ class BeaconBlockTest {
     }
 
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, proposer_index, previous_root, state_root, otherBody);
+        new BeaconBlock(blockSchema, slot, proposer_index, previous_root, state_root, otherBody);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -103,7 +110,7 @@ class BeaconBlockTest {
   @Test
   void roundtripSSZ() {
     final Bytes ssz = beaconBlock.sszSerialize();
-    final BeaconBlock result = BeaconBlock.SSZ_SCHEMA.get().sszDeserialize(ssz);
+    final BeaconBlock result = blockSchema.sszDeserialize(ssz);
     assertThat(result).isEqualTo(beaconBlock);
   }
 }

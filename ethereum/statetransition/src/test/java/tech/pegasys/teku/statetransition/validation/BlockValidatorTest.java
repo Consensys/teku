@@ -108,6 +108,7 @@ public class BlockValidatorTest {
     final UInt64 proposerIndex = signedBlock.getMessage().getProposerIndex();
     final BeaconBlock block =
         new BeaconBlock(
+            spec.getGenesisSchemaDefinitions().getBeaconBlockSchema(),
             signedBlock.getSlot(),
             proposerIndex,
             Bytes32.ZERO,
@@ -119,7 +120,9 @@ public class BlockValidatorTest {
             .getSigner(proposerIndex.intValue())
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
-    final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
+    final SignedBeaconBlock blockWithNoParent =
+        new SignedBeaconBlock(
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(), block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
     assertTrue(result.isSaveForFuture());
@@ -148,6 +151,7 @@ public class BlockValidatorTest {
 
     final BeaconBlock block =
         new BeaconBlock(
+            spec.getGenesisSchemaDefinitions().getBeaconBlockSchema(),
             signedBlock.getSlot(),
             invalidProposerIndex,
             signedBlock.getParentRoot(),
@@ -160,7 +164,8 @@ public class BlockValidatorTest {
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =
-        new SignedBeaconBlock(block, blockSignature);
+        new SignedBeaconBlock(
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(), block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
     assertTrue(result.isReject());
@@ -173,6 +178,7 @@ public class BlockValidatorTest {
 
     final SignedBeaconBlock block =
         new SignedBeaconBlock(
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
             BLSTestUtil.randomSignature(0));
 

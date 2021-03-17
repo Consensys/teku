@@ -62,12 +62,15 @@ public class BeaconBlock {
 
   public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
       final Spec spec) {
-    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock(
-        slot,
-        proposer_index,
-        parent_root,
-        state_root,
-        body.asInternalBeaconBlockBody(spec.atSlot(slot)));
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockSchema()
+        .create(
+            slot,
+            proposer_index,
+            parent_root,
+            state_root,
+            body.asInternalBeaconBlockBody(spec.atSlot(slot)));
   }
 
   @Override

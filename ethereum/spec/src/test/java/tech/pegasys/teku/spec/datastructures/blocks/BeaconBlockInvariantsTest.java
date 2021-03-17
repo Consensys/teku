@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,22 +15,27 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class SignedBeaconBlockTest {
+class BeaconBlockInvariantsTest {
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(SpecFactory.createMinimal());
+
   @Test
-  public void shouldRoundTripViaSsz() {
-    final Spec spec = SpecFactory.createMinimal();
-    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
-    final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
-    final Bytes ssz = block.sszSerialize();
-    final SignedBeaconBlock result =
-        schemaDefinitions.getSignedBeaconBlockSchema().sszDeserialize(ssz);
-    assertThat(result).isEqualTo(block);
+  void shouldExtractSlotFromSignedBeaconBlock() {
+    final UInt64 slot = UInt64.valueOf(123456);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(block.sszSerialize()))
+        .isEqualTo(slot);
+  }
+
+  @Test
+  void shouldExtractSlotFromBeaconBlock() {
+    final UInt64 slot = UInt64.valueOf(123456);
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(block.sszSerialize())).isEqualTo(slot);
   }
 }

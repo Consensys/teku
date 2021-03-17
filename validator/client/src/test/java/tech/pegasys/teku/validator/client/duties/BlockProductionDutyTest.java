@@ -84,7 +84,8 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
-    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
+    final SignedBeaconBlock signedBlock =
+        dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
     when(validatorApiChannel.sendSignedBlock(signedBlock))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 

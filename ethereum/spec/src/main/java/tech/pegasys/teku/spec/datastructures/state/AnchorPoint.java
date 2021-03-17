@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -72,9 +73,11 @@ public class AnchorPoint extends StateAndBlockSummary {
   public static AnchorPoint fromGenesisState(final Spec spec, final BeaconState genesisState) {
     checkArgument(isGenesisState(genesisState), "Invalid genesis state supplied");
 
+    final SignedBeaconBlockSchema signedBeaconBlockSchema =
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
     final BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedGenesisBlock =
-        new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
+        new SignedBeaconBlock(signedBeaconBlockSchema, genesisBlock, BLSSignature.empty());
 
     final Bytes32 genesisBlockRoot = genesisBlock.hashTreeRoot();
     final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);

@@ -30,6 +30,8 @@ import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -49,6 +51,7 @@ public class BeaconChainMethodsTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
+  private final Spec spec = SpecFactory.createMinimal();
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
@@ -86,6 +89,7 @@ public class BeaconChainMethodsTest {
 
   private BeaconChainMethods getMethods() {
     return BeaconChainMethods.create(
+        spec,
         asyncRunner,
         peerLookup,
         combinedChainDataClient,

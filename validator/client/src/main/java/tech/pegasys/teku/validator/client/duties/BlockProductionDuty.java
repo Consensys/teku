@@ -111,7 +111,14 @@ public class BlockProductionDuty implements Duty {
     return validator
         .getSigner()
         .signBlock(unsignedBlock, forkInfo)
-        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock, signature));
+        .thenApply(
+            signature ->
+                new SignedBeaconBlock(
+                    spec.atSlot(unsignedBlock.getSlot())
+                        .getSchemaDefinitions()
+                        .getSignedBeaconBlockSchema(),
+                    unsignedBlock,
+                    signature));
   }
 
   @Override
