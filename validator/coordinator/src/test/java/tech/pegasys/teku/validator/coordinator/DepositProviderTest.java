@@ -68,7 +68,7 @@ public class DepositProviderTest {
     when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
 
     SpecConstants specConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal").maxDeposits(maxDeposits).build();
+        TestConstantsLoader.loadConstants("minimal", b -> b.maxDeposits(maxDeposits));
     spec = SpecFactory.create(specConstants);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =

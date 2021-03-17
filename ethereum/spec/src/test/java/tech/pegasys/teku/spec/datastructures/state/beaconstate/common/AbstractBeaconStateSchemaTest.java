@@ -68,15 +68,16 @@ public abstract class AbstractBeaconStateSchemaTest<
   public void changeSpecConstantsTest() {
     final Spec standardSpec = SpecFactory.createMinimal();
     final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal")
-            .slotsPerHistoricalRoot(123)
-            .historicalRootsLimit(123)
-            .epochsPerEth1VotingPeriod(123)
-            .validatorRegistryLimit(123L)
-            .epochsPerHistoricalVector(123)
-            .epochsPerSlashingsVector(123)
-            .maxAttestations(123)
-            .build();
+        TestConstantsLoader.loadConstants(
+            "minimal",
+            b ->
+                b.slotsPerHistoricalRoot(123)
+                    .historicalRootsLimit(123)
+                    .epochsPerEth1VotingPeriod(123)
+                    .validatorRegistryLimit(123L)
+                    .epochsPerHistoricalVector(123)
+                    .epochsPerSlashingsVector(123)
+                    .maxAttestations(123));
 
     BeaconState s1 = getSchema(modifiedConstants).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
