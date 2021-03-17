@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.services.chainstorage;
 
-import java.util.Optional;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public class StorageConfiguration {
-  private final Optional<Eth1Address> eth1DepositContract;
+  private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
@@ -28,7 +27,7 @@ public class StorageConfiguration {
   private final Spec spec;
 
   private StorageConfiguration(
-      final Optional<Eth1Address> eth1DepositContract,
+      final Eth1Address eth1DepositContract,
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final DatabaseVersion dataStorageCreateDbVersion,
@@ -44,7 +43,7 @@ public class StorageConfiguration {
     return new Builder();
   }
 
-  public Optional<Eth1Address> getEth1DepositContract() {
+  public Eth1Address getEth1DepositContract() {
     return eth1DepositContract;
   }
 
@@ -66,7 +65,7 @@ public class StorageConfiguration {
 
   public static final class Builder {
 
-    private Optional<Eth1Address> eth1DepositContract;
+    private Eth1Address eth1DepositContract;
     private StateStorageMode dataStorageMode;
     private long dataStorageFrequency;
     private DatabaseVersion dataStorageCreateDbVersion;
@@ -74,7 +73,7 @@ public class StorageConfiguration {
 
     private Builder() {}
 
-    public Builder eth1DepositContract(Optional<Eth1Address> eth1DepositContract) {
+    public Builder eth1DepositContract(Eth1Address eth1DepositContract) {
       this.eth1DepositContract = eth1DepositContract;
       return this;
     }

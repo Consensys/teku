@@ -362,7 +362,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
         .powchain(
             b -> {
-              networkConfig.getEth1DepositContractAddress().ifPresent(b::depositContract);
+              b.depositContract(networkConfig.getEth1DepositContractAddress());
               b.eth1Endpoint(Optional.empty())
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
@@ -403,8 +403,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
-        .eth2NetworkConfig(
-            b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(Optional.of(address)))
+        .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
         .powchain(
             b ->
                 b.eth1Endpoint("http://localhost:8545")
@@ -413,7 +412,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->
-                b.eth1DepositContract(Optional.of(address))
+                b.eth1DepositContract(address)
                     .dataStorageMode(PRUNE)
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
@@ -438,7 +437,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
                     .restApiCorsAllowedOrigins(new ArrayList<>())
-                    .eth1DepositContractAddress(Optional.of(address))
+                    .eth1DepositContractAddress(address)
                     .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE))
         .validator(
             b ->

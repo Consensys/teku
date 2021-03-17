@@ -101,7 +101,7 @@ public class Eth2NetworkOptions {
         .eth2NetworkConfig(this::configureEth2Network)
         .powchain(
             b -> {
-              eth2Config.getEth1DepositContractAddress().ifPresent(b::depositContract);
+              b.depositContract(eth2Config.getEth1DepositContractAddress());
               b.depositContractDeployBlock(eth2Config.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
