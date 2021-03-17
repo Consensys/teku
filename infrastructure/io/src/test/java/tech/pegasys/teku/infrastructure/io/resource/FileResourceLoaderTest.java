@@ -29,7 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 class FileResourceLoaderTest {
 
   public static final byte[] MESSAGE = "Hello".getBytes(StandardCharsets.UTF_8);
-  private final FileResourceLoader loader = new FileResourceLoader();
+  private final FileResourceLoader loader = new FileResourceLoader(__ -> true);
 
   @Test
   public void shouldLoadFile(@TempDir Path tempDir) throws Exception {

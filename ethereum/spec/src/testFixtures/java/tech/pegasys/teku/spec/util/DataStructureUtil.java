@@ -133,6 +133,10 @@ public final class DataStructureUtil {
     return new Random(nextSeed()).nextLong();
   }
 
+  public int randomPositiveInt() {
+    return new Random(nextSeed()).nextInt(Integer.MAX_VALUE);
+  }
+
   public byte randomByte() {
     final byte[] bytes = new byte[1];
     new Random(nextSeed()).nextBytes(bytes);

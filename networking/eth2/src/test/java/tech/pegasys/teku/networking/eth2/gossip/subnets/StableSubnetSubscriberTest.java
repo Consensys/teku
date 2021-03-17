@@ -38,9 +38,7 @@ import tech.pegasys.teku.util.config.Constants;
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
   SpecConstants specConstants =
-      TestConstantsLoader.loadConstantsBuilder("minimal")
-          .epochsPerRandomSubnetSubscription(5)
-          .build();
+      TestConstantsLoader.loadConstants("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
   private final Spec spec = SpecFactory.create(specConstants);
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);

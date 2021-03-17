@@ -19,11 +19,11 @@ import java.net.URL;
 import org.junit.jupiter.api.Test;
 
 class URLResourceLoaderTest {
-  private final ResourceLoader loader = new URLResourceLoader();
+  private final ResourceLoader loader = new URLResourceLoader(__ -> true);
 
   @Test
   public void shouldLoadContentFromURL() throws Exception {
-    final String resourceName = ClasspathResourceLoaderTest.TEST_FILE_1 + ".txt";
+    final String resourceName = ClasspathResourceLoaderTest.TEST_FILE_1;
     final URL resource = ClasspathResourceLoaderTest.class.getResource(resourceName);
     assertThat(loader.loadBytes(resource.toExternalForm()))
         .contains(ClasspathResourceLoaderTest.TEST_FILE_1_CONTENT);
