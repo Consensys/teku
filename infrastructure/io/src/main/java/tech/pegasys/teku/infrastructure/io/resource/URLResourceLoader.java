@@ -17,15 +17,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Optional;
+import java.util.function.Predicate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class URLResourceLoader implements ResourceLoader {
+public class URLResourceLoader extends ResourceLoader {
+  private static final Logger LOG = LogManager.getLogger();
+
+  protected URLResourceLoader(final Predicate<String> sourceFilter) {
+    super(sourceFilter);
+  }
 
   @Override
-  public Optional<InputStream> load(final String source) throws IOException {
+  Optional<InputStream> loadSource(final String source) throws IOException {
     if (!source.contains(":")) {
       // Doesn't look like a URL
       return Optional.empty();
     }
-    return Optional.of(new URL(source).openStream());
+
+    try {
+      return Optional.of(new URL(source).openStream());
+    } catch (Exception e) {
+      LOG.debug("Failed to load url: " + source, e);
+      return Optional.empty();
+    }
   }
 }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;

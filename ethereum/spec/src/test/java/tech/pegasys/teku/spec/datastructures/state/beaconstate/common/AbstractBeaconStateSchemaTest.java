@@ -33,11 +33,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszTestUtils;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateSchemaTest<
@@ -68,15 +68,16 @@ public abstract class AbstractBeaconStateSchemaTest<
   public void changeSpecConstantsTest() {
     final Spec standardSpec = SpecFactory.createMinimal();
     final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal")
-            .slotsPerHistoricalRoot(123)
-            .historicalRootsLimit(123)
-            .epochsPerEth1VotingPeriod(123)
-            .validatorRegistryLimit(123L)
-            .epochsPerHistoricalVector(123)
-            .epochsPerSlashingsVector(123)
-            .maxAttestations(123)
-            .build();
+        TestConstantsLoader.loadConstants(
+            "minimal",
+            b ->
+                b.slotsPerHistoricalRoot(123)
+                    .historicalRootsLimit(123)
+                    .epochsPerEth1VotingPeriod(123)
+                    .validatorRegistryLimit(123L)
+                    .epochsPerHistoricalVector(123)
+                    .epochsPerSlashingsVector(123)
+                    .maxAttestations(123));
 
     BeaconState s1 = getSchema(modifiedConstants).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();

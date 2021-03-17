@@ -19,7 +19,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Optimised fork choice to avoid unnecessary copying, reducing CPU and memory usage.
 - Added a network definition for the prater test network `--network prater`.
-- Added a labelled counter to metrics to display teku version and release, under `beacon_teku_version`. On startup the version being run will report as the label 'version' and the full release as the label 'release', each with a value of '1'.
+- Added a labelled counter to metrics to display teku version under `beacon_teku_version`. On startup the version being run will report as the label 'version', with a value of '1'.
+- Support loading Altair constants. Versioned constants may be loaded from a single file or a directory containing files: phase0.yaml, altair.yaml. Constants files are now required to end in a YAML extension (.yaml or .yml).
 
 ### Bug Fixes
 - Reduced verbosity of warning message when SIGHUP can't be intercepted (e.g. on Windows)

@@ -15,31 +15,33 @@ package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class ClasspathResourceLoader implements ResourceLoader {
+public class ClasspathResourceLoader extends ResourceLoader {
 
   private final Class<?> referenceClass;
-  private final Function<String, String> nameToFilenameMapper;
-  private final Collection<String> availableResourceNames;
+  // We should constrain resource loading via an explicit whitelist
+  // This helps guard against unintentionally loading sensitive resources from the file
+  // system (which may be a part of the classpath)
+  private final Set<String> availableResources;
 
   public ClasspathResourceLoader(
       final Class<?> referenceClass,
-      final Function<String, String> nameToFilenameMapper,
-      final String... availableResourceNames) {
+      final Collection<String> availableResources,
+      final Predicate<String> resourceFilter) {
+    super(resourceFilter);
     this.referenceClass = referenceClass;
-    this.nameToFilenameMapper = nameToFilenameMapper;
-    this.availableResourceNames = Set.of(availableResourceNames);
+    this.availableResources = new HashSet<>(availableResources);
   }
 
   @Override
-  public Optional<InputStream> load(final String source) {
-    if (!availableResourceNames.contains(source)) {
+  Optional<InputStream> loadSource(final String source) {
+    if (!availableResources.contains(source)) {
       return Optional.empty();
     }
-    return Optional.ofNullable(
-        referenceClass.getResourceAsStream(nameToFilenameMapper.apply(source)));
+    return Optional.ofNullable(referenceClass.getResourceAsStream(source));
   }
 }

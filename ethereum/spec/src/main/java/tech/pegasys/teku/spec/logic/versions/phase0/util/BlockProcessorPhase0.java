@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.backing.SszList;
+import tech.pegasys.teku.ssz.SszList;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();

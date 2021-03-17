@@ -72,26 +72,26 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszPrimitive;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveVector;
-import tech.pegasys.teku.ssz.backing.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBytes32VectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveListSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszPrimitiveVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszPrimitive;
+import tech.pegasys.teku.ssz.SszVector;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszByte;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
@@ -131,6 +131,10 @@ public final class DataStructureUtil {
 
   public long randomLong() {
     return new Random(nextSeed()).nextLong();
+  }
+
+  public int randomPositiveInt() {
+    return new Random(nextSeed()).nextInt(Integer.MAX_VALUE);
   }
 
   public byte randomByte() {
