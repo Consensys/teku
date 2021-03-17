@@ -87,11 +87,11 @@ public abstract class AbstractSszMutableCollection<
         newValues.add(newNode);
         gIndexes.add(gIndex);
         nodeUpdatesCount = 0;
-        prevChildNodeIndex = childNodeIndex;
       }
 
       internalIdxs[nodeUpdatesCount] = childIndex % elementsPerChunk;
       newVals[nodeUpdatesCount] = entry.getValue();
+      prevChildNodeIndex = childNodeIndex;
       nodeUpdatesCount++;
     }
 
