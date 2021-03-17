@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Converter;
 
-class SpecConstantsFormatter {
+class SpecConfigFormatter {
   private static final Converter<String, String> CAMEL_TO_SNAKE_CASE =
       CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
 

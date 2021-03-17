@@ -65,7 +65,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     this.eth1DataCache = eth1DataCache;
     this.spec = spec;
     depositMerkleTree =
-        new OptimizedMerkleTree(spec.getGenesisSpecConstants().getDepositContractTreeDepth());
+        new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     depositCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,

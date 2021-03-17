@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
@@ -75,13 +75,13 @@ public class BeaconBlockBodySchemaPhase0
         voluntaryExitsSchema);
   }
 
-  public static BeaconBlockBodySchemaPhase0 create(final SpecConstants constants) {
+  public static BeaconBlockBodySchemaPhase0 create(final SpecConfig specConfig) {
     return create(
-        constants.getMaxProposerSlashings(),
-        constants.getMaxAttesterSlashings(),
-        constants.getMaxAttestations(),
-        constants.getMaxDeposits(),
-        constants.getMaxVoluntaryExits());
+        specConfig.getMaxProposerSlashings(),
+        specConfig.getMaxAttesterSlashings(),
+        specConfig.getMaxAttestations(),
+        specConfig.getMaxDeposits(),
+        specConfig.getMaxVoluntaryExits());
   }
 
   @Deprecated

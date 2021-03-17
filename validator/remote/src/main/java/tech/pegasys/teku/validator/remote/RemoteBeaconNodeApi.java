@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -92,7 +92,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     // but when using independent timing we only get head events on each new block so they may be
     // much rarer
     final int readTimeoutInSlots = useIndependentAttestationTiming ? 5 : 2;
-    return readTimeoutInSlots * spec.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
+    return readTimeoutInSlots * spec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
   }
 
   @Override

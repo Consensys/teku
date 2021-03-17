@@ -123,8 +123,7 @@ public class P2PConfig {
               : GossipConfigurator.NOOP;
       final Eth2Context eth2Context =
           Eth2Context.builder()
-              .activeValidatorCount(
-                  spec.getGenesisSpecConstants().getMinGenesisActiveValidatorCount())
+              .activeValidatorCount(spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount())
               .gossipEncoding(gossipEncoding)
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));

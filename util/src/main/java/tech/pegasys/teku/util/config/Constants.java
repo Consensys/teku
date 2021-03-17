@@ -179,7 +179,7 @@ public class Constants {
   }
 
   /**
-   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConstants
+   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConfig
    * @param source The source from which to load constants
    */
   @Deprecated
