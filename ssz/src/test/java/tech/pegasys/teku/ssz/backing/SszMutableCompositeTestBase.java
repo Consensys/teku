@@ -27,6 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.ssz.backing.schema.collections.SszUInt64ListSchema;
 
@@ -36,6 +37,16 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   SszData NON_EXISTING_SCHEMA_DATA = NON_EXISTING_SCHEMA.getDefault();
   RandomSszDataGenerator generator = new RandomSszDataGenerator();
 
+  static SszData getSomeNewChild(SszCompositeSchema<?> schema) {
+    final SszSchema<?> childSchema;
+    if (schema instanceof SszListSchema) {
+      childSchema = ((SszListSchema<?, ?>) schema).getElementSchema();
+    } else {
+      childSchema = schema.getChildSchema(0);
+    }
+    return childSchema.getDefault();
+  }
+
   default Stream<Arguments> sszMutableCompositeArguments() {
     return SszDataTestBase.passWhenEmpty(
         sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
@@ -44,9 +55,11 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_throwsIndexOutOfBounds(SszMutableComposite<SszData> data) {
-    assertThatThrownBy(() -> data.set(data.size() + 1, NON_EXISTING_SCHEMA_DATA))
+    SszData someData = getSomeNewChild(data.getSchema());
+    assertThatThrownBy(() -> data.set(data.size() + 1,
+        someData))
         .isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(() -> data.set(-1, NON_EXISTING_SCHEMA_DATA))
+    assertThatThrownBy(() -> data.set(-1, someData))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
 
