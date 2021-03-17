@@ -160,7 +160,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setPreGenesisForkInfo() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
             spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),

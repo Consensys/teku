@@ -55,7 +55,7 @@ class ScoringConfig {
   private ScoringConfig(final Spec spec, final int d) {
     this.spec = spec;
     // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants
-    this.genesisConstants = spec.getGenesisSpecConstants();
+    this.genesisConstants = spec.getGenesisSpecConfig();
     this.d = d;
 
     this.slotDuration = Duration.ofSeconds(this.genesisConstants.getSecondsPerSlot());

@@ -29,7 +29,7 @@ public interface SpecConfig {
     return new SpecConfigBuilder();
   }
 
-  Map<String, Object> getRawConstants();
+  Map<String, Object> getRawConfig();
 
   String getConfigName();
 

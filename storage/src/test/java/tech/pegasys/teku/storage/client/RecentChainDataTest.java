@@ -66,7 +66,7 @@ import tech.pegasys.teku.util.EventSink;
 class RecentChainDataTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
   private StorageSystem storageSystem;
 
   private ChainBuilder chainBuilder;

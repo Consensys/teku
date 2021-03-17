@@ -53,12 +53,12 @@ public class StateRootRecorderTest {
   @Test
   public void shouldLimitToSlotsPerHistoricalRoot() {
     final UInt64 history =
-        UInt64.valueOf(spec.getGenesisSpecConstants().getSlotsPerHistoricalRoot()).plus(10);
+        UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot()).plus(10);
     final StateRootRecorder stateRootRecorder =
         new StateRootRecorder(
             slot.minus(history), (stateRoot, slot) -> stateRoots.put(slot, stateRoot), spec);
     stateRootRecorder.acceptNextState(state);
     assertThat(stateRoots.size())
-        .isEqualTo(spec.getGenesisSpecConstants().getSlotsPerHistoricalRoot() + 1);
+        .isEqualTo(spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot() + 1);
   }
 }

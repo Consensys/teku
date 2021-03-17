@@ -62,7 +62,7 @@ import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManagerTest {
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConfig specConfig = spec.getGenesisSpecConstants();
+  private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);

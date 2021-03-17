@@ -55,7 +55,7 @@ public class BeaconStateUtilTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateUtil beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
-  private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConstants();
+  private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
   private final long SLOTS_PER_EPOCH = specConfig.getSlotsPerEpoch();
 
   @Test

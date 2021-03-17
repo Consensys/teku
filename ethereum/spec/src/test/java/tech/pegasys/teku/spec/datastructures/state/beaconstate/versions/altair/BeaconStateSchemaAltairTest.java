@@ -44,7 +44,7 @@ public class BeaconStateSchemaAltairTest
         TestConfigLoader.loadConstants("minimal", b -> b.validatorRegistryLimit(123L));
 
     BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
     assertThat(s1.getPreviousEpochParticipation().getSchema())
         .isNotEqualTo(s2.getPreviousEpochParticipation().getSchema());

@@ -43,7 +43,7 @@ public class ShuffleBenchmark {
   Bytes32 seed = Bytes32.ZERO;
   private final SpecConfig specConfig = SpecConfig.builder().configName("mainnet").build();
   private final SpecConfiguration specConfiguration =
-      SpecConfiguration.builder().constants(specConfig).build();
+      SpecConfiguration.builder().config(specConfig).build();
   private final Spec spec = Spec.create(specConfiguration);
   private final tech.pegasys.teku.spec.logic.common.util.CommitteeUtil committeeUtil =
       spec.atSlot(UInt64.ZERO).getCommitteeUtil();

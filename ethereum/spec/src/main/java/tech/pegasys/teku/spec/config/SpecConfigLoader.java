@@ -26,13 +26,13 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoader {
 
-  public static SpecConfig loadConstants(final String constants) {
+  public static SpecConfig loadConfig(final String configName) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConstants(constants, reader::read);
+    processConfig(configName, reader::read);
     return reader.build();
   }
 
-  static void processConstants(final String source, final InputStreamProcessor processor) {
+  static void processConfig(final String source, final InputStreamProcessor processor) {
     // TODO(#3394) - move Constants resources from util to this module
     final ResourceLoader loader =
         ResourceLoader.classpathUrlOrFile(
@@ -54,7 +54,7 @@ public class SpecConfigLoader {
           loader
               .load(source + "/phase0.yaml", source + "/phase0.yml")
               .orElseThrow(
-                  () -> new FileNotFoundException("Could not load constants from " + source));
+                  () -> new FileNotFoundException("Could not load spec config from " + source));
       processor.process(phase0Input);
       // Altair is optional
       final Optional<InputStream> altairInput =
@@ -63,13 +63,13 @@ public class SpecConfigLoader {
         processor.process(altairInput.get());
       }
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants", e);
+      throw new IllegalArgumentException("Failed to load spec config", e);
     }
   }
 
   private static List<String> enumerateAvailableResources() {
     return Arrays.stream(Eth2Network.values())
-        .map(Eth2Network::constantsName)
+        .map(Eth2Network::configName)
         .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());

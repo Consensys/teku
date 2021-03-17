@@ -88,7 +88,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       UInt64 currentSlot, int validatorCount) {
 
     final int randomSubnetsPerValidator =
-        spec.atSlot(currentSlot).getConstants().getRandomSubnetsPerValidator();
+        spec.atSlot(currentSlot).getConfig().getRandomSubnetsPerValidator();
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
 
@@ -154,7 +154,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   }
 
   private UInt64 getRandomSubscriptionLength(final UInt64 currentSlot) {
-    final SpecConfig constants = spec.atSlot(currentSlot).getConstants();
+    final SpecConfig constants = spec.atSlot(currentSlot).getConfig();
 
     return UInt64.valueOf(
         (constants.getEpochsPerRandomSubnetSubscription()

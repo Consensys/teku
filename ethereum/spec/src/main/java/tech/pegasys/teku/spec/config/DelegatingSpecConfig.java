@@ -26,8 +26,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Map<String, Object> getRawConstants() {
-    return specConfig.getRawConstants();
+  public Map<String, Object> getRawConfig() {
+    return specConfig.getRawConfig();
   }
 
   @Override

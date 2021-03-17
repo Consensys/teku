@@ -40,13 +40,13 @@ public class SpecConfigLoaderTest {
   @MethodSource("knownNetworks")
   public void shouldLoadAllKnownNetworks(final String name, final Class<?> constantsType)
       throws Exception {
-    final SpecConfig constants = SpecConfigLoader.loadConstants(name);
+    final SpecConfig constants = SpecConfigLoader.loadConfig(name);
     assertAllFieldsSet(constants, constantsType);
   }
 
   @Test
   public void shouldLoadMainnet() throws Exception {
-    final SpecConfig constants = SpecConfigLoader.loadConstants("mainnet");
+    final SpecConfig constants = SpecConfigLoader.loadConfig("mainnet");
     assertAllAltairFieldsSet(constants);
   }
 
@@ -56,7 +56,7 @@ public class SpecConfigLoaderTest {
         Constants.class
             .getClassLoader()
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml");
-    final SpecConfig constants = SpecConfigLoader.loadConstants(url.toString());
+    final SpecConfig constants = SpecConfigLoader.loadConfig(url.toString());
     assertAllPhase0FieldsSet(constants);
   }
 
@@ -68,7 +68,7 @@ public class SpecConfigLoaderTest {
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml")
             .toString();
     final String directoryPath = filePath.replace("/phase0.yaml", "");
-    final SpecConfig constants = SpecConfigLoader.loadConstants(directoryPath);
+    final SpecConfig constants = SpecConfigLoader.loadConfig(directoryPath);
     assertAllAltairFieldsSet(constants);
   }
 
@@ -77,7 +77,7 @@ public class SpecConfigLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
     final Path file = tempDir.resolve("phase0.yaml");
-    final SpecConfig constants = SpecConfigLoader.loadConstants(file.toAbsolutePath().toString());
+    final SpecConfig constants = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
     assertAllPhase0FieldsSet(constants);
   }
 
@@ -86,8 +86,7 @@ public class SpecConfigLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
     writeMainnetToFile(tempDir, "altair.yaml");
 
-    final SpecConfig constants =
-        SpecConfigLoader.loadConstants(tempDir.toAbsolutePath().toString());
+    final SpecConfig constants = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
     assertAllAltairFieldsSet(constants);
   }
 
@@ -95,8 +94,7 @@ public class SpecConfigLoaderTest {
   public void shouldLoadMainnetPhase0FromDirectory(@TempDir Path tempDir) throws Exception {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
-    final SpecConfig constants =
-        SpecConfigLoader.loadConstants(tempDir.toAbsolutePath().toString());
+    final SpecConfig constants = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
     assertAllPhase0FieldsSet(constants);
   }
 
@@ -106,7 +104,7 @@ public class SpecConfigLoaderTest {
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
     final List<String> allKnownNetworks =
         Arrays.stream(Eth2Network.values())
-            .map(Eth2Network::constantsName)
+            .map(Eth2Network::configName)
             .sorted()
             .collect(Collectors.toList());
 
@@ -115,12 +113,12 @@ public class SpecConfigLoaderTest {
 
   static Stream<Arguments> knownNetworks() {
     return Stream.of(
-        Arguments.of(Eth2Network.MAINNET.constantsName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.constantsName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.PRATER.constantsName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.MINIMAL.constantsName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.SWIFT.constantsName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.constantsName(), SpecConfigPhase0.class));
+        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
   }
 
   private void writeMainnetToFile(final Path directory, final String constantsFile)

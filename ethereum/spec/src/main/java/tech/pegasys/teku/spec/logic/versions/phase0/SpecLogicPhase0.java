@@ -54,25 +54,24 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   public static SpecLogicPhase0 create(
-      final SpecConfig constants, final SchemaDefinitions schemaDefinitions) {
-    final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(constants);
+      final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
     final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, committeeUtil);
+        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
     final EpochProcessorPhase0 epochProcessor =
-        new EpochProcessorPhase0(
-            constants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+        new EpochProcessorPhase0(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
     final BlockProcessorPhase0 blockProcessorUtil =
-        new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorPhase0(config, beaconStateUtil, attestationUtil, validatorsUtil);
     final StateTransition stateTransition =
         StateTransition.create(
-            constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
+            config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(constants, beaconStateUtil, attestationUtil, stateTransition);
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 

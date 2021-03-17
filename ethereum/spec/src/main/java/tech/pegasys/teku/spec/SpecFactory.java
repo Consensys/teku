@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class SpecFactory {
 
   public static Spec create(final Eth2Network network) {
-    return create(network.constantsName());
+    return create(network.configName());
   }
 
   public static Spec createMinimal() {
@@ -31,14 +31,13 @@ public class SpecFactory {
     return create(Eth2Network.MAINNET);
   }
 
-  public static Spec create(final String constantsName) {
-    final SpecConfig constants = SpecConfigLoader.loadConstants(constantsName);
-    return create(constants);
+  public static Spec create(final String configName) {
+    final SpecConfig config = SpecConfigLoader.loadConfig(configName);
+    return create(config);
   }
 
-  public static Spec create(final SpecConfig specConstants) {
-    final SpecConfiguration specConfig =
-        SpecConfiguration.builder().constants(specConstants).build();
+  public static Spec create(final SpecConfig config) {
+    final SpecConfiguration specConfig = SpecConfiguration.builder().config(config).build();
     return Spec.create(specConfig);
   }
 }

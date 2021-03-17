@@ -180,7 +180,7 @@ public class ValidatorDataProviderTest {
   public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final int maxValidatorsPerCommittee =
-        spec.atSlot(attestationData.getSlot()).getConstants().getMaxValidatorsPerCommittee();
+        spec.atSlot(attestationData.getSlot()).getConfig().getMaxValidatorsPerCommittee();
     final tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         new tech.pegasys.teku.spec.datastructures.operations.Attestation(
             SszBitlistSchema.create(maxValidatorsPerCommittee).ofBits(4),

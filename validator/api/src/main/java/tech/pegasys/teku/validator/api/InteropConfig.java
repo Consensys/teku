@@ -122,7 +122,7 @@ public class InteropConfig {
 
     private void validate() throws IllegalArgumentException {
       checkNotNull(spec);
-      final SpecConfig genesisSpecConfig = spec.getGenesisSpecConstants();
+      final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
       if (interopNumberOfValidators < genesisSpecConfig.getSlotsPerEpoch()) {
         throw new InvalidConfigurationException(
             String.format(

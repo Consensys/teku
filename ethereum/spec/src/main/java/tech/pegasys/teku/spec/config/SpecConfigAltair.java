@@ -78,7 +78,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected altair constants but got: " + specConfig.getClass().getSimpleName()));
+                    "Expected altair spec config but got: "
+                        + specConfig.getClass().getSimpleName()));
   }
 
   public UInt64 getInactivityPenaltyQuotientAltair() {

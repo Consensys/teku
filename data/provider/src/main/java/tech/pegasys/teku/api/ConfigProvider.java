@@ -36,8 +36,8 @@ public class ConfigProvider {
     spec
         // Display genesis spec, for now
         .atEpoch(UInt64.ZERO)
-        .getConstants()
-        .getRawConstants()
+        .getConfig()
+        .getRawConfig()
         .forEach(
             (k, v) -> {
               configAttributes.put(k, "" + v);
@@ -54,7 +54,7 @@ public class ConfigProvider {
   }
 
   public SpecConfig getGenesisSpecConstants() {
-    return spec.getGenesisSpecConstants();
+    return spec.getGenesisSpecConfig();
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {

@@ -51,48 +51,48 @@ public class SpecConfigReader {
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 
-  final SpecConfigBuilder constantsBuilder = SpecConfig.builder();
+  final SpecConfigBuilder configBuilder = SpecConfig.builder();
   final HashMap<String, Object> seenValues = new HashMap<>();
 
   public SpecConfig build() {
-    return constantsBuilder.build();
+    return configBuilder.build();
   }
 
   public SpecConfig build(Consumer<SpecConfigBuilder> modifier) {
-    modifier.accept(constantsBuilder);
+    modifier.accept(configBuilder);
     return build();
   }
 
   public void read(final InputStream source) throws IOException {
     final Map<String, Object> rawValues = readValues(source);
     processSeenValues(rawValues);
-    final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
+    final Map<String, Object> unprocessConfig = new HashMap<>(rawValues);
 
-    // Process phase0 constants
-    constantsBuilder.rawConstants(rawValues);
-    streamConstantSetters(constantsBuilder.getClass())
+    // Process phase0 config
+    configBuilder.rawConfig(rawValues);
+    streamConfigSetters(configBuilder.getClass())
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessedConstants.get(constantKey);
+              final Object rawValue = unprocessConfig.get(constantKey);
               invokeSetter(
-                  setter, BuilderSupplier.fromBuilder(constantsBuilder), constantKey, rawValue);
-              unprocessedConstants.remove(constantKey);
+                  setter, BuilderSupplier.fromBuilder(configBuilder), constantKey, rawValue);
+              unprocessConfig.remove(constantKey);
             });
 
-    // Process altair constants
-    streamConstantSetters(SpecConfigBuilder.AltairBuilder.class)
+    // Process altair config
+    streamConfigSetters(SpecConfigBuilder.AltairBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessedConstants.get(constantKey);
-              invokeSetter(setter, constantsBuilder::altairBuilder, constantKey, rawValue);
-              unprocessedConstants.remove(constantKey);
+              final Object rawValue = unprocessConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::altairBuilder, constantKey, rawValue);
+              unprocessConfig.remove(constantKey);
             });
 
-    if (unprocessedConstants.size() > 0) {
-      final String unknownKeys = String.join(",", unprocessedConstants.keySet());
-      throw new IllegalArgumentException("Detected unknown constants: " + unknownKeys);
+    if (unprocessConfig.size() > 0) {
+      final String unknownKeys = String.join(",", unprocessConfig.keySet());
+      throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
     }
   }
 
@@ -130,19 +130,19 @@ public class SpecConfigReader {
                   .next();
       return values;
     } catch (NoSuchElementException e) {
-      throw new IllegalArgumentException("Supplied constants are empty");
+      throw new IllegalArgumentException("Supplied spec config is empty");
     }
   }
 
-  private Stream<Method> streamConstantSetters(Class<?> builderClass) {
-    // Ignore any setters that aren't for individual constants
-    final Set<String> nonConstantSetters = Set.of("rawConstants");
+  private Stream<Method> streamConfigSetters(Class<?> builderClass) {
+    // Ignore any setters that aren't for individual config entries
+    final Set<String> ignoredSetters = Set.of("rawConfig");
 
     return Arrays.stream(builderClass.getMethods())
         .filter(m -> Modifier.isPublic(m.getModifiers()))
         .filter(m -> m.getReturnType() == builderClass)
         .filter(m -> m.getParameterTypes().length == 1)
-        .filter(m -> !nonConstantSetters.contains(m.getName()));
+        .filter(m -> !ignoredSetters.contains(m.getName()));
   }
 
   private <T> void invokeSetter(

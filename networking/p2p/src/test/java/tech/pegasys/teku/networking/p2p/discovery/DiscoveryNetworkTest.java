@@ -259,7 +259,7 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfoAtInitialization() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
             spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),

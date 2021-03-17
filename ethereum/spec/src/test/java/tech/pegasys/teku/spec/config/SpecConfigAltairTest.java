@@ -26,9 +26,9 @@ public class SpecConfigAltairTest {
   @Test
   public void equals_mainnet() {
     SpecConfigAltair constantsA =
-        SpecConfigLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
     SpecConfigAltair constantsB =
-        SpecConfigLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
 
     assertThat(constantsA).isEqualTo(constantsB);
     assertThat(constantsA.hashCode()).isEqualTo(constantsB.hashCode());
@@ -36,7 +36,7 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_sameRandomValues() {
-    SpecConfig phase0 = SpecConfigLoader.loadConstants("mainnet");
+    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
     SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
     SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 1);
 
@@ -46,7 +46,7 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_differentRandomValues() {
-    SpecConfig phase0 = SpecConfigLoader.loadConstants("mainnet");
+    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
     SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
     SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 2);
 

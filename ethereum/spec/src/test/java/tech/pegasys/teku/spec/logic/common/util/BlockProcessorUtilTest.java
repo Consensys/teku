@@ -52,7 +52,7 @@ class BlockProcessorUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
-  private final SpecConfig specConfig = genesisSpec.getConstants();
+  private final SpecConfig specConfig = genesisSpec.getConfig();
   private final BlockProcessorUtil blockProcessorUtil = genesisSpec.getBlockProcessorUtil();
 
   @Test

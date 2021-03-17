@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   public EpochProcessorAltair(
-      final SpecConfigAltair specConstants,
+      final SpecConfigAltair specConfig,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory) {
-    super(specConstants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+    super(specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory);
   }
 
   @Override

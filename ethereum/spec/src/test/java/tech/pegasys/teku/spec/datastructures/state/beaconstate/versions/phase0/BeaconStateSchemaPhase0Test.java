@@ -44,7 +44,7 @@ public class BeaconStateSchemaPhase0Test
         TestConfigLoader.loadConstants("minimal", b -> b.maxAttestations(123));
 
     BeaconStatePhase0 s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
     assertThat(s1.getPrevious_epoch_attestations().getSchema())
         .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema());

@@ -62,8 +62,8 @@ public class ForkManifest {
             });
   }
 
-  public static ForkManifest create(final SpecConfig genesisConstants) {
-    final Bytes4 genesisForkVersion = genesisConstants.getGenesisForkVersion();
+  public static ForkManifest create(final SpecConfig genesisConfig) {
+    final Bytes4 genesisForkVersion = genesisConfig.getGenesisForkVersion();
     return new ForkManifest(
         List.of(new Fork(genesisForkVersion, genesisForkVersion, GENESIS_EPOCH)));
   }

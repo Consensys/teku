@@ -24,15 +24,15 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
-  private final SpecConfig constants;
+  private final SpecConfig config;
   private final SchemaDefinitions schemaDefinitions;
 
   private SpecVersion(
-      final SpecConfig constants,
+      final SpecConfig config,
       final SchemaDefinitions schemaDefinitions,
       final SpecLogic specLogic) {
     super(specLogic);
-    this.constants = constants;
+    this.config = config;
     this.schemaDefinitions = schemaDefinitions;
   }
 
@@ -42,14 +42,14 @@ public class SpecVersion extends DelegatingSpecLogic {
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createAltair(final SpecConfigAltair specConstants) {
-    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsAltair(specConstants);
-    final SpecLogic specLogic = SpecLogicAltair.create(specConstants, schemaDefinitions);
-    return new SpecVersion(specConstants, schemaDefinitions, specLogic);
+  public static SpecVersion createAltair(final SpecConfigAltair specConfig) {
+    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
+    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+    return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 
-  public SpecConfig getConstants() {
-    return constants;
+  public SpecConfig getConfig() {
+    return config;
   }
 
   public SchemaDefinitions getSchemaDefinitions() {

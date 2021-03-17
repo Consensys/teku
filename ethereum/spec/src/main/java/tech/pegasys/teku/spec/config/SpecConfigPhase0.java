@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigPhase0 implements SpecConfig {
-  private final Map<String, Object> rawConstants;
+  private final Map<String, Object> rawConfig;
   private final String configName;
 
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
@@ -109,7 +109,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes depositContractAddress;
 
   public SpecConfigPhase0(
-      final Map<String, Object> rawConstants,
+      final Map<String, Object> rawConfig,
       final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
@@ -170,7 +170,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
-    this.rawConstants = rawConstants;
+    this.rawConfig = rawConfig;
     this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -234,8 +234,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Map<String, Object> getRawConstants() {
-    return rawConstants;
+  public Map<String, Object> getRawConfig() {
+    return rawConfig;
   }
 
   @Override

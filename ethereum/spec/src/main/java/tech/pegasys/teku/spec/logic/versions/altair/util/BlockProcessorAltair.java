@@ -26,11 +26,11 @@ import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
   public BlockProcessorAltair(
-      final SpecConfigAltair specConstants,
+      final SpecConfigAltair specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    super(specConstants, beaconStateUtil, attestationUtil, validatorsUtil);
+    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   @Override

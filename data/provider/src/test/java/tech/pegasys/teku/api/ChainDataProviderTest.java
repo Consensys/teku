@@ -78,7 +78,7 @@ public class ChainDataProviderTest {
   private UInt64 actualBalance;
   private final DataStructureUtil data = new DataStructureUtil();
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConfig specConfig = spec.getGenesisSpecConstants();
+  private final SpecConfig specConfig = spec.getGenesisSpecConfig();
 
   @BeforeEach
   public void setup() {
@@ -136,7 +136,7 @@ public class ChainDataProviderTest {
   public void getGenesisData_shouldReturnValueIfStoreAvailable() {
     final UInt64 genesisTime = beaconStateInternal.getGenesis_time();
     final Bytes32 genesisValidatorsRoot = beaconStateInternal.getGenesis_validators_root();
-    final Bytes4 genesisForkVersion = spec.atEpoch(ZERO).getConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
 
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);

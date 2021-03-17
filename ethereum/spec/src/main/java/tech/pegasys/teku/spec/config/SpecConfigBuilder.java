@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigBuilder {
-  private final Map<String, Object> rawConstants = new HashMap<>();
+  private final Map<String, Object> rawConfig = new HashMap<>();
   private String configName = "Custom (unknown)";
 
   // Misc
@@ -117,7 +117,7 @@ public class SpecConfigBuilder {
     validate();
     final SpecConfig phase0 =
         new SpecConfigPhase0(
-            rawConstants,
+            rawConfig,
             configName,
             eth1FollowDistance,
             maxCommitteesPerSlot,
@@ -183,7 +183,7 @@ public class SpecConfigBuilder {
   }
 
   private void validate() {
-    checkArgument(rawConstants.size() > 0, "Raw constants must be provided");
+    checkArgument(rawConfig.size() > 0, "Raw spec config must be provided");
     validateConstant("configName", configName);
     validateConstant("eth1FollowDistance", eth1FollowDistance);
     validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
@@ -266,9 +266,9 @@ public class SpecConfigBuilder {
     checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
   }
 
-  public SpecConfigBuilder rawConstants(final Map<String, Object> rawConstants) {
-    checkNotNull(rawConstants);
-    this.rawConstants.putAll(rawConstants);
+  public SpecConfigBuilder rawConfig(final Map<String, Object> rawConfig) {
+    checkNotNull(rawConfig);
+    this.rawConfig.putAll(rawConfig);
     return this;
   }
 

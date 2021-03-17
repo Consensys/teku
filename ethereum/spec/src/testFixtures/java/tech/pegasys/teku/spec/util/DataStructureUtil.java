@@ -763,7 +763,7 @@ public final class DataStructureUtil {
 
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    final Bytes4 domain = genesisSpec.getConstants().getDomainDeposit();
+    final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
     return genesisSpec.getBeaconStateUtil().computeDomain(domain);
   }
 
@@ -786,6 +786,6 @@ public final class DataStructureUtil {
   }
 
   private <T> T getConstant(final Function<SpecConfig, T> getter) {
-    return getter.apply(spec.getGenesisSpec().getConstants());
+    return getter.apply(spec.getGenesisSpec().getConfig());
   }
 }

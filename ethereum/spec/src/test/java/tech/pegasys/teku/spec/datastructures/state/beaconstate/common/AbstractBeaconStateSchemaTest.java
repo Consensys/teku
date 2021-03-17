@@ -45,7 +45,7 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   private final Spec spec = SpecFactory.createMinimal();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
   private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
 
   protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
@@ -80,7 +80,7 @@ public abstract class AbstractBeaconStateSchemaTest<
                     .maxAttestations(123));
 
     BeaconState s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
     assertThat(s1.getBlock_roots().getSchema()).isNotEqualTo(s2.getBlock_roots().getSchema());
     assertThat(s1.getState_roots().getSchema()).isNotEqualTo(s2.getState_roots().getSchema());
@@ -106,9 +106,9 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(SpecFactory.createMinimal().getGenesisSpecConstants());
+        getSchema(SpecFactory.createMinimal().getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(SpecFactory.createMainnet().getGenesisSpecConstants());
+        getSchema(SpecFactory.createMainnet().getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

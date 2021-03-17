@@ -75,13 +75,13 @@ public class BeaconBlockBodySchemaPhase0
         voluntaryExitsSchema);
   }
 
-  public static BeaconBlockBodySchemaPhase0 create(final SpecConfig constants) {
+  public static BeaconBlockBodySchemaPhase0 create(final SpecConfig specConfig) {
     return create(
-        constants.getMaxProposerSlashings(),
-        constants.getMaxAttesterSlashings(),
-        constants.getMaxAttestations(),
-        constants.getMaxDeposits(),
-        constants.getMaxVoluntaryExits());
+        specConfig.getMaxProposerSlashings(),
+        specConfig.getMaxAttesterSlashings(),
+        specConfig.getMaxAttestations(),
+        specConfig.getMaxDeposits(),
+        specConfig.getMaxVoluntaryExits());
   }
 
   @Deprecated

@@ -36,7 +36,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
 
   protected final Spec spec = SpecFactory.createMinimal();
   private final AbstractValidatorStatusFactory validatorStatusFactory = createFactory();
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private UInt64 balance(final int amount) {

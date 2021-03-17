@@ -169,14 +169,14 @@ public class StableSubnetSubscriberTest {
     UInt64 lowerBound =
         currentSlot.plus(
             UInt64.valueOf(
-                spec.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
-                    * spec.getGenesisSpecConstants().getSlotsPerEpoch()));
+                spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     UInt64 upperBound =
         currentSlot.plus(
             UInt64.valueOf(
                 2
-                    * spec.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
-                    * spec.getGenesisSpecConstants().getSlotsPerEpoch()));
+                    * spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     subnetSubscriptions.forEach(
         subnetSubscription -> {
           assertThat(subnetSubscription.getUnsubscriptionSlot()).isBetween(lowerBound, upperBound);

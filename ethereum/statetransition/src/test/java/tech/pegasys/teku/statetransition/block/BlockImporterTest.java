@@ -64,7 +64,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData =

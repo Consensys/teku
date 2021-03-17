@@ -56,8 +56,7 @@ public class ErrorConditionsIntegrationTest {
         ((ActiveEth2P2PNetwork) network1).getBeaconChainMethods().status();
     final SafeFuture<StatusMessage> response =
         peer.requestSingleItem(
-            status,
-            new InvalidStatusMessage(spec.getGenesisSpecConstants().getGenesisForkVersion()));
+            status, new InvalidStatusMessage(spec.getGenesisSpecConfig().getGenesisForkVersion()));
 
     final RpcException expected = new LengthOutOfBoundsException();
 

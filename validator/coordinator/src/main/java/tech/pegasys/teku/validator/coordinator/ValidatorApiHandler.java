@@ -171,7 +171,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (epoch.isGreaterThan(
         combinedChainDataClient
             .getCurrentEpoch()
-            .plus(spec.getSpecConstants(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
