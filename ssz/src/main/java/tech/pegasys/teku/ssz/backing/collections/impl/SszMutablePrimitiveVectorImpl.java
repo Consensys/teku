@@ -29,6 +29,7 @@ public class SszMutablePrimitiveVectorImpl<
 
   private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
 
+  @SuppressWarnings("unchecked")
   public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
     elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();

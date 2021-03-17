@@ -28,6 +28,7 @@ public class SszMutablePrimitiveListImpl<
 
   private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
 
+  @SuppressWarnings("unchecked")
   public SszMutablePrimitiveListImpl(
       SszPrimitiveListImpl<ElementT, SszElementT> backingImmutableData) {
     super(backingImmutableData);
