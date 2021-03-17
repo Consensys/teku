@@ -44,10 +44,7 @@ public class GetDepositContract implements Handler {
     this.jsonProvider = jsonProvider;
     this.configProvider = configProvider;
     this.depositContractResponse = Optional.empty();
-    this.depositContractAddress =
-        depositContractAddress == null
-            ? "0xdddddddddddddddddddddddddddddddddddddddd"
-            : depositContractAddress.toHexString();
+    this.depositContractAddress = depositContractAddress.toHexString();
   }
 
   @OpenApi(
