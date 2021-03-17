@@ -252,6 +252,7 @@ public class BlockImporterTest {
     // Now create an alternate block 1 with the real block one as the parent block
     final BeaconBlock invalidAncestryUnsignedBlock =
         new BeaconBlock(
+            spec.getGenesisSchemaDefinitions().getBeaconBlockSchema(),
             block.getSlot(),
             block.getMessage().getProposerIndex(),
             block.getMessage().hashTreeRoot(),
@@ -259,7 +260,8 @@ public class BlockImporterTest {
             block.getMessage().getBody());
     final Signer signer = localChain.getSigner(block.getMessage().getProposerIndex().intValue());
     final SignedBeaconBlock invalidAncestryBlock =
-        new SignedBeaconBlock(
+        SignedBeaconBlock.create(
+            spec,
             invalidAncestryUnsignedBlock,
             signer
                 .signBlock(
@@ -326,7 +328,8 @@ public class BlockImporterTest {
   public void importBlock_invalidStateTransition() throws Exception {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UInt64.ONE);
     SignedBeaconBlock newBlock =
-        new SignedBeaconBlock(block.getMessage().withStateRoot(Bytes32.ZERO), block.getSignature());
+        SignedBeaconBlock.create(
+            spec, block.getMessage().withStateRoot(Bytes32.ZERO), block.getSignature());
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(newBlock).get();

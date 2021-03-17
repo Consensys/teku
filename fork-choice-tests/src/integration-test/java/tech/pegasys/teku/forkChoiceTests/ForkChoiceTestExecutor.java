@@ -115,7 +115,10 @@ public class ForkChoiceTestExecutor {
       case block:
         {
           return resolvePart(
-              SignedBeaconBlock.class, SignedBeaconBlock.SSZ_SCHEMA.get(), file, value);
+              SignedBeaconBlock.class,
+              SPEC.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+              file,
+              value);
         }
       case attestation:
         {
