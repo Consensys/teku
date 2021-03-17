@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.collections;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 /** Specialized implementation of {@code SszVector<SszBit>} */

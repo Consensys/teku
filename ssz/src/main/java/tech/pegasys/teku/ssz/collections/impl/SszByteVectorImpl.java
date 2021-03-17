@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.ssz.tree.TreeNode;

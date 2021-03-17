@@ -31,8 +31,8 @@ import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 @SuppressWarnings("unchecked")
 abstract class AbstractBeaconStateBuilder<

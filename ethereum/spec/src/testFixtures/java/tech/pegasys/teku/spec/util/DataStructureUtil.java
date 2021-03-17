@@ -82,7 +82,7 @@ import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;

@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszMutableVector;
 import tech.pegasys.teku.ssz.SszVector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszVectorSchema;

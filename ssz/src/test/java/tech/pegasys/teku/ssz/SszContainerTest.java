@@ -28,7 +28,7 @@ import tech.pegasys.teku.ssz.TestContainers.ImmutableSubContainerImpl;
 import tech.pegasys.teku.ssz.TestContainers.WritableContainer;
 import tech.pegasys.teku.ssz.TestContainers.WritableMutableContainer;
 import tech.pegasys.teku.ssz.TestContainers.WritableMutableSubContainer;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszContainerSchemaTest;
 
 public class SszContainerTest implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
