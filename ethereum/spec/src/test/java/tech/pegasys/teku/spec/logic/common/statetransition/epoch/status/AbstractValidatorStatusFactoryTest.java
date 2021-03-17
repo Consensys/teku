@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -36,11 +36,11 @@ public abstract class AbstractValidatorStatusFactoryTest {
 
   protected final Spec spec = SpecFactory.createMinimal();
   private final AbstractValidatorStatusFactory validatorStatusFactory = createFactory();
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private UInt64 balance(final int amount) {
-    return genesisConstants.getEffectiveBalanceIncrement().times(amount);
+    return genesisConfig.getEffectiveBalanceIncrement().times(amount);
   }
 
   protected abstract AbstractValidatorStatusFactory createFactory();
@@ -234,7 +234,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   @Test
   void createTotalBalances_shouldReturnMinimumOfOneEffectiveBalanceIncrement() {
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(emptyList());
-    final UInt64 effectiveBalanceInc = genesisConstants.getEffectiveBalanceIncrement();
+    final UInt64 effectiveBalanceInc = genesisConfig.getEffectiveBalanceIncrement();
 
     assertThat(balances.getCurrentEpoch()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpoch()).isEqualTo(effectiveBalanceInc);

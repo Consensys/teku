@@ -20,7 +20,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -39,11 +39,11 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
   public BlockProcessorPhase0(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    super(specConstants, beaconStateUtil, attestationUtil, validatorsUtil);
+    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   @Override

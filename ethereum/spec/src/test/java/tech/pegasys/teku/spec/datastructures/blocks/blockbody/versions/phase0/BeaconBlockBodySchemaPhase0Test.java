@@ -31,7 +31,7 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_minimal() {
     final Spec spec = setupMinimalSpec();
     final BeaconBlockBodySchemaPhase0 specA =
-        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConstants());
+        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
     final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create();
 
     assertThat(specA).isEqualTo(specB);
@@ -41,7 +41,7 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_mainnet() {
     final Spec spec = setupMainnetSpec();
     final BeaconBlockBodySchemaPhase0 specA =
-        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConstants());
+        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
     final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create();
 
     assertThat(specA).isEqualTo(specB);

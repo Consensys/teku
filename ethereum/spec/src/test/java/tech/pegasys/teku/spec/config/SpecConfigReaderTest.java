@@ -11,14 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -26,46 +27,86 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class SpecConstantsReaderTest {
-  private final SpecConstantsReader reader = new SpecConstantsReader();
+public class SpecConfigReaderTest {
+  private final SpecConfigReader reader = new SpecConfigReader();
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getConstantsArgs")
+  @MethodSource("getConfigArgs")
   public void read_standardConfigs(final String network, final String filePath) throws Exception {
     final InputStream inputStream = getFileFromResourceAsStream(filePath);
+    reader.read(inputStream);
+    final SpecConfig result = reader.build();
 
-    final SpecConstants result = reader.read(inputStream);
     assertThat(result).isNotNull();
-    assertAllFieldsSet(result);
+    assertAllPhase0FieldsSet(result);
+  }
+
+  @Test
+  public void read_altair() throws Exception {
+    final InputStream inputStream =
+        getFileFromResourceAsStream(getStandardConfigPath("mainnetAltair"));
+    reader.read(inputStream);
+    final SpecConfig result = reader.build();
+
+    assertThat(result).isNotNull();
+    assertAllAltairFieldsSet(result);
+  }
+
+  @Test
+  public void read_multiFileFormat() throws Exception {
+    final InputStream phase0 =
+        getFileFromResourceAsStream(getStandardConfigPath("multifile/phase0"));
+    final InputStream altair =
+        getFileFromResourceAsStream(getStandardConfigPath("multifile/altair"));
+    reader.read(phase0);
+    reader.read(altair);
+    final SpecConfig result = reader.build();
+
+    assertThat(result).isNotNull();
+    assertAllAltairFieldsSet(result);
+  }
+
+  @Test
+  public void read_multiFileFormat_mismatchedDuplicateFields() throws Exception {
+    final InputStream phase0 =
+        getFileFromResourceAsStream(getInvalidConfigPath("multifile_dupFields/phase0"));
+    final InputStream altair =
+        getFileFromResourceAsStream(getInvalidConfigPath("multifile_dupFields/altair"));
+    reader.read(phase0);
+
+    assertThatThrownBy(() -> reader.read(altair))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Found duplicate declarations for spec constant 'MAX_COMMITTEES_PER_SLOT' with divergent values: '64' and '62'");
   }
 
   @Test
   public void read_mainnet() throws Exception {
-    final SpecConstants constants = readMainnet();
-    assertThat(constants).isNotNull();
+    final SpecConfig config = readMainnet();
+    assertThat(config).isNotNull();
 
     // Spot check a few values
-    assertThat(constants.getMaxCommitteesPerSlot()).isEqualTo(64);
-    Assertions.assertThat(constants.getTargetCommitteeSize()).isEqualTo(128);
-    assertAllFieldsSet(constants);
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
+    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(128);
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
   public void read_minimal() throws Exception {
-    final SpecConstants constants = readMinimal();
-    assertThat(constants).isNotNull();
+    final SpecConfig config = readMinimal();
+    assertThat(config).isNotNull();
 
     // Spot check a few values
-    assertThat(constants.getMaxCommitteesPerSlot()).isEqualTo(4);
-    Assertions.assertThat(constants.getTargetCommitteeSize()).isEqualTo(4);
-    assertAllFieldsSet(constants);
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
+    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
   public void read_distinctFilesProduceDifferentValues() throws Exception {
-    final SpecConstants mainnet = readMainnet();
+    final SpecConfig mainnet = readMainnet();
     assertThat(mainnet).isNotNull();
-    final SpecConstants minimal = readMinimal();
+    final SpecConfig minimal = readMinimal();
     assertThat(mainnet).isNotNull();
 
     assertThat(mainnet).isNotEqualTo(minimal);
@@ -75,12 +116,23 @@ public class SpecConstantsReaderTest {
   }
 
   @Test
-  public void read_missingConstants() {
+  public void read_missingConfig() throws Exception {
     final String path = getInvalidConfigPath("missingChurnLimit");
     final InputStream stream = getFileFromResourceAsStream(path);
-    assertThatThrownBy(() -> reader.read(stream))
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for constant MIN_PER_EPOCH_CHURN_LIMIT");
+        .hasMessageContaining("Missing value for spec constant 'MIN_PER_EPOCH_CHURN_LIMIT'");
+  }
+
+  @Test
+  public void read_missingAltairConstant() throws IOException {
+    final String path = getInvalidConfigPath("missingAltairField");
+    final InputStream stream = getFileFromResourceAsStream(path);
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }
 
   @Test
@@ -89,16 +141,17 @@ public class SpecConstantsReaderTest {
     final InputStream stream = getFileFromResourceAsStream(path);
     assertThatThrownBy(() -> reader.read(stream))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Supplied constants are empty");
+        .hasMessageContaining("Supplied spec config is empty");
   }
 
   @Test
-  public void read_almostEmptyFile() {
+  public void read_almostEmptyFile() throws Exception {
     final String path = getInvalidConfigPath("almostEmpty");
     final InputStream stream = getFileFromResourceAsStream(path);
-    assertThatThrownBy(() -> reader.read(stream))
+    reader.read(stream);
+    assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for constant");
+        .hasMessageContaining("Missing value for spec constant");
   }
 
   @Test
@@ -198,20 +251,22 @@ public class SpecConstantsReaderTest {
         .hasMessageContaining("Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102'");
   }
 
-  private SpecConstants readMainnet() throws IOException {
-    return readConstants(getStandardConfigPath("mainnet"));
+  private SpecConfig readMainnet() throws IOException {
+    return readConfig(getStandardConfigPath("mainnet"));
   }
 
-  private SpecConstants readMinimal() throws IOException {
-    return readConstants(getStandardConfigPath("minimal"));
+  private SpecConfig readMinimal() throws IOException {
+    return readConfig(getStandardConfigPath("minimal"));
   }
 
-  private SpecConstants readConstants(final String path) throws IOException {
+  private SpecConfig readConfig(final String path) throws IOException {
+    final SpecConfigReader reader = new SpecConfigReader();
     final InputStream stream = getFileFromResourceAsStream(path);
-    return reader.read(stream);
+    reader.read(stream);
+    return reader.build();
   }
 
-  public static Stream<Arguments> getConstantsArgs() {
+  public static Stream<Arguments> getConfigArgs() {
     return Stream.of(
         Arguments.of("mainnet", getStandardConfigPath("mainnet")),
         Arguments.of("minimal", getStandardConfigPath("minimal")),
@@ -229,7 +284,7 @@ public class SpecConstantsReaderTest {
   }
 
   private static String getConfigPath(final String name) {
-    final String path = "tech/pegasys/teku/spec/constants/";
+    final String path = "tech/pegasys/teku/spec/config/";
     return path + name + ".yaml";
   }
 
@@ -240,12 +295,5 @@ public class SpecConstantsReaderTest {
     }
 
     return inputStream;
-  }
-
-  private void assertAllFieldsSet(final SpecConstants constants) throws Exception {
-    for (Field field : SpecConstants.class.getFields()) {
-      final Object value = field.get(constants);
-      Assertions.assertThat(value).describedAs(field.getName()).isNotNull();
-    }
   }
 }

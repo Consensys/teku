@@ -81,8 +81,8 @@ class ConstantsReaderTest {
 
   @Test
   public void shouldLoadFromUrl() throws Exception {
-    Constants.setConstants(Constants.class.getResource("mainnet.yaml").toExternalForm());
-    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
+    Constants.setConstants(Constants.class.getResource("swift.yaml").toExternalForm());
+    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(4);
     assertAllFieldsSet();
   }
 

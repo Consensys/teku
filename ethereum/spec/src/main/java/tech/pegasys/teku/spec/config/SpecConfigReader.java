@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
+
+import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.CaseFormat;
-import com.google.common.base.Converter;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,16 +28,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsReader {
-  protected final Converter<String, String> camelToSnakeCase =
-      CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
+public class SpecConfigReader {
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, this::parseInt)
@@ -51,30 +51,68 @@ public class SpecConstantsReader {
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 
-  public SpecConstants read(final InputStream source) throws IOException {
-    return readToBuilder(source).build();
+  final SpecConfigBuilder configBuilder = SpecConfig.builder();
+  final HashMap<String, Object> seenValues = new HashMap<>();
+
+  public SpecConfig build() {
+    return configBuilder.build();
   }
 
-  public SpecConstantsBuilder readToBuilder(final InputStream source) throws IOException {
-    final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
-    final Map<String, Object> rawValues = readValues(source);
-    final Map<String, Object> unprocessedConstants = new HashMap<>(rawValues);
+  public SpecConfig build(Consumer<SpecConfigBuilder> modifier) {
+    modifier.accept(configBuilder);
+    return build();
+  }
 
-    constantsBuilder.rawConstants(rawValues);
-    streamConstantSetters()
+  public void read(final InputStream source) throws IOException {
+    final Map<String, Object> rawValues = readValues(source);
+    processSeenValues(rawValues);
+    final Map<String, Object> unprocessConfig = new HashMap<>(rawValues);
+
+    // Process phase0 config
+    configBuilder.rawConfig(rawValues);
+    streamConfigSetters(configBuilder.getClass())
         .forEach(
             setter -> {
-              final String constantKey = camelToSnakeCase.convert(setter.getName());
-              final Object rawValue = unprocessedConstants.get(constantKey);
-              invokeSetter(setter, constantsBuilder, constantKey, rawValue);
-              unprocessedConstants.remove(constantKey);
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessConfig.get(constantKey);
+              invokeSetter(
+                  setter, BuilderSupplier.fromBuilder(configBuilder), constantKey, rawValue);
+              unprocessConfig.remove(constantKey);
             });
 
-    if (unprocessedConstants.size() > 0) {
-      final String unknownKeys = String.join(",", unprocessedConstants.keySet());
-      throw new IllegalArgumentException("Detected unknown constants: " + unknownKeys);
+    // Process altair config
+    streamConfigSetters(SpecConfigBuilder.AltairBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::altairBuilder, constantKey, rawValue);
+              unprocessConfig.remove(constantKey);
+            });
+
+    if (unprocessConfig.size() > 0) {
+      final String unknownKeys = String.join(",", unprocessConfig.keySet());
+      throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
     }
-    return constantsBuilder;
+  }
+
+  private void processSeenValues(final Map<String, Object> rawValues) {
+    if (seenValues.isEmpty()) {
+      seenValues.putAll(rawValues);
+      return;
+    }
+
+    for (String key : rawValues.keySet()) {
+      final Object newValue = rawValues.get(key);
+      final Object existingValue = seenValues.get(key);
+      if (existingValue != null && !Objects.equals(existingValue, newValue)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Found duplicate declarations for spec constant '%s' with divergent values: '%s' and '%s'",
+                key, existingValue, newValue));
+      }
+      seenValues.put(key, newValue);
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -92,37 +130,40 @@ public class SpecConstantsReader {
                   .next();
       return values;
     } catch (NoSuchElementException e) {
-      throw new IllegalArgumentException("Supplied constants are empty");
+      throw new IllegalArgumentException("Supplied spec config is empty");
     }
   }
 
-  private Stream<Method> streamConstantSetters() {
-    // Ignore any setters that aren't for individual constants
-    final Set<String> nonConstantSetters = Set.of("rawConstants");
+  private Stream<Method> streamConfigSetters(Class<?> builderClass) {
+    // Ignore any setters that aren't for individual config entries
+    final Set<String> ignoredSetters = Set.of("rawConfig");
 
-    return Arrays.stream(SpecConstantsBuilder.class.getMethods())
+    return Arrays.stream(builderClass.getMethods())
         .filter(m -> Modifier.isPublic(m.getModifiers()))
-        .filter(m -> m.getReturnType() == SpecConstantsBuilder.class)
+        .filter(m -> m.getReturnType() == builderClass)
         .filter(m -> m.getParameterTypes().length == 1)
-        .filter(m -> !nonConstantSetters.contains(m.getName()));
+        .filter(m -> !ignoredSetters.contains(m.getName()));
   }
 
-  private void invokeSetter(
+  private <T> void invokeSetter(
       final Method setterMethod,
-      final Object builder,
+      final BuilderSupplier<T> builder,
       final String constantKey,
       final Object rawValue) {
     if (rawValue == null) {
-      throw new IllegalArgumentException("Missing value for constant " + constantKey);
+      return;
     }
 
     final Class<?> valueType = setterMethod.getParameterTypes()[0];
     final Object value = parseValue(valueType, constantKey, rawValue);
-    try {
-      setterMethod.invoke(builder, value);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
+    builder.updateBuilder(
+        b -> {
+          try {
+            setterMethod.invoke(b, value);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private Object parseValue(final Class<?> valueType, final String key, final Object value) {
@@ -171,5 +212,13 @@ public class SpecConstantsReader {
 
   private <T> Function<Object, T> fromString(final Function<String, T> function) {
     return value -> function.apply(value.toString());
+  }
+
+  private interface BuilderSupplier<TBuilder> {
+    static <T> BuilderSupplier<T> fromBuilder(T builder) {
+      return (consumer) -> consumer.accept(builder);
+    }
+
+    void updateBuilder(final Consumer<TBuilder> consumer);
   }
 }

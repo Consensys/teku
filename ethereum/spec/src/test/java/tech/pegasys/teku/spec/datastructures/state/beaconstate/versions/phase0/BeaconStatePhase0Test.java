@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
@@ -22,8 +22,8 @@ public class BeaconStatePhase0Test
 
   @Override
   protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
-      final SpecConstants specConstants) {
-    return BeaconStateSchemaPhase0.create(specConstants);
+      final SpecConfig specConfig) {
+    return BeaconStateSchemaPhase0.create(specConfig);
   }
 
   @Override

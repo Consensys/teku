@@ -75,7 +75,7 @@ public class ValidatorDataProvider {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    final int slotsPerEpoch = spec.atSlot(slot).getConstants().getSlotsPerEpoch();
+    final int slotsPerEpoch = spec.atSlot(slot).getConfig().getSlotsPerEpoch();
     final UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
     if (currentSlot.plus(slotsPerEpoch).isLessThan(slot)) {
       throw new IllegalArgumentException(

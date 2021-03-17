@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
@@ -28,8 +28,8 @@ public class BeaconStateSchemaAltairTest
 
   @Override
   protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
-      final SpecConstants specConstants) {
-    return BeaconStateSchemaAltair.create(specConstants);
+      final SpecConfig specConfig) {
+    return BeaconStateSchemaAltair.create(specConfig);
   }
 
   @Override
@@ -38,13 +38,13 @@ public class BeaconStateSchemaAltairTest
   }
 
   @Test
-  public void changeSpecConstantsTest_checkAltairFields() {
+  public void changeSpecConfigTest_checkAltairFields() {
     final Spec standardSpec = SpecFactory.createMinimal();
-    final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal").validatorRegistryLimit(123L).build();
+    final SpecConfig modifiedConstants =
+        TestConfigLoader.loadConfig("minimal", b -> b.validatorRegistryLimit(123L));
 
     BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
     assertThat(s1.getPreviousEpochParticipation().getSchema())
         .isNotEqualTo(s2.getPreviousEpochParticipation().getSchema());

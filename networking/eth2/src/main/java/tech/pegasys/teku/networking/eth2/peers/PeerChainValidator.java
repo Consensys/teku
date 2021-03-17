@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -241,7 +241,7 @@ public class PeerChainValidator {
     return remoteFinalizedEpoch.compareTo(currentEpoch) > 0
         // Remote finalized epoch is invalid if is from the current epoch (unless we're at genesis)
         || (remoteFinalizedEpoch.compareTo(currentEpoch) == 0
-            && !remoteFinalizedEpoch.equals(SpecConstants.GENESIS_EPOCH));
+            && !remoteFinalizedEpoch.equals(SpecConfig.GENESIS_EPOCH));
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(
@@ -272,13 +272,13 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       final Eth2Peer peer, AnchorPoint finalized) {
     final UInt64 finalizedEpochSlot = finalized.getEpochStartSlot();
-    if (finalizedEpochSlot.equals(SpecConstants.GENESIS_SLOT)) {
+    if (finalizedEpochSlot.equals(SpecConfig.GENESIS_SLOT)) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest.
       return SafeFuture.completedFuture(true);
     }
 
-    if (finalized.getBlockSlot().equals(SpecConstants.GENESIS_SLOT)) {
+    if (finalized.getBlockSlot().equals(SpecConfig.GENESIS_SLOT)) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest. Need to repeat this check in case we finalized a later epoch without
       // producing blocks (eg the genesis block is still the one in effect at epoch 2)

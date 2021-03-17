@@ -18,11 +18,16 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Predicate;
 
-public class FileResourceLoader implements ResourceLoader {
+public class FileResourceLoader extends ResourceLoader {
+
+  protected FileResourceLoader(final Predicate<String> sourceFilter) {
+    super(sourceFilter);
+  }
 
   @Override
-  public Optional<InputStream> load(final String source) throws IOException {
+  Optional<InputStream> loadSource(final String source) throws IOException {
     final Path path = Path.of(source);
     if (!path.toFile().exists()) {
       return Optional.empty();
