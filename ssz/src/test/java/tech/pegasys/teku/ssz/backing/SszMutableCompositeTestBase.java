@@ -23,9 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveCollection;
 import tech.pegasys.teku.ssz.backing.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
 import tech.pegasys.teku.ssz.backing.schema.SszSchema;
@@ -75,6 +77,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_shouldThrowWhenSchemaMismatch(SszMutableComposite<SszData> data) {
+    Assumptions.assumeThat(data).isNotInstanceOf(SszMutablePrimitiveCollection.class);
+
     for (int i = 0; i < data.size(); i++) {
       assertThatThrownBy(() -> data.set(0, NON_EXISTING_SCHEMA_DATA))
           .isInstanceOf(InvalidValueSchemaException.class);
