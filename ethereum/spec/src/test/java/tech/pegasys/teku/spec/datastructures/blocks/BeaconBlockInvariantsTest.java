@@ -15,7 +15,10 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -24,18 +27,26 @@ class BeaconBlockInvariantsTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(SpecFactory.createMinimal());
 
-  @Test
-  void shouldExtractSlotFromSignedBeaconBlock() {
-    final UInt64 slot = UInt64.valueOf(123456);
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromSignedBeaconBlock(final UInt64 slot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
     assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(block.sszSerialize()))
         .isEqualTo(slot);
   }
 
-  @Test
-  void shouldExtractSlotFromBeaconBlock() {
-    final UInt64 slot = UInt64.valueOf(123456);
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromBeaconBlock(final UInt64 slot) {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slot);
     assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(block.sszSerialize())).isEqualTo(slot);
+  }
+
+  static List<Arguments> slotNumbers() {
+    return List.of(
+        Arguments.of(UInt64.ZERO),
+        Arguments.of(UInt64.ONE),
+        Arguments.of(UInt64.MAX_VALUE),
+        Arguments.of(UInt64.valueOf(1234582)));
   }
 }
