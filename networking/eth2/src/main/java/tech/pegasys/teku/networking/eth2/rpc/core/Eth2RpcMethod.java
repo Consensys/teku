@@ -64,14 +64,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
     return methodMultistreamId;
   }
 
-  public SszSchema<TRequest> getRequestType() {
-    return requestType;
-  }
-
-  public SszSchema<TResponse> getResponseType() {
-    return responseType;
-  }
-
   public RpcEncoding getEncoding() {
     return encoding;
   }

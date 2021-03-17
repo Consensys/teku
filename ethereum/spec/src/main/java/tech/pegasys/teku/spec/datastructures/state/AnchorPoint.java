@@ -74,7 +74,7 @@ public class AnchorPoint extends StateAndBlockSummary {
 
     final BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
     final SignedBeaconBlock signedGenesisBlock =
-        new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
+        SignedBeaconBlock.create(spec, genesisBlock, BLSSignature.empty());
 
     final Bytes32 genesisBlockRoot = genesisBlock.hashTreeRoot();
     final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);

@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -169,6 +170,22 @@ public class Spec {
     return atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconStateSchema()
+        .sszDeserialize(serializedState);
+  }
+
+  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedState) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getSignedBeaconBlockSchema()
+        .sszDeserialize(serializedState);
+  }
+
+  public BeaconBlock deserializeBeaconBlock(final Bytes serializedState) {
+    final UInt64 slot = BeaconBlockInvariants.extractBeaconBlockSlot(serializedState);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockSchema()
         .sszDeserialize(serializedState);
   }
 

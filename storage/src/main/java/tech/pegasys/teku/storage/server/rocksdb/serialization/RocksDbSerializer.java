@@ -29,8 +29,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
   RocksDbSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
-  RocksDbSerializer<SignedBeaconBlock> SIGNED_BLOCK_SERIALIZER =
-      new SszSerializer<>(SignedBeaconBlock.getSszSchema());
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
@@ -46,6 +44,10 @@ public interface RocksDbSerializer<T> {
 
   static RocksDbSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);
+  }
+
+  static RocksDbSerializer<SignedBeaconBlock> createSignedBlockSerializer(final Spec spec) {
+    return new SignedBeaconBlockSerializer(spec);
   }
 
   T deserialize(final byte[] data);

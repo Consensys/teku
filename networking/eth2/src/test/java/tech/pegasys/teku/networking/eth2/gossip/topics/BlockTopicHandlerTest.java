@@ -57,7 +57,7 @@ public class BlockTopicHandlerTest {
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
           BlockGossipManager.TOPIC_NAME,
-          SignedBeaconBlock.SSZ_SCHEMA.get());
+          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
 
   @BeforeEach
   public void setup() {
@@ -141,7 +141,7 @@ public class BlockTopicHandlerTest {
             gossipEncoding,
             forkDigest,
             BlockGossipManager.TOPIC_NAME,
-            SignedBeaconBlock.SSZ_SCHEMA.get());
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

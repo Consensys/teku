@@ -35,7 +35,9 @@ import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -54,8 +56,12 @@ class FuzzUtilTest {
 
   private final Spec spec = SpecFactory.createMinimal();
   private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
+  private final BeaconBlockSchema beaconBlockSchema =
+      genesisSchemaDefinitions.getBeaconBlockSchema();
   private final BeaconStateSchema<?, ?> genesisBeaconStateSchema =
       genesisSchemaDefinitions.getBeaconStateSchema();
+  private final SignedBeaconBlockSchema signedBeaconBlockSchema =
+      genesisSchemaDefinitions.getSignedBeaconBlockSchema();
   // Basic sanity tests for Fuzzing Harnesses
   // NOTE: for the purposes of this class, we don't care so much that operation is
   // correct/equivalent according to the spec
@@ -119,9 +125,9 @@ class FuzzUtilTest {
 
     final Path testCaseDir = Path.of("minimal/sanity/blocks/pyspec_tests/attestation");
     final SignedBeaconBlock block0 =
-        loadSsz(testCaseDir.resolve("blocks_0.ssz"), SignedBeaconBlock.getSszSchema());
+        loadSsz(testCaseDir.resolve("blocks_0.ssz"), signedBeaconBlockSchema);
     final SignedBeaconBlock block1 =
-        loadSsz(testCaseDir.resolve("blocks_1.ssz"), SignedBeaconBlock.getSszSchema());
+        loadSsz(testCaseDir.resolve("blocks_1.ssz"), signedBeaconBlockSchema);
     final List<SignedBeaconBlock> blocks = List.of(block0, block1);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
@@ -146,7 +152,7 @@ class FuzzUtilTest {
 
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/success_block_header");
-    final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), BeaconBlock.getSszSchema());
+    final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz"), beaconBlockSchema);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz"), genesisBeaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz"), genesisBeaconStateSchema);

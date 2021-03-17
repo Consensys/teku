@@ -29,6 +29,7 @@ import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 /** Utility class to read/write SSZ serialized blocks */
@@ -38,9 +39,11 @@ public class BlockIO {
       implements AutoCloseable, Supplier<SignedBeaconBlock>, Iterable<SignedBeaconBlock> {
 
     private final ObjectInputStream inputStream;
+    private final Spec spec;
 
-    Reader(ObjectInputStream inputStream) {
+    Reader(ObjectInputStream inputStream, final Spec spec) {
       this.inputStream = inputStream;
+      this.spec = spec;
     }
 
     @Override
@@ -54,7 +57,7 @@ public class BlockIO {
         int size = inputStream.readInt();
         byte[] bytes = new byte[size];
         inputStream.readFully(bytes);
-        return SignedBeaconBlock.SSZ_SCHEMA.get().sszDeserialize(Bytes.wrap(bytes));
+        return spec.deserializeSignedBeaconBlock(Bytes.wrap(bytes));
       } catch (Exception e) {
         return null;
       }
@@ -112,27 +115,27 @@ public class BlockIO {
     }
   }
 
-  public static Reader createResourceReader(String resourcePath) {
+  public static Reader createResourceReader(Spec spec, String resourcePath) {
     try {
       return createReader(
-          BlockIO.class.getResourceAsStream(resourcePath), resourcePath.endsWith(".gz"));
+          spec, BlockIO.class.getResourceAsStream(resourcePath), resourcePath.endsWith(".gz"));
     } catch (Exception e) {
       throw new RuntimeException("Error opening resource " + resourcePath, e);
     }
   }
 
-  public static Reader createFileReader(String inFile) {
+  public static Reader createFileReader(Spec spec, String inFile) {
     try {
-      return createReader(new FileInputStream(inFile), inFile.endsWith(".gz"));
+      return createReader(spec, new FileInputStream(inFile), inFile.endsWith(".gz"));
     } catch (FileNotFoundException e) {
       throw new RuntimeException("Error opening file " + inFile, e);
     }
   }
 
-  public static Reader createReader(InputStream inputStream, boolean gzipped) {
+  public static Reader createReader(Spec spec, InputStream inputStream, boolean gzipped) {
     try {
       return new Reader(
-          new ObjectInputStream(gzipped ? new GZIPInputStream(inputStream) : inputStream));
+          new ObjectInputStream(gzipped ? new GZIPInputStream(inputStream) : inputStream), spec);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
