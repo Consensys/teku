@@ -67,7 +67,7 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
-            ? new Eth1Address(spec.getGenesisSpecConstants().getDepositContractAddress())
+            ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
