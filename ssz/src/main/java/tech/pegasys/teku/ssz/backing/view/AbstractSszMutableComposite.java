@@ -54,6 +54,7 @@ public abstract class AbstractSszMutableComposite<
   private final Map<Integer, ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
       new HashMap<>();
   private Integer sizeCache;
+  private final SszCompositeSchema<?> cachedSchema;
 
   private static final class ChildChangeRecord<
       SszChildT extends SszData, SszMutableChildT extends SszChildT> {
@@ -106,6 +107,7 @@ public abstract class AbstractSszMutableComposite<
   protected AbstractSszMutableComposite(AbstractSszComposite<SszChildT> backingImmutableData) {
     this.backingImmutableData = backingImmutableData;
     sizeCache = backingImmutableData.size();
+    cachedSchema = backingImmutableData.getSchema();
   }
 
   @Override
@@ -174,7 +176,7 @@ public abstract class AbstractSszMutableComposite<
 
   @Override
   public SszCompositeSchema<?> getSchema() {
-    return backingImmutableData.getSchema();
+    return cachedSchema;
   }
 
   @Override
