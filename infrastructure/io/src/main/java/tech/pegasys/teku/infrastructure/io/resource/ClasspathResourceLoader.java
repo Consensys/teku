@@ -14,8 +14,10 @@
 package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class ClasspathResourceLoader extends ResourceLoader {
@@ -24,15 +26,15 @@ public class ClasspathResourceLoader extends ResourceLoader {
   // We should constrain resource loading via an explicit whitelist
   // This helps guard against unintentionally loading sensitive resources from the file
   // system (which may be a part of the classpath)
-  private final List<String> availableResources;
+  private final Set<String> availableResources;
 
   public ClasspathResourceLoader(
       final Class<?> referenceClass,
-      final List<String> availableResources,
+      final Collection<String> availableResources,
       final Predicate<String> resourceFilter) {
     super(resourceFilter);
     this.referenceClass = referenceClass;
-    this.availableResources = availableResources;
+    this.availableResources = new HashSet<>(availableResources);
   }
 
   @Override
