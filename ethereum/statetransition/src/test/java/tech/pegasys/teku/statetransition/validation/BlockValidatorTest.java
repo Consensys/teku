@@ -121,8 +121,7 @@ public class BlockValidatorTest {
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock blockWithNoParent =
-        new SignedBeaconBlock(
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(), block, blockSignature);
+        SignedBeaconBlock.create(spec, block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
     assertTrue(result.isSaveForFuture());
@@ -164,8 +163,7 @@ public class BlockValidatorTest {
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =
-        new SignedBeaconBlock(
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(), block, blockSignature);
+        SignedBeaconBlock.create(spec, block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
     assertTrue(result.isReject());
@@ -177,8 +175,8 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock block =
-        new SignedBeaconBlock(
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+        SignedBeaconBlock.create(
+            spec,
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
             BLSTestUtil.randomSignature(0));
 

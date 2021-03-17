@@ -110,11 +110,7 @@ public class ChainStorageTest {
     final int lastBlockIndex = missingHistoricalBlocks.size() - 1;
     final BeaconBlock lastBlock = missingHistoricalBlocks.get(lastBlockIndex).getMessage();
     missingHistoricalBlocks.set(
-        lastBlockIndex,
-        new SignedBeaconBlock(
-            spec.atSlot(lastBlock.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
-            lastBlock,
-            BLSSignature.empty()));
+        lastBlockIndex, SignedBeaconBlock.create(spec, lastBlock, BLSSignature.empty()));
 
     final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(missingHistoricalBlocks);
     assertThat(result).isCompletedExceptionally();

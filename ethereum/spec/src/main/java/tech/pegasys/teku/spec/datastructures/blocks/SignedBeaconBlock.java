@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -28,9 +29,17 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     super(type, backingNode);
   }
 
-  public SignedBeaconBlock(
+  private SignedBeaconBlock(
       final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
     super(type, message, new SszSignature(signature));
+  }
+
+  public static SignedBeaconBlock create(
+      final Spec spec, final BeaconBlock message, final BLSSignature signature) {
+    return new SignedBeaconBlock(
+        spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
+        message,
+        signature);
   }
 
   public BeaconBlock getMessage() {

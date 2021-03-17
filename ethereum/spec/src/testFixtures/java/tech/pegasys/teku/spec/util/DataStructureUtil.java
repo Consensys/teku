@@ -385,10 +385,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock signedBlock(final BeaconBlock block, final BLSSignature signature) {
-    return new SignedBeaconBlock(
-        spec.atSlot(block.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
-        block,
-        signature);
+    return SignedBeaconBlock.create(spec, block, signature);
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, BeaconState state) {
@@ -759,8 +756,7 @@ public final class DataStructureUtil {
             anchorState.hashTreeRoot(),
             spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
     final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(
-            schemaDefinitions.getSignedBeaconBlockSchema(), anchorBlock, BLSSignature.empty());
+        SignedBeaconBlock.create(spec, anchorBlock, BLSSignature.empty());
 
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
     final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);

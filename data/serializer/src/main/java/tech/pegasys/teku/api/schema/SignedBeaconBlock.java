@@ -45,10 +45,8 @@ public class SignedBeaconBlock {
       final Spec spec) {
     final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock beaconBlock =
         message.asInternalBeaconBlock(spec);
-    return new tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock(
-        spec.atSlot(beaconBlock.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
-        beaconBlock,
-        signature.asInternalBLSSignature());
+    return tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock.create(
+        spec, beaconBlock, signature.asInternalBLSSignature());
   }
 
   @Override
