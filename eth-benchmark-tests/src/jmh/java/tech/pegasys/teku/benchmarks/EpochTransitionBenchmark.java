@@ -20,16 +20,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
@@ -38,20 +35,17 @@ import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
 import tech.pegasys.teku.ssz.backing.collections.SszMutableUInt64List;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -125,10 +119,15 @@ public class EpochTransitionBenchmark {
 
     preEpochTransitionState = recentChainData.getBestState().get();
 
-    validatorStatuses = spec.getGenesisSpec().getValidatorStatusFactory()
-        .createValidatorStatuses(preEpochTransitionState);
+    validatorStatuses =
+        spec.getGenesisSpec()
+            .getValidatorStatusFactory()
+            .createValidatorStatuses(preEpochTransitionState);
     preEpochTransitionState.updated(mbs -> preEpochTransitionMutableState = mbs);
-    attestationDeltas = epochProcessor.createRewardsAndPenaltiesCalculator(preEpochTransitionState, validatorStatuses).getAttestationDeltas();
+    attestationDeltas =
+        epochProcessor
+            .createRewardsAndPenaltiesCalculator(preEpochTransitionState, validatorStatuses)
+            .getAttestationDeltas();
 
     System.out.println("Done!");
   }
@@ -157,7 +156,8 @@ public class EpochTransitionBenchmark {
     int validatorsSize = preEpochTransitionMutableState.getValidators().size();
     for (int i = 0; i < validatorsSize; i++) {
       final Deltas.Delta delta = attestationDeltas.getDelta(i);
-      balances.setElement(i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
   }
 
@@ -165,8 +165,6 @@ public class EpochTransitionBenchmark {
     EpochTransitionBenchmark benchmark = new EpochTransitionBenchmark();
     benchmark.init();
 
-    new CustomRunner(20, 100000)
-        .withBench(benchmark::epochTransition)
-        .run();
+    new CustomRunner(20, 100000).withBench(benchmark::epochTransition).run();
   }
 }

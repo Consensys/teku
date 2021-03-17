@@ -15,7 +15,6 @@ package tech.pegasys.teku.ssz.backing.collections.impl;
 
 import tech.pegasys.teku.ssz.backing.SszPrimitive;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveCollection;
 import tech.pegasys.teku.ssz.backing.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.backing.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchema;
