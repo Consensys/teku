@@ -20,17 +20,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
 
-public class SpecConstantsAssertions {
+public class SpecConfigAssertions {
 
-  static void assertAllPhase0FieldsSet(final SpecConstants constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConstantsPhase0.class);
+  static void assertAllPhase0FieldsSet(final SpecConfig constants) throws Exception {
+    assertAllFieldsSet(constants, SpecConfigPhase0.class);
   }
 
-  static void assertAllAltairFieldsSet(final SpecConstants constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConstantsAltair.class);
+  static void assertAllAltairFieldsSet(final SpecConfig constants) throws Exception {
+    assertAllFieldsSet(constants, SpecConfigAltair.class);
   }
 
-  static void assertAllFieldsSet(final SpecConstants constants, Class<?> targetConstants)
+  static void assertAllFieldsSet(final SpecConfig constants, Class<?> targetConstants)
       throws Exception {
     for (Method method : listGetters(targetConstants)) {
       final Object value = method.invoke(constants);

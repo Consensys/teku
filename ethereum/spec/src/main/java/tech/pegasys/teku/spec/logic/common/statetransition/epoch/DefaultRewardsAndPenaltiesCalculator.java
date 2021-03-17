@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 import java.util.List;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
@@ -27,17 +27,17 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 // TODO(#3356) Merge RewardsAndPenalties interface into this class
 public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenaltiesCalculator {
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final BeaconState state;
   private final ValidatorStatuses validatorStatuses;
 
   public DefaultRewardsAndPenaltiesCalculator(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BeaconState state,
       final ValidatorStatuses validatorStatuses) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.state = state;
     this.validatorStatuses = validatorStatuses;
@@ -167,10 +167,10 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
       final UInt64 finalityDelay,
       final Delta delta) {
 
-    if (finalityDelay.isGreaterThan(specConstants.getMinEpochsToInactivityPenalty())) {
+    if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
-          specConstants
+          specConfig
               .getBaseRewardsPerEpoch()
               .times(baseReward)
               .minus(getProposerReward(baseReward)));
@@ -180,13 +180,13 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
             validator
                 .getCurrentEpochEffectiveBalance()
                 .times(finalityDelay)
-                .dividedBy(specConstants.getInactivityPenaltyQuotient()));
+                .dividedBy(specConfig.getInactivityPenaltyQuotient()));
       }
     }
   }
 
   private UInt64 getProposerReward(final UInt64 baseReward) {
-    return baseReward.dividedBy(specConstants.getProposerRewardQuotient());
+    return baseReward.dividedBy(specConfig.getProposerRewardQuotient());
   }
 
   @Override
@@ -199,17 +199,16 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
       final Delta delta) {
     final UInt64 totalBalance = totalBalances.getCurrentEpoch();
     if (indexInUnslashedAttestingIndices) {
-      if (finalityDelay.isGreaterThan(specConstants.getMinEpochsToInactivityPenalty())) {
+      if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
         // Since full base reward will be canceled out by inactivity penalty deltas,
         // optimal participation receives full base reward compensation here.
         delta.reward(baseReward);
       } else {
         final UInt64 rewardNumerator =
-            baseReward.times(
-                attestingBalance.dividedBy(specConstants.getEffectiveBalanceIncrement()));
+            baseReward.times(attestingBalance.dividedBy(specConfig.getEffectiveBalanceIncrement()));
         delta.reward(
             rewardNumerator.dividedBy(
-                totalBalance.dividedBy(specConstants.getEffectiveBalanceIncrement())));
+                totalBalance.dividedBy(specConfig.getEffectiveBalanceIncrement())));
       }
     } else {
       delta.penalize(baseReward);
@@ -229,9 +228,9 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     }
     return validator
         .getCurrentEpochEffectiveBalance()
-        .times(specConstants.getBaseRewardFactor())
+        .times(specConfig.getBaseRewardFactor())
         .dividedBy(totalActiveBalanceSquareRoot)
-        .dividedBy(specConstants.getBaseRewardsPerEpoch());
+        .dividedBy(specConfig.getBaseRewardsPerEpoch());
   }
 
   private UInt64 squareRootOrZero(final UInt64 totalActiveBalance) {

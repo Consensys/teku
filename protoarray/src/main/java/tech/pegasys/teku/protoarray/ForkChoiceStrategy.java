@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -65,7 +65,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
     final UInt64 initialEpoch =
-        store.getInitialCheckpoint().map(Checkpoint::getEpoch).orElse(SpecConstants.GENESIS_EPOCH);
+        store.getInitialCheckpoint().map(Checkpoint::getEpoch).orElse(SpecConfig.GENESIS_EPOCH);
     return storageChannel
         .getProtoArraySnapshot()
         .thenApply(

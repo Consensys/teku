@@ -30,16 +30,16 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConstants;
-import tech.pegasys.teku.spec.config.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
-  SpecConstants specConstants =
-      TestConstantsLoader.loadConstants("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
-  private final Spec spec = SpecFactory.create(specConstants);
+  SpecConfig specConfig =
+      TestConfigLoader.loadConstants("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
+  private final Spec spec = SpecFactory.create(specConfig);
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
 

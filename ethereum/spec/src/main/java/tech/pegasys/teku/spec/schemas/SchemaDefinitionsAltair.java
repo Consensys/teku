@@ -14,21 +14,21 @@
 package tech.pegasys.teku.spec.schemas;
 
 import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
 
-  public SchemaDefinitionsAltair(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  public SchemaDefinitionsAltair(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
-    return BeaconStateSchemaAltair.create(specConstants);
+    return BeaconStateSchemaAltair.create(specConfig);
   }
 
   @Override

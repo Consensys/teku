@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.api.blockselector;
 
-import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.Collections;
 import java.util.List;

@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConstants;
-import tech.pegasys.teku.spec.config.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -45,10 +45,10 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   private final Spec spec = SpecFactory.createMinimal();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConstants = spec.getGenesisSpecConstants();
   private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
 
   protected abstract T randomState();
 
@@ -67,8 +67,8 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void changeSpecConstantsTest() {
     final Spec standardSpec = SpecFactory.createMinimal();
-    final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstants(
+    final SpecConfig modifiedConstants =
+        TestConfigLoader.loadConstants(
             "minimal",
             b ->
                 b.slotsPerHistoricalRoot(123)

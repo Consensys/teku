@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair;
 
-import tech.pegasys.teku.spec.config.SpecConstantsAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -53,7 +53,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   public static SpecLogicAltair create(
-      final SpecConstantsAltair constants, final SchemaDefinitions schemaDefinitions) {
+      final SpecConfigAltair constants, final SchemaDefinitions schemaDefinitions) {
     final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil(constants);
     final BeaconStateUtil beaconStateUtil =

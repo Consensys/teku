@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static tech.pegasys.teku.spec.config.SpecConstantsAssertions.assertAllAltairFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConstantsAssertions.assertAllPhase0FieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,15 +27,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class SpecConstantsReaderTest {
-  private final SpecConstantsReader reader = new SpecConstantsReader();
+public class SpecConfigReaderTest {
+  private final SpecConfigReader reader = new SpecConfigReader();
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getConstantsArgs")
   public void read_standardConfigs(final String network, final String filePath) throws Exception {
     final InputStream inputStream = getFileFromResourceAsStream(filePath);
     reader.read(inputStream);
-    final SpecConstants result = reader.build();
+    final SpecConfig result = reader.build();
 
     assertThat(result).isNotNull();
     assertAllPhase0FieldsSet(result);
@@ -46,7 +46,7 @@ public class SpecConstantsReaderTest {
     final InputStream inputStream =
         getFileFromResourceAsStream(getStandardConfigPath("mainnetAltair"));
     reader.read(inputStream);
-    final SpecConstants result = reader.build();
+    final SpecConfig result = reader.build();
 
     assertThat(result).isNotNull();
     assertAllAltairFieldsSet(result);
@@ -60,7 +60,7 @@ public class SpecConstantsReaderTest {
         getFileFromResourceAsStream(getStandardConfigPath("multifile/altair"));
     reader.read(phase0);
     reader.read(altair);
-    final SpecConstants result = reader.build();
+    final SpecConfig result = reader.build();
 
     assertThat(result).isNotNull();
     assertAllAltairFieldsSet(result);
@@ -82,7 +82,7 @@ public class SpecConstantsReaderTest {
 
   @Test
   public void read_mainnet() throws Exception {
-    final SpecConstants constants = readMainnet();
+    final SpecConfig constants = readMainnet();
     assertThat(constants).isNotNull();
 
     // Spot check a few values
@@ -93,7 +93,7 @@ public class SpecConstantsReaderTest {
 
   @Test
   public void read_minimal() throws Exception {
-    final SpecConstants constants = readMinimal();
+    final SpecConfig constants = readMinimal();
     assertThat(constants).isNotNull();
 
     // Spot check a few values
@@ -104,9 +104,9 @@ public class SpecConstantsReaderTest {
 
   @Test
   public void read_distinctFilesProduceDifferentValues() throws Exception {
-    final SpecConstants mainnet = readMainnet();
+    final SpecConfig mainnet = readMainnet();
     assertThat(mainnet).isNotNull();
-    final SpecConstants minimal = readMinimal();
+    final SpecConfig minimal = readMinimal();
     assertThat(mainnet).isNotNull();
 
     assertThat(mainnet).isNotEqualTo(minimal);
@@ -251,16 +251,16 @@ public class SpecConstantsReaderTest {
         .hasMessageContaining("Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102'");
   }
 
-  private SpecConstants readMainnet() throws IOException {
+  private SpecConfig readMainnet() throws IOException {
     return readConstants(getStandardConfigPath("mainnet"));
   }
 
-  private SpecConstants readMinimal() throws IOException {
+  private SpecConfig readMinimal() throws IOException {
     return readConstants(getStandardConfigPath("minimal"));
   }
 
-  private SpecConstants readConstants(final String path) throws IOException {
-    final SpecConstantsReader reader = new SpecConstantsReader();
+  private SpecConfig readConstants(final String path) throws IOException {
+    final SpecConfigReader reader = new SpecConfigReader();
     final InputStream stream = getFileFromResourceAsStream(path);
     reader.read(stream);
     return reader.build();

@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -64,7 +64,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConstants = spec.getGenesisSpecConstants();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData =
@@ -208,7 +208,7 @@ public class BlockImporterTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
-    assertThat(bestEpoch).isEqualTo(SpecConstants.GENESIS_EPOCH.plus(1));
+    assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
@@ -232,7 +232,7 @@ public class BlockImporterTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
-    assertThat(bestEpoch).isEqualTo(SpecConstants.GENESIS_EPOCH.plus(1));
+    assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();

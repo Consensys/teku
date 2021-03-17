@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -31,10 +31,10 @@ import tech.pegasys.teku.ssz.SszList;
 
 public class ValidatorsUtil {
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
 
-  public ValidatorsUtil(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  public ValidatorsUtil(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
   }
 
   /**
@@ -63,7 +63,7 @@ public class ValidatorsUtil {
                 .getActivation_eligibility_epoch()
                 .compareTo(state.getFinalized_checkpoint().getEpoch())
             <= 0
-        && validator.getActivation_epoch().equals(SpecConstants.FAR_FUTURE_EPOCH);
+        && validator.getActivation_epoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
@@ -121,7 +121,7 @@ public class ValidatorsUtil {
   }
 
   private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
-    return stateEpoch.plus(specConstants.getMaxSeedLookahead());
+    return stateEpoch.plus(specConfig.getMaxSeedLookahead());
   }
 
   @SuppressWarnings("DoNotReturnNullOptionals")

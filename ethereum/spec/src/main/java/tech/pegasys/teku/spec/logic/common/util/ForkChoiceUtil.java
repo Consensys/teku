@@ -23,7 +23,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,17 +40,17 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 
 public class ForkChoiceUtil {
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final AttestationUtil attestationUtil;
   private final StateTransition stateTransition;
 
   public ForkChoiceUtil(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final StateTransition stateTransition) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.stateTransition = stateTransition;
@@ -65,15 +65,15 @@ public class ForkChoiceUtil {
     if (currentTime.isLessThan(genesisTime)) {
       return UInt64.ZERO;
     }
-    return currentTime.minus(genesisTime).dividedBy(specConstants.getSecondsPerSlot());
+    return currentTime.minus(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
-    return genesisTime.plus(slotNumber.times(specConstants.getSecondsPerSlot()));
+    return genesisTime.plus(slotNumber.times(specConfig.getSecondsPerSlot()));
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store, boolean useUnixTime) {
-    return SpecConstants.GENESIS_SLOT.plus(getSlotsSinceGenesis(store, useUnixTime));
+    return SpecConfig.GENESIS_SLOT.plus(getSlotsSinceGenesis(store, useUnixTime));
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
@@ -222,9 +222,9 @@ public class ForkChoiceUtil {
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
     UInt64 previous_epoch =
-        current_epoch.compareTo(SpecConstants.GENESIS_EPOCH) > 0
+        current_epoch.compareTo(SpecConfig.GENESIS_EPOCH) > 0
             ? current_epoch.minus(UInt64.ONE)
-            : SpecConstants.GENESIS_EPOCH;
+            : SpecConfig.GENESIS_EPOCH;
 
     if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
       return AttestationProcessingResult.invalid(
@@ -381,7 +381,7 @@ public class ForkChoiceUtil {
     if (!blockSlotState.getSlot().equals(blockSlot)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
-    if (blockSlot.isGreaterThan(SpecConstants.GENESIS_SLOT)
+    if (blockSlot.isGreaterThan(SpecConfig.GENESIS_SLOT)
         && !beaconStateUtil
             .getBlockRootAtSlot(blockSlotState, blockSlot.minus(1))
             .equals(block.getParentRoot())) {
@@ -434,7 +434,7 @@ public class ForkChoiceUtil {
       Checkpoint new_justified_checkpoint,
       ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
     if (computeSlotsSinceEpochStart(getCurrentSlot(store, true))
-            .compareTo(UInt64.valueOf(specConstants.getSafeSlotsToUpdateJustified()))
+            .compareTo(UInt64.valueOf(specConfig.getSafeSlotsToUpdateJustified()))
         < 0) {
       return true;
     }

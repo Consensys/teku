@@ -29,16 +29,16 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class CommitteeUtilTest {
-  final SpecConstants specConstants = mock(SpecConstants.class);
+  final SpecConfig specConfig = mock(SpecConfig.class);
   private final Spec spec = SpecFactory.createMinimal();
-  CommitteeUtil committeeUtil = new CommitteeUtil(specConstants);
+  CommitteeUtil committeeUtil = new CommitteeUtil(specConfig);
 
   @Test
   void aggregatorModulo_boundaryTest() {
-    when(specConstants.getTargetAggregatorsPerCommittee()).thenReturn(100);
+    when(specConfig.getTargetAggregatorsPerCommittee()).thenReturn(100);
     // invalid cases technically
     assertThat(committeeUtil.getAggregatorModulo(Integer.MIN_VALUE)).isEqualTo(1);
     assertThat(committeeUtil.getAggregatorModulo(-1)).isEqualTo(1);
@@ -53,7 +53,7 @@ public class CommitteeUtilTest {
 
   @Test
   void aggregatorModulo_samples() {
-    when(specConstants.getTargetAggregatorsPerCommittee()).thenReturn(100);
+    when(specConfig.getTargetAggregatorsPerCommittee()).thenReturn(100);
 
     assertThat(committeeUtil.getAggregatorModulo(200)).isEqualTo(2);
     assertThat(committeeUtil.getAggregatorModulo(300)).isEqualTo(3);
@@ -69,7 +69,7 @@ public class CommitteeUtilTest {
 
   @Test
   void computeShuffledIndex_samples() {
-    when(specConstants.getShuffleRoundCount()).thenReturn(90);
+    when(specConfig.getShuffleRoundCount()).thenReturn(90);
     assertThat(committeeUtil.computeShuffledIndex(320, 2048, Bytes32.ZERO)).isEqualTo(0);
     assertThat(committeeUtil.computeShuffledIndex(1291, 2048, Bytes32.ZERO)).isEqualTo(1);
     assertThat(committeeUtil.computeShuffledIndex(933, 2048, Bytes32.ZERO)).isEqualTo(2047);
@@ -77,7 +77,7 @@ public class CommitteeUtilTest {
 
   @Test
   void computeShuffledIndex_testListShuffleAndShuffledIndexCompatibility() {
-    when(specConstants.getShuffleRoundCount()).thenReturn(10);
+    when(specConfig.getShuffleRoundCount()).thenReturn(10);
     Bytes32 seed = Bytes32.ZERO;
     int index_count = 3333;
     int[] indexes = IntStream.range(0, index_count).toArray();

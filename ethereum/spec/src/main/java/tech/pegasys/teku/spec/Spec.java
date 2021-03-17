@@ -24,7 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -94,7 +94,7 @@ public class Spec {
     return atEpoch(epoch);
   }
 
-  public SpecConstants getSpecConstants(final UInt64 epoch) {
+  public SpecConfig getSpecConstants(final UInt64 epoch) {
     return atEpoch(epoch).getConstants();
   }
 
@@ -106,7 +106,7 @@ public class Spec {
     return atEpoch(UInt64.ZERO);
   }
 
-  public SpecConstants getGenesisSpecConstants() {
+  public SpecConfig getGenesisSpecConstants() {
     return getGenesisSpec().getConstants();
   }
 

@@ -18,330 +18,330 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class DelegatingSpecConstants implements SpecConstants {
-  protected final SpecConstants specConstants;
+public class DelegatingSpecConfig implements SpecConfig {
+  protected final SpecConfig specConfig;
 
-  public DelegatingSpecConstants(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  public DelegatingSpecConfig(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
   }
 
   @Override
   public Map<String, Object> getRawConstants() {
-    return specConstants.getRawConstants();
+    return specConfig.getRawConstants();
   }
 
   @Override
   public String getConfigName() {
-    return specConstants.getConfigName();
+    return specConfig.getConfigName();
   }
 
   @Override
   public UInt64 getBaseRewardsPerEpoch() {
-    return specConstants.getBaseRewardsPerEpoch();
+    return specConfig.getBaseRewardsPerEpoch();
   }
 
   @Override
   public int getDepositContractTreeDepth() {
-    return specConstants.getDepositContractTreeDepth();
+    return specConfig.getDepositContractTreeDepth();
   }
 
   @Override
   public int getJustificationBitsLength() {
-    return specConstants.getJustificationBitsLength();
+    return specConfig.getJustificationBitsLength();
   }
 
   @Override
   public UInt64 getEth1FollowDistance() {
-    return specConstants.getEth1FollowDistance();
+    return specConfig.getEth1FollowDistance();
   }
 
   @Override
   public int getMaxCommitteesPerSlot() {
-    return specConstants.getMaxCommitteesPerSlot();
+    return specConfig.getMaxCommitteesPerSlot();
   }
 
   @Override
   public int getTargetCommitteeSize() {
-    return specConstants.getTargetCommitteeSize();
+    return specConfig.getTargetCommitteeSize();
   }
 
   @Override
   public int getMaxValidatorsPerCommittee() {
-    return specConstants.getMaxValidatorsPerCommittee();
+    return specConfig.getMaxValidatorsPerCommittee();
   }
 
   @Override
   public int getMinPerEpochChurnLimit() {
-    return specConstants.getMinPerEpochChurnLimit();
+    return specConfig.getMinPerEpochChurnLimit();
   }
 
   @Override
   public int getChurnLimitQuotient() {
-    return specConstants.getChurnLimitQuotient();
+    return specConfig.getChurnLimitQuotient();
   }
 
   @Override
   public int getShuffleRoundCount() {
-    return specConstants.getShuffleRoundCount();
+    return specConfig.getShuffleRoundCount();
   }
 
   @Override
   public int getMinGenesisActiveValidatorCount() {
-    return specConstants.getMinGenesisActiveValidatorCount();
+    return specConfig.getMinGenesisActiveValidatorCount();
   }
 
   @Override
   public UInt64 getMinGenesisTime() {
-    return specConstants.getMinGenesisTime();
+    return specConfig.getMinGenesisTime();
   }
 
   @Override
   public UInt64 getHysteresisQuotient() {
-    return specConstants.getHysteresisQuotient();
+    return specConfig.getHysteresisQuotient();
   }
 
   @Override
   public UInt64 getHysteresisDownwardMultiplier() {
-    return specConstants.getHysteresisDownwardMultiplier();
+    return specConfig.getHysteresisDownwardMultiplier();
   }
 
   @Override
   public UInt64 getHysteresisUpwardMultiplier() {
-    return specConstants.getHysteresisUpwardMultiplier();
+    return specConfig.getHysteresisUpwardMultiplier();
   }
 
   @Override
   public int getProportionalSlashingMultiplier() {
-    return specConstants.getProportionalSlashingMultiplier();
+    return specConfig.getProportionalSlashingMultiplier();
   }
 
   @Override
   public UInt64 getMinDepositAmount() {
-    return specConstants.getMinDepositAmount();
+    return specConfig.getMinDepositAmount();
   }
 
   @Override
   public UInt64 getMaxEffectiveBalance() {
-    return specConstants.getMaxEffectiveBalance();
+    return specConfig.getMaxEffectiveBalance();
   }
 
   @Override
   public UInt64 getEjectionBalance() {
-    return specConstants.getEjectionBalance();
+    return specConfig.getEjectionBalance();
   }
 
   @Override
   public UInt64 getEffectiveBalanceIncrement() {
-    return specConstants.getEffectiveBalanceIncrement();
+    return specConfig.getEffectiveBalanceIncrement();
   }
 
   @Override
   public Bytes4 getGenesisForkVersion() {
-    return specConstants.getGenesisForkVersion();
+    return specConfig.getGenesisForkVersion();
   }
 
   @Override
   public Bytes getBlsWithdrawalPrefix() {
-    return specConstants.getBlsWithdrawalPrefix();
+    return specConfig.getBlsWithdrawalPrefix();
   }
 
   @Override
   public UInt64 getGenesisDelay() {
-    return specConstants.getGenesisDelay();
+    return specConfig.getGenesisDelay();
   }
 
   @Override
   public int getSecondsPerSlot() {
-    return specConstants.getSecondsPerSlot();
+    return specConfig.getSecondsPerSlot();
   }
 
   @Override
   public int getMinAttestationInclusionDelay() {
-    return specConstants.getMinAttestationInclusionDelay();
+    return specConfig.getMinAttestationInclusionDelay();
   }
 
   @Override
   public int getSlotsPerEpoch() {
-    return specConstants.getSlotsPerEpoch();
+    return specConfig.getSlotsPerEpoch();
   }
 
   @Override
   public int getMinSeedLookahead() {
-    return specConstants.getMinSeedLookahead();
+    return specConfig.getMinSeedLookahead();
   }
 
   @Override
   public int getMaxSeedLookahead() {
-    return specConstants.getMaxSeedLookahead();
+    return specConfig.getMaxSeedLookahead();
   }
 
   @Override
   public UInt64 getMinEpochsToInactivityPenalty() {
-    return specConstants.getMinEpochsToInactivityPenalty();
+    return specConfig.getMinEpochsToInactivityPenalty();
   }
 
   @Override
   public int getEpochsPerEth1VotingPeriod() {
-    return specConstants.getEpochsPerEth1VotingPeriod();
+    return specConfig.getEpochsPerEth1VotingPeriod();
   }
 
   @Override
   public int getSlotsPerHistoricalRoot() {
-    return specConstants.getSlotsPerHistoricalRoot();
+    return specConfig.getSlotsPerHistoricalRoot();
   }
 
   @Override
   public int getMinValidatorWithdrawabilityDelay() {
-    return specConstants.getMinValidatorWithdrawabilityDelay();
+    return specConfig.getMinValidatorWithdrawabilityDelay();
   }
 
   @Override
   public UInt64 getShardCommitteePeriod() {
-    return specConstants.getShardCommitteePeriod();
+    return specConfig.getShardCommitteePeriod();
   }
 
   @Override
   public int getEpochsPerHistoricalVector() {
-    return specConstants.getEpochsPerHistoricalVector();
+    return specConfig.getEpochsPerHistoricalVector();
   }
 
   @Override
   public int getEpochsPerSlashingsVector() {
-    return specConstants.getEpochsPerSlashingsVector();
+    return specConfig.getEpochsPerSlashingsVector();
   }
 
   @Override
   public int getHistoricalRootsLimit() {
-    return specConstants.getHistoricalRootsLimit();
+    return specConfig.getHistoricalRootsLimit();
   }
 
   @Override
   public long getValidatorRegistryLimit() {
-    return specConstants.getValidatorRegistryLimit();
+    return specConfig.getValidatorRegistryLimit();
   }
 
   @Override
   public int getBaseRewardFactor() {
-    return specConstants.getBaseRewardFactor();
+    return specConfig.getBaseRewardFactor();
   }
 
   @Override
   public int getWhistleblowerRewardQuotient() {
-    return specConstants.getWhistleblowerRewardQuotient();
+    return specConfig.getWhistleblowerRewardQuotient();
   }
 
   @Override
   public UInt64 getProposerRewardQuotient() {
-    return specConstants.getProposerRewardQuotient();
+    return specConfig.getProposerRewardQuotient();
   }
 
   @Override
   public UInt64 getInactivityPenaltyQuotient() {
-    return specConstants.getInactivityPenaltyQuotient();
+    return specConfig.getInactivityPenaltyQuotient();
   }
 
   @Override
   public int getMinSlashingPenaltyQuotient() {
-    return specConstants.getMinSlashingPenaltyQuotient();
+    return specConfig.getMinSlashingPenaltyQuotient();
   }
 
   @Override
   public int getMaxProposerSlashings() {
-    return specConstants.getMaxProposerSlashings();
+    return specConfig.getMaxProposerSlashings();
   }
 
   @Override
   public int getMaxAttesterSlashings() {
-    return specConstants.getMaxAttesterSlashings();
+    return specConfig.getMaxAttesterSlashings();
   }
 
   @Override
   public int getMaxAttestations() {
-    return specConstants.getMaxAttestations();
+    return specConfig.getMaxAttestations();
   }
 
   @Override
   public int getMaxDeposits() {
-    return specConstants.getMaxDeposits();
+    return specConfig.getMaxDeposits();
   }
 
   @Override
   public int getMaxVoluntaryExits() {
-    return specConstants.getMaxVoluntaryExits();
+    return specConfig.getMaxVoluntaryExits();
   }
 
   @Override
   public Bytes4 getDomainBeaconProposer() {
-    return specConstants.getDomainBeaconProposer();
+    return specConfig.getDomainBeaconProposer();
   }
 
   @Override
   public Bytes4 getDomainBeaconAttester() {
-    return specConstants.getDomainBeaconAttester();
+    return specConfig.getDomainBeaconAttester();
   }
 
   @Override
   public Bytes4 getDomainRandao() {
-    return specConstants.getDomainRandao();
+    return specConfig.getDomainRandao();
   }
 
   @Override
   public Bytes4 getDomainDeposit() {
-    return specConstants.getDomainDeposit();
+    return specConfig.getDomainDeposit();
   }
 
   @Override
   public Bytes4 getDomainVoluntaryExit() {
-    return specConstants.getDomainVoluntaryExit();
+    return specConfig.getDomainVoluntaryExit();
   }
 
   @Override
   public Bytes4 getDomainSelectionProof() {
-    return specConstants.getDomainSelectionProof();
+    return specConfig.getDomainSelectionProof();
   }
 
   @Override
   public Bytes4 getDomainAggregateAndProof() {
-    return specConstants.getDomainAggregateAndProof();
+    return specConfig.getDomainAggregateAndProof();
   }
 
   @Override
   public int getTargetAggregatorsPerCommittee() {
-    return specConstants.getTargetAggregatorsPerCommittee();
+    return specConfig.getTargetAggregatorsPerCommittee();
   }
 
   @Override
   public UInt64 getSecondsPerEth1Block() {
-    return specConstants.getSecondsPerEth1Block();
+    return specConfig.getSecondsPerEth1Block();
   }
 
   @Override
   public int getRandomSubnetsPerValidator() {
-    return specConstants.getRandomSubnetsPerValidator();
+    return specConfig.getRandomSubnetsPerValidator();
   }
 
   @Override
   public int getEpochsPerRandomSubnetSubscription() {
-    return specConstants.getEpochsPerRandomSubnetSubscription();
+    return specConfig.getEpochsPerRandomSubnetSubscription();
   }
 
   @Override
   public int getSafeSlotsToUpdateJustified() {
-    return specConstants.getSafeSlotsToUpdateJustified();
+    return specConfig.getSafeSlotsToUpdateJustified();
   }
 
   @Override
   public int getDepositChainId() {
-    return specConstants.getDepositChainId();
+    return specConfig.getDepositChainId();
   }
 
   @Override
   public int getDepositNetworkId() {
-    return specConstants.getDepositNetworkId();
+    return specConfig.getDepositNetworkId();
   }
 
   @Override
   public Bytes getDepositContractAddress() {
-    return specConstants.getDepositContractAddress();
+    return specConfig.getDepositContractAddress();
   }
 }

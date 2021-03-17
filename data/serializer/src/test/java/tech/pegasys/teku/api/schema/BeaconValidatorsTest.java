@@ -16,8 +16,8 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
-import static tech.pegasys.teku.spec.config.SpecConstants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;

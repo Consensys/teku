@@ -28,7 +28,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -41,9 +41,9 @@ public class ShuffleBenchmark {
   int indexCount;
 
   Bytes32 seed = Bytes32.ZERO;
-  private final SpecConstants specConstants = SpecConstants.builder().configName("mainnet").build();
+  private final SpecConfig specConfig = SpecConfig.builder().configName("mainnet").build();
   private final SpecConfiguration specConfiguration =
-      SpecConfiguration.builder().constants(specConstants).build();
+      SpecConfiguration.builder().constants(specConfig).build();
   private final Spec spec = Spec.create(specConfiguration);
   private final tech.pegasys.teku.spec.logic.common.util.CommitteeUtil committeeUtil =
       spec.atSlot(UInt64.ZERO).getCommitteeUtil();

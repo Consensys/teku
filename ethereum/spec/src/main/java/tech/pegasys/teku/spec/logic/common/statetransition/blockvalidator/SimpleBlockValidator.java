@@ -19,7 +19,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -38,19 +38,19 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
  */
 class SimpleBlockValidator implements BlockValidator {
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final BlockProcessorUtil blockProcessorUtil;
   private final ValidatorsUtil validatorsUtil;
   private final BLSSignatureVerifier signatureVerifier;
 
   SimpleBlockValidator(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
       final ValidatorsUtil validatorsUtil,
       final BLSSignatureVerifier signatureVerifier) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.blockProcessorUtil = blockProcessorUtil;
     this.validatorsUtil = validatorsUtil;
@@ -58,12 +58,12 @@ class SimpleBlockValidator implements BlockValidator {
   }
 
   public SimpleBlockValidator(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
       final ValidatorsUtil validatorsUtil) {
     this(
-        specConstants,
+        specConfig,
         beaconStateUtil,
         blockProcessorUtil,
         validatorsUtil,
@@ -129,7 +129,7 @@ class SimpleBlockValidator implements BlockValidator {
     final Bytes signing_root =
         beaconStateUtil.computeSigningRoot(
             signed_block.getMessage(),
-            beaconStateUtil.getDomain(state, specConstants.getDomainBeaconProposer()));
+            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
     try {
       signatureVerifier.verifyAndThrow(
           proposerPublicKey, signing_root, signed_block.getSignature());

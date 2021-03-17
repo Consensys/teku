@@ -18,7 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsAltair extends DelegatingSpecConstants {
+public class SpecConfigAltair extends DelegatingSpecConfig {
   // Updated penalties
   private final UInt64 inactivityPenaltyQuotientAltair;
   private final int minSlashingPenaltyQuotientAltair;
@@ -43,8 +43,8 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
   private final int maxValidLightClientUpdates;
   private final int lightClientUpdateTimeout;
 
-  public SpecConstantsAltair(
-      final SpecConstants specConstants,
+  public SpecConfigAltair(
+      final SpecConfig specConfig,
       final UInt64 inactivityPenaltyQuotientAltair,
       final int altairMinSlashingPenaltyQuotient,
       final int proportionalSlashingMultiplierAltair,
@@ -57,7 +57,7 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
       final int minSyncCommitteeParticipants,
       final int maxValidLightClientUpdates,
       final int lightClientUpdateTimeout) {
-    super(specConstants);
+    super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
     this.proportionalSlashingMultiplierAltair = proportionalSlashingMultiplierAltair;
@@ -72,14 +72,13 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
     this.lightClientUpdateTimeout = lightClientUpdateTimeout;
   }
 
-  public static SpecConstantsAltair required(final SpecConstants specConstants) {
-    return specConstants
+  public static SpecConfigAltair required(final SpecConfig specConfig) {
+    return specConfig
         .toVersionAltair()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected altair constants but got: "
-                        + specConstants.getClass().getSimpleName()));
+                    "Expected altair constants but got: " + specConfig.getClass().getSimpleName()));
   }
 
   public UInt64 getInactivityPenaltyQuotientAltair() {
@@ -111,7 +110,7 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
   }
 
   @Override
-  public Optional<SpecConstantsAltair> toVersionAltair() {
+  public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
 
@@ -119,8 +118,8 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpecConstantsAltair that = (SpecConstantsAltair) o;
-    return Objects.equals(specConstants, that.specConstants)
+    final SpecConfigAltair that = (SpecConfigAltair) o;
+    return Objects.equals(specConfig, that.specConfig)
         && minSlashingPenaltyQuotientAltair == that.minSlashingPenaltyQuotientAltair
         && proportionalSlashingMultiplierAltair == that.proportionalSlashingMultiplierAltair
         && syncCommitteeSize == that.syncCommitteeSize
@@ -138,7 +137,7 @@ public class SpecConstantsAltair extends DelegatingSpecConstants {
   @Override
   public int hashCode() {
     return Objects.hash(
-        specConstants,
+        specConfig,
         inactivityPenaltyQuotientAltair,
         minSlashingPenaltyQuotientAltair,
         proportionalSlashingMultiplierAltair,

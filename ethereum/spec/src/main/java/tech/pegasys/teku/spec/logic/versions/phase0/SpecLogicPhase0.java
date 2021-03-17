@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0;
 
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -54,7 +54,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   public static SpecLogicPhase0 create(
-      final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
+      final SpecConfig constants, final SchemaDefinitions schemaDefinitions) {
     final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil(constants);
     final BeaconStateUtil beaconStateUtil =

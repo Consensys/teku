@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
-import tech.pegasys.teku.spec.config.SpecConstants;
-import tech.pegasys.teku.spec.config.SpecConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecFactory {
@@ -32,11 +32,11 @@ public class SpecFactory {
   }
 
   public static Spec create(final String constantsName) {
-    final SpecConstants constants = SpecConstantsLoader.loadConstants(constantsName);
+    final SpecConfig constants = SpecConfigLoader.loadConstants(constantsName);
     return create(constants);
   }
 
-  public static Spec create(final SpecConstants specConstants) {
+  public static Spec create(final SpecConfig specConstants) {
     final SpecConfiguration specConfig =
         SpecConfiguration.builder().constants(specConstants).build();
     return Spec.create(specConfig);

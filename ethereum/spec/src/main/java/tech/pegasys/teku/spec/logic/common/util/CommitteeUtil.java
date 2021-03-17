@@ -26,22 +26,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class CommitteeUtil {
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
 
-  public CommitteeUtil(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  public CommitteeUtil(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
   }
 
   public int computeShuffledIndex(int index, int index_count, Bytes32 seed) {
     checkArgument(index < index_count, "CommitteeUtil.computeShuffledIndex1");
 
     int indexRet = index;
-    final int shuffleRoundCount = specConstants.getShuffleRoundCount();
+    final int shuffleRoundCount = specConfig.getShuffleRoundCount();
 
     for (int round = 0; round < shuffleRoundCount; round++) {
 
@@ -84,7 +84,7 @@ public class CommitteeUtil {
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConstants.getMaxEffectiveBalance().times(random_byte))) {
+          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(random_byte))) {
         return candidate_index;
       }
       i++;
@@ -92,9 +92,9 @@ public class CommitteeUtil {
   }
 
   public int getAggregatorModulo(final int committeeSize) {
-    return specConstants.getTargetAggregatorsPerCommittee() == 0
+    return specConfig.getTargetAggregatorsPerCommittee() == 0
         ? 1
-        : Math.max(1, committeeSize / specConstants.getTargetAggregatorsPerCommittee());
+        : Math.max(1, committeeSize / specConfig.getTargetAggregatorsPerCommittee());
   }
 
   public void shuffleList(int[] input, Bytes32 seed) {
@@ -104,7 +104,7 @@ public class CommitteeUtil {
       return;
     }
 
-    for (int round = specConstants.getShuffleRoundCount() - 1; round >= 0; round--) {
+    for (int round = specConfig.getShuffleRoundCount() - 1; round >= 0; round--) {
 
       Bytes roundAsByte = Bytes.of((byte) round);
 

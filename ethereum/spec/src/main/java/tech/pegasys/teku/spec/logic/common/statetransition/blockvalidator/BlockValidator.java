@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -32,12 +32,11 @@ public interface BlockValidator {
   BlockValidator NOOP = new NoOpBlockValidator();
 
   static BlockValidator standard(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
       final ValidatorsUtil validatorsUtil) {
-    return new BatchBlockValidator(
-        specConstants, beaconStateUtil, blockProcessorUtil, validatorsUtil);
+    return new BatchBlockValidator(specConfig, beaconStateUtil, blockProcessorUtil, validatorsUtil);
   }
 
   /**

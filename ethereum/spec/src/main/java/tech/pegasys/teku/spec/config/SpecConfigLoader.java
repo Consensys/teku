@@ -24,10 +24,10 @@ import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.util.config.Constants;
 
-public class SpecConstantsLoader {
+public class SpecConfigLoader {
 
-  public static SpecConstants loadConstants(final String constants) {
-    final SpecConstantsReader reader = new SpecConstantsReader();
+  public static SpecConfig loadConstants(final String constants) {
+    final SpecConfigReader reader = new SpecConfigReader();
     processConstants(constants, reader::read);
     return reader.build();
   }

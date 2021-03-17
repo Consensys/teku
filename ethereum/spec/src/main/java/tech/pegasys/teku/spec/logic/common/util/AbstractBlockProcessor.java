@@ -29,7 +29,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -55,17 +55,17 @@ import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   private static final Logger LOG = LogManager.getLogger();
-  protected final SpecConstants specConstants;
+  protected final SpecConfig specConfig;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
 
   protected AbstractBlockProcessor(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
@@ -128,7 +128,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
           beaconStateUtil
               .getRandaoMix(state, epoch)
               .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
+      int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
       state.getRandao_mixes().setElement(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -143,7 +143,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes32 domain = beaconStateUtil.getDomain(state, specConstants.getDomainRandao());
+    final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
     bls.verifyAndThrow(
         proposerPublicKey,
@@ -172,7 +172,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
     return voteCount * 2
-        > (long) specConstants.getEpochsPerEth1VotingPeriod() * specConstants.getSlotsPerEpoch();
+        > (long) specConfig.getEpochsPerEth1VotingPeriod() * specConfig.getSlotsPerEpoch();
   }
 
   @Override
@@ -197,7 +197,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
       checkArgument(
           body.getDeposits().size()
               == Math.min(
-                  specConstants.getMaxDeposits(),
+                  specConfig.getMaxDeposits(),
                   toIntExact(
                       state
                           .getEth1_data()

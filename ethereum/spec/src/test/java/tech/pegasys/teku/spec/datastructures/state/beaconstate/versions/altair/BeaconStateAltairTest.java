@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
@@ -22,8 +22,8 @@ public class BeaconStateAltairTest
 
   @Override
   protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
-      final SpecConstants specConstants) {
-    return BeaconStateSchemaAltair.create(specConstants);
+      final SpecConfig specConfig) {
+    return BeaconStateSchemaAltair.create(specConfig);
   }
 
   @Override

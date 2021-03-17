@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -52,7 +52,7 @@ class BlockProcessorUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
-  private final SpecConstants specConstants = genesisSpec.getConstants();
+  private final SpecConfig specConfig = genesisSpec.getConstants();
   private final BlockProcessorUtil blockProcessorUtil = genesisSpec.getBlockProcessorUtil();
 
   @Test
@@ -173,9 +173,9 @@ class BlockProcessorUtilTest {
               beaconState.setSlot(dataStructureUtil.randomUInt64());
               beaconState.setFork(
                   new Fork(
-                      specConstants.getGenesisForkVersion(),
-                      specConstants.getGenesisForkVersion(),
-                      SpecConstants.GENESIS_EPOCH));
+                      specConfig.getGenesisForkVersion(),
+                      specConfig.getGenesisForkVersion(),
+                      SpecConfig.GENESIS_EPOCH));
 
               List<Validator> validatorList =
                   new ArrayList<>(
@@ -205,7 +205,7 @@ class BlockProcessorUtilTest {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
     MerkleTree depositMerkleTree =
-        new OptimizedMerkleTree(specConstants.getDepositContractTreeDepth());
+        new OptimizedMerkleTree(specConfig.getDepositContractTreeDepth());
     depositMerkleTree.add(depositData.hashTreeRoot());
 
     beaconState =
@@ -215,7 +215,7 @@ class BlockProcessorUtilTest {
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
     SszListSchema<Deposit, ?> schema =
-        SszListSchema.create(DepositWithIndex.SSZ_SCHEMA, specConstants.getMaxDeposits());
+        SszListSchema.create(DepositWithIndex.SSZ_SCHEMA, specConfig.getMaxDeposits());
     SszBytes32Vector proof = Deposit.SSZ_SCHEMA.getProofSchema().of(depositMerkleTree.getProof(0));
     SszList<Deposit> deposits =
         schema.of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
@@ -228,11 +228,11 @@ class BlockProcessorUtilTest {
     return new Validator(
         pubkey,
         withdrawalCredentials,
-        specConstants.getMaxEffectiveBalance(),
+        specConfig.getMaxEffectiveBalance(),
         false,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH);
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH);
   }
 }

@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsPhase0 implements SpecConstants {
+public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConstants;
   private final String configName;
 
@@ -108,7 +108,7 @@ public class SpecConstantsPhase0 implements SpecConstants {
   private final int depositNetworkId;
   private final Bytes depositContractAddress;
 
-  public SpecConstantsPhase0(
+  public SpecConfigPhase0(
       final Map<String, Object> rawConstants,
       final String configName,
       final UInt64 eth1FollowDistance,
@@ -557,7 +557,7 @@ public class SpecConstantsPhase0 implements SpecConstants {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpecConstantsPhase0 that = (SpecConstantsPhase0) o;
+    final SpecConfigPhase0 that = (SpecConfigPhase0) o;
     return depositContractTreeDepth == that.depositContractTreeDepth
         && justificationBitsLength == that.justificationBitsLength
         && maxCommitteesPerSlot == that.maxCommitteesPerSlot

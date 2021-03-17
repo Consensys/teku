@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static tech.pegasys.teku.spec.config.SpecConstantsFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -37,7 +37,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsReader {
+public class SpecConfigReader {
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, this::parseInt)
@@ -51,14 +51,14 @@ public class SpecConstantsReader {
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 
-  final SpecConstantsBuilder constantsBuilder = SpecConstants.builder();
+  final SpecConfigBuilder constantsBuilder = SpecConfig.builder();
   final HashMap<String, Object> seenValues = new HashMap<>();
 
-  public SpecConstants build() {
+  public SpecConfig build() {
     return constantsBuilder.build();
   }
 
-  public SpecConstants build(Consumer<SpecConstantsBuilder> modifier) {
+  public SpecConfig build(Consumer<SpecConfigBuilder> modifier) {
     modifier.accept(constantsBuilder);
     return build();
   }
@@ -81,7 +81,7 @@ public class SpecConstantsReader {
             });
 
     // Process altair constants
-    streamConstantSetters(SpecConstantsBuilder.AltairBuilder.class)
+    streamConstantSetters(SpecConfigBuilder.AltairBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());

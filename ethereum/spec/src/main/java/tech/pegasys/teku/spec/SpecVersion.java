@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
-import tech.pegasys.teku.spec.config.SpecConstants;
-import tech.pegasys.teku.spec.config.SpecConstantsAltair;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
-  private final SpecConstants constants;
+  private final SpecConfig constants;
   private final SchemaDefinitions schemaDefinitions;
 
   private SpecVersion(
-      final SpecConstants constants,
+      final SpecConfig constants,
       final SchemaDefinitions schemaDefinitions,
       final SpecLogic specLogic) {
     super(specLogic);
@@ -36,19 +36,19 @@ public class SpecVersion extends DelegatingSpecLogic {
     this.schemaDefinitions = schemaDefinitions;
   }
 
-  public static SpecVersion createPhase0(final SpecConstants specConstants) {
-    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConstants);
-    final SpecLogic specLogic = SpecLogicPhase0.create(specConstants, schemaDefinitions);
-    return new SpecVersion(specConstants, schemaDefinitions, specLogic);
+  public static SpecVersion createPhase0(final SpecConfig specConfig) {
+    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConfig);
+    final SpecLogic specLogic = SpecLogicPhase0.create(specConfig, schemaDefinitions);
+    return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createAltair(final SpecConstantsAltair specConstants) {
+  public static SpecVersion createAltair(final SpecConfigAltair specConstants) {
     final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsAltair(specConstants);
     final SpecLogic specLogic = SpecLogicAltair.create(specConstants, schemaDefinitions);
     return new SpecVersion(specConstants, schemaDefinitions, specLogic);
   }
 
-  public SpecConstants getConstants() {
+  public SpecConfig getConstants() {
     return constants;
   }
 

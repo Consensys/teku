@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static tech.pegasys.teku.spec.config.SpecConstantsLoader.processConstants;
+import com.google.common.base.CaseFormat;
+import com.google.common.base.Converter;
 
-import java.util.function.Consumer;
+class SpecConfigFormatter {
+  private static final Converter<String, String> CAMEL_TO_SNAKE_CASE =
+      CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
 
-public class TestConstantsLoader {
-  public static SpecConstants loadConstants(
-      final String constants, final Consumer<SpecConstantsBuilder> modifier) {
-    final SpecConstantsReader reader = new SpecConstantsReader();
-    processConstants(constants, reader::read);
-    return reader.build(modifier);
+  public static String camelToSnakeCase(final String camelCase) {
+    return CAMEL_TO_SNAKE_CASE.convert(camelCase);
   }
 }

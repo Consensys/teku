@@ -52,7 +52,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -62,7 +62,7 @@ import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManagerTest {
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConstants specConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig specConfig = spec.getGenesisSpecConstants();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
@@ -355,7 +355,7 @@ public class EventSubscriptionManagerTest {
         chainReorgEvent.slot,
         chainReorgEvent.newHeadState,
         chainReorgEvent.newHeadBlock,
-        chainReorgEvent.slot.mod(specConstants.getSlotsPerEpoch()).equals(UInt64.ZERO),
+        chainReorgEvent.slot.mod(specConfig.getSlotsPerEpoch()).equals(UInt64.ZERO),
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.of(

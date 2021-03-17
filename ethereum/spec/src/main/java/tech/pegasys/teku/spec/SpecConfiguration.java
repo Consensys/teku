@@ -15,12 +15,12 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class SpecConfiguration {
-  private final SpecConstants constants;
+  private final SpecConfig constants;
 
-  private SpecConfiguration(final SpecConstants constants) {
+  private SpecConfiguration(final SpecConfig constants) {
     this.constants = constants;
   }
 
@@ -28,19 +28,19 @@ public class SpecConfiguration {
     return new Builder();
   }
 
-  public SpecConstants constants() {
+  public SpecConfig constants() {
     return constants;
   }
 
   public static class Builder {
-    private SpecConstants constants;
+    private SpecConfig constants;
 
     public SpecConfiguration build() {
       validate();
       return new SpecConfiguration(constants);
     }
 
-    public Builder constants(final SpecConstants constants) {
+    public Builder constants(final SpecConfig constants) {
       checkNotNull(constants);
       this.constants = constants;
       return this;

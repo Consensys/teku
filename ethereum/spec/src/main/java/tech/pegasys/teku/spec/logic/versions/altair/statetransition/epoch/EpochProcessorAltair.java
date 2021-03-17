@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.config.SpecConstantsAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   public EpochProcessorAltair(
-      final SpecConstantsAltair specConstants,
+      final SpecConfigAltair specConstants,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory) {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.util;
 
-import static tech.pegasys.teku.spec.config.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -742,23 +742,23 @@ public final class DataStructureUtil {
   }
 
   int getEpochsPerEth1VotingPeriod() {
-    return getConstant(SpecConstants::getEpochsPerEth1VotingPeriod);
+    return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
 
   int getSlotsPerEpoch() {
-    return getConstant(SpecConstants::getSlotsPerEpoch);
+    return getConstant(SpecConfig::getSlotsPerEpoch);
   }
 
   int getJustificationBitsLength() {
-    return getConstant(SpecConstants::getJustificationBitsLength);
+    return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
   private int getMaxValidatorsPerCommittee() {
-    return getConstant(SpecConstants::getMaxValidatorsPerCommittee);
+    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
   }
 
   private UInt64 getMaxEffectiveBalance() {
-    return getConstant(SpecConstants::getMaxEffectiveBalance);
+    return getConstant(SpecConfig::getMaxEffectiveBalance);
   }
 
   private Bytes32 computeDomain() {
@@ -785,7 +785,7 @@ public final class DataStructureUtil {
     return spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
-  private <T> T getConstant(final Function<SpecConstants, T> getter) {
+  private <T> T getConstant(final Function<SpecConfig, T> getter) {
     return getter.apply(spec.getGenesisSpec().getConstants());
   }
 }

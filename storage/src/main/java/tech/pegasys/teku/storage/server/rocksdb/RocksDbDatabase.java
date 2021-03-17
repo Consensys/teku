@@ -55,7 +55,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -358,7 +358,7 @@ public class RocksDbDatabase implements Database {
 
     // Check block signatures are valid for blocks except the genesis block
     boolean isGenesisBlockIncluded =
-        Iterables.getLast(sorted).getSlot().equals(SpecConstants.GENESIS_SLOT);
+        Iterables.getLast(sorted).getSlot().equals(SpecConfig.GENESIS_SLOT);
     checkArgument(
         batchVerifyHistoricalBlockSignatures(
             isGenesisBlockIncluded ? sorted.subList(0, sorted.size() - 1) : sorted),

@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -33,30 +33,30 @@ public class BeaconStateSchemaAltair
   private static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
 
   @VisibleForTesting
-  BeaconStateSchemaAltair(final SpecConstants specConstants) {
-    super("BeaconStateAltair", getUniqueFields(specConstants), specConstants);
+  BeaconStateSchemaAltair(final SpecConfig specConfig) {
+    super("BeaconStateAltair", getUniqueFields(specConfig), specConfig);
   }
 
   public static BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> create(
-      final SpecConstants specConstants) {
-    return new BeaconStateSchemaAltair(specConstants);
+      final SpecConfig specConfig) {
+    return new BeaconStateSchemaAltair(specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConstants specConstants) {
+  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final SszField previousEpochAttestationsField =
         new SszField(
             PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
+                    SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
     final SszField currentEpochAttestationsField =
         new SszField(
             CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name(),
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.BYTE_SCHEMA, specConstants.getValidatorRegistryLimit()));
+                    SszPrimitiveSchemas.BYTE_SCHEMA, specConfig.getValidatorRegistryLimit()));
 
     return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
   }

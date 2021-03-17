@@ -20,15 +20,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SpecConstantsAltairTest {
+public class SpecConfigAltairTest {
   private final Spec spec = SpecFactory.createMinimal();
 
   @Test
   public void equals_mainnet() {
-    SpecConstantsAltair constantsA =
-        SpecConstantsLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
-    SpecConstantsAltair constantsB =
-        SpecConstantsLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
+    SpecConfigAltair constantsA =
+        SpecConfigLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
+    SpecConfigAltair constantsB =
+        SpecConfigLoader.loadConstants("mainnet").toVersionAltair().orElseThrow();
 
     assertThat(constantsA).isEqualTo(constantsB);
     assertThat(constantsA.hashCode()).isEqualTo(constantsB.hashCode());
@@ -36,9 +36,9 @@ public class SpecConstantsAltairTest {
 
   @Test
   public void equals_sameRandomValues() {
-    SpecConstants phase0 = SpecConstantsLoader.loadConstants("mainnet");
-    SpecConstantsAltair constantsA = createRandomAltairConstants(phase0, 1);
-    SpecConstantsAltair constantsB = createRandomAltairConstants(phase0, 1);
+    SpecConfig phase0 = SpecConfigLoader.loadConstants("mainnet");
+    SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
+    SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 1);
 
     assertThat(constantsA).isEqualTo(constantsB);
     assertThat(constantsA.hashCode()).isEqualTo(constantsB.hashCode());
@@ -46,9 +46,9 @@ public class SpecConstantsAltairTest {
 
   @Test
   public void equals_differentRandomValues() {
-    SpecConstants phase0 = SpecConstantsLoader.loadConstants("mainnet");
-    SpecConstantsAltair constantsA = createRandomAltairConstants(phase0, 1);
-    SpecConstantsAltair constantsB = createRandomAltairConstants(phase0, 2);
+    SpecConfig phase0 = SpecConfigLoader.loadConstants("mainnet");
+    SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
+    SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 2);
 
     assertThat(constantsA).isNotEqualTo(constantsB);
     assertThat(constantsA.hashCode()).isNotEqualTo(constantsB.hashCode());
@@ -56,22 +56,22 @@ public class SpecConstantsAltairTest {
 
   @Test
   public void equals_phase0ConstantsDiffer() {
-    SpecConstants phase0A = TestConstantsLoader.loadConstants("swift", b -> {});
-    SpecConstants phase0B =
-        TestConstantsLoader.loadConstants("swift", b -> b.maxValidatorsPerCommittee(1));
+    SpecConfig phase0A = TestConfigLoader.loadConstants("swift", b -> {});
+    SpecConfig phase0B =
+        TestConfigLoader.loadConstants("swift", b -> b.maxValidatorsPerCommittee(1));
 
-    SpecConstantsAltair constantsA = createRandomAltairConstants(phase0A, 1);
-    SpecConstantsAltair constantsB = createRandomAltairConstants(phase0B, 1);
+    SpecConfigAltair constantsA = createRandomAltairConstants(phase0A, 1);
+    SpecConfigAltair constantsB = createRandomAltairConstants(phase0B, 1);
 
     assertThat(constantsA).isNotEqualTo(constantsB);
     assertThat(constantsA.hashCode()).isNotEqualTo(constantsB.hashCode());
   }
 
-  private SpecConstantsAltair createRandomAltairConstants(
-      final SpecConstants phase0Constants, final int seed) {
+  private SpecConfigAltair createRandomAltairConstants(
+      final SpecConfig phase0Constants, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
-    return new SpecConstantsAltair(
+    return new SpecConfigAltair(
         phase0Constants,
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
