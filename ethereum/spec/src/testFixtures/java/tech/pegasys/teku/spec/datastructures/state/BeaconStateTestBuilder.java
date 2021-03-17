@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;

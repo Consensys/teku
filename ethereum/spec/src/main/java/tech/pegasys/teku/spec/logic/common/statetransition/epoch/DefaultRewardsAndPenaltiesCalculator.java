@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 import java.util.List;
 import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;

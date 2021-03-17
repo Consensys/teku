@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllAltairFieldsSet;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllFieldsSet;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllPhase0FieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConstantsAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConstantsAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConstantsAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;

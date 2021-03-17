@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstants;
 
 public class SpecConfiguration {
   private final SpecConstants constants;

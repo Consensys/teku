@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_EPOCH;
 
 import java.util.List;
 import java.util.Optional;

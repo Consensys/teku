@@ -22,8 +22,8 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_acti
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConstants;
 import tech.pegasys.teku.spec.constants.EthConstants;
-import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;

@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
-import static tech.pegasys.teku.spec.constants.SpecConstantsFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.config.SpecConstantsFormatter.camelToSnakeCase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;

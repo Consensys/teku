@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;

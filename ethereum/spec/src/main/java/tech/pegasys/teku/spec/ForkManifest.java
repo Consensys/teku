@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +24,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.TreeMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstants;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.ssz.type.Bytes4;
 

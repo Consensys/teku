@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.TestConstantsLoader;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth1VotingPeriodTest {

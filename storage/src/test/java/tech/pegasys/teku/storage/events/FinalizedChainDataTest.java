@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_EPOCH;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;

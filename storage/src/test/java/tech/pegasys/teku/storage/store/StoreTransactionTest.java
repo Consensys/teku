@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_SLOT;
 
 import java.util.List;
 import java.util.Optional;

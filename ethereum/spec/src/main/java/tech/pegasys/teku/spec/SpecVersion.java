@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.SpecConstantsAltair;
+import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstantsAltair;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;

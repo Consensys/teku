@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.constants.SpecConstantsFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.config.SpecConstantsFormatter.camelToSnakeCase;
 
 import java.util.HashMap;
 import java.util.Map;

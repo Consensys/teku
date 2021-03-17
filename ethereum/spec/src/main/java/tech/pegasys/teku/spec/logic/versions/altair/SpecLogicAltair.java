@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair;
 
-import tech.pegasys.teku.spec.constants.SpecConstantsAltair;
+import tech.pegasys.teku.spec.config.SpecConstantsAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;

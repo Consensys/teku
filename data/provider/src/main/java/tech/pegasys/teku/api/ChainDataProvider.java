@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConstants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
 import com.google.common.annotations.VisibleForTesting;

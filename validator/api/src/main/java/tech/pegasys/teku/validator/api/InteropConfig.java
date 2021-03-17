@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.api;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class InteropConfig {

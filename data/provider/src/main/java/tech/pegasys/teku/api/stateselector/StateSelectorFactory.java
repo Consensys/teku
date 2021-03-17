@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.api.stateselector;
 
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.config.SpecConstants.GENESIS_SLOT;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;

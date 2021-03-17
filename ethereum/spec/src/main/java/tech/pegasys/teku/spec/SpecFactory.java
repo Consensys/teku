@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.SpecConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConstantsLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecFactory {
