@@ -49,9 +49,35 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     return childSchema.getDefault();
   }
 
+  @SuppressWarnings("unchecked")
+  default Stream<SszMutableComposite<SszData>> sszMutableComposites() {
+    return sszWritableData().map(SszData::createWritableCopy).map(d -> (SszMutableComposite<SszData>) d);
+  }
+
   default Stream<Arguments> sszMutableCompositeArguments() {
-    return SszDataTestBase.passWhenEmpty(
-        sszWritableData().map(SszData::createWritableCopy).map(Arguments::of));
+    return SszDataTestBase.passWhenEmpty(sszMutableComposites().map(Arguments::of));
+  }
+
+  default Stream<Arguments> sszMutableCompositeWithUpdateIndexesArguments() {
+    return SszDataTestBase.passWhenEmpty(sszMutableComposites().flatMap(data ->
+        Stream.of(
+            IntStream.of(0),
+            IntStream.of(data.size()),
+            IntStream.of(data.size() / 2),
+            IntStream.of(data.size() / 2, data.size() - 1),
+            IntStream.of(0, data.size() - 1),
+            IntStream.of(0, data.size() / 2, data.size() - 1),
+            IntStream.concat(IntStream.range(1, 32), IntStream.of(data.size() - 1))
+        ).map(indexes ->
+            indexes
+                .filter(i -> i >= 0 && i < data.size())
+                .sorted()
+                .distinct()
+                .boxed().collect(Collectors.toList()))
+            .distinct()
+            .filter(l -> !l.isEmpty())
+            .map(indexList -> Arguments.of(data, indexList))
+    ));
   }
 
   @MethodSource("sszMutableCompositeArguments")
@@ -85,24 +111,55 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     }
   }
 
-  @MethodSource("sszMutableCompositeArguments")
+  @MethodSource("sszMutableCompositeWithUpdateIndexesArguments")
   @ParameterizedTest
-  default void set_shouldMatchGet(SszMutableComposite<SszData> data) {
-    int[] updateIndexes =
-        IntStream.concat(IntStream.range(1, 32), IntStream.of(data.size()))
-            .filter(i -> i < data.size())
-            .toArray();
+  default void set_shouldMatchGet(SszMutableComposite<SszData> data, List<Integer> updateIndexes) {
+    SszComposite<SszData> origData = data.commitChanges();
 
-    SszCompositeSchema<?> schema = data.getSchema();
-    for (int i : updateIndexes) {
-      SszData newChild = generator.randomData(schema.getChildSchema(i));
-      data.set(i, newChild);
+    SszCompositeSchema<? extends SszComposite<?>> schema = data.getSchema();
 
-      assertThatSszData(data.get(i)).isEqualByAllMeansTo(newChild);
+    List<SszData> newChildrenValues = updateIndexes.stream()
+        .map(idx -> generator.randomData(schema.getChildSchema(idx))).collect(
+            Collectors.toList());
 
-      SszComposite<SszData> data1 = data.commitChanges();
+    for (int i = 0; i < updateIndexes.size(); i++) {
+      Integer updateIndex = updateIndexes.get(i);
+      SszData updateValue = newChildrenValues.get(i);
+      data.set(updateIndex, updateValue);
+    }
 
-      assertThatSszData(data1.get(i)).isEqualByAllMeansTo(newChild);
+    for (int i = 0; i < data.size(); i++) {
+      int idx = updateIndexes.indexOf(i);
+      if (idx < 0) {
+        assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
+      } else {
+        SszData updateValue = newChildrenValues.get(idx);
+        assertThatSszData(data.get(i)).isEqualByAllMeansTo(updateValue);
+      }
+    }
+
+    SszComposite<SszData> data1 = data.commitChanges();
+
+    for (int i = 0; i < data.size(); i++) {
+      int idx = updateIndexes.indexOf(i);
+      if (idx < 0) {
+        assertThatSszData(data1.get(i)).isEqualByAllMeansTo(origData.get(i));
+      } else {
+        SszData updateValue = newChildrenValues.get(idx);
+        assertThatSszData(data1.get(i)).isEqualByAllMeansTo(updateValue);
+      }
+    }
+
+    SszComposite<?> data2 = schema.createFromBackingNode(data1.getBackingNode());
+
+    for (int i = 0; i < data.size(); i++) {
+      int idx = updateIndexes.indexOf(i);
+      if (idx < 0) {
+        assertThatSszData((SszData) data2.get(i)).isEqualByAllMeansTo(origData.get(i));
+      } else {
+        SszData updateValue = newChildrenValues.get(idx);
+        assertThatSszData((SszData) data2.get(i)).isEqualByAllMeansTo(updateValue);
+      }
     }
   }
 

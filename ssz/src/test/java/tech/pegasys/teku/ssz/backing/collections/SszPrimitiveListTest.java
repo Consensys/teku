@@ -30,6 +30,7 @@ public class SszPrimitiveListTest implements SszMutablePrimitiveListTestBase {
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 15),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 16),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 17),
+        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 300),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 0),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 1),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 3),
@@ -38,11 +39,14 @@ public class SszPrimitiveListTest implements SszMutablePrimitiveListTestBase {
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 15),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 16),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 17),
+        SszPrimitiveListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, 300),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 0),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 1),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 31),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 32),
-        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 33));
+        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 33),
+        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 300)
+        );
   }
 
   @Override
