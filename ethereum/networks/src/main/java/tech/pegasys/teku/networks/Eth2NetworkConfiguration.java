@@ -151,7 +151,7 @@ public class Eth2NetworkConfiguration {
 
       final Spec spec = SpecFactory.create(constants);
       // if the deposit contract was not set, default from constants
-      if (eth1DepositContractAddress.isEmpty()) {
+      if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
             spec.getGenesisSpec().getConstants().getDepositContractAddress().toHexString());
       }
