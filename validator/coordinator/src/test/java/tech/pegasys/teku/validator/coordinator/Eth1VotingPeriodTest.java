@@ -30,7 +30,7 @@ import tech.pegasys.teku.util.config.Constants;
 class Eth1VotingPeriodTest {
 
   final SpecConfig specConfig =
-      TestConfigLoader.loadConstants(
+      TestConfigLoader.loadConfig(
           "minimal",
           b ->
               b.secondsPerEth1Block(UInt64.valueOf(3))

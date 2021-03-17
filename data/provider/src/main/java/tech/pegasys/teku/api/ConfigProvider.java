@@ -53,7 +53,7 @@ public class ConfigProvider {
     return new GetForkScheduleResponse(forkList);
   }
 
-  public SpecConfig getGenesisSpecConstants() {
+  public SpecConfig getGenesisSpecConfig() {
     return spec.getGenesisSpecConfig();
   }
 

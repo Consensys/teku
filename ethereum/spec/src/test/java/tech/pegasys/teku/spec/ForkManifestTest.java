@@ -36,12 +36,12 @@ class ForkManifestTest {
       new Fork(genesisForkVersion, secondForkVersion, UInt64.valueOf(100L));
   private final Fork thirdFork =
       new Fork(secondForkVersion, thirdForkVersion, UInt64.valueOf(200L));
-  private final SpecConfig constants = mock(SpecConfig.class);
+  private final SpecConfig config = mock(SpecConfig.class);
   private ForkManifest forkManifest;
 
   @BeforeEach
   public void setup() {
-    when(constants.getGenesisForkVersion()).thenReturn(genesisForkVersion);
+    when(config.getGenesisForkVersion()).thenReturn(genesisForkVersion);
     forkManifest = ForkManifest.create(List.of(genesisFork, secondFork, thirdFork));
   }
 

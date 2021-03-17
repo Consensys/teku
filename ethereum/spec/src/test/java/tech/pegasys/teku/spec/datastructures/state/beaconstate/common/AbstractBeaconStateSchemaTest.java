@@ -45,8 +45,8 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   private final Spec spec = SpecFactory.createMinimal();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
 
   protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
 
@@ -56,19 +56,19 @@ public abstract class AbstractBeaconStateSchemaTest<
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(
-            genesisConstants.getSlotsPerHistoricalRoot(),
-            genesisConstants.getSlotsPerHistoricalRoot(),
-            genesisConstants.getEpochsPerHistoricalVector(),
-            genesisConstants.getEpochsPerSlashingsVector(),
-            genesisConstants.getJustificationBitsLength());
+            genesisConfig.getSlotsPerHistoricalRoot(),
+            genesisConfig.getSlotsPerHistoricalRoot(),
+            genesisConfig.getEpochsPerHistoricalVector(),
+            genesisConfig.getEpochsPerSlashingsVector(),
+            genesisConfig.getJustificationBitsLength());
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
 
   @Test
-  public void changeSpecConstantsTest() {
+  public void changeSpecConfigTest() {
     final Spec standardSpec = SpecFactory.createMinimal();
-    final SpecConfig modifiedConstants =
-        TestConfigLoader.loadConstants(
+    final SpecConfig modifiedConfig =
+        TestConfigLoader.loadConfig(
             "minimal",
             b ->
                 b.slotsPerHistoricalRoot(123)
@@ -79,7 +79,7 @@ public abstract class AbstractBeaconStateSchemaTest<
                     .epochsPerSlashingsVector(123)
                     .maxAttestations(123));
 
-    BeaconState s1 = getSchema(modifiedConstants).createEmpty();
+    BeaconState s1 = getSchema(modifiedConfig).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
     assertThat(s1.getBlock_roots().getSchema()).isNotEqualTo(s2.getBlock_roots().getSchema());

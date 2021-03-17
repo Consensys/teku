@@ -22,18 +22,17 @@ import org.assertj.core.api.Assertions;
 
 public class SpecConfigAssertions {
 
-  static void assertAllPhase0FieldsSet(final SpecConfig constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConfigPhase0.class);
+  static void assertAllPhase0FieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigPhase0.class);
   }
 
-  static void assertAllAltairFieldsSet(final SpecConfig constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConfigAltair.class);
+  static void assertAllAltairFieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigAltair.class);
   }
 
-  static void assertAllFieldsSet(final SpecConfig constants, Class<?> targetConstants)
-      throws Exception {
-    for (Method method : listGetters(targetConstants)) {
-      final Object value = method.invoke(constants);
+  static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {
+    for (Method method : listGetters(targetConfig)) {
+      final Object value = method.invoke(config);
       Assertions.assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
     }
   }

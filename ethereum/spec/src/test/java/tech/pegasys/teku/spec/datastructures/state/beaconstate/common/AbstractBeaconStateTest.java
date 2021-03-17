@@ -32,8 +32,8 @@ public abstract class AbstractBeaconStateTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);

@@ -47,7 +47,7 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  final SpecConfig specConfig = TestConfigLoader.loadConstants("minimal", b -> b.slotsPerEpoch(4));
+  final SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.slotsPerEpoch(4));
   private final Spec spec = SpecFactory.create(specConfig);
   protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);

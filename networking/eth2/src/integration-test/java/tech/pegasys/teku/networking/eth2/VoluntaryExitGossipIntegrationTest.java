@@ -55,9 +55,9 @@ public class VoluntaryExitGossipIntegrationTest {
   @Test
   public void shouldGossipVoluntaryExitToPeers() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    final SpecConfig constants = spec.getGenesisSpecConfig();
+    final SpecConfig config = spec.getGenesisSpecConfig();
     final UInt64 blockSlot =
-        constants.getShardCommitteePeriod().plus(2).times(constants.getSlotsPerEpoch());
+        config.getShardCommitteePeriod().plus(2).times(config.getSlotsPerEpoch());
 
     // Set up publishers & consumers
     final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =

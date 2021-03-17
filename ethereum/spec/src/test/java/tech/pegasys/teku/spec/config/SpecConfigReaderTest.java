@@ -31,7 +31,7 @@ public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getConstantsArgs")
+  @MethodSource("getConfigArgs")
   public void read_standardConfigs(final String network, final String filePath) throws Exception {
     final InputStream inputStream = getFileFromResourceAsStream(filePath);
     reader.read(inputStream);
@@ -82,24 +82,24 @@ public class SpecConfigReaderTest {
 
   @Test
   public void read_mainnet() throws Exception {
-    final SpecConfig constants = readMainnet();
-    assertThat(constants).isNotNull();
+    final SpecConfig config = readMainnet();
+    assertThat(config).isNotNull();
 
     // Spot check a few values
-    assertThat(constants.getMaxCommitteesPerSlot()).isEqualTo(64);
-    Assertions.assertThat(constants.getTargetCommitteeSize()).isEqualTo(128);
-    assertAllPhase0FieldsSet(constants);
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
+    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(128);
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
   public void read_minimal() throws Exception {
-    final SpecConfig constants = readMinimal();
-    assertThat(constants).isNotNull();
+    final SpecConfig config = readMinimal();
+    assertThat(config).isNotNull();
 
     // Spot check a few values
-    assertThat(constants.getMaxCommitteesPerSlot()).isEqualTo(4);
-    Assertions.assertThat(constants.getTargetCommitteeSize()).isEqualTo(4);
-    assertAllPhase0FieldsSet(constants);
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
+    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -116,7 +116,7 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  public void read_missingConstants() throws Exception {
+  public void read_missingConfig() throws Exception {
     final String path = getInvalidConfigPath("missingChurnLimit");
     final InputStream stream = getFileFromResourceAsStream(path);
     reader.read(stream);
@@ -141,7 +141,7 @@ public class SpecConfigReaderTest {
     final InputStream stream = getFileFromResourceAsStream(path);
     assertThatThrownBy(() -> reader.read(stream))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Supplied constants are empty");
+        .hasMessageContaining("Supplied spec config is empty");
   }
 
   @Test
@@ -252,21 +252,21 @@ public class SpecConfigReaderTest {
   }
 
   private SpecConfig readMainnet() throws IOException {
-    return readConstants(getStandardConfigPath("mainnet"));
+    return readConfig(getStandardConfigPath("mainnet"));
   }
 
   private SpecConfig readMinimal() throws IOException {
-    return readConstants(getStandardConfigPath("minimal"));
+    return readConfig(getStandardConfigPath("minimal"));
   }
 
-  private SpecConfig readConstants(final String path) throws IOException {
+  private SpecConfig readConfig(final String path) throws IOException {
     final SpecConfigReader reader = new SpecConfigReader();
     final InputStream stream = getFileFromResourceAsStream(path);
     reader.read(stream);
     return reader.build();
   }
 
-  public static Stream<Arguments> getConstantsArgs() {
+  public static Stream<Arguments> getConfigArgs() {
     return Stream.of(
         Arguments.of("mainnet", getStandardConfigPath("mainnet")),
         Arguments.of("minimal", getStandardConfigPath("minimal")),
@@ -284,7 +284,7 @@ public class SpecConfigReaderTest {
   }
 
   private static String getConfigPath(final String name) {
-    final String path = "tech/pegasys/teku/spec/constants/";
+    final String path = "tech/pegasys/teku/spec/config/";
     return path + name + ".yaml";
   }
 

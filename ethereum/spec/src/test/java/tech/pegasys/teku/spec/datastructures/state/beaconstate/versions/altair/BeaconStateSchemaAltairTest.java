@@ -38,10 +38,10 @@ public class BeaconStateSchemaAltairTest
   }
 
   @Test
-  public void changeSpecConstantsTest_checkAltairFields() {
+  public void changeSpecConfigTest_checkAltairFields() {
     final Spec standardSpec = SpecFactory.createMinimal();
     final SpecConfig modifiedConstants =
-        TestConfigLoader.loadConstants("minimal", b -> b.validatorRegistryLimit(123L));
+        TestConfigLoader.loadConfig("minimal", b -> b.validatorRegistryLimit(123L));
 
     BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
     BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();

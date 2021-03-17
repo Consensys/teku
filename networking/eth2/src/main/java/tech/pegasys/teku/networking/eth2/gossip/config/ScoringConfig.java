@@ -43,7 +43,7 @@ class ScoringConfig {
       Suppliers.memoize(this::calculateMaxPositiveScore);
 
   private final Spec spec;
-  private final SpecConfig genesisConstants;
+  private final SpecConfig genesisConfig;
   private final Duration slotDuration;
   private final Duration epochDuration;
 
@@ -55,11 +55,11 @@ class ScoringConfig {
   private ScoringConfig(final Spec spec, final int d) {
     this.spec = spec;
     // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants
-    this.genesisConstants = spec.getGenesisSpecConfig();
+    this.genesisConfig = spec.getGenesisSpecConfig();
     this.d = d;
 
-    this.slotDuration = Duration.ofSeconds(this.genesisConstants.getSecondsPerSlot());
-    this.epochDuration = slotDuration.multipliedBy(this.genesisConstants.getSlotsPerEpoch());
+    this.slotDuration = Duration.ofSeconds(this.genesisConfig.getSecondsPerSlot());
+    this.epochDuration = slotDuration.multipliedBy(this.genesisConfig.getSlotsPerEpoch());
     this.decayInterval = slotDuration;
     this.targetScoringDuration = epochDuration.multipliedBy(100);
   }
@@ -121,7 +121,7 @@ class ScoringConfig {
   }
 
   public int getSlotsPerEpoch() {
-    return genesisConstants.getSlotsPerEpoch();
+    return genesisConfig.getSlotsPerEpoch();
   }
 
   public int convertEpochsToSlots(final int epochs) {
@@ -144,7 +144,7 @@ class ScoringConfig {
     final int committeesPerEpoch =
         spec.getGenesisBeaconStateUtil()
             .getCommitteeCountPerSlot(activeValidatorCount)
-            .times(genesisConstants.getSlotsPerEpoch())
+            .times(genesisConfig.getSlotsPerEpoch())
             .intValue();
 
     // Committees can vary in size by one - calculate aggregators per slot accounting for this
@@ -164,7 +164,7 @@ class ScoringConfig {
         largeCommitteeSize / largeAggregatorModulo * largeCommitteesPerEpoch;
 
     return ((double) smallCommitteeAggregatorPerEpoch + largeCommitteeAggregatorPerEpoch)
-        / genesisConstants.getSlotsPerEpoch();
+        / genesisConfig.getSlotsPerEpoch();
   }
 
   public int getCommitteesPerSlot(final int activeValidatorCount) {

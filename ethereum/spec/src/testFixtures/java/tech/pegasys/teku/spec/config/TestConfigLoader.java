@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigLoader.processConfig;
 import java.util.function.Consumer;
 
 public class TestConfigLoader {
-  public static SpecConfig loadConstants(
+  public static SpecConfig loadConfig(
       final String constants, final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
     processConfig(constants, reader::read);

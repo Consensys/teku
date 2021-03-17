@@ -38,16 +38,16 @@ public class SpecConfigLoaderTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("knownNetworks")
-  public void shouldLoadAllKnownNetworks(final String name, final Class<?> constantsType)
+  public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
       throws Exception {
-    final SpecConfig constants = SpecConfigLoader.loadConfig(name);
-    assertAllFieldsSet(constants, constantsType);
+    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    assertAllFieldsSet(config, configType);
   }
 
   @Test
   public void shouldLoadMainnet() throws Exception {
-    final SpecConfig constants = SpecConfigLoader.loadConfig("mainnet");
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
@@ -56,8 +56,8 @@ public class SpecConfigLoaderTest {
         Constants.class
             .getClassLoader()
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml");
-    final SpecConfig constants = SpecConfigLoader.loadConfig(url.toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -68,8 +68,8 @@ public class SpecConfigLoaderTest {
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml")
             .toString();
     final String directoryPath = filePath.replace("/phase0.yaml", "");
-    final SpecConfig constants = SpecConfigLoader.loadConfig(directoryPath);
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(directoryPath);
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
@@ -77,8 +77,8 @@ public class SpecConfigLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
     final Path file = tempDir.resolve("phase0.yaml");
-    final SpecConfig constants = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -86,16 +86,16 @@ public class SpecConfigLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
     writeMainnetToFile(tempDir, "altair.yaml");
 
-    final SpecConfig constants = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
   public void shouldLoadMainnetPhase0FromDirectory(@TempDir Path tempDir) throws Exception {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
-    final SpecConfig constants = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -121,15 +121,14 @@ public class SpecConfigLoaderTest {
         Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
   }
 
-  private void writeMainnetToFile(final Path directory, final String constantsFile)
-      throws Exception {
-    final Path file = directory.resolve(constantsFile);
-    final InputStream constantsStream =
+  private void writeMainnetToFile(final Path directory, final String configFile) throws Exception {
+    final Path file = directory.resolve(configFile);
+    final InputStream configStream =
         Constants.class
             .getClassLoader()
-            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + constantsFile);
-    byte[] buffer = new byte[constantsStream.available()];
-    constantsStream.read(buffer);
+            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + configFile);
+    byte[] buffer = new byte[configStream.available()];
+    configStream.read(buffer);
     Files.write(file, buffer);
   }
 }

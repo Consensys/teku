@@ -154,11 +154,11 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   }
 
   private UInt64 getRandomSubscriptionLength(final UInt64 currentSlot) {
-    final SpecConfig constants = spec.atSlot(currentSlot).getConfig();
+    final SpecConfig config = spec.atSlot(currentSlot).getConfig();
 
     return UInt64.valueOf(
-        (constants.getEpochsPerRandomSubnetSubscription()
-                + random.nextInt(constants.getEpochsPerRandomSubnetSubscription()))
-            * constants.getSlotsPerEpoch());
+        (config.getEpochsPerRandomSubnetSubscription()
+                + random.nextInt(config.getEpochsPerRandomSubnetSubscription()))
+            * config.getSlotsPerEpoch());
   }
 }

@@ -25,54 +25,52 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_mainnet() {
-    SpecConfigAltair constantsA =
+    SpecConfigAltair configA =
         SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
-    SpecConfigAltair constantsB =
+    SpecConfigAltair configB =
         SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
 
-    assertThat(constantsA).isEqualTo(constantsB);
-    assertThat(constantsA.hashCode()).isEqualTo(constantsB.hashCode());
+    assertThat(configA).isEqualTo(configB);
+    assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
   }
 
   @Test
   public void equals_sameRandomValues() {
     SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
-    SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
-    SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 1);
+    SpecConfigAltair configA = createRandomAltairConfig(phase0, 1);
+    SpecConfigAltair configB = createRandomAltairConfig(phase0, 1);
 
-    assertThat(constantsA).isEqualTo(constantsB);
-    assertThat(constantsA.hashCode()).isEqualTo(constantsB.hashCode());
+    assertThat(configA).isEqualTo(configB);
+    assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
   }
 
   @Test
   public void equals_differentRandomValues() {
     SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
-    SpecConfigAltair constantsA = createRandomAltairConstants(phase0, 1);
-    SpecConfigAltair constantsB = createRandomAltairConstants(phase0, 2);
+    SpecConfigAltair configA = createRandomAltairConfig(phase0, 1);
+    SpecConfigAltair configB = createRandomAltairConfig(phase0, 2);
 
-    assertThat(constantsA).isNotEqualTo(constantsB);
-    assertThat(constantsA.hashCode()).isNotEqualTo(constantsB.hashCode());
+    assertThat(configA).isNotEqualTo(configB);
+    assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
   @Test
-  public void equals_phase0ConstantsDiffer() {
-    SpecConfig phase0A = TestConfigLoader.loadConstants("swift", b -> {});
-    SpecConfig phase0B =
-        TestConfigLoader.loadConstants("swift", b -> b.maxValidatorsPerCommittee(1));
+  public void equals_phase0ConfigDiffer() {
+    SpecConfig phase0A = TestConfigLoader.loadConfig("swift", b -> {});
+    SpecConfig phase0B = TestConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1));
 
-    SpecConfigAltair constantsA = createRandomAltairConstants(phase0A, 1);
-    SpecConfigAltair constantsB = createRandomAltairConstants(phase0B, 1);
+    SpecConfigAltair configA = createRandomAltairConfig(phase0A, 1);
+    SpecConfigAltair configB = createRandomAltairConfig(phase0B, 1);
 
-    assertThat(constantsA).isNotEqualTo(constantsB);
-    assertThat(constantsA.hashCode()).isNotEqualTo(constantsB.hashCode());
+    assertThat(configA).isNotEqualTo(configB);
+    assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
-  private SpecConfigAltair createRandomAltairConstants(
-      final SpecConfig phase0Constants, final int seed) {
+  private SpecConfigAltair createRandomAltairConfig(final SpecConfig phase0Config, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
     return new SpecConfigAltair(
-        phase0Constants,
+        phase0Config,
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),

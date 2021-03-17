@@ -36,11 +36,11 @@ public abstract class AbstractValidatorStatusFactoryTest {
 
   protected final Spec spec = SpecFactory.createMinimal();
   private final AbstractValidatorStatusFactory validatorStatusFactory = createFactory();
-  private final SpecConfig genesisConstants = spec.getGenesisSpecConfig();
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private UInt64 balance(final int amount) {
-    return genesisConstants.getEffectiveBalanceIncrement().times(amount);
+    return genesisConfig.getEffectiveBalanceIncrement().times(amount);
   }
 
   protected abstract AbstractValidatorStatusFactory createFactory();
@@ -234,7 +234,7 @@ public abstract class AbstractValidatorStatusFactoryTest {
   @Test
   void createTotalBalances_shouldReturnMinimumOfOneEffectiveBalanceIncrement() {
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(emptyList());
-    final UInt64 effectiveBalanceInc = genesisConstants.getEffectiveBalanceIncrement();
+    final UInt64 effectiveBalanceInc = genesisConfig.getEffectiveBalanceIncrement();
 
     assertThat(balances.getCurrentEpoch()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpoch()).isEqualTo(effectiveBalanceInc);

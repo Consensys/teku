@@ -46,7 +46,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class GenesisHandlerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final SpecConfig specConfig =
-      TestConfigLoader.loadConstants(
+      TestConfigLoader.loadConfig(
           "minimal", b -> b.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
   private Spec spec = SpecFactory.create(specConfig);
 
