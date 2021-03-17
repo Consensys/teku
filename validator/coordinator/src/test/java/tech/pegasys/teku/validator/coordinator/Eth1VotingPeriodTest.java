@@ -23,21 +23,22 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth1VotingPeriodTest {
 
-  final SpecConstants specConstants =
-      TestConstantsLoader.loadConstantsBuilder("minimal")
-          .secondsPerEth1Block(UInt64.valueOf(3))
-          .eth1FollowDistance(UInt64.valueOf(5))
-          .epochsPerEth1VotingPeriod(1)
-          .slotsPerEpoch(6)
-          .secondsPerSlot(4)
-          .build();
-  private final Spec spec = SpecFactory.create(specConstants);
+  final SpecConfig specConfig =
+      TestConfigLoader.loadConfig(
+          "minimal",
+          b ->
+              b.secondsPerEth1Block(UInt64.valueOf(3))
+                  .eth1FollowDistance(UInt64.valueOf(5))
+                  .epochsPerEth1VotingPeriod(1)
+                  .slotsPerEpoch(6)
+                  .secondsPerSlot(4));
+  private final Spec spec = SpecFactory.create(specConfig);
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(1000);
   private static final UInt64 START_SLOT = UInt64.valueOf(100);
   private static final UInt64 NEXT_VOTING_PERIOD_SLOT = UInt64.valueOf(102);

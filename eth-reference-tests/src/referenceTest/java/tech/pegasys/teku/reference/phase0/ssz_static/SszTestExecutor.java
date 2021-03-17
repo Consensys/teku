@@ -24,8 +24,8 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -36,6 +36,16 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BeaconState",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconStateSchema))
+          .put(
+              "ssz_static/SignedBeaconBlock",
+              new SszTestExecutor<>(SchemaDefinitions::getSignedBeaconBlockSchema))
+          .put(
+              "ssz_static/BeaconBlock",
+              new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockSchema))
+          .put(
+              "ssz_static/BeaconBlockBody",
+              new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockBodySchema))
+
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)
           .put("ssz_generic/bitlist", IGNORE_TESTS)

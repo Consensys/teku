@@ -16,11 +16,11 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container1;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema1;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container1;
+import tech.pegasys.teku.ssz.containers.ContainerSchema1;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     implements RpcRequest {
@@ -54,7 +54,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   }
 
   public GoodbyeMessage(UInt64 reason) {
-    super(SSZ_SCHEMA, new SszUInt64(reason));
+    super(SSZ_SCHEMA, SszUInt64.of(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)

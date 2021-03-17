@@ -15,7 +15,8 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -28,8 +29,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
@@ -40,8 +42,9 @@ import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {
@@ -49,7 +52,7 @@ class BlockProcessorUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
-  private final SpecConstants specConstants = genesisSpec.getConstants();
+  private final SpecConfig specConfig = genesisSpec.getConfig();
   private final BlockProcessorUtil blockProcessorUtil = genesisSpec.getBlockProcessorUtil();
 
   @Test
@@ -79,7 +82,7 @@ class BlockProcessorUtilTest {
     assertEquals(
         makeValidator(pubkey, withdrawalCredentials),
         postState.getValidators().get(originalValidatorRegistrySize));
-    assertEquals(amount, postState.getBalances().get(originalValidatorBalancesSize));
+    assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize));
   }
 
   @Test
@@ -109,7 +112,8 @@ class BlockProcessorUtilTest {
         originalValidatorBalancesSize,
         "A new balance was added to the validator balances, but should not have been.");
     assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
-    assertEquals(amount.times(2L), postState.getBalances().get(originalValidatorBalancesSize - 1));
+    assertEquals(
+        amount.times(2L), postState.getBalances().getElement(originalValidatorBalancesSize - 1));
   }
 
   @Test
@@ -145,8 +149,8 @@ class BlockProcessorUtilTest {
         originalValidatorBalancesSize,
         "The balance was added to the validator balances.");
     assertEquals(
-        preState.getBalances().hash_tree_root(),
-        postState.getBalances().hash_tree_root(),
+        preState.getBalances().hashTreeRoot(),
+        postState.getBalances().hashTreeRoot(),
         "The balances list has changed.");
   }
 
@@ -169,34 +173,30 @@ class BlockProcessorUtilTest {
               beaconState.setSlot(dataStructureUtil.randomUInt64());
               beaconState.setFork(
                   new Fork(
-                      specConstants.getGenesisForkVersion(),
-                      specConstants.getGenesisForkVersion(),
-                      SpecConstants.GENESIS_EPOCH));
+                      specConfig.getGenesisForkVersion(),
+                      specConfig.getGenesisForkVersion(),
+                      SpecConfig.GENESIS_EPOCH));
 
-              SSZMutableList<Validator> validatorList =
-                  SSZList.createMutable(
-                      Arrays.asList(
+              List<Validator> validatorList =
+                  new ArrayList<>(
+                      List.of(
                           dataStructureUtil.randomValidator(),
                           dataStructureUtil.randomValidator(),
-                          dataStructureUtil.randomValidator()),
-                      specConstants.getValidatorRegistryLimit(),
-                      Validator.class);
-              SSZMutableList<UInt64> balanceList =
-                  SSZList.createMutable(
-                      Arrays.asList(
+                          dataStructureUtil.randomValidator()));
+              List<UInt64> balanceList =
+                  new ArrayList<>(
+                      List.of(
                           dataStructureUtil.randomUInt64(),
                           dataStructureUtil.randomUInt64(),
-                          dataStructureUtil.randomUInt64()),
-                      specConstants.getValidatorRegistryLimit(),
-                      UInt64.class);
+                          dataStructureUtil.randomUInt64()));
 
               if (addToList) {
                 validatorList.add(knownValidator);
                 balanceList.add(amount);
               }
 
-              beaconState.getValidators().addAll(validatorList);
-              beaconState.getBalances().addAll(balanceList);
+              beaconState.getValidators().appendAll(validatorList);
+              beaconState.getBalances().appendAllElements(balanceList);
             });
   }
 
@@ -205,7 +205,7 @@ class BlockProcessorUtilTest {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
     MerkleTree depositMerkleTree =
-        new OptimizedMerkleTree(specConstants.getDepositContractTreeDepth());
+        new OptimizedMerkleTree(specConfig.getDepositContractTreeDepth());
     depositMerkleTree.add(depositData.hashTreeRoot());
 
     beaconState =
@@ -214,10 +214,11 @@ class BlockProcessorUtilTest {
                 state.setEth1_data(
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, specConstants.getMaxDeposits());
-    deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositData, UInt64.valueOf(0)));
+    SszListSchema<Deposit, ?> schema =
+        SszListSchema.create(DepositWithIndex.SSZ_SCHEMA, specConfig.getMaxDeposits());
+    SszBytes32Vector proof = Deposit.SSZ_SCHEMA.getProofSchema().of(depositMerkleTree.getProof(0));
+    SszList<Deposit> deposits =
+        schema.of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
     return beaconState.updated(state -> blockProcessorUtil.processDeposits(state, deposits));
@@ -225,13 +226,13 @@ class BlockProcessorUtilTest {
 
   private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
     return new Validator(
-        pubkey.toBytesCompressed(),
+        pubkey,
         withdrawalCredentials,
-        specConstants.getMaxEffectiveBalance(),
+        specConfig.getMaxEffectiveBalance(),
         false,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH,
-        SpecConstants.FAR_FUTURE_EPOCH);
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH,
+        SpecConfig.FAR_FUTURE_EPOCH);
   }
 }

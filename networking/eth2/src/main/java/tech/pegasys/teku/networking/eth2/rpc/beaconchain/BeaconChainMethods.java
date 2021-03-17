@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHa
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -82,6 +83,7 @@ public class BeaconChainMethods {
   }
 
   public static BeaconChainMethods create(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
@@ -93,8 +95,9 @@ public class BeaconChainMethods {
     return new BeaconChainMethods(
         createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
-        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup, rpcEncoding),
-        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding),
+        createBeaconBlocksByRoot(spec, asyncRunner, recentChainData, peerLookup, rpcEncoding),
+        createBeaconBlocksByRange(
+            spec, asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding),
         createMetadata(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -135,6 +138,7 @@ public class BeaconChainMethods {
 
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRoot(
+          final Spec spec,
           final AsyncRunner asyncRunner,
           final RecentChainData recentChainData,
           final PeerLookup peerLookup,
@@ -146,7 +150,7 @@ public class BeaconChainMethods {
         BEACON_BLOCKS_BY_ROOT,
         rpcEncoding,
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
-        SignedBeaconBlock.SSZ_SCHEMA.get(),
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
         true,
         beaconBlocksByRootHandler,
         peerLookup);
@@ -154,6 +158,7 @@ public class BeaconChainMethods {
 
   private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRange(
+          final Spec spec,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
           final PeerLookup peerLookup,
@@ -167,7 +172,7 @@ public class BeaconChainMethods {
         BEACON_BLOCKS_BY_RANGE,
         rpcEncoding,
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA,
-        SignedBeaconBlock.SSZ_SCHEMA.get(),
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
         true,
         beaconBlocksByRangeHandler,
         peerLookup);

@@ -33,8 +33,8 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -47,9 +47,8 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  final SpecConstants specConstants =
-      TestConstantsLoader.loadConstantsBuilder("minimal").slotsPerEpoch(4).build();
-  private final Spec spec = SpecFactory.create(specConstants);
+  final SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.slotsPerEpoch(4));
+  private final Spec spec = SpecFactory.create(specConfig);
   protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater =

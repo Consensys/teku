@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.SszList;
 
-public interface VerifiedBlockOperationsListener<T> {
-  void onOperationsFromBlock(SSZList<T> operations);
+public interface VerifiedBlockOperationsListener<T extends SszData> {
+  void onOperationsFromBlock(SszList<T> operations);
 }

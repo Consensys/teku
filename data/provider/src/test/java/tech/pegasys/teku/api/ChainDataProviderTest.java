@@ -52,10 +52,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -78,12 +78,12 @@ public class ChainDataProviderTest {
   private UInt64 actualBalance;
   private final DataStructureUtil data = new DataStructureUtil();
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConstants specConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig specConfig = spec.getGenesisSpecConfig();
 
   @BeforeEach
   public void setup() {
-    slot = UInt64.valueOf(specConstants.getSlotsPerEpoch() * 3);
-    actualBalance = specConstants.getMaxEffectiveBalance().plus(100000);
+    slot = UInt64.valueOf(specConfig.getSlotsPerEpoch() * 3);
+    actualBalance = specConfig.getMaxEffectiveBalance().plus(100000);
     storageSystem.chainUpdater().initializeGenesis(true, actualBalance);
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
@@ -136,7 +136,7 @@ public class ChainDataProviderTest {
   public void getGenesisData_shouldReturnValueIfStoreAvailable() {
     final UInt64 genesisTime = beaconStateInternal.getGenesis_time();
     final Bytes32 genesisValidatorsRoot = beaconStateInternal.getGenesis_validators_root();
-    final Bytes4 genesisForkVersion = spec.atEpoch(ZERO).getConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.atEpoch(ZERO).getConfig().getGenesisForkVersion();
 
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
@@ -317,7 +317,7 @@ public class ChainDataProviderTest {
         data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final String key = internalState.getValidators().get(12).getPubkey().toString();
+    final String key = internalState.getValidators().get(12).getPubkeyBytes().toString();
     final String missingKey = data.randomPublicKey().toString();
     List<String> pubkeys =
         provider.getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())
@@ -395,7 +395,7 @@ public class ChainDataProviderTest {
                 .getCommitteesFromState(
                     internalState, Optional.empty(), Optional.empty(), Optional.empty())
                 .size())
-        .isEqualTo(specConstants.getSlotsPerEpoch());
+        .isEqualTo(specConfig.getSlotsPerEpoch());
   }
 
   @Test

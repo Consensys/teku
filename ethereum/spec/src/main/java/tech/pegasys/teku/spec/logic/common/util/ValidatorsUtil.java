@@ -21,20 +21,20 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class ValidatorsUtil {
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
 
-  public ValidatorsUtil(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+  public ValidatorsUtil(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
   }
 
   /**
@@ -63,7 +63,7 @@ public class ValidatorsUtil {
                 .getActivation_eligibility_epoch()
                 .compareTo(state.getFinalized_checkpoint().getEpoch())
             <= 0
-        && validator.getActivation_epoch().equals(SpecConstants.FAR_FUTURE_EPOCH);
+        && validator.getActivation_epoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
@@ -77,9 +77,7 @@ public class ValidatorsUtil {
             .get(
                 validatorIndex,
                 i -> {
-                  BLSPublicKey pubKey =
-                      BLSPublicKey.fromBytesCompressed(
-                          state.getValidators().get(i.intValue()).getPubkey());
+                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
 
                   // eagerly pre-cache pubKey => validatorIndex mapping
                   BeaconStateCache.getTransitionCaches(state)
@@ -110,7 +108,7 @@ public class ValidatorsUtil {
         .get(
             epoch,
             e -> {
-              SSZList<Validator> validators = state.getValidators();
+              SszList<Validator> validators = state.getValidators();
               return IntStream.range(0, validators.size())
                   .filter(index -> isActiveValidator(validators.get(index), epoch))
                   .boxed()
@@ -123,7 +121,7 @@ public class ValidatorsUtil {
   }
 
   private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
-    return stateEpoch.plus(specConstants.getMaxSeedLookahead());
+    return stateEpoch.plus(specConfig.getMaxSeedLookahead());
   }
 
   @SuppressWarnings("DoNotReturnNullOptionals")
@@ -143,7 +141,9 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   public void decreaseBalance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).minusMinZero(delta));
+    state
+        .getBalances()
+        .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
   }
 
   /**
@@ -156,7 +156,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
   public void increaseBalance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().set(index, state.getBalances().get(index).plus(delta));
+    state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
   }
 
   /**

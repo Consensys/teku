@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
 
@@ -46,7 +46,7 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
   }
 
   public ForkData(final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
-    super(SSZ_SCHEMA, new SszBytes4(currentVersion), new SszBytes32(genesisValidatorsRoot));
+    super(SSZ_SCHEMA, SszBytes4.of(currentVersion), SszBytes32.of(genesisValidatorsRoot));
   }
 
   public Bytes4 getCurrentVersion() {

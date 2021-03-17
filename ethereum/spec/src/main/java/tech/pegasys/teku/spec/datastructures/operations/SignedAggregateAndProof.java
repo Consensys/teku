@@ -14,25 +14,23 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SignedAggregateAndProof
-    extends Container2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
+    extends Container2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {
 
   public static class SignedAggregateAndProofSchema
-      extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszVector<SszByte>> {
+      extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {
 
     public SignedAggregateAndProofSchema() {
       super(
           "SignedAggregateAndProof",
           namedSchema("message", AggregateAndProof.SSZ_SCHEMA),
-          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
+          namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
 
     @Override
@@ -44,15 +42,12 @@ public class SignedAggregateAndProof
   public static final SignedAggregateAndProofSchema SSZ_SCHEMA =
       new SignedAggregateAndProofSchema();
 
-  private BLSSignature signatureCache;
-
   private SignedAggregateAndProof(SignedAggregateAndProofSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
-    super(SSZ_SCHEMA, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
-    signatureCache = signature;
+    super(SSZ_SCHEMA, message, new SszSignature(signature));
   }
 
   public AggregateAndProof getMessage() {
@@ -60,9 +55,6 @@ public class SignedAggregateAndProof
   }
 
   public BLSSignature getSignature() {
-    if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
-    }
-    return signatureCache;
+    return getField1().getSignature();
   }
 }

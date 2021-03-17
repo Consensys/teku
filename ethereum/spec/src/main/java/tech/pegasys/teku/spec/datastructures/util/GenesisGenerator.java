@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -38,8 +37,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
+import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
@@ -57,8 +56,8 @@ public class GenesisGenerator {
 
   public GenesisGenerator(final SchemaDefinitions schemaDefinitions) {
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
-
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hashTreeRoot();
+    Bytes32 latestBlockRoot =
+        schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
     final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
@@ -101,7 +100,7 @@ public class GenesisGenerator {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
-    UInt64 balance = state.getBalances().get(index);
+    UInt64 balance = state.getBalances().getElement(index);
     UInt64 effective_balance =
         balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
 
@@ -116,7 +115,7 @@ public class GenesisGenerator {
 
     Validator modifiedValidator =
         new Validator(
-            validator.getPubkey(),
+            validator.getPubkeyBytes(),
             validator.getWithdrawal_credentials(),
             effective_balance,
             validator.isSlashed(),
@@ -149,12 +148,12 @@ public class GenesisGenerator {
     calculateRandaoMixes();
     calculateDepositRoot();
     final BeaconState readOnlyState = state.commitChanges();
-    state.setGenesis_validators_root(readOnlyState.getValidators().hash_tree_root());
+    state.setGenesis_validators_root(readOnlyState.getValidators().hashTreeRoot());
   }
 
   private void calculateRandaoMixes() {
     for (int i = 0; i < state.getRandao_mixes().size(); i++) {
-      state.getRandao_mixes().set(i, state.getEth1_data().getBlock_hash());
+      state.getRandao_mixes().setElement(i, state.getEth1_data().getBlock_hash());
     }
   }
 

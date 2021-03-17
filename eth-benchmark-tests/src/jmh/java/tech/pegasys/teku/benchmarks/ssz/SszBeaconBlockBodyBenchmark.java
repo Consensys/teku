@@ -14,31 +14,39 @@
 package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {
 
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1);
+  private static final Spec spec = SpecFactory.createMinimal();
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
   private static final BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
 
   @Override
   protected BeaconBlockBody createContainer() {
-    return new BeaconBlockBody(
-        beaconBlockBody.getRandao_reveal(),
-        beaconBlockBody.getEth1_data(),
-        beaconBlockBody.getGraffiti(),
-        beaconBlockBody.getProposer_slashings(),
-        beaconBlockBody.getAttester_slashings(),
-        beaconBlockBody.getAttestations(),
-        beaconBlockBody.getDeposits(),
-        beaconBlockBody.getVoluntary_exits());
+    return spec.getGenesisSpec()
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .createBlockBody(
+            beaconBlockBody.getRandao_reveal(),
+            beaconBlockBody.getEth1_data(),
+            beaconBlockBody.getGraffiti(),
+            beaconBlockBody.getProposer_slashings(),
+            beaconBlockBody.getAttester_slashings(),
+            beaconBlockBody.getAttestations(),
+            beaconBlockBody.getDeposits(),
+            beaconBlockBody.getVoluntary_exits());
   }
 
   @Override
   protected SszSchema<BeaconBlockBody> getContainerType() {
-    return BeaconBlockBody.getSszSchema();
+    return SszSchema.as(
+        BeaconBlockBody.class,
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema());
   }
 
   @Override

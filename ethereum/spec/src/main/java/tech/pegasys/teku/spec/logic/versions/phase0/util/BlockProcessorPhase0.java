@@ -20,7 +20,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -33,22 +33,22 @@ import tech.pegasys.teku.spec.logic.common.util.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
   public BlockProcessorPhase0(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    super(specConstants, beaconStateUtil, attestationUtil, validatorsUtil);
+    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil);
   }
 
   @Override
   public void processAttestationsNoValidation(
-      MutableBeaconState genericState, SSZList<Attestation> attestations)
+      MutableBeaconState genericState, SszList<Attestation> attestations)
       throws BlockProcessingException {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
 
@@ -78,9 +78,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
                 UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
         if (data.getTarget().getEpoch().equals(beaconStateUtil.getCurrentEpoch(state))) {
-          state.getCurrent_epoch_attestations().add(pendingAttestation);
+          state.getCurrent_epoch_attestations().append(pendingAttestation);
         } else {
-          state.getPrevious_epoch_attestations().add(pendingAttestation);
+          state.getPrevious_epoch_attestations().append(pendingAttestation);
         }
       }
     } catch (IllegalArgumentException e) {

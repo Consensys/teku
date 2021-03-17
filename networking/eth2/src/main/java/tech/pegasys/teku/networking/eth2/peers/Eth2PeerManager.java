@@ -66,6 +66,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final Duration eth2StatusUpdateInterval;
 
   Eth2PeerManager(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
@@ -82,6 +83,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
+            spec,
             asyncRunner,
             this,
             combinedChainDataClient,
@@ -117,6 +119,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     final CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(recentChainData, historicalChainData, spec);
     return new Eth2PeerManager(
+        spec,
         asyncRunner,
         combinedChainDataClient,
         recentChainData,

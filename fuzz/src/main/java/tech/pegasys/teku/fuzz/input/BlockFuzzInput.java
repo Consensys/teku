@@ -17,18 +17,20 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, SignedBeaconBlock> {
 
   public static ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> createSchema(
       final SpecVersion spec) {
+    final SchemaDefinitions schemaDefinitions = spec.getSchemaDefinitions();
     return ContainerSchema2.create(
-        SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        SignedBeaconBlock.SSZ_SCHEMA.get(),
+        SszSchema.as(BeaconState.class, schemaDefinitions.getBeaconStateSchema()),
+        schemaDefinitions.getSignedBeaconBlockSchema(),
         BlockFuzzInput::new);
   }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -25,17 +24,18 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.SszContainer;
-import tech.pegasys.teku.ssz.backing.SszMutableContainer;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.view.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.SszContainer;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszMutableContainer;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public interface BeaconState extends SszContainer, ValidatorStats {
 
@@ -70,22 +70,19 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return getAny(fieldIndex);
   }
 
-  default SSZVector<Bytes32> getBlock_roots() {
+  default SszBytes32Vector getBlock_roots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BLOCK_ROOTS.name());
-    return new SSZBackingVector<>(
-        Bytes32.class, getAny(fieldIndex), SszBytes32::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
-  default SSZVector<Bytes32> getState_roots() {
+  default SszBytes32Vector getState_roots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.STATE_ROOTS.name());
-    return new SSZBackingVector<>(
-        Bytes32.class, getAny(fieldIndex), SszBytes32::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
-  default SSZList<Bytes32> getHistorical_roots() {
+  default SszPrimitiveList<Bytes32, SszBytes32> getHistorical_roots() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS.name());
-    return new SSZBackingList<>(
-        Bytes32.class, getAny(fieldIndex), SszBytes32::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
   // Eth1
@@ -94,10 +91,9 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return getAny(fieldIndex);
   }
 
-  default SSZList<Eth1Data> getEth1_data_votes() {
+  default SszList<Eth1Data> getEth1_data_votes() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES.name());
-    return new SSZBackingList<>(
-        Eth1Data.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
   default UInt64 getEth1_deposit_index() {
@@ -106,29 +102,25 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   }
 
   // Registry
-  default SSZList<Validator> getValidators() {
+  default SszList<Validator> getValidators() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.VALIDATORS.name());
-    return new SSZBackingList<>(
-        Validator.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
-  default SSZList<UInt64> getBalances() {
+  default SszUInt64List getBalances() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BALANCES.name());
-    return new SSZBackingList<>(
-        UInt64.class, getAny(fieldIndex), SszUInt64::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
-  default SSZVector<Bytes32> getRandao_mixes() {
+  default SszBytes32Vector getRandao_mixes() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.RANDAO_MIXES.name());
-    return new SSZBackingVector<>(
-        Bytes32.class, getAny(fieldIndex), SszBytes32::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
   // Slashings
-  default SSZVector<UInt64> getSlashings() {
+  default SszPrimitiveVector<UInt64, SszUInt64> getSlashings() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLASHINGS.name());
-    return new SSZBackingVector<>(
-        UInt64.class, getAny(fieldIndex), SszUInt64::new, AbstractSszPrimitive::get);
+    return getAny(fieldIndex);
   }
 
   // Finality
@@ -172,6 +164,10 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   }
 
   default Optional<BeaconStatePhase0> toVersionPhase0() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconStateAltair> toVersionAltair() {
     return Optional.empty();
   }
 }

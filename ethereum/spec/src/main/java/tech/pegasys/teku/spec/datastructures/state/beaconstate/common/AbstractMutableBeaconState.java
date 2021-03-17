@@ -15,19 +15,14 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.cache.IntCache;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszContainerImpl;
-import tech.pegasys.teku.ssz.backing.view.SszMutableContainerImpl;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.cache.IntCache;
+import tech.pegasys.teku.ssz.impl.SszContainerImpl;
+import tech.pegasys.teku.ssz.impl.SszMutableContainerImpl;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public abstract class AbstractMutableBeaconState<
         T extends SszContainerImpl & BeaconState & BeaconStateCache>
@@ -35,14 +30,6 @@ public abstract class AbstractMutableBeaconState<
 
   private final TransitionCaches transitionCaches;
   private final boolean builder;
-
-  private SSZMutableList<Validator> validators;
-  private SSZMutableList<UInt64> balances;
-  private SSZMutableVector<Bytes32> blockRoots;
-  private SSZMutableVector<Bytes32> stateRoots;
-  private SSZMutableList<Bytes32> historicalRoots;
-  private SSZMutableList<Eth1Data> eth1DataVotes;
-  private SSZMutableVector<Bytes32> randaoMixes;
 
   protected AbstractMutableBeaconState(T backingImmutableView) {
     this(backingImmutableView, false);
@@ -82,53 +69,6 @@ public abstract class AbstractMutableBeaconState<
   @Override
   public MutableBeaconState createWritableCopy() {
     return (MutableBeaconState) super.createWritableCopy();
-  }
-
-  @Override
-  public SSZMutableList<Validator> getValidators() {
-    return validators != null
-        ? validators
-        : (validators = MutableBeaconState.super.getValidators());
-  }
-
-  @Override
-  public SSZMutableList<UInt64> getBalances() {
-    return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getBlock_roots() {
-    return blockRoots != null
-        ? blockRoots
-        : (blockRoots = MutableBeaconState.super.getBlock_roots());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getState_roots() {
-    return stateRoots != null
-        ? stateRoots
-        : (stateRoots = MutableBeaconState.super.getState_roots());
-  }
-
-  @Override
-  public SSZMutableList<Bytes32> getHistorical_roots() {
-    return historicalRoots != null
-        ? historicalRoots
-        : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZMutableList<Eth1Data> getEth1_data_votes() {
-    return eth1DataVotes != null
-        ? eth1DataVotes
-        : (eth1DataVotes = MutableBeaconState.super.getEth1_data_votes());
-  }
-
-  @Override
-  public SSZMutableVector<Bytes32> getRandao_mixes() {
-    return randaoMixes != null
-        ? randaoMixes
-        : (randaoMixes = MutableBeaconState.super.getRandao_mixes());
   }
 
   @Override

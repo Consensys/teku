@@ -46,7 +46,7 @@ class WeakSubjectivityInitializer {
           try {
             STATUS_LOG.loadingInitialStateResource(stateResource);
             final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
-            final AnchorPoint anchor = AnchorPoint.fromInitialState(state);
+            final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
             STATUS_LOG.loadedInitialStateResource(
                 state.hashTreeRoot(),
                 anchor.getRoot(),

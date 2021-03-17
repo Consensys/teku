@@ -22,8 +22,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -42,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class IsVariableTest {
   private static final Spec SPEC = SpecFactory.createMinimal();
@@ -50,8 +48,8 @@ public class IsVariableTest {
 
   static Stream<Arguments> variableSizeTypes() {
     return Stream.of(
-        Arguments.of(BeaconBlockBody.SSZ_SCHEMA.get()),
-        Arguments.of(BeaconBlock.SSZ_SCHEMA.get()),
+        Arguments.of(SCHEMA_DEFINITIONS.getBeaconBlockBodySchema()),
+        Arguments.of(SCHEMA_DEFINITIONS.getBeaconBlockSchema()),
         Arguments.of(Attestation.SSZ_SCHEMA),
         Arguments.of(AttesterSlashing.SSZ_SCHEMA),
         Arguments.of(IndexedAttestation.SSZ_SCHEMA),

@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
@@ -28,22 +28,27 @@ public class BeaconStateSchemaPhase0Test
 
   @Override
   protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
-      final SpecConstants specConstants) {
-    return BeaconStateSchemaPhase0.create(specConstants);
+      final SpecConfig specConfig) {
+    return BeaconStateSchemaPhase0.create(specConfig);
+  }
+
+  @Override
+  protected BeaconStatePhase0 randomState() {
+    return dataStructureUtil.stateBuilderPhase0().build();
   }
 
   @Test
-  public void changeSpecConstantsTest_checkGenesisFields() {
+  public void changeSpecConfigTest_checkPhase0Fields() {
     final Spec standardSpec = SpecFactory.createMinimal();
-    final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal").maxAttestations(123).build();
+    final SpecConfig modifiedConfig =
+        TestConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123));
 
-    BeaconStatePhase0 s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconStatePhase0 s1 = getSchema(modifiedConfig).createEmpty();
+    BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
-    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
-    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
+    assertThat(s1.getPrevious_epoch_attestations().getSchema())
+        .isNotEqualTo(s2.getPrevious_epoch_attestations().getSchema());
+    assertThat(s1.getCurrent_epoch_attestations().getSchema())
+        .isNotEqualTo(s2.getCurrent_epoch_attestations().getSchema());
   }
 }

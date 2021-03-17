@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkInfo {
   private final Fork fork;

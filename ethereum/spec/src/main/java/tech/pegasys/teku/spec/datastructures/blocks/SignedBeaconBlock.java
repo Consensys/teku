@@ -17,57 +17,29 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
-import tech.pegasys.teku.util.config.SpecDependent;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class SignedBeaconBlock
-    extends Container2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>>
+public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements BeaconBlockSummary {
 
-  public static class SignedBeaconBlockSchema
-      extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszVector<SszByte>> {
-
-    public SignedBeaconBlockSchema() {
-      super(
-          "SignedBeaconBlock",
-          namedSchema("message", BeaconBlock.SSZ_SCHEMA.get()),
-          namedSchema("signature", SszComplexSchemas.BYTES_96_SCHEMA));
-    }
-
-    @Override
-    public SignedBeaconBlock createFromBackingNode(TreeNode node) {
-      return new SignedBeaconBlock(this, node);
-    }
-  }
-
-  public static SignedBeaconBlockSchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
-
-  public static final SpecDependent<SignedBeaconBlockSchema> SSZ_SCHEMA =
-      SpecDependent.of(SignedBeaconBlockSchema::new);
-
-  private BLSSignature signatureCache;
-
-  private SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
+  SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  @Deprecated
-  public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
-    this(SSZ_SCHEMA.get(), message, signature);
+  private SignedBeaconBlock(
+      final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
+    super(type, message, new SszSignature(signature));
   }
 
-  public SignedBeaconBlock(
-      final SignedBeaconBlockSchema type, final BeaconBlock message, final BLSSignature signature) {
-    super(type, message, SszUtils.toSszByteVector(signature.toBytesCompressed()));
-    this.signatureCache = signature;
+  public static SignedBeaconBlock create(
+      final Spec spec, final BeaconBlock message, final BLSSignature signature) {
+    return new SignedBeaconBlock(
+        spec.atSlot(message.getSlot()).getSchemaDefinitions().getSignedBeaconBlockSchema(),
+        message,
+        signature);
   }
 
   public BeaconBlock getMessage() {
@@ -75,10 +47,7 @@ public class SignedBeaconBlock
   }
 
   public BLSSignature getSignature() {
-    if (signatureCache == null) {
-      signatureCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField1()));
-    }
-    return signatureCache;
+    return getField1().getSignature();
   }
 
   @Override

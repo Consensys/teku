@@ -24,11 +24,11 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszMutableList;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 
 @State(Scope.Thread)
 public class ListBenchmark {
@@ -50,7 +50,7 @@ public class ListBenchmark {
 
     SszMutableList<SszUInt64> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
-      l2w.append(new SszUInt64(UInt64.valueOf(1121212)));
+      l2w.append(SszUInt64.of(UInt64.valueOf(1121212)));
     }
     l2r = l2w.commitChanges();
 
@@ -81,7 +81,7 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void append(Blackhole bh) {
-    l1w.append(new SszUInt64(UInt64.valueOf(1121212)));
+    l1w.append(SszUInt64.of(UInt64.valueOf(1121212)));
   }
 
   @Benchmark
@@ -89,7 +89,7 @@ public class ListBenchmark {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
     SszMutableList<SszUInt64> l2w = l2r.createWritableCopy();
-    l2w.set(12345, new SszUInt64(UInt64.valueOf(77777)));
+    l2w.set(12345, SszUInt64.of(UInt64.valueOf(77777)));
     SszList<SszUInt64> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }

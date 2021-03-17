@@ -20,8 +20,8 @@ import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcMethod {
@@ -62,14 +62,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
 
   public String getMultistreamId() {
     return methodMultistreamId;
-  }
-
-  public SszSchema<TRequest> getRequestType() {
-    return requestType;
-  }
-
-  public SszSchema<TResponse> getResponseType() {
-    return responseType;
   }
 
   public RpcEncoding getEncoding() {

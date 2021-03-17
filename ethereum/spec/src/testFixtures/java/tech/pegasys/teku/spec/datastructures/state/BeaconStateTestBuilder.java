@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static tech.pegasys.teku.spec.constants.SpecConstants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class BeaconStateTestBuilder {
   private final List<Validator> validators = new ArrayList<>();
@@ -73,8 +73,8 @@ public class BeaconStateTestBuilder {
             state -> {
               state.setSlot(slot);
               state.setFork(fork);
-              state.getValidators().addAll(validators);
-              state.getBalances().addAll(balances);
+              state.getValidators().appendAll(validators);
+              state.getBalances().appendAllElements(balances);
             });
   }
 }

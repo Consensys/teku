@@ -23,18 +23,18 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public class BeaconStateInvariants {
   // Schemas
-  static final SszSchema<SszPrimitives.SszUInt64> GENESIS_TIME_SCHEMA =
-      SszPrimitiveSchemas.UINT64_SCHEMA;
-  static final SszSchema<SszPrimitives.SszBytes32> GENESIS_VALIDATORS_ROOT_SCHEMA =
+  static final SszSchema<SszUInt64> GENESIS_TIME_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
+  static final SszSchema<SszBytes32> GENESIS_VALIDATORS_ROOT_SCHEMA =
       SszPrimitiveSchemas.BYTES32_SCHEMA;
-  static final SszSchema<SszPrimitives.SszUInt64> SLOT_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
+  static final SszSchema<SszUInt64> SLOT_SCHEMA = SszPrimitiveSchemas.UINT64_SCHEMA;
 
   // Fields
   static SszField GENESIS_TIME_FIELD =
@@ -64,8 +64,9 @@ public class BeaconStateInvariants {
     checkState(SLOT_SCHEMA.isFixedSize(), "Expected slot field to be a fixed size");
 
     final int offset =
-        GENESIS_TIME_SCHEMA.getFixedPartSize() + GENESIS_VALIDATORS_ROOT_SCHEMA.getFixedPartSize();
-    final int size = SLOT_SCHEMA.getFixedPartSize();
+        GENESIS_TIME_SCHEMA.getSszFixedPartSize()
+            + GENESIS_VALIDATORS_ROOT_SCHEMA.getSszFixedPartSize();
+    final int size = SLOT_SCHEMA.getSszFixedPartSize();
 
     // Extract slot data
     final Bytes slotData = bytes.slice(offset, size);

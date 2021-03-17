@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ErrorConditionsIntegrationTest {
 
@@ -56,8 +56,7 @@ public class ErrorConditionsIntegrationTest {
         ((ActiveEth2P2PNetwork) network1).getBeaconChainMethods().status();
     final SafeFuture<StatusMessage> response =
         peer.requestSingleItem(
-            status,
-            new InvalidStatusMessage(spec.getGenesisSpecConstants().getGenesisForkVersion()));
+            status, new InvalidStatusMessage(spec.getGenesisSpecConfig().getGenesisForkVersion()));
 
     final RpcException expected = new LengthOutOfBoundsException();
 

@@ -17,14 +17,14 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container5;
+import tech.pegasys.teku.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StatusMessage
@@ -65,11 +65,11 @@ public class StatusMessage
       UInt64 headSlot) {
     super(
         SSZ_SCHEMA,
-        new SszBytes4(forkDigest),
-        new SszBytes32(finalizedRoot),
-        new SszUInt64(finalizedEpoch),
-        new SszBytes32(headRoot),
-        new SszUInt64(headSlot));
+        SszBytes4.of(forkDigest),
+        SszBytes32.of(finalizedRoot),
+        SszUInt64.of(finalizedEpoch),
+        SszBytes32.of(headRoot),
+        SszUInt64.of(headSlot));
   }
 
   public static StatusMessage createPreGenesisStatus() {

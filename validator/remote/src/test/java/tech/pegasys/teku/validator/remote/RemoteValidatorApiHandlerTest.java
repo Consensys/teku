@@ -27,7 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
@@ -53,6 +53,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -74,7 +76,8 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
 class RemoteValidatorApiHandlerTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SchemaObjectsTestFixture schemaObjects = new SchemaObjectsTestFixture();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
@@ -84,7 +87,7 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(apiClient, asyncRunner);
+    apiHandler = new RemoteValidatorApiHandler(spec, apiClient, asyncRunner);
   }
 
   @Test
@@ -442,7 +445,8 @@ class RemoteValidatorApiHandlerTest {
   public void sendSignedBlock_InvokeApiWithCorrectRequest() {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
     final BLSSignature signature = dataStructureUtil.randomSignature();
-    final SignedBeaconBlock signedBeaconBlock = new SignedBeaconBlock(beaconBlock, signature);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
     final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =

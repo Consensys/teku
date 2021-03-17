@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +39,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -55,8 +55,8 @@ public class BeaconStateUtilTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateUtil beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
-  private final SpecConstants specConstants = spec.atSlot(UInt64.ZERO).getConstants();
-  private final long SLOTS_PER_EPOCH = specConstants.getSlotsPerEpoch();
+  private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
+  private final long SLOTS_PER_EPOCH = specConfig.getSlotsPerEpoch();
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
@@ -74,7 +74,7 @@ public class BeaconStateUtilTest {
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
     BeaconState beaconState =
         createBeaconState()
-            .updated(state -> state.setSlot(GENESIS_SLOT.plus(specConstants.getSlotsPerEpoch())));
+            .updated(state -> state.setSlot(GENESIS_SLOT.plus(specConfig.getSlotsPerEpoch())));
     assertEquals(GENESIS_EPOCH, beaconStateUtil.getPreviousEpoch(beaconState));
   }
 
@@ -82,8 +82,7 @@ public class BeaconStateUtilTest {
   void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
     BeaconState beaconState =
         createBeaconState()
-            .updated(
-                state -> state.setSlot(GENESIS_SLOT.plus(2L * specConstants.getSlotsPerEpoch())));
+            .updated(state -> state.setSlot(GENESIS_SLOT.plus(2L * specConfig.getSlotsPerEpoch())));
     assertEquals(GENESIS_EPOCH.increment(), beaconStateUtil.getPreviousEpoch(beaconState));
   }
 
@@ -91,14 +90,14 @@ public class BeaconStateUtilTest {
   void getPreviousDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT);
     assertThat(beaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(spec, state).getRoot());
   }
 
   @Test
   void getPreviousDutyDependentRoot_returnsGenesisBlockDuringEpochZero() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT.plus(3));
     assertThat(beaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -106,7 +105,7 @@ public class BeaconStateUtilTest {
     final BeaconState state =
         dataStructureUtil.randomBeaconState(GENESIS_SLOT.plus(SLOTS_PER_EPOCH).plus(3));
     assertThat(beaconStateUtil.getPreviousDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -117,7 +116,7 @@ public class BeaconStateUtilTest {
         .isEqualTo(
             state
                 .getBlock_roots()
-                .get((int) GENESIS_SLOT.plus(SLOTS_PER_EPOCH).decrement().longValue()));
+                .getElement((int) GENESIS_SLOT.plus(SLOTS_PER_EPOCH).decrement().longValue()));
   }
 
   @Test
@@ -140,14 +139,14 @@ public class BeaconStateUtilTest {
   void getCurrentDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT);
     assertThat(beaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(BeaconBlock.fromGenesisState(state).getRoot());
+        .isEqualTo(BeaconBlock.fromGenesisState(spec, state).getRoot());
   }
 
   @Test
   void getCurrentDutyDependentRoot_returnsGenesisBlockDuringEpochZero() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT.plus(3));
     assertThat(beaconStateUtil.getCurrentDutyDependentRoot(state))
-        .isEqualTo(state.getBlock_roots().get(0));
+        .isEqualTo(state.getBlock_roots().getElement(0));
   }
 
   @Test
@@ -158,12 +157,12 @@ public class BeaconStateUtilTest {
         .isEqualTo(
             state
                 .getBlock_roots()
-                .get((int) GENESIS_SLOT.plus(SLOTS_PER_EPOCH).decrement().longValue()));
+                .getElement((int) GENESIS_SLOT.plus(SLOTS_PER_EPOCH).decrement().longValue()));
   }
 
   private BeaconState createBeaconState() {
     return new BeaconStateTestBuilder(dataStructureUtil)
-        .forkVersion(specConstants.getGenesisForkVersion())
+        .forkVersion(specConfig.getGenesisForkVersion())
         .validator(dataStructureUtil.randomValidator())
         .validator(dataStructureUtil.randomValidator())
         .validator(dataStructureUtil.randomValidator())
@@ -178,11 +177,11 @@ public class BeaconStateUtilTest {
 
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
-    for (UInt64 balance : state.getBalances()) {
-      if (balance.isLessThan(specConstants.getMaxEffectiveBalance())) {
+    for (UInt64 balance : state.getBalances().asListUnboxed()) {
+      if (balance.isLessThan(specConfig.getMaxEffectiveBalance())) {
         expectedBalance = expectedBalance.plus(balance);
       } else {
-        expectedBalance = expectedBalance.plus(specConstants.getMaxEffectiveBalance());
+        expectedBalance = expectedBalance.plus(specConfig.getMaxEffectiveBalance());
       }
     }
 
@@ -202,7 +201,7 @@ public class BeaconStateUtilTest {
             depositData.getAmount());
     Bytes32 domain =
         beaconStateUtil.getDomain(
-            createBeaconState(), specConstants.getDomainDeposit(), GENESIS_EPOCH);
+            createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
     Bytes signing_root = beaconStateUtil.computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
@@ -355,10 +354,10 @@ public class BeaconStateUtilTest {
     final BeaconStateTestBuilder stateBuilder =
         new BeaconStateTestBuilder(dataStructureUtil).slot(5);
     for (int i = 0;
-        i < specConstants.getSlotsPerEpoch() * specConstants.getTargetAggregatorsPerCommittee() * 2;
+        i < specConfig.getSlotsPerEpoch() * specConfig.getTargetAggregatorsPerCommittee() * 2;
         i++) {
       stateBuilder.activeValidator(
-          UInt64.valueOf(i).times(specConstants.getEffectiveBalanceIncrement()));
+          UInt64.valueOf(i).times(specConfig.getEffectiveBalanceIncrement()));
     }
     final BeaconState state = stateBuilder.build();
     assertThat(beaconStateUtil.getCommitteeCountPerSlot(state, UInt64.ZERO))
@@ -366,7 +365,7 @@ public class BeaconStateUtilTest {
 
     // Randao seed is fixed for state so we know the committee allocations will be the same
     assertThat(beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.valueOf(0)))
-        .isEqualTo(UInt64.valueOf(4394).times(specConstants.getEffectiveBalanceIncrement()));
+        .isEqualTo(UInt64.valueOf(4394).times(specConfig.getEffectiveBalanceIncrement()));
 
     assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
   }
@@ -398,7 +397,7 @@ public class BeaconStateUtilTest {
   private void assertAttestersBalancesSumToTotalBalancesOverEpoch(final BeaconState state) {
     final UInt64 expectedTotalBalance = beaconStateUtil.getTotalActiveBalance(state);
     UInt64 actualTotalBalance = UInt64.ZERO;
-    for (int i = 0; i < specConstants.getSlotsPerEpoch(); i++) {
+    for (int i = 0; i < specConfig.getSlotsPerEpoch(); i++) {
       actualTotalBalance =
           actualTotalBalance.plus(
               beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.valueOf(i)));
@@ -434,9 +433,9 @@ public class BeaconStateUtilTest {
     assertEquals(2, state.getValidators().size());
     assertEquals(
         deposits.get(0).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(0).getPubkey());
+        state.getValidators().get(0).getPubkeyBytes());
     assertEquals(
         deposits.get(2).getData().getPubkey().toBytesCompressed(),
-        state.getValidators().get(1).getPubkey());
+        state.getValidators().get(1).getPubkeyBytes());
   }
 }

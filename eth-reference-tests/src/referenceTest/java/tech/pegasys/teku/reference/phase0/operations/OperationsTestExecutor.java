@@ -23,7 +23,7 @@ import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.backing.SszData;
+import tech.pegasys.teku.ssz.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
@@ -95,7 +95,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
       assertOperationSuccessful(processor, testDefinition, preState, dataPath);
     } else {
-      assertOperationInvalid(processor, preState, dataPath);
+      assertOperationInvalid(testDefinition.getSpec(), processor, preState, dataPath);
     }
   }
 
@@ -106,24 +106,34 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final Path dataPath)
       throws Exception {
     final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILE);
-    final BeaconState result = applyOperation(processor, preState, dataPath);
+    final BeaconState result =
+        applyOperation(testDefinition.getSpec(), processor, preState, dataPath);
     assertThat(result).isEqualTo(expectedState);
   }
 
   private void assertOperationInvalid(
-      final OperationProcessor processor, final BeaconState preState, final Path dataPath) {
-    assertThatThrownBy(() -> applyOperation(processor, preState, dataPath))
+      final Spec spec,
+      final OperationProcessor processor,
+      final BeaconState preState,
+      final Path dataPath) {
+    assertThatThrownBy(() -> applyOperation(spec, processor, preState, dataPath))
         .isInstanceOf(BlockProcessingException.class);
   }
 
   private BeaconState applyOperation(
-      final OperationProcessor processor, final BeaconState preState, final Path dataPath)
+      final Spec spec,
+      final OperationProcessor processor,
+      final BeaconState preState,
+      final Path dataPath)
       throws Exception {
-    return preState.updated(state -> processOperation(state, dataPath, processor));
+    return preState.updated(state -> processOperation(spec, state, dataPath, processor));
   }
 
   private void processOperation(
-      final MutableBeaconState state, final Path dataPath, final OperationProcessor processor)
+      final Spec spec,
+      final MutableBeaconState state,
+      final Path dataPath,
+      final OperationProcessor processor)
       throws Exception {
     switch (operation) {
       case ATTESTER_SLASHING:
@@ -138,7 +148,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case PROCESS_BLOCK_HEADER:
         final BeaconBlockSummary blockHeader =
-            BeaconBlock.getSszSchema().sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+            spec.deserializeBeaconBlock(Bytes.wrap(Files.readAllBytes(dataPath)));
         processor.processBlockHeader(state, blockHeader);
         break;
       case DEPOSIT:

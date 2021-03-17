@@ -15,12 +15,12 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
 
@@ -54,11 +54,7 @@ public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32,
   }
 
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(
-        SSZ_SCHEMA,
-        new SszBytes32(currentRoot),
-        new SszBytes32(nextRoot),
-        new SszUInt64(nextEpoch));
+    super(SSZ_SCHEMA, SszBytes32.of(currentRoot), SszBytes32.of(nextRoot), SszUInt64.of(nextEpoch));
   }
 
   public Bytes32 getCurrentRoot() {

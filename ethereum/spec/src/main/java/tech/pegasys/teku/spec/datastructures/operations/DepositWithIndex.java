@@ -14,16 +14,15 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 
   private final UInt64 index;
 
-  public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UInt64 index) {
+  public DepositWithIndex(SszBytes32Vector proof, DepositData data, UInt64 index) {
     super(proof, data);
     this.index = index;
   }

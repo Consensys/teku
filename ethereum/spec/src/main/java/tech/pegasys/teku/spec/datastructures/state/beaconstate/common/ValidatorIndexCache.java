@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class ValidatorIndexCache {
   private final Cache<BLSPublicKey, Integer> validatorIndexes;
@@ -59,11 +59,11 @@ public class ValidatorIndexCache {
   }
 
   private Optional<Integer> findIndexFromState(
-      final SSZList<Validator> validatorList,
+      final SszList<Validator> validatorList,
       final BLSPublicKey publicKey,
       final int lastIndexSnapshot) {
     for (int i = Math.max(lastIndexSnapshot, 0); i < validatorList.size(); i++) {
-      BLSPublicKey pubKey = BLSPublicKey.fromBytesCompressed(validatorList.get(i).getPubkey());
+      BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
       validatorIndexes.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
         updateLastIndex(i);

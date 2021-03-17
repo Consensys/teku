@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -25,7 +25,7 @@ public class ProtoArrayBuilder {
   private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
   private UInt64 justifiedEpoch;
   private UInt64 finalizedEpoch;
-  private UInt64 initialEpoch = SpecConstants.GENESIS_EPOCH;
+  private UInt64 initialEpoch = SpecConfig.GENESIS_EPOCH;
 
   public ProtoArray build() {
     checkNotNull(justifiedEpoch, "Justified epoch must be supplied");
@@ -68,7 +68,7 @@ public class ProtoArrayBuilder {
   public ProtoArrayBuilder initialCheckpoint(final Optional<Checkpoint> initialCheckpoint) {
     initialCheckpoint.ifPresentOrElse(
         checkpoint -> initialEpoch(checkpoint.getEpoch()),
-        () -> initialEpoch(SpecConstants.GENESIS_EPOCH));
+        () -> initialEpoch(SpecConfig.GENESIS_EPOCH));
     return this;
   }
 }

@@ -15,11 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
-import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTATIONS;
-import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTER_SLASHINGS;
-import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.teku.util.config.Constants.MAX_PROPOSER_SLASHINGS;
-import static tech.pegasys.teku.util.config.Constants.MAX_VOLUNTARY_EXITS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,7 +23,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -65,7 +61,8 @@ public class BeaconBlockBody {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public BeaconBlockBody(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody body) {
+  public BeaconBlockBody(
+      tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1_data());
     this.graffiti = body.getGraffiti();
@@ -86,32 +83,29 @@ public class BeaconBlockBody {
             .collect(Collectors.toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody asInternalBeaconBlockBody() {
-    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody(
+  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
+      asInternalBeaconBlockBody(final SpecVersion spec) {
+    BeaconBlockBodySchema<?> schema = spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema.createBlockBody(
         randao_reveal.asInternalBLSSignature(),
         new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
             eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
         graffiti,
-        SSZList.createMutable(
-            proposer_slashings.stream().map(ProposerSlashing::asInternalProposerSlashing),
-            MAX_PROPOSER_SLASHINGS,
-            tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing.class),
-        SSZList.createMutable(
-            attester_slashings.stream().map(AttesterSlashing::asInternalAttesterSlashing),
-            MAX_ATTESTER_SLASHINGS,
-            tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.class),
-        SSZList.createMutable(
-            attestations.stream().map(Attestation::asInternalAttestation),
-            MAX_ATTESTATIONS,
-            tech.pegasys.teku.spec.datastructures.operations.Attestation.class),
-        SSZList.createMutable(
-            deposits.stream().map(Deposit::asInternalDeposit),
-            MAX_DEPOSITS,
-            tech.pegasys.teku.spec.datastructures.operations.Deposit.class),
-        SSZList.createMutable(
-            voluntary_exits.stream().map(SignedVoluntaryExit::asInternalSignedVoluntaryExit),
-            MAX_VOLUNTARY_EXITS,
-            tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit.class));
+        proposer_slashings.stream()
+            .map(ProposerSlashing::asInternalProposerSlashing)
+            .collect(schema.getProposerSlashingsSchema().collector()),
+        attester_slashings.stream()
+            .map(AttesterSlashing::asInternalAttesterSlashing)
+            .collect(schema.getAttesterSlashingsSchema().collector()),
+        attestations.stream()
+            .map(Attestation::asInternalAttestation)
+            .collect(schema.getAttestationsSchema().collector()),
+        deposits.stream()
+            .map(Deposit::asInternalDeposit)
+            .collect(schema.getDepositsSchema().collector()),
+        voluntary_exits.stream()
+            .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
+            .collect(schema.getVoluntaryExitsSchema().collector()));
   }
 
   @Override

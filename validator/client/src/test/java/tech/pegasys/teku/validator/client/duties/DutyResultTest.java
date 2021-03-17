@@ -37,7 +37,7 @@ class DutyResultTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final Optional<String> validatorId =
-      Optional.of(dataStructureUtil.randomValidator().getPubkey().toShortHexString());
+      Optional.of(dataStructureUtil.randomValidator().getPubkeyBytes().toShortHexString());
 
   @Test
   void shouldReportSuccess() {

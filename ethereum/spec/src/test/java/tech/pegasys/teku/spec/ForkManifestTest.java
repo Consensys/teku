@@ -23,9 +23,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ForkManifestTest {
   private final Bytes4 genesisForkVersion = Bytes4.fromHexString("0x00000000");
@@ -36,12 +36,12 @@ class ForkManifestTest {
       new Fork(genesisForkVersion, secondForkVersion, UInt64.valueOf(100L));
   private final Fork thirdFork =
       new Fork(secondForkVersion, thirdForkVersion, UInt64.valueOf(200L));
-  private final SpecConstants constants = mock(SpecConstants.class);
+  private final SpecConfig config = mock(SpecConfig.class);
   private ForkManifest forkManifest;
 
   @BeforeEach
   public void setup() {
-    when(constants.getGenesisForkVersion()).thenReturn(genesisForkVersion);
+    when(config.getGenesisForkVersion()).thenReturn(genesisForkVersion);
     forkManifest = ForkManifest.create(List.of(genesisFork, secondFork, thirdFork));
   }
 

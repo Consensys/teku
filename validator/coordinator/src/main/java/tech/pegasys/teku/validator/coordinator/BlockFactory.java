@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -94,23 +94,23 @@ public class BlockFactory {
     } else {
       blockSlotState = spec.processSlots(blockPreState, newSlot);
     }
-    SSZList<Attestation> attestations =
+    SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
             blockSlotState, new AttestationForkChecker(blockSlotState));
 
     // Collect slashings to include
-    final SSZList<ProposerSlashing> proposerSlashings =
+    final SszList<ProposerSlashing> proposerSlashings =
         proposerSlashingPool.getItemsForBlock(blockSlotState);
-    final SSZList<AttesterSlashing> attesterSlashings =
+    final SszList<AttesterSlashing> attesterSlashings =
         attesterSlashingPool.getItemsForBlock(blockSlotState);
 
     // Collect exits to include
-    final SSZList<SignedVoluntaryExit> voluntaryExits =
+    final SszList<SignedVoluntaryExit> voluntaryExits =
         voluntaryExitPool.getItemsForBlock(blockSlotState);
 
     // Collect deposits
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
+    final SszList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 

@@ -30,7 +30,8 @@ public interface VoteUpdater {
   Bytes32 applyForkChoiceScoreChanges(
       Checkpoint finalizedCheckpoint,
       Checkpoint justifiedCheckpoint,
-      List<UInt64> justifiedCheckpointEffectiveBalances);
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
+      List<ProposerWeighting> removedProposerWeightings);
 
   void commit();
 }

@@ -20,8 +20,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -31,13 +31,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalUtil {
 
   private final StateTransition stateTransition;
+  private final SchemaDefinitions schemaDefinitions;
 
-  public BlockProposalUtil(final StateTransition stateTransition) {
+  public BlockProposalUtil(
+      final SchemaDefinitions schemaDefinitions, final StateTransition stateTransition) {
+    this.schemaDefinitions = schemaDefinitions;
     this.stateTransition = stateTransition;
   }
 
@@ -49,11 +53,11 @@ public class BlockProposalUtil {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> proposerSlashings,
-      final SSZList<AttesterSlashing> attesterSlashings,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> voluntaryExits)
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -62,26 +66,30 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    BeaconBlockBody beaconBlockBody =
-        new BeaconBlockBody(
-            randaoReveal,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+    final BeaconBlockBody beaconBlockBody =
+        schemaDefinitions
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                randaoReveal,
+                eth1Data,
+                graffiti,
+                proposerSlashings,
+                attesterSlashings,
+                attestations,
+                deposits,
+                voluntaryExits);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     BeaconBlock newBlock =
-        new BeaconBlock(
-            newSlot,
-            UInt64.valueOf(proposerIndex),
-            parentBlockSigningRoot,
-            tmpStateRoot,
-            beaconBlockBody);
+        schemaDefinitions
+            .getBeaconBlockSchema()
+            .create(
+                newSlot,
+                UInt64.valueOf(proposerIndex),
+                parentBlockSigningRoot,
+                tmpStateRoot,
+                beaconBlockBody);
 
     // Run state transition and set state root
     try {

@@ -24,10 +24,11 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -53,9 +54,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Spec {
   // Eventually we will have multiple SpecVersions, where each version is active for a specific
@@ -71,16 +72,16 @@ public class Spec {
   }
 
   private Spec(final SpecVersion genesisSpec) {
-    this(genesisSpec, ForkManifest.create(genesisSpec.getConstants()));
+    this(genesisSpec, ForkManifest.create(genesisSpec.getConfig()));
   }
 
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
     return new Spec(initialSpec);
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -94,8 +95,8 @@ public class Spec {
     return atEpoch(epoch);
   }
 
-  public SpecConstants getSpecConstants(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants();
+  public SpecConfig getSpecConfig(final UInt64 epoch) {
+    return atEpoch(epoch).getConfig();
   }
 
   public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
@@ -106,8 +107,8 @@ public class Spec {
     return atEpoch(UInt64.ZERO);
   }
 
-  public SpecConstants getGenesisSpecConstants() {
-    return getGenesisSpec().getConstants();
+  public SpecConfig getGenesisSpecConfig() {
+    return getGenesisSpec().getConfig();
   }
 
   public BeaconStateUtil getGenesisBeaconStateUtil() {
@@ -126,41 +127,41 @@ public class Spec {
     return forkManifest.get(epoch);
   }
 
-  // Constants helpers
+  // Config helpers
   public int slotsPerEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants().getSlotsPerEpoch();
+    return atEpoch(epoch).getConfig().getSlotsPerEpoch();
   }
 
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants().getDomainBeaconProposer();
+    return atEpoch(epoch).getConfig().getDomainBeaconProposer();
   }
 
   public long getSlotsPerHistoricalRoot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
+    return atSlot(slot).getConfig().getSlotsPerHistoricalRoot();
   }
 
   public int getSlotsPerEpoch(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerEpoch();
+    return atSlot(slot).getConfig().getSlotsPerEpoch();
   }
 
   public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerSlot();
+    return atSlot(slot).getConfig().getSecondsPerSlot();
   }
 
   public long getMaxDeposits(final BeaconState state) {
-    return atState(state).getConstants().getMaxDeposits();
+    return atState(state).getConfig().getMaxDeposits();
   }
 
   public long getEpochsPerEth1VotingPeriod(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEpochsPerEth1VotingPeriod();
+    return atSlot(slot).getConfig().getEpochsPerEth1VotingPeriod();
   }
 
   public UInt64 getEth1FollowDistance(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEth1FollowDistance();
+    return atSlot(slot).getConfig().getEth1FollowDistance();
   }
 
   public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerEth1Block();
+    return atSlot(slot).getConfig().getSecondsPerEth1Block();
   }
 
   // Serialization
@@ -169,6 +170,22 @@ public class Spec {
     return atSlot(slot)
         .getSchemaDefinitions()
         .getBeaconStateSchema()
+        .sszDeserialize(serializedState);
+  }
+
+  public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedState) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getSignedBeaconBlockSchema()
+        .sszDeserialize(serializedState);
+  }
+
+  public BeaconBlock deserializeBeaconBlock(final Bytes serializedState) {
+    final UInt64 slot = BeaconBlockInvariants.extractBeaconBlockSlot(serializedState);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockSchema()
         .sszDeserialize(serializedState);
   }
 
@@ -341,11 +358,11 @@ public class Spec {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> proposerSlashings,
-      final SSZList<AttesterSlashing> attesterSlashings,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> voluntaryExits)
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
     return atSlot(newSlot)
         .getBlockProposalUtil()
@@ -371,25 +388,25 @@ public class Spec {
   }
 
   public void processProposerSlashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processProposerSlashings(state, proposerSlashings);
   }
 
   public void processAttesterSlashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processAttesterSlashings(state, attesterSlashings);
   }
 
-  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processAttestations(state, attestations);
   }
 
   public void processAttestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
@@ -397,12 +414,12 @@ public class Spec {
         .processAttestations(state, attestations, indexedAttestationCache);
   }
 
-  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processDeposits(state, deposits);
   }
 
-  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     atState(state).getBlockProcessorUtil().processVoluntaryExits(state, exits);
   }

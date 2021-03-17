@@ -29,12 +29,12 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -51,21 +51,21 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   private static final Logger LOG = LogManager.getLogger();
-  protected final SpecConstants specConstants;
+  protected final SpecConfig specConfig;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
 
   protected AbstractBlockProcessor(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
@@ -128,8 +128,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
           beaconStateUtil
               .getRandaoMix(state, epoch)
               .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(specConstants.getEpochsPerHistoricalVector()).intValue();
-      state.getRandao_mixes().set(index, mix);
+      int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
+      state.getRandao_mixes().setElement(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
@@ -143,7 +143,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes32 domain = beaconStateUtil.getDomain(state, specConstants.getDomainRandao());
+    final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
     bls.verifyAndThrow(
         proposerPublicKey,
@@ -162,7 +162,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    */
   @Override
   public void processEth1Data(MutableBeaconState state, BeaconBlockBody body) {
-    state.getEth1_data_votes().add(body.getEth1_data());
+    state.getEth1_data_votes().append(body.getEth1_data());
     long vote_count = getVoteCount(state, body.getEth1_data());
     if (isEnoughVotesToUpdateEth1Data(vote_count)) {
       state.setEth1_data(body.getEth1_data());
@@ -172,7 +172,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
     return voteCount * 2
-        > (long) specConstants.getEpochsPerEth1VotingPeriod() * specConstants.getSlotsPerEpoch();
+        > (long) specConfig.getEpochsPerEth1VotingPeriod() * specConfig.getSlotsPerEpoch();
   }
 
   @Override
@@ -197,7 +197,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
       checkArgument(
           body.getDeposits().size()
               == Math.min(
-                  specConstants.getMaxDeposits(),
+                  specConfig.getMaxDeposits(),
                   toIntExact(
                       state
                           .getEth1_data()
@@ -229,7 +229,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    */
   @Override
   public void processProposerSlashings(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     processProposerSlashingsNoValidation(state, proposerSlashings);
     boolean signaturesValid =
@@ -241,7 +241,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
 
   @Override
   public void processProposerSlashingsNoValidation(
-      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     ProposerSlashingStateTransitionValidator validator =
         new ProposerSlashingStateTransitionValidator();
@@ -269,7 +269,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public boolean verifyProposerSlashings(
       BeaconState state,
-      SSZList<ProposerSlashing> proposerSlashings,
+      SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
     ProposerSlashingSignatureVerifier slashingSignatureVerifier =
         new ProposerSlashingSignatureVerifier();
@@ -298,7 +298,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    */
   @Override
   public void processAttesterSlashings(
-      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
       final AttesterSlashingStateTransitionValidator validator =
@@ -335,7 +335,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
   @Override
-  public void processAttestations(MutableBeaconState state, SSZList<Attestation> attestations)
+  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     processAttestations(state, attestations, IndexedAttestationCache.NOOP);
   }
@@ -352,7 +352,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public void processAttestations(
       MutableBeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     processAttestationsNoValidation(state, attestations);
@@ -362,7 +362,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public void verifyAttestations(
       BeaconState state,
-      SSZList<Attestation> attestations,
+      SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
@@ -396,7 +396,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   @Override
-  public void processDeposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
+  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -418,7 +418,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
   @Override
-  public void processVoluntaryExits(MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
 
     processVoluntaryExitsNoValidation(state, exits);
@@ -430,7 +430,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
 
   @Override
   public void processVoluntaryExitsNoValidation(
-      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     try {
@@ -456,7 +456,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public boolean verifyVoluntaryExits(
       BeaconState state,
-      SSZList<SignedVoluntaryExit> exits,
+      SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
     VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {

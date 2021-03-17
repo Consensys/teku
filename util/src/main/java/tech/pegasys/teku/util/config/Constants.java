@@ -18,16 +18,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "less-swift");
+      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
 
   @Deprecated public static String CONFIG_NAME;
 
@@ -177,7 +179,7 @@ public class Constants {
   }
 
   /**
-   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConstants
+   * @deprecated Use tech.pegasys.teku.spec.constants.SpecConfig
    * @param source The source from which to load constants
    */
   @Deprecated
@@ -190,10 +192,19 @@ public class Constants {
     SpecDependent.resetAll();
   }
 
-  public static InputStream createInputStream(final String source) throws IOException {
+  private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS.toArray(String[]::new))
-        .load(source)
+            Constants.class,
+            enumerateNetworkResources(),
+            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
+        .load(source + ".yaml", source + "/phase0.yaml", source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
+  }
+
+  private static List<String> enumerateNetworkResources() {
+    return NETWORK_DEFINITIONS.stream()
+        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml"))
+        .flatMap(List::stream)
+        .collect(Collectors.toList());
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -98,8 +97,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             attesterSlashingPool.addAll(blockBody.getAttester_slashings());
                             exitPool.addAll(blockBody.getVoluntary_exits());
 
-                            processNonCanonicalBlockAttestations(
-                                blockBody.getAttestations().asList(), root);
+                            processNonCanonicalBlockAttestations(blockBody.getAttestations(), root);
                           },
                           () ->
                               LOG.debug(
@@ -115,7 +113,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   }
 
   private void processNonCanonicalBlockAttestations(
-      List<Attestation> attestations, Bytes32 blockRoot) {
+      Iterable<Attestation> attestations, Bytes32 blockRoot) {
     // Attestations need to get re-processed through AttestationManager
     // because we don't have access to the state with which they were
     // verified anymore and we need to make sure later on
