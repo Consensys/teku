@@ -41,6 +41,12 @@ public class SszMutablePrimitiveListImpl<
   }
 
   @Override
+  public void set(int index, SszElementT value) {
+    // no need to check primitive value schema
+    setUnsafe(index, value);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public SszPrimitiveList<ElementT, SszElementT> commitChanges() {
     return (SszPrimitiveListImpl<ElementT, SszElementT>) super.commitChanges();

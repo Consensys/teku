@@ -40,6 +40,12 @@ public class SszMutablePrimitiveVectorImpl<
   }
 
   @Override
+  public void set(int index, SszElementT value) {
+    // no need to check primitive value schema
+    setUnsafe(index, value);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public SszPrimitiveVector<ElementT, SszElementT> commitChanges() {
     return (SszPrimitiveVector<ElementT, SszElementT>) super.commitChanges();

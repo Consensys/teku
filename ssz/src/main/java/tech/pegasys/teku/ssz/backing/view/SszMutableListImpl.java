@@ -63,8 +63,8 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   }
 
   @Override
-  public void set(int index, SszElementT value) {
-    super.set(index, value);
+  protected void setUnsafe(int index, SszElementT value) {
+    super.setUnsafe(index, value);
     if (index == size()) {
       cachedSize++;
     }
