@@ -67,44 +67,72 @@ public abstract class AbstractSszMutableCollection<
     int elementsPerChunk = type.getElementsPerChunk();
 
     List<Map.Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
-    int[] internalIdxs = new int[elementsPerChunk];
-    SszData[] newVals = new SszData[elementsPerChunk];
-    int nodeUpdatesCount = 0;
     int prevChildNodeIndex = 0;
-    List<Long> gIndexes = new ArrayList<>();
-    List<TreeNode> newValues = new ArrayList<>();
-    for (int i = 0; i < newChildren.size(); i++) {
-      Map.Entry<Integer, SszElementT> entry = newChildren.get(i);
+    List<NodeUpdate> nodeUpdates = new ArrayList<>();
+    NodeUpdate curNodeUpdate = null;
+
+    for (Map.Entry<Integer, SszElementT> entry : newChildren) {
       int childIndex = entry.getKey();
       int childNodeIndex = childIndex / elementsPerChunk;
 
-      if (childNodeIndex != prevChildNodeIndex && nodeUpdatesCount > 0) {
-        long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
-        TreeNode originalNode =
-            nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
-        TreeNode newNode =
-            elementType.updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
-        newValues.add(newNode);
-        gIndexes.add(gIndex);
-        nodeUpdatesCount = 0;
+      if (curNodeUpdate == null || childNodeIndex != prevChildNodeIndex) {
+        long gIndex = type.getChildGeneralizedIndex(childNodeIndex);
+        curNodeUpdate = new NodeUpdate(gIndex, elementsPerChunk);
+        nodeUpdates.add(curNodeUpdate);
+        prevChildNodeIndex = childNodeIndex;
       }
-
-      internalIdxs[nodeUpdatesCount] = childIndex % elementsPerChunk;
-      newVals[nodeUpdatesCount] = entry.getValue();
-      prevChildNodeIndex = childNodeIndex;
-      nodeUpdatesCount++;
+      curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
     }
 
-    if (nodeUpdatesCount > 0) {
-      long gIndex = type.getChildGeneralizedIndex(prevChildNodeIndex);
+    List<Long> gIndexes = new ArrayList<>();
+    List<TreeNode> newValues = new ArrayList<>();
+    for (NodeUpdate nodeUpdate : nodeUpdates) {
+      long gIndex = nodeUpdate.getNodeGIndex();
       TreeNode originalNode =
-          nodeUpdatesCount < elementsPerChunk ? original.get(gIndex) : LeafNode.EMPTY_LEAF;
+          nodeUpdate.getNodeUpdatesCount() < elementsPerChunk ? original.get(gIndex)
+              : LeafNode.EMPTY_LEAF;
       TreeNode newNode =
-          elementType.updateBackingNode(originalNode, internalIdxs, newVals, nodeUpdatesCount);
+          elementType.updateBackingNode(originalNode, nodeUpdate.getInternalIndexes(),
+              nodeUpdate.getNewValues(), nodeUpdate.getNodeUpdatesCount());
       newValues.add(newNode);
       gIndexes.add(gIndex);
     }
 
     return new TreeUpdates(gIndexes, newValues);
+  }
+
+  private static class NodeUpdate {
+    private final int[] internalIndexes;
+    private final SszData[] newValues;
+    private final long nodeGIndex;
+    private int nodeUpdatesCount = 0;
+
+    public NodeUpdate(long nodeGIndex, int maxElementsPerChunk) {
+      internalIndexes = new int[maxElementsPerChunk];
+      this.nodeGIndex = nodeGIndex;
+      this.newValues = new SszData[maxElementsPerChunk];
+    }
+
+    public void addUpdate(int internalNodeIndex, SszData newValue) {
+      internalIndexes[nodeUpdatesCount] = internalNodeIndex;
+      newValues[nodeUpdatesCount] = newValue;
+      nodeUpdatesCount++;
+    }
+
+    public int[] getInternalIndexes() {
+      return internalIndexes;
+    }
+
+    public SszData[] getNewValues() {
+      return newValues;
+    }
+
+    public int getNodeUpdatesCount() {
+      return nodeUpdatesCount;
+    }
+
+    public long getNodeGIndex() {
+      return nodeGIndex;
+    }
   }
 }
