@@ -45,7 +45,7 @@ public class GossipScoringConfiguratorTest {
   private final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
   private final Spec spec = SpecFactory.createMainnet();
   private final int genesisMinActiveValidators =
-      spec.getGenesisSpecConstants().getMinGenesisActiveValidatorCount();
+      spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
 
   private GossipScoringConfigurator configurator;
 

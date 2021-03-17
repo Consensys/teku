@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
@@ -38,7 +38,7 @@ class TimeBasedEventAdapterTest {
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
-  final int secondsPerSlot = spec.getSecondsPerSlot(SpecConstants.GENESIS_SLOT);
+  final int secondsPerSlot = spec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =

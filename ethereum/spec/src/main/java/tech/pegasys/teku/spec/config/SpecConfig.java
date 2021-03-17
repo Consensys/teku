@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,17 +19,17 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public interface SpecConstants {
+public interface SpecConfig {
   // Non-configurable constants
   UInt64 GENESIS_SLOT = UInt64.ZERO;
   UInt64 GENESIS_EPOCH = UInt64.ZERO;
   UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
 
-  static SpecConstantsBuilder builder() {
-    return new SpecConstantsBuilder();
+  static SpecConfigBuilder builder() {
+    return new SpecConfigBuilder();
   }
 
-  Map<String, Object> getRawConstants();
+  Map<String, Object> getRawConfig();
 
   String getConfigName();
 
@@ -157,7 +157,7 @@ public interface SpecConstants {
 
   Bytes getDepositContractAddress();
 
-  default Optional<SpecConstantsAltair> toVersionAltair() {
+  default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }
 }

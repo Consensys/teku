@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.constants.SpecConstantsFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsBuilder {
-  private final Map<String, Object> rawConstants = new HashMap<>();
+public class SpecConfigBuilder {
+  private final Map<String, Object> rawConfig = new HashMap<>();
   private String configName = "Custom (unknown)";
 
   // Misc
@@ -113,11 +113,11 @@ public class SpecConstantsBuilder {
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
-  public SpecConstants build() {
+  public SpecConfig build() {
     validate();
-    final SpecConstants phase0 =
-        new SpecConstantsPhase0(
-            rawConstants,
+    final SpecConfig phase0 =
+        new SpecConfigPhase0(
+            rawConfig,
             configName,
             eth1FollowDistance,
             maxCommitteesPerSlot,
@@ -179,11 +179,11 @@ public class SpecConstantsBuilder {
             depositNetworkId,
             depositContractAddress);
 
-    return altairBuilder.map(b -> (SpecConstants) b.build(phase0)).orElse(phase0);
+    return altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
   }
 
   private void validate() {
-    checkArgument(rawConstants.size() > 0, "Raw constants must be provided");
+    checkArgument(rawConfig.size() > 0, "Raw spec config must be provided");
     validateConstant("configName", configName);
     validateConstant("eth1FollowDistance", eth1FollowDistance);
     validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
@@ -266,383 +266,380 @@ public class SpecConstantsBuilder {
     checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
   }
 
-  public SpecConstantsBuilder rawConstants(final Map<String, Object> rawConstants) {
-    checkNotNull(rawConstants);
-    this.rawConstants.putAll(rawConstants);
+  public SpecConfigBuilder rawConfig(final Map<String, Object> rawConfig) {
+    checkNotNull(rawConfig);
+    this.rawConfig.putAll(rawConfig);
     return this;
   }
 
-  public SpecConstantsBuilder configName(final String configName) {
+  public SpecConfigBuilder configName(final String configName) {
     checkNotNull(configName);
     this.configName = configName;
     return this;
   }
 
-  public SpecConstantsBuilder eth1FollowDistance(final UInt64 eth1FollowDistance) {
+  public SpecConfigBuilder eth1FollowDistance(final UInt64 eth1FollowDistance) {
     checkNotNull(eth1FollowDistance);
     this.eth1FollowDistance = eth1FollowDistance;
     return this;
   }
 
-  public SpecConstantsBuilder maxCommitteesPerSlot(final Integer maxCommitteesPerSlot) {
+  public SpecConfigBuilder maxCommitteesPerSlot(final Integer maxCommitteesPerSlot) {
     checkNotNull(maxCommitteesPerSlot);
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
     return this;
   }
 
-  public SpecConstantsBuilder targetCommitteeSize(final Integer targetCommitteeSize) {
+  public SpecConfigBuilder targetCommitteeSize(final Integer targetCommitteeSize) {
     checkNotNull(targetCommitteeSize);
     this.targetCommitteeSize = targetCommitteeSize;
     return this;
   }
 
-  public SpecConstantsBuilder maxValidatorsPerCommittee(final Integer maxValidatorsPerCommittee) {
+  public SpecConfigBuilder maxValidatorsPerCommittee(final Integer maxValidatorsPerCommittee) {
     checkNotNull(maxValidatorsPerCommittee);
     this.maxValidatorsPerCommittee = maxValidatorsPerCommittee;
     return this;
   }
 
-  public SpecConstantsBuilder minPerEpochChurnLimit(final Integer minPerEpochChurnLimit) {
+  public SpecConfigBuilder minPerEpochChurnLimit(final Integer minPerEpochChurnLimit) {
     checkNotNull(minPerEpochChurnLimit);
     this.minPerEpochChurnLimit = minPerEpochChurnLimit;
     return this;
   }
 
-  public SpecConstantsBuilder churnLimitQuotient(final Integer churnLimitQuotient) {
+  public SpecConfigBuilder churnLimitQuotient(final Integer churnLimitQuotient) {
     checkNotNull(churnLimitQuotient);
     this.churnLimitQuotient = churnLimitQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder shuffleRoundCount(final Integer shuffleRoundCount) {
+  public SpecConfigBuilder shuffleRoundCount(final Integer shuffleRoundCount) {
     checkNotNull(shuffleRoundCount);
     this.shuffleRoundCount = shuffleRoundCount;
     return this;
   }
 
-  public SpecConstantsBuilder minGenesisActiveValidatorCount(
+  public SpecConfigBuilder minGenesisActiveValidatorCount(
       final Integer minGenesisActiveValidatorCount) {
     checkNotNull(minGenesisActiveValidatorCount);
     this.minGenesisActiveValidatorCount = minGenesisActiveValidatorCount;
     return this;
   }
 
-  public SpecConstantsBuilder minGenesisTime(final UInt64 minGenesisTime) {
+  public SpecConfigBuilder minGenesisTime(final UInt64 minGenesisTime) {
     checkNotNull(minGenesisTime);
     this.minGenesisTime = minGenesisTime;
     return this;
   }
 
-  public SpecConstantsBuilder hysteresisQuotient(final UInt64 hysteresisQuotient) {
+  public SpecConfigBuilder hysteresisQuotient(final UInt64 hysteresisQuotient) {
     checkNotNull(hysteresisQuotient);
     this.hysteresisQuotient = hysteresisQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder hysteresisDownwardMultiplier(
-      final UInt64 hysteresisDownwardMultiplier) {
+  public SpecConfigBuilder hysteresisDownwardMultiplier(final UInt64 hysteresisDownwardMultiplier) {
     checkNotNull(hysteresisDownwardMultiplier);
     this.hysteresisDownwardMultiplier = hysteresisDownwardMultiplier;
     return this;
   }
 
-  public SpecConstantsBuilder hysteresisUpwardMultiplier(final UInt64 hysteresisUpwardMultiplier) {
+  public SpecConfigBuilder hysteresisUpwardMultiplier(final UInt64 hysteresisUpwardMultiplier) {
     checkNotNull(hysteresisUpwardMultiplier);
     this.hysteresisUpwardMultiplier = hysteresisUpwardMultiplier;
     return this;
   }
 
-  public SpecConstantsBuilder proportionalSlashingMultiplier(
+  public SpecConfigBuilder proportionalSlashingMultiplier(
       final Integer proportionalSlashingMultiplier) {
     checkNotNull(proportionalSlashingMultiplier);
     this.proportionalSlashingMultiplier = proportionalSlashingMultiplier;
     return this;
   }
 
-  public SpecConstantsBuilder minDepositAmount(final UInt64 minDepositAmount) {
+  public SpecConfigBuilder minDepositAmount(final UInt64 minDepositAmount) {
     checkNotNull(minDepositAmount);
     this.minDepositAmount = minDepositAmount;
     return this;
   }
 
-  public SpecConstantsBuilder maxEffectiveBalance(final UInt64 maxEffectiveBalance) {
+  public SpecConfigBuilder maxEffectiveBalance(final UInt64 maxEffectiveBalance) {
     checkNotNull(maxEffectiveBalance);
     this.maxEffectiveBalance = maxEffectiveBalance;
     return this;
   }
 
-  public SpecConstantsBuilder ejectionBalance(final UInt64 ejectionBalance) {
+  public SpecConfigBuilder ejectionBalance(final UInt64 ejectionBalance) {
     checkNotNull(ejectionBalance);
     this.ejectionBalance = ejectionBalance;
     return this;
   }
 
-  public SpecConstantsBuilder effectiveBalanceIncrement(final UInt64 effectiveBalanceIncrement) {
+  public SpecConfigBuilder effectiveBalanceIncrement(final UInt64 effectiveBalanceIncrement) {
     checkNotNull(effectiveBalanceIncrement);
     this.effectiveBalanceIncrement = effectiveBalanceIncrement;
     return this;
   }
 
-  public SpecConstantsBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
+  public SpecConfigBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     checkNotNull(genesisForkVersion);
     this.genesisForkVersion = genesisForkVersion;
     return this;
   }
 
-  public SpecConstantsBuilder blsWithdrawalPrefix(final Bytes blsWithdrawalPrefix) {
+  public SpecConfigBuilder blsWithdrawalPrefix(final Bytes blsWithdrawalPrefix) {
     checkNotNull(blsWithdrawalPrefix);
     this.blsWithdrawalPrefix = blsWithdrawalPrefix;
     return this;
   }
 
-  public SpecConstantsBuilder genesisDelay(final UInt64 genesisDelay) {
+  public SpecConfigBuilder genesisDelay(final UInt64 genesisDelay) {
     checkNotNull(genesisDelay);
     this.genesisDelay = genesisDelay;
     return this;
   }
 
-  public SpecConstantsBuilder secondsPerSlot(final Integer secondsPerSlot) {
+  public SpecConfigBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
     this.secondsPerSlot = secondsPerSlot;
     return this;
   }
 
-  public SpecConstantsBuilder minAttestationInclusionDelay(
+  public SpecConfigBuilder minAttestationInclusionDelay(
       final Integer minAttestationInclusionDelay) {
     checkNotNull(minAttestationInclusionDelay);
     this.minAttestationInclusionDelay = minAttestationInclusionDelay;
     return this;
   }
 
-  public SpecConstantsBuilder slotsPerEpoch(final Integer slotsPerEpoch) {
+  public SpecConfigBuilder slotsPerEpoch(final Integer slotsPerEpoch) {
     checkNotNull(slotsPerEpoch);
     this.slotsPerEpoch = slotsPerEpoch;
     return this;
   }
 
-  public SpecConstantsBuilder minSeedLookahead(final Integer minSeedLookahead) {
+  public SpecConfigBuilder minSeedLookahead(final Integer minSeedLookahead) {
     checkNotNull(minSeedLookahead);
     this.minSeedLookahead = minSeedLookahead;
     return this;
   }
 
-  public SpecConstantsBuilder maxSeedLookahead(final Integer maxSeedLookahead) {
+  public SpecConfigBuilder maxSeedLookahead(final Integer maxSeedLookahead) {
     checkNotNull(maxSeedLookahead);
     this.maxSeedLookahead = maxSeedLookahead;
     return this;
   }
 
-  public SpecConstantsBuilder minEpochsToInactivityPenalty(
-      final UInt64 minEpochsToInactivityPenalty) {
+  public SpecConfigBuilder minEpochsToInactivityPenalty(final UInt64 minEpochsToInactivityPenalty) {
     checkNotNull(minEpochsToInactivityPenalty);
     this.minEpochsToInactivityPenalty = minEpochsToInactivityPenalty;
     return this;
   }
 
-  public SpecConstantsBuilder epochsPerEth1VotingPeriod(final Integer epochsPerEth1VotingPeriod) {
+  public SpecConfigBuilder epochsPerEth1VotingPeriod(final Integer epochsPerEth1VotingPeriod) {
     checkNotNull(epochsPerEth1VotingPeriod);
     this.epochsPerEth1VotingPeriod = epochsPerEth1VotingPeriod;
     return this;
   }
 
-  public SpecConstantsBuilder slotsPerHistoricalRoot(final Integer slotsPerHistoricalRoot) {
+  public SpecConfigBuilder slotsPerHistoricalRoot(final Integer slotsPerHistoricalRoot) {
     checkNotNull(slotsPerHistoricalRoot);
     this.slotsPerHistoricalRoot = slotsPerHistoricalRoot;
     return this;
   }
 
-  public SpecConstantsBuilder minValidatorWithdrawabilityDelay(
+  public SpecConfigBuilder minValidatorWithdrawabilityDelay(
       final Integer minValidatorWithdrawabilityDelay) {
     checkNotNull(minValidatorWithdrawabilityDelay);
     this.minValidatorWithdrawabilityDelay = minValidatorWithdrawabilityDelay;
     return this;
   }
 
-  public SpecConstantsBuilder shardCommitteePeriod(final UInt64 shardCommitteePeriod) {
+  public SpecConfigBuilder shardCommitteePeriod(final UInt64 shardCommitteePeriod) {
     checkNotNull(shardCommitteePeriod);
     this.shardCommitteePeriod = shardCommitteePeriod;
     return this;
   }
 
-  public SpecConstantsBuilder epochsPerHistoricalVector(final Integer epochsPerHistoricalVector) {
+  public SpecConfigBuilder epochsPerHistoricalVector(final Integer epochsPerHistoricalVector) {
     checkNotNull(epochsPerHistoricalVector);
     this.epochsPerHistoricalVector = epochsPerHistoricalVector;
     return this;
   }
 
-  public SpecConstantsBuilder epochsPerSlashingsVector(final Integer epochsPerSlashingsVector) {
+  public SpecConfigBuilder epochsPerSlashingsVector(final Integer epochsPerSlashingsVector) {
     checkNotNull(epochsPerSlashingsVector);
     this.epochsPerSlashingsVector = epochsPerSlashingsVector;
     return this;
   }
 
-  public SpecConstantsBuilder historicalRootsLimit(final Integer historicalRootsLimit) {
+  public SpecConfigBuilder historicalRootsLimit(final Integer historicalRootsLimit) {
     checkNotNull(historicalRootsLimit);
     this.historicalRootsLimit = historicalRootsLimit;
     return this;
   }
 
-  public SpecConstantsBuilder validatorRegistryLimit(final Long validatorRegistryLimit) {
+  public SpecConfigBuilder validatorRegistryLimit(final Long validatorRegistryLimit) {
     checkNotNull(validatorRegistryLimit);
     this.validatorRegistryLimit = validatorRegistryLimit;
     return this;
   }
 
-  public SpecConstantsBuilder baseRewardFactor(final Integer baseRewardFactor) {
+  public SpecConfigBuilder baseRewardFactor(final Integer baseRewardFactor) {
     checkNotNull(baseRewardFactor);
     this.baseRewardFactor = baseRewardFactor;
     return this;
   }
 
-  public SpecConstantsBuilder whistleblowerRewardQuotient(
-      final Integer whistleblowerRewardQuotient) {
+  public SpecConfigBuilder whistleblowerRewardQuotient(final Integer whistleblowerRewardQuotient) {
     checkNotNull(whistleblowerRewardQuotient);
     this.whistleblowerRewardQuotient = whistleblowerRewardQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder proposerRewardQuotient(final UInt64 proposerRewardQuotient) {
+  public SpecConfigBuilder proposerRewardQuotient(final UInt64 proposerRewardQuotient) {
     checkNotNull(proposerRewardQuotient);
     this.proposerRewardQuotient = proposerRewardQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder inactivityPenaltyQuotient(final UInt64 inactivityPenaltyQuotient) {
+  public SpecConfigBuilder inactivityPenaltyQuotient(final UInt64 inactivityPenaltyQuotient) {
     checkNotNull(inactivityPenaltyQuotient);
     this.inactivityPenaltyQuotient = inactivityPenaltyQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder minSlashingPenaltyQuotient(final Integer minSlashingPenaltyQuotient) {
+  public SpecConfigBuilder minSlashingPenaltyQuotient(final Integer minSlashingPenaltyQuotient) {
     checkNotNull(minSlashingPenaltyQuotient);
     this.minSlashingPenaltyQuotient = minSlashingPenaltyQuotient;
     return this;
   }
 
-  public SpecConstantsBuilder maxProposerSlashings(final Integer maxProposerSlashings) {
+  public SpecConfigBuilder maxProposerSlashings(final Integer maxProposerSlashings) {
     checkNotNull(maxProposerSlashings);
     this.maxProposerSlashings = maxProposerSlashings;
     return this;
   }
 
-  public SpecConstantsBuilder maxAttesterSlashings(final Integer maxAttesterSlashings) {
+  public SpecConfigBuilder maxAttesterSlashings(final Integer maxAttesterSlashings) {
     checkNotNull(maxAttesterSlashings);
     this.maxAttesterSlashings = maxAttesterSlashings;
     return this;
   }
 
-  public SpecConstantsBuilder maxAttestations(final Integer maxAttestations) {
+  public SpecConfigBuilder maxAttestations(final Integer maxAttestations) {
     checkNotNull(maxAttestations);
     this.maxAttestations = maxAttestations;
     return this;
   }
 
-  public SpecConstantsBuilder maxDeposits(final Integer maxDeposits) {
+  public SpecConfigBuilder maxDeposits(final Integer maxDeposits) {
     checkNotNull(maxDeposits);
     this.maxDeposits = maxDeposits;
     return this;
   }
 
-  public SpecConstantsBuilder maxVoluntaryExits(final Integer maxVoluntaryExits) {
+  public SpecConfigBuilder maxVoluntaryExits(final Integer maxVoluntaryExits) {
     checkNotNull(maxVoluntaryExits);
     this.maxVoluntaryExits = maxVoluntaryExits;
     return this;
   }
 
-  public SpecConstantsBuilder domainBeaconProposer(final Bytes4 domainBeaconProposer) {
+  public SpecConfigBuilder domainBeaconProposer(final Bytes4 domainBeaconProposer) {
     checkNotNull(domainBeaconProposer);
     this.domainBeaconProposer = domainBeaconProposer;
     return this;
   }
 
-  public SpecConstantsBuilder domainBeaconAttester(final Bytes4 domainBeaconAttester) {
+  public SpecConfigBuilder domainBeaconAttester(final Bytes4 domainBeaconAttester) {
     checkNotNull(domainBeaconAttester);
     this.domainBeaconAttester = domainBeaconAttester;
     return this;
   }
 
-  public SpecConstantsBuilder domainRandao(final Bytes4 domainRandao) {
+  public SpecConfigBuilder domainRandao(final Bytes4 domainRandao) {
     checkNotNull(domainRandao);
     this.domainRandao = domainRandao;
     return this;
   }
 
-  public SpecConstantsBuilder domainDeposit(final Bytes4 domainDeposit) {
+  public SpecConfigBuilder domainDeposit(final Bytes4 domainDeposit) {
     checkNotNull(domainDeposit);
     this.domainDeposit = domainDeposit;
     return this;
   }
 
-  public SpecConstantsBuilder domainVoluntaryExit(final Bytes4 domainVoluntaryExit) {
+  public SpecConfigBuilder domainVoluntaryExit(final Bytes4 domainVoluntaryExit) {
     checkNotNull(domainVoluntaryExit);
     this.domainVoluntaryExit = domainVoluntaryExit;
     return this;
   }
 
-  public SpecConstantsBuilder domainSelectionProof(final Bytes4 domainSelectionProof) {
+  public SpecConfigBuilder domainSelectionProof(final Bytes4 domainSelectionProof) {
     checkNotNull(domainSelectionProof);
     this.domainSelectionProof = domainSelectionProof;
     return this;
   }
 
-  public SpecConstantsBuilder domainAggregateAndProof(final Bytes4 domainAggregateAndProof) {
+  public SpecConfigBuilder domainAggregateAndProof(final Bytes4 domainAggregateAndProof) {
     checkNotNull(domainAggregateAndProof);
     this.domainAggregateAndProof = domainAggregateAndProof;
     return this;
   }
 
-  public SpecConstantsBuilder targetAggregatorsPerCommittee(
+  public SpecConfigBuilder targetAggregatorsPerCommittee(
       final Integer targetAggregatorsPerCommittee) {
     checkNotNull(targetAggregatorsPerCommittee);
     this.targetAggregatorsPerCommittee = targetAggregatorsPerCommittee;
     return this;
   }
 
-  public SpecConstantsBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
+  public SpecConfigBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
     return this;
   }
 
-  public SpecConstantsBuilder randomSubnetsPerValidator(final Integer randomSubnetsPerValidator) {
+  public SpecConfigBuilder randomSubnetsPerValidator(final Integer randomSubnetsPerValidator) {
     checkNotNull(randomSubnetsPerValidator);
     this.randomSubnetsPerValidator = randomSubnetsPerValidator;
     return this;
   }
 
-  public SpecConstantsBuilder epochsPerRandomSubnetSubscription(
+  public SpecConfigBuilder epochsPerRandomSubnetSubscription(
       final Integer epochsPerRandomSubnetSubscription) {
     checkNotNull(epochsPerRandomSubnetSubscription);
     this.epochsPerRandomSubnetSubscription = epochsPerRandomSubnetSubscription;
     return this;
   }
 
-  public SpecConstantsBuilder safeSlotsToUpdateJustified(final Integer safeSlotsToUpdateJustified) {
+  public SpecConfigBuilder safeSlotsToUpdateJustified(final Integer safeSlotsToUpdateJustified) {
     checkNotNull(safeSlotsToUpdateJustified);
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     return this;
   }
 
-  public SpecConstantsBuilder depositChainId(final Integer depositChainId) {
+  public SpecConfigBuilder depositChainId(final Integer depositChainId) {
     checkNotNull(depositChainId);
     this.depositChainId = depositChainId;
     return this;
   }
 
-  public SpecConstantsBuilder depositNetworkId(final Integer depositNetworkId) {
+  public SpecConfigBuilder depositNetworkId(final Integer depositNetworkId) {
     checkNotNull(depositNetworkId);
     this.depositNetworkId = depositNetworkId;
     return this;
   }
 
-  public SpecConstantsBuilder depositContractAddress(final Bytes depositContractAddress) {
+  public SpecConfigBuilder depositContractAddress(final Bytes depositContractAddress) {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
     return this;
   }
 
   // Altair
-  public SpecConstantsBuilder altairBuilder(final Consumer<AltairBuilder> consumer) {
+  public SpecConfigBuilder altairBuilder(final Consumer<AltairBuilder> consumer) {
     if (altairBuilder.isEmpty()) {
       altairBuilder = Optional.of(new AltairBuilder());
     }
@@ -677,9 +674,9 @@ public class SpecConstantsBuilder {
 
     private AltairBuilder() {}
 
-    SpecConstantsAltair build(final SpecConstants specConstants) {
-      return new SpecConstantsAltair(
-          specConstants,
+    SpecConfigAltair build(final SpecConfig specConfig) {
+      return new SpecConfigAltair(
+          specConfig,
           inactivityPenaltyQuotientAltair,
           minSlashingPenaltyQuotientAltair,
           proportionalSlashingMultiplierAltair,

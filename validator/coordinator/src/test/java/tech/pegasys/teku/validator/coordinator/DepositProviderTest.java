@@ -34,8 +34,8 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -67,14 +67,13 @@ public class DepositProviderTest {
   void setup(final int maxDeposits) {
     when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
 
-    SpecConstants specConstants =
-        TestConstantsLoader.loadConstants("minimal", b -> b.maxDeposits(maxDeposits));
-    spec = SpecFactory.create(specConstants);
+    SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.maxDeposits(maxDeposits));
+    spec = SpecFactory.create(specConfig);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
         new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, spec);
     depositMerkleTree =
-        new OptimizedMerkleTree(spec.getGenesisSpecConstants().getDepositContractTreeDepth());
+        new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     mockStateEth1DataVotes();
     createDepositEvents(40);
     randomEth1Data = dataStructureUtil.randomEth1Data();
@@ -114,8 +113,8 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(10, 30);
 
     int enoughVoteCount =
-        spec.getGenesisSpecConstants().getEpochsPerEth1VotingPeriod()
-            * spec.slotsPerEpoch(SpecConstants.GENESIS_EPOCH);
+        spec.getGenesisSpecConfig().getEpochsPerEth1VotingPeriod()
+            * spec.slotsPerEpoch(SpecConfig.GENESIS_EPOCH);
     UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
     SszList<Eth1Data> et1hDataVotes =
@@ -258,7 +257,7 @@ public class DepositProviderTest {
                     BeaconStateUtil.isValidMerkleBranch(
                         deposit.getData().hashTreeRoot(),
                         deposit.getProof(),
-                        genesisSpec.getConstants().getDepositContractTreeDepth() + 1,
+                        genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
                         ((DepositWithIndex) deposit).getIndex().intValue(),
                         depositMerkleTree.getRoot()))
                 .isTrue());

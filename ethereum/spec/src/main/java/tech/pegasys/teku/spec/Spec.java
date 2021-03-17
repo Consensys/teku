@@ -24,7 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -71,16 +71,16 @@ public class Spec {
   }
 
   private Spec(final SpecVersion genesisSpec) {
-    this(genesisSpec, ForkManifest.create(genesisSpec.getConstants()));
+    this(genesisSpec, ForkManifest.create(genesisSpec.getConfig()));
   }
 
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
     return new Spec(initialSpec);
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.constants());
+    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -94,8 +94,8 @@ public class Spec {
     return atEpoch(epoch);
   }
 
-  public SpecConstants getSpecConstants(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants();
+  public SpecConfig getSpecConfig(final UInt64 epoch) {
+    return atEpoch(epoch).getConfig();
   }
 
   public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
@@ -106,8 +106,8 @@ public class Spec {
     return atEpoch(UInt64.ZERO);
   }
 
-  public SpecConstants getGenesisSpecConstants() {
-    return getGenesisSpec().getConstants();
+  public SpecConfig getGenesisSpecConfig() {
+    return getGenesisSpec().getConfig();
   }
 
   public BeaconStateUtil getGenesisBeaconStateUtil() {
@@ -126,41 +126,41 @@ public class Spec {
     return forkManifest.get(epoch);
   }
 
-  // Constants helpers
+  // Config helpers
   public int slotsPerEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants().getSlotsPerEpoch();
+    return atEpoch(epoch).getConfig().getSlotsPerEpoch();
   }
 
   public Bytes4 domainBeaconProposer(final UInt64 epoch) {
-    return atEpoch(epoch).getConstants().getDomainBeaconProposer();
+    return atEpoch(epoch).getConfig().getDomainBeaconProposer();
   }
 
   public long getSlotsPerHistoricalRoot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerHistoricalRoot();
+    return atSlot(slot).getConfig().getSlotsPerHistoricalRoot();
   }
 
   public int getSlotsPerEpoch(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSlotsPerEpoch();
+    return atSlot(slot).getConfig().getSlotsPerEpoch();
   }
 
   public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerSlot();
+    return atSlot(slot).getConfig().getSecondsPerSlot();
   }
 
   public long getMaxDeposits(final BeaconState state) {
-    return atState(state).getConstants().getMaxDeposits();
+    return atState(state).getConfig().getMaxDeposits();
   }
 
   public long getEpochsPerEth1VotingPeriod(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEpochsPerEth1VotingPeriod();
+    return atSlot(slot).getConfig().getEpochsPerEth1VotingPeriod();
   }
 
   public UInt64 getEth1FollowDistance(final UInt64 slot) {
-    return atSlot(slot).getConstants().getEth1FollowDistance();
+    return atSlot(slot).getConfig().getEth1FollowDistance();
   }
 
   public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
-    return atSlot(slot).getConstants().getSecondsPerEth1Block();
+    return atSlot(slot).getConfig().getSecondsPerEth1Block();
   }
 
   // Serialization

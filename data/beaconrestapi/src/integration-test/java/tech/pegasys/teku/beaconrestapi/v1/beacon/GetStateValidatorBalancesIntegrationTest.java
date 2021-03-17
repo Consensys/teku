@@ -55,8 +55,7 @@ public class GetStateValidatorBalancesIntegrationTest
             response.body().string(), GetStateValidatorBalancesResponse.class);
     assertThat(body.data)
         .containsExactly(
-            new ValidatorBalanceResponse(
-                UInt64.valueOf(1), specConstants.getMaxEffectiveBalance()));
+            new ValidatorBalanceResponse(UInt64.valueOf(1), specConfig.getMaxEffectiveBalance()));
   }
 
   @Test

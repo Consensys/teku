@@ -53,7 +53,7 @@ class BeaconChainMetricsTest {
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
   private final Spec spec = SpecFactory.createMainnet();
   private final int slotsPerHistoricalRoot =
-      spec.getGenesisSpecConstants().getSlotsPerHistoricalRoot();
+      spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Bytes32 root =

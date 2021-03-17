@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -64,7 +64,7 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData =
@@ -198,7 +198,7 @@ public class BlockImporterTest {
   public void importBlock_latestFinalizedBlock() throws Exception {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     UInt64 currentSlot = recentChainData.getHeadSlot();
-    for (int i = 0; i < genesisConstants.getSlotsPerEpoch(); i++) {
+    for (int i = 0; i < genesisConfig.getSlotsPerEpoch(); i++) {
       currentSlot = currentSlot.plus(UInt64.ONE);
       final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot);
       blocks.add(block);
@@ -208,7 +208,7 @@ public class BlockImporterTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
-    assertThat(bestEpoch).isEqualTo(SpecConstants.GENESIS_EPOCH.plus(1));
+    assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
@@ -222,7 +222,7 @@ public class BlockImporterTest {
   public void importBlock_knownBlockOlderThanLatestFinalized() throws Exception {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     UInt64 currentSlot = recentChainData.getHeadSlot();
-    for (int i = 0; i < genesisConstants.getSlotsPerEpoch(); i++) {
+    for (int i = 0; i < genesisConfig.getSlotsPerEpoch(); i++) {
       currentSlot = currentSlot.plus(UInt64.ONE);
       final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot);
       blocks.add(block);
@@ -232,7 +232,7 @@ public class BlockImporterTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
-    assertThat(bestEpoch).isEqualTo(SpecConstants.GENESIS_EPOCH.plus(1));
+    assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
@@ -432,7 +432,7 @@ public class BlockImporterTest {
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
-    final UInt64 wsPeriodInSlots = wsPeriod.times(genesisConstants.getSlotsPerEpoch());
+    final UInt64 wsPeriodInSlots = wsPeriod.times(genesisConfig.getSlotsPerEpoch());
     when(weakSubjectivityValidator.getWSPeriod(any())).thenReturn(Optional.of(wsPeriod));
     final UInt64 currentSlot = wsPeriodInSlots.times(3).plus(1);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
@@ -473,7 +473,7 @@ public class BlockImporterTest {
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
-    final UInt64 wsPeriodInSlots = wsPeriod.times(genesisConstants.getSlotsPerEpoch());
+    final UInt64 wsPeriodInSlots = wsPeriod.times(genesisConfig.getSlotsPerEpoch());
     when(weakSubjectivityValidator.getWSPeriod(any())).thenReturn(Optional.of(wsPeriod));
     final UInt64 currentSlot = wsPeriodInSlots.times(3).plus(1);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);

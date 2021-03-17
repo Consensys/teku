@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -20,20 +20,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
 
-public class SpecConstantsAssertions {
+public class SpecConfigAssertions {
 
-  static void assertAllPhase0FieldsSet(final SpecConstants constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConstantsPhase0.class);
+  static void assertAllPhase0FieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigPhase0.class);
   }
 
-  static void assertAllAltairFieldsSet(final SpecConstants constants) throws Exception {
-    assertAllFieldsSet(constants, SpecConstantsAltair.class);
+  static void assertAllAltairFieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigAltair.class);
   }
 
-  static void assertAllFieldsSet(final SpecConstants constants, Class<?> targetConstants)
-      throws Exception {
-    for (Method method : listGetters(targetConstants)) {
-      final Object value = method.invoke(constants);
+  static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {
+    for (Method method : listGetters(targetConfig)) {
+      final Object value = method.invoke(config);
       Assertions.assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
     }
   }

@@ -46,7 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -647,8 +647,8 @@ class ValidatorApiHandlerTest {
                         validator
                             .withActivation_eligibility_epoch(ZERO)
                             .withActivation_epoch(ZERO)
-                            .withExit_epoch(SpecConstants.FAR_FUTURE_EPOCH)
-                            .withWithdrawable_epoch(SpecConstants.FAR_FUTURE_EPOCH));
+                            .withExit_epoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(SpecConfig.FAR_FUTURE_EPOCH));
               }
             });
   }

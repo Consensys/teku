@@ -39,7 +39,7 @@ public class BeaconStateBuilderPhase0
 
   @Override
   protected BeaconStatePhase0 getEmptyState() {
-    return BeaconStateSchemaPhase0.create(spec.getGenesisSpecConstants()).createEmpty();
+    return BeaconStateSchemaPhase0.create(spec.getGenesisSpecConfig()).createEmpty();
   }
 
   @Override

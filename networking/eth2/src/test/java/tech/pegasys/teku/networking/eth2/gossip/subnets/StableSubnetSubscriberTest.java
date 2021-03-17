@@ -30,16 +30,16 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
-  SpecConstants specConstants =
-      TestConstantsLoader.loadConstants("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
-  private final Spec spec = SpecFactory.create(specConstants);
+  SpecConfig specConfig =
+      TestConfigLoader.loadConfig("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
+  private final Spec spec = SpecFactory.create(specConfig);
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
 
@@ -169,14 +169,14 @@ public class StableSubnetSubscriberTest {
     UInt64 lowerBound =
         currentSlot.plus(
             UInt64.valueOf(
-                spec.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
-                    * spec.getGenesisSpecConstants().getSlotsPerEpoch()));
+                spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     UInt64 upperBound =
         currentSlot.plus(
             UInt64.valueOf(
                 2
-                    * spec.getGenesisSpecConstants().getEpochsPerRandomSubnetSubscription()
-                    * spec.getGenesisSpecConstants().getSlotsPerEpoch()));
+                    * spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     subnetSubscriptions.forEach(
         subnetSubscription -> {
           assertThat(subnetSubscription.getUnsubscriptionSlot()).isBetween(lowerBound, upperBound);

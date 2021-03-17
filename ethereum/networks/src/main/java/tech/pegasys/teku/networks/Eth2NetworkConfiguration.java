@@ -150,7 +150,7 @@ public class Eth2NetworkConfiguration {
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress.isEmpty()) {
         eth1DepositContractAddress(
-            spec.getGenesisSpec().getConstants().getDepositContractAddress().toHexString());
+            spec.getGenesisSpec().getConfig().getDepositContractAddress().toHexString());
       }
       return new Eth2NetworkConfiguration(
           spec,
@@ -240,7 +240,7 @@ public class Eth2NetworkConfiguration {
         case LESS_SWIFT:
           return applyLessSwiftNetworkDefaults();
         default:
-          return reset().constants(network.constantsName());
+          return reset().constants(network.configName());
       }
     }
 
@@ -257,20 +257,20 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return reset().constants(MINIMAL.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(MINIMAL.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
-      return reset().constants(SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyLessSwiftNetworkDefaults() {
-      return reset().constants(LESS_SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(LESS_SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyMainnetNetworkDefaults() {
       return reset()
-          .constants(MAINNET.constantsName())
+          .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
@@ -299,7 +299,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyPraterNetworkDefaults() {
       return reset()
-          .constants(PRATER.constantsName())
+          .constants(PRATER.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
           .initialState(
@@ -309,7 +309,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyPyrmontNetworkDefaults() {
       return reset()
-          .constants(PYRMONT.constantsName())
+          .constants(PYRMONT.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(3743587)
           .initialStateFromClasspath("pyrmont-genesis.ssz")

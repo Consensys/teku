@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;

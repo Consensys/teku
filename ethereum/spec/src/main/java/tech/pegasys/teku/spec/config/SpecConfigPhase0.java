@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
@@ -19,8 +19,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConstantsPhase0 implements SpecConstants {
-  private final Map<String, Object> rawConstants;
+public class SpecConfigPhase0 implements SpecConfig {
+  private final Map<String, Object> rawConfig;
   private final String configName;
 
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
@@ -108,8 +108,8 @@ public class SpecConstantsPhase0 implements SpecConstants {
   private final int depositNetworkId;
   private final Bytes depositContractAddress;
 
-  public SpecConstantsPhase0(
-      final Map<String, Object> rawConstants,
+  public SpecConfigPhase0(
+      final Map<String, Object> rawConfig,
       final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
@@ -170,7 +170,7 @@ public class SpecConstantsPhase0 implements SpecConstants {
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
-    this.rawConstants = rawConstants;
+    this.rawConfig = rawConfig;
     this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -234,8 +234,8 @@ public class SpecConstantsPhase0 implements SpecConstants {
   }
 
   @Override
-  public Map<String, Object> getRawConstants() {
-    return rawConstants;
+  public Map<String, Object> getRawConfig() {
+    return rawConfig;
   }
 
   @Override
@@ -557,7 +557,7 @@ public class SpecConstantsPhase0 implements SpecConstants {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SpecConstantsPhase0 that = (SpecConstantsPhase0) o;
+    final SpecConfigPhase0 that = (SpecConfigPhase0) o;
     return depositContractTreeDepth == that.depositContractTreeDepth
         && justificationBitsLength == that.justificationBitsLength
         && maxCommitteesPerSlot == that.maxCommitteesPerSlot
