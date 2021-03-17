@@ -30,7 +30,6 @@ import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import java.net.BindException;
-import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -127,7 +126,7 @@ public class BeaconRestApi {
   }
 
   private void addV1ConfigHandlers(
-      final DataProvider dataProvider, final Optional<Eth1Address> depositAddress) {
+      final DataProvider dataProvider, final Eth1Address depositAddress) {
     app.get(
         GetDepositContract.ROUTE,
         new GetDepositContract(depositAddress, jsonProvider, dataProvider.getConfigProvider()));
