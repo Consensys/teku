@@ -17,8 +17,8 @@ import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.impl.SszMutableListImpl;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszMutablePrimitiveListImpl<

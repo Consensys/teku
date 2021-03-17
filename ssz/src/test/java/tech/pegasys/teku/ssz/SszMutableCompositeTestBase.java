@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +27,11 @@ import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveCollection;
 import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveCollection;
 
 public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
@@ -195,16 +197,16 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     }
     SszComposite<SszData> data1 = data.commitChanges();
 
-    SszDataAssert.assertThatSszData((SszComposite<SszData>) data).isEqualByGettersTo(origData);
-    SszDataAssert.assertThatSszData(data1).isEqualByAllMeansTo(origData);
+    assertThatSszData((SszComposite<SszData>) data).isEqualByGettersTo(origData);
+    assertThatSszData(data1).isEqualByAllMeansTo(origData);
 
     for (int i = 0; i < updatedIndexes.size(); i++) {
       SszComposite<SszData> updated = updatedData.get(i);
       for (int i1 = 0; i1 < updated.size(); i1++) {
         if (i1 != updatedIndexes.get(i)) {
-          SszDataAssert.assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(origData.get(i1));
+          assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(origData.get(i1));
         } else {
-          SszDataAssert.assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(newChildren.get(i));
+          assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(newChildren.get(i));
         }
       }
     }
@@ -221,11 +223,11 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
       data.set(origSize, appendChild);
 
       assertThat(data.size()).isEqualTo(origSize + 1);
-      SszDataAssert.assertThatSszData(data.get(origSize)).isEqualByAllMeansTo(appendChild);
+      assertThatSszData(data.get(origSize)).isEqualByAllMeansTo(appendChild);
 
       SszComposite<SszData> data1 = data.commitChanges();
       assertThat(data1.size()).isEqualTo(origSize + 1);
-      SszDataAssert.assertThatSszData(data1.get(origSize)).isEqualByAllMeansTo(appendChild);
+      assertThatSszData(data1.get(origSize)).isEqualByAllMeansTo(appendChild);
     }
   }
 
