@@ -27,7 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
@@ -445,7 +445,8 @@ class RemoteValidatorApiHandlerTest {
   public void sendSignedBlock_InvokeApiWithCorrectRequest() {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
     final BLSSignature signature = dataStructureUtil.randomSignature();
-    final SignedBeaconBlock signedBeaconBlock = new SignedBeaconBlock(beaconBlock, signature);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
     final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =

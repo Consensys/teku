@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public final class BeaconBlocksByRangeRequestMessage
     extends Container3<BeaconBlocksByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64>
@@ -51,7 +51,7 @@ public final class BeaconBlocksByRangeRequestMessage
 
   public BeaconBlocksByRangeRequestMessage(
       final UInt64 startSlot, final UInt64 count, final UInt64 step) {
-    super(SSZ_SCHEMA, new SszUInt64(startSlot), new SszUInt64(count), new SszUInt64(step));
+    super(SSZ_SCHEMA, SszUInt64.of(startSlot), SszUInt64.of(count), SszUInt64.of(step));
   }
 
   public UInt64 getStartSlot() {

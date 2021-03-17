@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,32 +40,32 @@ public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecConstants specConstants;
+  private final SpecConfig specConfig;
   private final BlockProcessorUtil blockProcessorUtil;
   private final EpochProcessor epochProcessor;
 
   private final BlockValidator blockValidator;
 
   private StateTransition(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BlockProcessorUtil blockProcessorUtil,
       final EpochProcessor epochProcessor,
       final BlockValidator blockValidator) {
-    this.specConstants = specConstants;
+    this.specConfig = specConfig;
     this.blockProcessorUtil = blockProcessorUtil;
     this.epochProcessor = epochProcessor;
     this.blockValidator = blockValidator;
   }
 
   public static StateTransition create(
-      final SpecConstants specConstants,
+      final SpecConfig specConfig,
       final BlockProcessorUtil blockProcessorUtil,
       final EpochProcessor epochProcessor,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorsUtil validatorsUtil) {
     final BlockValidator blockValidator =
-        BlockValidator.standard(specConstants, beaconStateUtil, blockProcessorUtil, validatorsUtil);
-    return new StateTransition(specConstants, blockProcessorUtil, epochProcessor, blockValidator);
+        BlockValidator.standard(specConfig, beaconStateUtil, blockProcessorUtil, validatorsUtil);
+    return new StateTransition(specConfig, blockProcessorUtil, epochProcessor, blockValidator);
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
@@ -178,7 +178,7 @@ public class StateTransition {
         if (state
             .getSlot()
             .plus(UInt64.ONE)
-            .mod(specConstants.getSlotsPerEpoch())
+            .mod(specConfig.getSlotsPerEpoch())
             .equals(UInt64.ZERO)) {
           state = epochProcessor.processEpoch(state);
         }
@@ -201,8 +201,8 @@ public class StateTransition {
         state -> {
           // Cache state root
           Bytes32 previous_state_root = state.hashTreeRoot();
-          int index = state.getSlot().mod(specConstants.getSlotsPerHistoricalRoot()).intValue();
-          state.getState_roots().set(index, previous_state_root);
+          int index = state.getSlot().mod(specConfig.getSlotsPerHistoricalRoot()).intValue();
+          state.getState_roots().setElement(index, previous_state_root);
 
           // Cache latest block header state root
           BeaconBlockHeader latest_block_header = state.getLatest_block_header();
@@ -219,7 +219,7 @@ public class StateTransition {
 
           // Cache block root
           Bytes32 previous_block_root = state.getLatest_block_header().hashTreeRoot();
-          state.getBlock_roots().set(index, previous_block_root);
+          state.getBlock_roots().setElement(index, previous_block_root);
         });
   }
 }

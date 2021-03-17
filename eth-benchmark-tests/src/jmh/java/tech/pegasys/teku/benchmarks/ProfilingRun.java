@@ -86,9 +86,10 @@ public class ProfilingRun {
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
-      BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+      BeaconChainUtil localChain =
+          BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
           new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
 
@@ -97,7 +98,7 @@ public class ProfilingRun {
       int measuredBlockCount = 0;
 
       long totalS = 0;
-      try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
+      try (Reader blockReader = BlockIO.createResourceReader(spec, blocksFile)) {
         for (SignedBeaconBlock block : blockReader) {
           if (block.getSlot().intValue() == 65) {
             totalS = System.currentTimeMillis();
@@ -166,7 +167,7 @@ public class ProfilingRun {
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;
-      try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
+      try (Reader blockReader = BlockIO.createResourceReader(spec, blocksFile)) {
         for (SignedBeaconBlock block : blockReader) {
           long s = System.currentTimeMillis();
           localChain.setSlot(block.getSlot());

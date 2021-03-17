@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class ChainHeadTest {
   private final Spec spec = SpecFactory.createMinimal();
@@ -128,9 +128,11 @@ public class ChainHeadTest {
     assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
 
+  @SuppressWarnings("unchecked")
   private ChainHead copy(ChainHead original) {
+    final SignedBeaconBlock originalBlock = original.getSignedBeaconBlock().orElseThrow();
     final SignedBeaconBlock blockCopy =
-        copy(original.getSignedBeaconBlock().orElseThrow(), SignedBeaconBlock.SSZ_SCHEMA.get());
+        copy(originalBlock, (SszSchema<SignedBeaconBlock>) originalBlock.getSchema());
     final BeaconState stateCopy =
         copy(
             original.getState(),

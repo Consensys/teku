@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import java.net.BindException;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -129,6 +131,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private final BeaconChainConfiguration beaconConfig;
   private final Spec spec;
+  private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final AsyncRunner beaconAsyncRunner;
@@ -179,6 +182,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
     this.spec = beaconConfig.getSpec();
+    this.beaconBlockSchemaSupplier =
+        slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -349,7 +354,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AttesterSlashingValidator validator =
         new AttesterSlashingValidator(
             recentChainData, new AttesterSlashingStateTransitionValidator());
-    attesterSlashingPool = new OperationPool<>(AttesterSlashing.class, validator);
+    attesterSlashingPool =
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
+            validator);
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
@@ -360,7 +368,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             new ProposerSlashingStateTransitionValidator(),
             new ProposerSlashingSignatureVerifier());
-    proposerSlashingPool = new OperationPool<>(ProposerSlashing.class, validator);
+    proposerSlashingPool =
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
+            validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
@@ -371,7 +382,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             new VoluntaryExitStateTransitionValidator(),
             new VoluntaryExitSignatureVerifier());
-    voluntaryExitPool = new OperationPool<>(SignedVoluntaryExit.class, validator);
+    voluntaryExitPool =
+        new OperationPool<>(
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
+            validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
@@ -397,10 +411,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoice = ForkChoice.create(spec, forkChoiceExecutor, recentChainData);
-    forkChoiceTrigger =
-        ForkChoiceTrigger.create(
-            forkChoice, beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled());
+    final boolean balanceAttackMitigationEnabled =
+        beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled();
+    forkChoice =
+        ForkChoice.create(
+            spec, forkChoiceExecutor, recentChainData, balanceAttackMitigationEnabled);
+    forkChoiceTrigger = ForkChoiceTrigger.create(forkChoice, balanceAttackMitigationEnabled);
   }
 
   public void initMetrics() {

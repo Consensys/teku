@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.sos;
 
+import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
@@ -51,11 +53,11 @@ public class SszLengthBounds {
   }
 
   public long getMinBytes() {
-    return (min + 7) / 8;
+    return bitsCeilToBytes(min);
   }
 
   public long getMaxBytes() {
-    return (max + 7) / 8;
+    return bitsCeilToBytes(max);
   }
 
   public SszLengthBounds ceilToBytes() {

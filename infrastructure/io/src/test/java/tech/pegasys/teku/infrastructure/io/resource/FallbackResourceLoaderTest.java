@@ -28,14 +28,15 @@ class FallbackResourceLoaderTest {
   private final ResourceLoader loader1 = mock(ResourceLoader.class);
   private final ResourceLoader loader2 = mock(ResourceLoader.class);
 
-  private final ResourceLoader fallbackLoader = new FallbackResourceLoader(loader1, loader2);
+  private final ResourceLoader fallbackLoader =
+      new FallbackResourceLoader(__ -> true, loader1, loader2);
 
   @Test
   public void shouldLoadFromFirstLoaderIfBothCouldLoad() throws Exception {
     final InputStream result1 = new ByteArrayInputStream(new byte[1]);
     final InputStream result2 = new ByteArrayInputStream(new byte[2]);
-    when(loader1.load(SOURCE)).thenReturn(Optional.of(result1));
-    when(loader2.load(SOURCE)).thenReturn(Optional.of(result2));
+    when(loader1.loadSource(SOURCE)).thenReturn(Optional.of(result1));
+    when(loader2.loadSource(SOURCE)).thenReturn(Optional.of(result2));
 
     assertThat(fallbackLoader.load(SOURCE)).containsSame(result1);
     verifyNoInteractions(loader2);
@@ -44,7 +45,7 @@ class FallbackResourceLoaderTest {
   @Test
   public void shouldLoadFromSecondLoaderIfFirstCouldNotLoad() throws Exception {
     final InputStream result2 = new ByteArrayInputStream(new byte[2]);
-    when(loader2.load(SOURCE)).thenReturn(Optional.of(result2));
+    when(loader2.loadSource(SOURCE)).thenReturn(Optional.of(result2));
 
     assertThat(fallbackLoader.load(SOURCE)).containsSame(result2);
   }

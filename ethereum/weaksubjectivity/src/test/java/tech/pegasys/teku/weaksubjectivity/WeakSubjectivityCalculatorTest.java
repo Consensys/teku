@@ -47,7 +47,7 @@ public class WeakSubjectivityCalculatorTest {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result =
         calculator.computeWeakSubjectivityPeriod(
-            SPEC.getGenesisSpecConstants(), validatorCount, totalActiveValidatorBalance);
+            SPEC.getGenesisSpecConfig(), validatorCount, totalActiveValidatorBalance);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 

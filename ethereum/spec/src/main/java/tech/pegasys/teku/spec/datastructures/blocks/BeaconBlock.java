@@ -18,63 +18,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.containers.Container5;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
-import tech.pegasys.teku.util.config.SpecDependent;
+import tech.pegasys.teku.ssz.containers.Container5;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public final class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary {
 
-  public static class BeaconBlockSchema
-      extends ContainerSchema5<
-          BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
-
-    public BeaconBlockSchema() {
-      super(
-          "BeaconBlock",
-          namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("parent_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema(
-              "body",
-              SszSchema.as(BeaconBlockBody.class, BeaconBlockBodySchemaPhase0.SSZ_SCHEMA.get())));
-    }
-
-    @Override
-    public BeaconBlock createFromBackingNode(TreeNode node) {
-      return new BeaconBlock(this, node);
-    }
-  }
-
-  public static BeaconBlockSchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
-
-  public static final SpecDependent<BeaconBlockSchema> SSZ_SCHEMA =
-      SpecDependent.of(BeaconBlockSchema::new);
-
-  private BeaconBlock(BeaconBlockSchema type, TreeNode backingNode) {
+  BeaconBlock(final BeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
-  }
-
-  @Deprecated
-  public BeaconBlock(
-      UInt64 slot,
-      UInt64 proposer_index,
-      Bytes32 parent_root,
-      Bytes32 state_root,
-      BeaconBlockBody body) {
-    this(SSZ_SCHEMA.get(), slot, proposer_index, parent_root, state_root, body);
   }
 
   public BeaconBlock(
@@ -86,10 +42,10 @@ public final class BeaconBlock
       BeaconBlockBody body) {
     super(
         type,
-        new SszUInt64(slot),
-        new SszUInt64(proposer_index),
-        new SszBytes32(parent_root),
-        new SszBytes32(state_root),
+        SszUInt64.of(slot),
+        SszUInt64.of(proposer_index),
+        SszBytes32.of(parent_root),
+        SszBytes32.of(state_root),
         body);
   }
 
@@ -100,7 +56,7 @@ public final class BeaconBlock
   public static BeaconBlock fromGenesisState(
       final SchemaDefinitions genesisSchema, final BeaconState genesisState) {
     return new BeaconBlock(
-        SSZ_SCHEMA.get(),
+        genesisSchema.getBeaconBlockSchema(),
         UInt64.ZERO,
         UInt64.ZERO,
         Bytes32.ZERO,

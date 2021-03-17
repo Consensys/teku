@@ -46,7 +46,7 @@ class ForkChoiceUtilTest {
 
   private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
   private final UInt64 slot50Time =
-      GENESIS_TIME.plus(spec.getGenesisSpecConstants().getSecondsPerSlot() * 50L);
+      GENESIS_TIME.plus(spec.getGenesisSpecConfig().getSecondsPerSlot() * 50L);
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {

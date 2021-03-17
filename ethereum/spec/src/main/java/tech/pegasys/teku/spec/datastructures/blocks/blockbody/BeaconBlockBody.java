@@ -21,8 +21,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.SszContainer;
+import tech.pegasys.teku.ssz.SszContainer;
+import tech.pegasys.teku.ssz.SszList;
 
 public interface BeaconBlockBody extends SszContainer {
   BLSSignature getRandao_reveal();
@@ -31,13 +31,16 @@ public interface BeaconBlockBody extends SszContainer {
 
   Bytes32 getGraffiti();
 
-  SSZList<ProposerSlashing> getProposer_slashings();
+  SszList<ProposerSlashing> getProposer_slashings();
 
-  SSZList<AttesterSlashing> getAttester_slashings();
+  SszList<AttesterSlashing> getAttester_slashings();
 
-  SSZList<Attestation> getAttestations();
+  SszList<Attestation> getAttestations();
 
-  SSZList<Deposit> getDeposits();
+  SszList<Deposit> getDeposits();
 
-  SSZList<SignedVoluntaryExit> getVoluntary_exits();
+  SszList<SignedVoluntaryExit> getVoluntary_exits();
+
+  @Override
+  BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
 }

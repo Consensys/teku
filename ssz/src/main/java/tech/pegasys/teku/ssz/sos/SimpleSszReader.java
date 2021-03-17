@@ -15,10 +15,10 @@ package tech.pegasys.teku.ssz.sos;
 
 import org.apache.tuweni.bytes.Bytes;
 
-class SimpleSszReader implements SszReader {
+public class SimpleSszReader implements SszReader {
 
   private final Bytes bytes;
-  private int offset = 0;
+  protected int offset = 0;
 
   public SimpleSszReader(Bytes bytes) {
     this.bytes = bytes;

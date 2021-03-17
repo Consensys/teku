@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalUtil {
 
@@ -53,11 +53,11 @@ public class BlockProposalUtil {
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final Bytes32 graffiti,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> proposerSlashings,
-      final SSZList<AttesterSlashing> attesterSlashings,
-      final SSZList<Deposit> deposits,
-      final SSZList<SignedVoluntaryExit> voluntaryExits)
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -82,12 +82,14 @@ public class BlockProposalUtil {
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     BeaconBlock newBlock =
-        new BeaconBlock(
-            newSlot,
-            UInt64.valueOf(proposerIndex),
-            parentBlockSigningRoot,
-            tmpStateRoot,
-            beaconBlockBody);
+        schemaDefinitions
+            .getBeaconBlockSchema()
+            .create(
+                newSlot,
+                UInt64.valueOf(proposerIndex),
+                parentBlockSigningRoot,
+                tmpStateRoot,
+                beaconBlockBody);
 
     // Run state transition and set state root
     try {

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -23,21 +22,18 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.containers.Container8;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.containers.Container8;
+import tech.pegasys.teku.ssz.impl.SszUtils;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
 class BeaconBlockBodyPhase0
     extends Container8<
         BeaconBlockBodyPhase0,
-        SszVector<SszByte>,
+        SszSignature,
         Eth1Data,
         SszBytes32,
         SszList<ProposerSlashing>,
@@ -59,7 +55,7 @@ class BeaconBlockBodyPhase0
 
   BeaconBlockBodyPhase0(
       BeaconBlockBodySchemaPhase0 type,
-      SszVector<SszByte> randao_reveal,
+      SszSignature randao_reveal,
       Eth1Data eth1_data,
       SszBytes32 graffiti,
       SszList<ProposerSlashing> proposer_slashings,
@@ -98,32 +94,32 @@ class BeaconBlockBodyPhase0
   }
 
   @Override
-  public SSZList<ProposerSlashing> getProposer_slashings() {
-    return new SSZBackingList<>(
-        ProposerSlashing.class, getField3(), Function.identity(), Function.identity());
+  public SszList<ProposerSlashing> getProposer_slashings() {
+    return getField3();
   }
 
   @Override
-  public SSZList<AttesterSlashing> getAttester_slashings() {
-    return new SSZBackingList<>(
-        AttesterSlashing.class, getField4(), Function.identity(), Function.identity());
+  public SszList<AttesterSlashing> getAttester_slashings() {
+    return getField4();
   }
 
   @Override
-  public SSZList<Attestation> getAttestations() {
-    return new SSZBackingList<>(
-        Attestation.class, getField5(), Function.identity(), Function.identity());
+  public SszList<Attestation> getAttestations() {
+    return getField5();
   }
 
   @Override
-  public SSZList<Deposit> getDeposits() {
-    return new SSZBackingList<>(
-        Deposit.class, getField6(), Function.identity(), Function.identity());
+  public SszList<Deposit> getDeposits() {
+    return getField6();
   }
 
   @Override
-  public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
-    return new SSZBackingList<>(
-        SignedVoluntaryExit.class, getField7(), Function.identity(), Function.identity());
+  public SszList<SignedVoluntaryExit> getVoluntary_exits() {
+    return getField7();
+  }
+
+  @Override
+  public BeaconBlockBodySchemaPhase0 getSchema() {
+    return (BeaconBlockBodySchemaPhase0) super.getSchema();
   }
 }

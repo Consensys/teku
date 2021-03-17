@@ -51,8 +51,7 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
@@ -239,7 +238,8 @@ public class ChainBuilder {
 
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
-    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
+    final SignedBeaconBlock signedBlock =
+        SignedBeaconBlock.create(spec, genesisBlock, BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
@@ -328,7 +328,7 @@ public class ChainBuilder {
     final UInt64 minBlockSlot = spec.computeStartSlotAtEpoch(prevEpoch);
 
     // Calculate valid assigned slots to be included in a block at the given slot
-    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConstants().getSlotsPerEpoch());
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
     final UInt64 minAssignedSlot =
         slot.compareTo(slotsPerEpoch) <= 0 ? UInt64.ZERO : slot.minus(slotsPerEpoch);
     final UInt64 minInclusionDiff = UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);
@@ -378,13 +378,16 @@ public class ChainBuilder {
     final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
+      SszList<Attestation> attestations =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createAttestations(options.getAttestations().toArray(new Attestation[0]));
       nextBlockAndState =
           blockProposalTestUtil.createBlock(
               signer,
               slot,
               preState,
               parentRoot,
-              Optional.of(options.getAttestations()),
+              Optional.of(attestations),
               Optional.empty(),
               Optional.empty(),
               options.getEth1Data());
@@ -408,7 +411,8 @@ public class ChainBuilder {
   }
 
   public static final class BlockOptions {
-    private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+
+    private List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
@@ -427,7 +431,7 @@ public class ChainBuilder {
       return this;
     }
 
-    private SSZList<Attestation> getAttestations() {
+    private List<Attestation> getAttestations() {
       return attestations;
     }
 

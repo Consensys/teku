@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
@@ -24,25 +24,21 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.SszList;
-import tech.pegasys.teku.ssz.backing.SszVector;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.backing.schema.SszComplexSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszUtils;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.containers.ContainerSchema8;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<
         BeaconBlockBodyPhase0,
-        SszVector<SszByte>,
+        SszSignature,
         Eth1Data,
         SszBytes32,
         SszList<ProposerSlashing>,
@@ -59,7 +55,7 @@ public class BeaconBlockBodySchemaPhase0
       SpecDependent.of(BeaconBlockBodySchemaPhase0::create);
 
   private BeaconBlockBodySchemaPhase0(
-      NamedSchema<SszVector<SszByte>> randaoRevealSchema,
+      NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
       NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
@@ -79,13 +75,13 @@ public class BeaconBlockBodySchemaPhase0
         voluntaryExitsSchema);
   }
 
-  public static BeaconBlockBodySchemaPhase0 create(final SpecConstants constants) {
+  public static BeaconBlockBodySchemaPhase0 create(final SpecConfig specConfig) {
     return create(
-        constants.getMaxProposerSlashings(),
-        constants.getMaxAttesterSlashings(),
-        constants.getMaxAttestations(),
-        constants.getMaxDeposits(),
-        constants.getMaxVoluntaryExits());
+        specConfig.getMaxProposerSlashings(),
+        specConfig.getMaxAttesterSlashings(),
+        specConfig.getMaxAttestations(),
+        specConfig.getMaxDeposits(),
+        specConfig.getMaxVoluntaryExits());
   }
 
   @Deprecated
@@ -105,7 +101,7 @@ public class BeaconBlockBodySchemaPhase0
       final long maxDeposits,
       final long maxVoluntaryExits) {
     return new BeaconBlockBodySchemaPhase0(
-        namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszComplexSchemas.BYTES_96_SCHEMA),
+        namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
@@ -129,21 +125,21 @@ public class BeaconBlockBodySchemaPhase0
       BLSSignature randao_reveal,
       Eth1Data eth1_data,
       Bytes32 graffiti,
-      SSZList<ProposerSlashing> proposer_slashings,
-      SSZList<AttesterSlashing> attester_slashings,
-      SSZList<Attestation> attestations,
-      SSZList<Deposit> deposits,
-      SSZList<SignedVoluntaryExit> voluntary_exits) {
+      SszList<ProposerSlashing> proposer_slashings,
+      SszList<AttesterSlashing> attester_slashings,
+      SszList<Attestation> attestations,
+      SszList<Deposit> deposits,
+      SszList<SignedVoluntaryExit> voluntary_exits) {
     return new BeaconBlockBodyPhase0(
         this,
-        SszUtils.toSszByteVector(randao_reveal.toBytesCompressed()),
+        new SszSignature(randao_reveal),
         eth1_data,
-        new SszBytes32(graffiti),
-        SszUtils.toSszList(getProposerSlashingsSchema(), proposer_slashings),
-        SszUtils.toSszList(getAttesterSlashingsSchema(), attester_slashings),
-        SszUtils.toSszList(getAttestationsSchema(), attestations),
-        SszUtils.toSszList(getDepositsSchema(), deposits),
-        SszUtils.toSszList(getVoluntaryExitsSchema(), voluntary_exits));
+        SszBytes32.of(graffiti),
+        proposer_slashings,
+        attester_slashings,
+        attestations,
+        deposits,
+        voluntary_exits);
   }
 
   @Override
@@ -151,29 +147,34 @@ public class BeaconBlockBodySchemaPhase0
     return new BeaconBlockBodyPhase0(this);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public SszSchema<SszList<ProposerSlashing>> getFieldSchema3() {
-    return super.getFieldSchema3();
+  public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
+    return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
   }
 
-  SszSchema<SszList<ProposerSlashing>> getProposerSlashingsSchema() {
-    return getFieldSchema3();
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
+    return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
   }
 
-  SszSchema<SszList<AttesterSlashing>> getAttesterSlashingsSchema() {
-    return getFieldSchema4();
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<Attestation, ?> getAttestationsSchema() {
+    return (SszListSchema<Attestation, ?>) getFieldSchema5();
   }
 
-  SszSchema<SszList<Attestation>> getAttestationsSchema() {
-    return getFieldSchema5();
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<Deposit, ?> getDepositsSchema() {
+    return (SszListSchema<Deposit, ?>) getFieldSchema6();
   }
 
-  SszSchema<SszList<Deposit>> getDepositsSchema() {
-    return getFieldSchema6();
-  }
-
-  SszSchema<SszList<SignedVoluntaryExit>> getVoluntaryExitsSchema() {
-    return getFieldSchema7();
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
+    return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
   }
 
   @Override

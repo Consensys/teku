@@ -23,7 +23,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.ssz.backing.collections.SszBitlist;
+import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is

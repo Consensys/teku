@@ -25,9 +25,14 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
+import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 @SuppressWarnings("unchecked")
 abstract class AbstractBeaconStateBuilder<
@@ -44,16 +49,16 @@ abstract class AbstractBeaconStateBuilder<
   private UInt64 slot;
   private Fork fork;
   private BeaconBlockHeader latestBlockHeader;
-  private SSZVector<Bytes32> blockRoots;
-  private SSZVector<Bytes32> stateRoots;
-  private SSZList<Bytes32> historicalRoots;
+  private SszBytes32Vector blockRoots;
+  private SszBytes32Vector stateRoots;
+  private SszPrimitiveList<Bytes32, SszBytes32> historicalRoots;
   private Eth1Data eth1Data;
-  private SSZList<Eth1Data> eth1DataVotes;
+  private SszList<Eth1Data> eth1DataVotes;
   private UInt64 eth1DepositIndex;
-  private SSZList<? extends Validator> validators;
-  private SSZList<UInt64> balances;
-  private SSZVector<Bytes32> randaoMixes;
-  private SSZVector<UInt64> slashings;
+  private SszList<Validator> validators;
+  private SszUInt64List balances;
+  private SszBytes32Vector randaoMixes;
+  private SszPrimitiveVector<UInt64, SszUInt64> slashings;
   private SszBitvector justificationBits;
   private Checkpoint previousJustifiedCheckpoint;
   private Checkpoint currentJustifiedCheckpoint;
@@ -112,49 +117,42 @@ abstract class AbstractBeaconStateBuilder<
     fork = dataStructureUtil.randomFork();
     latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     blockRoots =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getSlotsPerHistoricalRoot(),
+        dataStructureUtil.randomSszBytes32Vector(
+            dataStructureUtil.getBeaconStateSchema().getBlockRootsSchema(),
             dataStructureUtil::randomBytes32);
     stateRoots =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getSlotsPerHistoricalRoot(),
+        dataStructureUtil.randomSszBytes32Vector(
+            dataStructureUtil.getBeaconStateSchema().getStateRootsSchema(),
             dataStructureUtil::randomBytes32);
     historicalRoots =
-        dataStructureUtil.randomSSZList(
-            Bytes32.class,
+        dataStructureUtil.randomSszPrimitiveList(
+            dataStructureUtil.getBeaconStateSchema().getHistoricalRootsSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil.getHistoricalRootsLimit(),
             dataStructureUtil::randomBytes32);
     eth1Data = dataStructureUtil.randomEth1Data();
     eth1DataVotes =
-        dataStructureUtil.randomSSZList(
-            Eth1Data.class,
+        dataStructureUtil.randomSszList(
+            dataStructureUtil.getBeaconStateSchema().getEth1DataVotesSchema(),
             dataStructureUtil.getEpochsPerEth1VotingPeriod() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomEth1Data);
     eth1DepositIndex = dataStructureUtil.randomUInt64();
     validators =
-        dataStructureUtil.randomSSZList(
-            Validator.class,
+        dataStructureUtil.randomSszList(
+            dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
             defaultValidatorCount,
-            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomValidator);
     balances =
-        dataStructureUtil.randomSSZList(
-            UInt64.class,
+        dataStructureUtil.randomSszUInt64List(
+            dataStructureUtil.getBeaconStateSchema().getBalancesSchema(),
             defaultValidatorCount,
-            dataStructureUtil.getValidatorRegistryLimit(),
             dataStructureUtil::randomUInt64);
     randaoMixes =
-        dataStructureUtil.randomSSZVector(
-            Bytes32.ZERO,
-            dataStructureUtil.getEpochsPerHistoricalVector(),
+        dataStructureUtil.randomSszBytes32Vector(
+            dataStructureUtil.getBeaconStateSchema().getRandaoMixesSchema(),
             dataStructureUtil::randomBytes32);
     slashings =
-        dataStructureUtil.randomSSZVector(
-            UInt64.ZERO,
-            dataStructureUtil.getEpochsPerSlashingsVector(),
+        dataStructureUtil.randomSszPrimitiveVector(
+            dataStructureUtil.getBeaconStateSchema().getSlashingsSchema(),
             dataStructureUtil::randomUInt64);
     justificationBits =
         dataStructureUtil.randomSszBitvector(dataStructureUtil.getJustificationBitsLength());
@@ -198,19 +196,19 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
-  public TBuilder blockRoots(final SSZVector<Bytes32> blockRoots) {
+  public TBuilder blockRoots(final SszBytes32Vector blockRoots) {
     checkNotNull(blockRoots);
     this.blockRoots = blockRoots;
     return (TBuilder) this;
   }
 
-  public TBuilder stateRoots(final SSZVector<Bytes32> stateRoots) {
+  public TBuilder stateRoots(final SszBytes32Vector stateRoots) {
     checkNotNull(stateRoots);
     this.stateRoots = stateRoots;
     return (TBuilder) this;
   }
 
-  public TBuilder historicalRoots(final SSZList<Bytes32> historicalRoots) {
+  public TBuilder historicalRoots(final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
     checkNotNull(historicalRoots);
     this.historicalRoots = historicalRoots;
     return (TBuilder) this;
@@ -222,7 +220,7 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
-  public TBuilder eth1DataVotes(final SSZList<Eth1Data> eth1DataVotes) {
+  public TBuilder eth1DataVotes(final SszList<Eth1Data> eth1DataVotes) {
     checkNotNull(eth1DataVotes);
     this.eth1DataVotes = eth1DataVotes;
     return (TBuilder) this;
@@ -234,25 +232,25 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
-  public TBuilder validators(final SSZList<? extends Validator> validators) {
+  public TBuilder validators(final SszList<Validator> validators) {
     checkNotNull(validators);
     this.validators = validators;
     return (TBuilder) this;
   }
 
-  public TBuilder balances(final SSZList<UInt64> balances) {
+  public TBuilder balances(final SszUInt64List balances) {
     checkNotNull(balances);
     this.balances = balances;
     return (TBuilder) this;
   }
 
-  public TBuilder randaoMixes(final SSZVector<Bytes32> randaoMixes) {
+  public TBuilder randaoMixes(final SszBytes32Vector randaoMixes) {
     checkNotNull(randaoMixes);
     this.randaoMixes = randaoMixes;
     return (TBuilder) this;
   }
 
-  public TBuilder slashings(final SSZVector<UInt64> slashings) {
+  public TBuilder slashings(final SszPrimitiveVector<UInt64, SszUInt64> slashings) {
     checkNotNull(slashings);
     this.slashings = slashings;
     return (TBuilder) this;

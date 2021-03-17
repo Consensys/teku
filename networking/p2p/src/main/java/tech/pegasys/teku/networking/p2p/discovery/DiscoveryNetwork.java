@@ -38,12 +38,12 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
@@ -160,12 +160,12 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setPreGenesisForkInfo() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
             spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
-            SpecConstants.FAR_FUTURE_EPOCH);
+            SpecConfig.FAR_FUTURE_EPOCH);
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
     this.enrForkId = Optional.of(enrForkId);
   }
@@ -178,7 +178,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .orElse(currentForkInfo.getFork().getCurrent_version());
     // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
     final UInt64 nextForkEpoch =
-        nextForkInfo.map(Fork::getEpoch).orElse(SpecConstants.FAR_FUTURE_EPOCH);
+        nextForkInfo.map(Fork::getEpoch).orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
     final Bytes4 forkDigest = currentForkInfo.getForkDigest();
     final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);

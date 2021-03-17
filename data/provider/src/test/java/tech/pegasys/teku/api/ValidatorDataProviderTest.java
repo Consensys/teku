@@ -27,7 +27,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import static tech.pegasys.teku.ssz.backing.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -180,7 +180,7 @@ public class ValidatorDataProviderTest {
   public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final int maxValidatorsPerCommittee =
-        spec.atSlot(attestationData.getSlot()).getConstants().getMaxValidatorsPerCommittee();
+        spec.atSlot(attestationData.getSlot()).getConfig().getMaxValidatorsPerCommittee();
     final tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         new tech.pegasys.teku.spec.datastructures.operations.Attestation(
             SszBitlistSchema.create(maxValidatorsPerCommittee).ofBits(4),

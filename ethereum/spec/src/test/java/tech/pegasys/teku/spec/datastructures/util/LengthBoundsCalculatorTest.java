@@ -23,10 +23,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -51,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
@@ -92,7 +90,8 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(getProvider(AttestationData.SSZ_SCHEMA), SszLengthBounds.ofBytes(128, 128)),
         Arguments.of(getProvider(AttesterSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(464, 33232)),
         Arguments.of(
-            getProvider(BeaconBlock.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(304, 157656)),
+            (SchemaProvider) SchemaDefinitions::getBeaconBlockSchema,
+            SszLengthBounds.ofBytes(304, 157656)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconBlockBodySchema,
             SszLengthBounds.ofBytes(220, 157572)),
@@ -116,7 +115,8 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(
             getProvider(SignedAggregateAndProof.SSZ_SCHEMA), SszLengthBounds.ofBytes(437, 693)),
         Arguments.of(
-            getProvider(SignedBeaconBlock.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(404, 157756)),
+            (SchemaProvider) SchemaDefinitions::getSignedBeaconBlockSchema,
+            SszLengthBounds.ofBytes(404, 157756)),
         Arguments.of(
             getProvider(SignedBeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(208, 208)),
         Arguments.of(

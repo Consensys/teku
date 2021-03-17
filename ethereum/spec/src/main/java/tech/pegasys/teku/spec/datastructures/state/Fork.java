@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes4;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
@@ -49,9 +49,9 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
   public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
         SSZ_SCHEMA,
-        new SszBytes4(previous_version),
-        new SszBytes4(current_version),
-        new SszUInt64(epoch));
+        SszBytes4.of(previous_version),
+        SszBytes4.of(current_version),
+        SszUInt64.of(epoch));
   }
 
   public Bytes4 getPrevious_version() {

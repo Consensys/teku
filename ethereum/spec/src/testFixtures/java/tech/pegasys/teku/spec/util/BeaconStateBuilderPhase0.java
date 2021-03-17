@@ -20,14 +20,14 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SszList;
 
 public class BeaconStateBuilderPhase0
     extends AbstractBeaconStateBuilder<
         BeaconStatePhase0, MutableBeaconStatePhase0, BeaconStateBuilderPhase0> {
 
-  private SSZList<PendingAttestation> previousEpochAttestations;
-  private SSZList<PendingAttestation> currentEpochAttestations;
+  private SszList<PendingAttestation> previousEpochAttestations;
+  private SszList<PendingAttestation> currentEpochAttestations;
 
   private BeaconStateBuilderPhase0(
       final Spec spec,
@@ -39,7 +39,7 @@ public class BeaconStateBuilderPhase0
 
   @Override
   protected BeaconStatePhase0 getEmptyState() {
-    return BeaconStateSchemaPhase0.create(spec.getGenesisSpecConstants()).createEmpty();
+    return BeaconStateSchemaPhase0.create(spec.getGenesisSpecConfig()).createEmpty();
   }
 
   @Override
@@ -62,28 +62,26 @@ public class BeaconStateBuilderPhase0
     super.initDefaults();
 
     previousEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
+        dataStructureUtil.randomSszList(
+            dataStructureUtil.getBeaconStateSchema().getPreviousEpochAttestationsSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
     currentEpochAttestations =
-        dataStructureUtil.randomSSZList(
-            PendingAttestation.class,
+        dataStructureUtil.randomSszList(
+            dataStructureUtil.getBeaconStateSchema().getCurrentEpochAttestationsSchema(),
             defaultItemsInSSZLists,
-            dataStructureUtil.getMaxAttestations() * dataStructureUtil.getSlotsPerEpoch(),
             dataStructureUtil::randomPendingAttestation);
   }
 
   public BeaconStateBuilderPhase0 previousEpochAttestations(
-      final SSZList<PendingAttestation> previousEpochAttestations) {
+      final SszList<PendingAttestation> previousEpochAttestations) {
     checkNotNull(previousEpochAttestations);
     this.previousEpochAttestations = previousEpochAttestations;
     return this;
   }
 
   public BeaconStateBuilderPhase0 currentEpochAttestations(
-      final SSZList<PendingAttestation> currentEpochAttestations) {
+      final SszList<PendingAttestation> currentEpochAttestations) {
     checkNotNull(currentEpochAttestations);
     this.currentEpochAttestations = currentEpochAttestations;
     return this;

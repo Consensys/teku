@@ -37,16 +37,30 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
 
   @Override
   public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
-    processHead(nodeSlot);
+    // We're technically processing attestations at the end of the previous slot so the fork choice
+    // slot needs to be nodeSlot - 1.  Otherwise we wind up deciding every slot is empty immediately
+    // and then treating the block as a reorg even if it arrives on time.
+    processHead(nodeSlot.minusMinZero(1));
   }
 
   @Override
   public void onSlotStarted(final UInt64 nodeSlot) {
-    processHead(nodeSlot);
+    // We're technically processing attestations at the end of the previous slot so the fork choice
+    // slot needs to be nodeSlot - 1.  Otherwise we wind up deciding every slot is empty immediately
+    // and then treating the block as a reorg even if it arrives on time.
+    processHead(nodeSlot.minusMinZero(1));
   }
 
+  /**
+   * Called at the point in the slot when attestations are due. This is also the point where the
+   * block for that slot must have been received by.
+   *
+   * @param slot the slot attestations are due for
+   */
   @Override
-  public void onAttestationsDueForSlot(final UInt64 nodeSlot) {}
+  public void onAttestationsDueForSlot(final UInt64 slot) {
+    forkChoice.onBlocksDueForSlot(slot);
+  }
 
   @Override
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {

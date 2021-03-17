@@ -37,7 +37,7 @@ public class Eth2NetworkConfigurationTest {
         Eth2NetworkConfiguration.builder();
     networkDefinition.configure(networkConfigBuilder);
 
-    assertThat(networkConfig.getConstants()).isEqualTo(network.constantsName());
+    assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
     assertThat(networkConfigBuilder.build()).usingRecursiveComparison().isEqualTo(networkConfig);
   }
 
@@ -48,7 +48,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConfig().getConfigName())
         .isEqualTo("Custom Constants");
   }
 
@@ -59,7 +59,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConstants().getConfigName())
+    assertThat(config.getSpec().getGenesisSpecConfig().getConfigName())
         .isEqualTo("Custom Constants");
   }
 

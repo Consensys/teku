@@ -39,8 +39,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.ssz.backing.SszData;
-import tech.pegasys.teku.ssz.backing.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 @Command(
@@ -75,11 +73,11 @@ public class TransitionCommand implements Runnable {
           List<String> blocks) {
     return processStateTransition(
         params,
-        (specProvider, state) -> {
+        (spec, state) -> {
           if (blocks != null) {
             for (String blockPath : blocks) {
-              SignedBeaconBlock block = readBlock(blockPath);
-              state = specProvider.initiateStateTransition(state, block);
+              SignedBeaconBlock block = readBlock(spec, blockPath);
+              state = spec.initiateStateTransition(state, block);
             }
           }
           return state;
@@ -169,17 +167,12 @@ public class TransitionCommand implements Runnable {
     }
   }
 
-  private SignedBeaconBlock readBlock(final String path) throws IOException {
+  private SignedBeaconBlock readBlock(final Spec spec, final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return deserialize(blockData, SignedBeaconBlock.getSszSchema(), path);
-  }
-
-  private <T extends SszData> T deserialize(
-      final Bytes data, final SszSchema<T> type, final String descriptor) {
     try {
-      return type.sszDeserialize(data);
+      return spec.deserializeSignedBeaconBlock(blockData);
     } catch (final IllegalArgumentException e) {
-      throw new SSZException("Failed to parse SSZ (" + descriptor + "): " + e.getMessage(), e);
+      throw new SSZException("Failed to parse SSZ (" + path + "): " + e.getMessage(), e);
     }
   }
 

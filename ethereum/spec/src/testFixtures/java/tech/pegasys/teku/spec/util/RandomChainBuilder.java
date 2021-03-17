@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
@@ -108,7 +108,7 @@ public class RandomChainBuilder {
 
   private SignedBlockAndState generateGenesis() {
     final SignedBlockAndState genesis =
-        datastructureUtil.randomSignedBlockAndState(SpecConstants.GENESIS_SLOT);
+        datastructureUtil.randomSignedBlockAndState(SpecConfig.GENESIS_SLOT);
     putBlock(genesis);
     return genesis;
   }

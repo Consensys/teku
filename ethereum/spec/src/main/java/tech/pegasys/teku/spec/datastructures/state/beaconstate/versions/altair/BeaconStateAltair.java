@@ -14,12 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
 
@@ -33,18 +31,16 @@ public interface BeaconStateAltair extends BeaconState {
   }
 
   // Participation
-  default SSZList<SszByte> getPreviousEpochParticipation() {
+  default SszList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
-    return new SSZBackingList<>(
-        SszByte.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
-  default SSZList<SszByte> getCurrentEpochParticipation() {
+  default SszList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
-    return new SSZBackingList<>(
-        SszByte.class, getAny(fieldIndex), Function.identity(), Function.identity());
+    return getAny(fieldIndex);
   }
 
   @Override

@@ -273,7 +273,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
+      final List<ProposerWeighting> removedProposerWeightings) {
     throw new UnsupportedOperationException("Not implemented");
   }
 }

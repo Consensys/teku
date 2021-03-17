@@ -20,9 +20,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container2;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.containers.Container2;
+import tech.pegasys.teku.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
@@ -52,8 +52,8 @@ public class AttesterSlashing
                   new TreeSet<>(
                       getAttestation_1()
                           .getAttesting_indices()
-                          .asList()), // TreeSet as must be sorted
-                  new HashSet<>(getAttestation_2().getAttesting_indices().asList())));
+                          .asListUnboxed()), // TreeSet as must be sorted
+                  new HashSet<>(getAttestation_2().getAttesting_indices().asListUnboxed())));
 
   private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
     super(type, backingNode);

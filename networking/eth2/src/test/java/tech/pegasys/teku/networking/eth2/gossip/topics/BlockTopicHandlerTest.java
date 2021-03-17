@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -57,7 +57,7 @@ public class BlockTopicHandlerTest {
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
           BlockGossipManager.TOPIC_NAME,
-          SignedBeaconBlock.SSZ_SCHEMA.get());
+          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
 
   @BeforeEach
   public void setup() {
@@ -141,7 +141,7 @@ public class BlockTopicHandlerTest {
             gossipEncoding,
             forkDigest,
             BlockGossipManager.TOPIC_NAME,
-            SignedBeaconBlock.SSZ_SCHEMA.get());
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -32,11 +32,11 @@ public abstract class AbstractBeaconStateTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
   private final Spec spec = SpecFactory.createMinimal();
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
 
   protected abstract T randomState();
 
@@ -48,19 +48,19 @@ public abstract class AbstractBeaconStateTest<
             .createEmpty()
             .updated(
                 state -> {
-                  state.getBalances().add(val1);
+                  state.getBalances().appendElement(val1);
                 });
-    UInt64 v1 = stateR1.getBalances().get(0);
+    UInt64 v1 = stateR1.getBalances().getElement(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
-    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
+    assertThat(stateR1.getBalances().getElement(0)).isEqualTo(UInt64.valueOf(0x3333));
 
     BeaconState stateR2 =
         stateR1.updated(
             state -> {
-              state.getBalances().add(UInt64.valueOf(0x4444));
+              state.getBalances().appendElement(UInt64.valueOf(0x4444));
             });
-    UInt64 v2 = stateR2.getBalances().get(0);
+    UInt64 v2 = stateR2.getBalances().getElement(0);
 
     // check that view caching is effectively works and the value
     // is not recreated from tree node without need

@@ -13,14 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0;
 
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
@@ -37,9 +34,9 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final EpochProcessor epochProcessor,
-      final BlockProcessorUtil blockProcessorUtil,
+      final ValidatorStatusFactoryPhase0 validatorStatusFactory,
+      final EpochProcessorPhase0 epochProcessor,
+      final BlockProcessorPhase0 blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -57,25 +54,24 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   public static SpecLogicPhase0 create(
-      final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
-    final CommitteeUtil committeeUtil = new CommitteeUtil(constants);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(constants);
+      final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
     final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, committeeUtil);
+        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    final ValidatorStatusFactory validatorStatusFactory =
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
+    final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
-    final EpochProcessor epochProcessor =
-        new EpochProcessorPhase0(
-            constants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
-    final BlockProcessorUtil blockProcessorUtil =
-        new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
+    final EpochProcessorPhase0 epochProcessor =
+        new EpochProcessorPhase0(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+    final BlockProcessorPhase0 blockProcessorUtil =
+        new BlockProcessorPhase0(config, beaconStateUtil, attestationUtil, validatorsUtil);
     final StateTransition stateTransition =
         StateTransition.create(
-            constants, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
+            config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(constants, beaconStateUtil, attestationUtil, stateTransition);
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 

@@ -15,12 +15,12 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.backing.containers.Container3;
-import tech.pegasys.teku.ssz.backing.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.containers.Container3;
+import tech.pegasys.teku.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszBytes32> {
 
@@ -50,9 +50,9 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
   public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
     super(
         SSZ_SCHEMA,
-        new SszBytes32(deposit_root),
-        new SszUInt64(deposit_count),
-        new SszBytes32(block_hash));
+        SszBytes32.of(deposit_root),
+        SszUInt64.of(deposit_count),
+        SszBytes32.of(block_hash));
   }
 
   public Eth1Data() {

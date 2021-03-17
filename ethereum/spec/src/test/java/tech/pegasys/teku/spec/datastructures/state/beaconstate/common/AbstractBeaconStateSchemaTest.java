@@ -27,17 +27,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
-import tech.pegasys.teku.spec.constants.TestConstantsLoader;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.backing.SszTestUtils;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszTestUtils;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 @ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateSchemaTest<
@@ -45,10 +45,10 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   private final Spec spec = SpecFactory.createMinimal();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SpecConstants genesisConstants = spec.getGenesisSpecConstants();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConstants);
+  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConstants specConstants);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
 
   protected abstract T randomState();
 
@@ -56,41 +56,42 @@ public abstract class AbstractBeaconStateSchemaTest<
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(
-            genesisConstants.getSlotsPerHistoricalRoot(),
-            genesisConstants.getSlotsPerHistoricalRoot(),
-            genesisConstants.getEpochsPerHistoricalVector(),
-            genesisConstants.getEpochsPerSlashingsVector(),
-            genesisConstants.getJustificationBitsLength());
+            genesisConfig.getSlotsPerHistoricalRoot(),
+            genesisConfig.getSlotsPerHistoricalRoot(),
+            genesisConfig.getEpochsPerHistoricalVector(),
+            genesisConfig.getEpochsPerSlashingsVector(),
+            genesisConfig.getJustificationBitsLength());
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
 
   @Test
-  public void changeSpecConstantsTest() {
+  public void changeSpecConfigTest() {
     final Spec standardSpec = SpecFactory.createMinimal();
-    final SpecConstants modifiedConstants =
-        TestConstantsLoader.loadConstantsBuilder("minimal")
-            .slotsPerHistoricalRoot(123)
-            .historicalRootsLimit(123)
-            .epochsPerEth1VotingPeriod(123)
-            .validatorRegistryLimit(123L)
-            .epochsPerHistoricalVector(123)
-            .epochsPerSlashingsVector(123)
-            .maxAttestations(123)
-            .build();
+    final SpecConfig modifiedConfig =
+        TestConfigLoader.loadConfig(
+            "minimal",
+            b ->
+                b.slotsPerHistoricalRoot(123)
+                    .historicalRootsLimit(123)
+                    .epochsPerEth1VotingPeriod(123)
+                    .validatorRegistryLimit(123L)
+                    .epochsPerHistoricalVector(123)
+                    .epochsPerSlashingsVector(123)
+                    .maxAttestations(123));
 
-    BeaconState s1 = getSchema(modifiedConstants).createEmpty();
-    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConstants()).createEmpty();
+    BeaconState s1 = getSchema(modifiedConfig).createEmpty();
+    BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
 
-    assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
-    assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
-    assertThat(s1.getHistorical_roots().getMaxSize())
-        .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
-    assertThat(s1.getEth1_data_votes().getMaxSize())
-        .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
-    assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
-    assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
-    assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
-    assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
+    assertThat(s1.getBlock_roots().getSchema()).isNotEqualTo(s2.getBlock_roots().getSchema());
+    assertThat(s1.getState_roots().getSchema()).isNotEqualTo(s2.getState_roots().getSchema());
+    assertThat(s1.getHistorical_roots().getSchema())
+        .isNotEqualTo(s2.getHistorical_roots().getSchema());
+    assertThat(s1.getEth1_data_votes().getSchema())
+        .isNotEqualTo(s2.getEth1_data_votes().getSchema());
+    assertThat(s1.getValidators().getSchema()).isNotEqualTo(s2.getValidators().getSchema());
+    assertThat(s1.getBalances().getSchema()).isNotEqualTo(s2.getBalances().getSchema());
+    assertThat(s1.getRandao_mixes().getSchema()).isNotEqualTo(s2.getRandao_mixes().getSchema());
+    assertThat(s1.getSlashings().getSchema()).isNotEqualTo(s2.getSlashings().getSchema());
   }
 
   @Test
@@ -105,9 +106,9 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(SpecFactory.createMinimal().getGenesisSpecConstants());
+        getSchema(SpecFactory.createMinimal().getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(SpecFactory.createMainnet().getGenesisSpecConstants());
+        getSchema(SpecFactory.createMainnet().getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

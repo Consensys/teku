@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
@@ -53,7 +54,8 @@ class ProtoArrayScoreCalculator {
       int protoArraySize,
       Function<Bytes32, Optional<Integer>> getIndexByRoot,
       List<UInt64> oldBalances,
-      List<UInt64> newBalances) {
+      List<UInt64> newBalances,
+      List<ProposerWeighting> removedProposerWeightings) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
 
     for (UInt64 validatorIndex : store.getVotedValidatorIndices()) {
@@ -81,37 +83,58 @@ class ProtoArrayScoreCalculator {
           newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
-        // We ignore the vote if it is not known in `indices`. We assume that it is outside
-        // of our tree (i.e. pre-finalization) and therefore not interesting.
-        getIndexByRoot
-            .apply(vote.getCurrentRoot())
-            .ifPresent(
-                (currentDeltaIndex) -> {
-                  checkState(
-                      currentDeltaIndex < deltas.size(),
-                      "ProtoArrayForkChoice: Invalid node delta index");
-                  long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
-                  deltas.set(currentDeltaIndex, delta);
-                });
-
-        // We ignore the vote if it is not known in `indices`. We assume that it is outside
-        // of our tree (i.e. pre-finalization) and therefore not interesting.
-        getIndexByRoot
-            .apply(vote.getNextRoot())
-            .ifPresent(
-                (nextDeltaIndex) -> {
-                  checkState(
-                      nextDeltaIndex < deltas.size(),
-                      "ProtoArrayForkChoice: Invalid node delta index");
-                  long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
-                  deltas.set(nextDeltaIndex, delta);
-                });
+        subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
+        addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
 
         VoteTracker newVote =
             new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
         store.putVote(validatorIndex, newVote);
       }
     }
+
+    removedProposerWeightings.forEach(
+        weighting ->
+            subtractBalance(
+                getIndexByRoot, deltas, weighting.getTargetRoot(), weighting.getWeight()));
     return deltas;
+  }
+
+  private static void addBalance(
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
+      final List<Long> deltas,
+      final Bytes32 targetRoot,
+      final UInt64 balanceToAdd) {
+    // We ignore the vote if it is not known in `indices`. We assume that it is outside
+    // of our tree (i.e. pre-finalization) and therefore not interesting.
+    getIndexByRoot
+        .apply(targetRoot)
+        .ifPresent(
+            nextDeltaIndex -> {
+              checkState(
+                  nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
+              long delta = addExact(deltas.get(nextDeltaIndex), balanceToAdd.longValue());
+              deltas.set(nextDeltaIndex, delta);
+            });
+  }
+
+  private static void subtractBalance(
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
+      final List<Long> deltas,
+      final Bytes32 targetRoot,
+      final UInt64 balanceToRemove) {
+
+    // We ignore the change if it is not known in `indices`. We assume that it is outside
+    // of our tree (i.e. pre-finalization) and therefore not interesting.
+    getIndexByRoot
+        .apply(targetRoot)
+        .ifPresent(
+            currentDeltaIndex -> {
+              checkState(
+                  currentDeltaIndex < deltas.size(),
+                  "ProtoArrayForkChoice: Invalid node delta index");
+              long delta =
+                  subtractExact(deltas.get(currentDeltaIndex), balanceToRemove.longValue());
+              deltas.set(currentDeltaIndex, delta);
+            });
   }
 }

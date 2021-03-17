@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair;
 
-import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
@@ -34,9 +33,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final EpochProcessor epochProcessor,
-      final BlockProcessorUtil blockProcessorUtil,
+      final ValidatorStatusFactoryAltair validatorStatusFactory,
+      final EpochProcessorAltair epochProcessor,
+      final BlockProcessorAltair blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -54,8 +53,37 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   public static SpecLogicAltair create(
-      final SpecConstants constants, final SchemaDefinitions schemaDefinitions) {
-    // TODO(#3648), TODO(#3649) - Implement altair logic
-    throw new NotImplementedException();
+      final SpecConfigAltair config, final SchemaDefinitions schemaDefinitions) {
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
+    final BeaconStateUtil beaconStateUtil =
+        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
+    final AttestationUtil attestationUtil =
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
+    final ValidatorStatusFactoryAltair validatorStatusFactory =
+        new ValidatorStatusFactoryAltair(beaconStateUtil, attestationUtil, validatorsUtil);
+    final EpochProcessorAltair epochProcessor =
+        new EpochProcessorAltair(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+    final BlockProcessorAltair blockProcessorUtil =
+        new BlockProcessorAltair(config, beaconStateUtil, attestationUtil, validatorsUtil);
+    final StateTransition stateTransition =
+        StateTransition.create(
+            config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
+    final ForkChoiceUtil forkChoiceUtil =
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
+    final BlockProposalUtil blockProposalUtil =
+        new BlockProposalUtil(schemaDefinitions, stateTransition);
+
+    return new SpecLogicAltair(
+        committeeUtil,
+        validatorsUtil,
+        beaconStateUtil,
+        attestationUtil,
+        validatorStatusFactory,
+        epochProcessor,
+        blockProcessorUtil,
+        stateTransition,
+        forkChoiceUtil,
+        blockProposalUtil);
   }
 }

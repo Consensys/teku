@@ -18,17 +18,17 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants.SLOT_FIELD;
 
 import java.util.List;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.backing.schema.SszListSchema;
-import tech.pegasys.teku.ssz.backing.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.backing.schema.SszSchemaHints;
-import tech.pegasys.teku.ssz.backing.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.backing.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 
 public enum BeaconStateFields {
@@ -57,7 +57,7 @@ public enum BeaconStateFields {
   PREVIOUS_EPOCH_PARTICIPATION,
   CURRENT_EPOCH_PARTICIPATION;
 
-  static List<SszField> getCommonFields(final SpecConstants specConstants) {
+  static List<SszField> getCommonFields(final SpecConfig specConfig) {
     SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
     final BeaconBlockHeader.BeaconBlockHeaderSchema blockHeaderSchema =
         BeaconBlockHeader.SSZ_SCHEMA;
@@ -69,21 +69,21 @@ public enum BeaconStateFields {
             BeaconStateFields.BLOCK_ROOTS.name(),
             () ->
                 SszVectorSchema.create(
-                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConstants.getSlotsPerHistoricalRoot()));
+                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getSlotsPerHistoricalRoot()));
     SszField stateRootsField =
         new SszField(
             6,
             BeaconStateFields.STATE_ROOTS.name(),
             () ->
                 SszVectorSchema.create(
-                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConstants.getSlotsPerHistoricalRoot()));
+                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getSlotsPerHistoricalRoot()));
     SszField historicalRootsField =
         new SszField(
             7,
             BeaconStateFields.HISTORICAL_ROOTS.name(),
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConstants.getHistoricalRootsLimit()));
+                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getHistoricalRootsLimit()));
     SszField eth1DataField =
         new SszField(8, BeaconStateFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA);
     SszField eth1DataVotesField =
@@ -93,8 +93,8 @@ public enum BeaconStateFields {
             () ->
                 SszListSchema.create(
                     Eth1Data.SSZ_SCHEMA,
-                    (long) specConstants.getEpochsPerEth1VotingPeriod()
-                        * specConstants.getSlotsPerEpoch()));
+                    (long) specConfig.getEpochsPerEth1VotingPeriod()
+                        * specConfig.getSlotsPerEpoch()));
     SszField eth1DepositIndexField =
         new SszField(
             10, BeaconStateFields.ETH1_DEPOSIT_INDEX.name(), SszPrimitiveSchemas.UINT64_SCHEMA);
@@ -105,7 +105,7 @@ public enum BeaconStateFields {
             () ->
                 SszListSchema.create(
                     Validator.SSZ_SCHEMA,
-                    specConstants.getValidatorRegistryLimit(),
+                    specConfig.getValidatorRegistryLimit(),
                     SszSchemaHints.sszSuperNode(8)));
     SszField balancesField =
         new SszField(
@@ -113,28 +113,26 @@ public enum BeaconStateFields {
             BeaconStateFields.BALANCES.name(),
             () ->
                 SszListSchema.create(
-                    SszPrimitiveSchemas.UINT64_SCHEMA, specConstants.getValidatorRegistryLimit()));
+                    SszPrimitiveSchemas.UINT64_SCHEMA, specConfig.getValidatorRegistryLimit()));
     SszField randaoMixesField =
         new SszField(
             13,
             BeaconStateFields.RANDAO_MIXES.name(),
             () ->
                 SszVectorSchema.create(
-                    SszPrimitiveSchemas.BYTES32_SCHEMA,
-                    specConstants.getEpochsPerHistoricalVector()));
+                    SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getEpochsPerHistoricalVector()));
     SszField slashingsField =
         new SszField(
             14,
             BeaconStateFields.SLASHINGS.name(),
             () ->
                 SszVectorSchema.create(
-                    SszPrimitiveSchemas.UINT64_SCHEMA,
-                    specConstants.getEpochsPerSlashingsVector()));
+                    SszPrimitiveSchemas.UINT64_SCHEMA, specConfig.getEpochsPerSlashingsVector()));
     SszField justificationBitsField =
         new SszField(
             17,
             BeaconStateFields.JUSTIFICATION_BITS.name(),
-            () -> SszBitvectorSchema.create(specConstants.getJustificationBitsLength()));
+            () -> SszBitvectorSchema.create(specConfig.getJustificationBitsLength()));
     SszField previousJustifiedCheckpointField =
         new SszField(
             18, BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT.name(), Checkpoint.SSZ_SCHEMA);

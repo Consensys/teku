@@ -71,12 +71,12 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.ssz.backing.Merkleizable;
-import tech.pegasys.teku.ssz.backing.collections.SszBitvector;
-import tech.pegasys.teku.ssz.backing.view.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.Merkleizable;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconStateUtil {
@@ -126,7 +126,7 @@ public class BeaconStateUtil {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SSZList<Validator> validators = state.getValidators();
+      SszList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
           index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
@@ -169,8 +169,8 @@ public class BeaconStateUtil {
       if (pubKeyToIndexMap == null) {
         LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
-      state.getValidators().add(getValidatorFromDeposit(deposit));
-      state.getBalances().add(amount);
+      state.getValidators().append(getValidatorFromDeposit(deposit));
+      state.getBalances().appendElement(amount);
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
     }
@@ -182,7 +182,7 @@ public class BeaconStateUtil {
     final UInt64 effectiveBalance =
         amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
     return new Validator(
-        deposit.getData().getPubkey().toBytesCompressed(),
+        deposit.getData().getPubkey(),
         deposit.getData().getWithdrawal_credentials(),
         effectiveBalance,
         false,
@@ -223,13 +223,13 @@ public class BeaconStateUtil {
    */
   @Deprecated
   public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
+      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.get(i), value));
+        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
       } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.get(i)));
+        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
       }
     }
     return value.equals(root);
@@ -267,7 +267,7 @@ public class BeaconStateUtil {
   @Deprecated
   public static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
-    SSZList<Validator> validator_registry = state.getValidators();
+    SszList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
@@ -374,7 +374,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(long number, Bytes32 domain) {
 
     SigningData domain_wrapped_object =
-        new SigningData(new SszUInt64(UInt64.valueOf(number)).hashTreeRoot(), domain);
+        new SigningData(SszUInt64.of(UInt64.valueOf(number)).hashTreeRoot(), domain);
     return domain_wrapped_object.hashTreeRoot();
   }
 
@@ -541,7 +541,8 @@ public class BeaconStateUtil {
     int index = epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
     state
         .getSlashings()
-        .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
+        .setElement(
+            index, state.getSlashings().getElement(index).plus(validator.getEffective_balance()));
     decrease_balance(
         state,
         slashed_index,
@@ -616,7 +617,7 @@ public class BeaconStateUtil {
   @Deprecated
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
-    return state.getRandao_mixes().get(index);
+    return state.getRandao_mixes().getElement(index);
   }
 
   /**
@@ -846,7 +847,7 @@ public class BeaconStateUtil {
         slot,
         state.getSlot());
     int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
-    return state.getBlock_roots().get(latestBlockRootIndex);
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
   }
 
   @Deprecated

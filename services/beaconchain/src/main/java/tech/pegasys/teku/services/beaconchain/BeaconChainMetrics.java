@@ -17,9 +17,12 @@ import java.nio.ByteOrder;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
@@ -177,6 +180,15 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             TekuMetricCategory.BEACON,
             "previous_epoch_total_weight",
             "Total effective balance of all active validators in the previous epoch");
+
+    final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
+    final LabelledMetric<Counter> versionCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            VersionProvider.CLIENT_IDENTITY + "_version",
+            "Teku version in use",
+            "version");
+    versionCounter.labels(version).inc();
   }
 
   @Override

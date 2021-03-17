@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
+import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
@@ -145,8 +146,14 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
+      final Spec spec = SpecFactory.create(constants);
+      // if the deposit contract was not set, default from constants
+      if (eth1DepositContractAddress.isEmpty()) {
+        eth1DepositContractAddress(
+            spec.getGenesisSpec().getConfig().getDepositContractAddress().toHexString());
+      }
       return new Eth2NetworkConfiguration(
-          SpecFactory.create(constants),
+          spec,
           constants,
           initialState,
           usingCustomInitialState,
@@ -226,12 +233,14 @@ public class Eth2NetworkConfiguration {
           return applyMinimalNetworkDefaults();
         case PYRMONT:
           return applyPyrmontNetworkDefaults();
+        case PRATER:
+          return applyPraterNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
           return applyLessSwiftNetworkDefaults();
         default:
-          return reset().constants(network.constantsName());
+          return reset().constants(network.configName());
       }
     }
 
@@ -248,23 +257,22 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return reset().constants(MINIMAL.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(MINIMAL.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
-      return reset().constants(SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyLessSwiftNetworkDefaults() {
-      return reset().constants(LESS_SWIFT.constantsName()).startupTargetPeerCount(0);
+      return reset().constants(LESS_SWIFT.configName()).startupTargetPeerCount(0);
     }
 
     public Builder applyMainnetNetworkDefaults() {
       return reset()
-          .constants(MAINNET.constantsName())
+          .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .startupTimeoutSeconds(120)
-          .eth1DepositContractAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
               // PegaSys Teku
@@ -289,11 +297,20 @@ public class Eth2NetworkConfiguration {
               "enr:-LK4QKWrXTpV9T78hNG6s8AM6IO4XH9kFT91uZtFg1GcsJ6dKovDOr1jtAAFPnS2lvNltkOGA9k29BUN7lFh_sjuc9QBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhANAdd-Jc2VjcDI1NmsxoQLQa6ai7y9PMN5hpLe5HmiJSlYzMuzP7ZhwRiwHvqNXdoN0Y3CCI4yDdWRwgiOM");
     }
 
+    public Builder applyPraterNetworkDefaults() {
+      return reset()
+          .constants(PRATER.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(4367322)
+          .initialState(
+              "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
+          .discoveryBootnodes();
+    }
+
     public Builder applyPyrmontNetworkDefaults() {
       return reset()
-          .constants(PYRMONT.constantsName())
+          .constants(PYRMONT.configName())
           .startupTimeoutSeconds(120)
-          .eth1DepositContractAddress("0x8c5fecdC472E27Bc447696F431E425D02dd46a8c")
           .eth1DepositContractDeployBlock(3743587)
           .initialStateFromClasspath("pyrmont-genesis.ssz")
           .discoveryBootnodes(
