@@ -17,25 +17,24 @@ import static tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas.UINT64_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.schema.SszType;
 
 public class BeaconBlockInvariants {
 
   /** Extract the slot value from any SignedBeaconBlock */
   public static UInt64 extractBeaconBlockSlot(final Bytes bytes) {
-    return extractSlot(bytes);
-  }
-  /** Extract the slot value from any BeaconBlock */
-  public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
-    return extractSlot(bytes);
-  }
-
-  /**
-   * Slot is the first field in both BeaconBlock and SignedBeaconBlock. We use the two variants
-   * above to ensure we are being clear about the different types.
-   */
-  private static UInt64 extractSlot(final Bytes bytes) {
+    // Slot is the first field and recorded directly because it's fixed length.
     final int size = UINT64_SCHEMA.getSszFixedPartSize();
     final Bytes slotData = bytes.slice(0, size);
     return UINT64_SCHEMA.sszDeserialize(slotData).get();
+  }
+
+  /** Extract the slot value from any BeaconBlock */
+  public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
+    // The slot is the first field but is inside the variable length beacon block so a 4 byte offset
+    // to the start of the beacon block data is recorded.
+    // Use that prefix to get the beacon block data and then find the slot as for an unsigned block
+    final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, 4));
+    return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
   }
 }
