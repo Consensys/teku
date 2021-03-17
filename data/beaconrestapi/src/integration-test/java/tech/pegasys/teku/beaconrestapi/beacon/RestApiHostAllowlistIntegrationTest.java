@@ -17,20 +17,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
+    final Eth1Address depositContractAddress =
+        new Eth1Address(Bytes.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd"));
     final BeaconRestApiConfig config =
         BeaconRestApiConfig.builder()
             .restApiPort(0)
             .restApiEnabled(true)
             .restApiDocsEnabled(false)
+            .eth1DepositContractAddress(depositContractAddress)
             .restApiHostAllowlist(List.of("not.authorized.host"))
             .restApiCorsAllowedOrigins(new ArrayList<>())
             .build();
