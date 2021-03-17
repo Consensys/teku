@@ -75,7 +75,7 @@ import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 

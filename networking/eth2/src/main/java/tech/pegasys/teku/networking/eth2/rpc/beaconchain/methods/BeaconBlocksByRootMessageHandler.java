@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconBlocksByRootMessageHandler

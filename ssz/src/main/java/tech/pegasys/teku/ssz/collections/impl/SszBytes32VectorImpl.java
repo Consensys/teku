@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.collections.SszMutableBytes32Vector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

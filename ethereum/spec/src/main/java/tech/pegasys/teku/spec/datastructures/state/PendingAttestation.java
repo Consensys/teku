@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.containers.Container4;
 import tech.pegasys.teku.ssz.containers.ContainerSchema4;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;

@@ -19,7 +19,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.collections.impl.SszByteVectorImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszVectorSchema;

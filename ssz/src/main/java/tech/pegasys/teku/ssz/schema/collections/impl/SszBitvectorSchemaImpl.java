@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.collections.impl.SszBitvectorImpl;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszVectorSchema;

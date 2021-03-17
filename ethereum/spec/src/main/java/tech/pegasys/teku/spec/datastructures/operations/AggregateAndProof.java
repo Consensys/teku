@@ -19,7 +19,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.containers.Container3;
 import tech.pegasys.teku.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

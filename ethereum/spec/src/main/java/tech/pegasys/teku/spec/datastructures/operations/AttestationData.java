@@ -18,8 +18,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.containers.Container5;
 import tech.pegasys.teku.ssz.containers.ContainerSchema5;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

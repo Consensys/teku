@@ -15,7 +15,7 @@ package tech.pegasys.teku.ssz.schema.collections;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.collections.impl.SszBytes32VectorSchemaImpl;
 
 public interface SszBytes32VectorSchema<SszVectorT extends SszBytes32Vector>

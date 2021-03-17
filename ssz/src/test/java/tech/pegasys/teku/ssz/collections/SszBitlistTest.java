@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszTestUtils;
 import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;

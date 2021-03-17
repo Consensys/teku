@@ -16,11 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.phase0;
 import tech.pegasys.teku.spec.constants.SpecConstants;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
@@ -37,9 +34,9 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final EpochProcessor epochProcessor,
-      final BlockProcessorUtil blockProcessorUtil,
+      final ValidatorStatusFactoryPhase0 validatorStatusFactory,
+      final EpochProcessorPhase0 epochProcessor,
+      final BlockProcessorPhase0 blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -64,12 +61,12 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateUtil(constants, schemaDefinitions, validatorsUtil, committeeUtil);
     final AttestationUtil attestationUtil =
         new AttestationUtil(constants, beaconStateUtil, validatorsUtil);
-    final ValidatorStatusFactory validatorStatusFactory =
+    final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
-    final EpochProcessor epochProcessor =
+    final EpochProcessorPhase0 epochProcessor =
         new EpochProcessorPhase0(
             constants, validatorsUtil, beaconStateUtil, validatorStatusFactory);
-    final BlockProcessorUtil blockProcessorUtil =
+    final BlockProcessorPhase0 blockProcessorUtil =
         new BlockProcessorPhase0(constants, beaconStateUtil, attestationUtil, validatorsUtil);
     final StateTransition stateTransition =
         StateTransition.create(

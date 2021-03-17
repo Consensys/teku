@@ -36,8 +36,8 @@ import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszBytes32;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 

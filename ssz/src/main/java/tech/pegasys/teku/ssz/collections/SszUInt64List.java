@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.collections;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.impl.SszPrimitives.SszUInt64;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public interface SszUInt64List extends SszPrimitiveList<UInt64, SszUInt64> {
 
