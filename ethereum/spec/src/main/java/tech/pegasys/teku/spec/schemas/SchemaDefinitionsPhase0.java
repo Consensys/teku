@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec.schemas;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -29,6 +31,16 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return BeaconStateSchemaPhase0.create(specConfig);
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
+    return new SignedBeaconBlockSchema(getBeaconBlockSchema());
+  }
+
+  @Override
+  public BeaconBlockSchema getBeaconBlockSchema() {
+    return new BeaconBlockSchema(getBeaconBlockBodySchema());
   }
 
   @Override

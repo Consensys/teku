@@ -91,7 +91,7 @@ public abstract class TransitionBenchmark {
     localChain.initializeStorage();
 
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
-    blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
+    blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }
 

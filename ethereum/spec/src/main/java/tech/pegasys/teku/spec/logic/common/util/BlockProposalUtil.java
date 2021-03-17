@@ -82,12 +82,14 @@ public class BlockProposalUtil {
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     BeaconBlock newBlock =
-        new BeaconBlock(
-            newSlot,
-            UInt64.valueOf(proposerIndex),
-            parentBlockSigningRoot,
-            tmpStateRoot,
-            beaconBlockBody);
+        schemaDefinitions
+            .getBeaconBlockSchema()
+            .create(
+                newSlot,
+                UInt64.valueOf(proposerIndex),
+                parentBlockSigningRoot,
+                tmpStateRoot,
+                beaconBlockBody);
 
     // Run state transition and set state root
     try {

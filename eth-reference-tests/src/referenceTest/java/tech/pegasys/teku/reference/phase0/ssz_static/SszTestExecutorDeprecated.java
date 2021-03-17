@@ -24,10 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -68,7 +66,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put(
               "ssz_static/AttesterSlashing",
               new SszTestExecutorDeprecated<>(AttesterSlashing.SSZ_SCHEMA))
-          .put("ssz_static/BeaconBlock", new SszTestExecutorDeprecated<>(BeaconBlock.SSZ_SCHEMA))
           .put(
               "ssz_static/BeaconBlockHeader",
               new SszTestExecutorDeprecated<>(BeaconBlockHeader.SSZ_SCHEMA))
@@ -97,9 +94,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put(
               "ssz_static/SignedAggregateAndProof",
               new SszTestExecutorDeprecated<>(SignedAggregateAndProof.SSZ_SCHEMA))
-          .put(
-              "ssz_static/SignedBeaconBlock",
-              new SszTestExecutorDeprecated<>(SignedBeaconBlock.getSszSchema()))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutorDeprecated<>(SignedBeaconBlockHeader.SSZ_SCHEMA))

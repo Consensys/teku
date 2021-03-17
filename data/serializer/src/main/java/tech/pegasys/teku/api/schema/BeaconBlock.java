@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 
 public class BeaconBlock {
   @Schema(type = "string", format = "uint64")
@@ -62,12 +63,16 @@ public class BeaconBlock {
 
   public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
       final Spec spec) {
-    return new tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock(
-        slot,
-        proposer_index,
-        parent_root,
-        state_root,
-        body.asInternalBeaconBlockBody(spec.atSlot(slot)));
+    final SpecVersion specVersion = spec.atSlot(slot);
+    return specVersion
+        .getSchemaDefinitions()
+        .getBeaconBlockSchema()
+        .create(
+            slot,
+            proposer_index,
+            parent_root,
+            state_root,
+            body.asInternalBeaconBlockBody(specVersion));
   }
 
   @Override
