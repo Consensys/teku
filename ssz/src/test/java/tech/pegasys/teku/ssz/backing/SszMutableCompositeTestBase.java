@@ -51,7 +51,9 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @SuppressWarnings("unchecked")
   default Stream<SszMutableComposite<SszData>> sszMutableComposites() {
-    return sszWritableData().map(SszData::createWritableCopy).map(d -> (SszMutableComposite<SszData>) d);
+    return sszWritableData()
+        .map(SszData::createWritableCopy)
+        .map(d -> (SszMutableComposite<SszData>) d);
   }
 
   default Stream<Arguments> sszMutableCompositeArguments() {
@@ -59,36 +61,38 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   }
 
   default Stream<Arguments> sszMutableCompositeWithUpdateIndexesArguments() {
-    return SszDataTestBase.passWhenEmpty(sszMutableComposites().flatMap(data ->
-        Stream.of(
-            IntStream.of(0),
-            IntStream.of(data.size()),
-            IntStream.of(data.size() / 2),
-            IntStream.of(data.size() / 2, data.size() - 1),
-            IntStream.of(0, data.size() - 1),
-            IntStream.of(0, data.size() / 2, data.size() - 1),
-            IntStream.concat(IntStream.range(1, 32), IntStream.of(data.size() - 1))
-        ).map(indexes ->
-            indexes
-                .filter(i -> i >= 0 && i < data.size())
-                .sorted()
-                .distinct()
-                .boxed().collect(Collectors.toList()))
-            .distinct()
-            .filter(l -> !l.isEmpty())
-            .map(indexList -> Arguments.of(data, indexList))
-    ));
+    return SszDataTestBase.passWhenEmpty(
+        sszMutableComposites()
+            .flatMap(
+                data ->
+                    Stream.of(
+                            IntStream.of(0),
+                            IntStream.of(data.size()),
+                            IntStream.of(data.size() / 2),
+                            IntStream.of(data.size() / 2, data.size() - 1),
+                            IntStream.of(0, data.size() - 1),
+                            IntStream.of(0, data.size() / 2, data.size() - 1),
+                            IntStream.concat(IntStream.range(1, 32), IntStream.of(data.size() - 1)))
+                        .map(
+                            indexes ->
+                                indexes
+                                    .filter(i -> i >= 0 && i < data.size())
+                                    .sorted()
+                                    .distinct()
+                                    .boxed()
+                                    .collect(Collectors.toList()))
+                        .distinct()
+                        .filter(l -> !l.isEmpty())
+                        .map(indexList -> Arguments.of(data, indexList))));
   }
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_throwsIndexOutOfBounds(SszMutableComposite<SszData> data) {
     SszData someData = getSomeNewChild(data.getSchema());
-    assertThatThrownBy(() -> data.set(data.size() + 1,
-        someData))
+    assertThatThrownBy(() -> data.set(data.size() + 1, someData))
         .isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(() -> data.set(-1, someData))
-        .isInstanceOf(IndexOutOfBoundsException.class);
+    assertThatThrownBy(() -> data.set(-1, someData)).isInstanceOf(IndexOutOfBoundsException.class);
   }
 
   @MethodSource("sszMutableCompositeArguments")
@@ -118,9 +122,10 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
     SszCompositeSchema<? extends SszComposite<?>> schema = data.getSchema();
 
-    List<SszData> newChildrenValues = updateIndexes.stream()
-        .map(idx -> generator.randomData(schema.getChildSchema(idx))).collect(
-            Collectors.toList());
+    List<SszData> newChildrenValues =
+        updateIndexes.stream()
+            .map(idx -> generator.randomData(schema.getChildSchema(idx)))
+            .collect(Collectors.toList());
 
     for (int i = 0; i < updateIndexes.size(); i++) {
       Integer updateIndex = updateIndexes.get(i);

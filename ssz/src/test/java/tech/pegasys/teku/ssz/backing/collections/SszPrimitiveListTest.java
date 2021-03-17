@@ -45,8 +45,7 @@ public class SszPrimitiveListTest implements SszMutablePrimitiveListTestBase {
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 31),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 32),
         SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 33),
-        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 300)
-        );
+        SszPrimitiveListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, 300));
   }
 
   @Override
