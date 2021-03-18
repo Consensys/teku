@@ -22,12 +22,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
-  private final SpecConfig specConfig;
   private final BeaconStateSchema<?, ?> beaconStateSchema;
 
   public SchemaDefinitionsAltair(final SpecConfig specConfig) {
-    this.specConfig = specConfig;
-    this.beaconStateSchema = BeaconStateSchemaAltair.create(specConstants);
+    this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
   }
 
   @Override
