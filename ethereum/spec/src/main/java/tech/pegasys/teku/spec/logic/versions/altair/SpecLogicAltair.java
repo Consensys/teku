@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
@@ -40,7 +41,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
-      final MiscHelpersAltair miscHelpers) {
+      final MiscHelpersAltair miscHelpers,
+      final BeaconStateAccessorsAltair beaconStateAccessors) {
     super(
         committeeUtil,
         validatorsUtil,
@@ -52,11 +54,13 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
-        miscHelpers);
+        miscHelpers,
+        beaconStateAccessors);
   }
 
   public static SpecLogicAltair create(
       final SpecConfigAltair config, final SchemaDefinitions schemaDefinitions) {
+    // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
     final BeaconStateUtil beaconStateUtil =
@@ -76,7 +80,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
+
+    // Helpers
     final MiscHelpersAltair miscHelpersAltair = new MiscHelpersAltair();
+    final BeaconStateAccessorsAltair beaconStateAccessors = new BeaconStateAccessorsAltair();
 
     return new SpecLogicAltair(
         committeeUtil,
@@ -89,6 +96,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
-        miscHelpersAltair);
+        miscHelpersAltair,
+        beaconStateAccessors);
   }
 }

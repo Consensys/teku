@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common;
 
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -38,6 +39,7 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
   protected final MiscHelpers miscHelpers;
+  protected final BeaconStateAccessors beaconStateAccessors;
 
   public AbstractSpecLogic(
       final CommitteeUtil committeeUtil,
@@ -50,7 +52,8 @@ public class AbstractSpecLogic implements SpecLogic {
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
-      final MiscHelpers miscHelpers) {
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors) {
     this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
@@ -62,6 +65,7 @@ public class AbstractSpecLogic implements SpecLogic {
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
     this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
   }
 
   @Override
@@ -117,5 +121,10 @@ public class AbstractSpecLogic implements SpecLogic {
   @Override
   public MiscHelpers getMiscHelpers() {
     return miscHelpers;
+  }
+
+  @Override
+  public BeaconStateAccessors getBeaconStateAccessors() {
+    return beaconStateAccessors;
   }
 }

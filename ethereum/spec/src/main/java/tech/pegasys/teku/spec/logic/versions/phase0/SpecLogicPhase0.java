@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -41,7 +42,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
-      final MiscHelpers miscHelpers) {
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors) {
     super(
         committeeUtil,
         validatorsUtil,
@@ -53,11 +55,13 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
-        miscHelpers);
+        miscHelpers,
+        beaconStateAccessors);
   }
 
   public static SpecLogicPhase0 create(
       final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+    // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
     final BeaconStateUtil beaconStateUtil =
@@ -77,7 +81,10 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
+
+    // Helpers
     final MiscHelpers miscHelpers = new MiscHelpers();
+    final BeaconStateAccessors beaconStateAccessors = new BeaconStateAccessors();
 
     return new SpecLogicPhase0(
         committeeUtil,
@@ -90,6 +97,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
-        miscHelpers);
+        miscHelpers,
+        beaconStateAccessors);
   }
 }
