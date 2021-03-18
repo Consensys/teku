@@ -83,27 +83,27 @@
       }
 
       // is the version passed as param the one displayed accoring to the url
-      function isDisplayedVersion(version){
-         return getVersionFromURL() === version || (getVersionFromURL() === '' && version === defaultVersion);
+      function isDisplayedVersion(version,displayedVersion){
+         return displayedVersion === version || (displayedVersion === '' && version === defaultVersion);
       }
 
       // Update the redoc element and run the redoc display
-      function updateSpec(){
-        const element = $( `<redoc spec-url="${getSpecPath(getVersionFromURL())}"></redoc>` );
+      function updateSpec(version){
+        const element = $( `<redoc spec-url="${getSpecPath(version)}"></redoc>` );
         element.appendTo( "main.container" );
         Redoc.init(`${element.attr('spec-url')}?ts=${Date.now()}`, {hideHostname: true});
-        updateVersionsDropDown();
+        updateVersionsDropDown(version);
       }
 
       // Update the drop down list and set active version
-      function updateVersionsDropDown(){
+      function updateVersionsDropDown(versionFromUrl){
         $("#versionsList").empty();
         $.each( versions, function( version, infos ) {
           var sourceText = (version === infos.source) ? '' : ` (${infos.source})`;
 
-          var item = $( `<a class="version-number-item dropdown-item" href="#${version}">${version}${sourceText}</a>" `);
+          var item = $( `<a class="version-number-item dropdown-item" href="?version=${version}">${version}${sourceText}</a>" `);
 
-          if(isDisplayedVersion(version)){
+          if(isDisplayedVersion(version,versionFromUrl)){
             item.addClass("active");
             $('#dropdownMenuButton').text(`${version}${sourceText}`);
             document.title = `ConsenSys Teku REST API documentation - ${version}`;
@@ -113,11 +113,13 @@
         });
       }
 
-      // get the version in the URL from the hash part
-      // removes the and # at the begining of the hask part
-      // returns empty string if no hash present
+      // get the version in the URL from the search query or hash part (for retro compatibility)
+      // removes the and # at the beginning of the hash part
+      // returns empty string if no version present at all
       function getVersionFromURL(){
-        return $(location).attr('hash').replace(/^[#]/,'');
+        let params = new URLSearchParams($(location).attr('search').substring(1));
+        const version = params.get("version");
+        return version != null ? version : $(location).attr('hash').replace(/^[#]/, '');
       }
 
       // set the global versions value from the Json file,
@@ -133,12 +135,12 @@
             }
           }
         })
-        .always(function() { updateSpec(); });
+        .always(function() { updateSpec(getVersionFromURL()); });
       }
 
       // event trigger functions
       $(window).on( 'hashchange', function( e ) {
-        updateSpec();
+        updateSpec(getVersionFromURL());
       });
 
       $(function() {
