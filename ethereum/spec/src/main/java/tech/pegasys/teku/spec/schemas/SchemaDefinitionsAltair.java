@@ -20,15 +20,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
-  private final SpecConstants specConstants;
+  private final BeaconStateSchema<?, ?> beaconStateSchema;
 
   public SchemaDefinitionsAltair(final SpecConstants specConstants) {
-    this.specConstants = specConstants;
+    beaconStateSchema = BeaconStateSchemaAltair.create(specConstants);
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
-    return BeaconStateSchemaAltair.create(specConstants);
+    return beaconStateSchema;
   }
 
   @Override
