@@ -62,14 +62,26 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
    * leaf node and it's 'internal index' in this node would be `45`
    */
-  SszDataT createFromPackedNode(TreeNode node, int internalIndex);
+  default SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
+    return createFromBackingNode(node);
+  }
 
   /**
-   * For packed primitive values. Packs the values to the existing node at 'internal indexes' For
+   * For packed primitive values. Packs the value to the existing node at 'internal index' For
    * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
    * it's 'internal index' in this node would be `45`
    */
-  TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates);
+  default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+    return newValue.getBackingNode();
+  }
+
+  default TreeNode updateBackingNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+    TreeNode res = srcNode;
+    for (PackedNodeUpdate update : updates) {
+      res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
+    }
+    return res;
+  }
 
   default Bytes sszSerialize(SszDataT view) {
     return sszSerializeTree(view.getBackingNode());

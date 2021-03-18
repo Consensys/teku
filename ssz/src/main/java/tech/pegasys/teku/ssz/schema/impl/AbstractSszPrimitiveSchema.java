@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -55,11 +54,11 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public SszDataT createFromBackingNode(TreeNode node) {
-    return createFromPackedNode(node, 0);
+    return createFromBackingNode(node, 0);
   }
 
   @Override
-  public final SszDataT createFromPackedNode(TreeNode node, int internalIndex) {
+  public final SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
@@ -71,16 +70,7 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
-    TreeNode res = srcNode;
-    for (PackedNodeUpdate update : updates) {
-      res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
-    }
-    return res;
-  }
-
-  protected abstract TreeNode updateBackingNode(
-      TreeNode srcNode, int internalIndex, SszData newValue);
+  public abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
     return bitsCeilToBytes(getBitsSize());

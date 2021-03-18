@@ -48,17 +48,12 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
   @SuppressWarnings("unchecked")
   @Override
   protected SszElementT getImpl(int index) {
-    SszCollectionSchema<SszElementT, ?> type = this.getSchema();
+    SszCollectionSchema<SszElementT, ?> type =
+        (SszCollectionSchema<SszElementT, ?>) this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
-    if (elementType.isPrimitive()) {
-      // several primitive values could be packed to a single leaf node
-      TreeNode node =
-          getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
-      return (SszElementT)
-          elementType.createFromPackedNode(node, index % type.getElementsPerChunk());
-    } else {
-      TreeNode node = getBackingNode().get(type.getChildGeneralizedIndex(index));
-      return (SszElementT) elementType.createFromBackingNode(node);
-    }
+    TreeNode node =
+        getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
+    return (SszElementT)
+        elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }
 }
