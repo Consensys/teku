@@ -19,7 +19,6 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.PROTO_ARRAY_SNAPSHOT_SERIALIZER;
-import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.VOTES_SERIALIZER;
@@ -40,8 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
 public class V4SchemaHot implements SchemaHot {
-  private static final RocksDbColumn<Bytes32, SignedBeaconBlock> HOT_BLOCKS_BY_ROOT =
-      RocksDbColumn.create(1, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  private final RocksDbColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final RocksDbColumn<Checkpoint, BeaconState> checkpointStates;
   private static final RocksDbColumn<UInt64, VoteTracker> VOTES =
@@ -75,6 +73,10 @@ public class V4SchemaHot implements SchemaHot {
       RocksDbVariable.create(9, CHECKPOINT_SERIALIZER);
 
   private V4SchemaHot(final Spec spec) {
+    final RocksDbSerializer<SignedBeaconBlock> signedBlockSerializer =
+        RocksDbSerializer.createSignedBlockSerializer(spec);
+    hotBlocksByRoot = RocksDbColumn.create(1, BYTES32_SERIALIZER, signedBlockSerializer);
+
     final RocksDbSerializer<BeaconState> stateSerializer =
         RocksDbSerializer.createStateSerializer(spec);
     checkpointStates = RocksDbColumn.create(2, CHECKPOINT_SERIALIZER, stateSerializer);
@@ -88,7 +90,7 @@ public class V4SchemaHot implements SchemaHot {
 
   @Override
   public RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
-    return HOT_BLOCKS_BY_ROOT;
+    return hotBlocksByRoot;
   }
 
   @Override
@@ -169,7 +171,7 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public List<RocksDbColumn<?, ?>> getAllColumns() {
     return List.of(
-        HOT_BLOCKS_BY_ROOT,
+        hotBlocksByRoot,
         checkpointStates,
         VOTES,
         DEPOSITS_FROM_BLOCK_EVENTS,

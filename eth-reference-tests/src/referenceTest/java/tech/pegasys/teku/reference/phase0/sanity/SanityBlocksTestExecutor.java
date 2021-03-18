@@ -49,7 +49,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                     loadSsz(
                         testDefinition,
                         "blocks_" + index + ".ssz",
-                        SignedBeaconBlock.getSszSchema()))
+                        testDefinition.getSpec()::deserializeSignedBeaconBlock))
             .collect(Collectors.toList());
 
     final Optional<BeaconState> expectedState;

@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-import static tech.pegasys.teku.spec.constants.SpecConstants.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -171,7 +171,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (epoch.isGreaterThan(
         combinedChainDataClient
             .getCurrentEpoch()
-            .plus(spec.getSpecConstants(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(

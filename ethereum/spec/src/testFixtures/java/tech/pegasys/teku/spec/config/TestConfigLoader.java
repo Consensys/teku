@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
-import static tech.pegasys.teku.spec.constants.SpecConstantsLoader.processConstants;
+import static tech.pegasys.teku.spec.config.SpecConfigLoader.processConfig;
 
 import java.util.function.Consumer;
 
-public class TestConstantsLoader {
-  public static SpecConstants loadConstants(
-      final String constants, final Consumer<SpecConstantsBuilder> modifier) {
-    final SpecConstantsReader reader = new SpecConstantsReader();
-    processConstants(constants, reader::read);
+public class TestConfigLoader {
+  public static SpecConfig loadConfig(
+      final String constants, final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    processConfig(constants, reader::read);
     return reader.build(modifier);
   }
 }

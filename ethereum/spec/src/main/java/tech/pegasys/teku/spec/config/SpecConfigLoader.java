@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,15 +24,15 @@ import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.util.config.Constants;
 
-public class SpecConstantsLoader {
+public class SpecConfigLoader {
 
-  public static SpecConstants loadConstants(final String constants) {
-    final SpecConstantsReader reader = new SpecConstantsReader();
-    processConstants(constants, reader::read);
+  public static SpecConfig loadConfig(final String configName) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    processConfig(configName, reader::read);
     return reader.build();
   }
 
-  static void processConstants(final String source, final InputStreamProcessor processor) {
+  static void processConfig(final String source, final InputStreamProcessor processor) {
     // TODO(#3394) - move Constants resources from util to this module
     final ResourceLoader loader =
         ResourceLoader.classpathUrlOrFile(
@@ -54,7 +54,7 @@ public class SpecConstantsLoader {
           loader
               .load(source + "/phase0.yaml", source + "/phase0.yml")
               .orElseThrow(
-                  () -> new FileNotFoundException("Could not load constants from " + source));
+                  () -> new FileNotFoundException("Could not load spec config from " + source));
       processor.process(phase0Input);
       // Altair is optional
       final Optional<InputStream> altairInput =
@@ -63,13 +63,13 @@ public class SpecConstantsLoader {
         processor.process(altairInput.get());
       }
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load constants", e);
+      throw new IllegalArgumentException("Failed to load spec config", e);
     }
   }
 
   private static List<String> enumerateAvailableResources() {
     return Arrays.stream(Eth2Network.values())
-        .map(Eth2Network::constantsName)
+        .map(Eth2Network::configName)
         .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());

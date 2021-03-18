@@ -53,14 +53,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
-  private final Optional<Eth1Address> eth1Address;
+  private final Eth1Address eth1Address;
   private final Spec spec;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
-      final Optional<Eth1Address> depositContractAddress,
+      final Eth1Address depositContractAddress,
       final Spec spec) {
     this(
         metricsSystem,
@@ -79,7 +79,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address,
+      final Eth1Address eth1Address,
       final Spec spec) {
     this(
         metricsSystem,
@@ -99,7 +99,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final StateStorageMode dataStorageMode,
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
-      final Optional<Eth1Address> eth1Address,
+      final Eth1Address eth1Address,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
@@ -207,7 +207,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
@@ -230,7 +230,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -263,7 +263,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
@@ -303,7 +303,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
       return RocksDbDatabase.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -336,7 +336,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       }
 
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConstants().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
 
       final RocksDbConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()

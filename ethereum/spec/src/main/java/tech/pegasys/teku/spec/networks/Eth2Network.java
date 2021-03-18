@@ -26,8 +26,8 @@ public enum Eth2Network {
   SWIFT,
   LESS_SWIFT;
 
-  public String constantsName() {
-    // TODO(#3356) - Store constants with filename matching enum so we don't have to convert
+  public String configName() {
+    // TODO(#3356) - Store config with filename matching enum so we don't have to convert
     return name().toLowerCase(Locale.US).replace("_", "-");
   }
 

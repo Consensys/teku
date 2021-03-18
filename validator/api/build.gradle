@@ -9,3 +9,9 @@ dependencies {
 
   testImplementation testFixtures(project(':bls'))
 }
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'validator-api' }
+  }
+}

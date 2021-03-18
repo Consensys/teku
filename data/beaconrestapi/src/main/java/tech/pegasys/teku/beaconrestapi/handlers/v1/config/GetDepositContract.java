@@ -38,16 +38,13 @@ public class GetDepositContract implements Handler {
   private final ConfigProvider configProvider;
 
   public GetDepositContract(
-      final Optional<Eth1Address> depositContractAddress,
+      final Eth1Address depositContractAddress,
       final JsonProvider jsonProvider,
       final ConfigProvider configProvider) {
     this.jsonProvider = jsonProvider;
     this.configProvider = configProvider;
     this.depositContractResponse = Optional.empty();
-    this.depositContractAddress =
-        depositContractAddress
-            .map(Eth1Address::toHexString)
-            .orElse("0xdddddddddddddddddddddddddddddddddddddddd");
+    this.depositContractAddress = depositContractAddress.toHexString();
   }
 
   @OpenApi(
@@ -64,7 +61,7 @@ public class GetDepositContract implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    final int depositChainId = configProvider.getGenesisSpecConstants().getDepositChainId();
+    final int depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
     if (depositContractResponse.isEmpty()) {
       this.depositContractResponse =
           Optional.of(

@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -39,8 +39,8 @@ public abstract class AbstractBeaconStateSchema<
   }
 
   protected AbstractBeaconStateSchema(
-      final String name, final List<SszField> uniqueFields, final SpecConstants specConstants) {
-    this(name, combineFields(BeaconStateFields.getCommonFields(specConstants), uniqueFields));
+      final String name, final List<SszField> uniqueFields, final SpecConfig specConfig) {
+    this(name, combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields));
   }
 
   private static List<SszField> combineFields(List<SszField> fieldsA, List<SszField> fieldsB) {

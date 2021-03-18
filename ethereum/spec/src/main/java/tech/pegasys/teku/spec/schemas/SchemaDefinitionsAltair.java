@@ -14,21 +14,35 @@
 package tech.pegasys.teku.spec.schemas;
 
 import org.apache.commons.lang3.NotImplementedException;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
+  private final SpecConfig specConfig;
   private final BeaconStateSchema<?, ?> beaconStateSchema;
 
-  public SchemaDefinitionsAltair(final SpecConstants specConstants) {
-    beaconStateSchema = BeaconStateSchemaAltair.create(specConstants);
+  public SchemaDefinitionsAltair(final SpecConfig specConfig) {
+    this.specConfig = specConfig;
+    this.beaconStateSchema = BeaconStateSchemaAltair.create(specConstants);
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return beaconStateSchema;
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
+    return new SignedBeaconBlockSchema(getBeaconBlockSchema());
+  }
+
+  @Override
+  public BeaconBlockSchema getBeaconBlockSchema() {
+    return new BeaconBlockSchema(getBeaconBlockBodySchema());
   }
 
   @Override

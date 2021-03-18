@@ -198,7 +198,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     blockGossipManager =
         new BlockGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, eventBus, blockProcessor);
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            eventBus,
+            blockProcessor);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);

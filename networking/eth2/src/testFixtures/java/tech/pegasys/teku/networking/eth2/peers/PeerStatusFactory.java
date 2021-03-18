@@ -34,12 +34,12 @@ public class PeerStatusFactory {
   }
 
   public PeerStatus random() {
-    final Bytes4 fork = spec.getGenesisSpecConstants().getGenesisForkVersion();
+    final Bytes4 fork = spec.getGenesisSpecConfig().getGenesisForkVersion();
     final Bytes32 finalizedRoot = randomBytes32();
     final UInt64 finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();
     final long minHeadSlot =
-        (finalizedEpoch.longValue() + 2) * spec.getGenesisSpecConstants().getSlotsPerEpoch();
+        (finalizedEpoch.longValue() + 2) * spec.getGenesisSpecConfig().getSlotsPerEpoch();
     final UInt64 headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
     return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }

@@ -47,7 +47,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.constants.SpecConstants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -73,7 +73,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   protected final Spec spec = SpecFactory.createMinimal();
-  protected final SpecConstants specConstants = spec.getGenesisSpecConstants();
+  protected final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =

@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllAltairFieldsSet;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllFieldsSet;
-import static tech.pegasys.teku.spec.constants.SpecConstantsAssertions.assertAllPhase0FieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -34,20 +34,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.util.config.Constants;
 
-public class SpecConstantsLoaderTest {
+public class SpecConfigLoaderTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("knownNetworks")
-  public void shouldLoadAllKnownNetworks(final String name, final Class<?> constantsType)
+  public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
       throws Exception {
-    final SpecConstants constants = SpecConstantsLoader.loadConstants(name);
-    assertAllFieldsSet(constants, constantsType);
+    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    assertAllFieldsSet(config, configType);
   }
 
   @Test
   public void shouldLoadMainnet() throws Exception {
-    final SpecConstants constants = SpecConstantsLoader.loadConstants("mainnet");
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
@@ -56,8 +56,8 @@ public class SpecConstantsLoaderTest {
         Constants.class
             .getClassLoader()
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml");
-    final SpecConstants constants = SpecConstantsLoader.loadConstants(url.toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -68,8 +68,8 @@ public class SpecConstantsLoaderTest {
             .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml")
             .toString();
     final String directoryPath = filePath.replace("/phase0.yaml", "");
-    final SpecConstants constants = SpecConstantsLoader.loadConstants(directoryPath);
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(directoryPath);
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
@@ -77,9 +77,8 @@ public class SpecConstantsLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
     final Path file = tempDir.resolve("phase0.yaml");
-    final SpecConstants constants =
-        SpecConstantsLoader.loadConstants(file.toAbsolutePath().toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -87,18 +86,16 @@ public class SpecConstantsLoaderTest {
     writeMainnetToFile(tempDir, "phase0.yaml");
     writeMainnetToFile(tempDir, "altair.yaml");
 
-    final SpecConstants constants =
-        SpecConstantsLoader.loadConstants(tempDir.toAbsolutePath().toString());
-    assertAllAltairFieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
+    assertAllAltairFieldsSet(config);
   }
 
   @Test
   public void shouldLoadMainnetPhase0FromDirectory(@TempDir Path tempDir) throws Exception {
     writeMainnetToFile(tempDir, "phase0.yaml");
 
-    final SpecConstants constants =
-        SpecConstantsLoader.loadConstants(tempDir.toAbsolutePath().toString());
-    assertAllPhase0FieldsSet(constants);
+    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
+    assertAllPhase0FieldsSet(config);
   }
 
   @Test
@@ -107,7 +104,7 @@ public class SpecConstantsLoaderTest {
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
     final List<String> allKnownNetworks =
         Arrays.stream(Eth2Network.values())
-            .map(Eth2Network::constantsName)
+            .map(Eth2Network::configName)
             .sorted()
             .collect(Collectors.toList());
 
@@ -116,23 +113,22 @@ public class SpecConstantsLoaderTest {
 
   static Stream<Arguments> knownNetworks() {
     return Stream.of(
-        Arguments.of(Eth2Network.MAINNET.constantsName(), SpecConstantsAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.constantsName(), SpecConstantsPhase0.class),
-        Arguments.of(Eth2Network.PRATER.constantsName(), SpecConstantsPhase0.class),
-        Arguments.of(Eth2Network.MINIMAL.constantsName(), SpecConstantsAltair.class),
-        Arguments.of(Eth2Network.SWIFT.constantsName(), SpecConstantsPhase0.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.constantsName(), SpecConstantsPhase0.class));
+        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
   }
 
-  private void writeMainnetToFile(final Path directory, final String constantsFile)
-      throws Exception {
-    final Path file = directory.resolve(constantsFile);
-    final InputStream constantsStream =
+  private void writeMainnetToFile(final Path directory, final String configFile) throws Exception {
+    final Path file = directory.resolve(configFile);
+    final InputStream configStream =
         Constants.class
             .getClassLoader()
-            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + constantsFile);
-    byte[] buffer = new byte[constantsStream.available()];
-    constantsStream.read(buffer);
+            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + configFile);
+    byte[] buffer = new byte[configStream.available()];
+    configStream.read(buffer);
     Files.write(file, buffer);
   }
 }

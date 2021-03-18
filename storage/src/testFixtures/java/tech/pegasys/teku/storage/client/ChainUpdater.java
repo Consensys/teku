@@ -63,7 +63,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(signDeposits, spec.getGenesisSpecConstants().getMaxEffectiveBalance());
+    return initializeGenesis(signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
   }
 
   public SignedBlockAndState initializeGenesis(
@@ -139,7 +139,7 @@ public class ChainUpdater {
   }
 
   protected UInt64 getSlotTime(final UInt64 slot) {
-    final UInt64 secPerSlot = UInt64.valueOf(spec.atSlot(slot).getConstants().getSecondsPerSlot());
+    final UInt64 secPerSlot = UInt64.valueOf(spec.atSlot(slot).getConfig().getSecondsPerSlot());
     return recentChainData.getGenesisTime().plus(slot.times(secPerSlot));
   }
 }

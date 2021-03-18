@@ -238,7 +238,8 @@ public class ChainBuilder {
 
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
-    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
+    final SignedBeaconBlock signedBlock =
+        SignedBeaconBlock.create(spec, genesisBlock, BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
@@ -327,7 +328,7 @@ public class ChainBuilder {
     final UInt64 minBlockSlot = spec.computeStartSlotAtEpoch(prevEpoch);
 
     // Calculate valid assigned slots to be included in a block at the given slot
-    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConstants().getSlotsPerEpoch());
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
     final UInt64 minAssignedSlot =
         slot.compareTo(slotsPerEpoch) <= 0 ? UInt64.ZERO : slot.minus(slotsPerEpoch);
     final UInt64 minInclusionDiff = UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);
