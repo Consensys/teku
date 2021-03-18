@@ -83,7 +83,7 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
-  public MiscHelpers getMiscLogic() {
-    return specLogic.getMiscLogic();
+  public MiscHelpers getMiscHelpers() {
+    return specLogic.getMiscHelpers();
   }
 }

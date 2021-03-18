@@ -115,7 +115,7 @@ public class AbstractSpecLogic implements SpecLogic {
   }
 
   @Override
-  public MiscHelpers getMiscLogic() {
+  public MiscHelpers getMiscHelpers() {
     return miscHelpers;
   }
 }

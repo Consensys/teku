@@ -21,18 +21,18 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class MiscHelpersAltair extends MiscHelpers {
-  private static final List<ParticipationIndexAndWeight> flagIndicesAndWeights =
+  private static final List<FlagIndexAndWeight> flagIndicesAndWeights =
       List.of(
-          new ParticipationIndexAndWeight(
+          new FlagIndexAndWeight(
               ParticipationFlags.TIMELY_HEAD_FLAG_INDEX, IncentivizationWeights.TIMELY_HEAD_WEIGHT),
-          new ParticipationIndexAndWeight(
+          new FlagIndexAndWeight(
               ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX,
               IncentivizationWeights.TIMELY_SOURCE_WEIGHT),
-          new ParticipationIndexAndWeight(
+          new FlagIndexAndWeight(
               ParticipationFlags.TIMELY_TARGET_FLAG_INDEX,
               IncentivizationWeights.TIMELY_TARGET_WEIGHT));
 
-  public List<ParticipationIndexAndWeight> getFlagIndicesAndWeights() {
+  public List<FlagIndexAndWeight> getFlagIndicesAndWeights() {
     return flagIndicesAndWeights;
   }
 
@@ -46,11 +46,11 @@ public class MiscHelpersAltair extends MiscHelpers {
     return (participationFlags & flag) == flag;
   }
 
-  public static class ParticipationIndexAndWeight {
+  public static class FlagIndexAndWeight {
     final int index;
     final int weight;
 
-    private ParticipationIndexAndWeight(final int index, final int weight) {
+    private FlagIndexAndWeight(final int index, final int weight) {
       this.index = index;
       this.weight = weight;
     }

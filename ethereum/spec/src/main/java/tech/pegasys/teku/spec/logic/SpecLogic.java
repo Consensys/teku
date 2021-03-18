@@ -46,5 +46,5 @@ public interface SpecLogic {
 
   ValidatorStatusFactory getValidatorStatusFactory();
 
-  MiscHelpers getMiscLogic();
+  MiscHelpers getMiscHelpers();
 }
