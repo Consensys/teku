@@ -92,10 +92,7 @@ public abstract class AbstractSszMutableCollection<
           nodeUpdate.getUpdates().size() < elementsPerChunk
               ? original.get(gIndex)
               : LeafNode.EMPTY_LEAF;
-      TreeNode newNode =
-          elementType.updateBackingNode(
-              originalNode,
-              nodeUpdate.getUpdates());
+      TreeNode newNode = elementType.updateBackingNode(originalNode, nodeUpdate.getUpdates());
       newValues.add(newNode);
       gIndexes.add(gIndex);
     }
