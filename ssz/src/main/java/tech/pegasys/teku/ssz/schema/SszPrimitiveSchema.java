@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.schema;
 
 import tech.pegasys.teku.ssz.SszPrimitive;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
     extends SszSchema<SszDataT> {
@@ -26,4 +27,11 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
   default boolean isPrimitive() {
     return true;
   }
+
+  /**
+   * For packed primitive values. Extracts a packed value from the tree node by its 'internal
+   * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
+   * leaf node and it's 'internal index' in this node would be `45`
+   */
+  SszDataT createFromPackedNode(TreeNode node, int internalIndex);
 }

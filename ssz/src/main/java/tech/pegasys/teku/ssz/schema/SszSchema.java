@@ -58,13 +58,6 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   boolean isPrimitive();
 
   /**
-   * For packed primitive values. Extracts a packed value from the tree node by its 'internal
-   * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
-   * leaf node and it's 'internal index' in this node would be `45`
-   */
-  SszDataT createFromPackedNode(TreeNode node, int internalIndex);
-
-  /**
    * For packed primitive values. Packs the values to the existing node at 'internal indexes' For
    * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
    * it's 'internal index' in this node would be `45`
