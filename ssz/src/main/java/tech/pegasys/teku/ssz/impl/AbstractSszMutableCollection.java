@@ -22,6 +22,7 @@ import tech.pegasys.teku.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema.PackedNodeUpdate;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUpdates;
@@ -88,15 +89,13 @@ public abstract class AbstractSszMutableCollection<
     for (NodeUpdate nodeUpdate : nodeUpdates) {
       long gIndex = nodeUpdate.getNodeGIndex();
       TreeNode originalNode =
-          nodeUpdate.getNodeUpdatesCount() < elementsPerChunk
+          nodeUpdate.getUpdates().size() < elementsPerChunk
               ? original.get(gIndex)
               : LeafNode.EMPTY_LEAF;
       TreeNode newNode =
           elementType.updateBackingNode(
               originalNode,
-              nodeUpdate.getInternalIndexes(),
-              nodeUpdate.getNewValues(),
-              nodeUpdate.getNodeUpdatesCount());
+              nodeUpdate.getUpdates());
       newValues.add(newNode);
       gIndexes.add(gIndex);
     }
@@ -105,37 +104,24 @@ public abstract class AbstractSszMutableCollection<
   }
 
   private static class NodeUpdate {
-    private final int[] internalIndexes;
-    private final SszData[] newValues;
+    private final List<PackedNodeUpdate> updates;
     private final long nodeGIndex;
-    private int nodeUpdatesCount = 0;
 
     public NodeUpdate(long nodeGIndex, int maxElementsPerChunk) {
-      internalIndexes = new int[maxElementsPerChunk];
+      this.updates = new ArrayList<>(maxElementsPerChunk);
       this.nodeGIndex = nodeGIndex;
-      this.newValues = new SszData[maxElementsPerChunk];
     }
 
     public void addUpdate(int internalNodeIndex, SszData newValue) {
-      internalIndexes[nodeUpdatesCount] = internalNodeIndex;
-      newValues[nodeUpdatesCount] = newValue;
-      nodeUpdatesCount++;
-    }
-
-    public int[] getInternalIndexes() {
-      return internalIndexes;
-    }
-
-    public SszData[] getNewValues() {
-      return newValues;
-    }
-
-    public int getNodeUpdatesCount() {
-      return nodeUpdatesCount;
+      updates.add(new PackedNodeUpdate(internalNodeIndex, newValue));
     }
 
     public long getNodeGIndex() {
       return nodeGIndex;
+    }
+
+    public List<PackedNodeUpdate> getUpdates() {
+      return updates;
     }
   }
 }

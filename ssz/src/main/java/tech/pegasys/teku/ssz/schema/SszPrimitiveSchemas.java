@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -143,12 +144,11 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public TreeNode updateBackingNode(
-            TreeNode srcNode, int[] internalIndexes, SszData[] newValues, int count) {
-          if (count == 4) {
+        public TreeNode updateBackingNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+          if (updates.size() == 4) {
             byte[] data = new byte[32];
-            for (int i = 0; i < newValues.length; i++) {
-              long longValue = ((SszUInt64) newValues[i]).longValue();
+            for (int i = 0; i < 4; i++) {
+              long longValue = ((SszUInt64) updates.get(i).getNewValue()).longValue();
               int off = i * 8;
               data[off + 0] = (byte) longValue;
               data[off + 1] = (byte) (longValue >> 8);
@@ -161,7 +161,7 @@ public interface SszPrimitiveSchemas {
             }
             return LeafNode.create(Bytes.wrap(data));
           } else {
-            return super.updateBackingNode(srcNode, internalIndexes, newValues, count);
+            return super.updateBackingNode(srcNode, updates);
           }
         }
 

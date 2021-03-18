@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
@@ -74,12 +75,10 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     return newValue.getBackingNode();
   }
 
-  default TreeNode updateBackingNode(
-      TreeNode srcNode, int[] internalIndexes, SszData[] newValues, int count) {
-    assert internalIndexes.length >= count && newValues.length >= count;
+  default TreeNode updateBackingNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
     TreeNode res = srcNode;
-    for (int i = 0; i < count; i++) {
-      res = updateBackingNode(res, internalIndexes[i], newValues[i]);
+    for (PackedNodeUpdate update : updates) {
+      res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
     }
     return res;
   }
@@ -98,5 +97,23 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
+  }
+
+  final class PackedNodeUpdate {
+    private final int internalIndex;
+    private final SszData newValue;
+
+    public PackedNodeUpdate(int internalIndex, SszData newValue) {
+      this.internalIndex = internalIndex;
+      this.newValue = newValue;
+    }
+
+    public int getInternalIndex() {
+      return internalIndex;
+    }
+
+    public SszData getNewValue() {
+      return newValue;
+    }
   }
 }
