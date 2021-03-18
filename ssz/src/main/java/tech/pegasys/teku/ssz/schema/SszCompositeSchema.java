@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.schema;
 
-import java.util.List;
 import tech.pegasys.teku.ssz.SszComposite;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;

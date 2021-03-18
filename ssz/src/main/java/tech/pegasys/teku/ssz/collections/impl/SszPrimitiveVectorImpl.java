@@ -30,8 +30,8 @@ public class SszPrimitiveVectorImpl<
     super(schema, lazyBackingNode);
   }
 
-  SszPrimitiveVectorImpl(SszCompositeSchema<?> schema,
-      TreeNode backingNode, IntCache<SszElementT> cache) {
+  SszPrimitiveVectorImpl(
+      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
   }
 

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.schema;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;

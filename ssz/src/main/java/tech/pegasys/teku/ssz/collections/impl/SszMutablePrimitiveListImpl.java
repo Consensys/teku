@@ -18,10 +18,7 @@ import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
-import tech.pegasys.teku.ssz.impl.SszMutableListImpl;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
@@ -34,7 +31,6 @@ public class SszMutablePrimitiveListImpl<
 
   private int cachedSize;
   private final long cachedMaxLength;
-
 
   @SuppressWarnings("unchecked")
   public SszMutablePrimitiveListImpl(

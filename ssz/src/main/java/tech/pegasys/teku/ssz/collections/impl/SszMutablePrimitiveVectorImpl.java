@@ -18,11 +18,6 @@ import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.impl.AbstractSszComposite;
-import tech.pegasys.teku.ssz.impl.AbstractSszMutableCollection;
-import tech.pegasys.teku.ssz.impl.SszMutableVectorImpl;
-import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
-import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveCollectionSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

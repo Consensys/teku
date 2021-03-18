@@ -1,9 +1,21 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.collections.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -19,13 +31,14 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUpdates;
 
 public abstract class AbstractSszMutablePrimitiveCollection<
-    ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-  extends AbstractSszMutableCollection<SszElementT, SszElementT>
-  implements SszMutablePrimitiveCollection<ElementT, SszElementT> {
+        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+    extends AbstractSszMutableCollection<SszElementT, SszElementT>
+    implements SszMutablePrimitiveCollection<ElementT, SszElementT> {
 
   private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
 
-  public AbstractSszMutablePrimitiveCollection(
+  @SuppressWarnings("unchecked")
+  protected AbstractSszMutablePrimitiveCollection(
       AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
     elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
@@ -42,16 +55,16 @@ public abstract class AbstractSszMutablePrimitiveCollection<
   }
 
   /**
-   * Overridden to pack primitive values to tree nodes.
-   * E.g. a tree node can contain up to 8 {@link tech.pegasys.teku.ssz.primitive.SszBytes4} values
+   * Overridden to pack primitive values to tree nodes. E.g. a tree node can contain up to 8 {@link
+   * tech.pegasys.teku.ssz.primitive.SszBytes4} values
    */
   @Override
-  protected TreeUpdates changesToNewNodes(Stream<Entry<Integer, SszElementT>> newChildValues,
-      TreeNode original) {
+  protected TreeUpdates changesToNewNodes(
+      Stream<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
     SszCollectionSchema<?, ?> type = getSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
-    List<Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
+    List<Map.Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
     int prevChildNodeIndex = 0;
     List<NodeUpdate<ElementT, SszElementT>> nodeUpdates = new ArrayList<>();
     NodeUpdate<ElementT, SszElementT> curNodeUpdate = null;
@@ -78,10 +91,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
           nodeUpdate.getUpdates().size() < elementsPerChunk
               ? original.get(gIndex)
               : LeafNode.EMPTY_LEAF;
-      TreeNode newNode =
-          elementType.updatePackedNode(
-              originalNode,
-              nodeUpdate.getUpdates());
+      TreeNode newNode = elementType.updatePackedNode(originalNode, nodeUpdate.getUpdates());
       newValues.add(newNode);
       gIndexes.add(gIndex);
     }
@@ -90,16 +100,15 @@ public abstract class AbstractSszMutablePrimitiveCollection<
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public SszPrimitiveCollection<ElementT, SszElementT> commitChanges() {
     return (SszPrimitiveCollection<ElementT, SszElementT>) super.commitChanges();
   }
 
   @Override
-  public SszMutablePrimitiveCollection<
-      ElementT, SszElementT> createWritableCopy() {
+  public SszMutablePrimitiveCollection<ElementT, SszElementT> createWritableCopy() {
     throw new UnsupportedOperationException();
   }
-
 
   private static class NodeUpdate<
       ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>> {

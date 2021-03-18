@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ssz.schema;
 
 import java.util.List;
-import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 

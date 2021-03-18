@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.impl;
 
-import java.util.Map;
-import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszMutableContainer;
@@ -23,7 +21,6 @@ import tech.pegasys.teku.ssz.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUpdates;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {

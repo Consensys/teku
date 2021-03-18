@@ -18,13 +18,11 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema.PackedNodeUpdate;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
