@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.spec.constants;
 
-public class ParticipationFlagFractions {
-  public static final int TIMELY_HEAD_FLAG_NUMERATOR = 12;
-  public static final int TIMELY_SOURCE_FLAG_NUMERATOR = 12;
-  public static final int TIMELY_TARGET_FLAG_NUMERATOR = 32;
-  public static final int FLAG_DENOMINATOR = 64;
+public class IncentivizationWeights {
+  public static final int TIMELY_HEAD_WEIGHT = 12;
+  public static final int TIMELY_SOURCE_WEIGHT = 12;
+  public static final int TIMELY_TARGET_WEIGHT = 24;
+  public static final int SYNC_REWARD_WEIGHT = 8;
+  public static final int WEIGHT_DENOMINATOR = 64;
 }

@@ -14,9 +14,13 @@
 package tech.pegasys.teku.spec.constants;
 
 public class ParticipationFlags {
-  public static final int TIMELY_HEAD_FLAG = 1;
-  public static final int TIMELY_SOURCE_FLAG = 2;
-  public static final int TIMELY_TARGET_FLAG = 4;
+  public static final int TIMELY_HEAD_FLAG_INDEX = 0;
+  public static final int TIMELY_SOURCE_FLAG_INDEX = 1;
+  public static final int TIMELY_TARGET_FLAG_INDEX = 2;
+
+  public static final int TIMELY_HEAD_FLAG = indexToFlag(TIMELY_HEAD_FLAG_INDEX);
+  public static final int TIMELY_SOURCE_FLAG = indexToFlag(TIMELY_SOURCE_FLAG_INDEX);
+  public static final int TIMELY_TARGET_FLAG = indexToFlag(TIMELY_TARGET_FLAG_INDEX);
 
   private static final int ALL_FLAGS =
       combineFlags(TIMELY_HEAD_FLAG, TIMELY_SOURCE_FLAG, TIMELY_TARGET_FLAG);
@@ -31,6 +35,10 @@ public class ParticipationFlags {
 
   private static boolean checkIfAnyFlagIsSet(final int value, final int flags) {
     return (value & flags) != 0;
+  }
+
+  private static int indexToFlag(final int flagIndex) {
+    return 1 << flagIndex;
   }
 
   private static int combineFlags(final int... flags) {
