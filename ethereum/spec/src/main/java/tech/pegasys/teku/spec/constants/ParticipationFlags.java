@@ -33,12 +33,12 @@ public class ParticipationFlags {
     return checkIfAnyFlagIsSet(value, ALL_FLAGS);
   }
 
-  private static boolean checkIfAnyFlagIsSet(final int value, final int flags) {
-    return (value & flags) != 0;
+  public static int indexToFlag(final int flagIndex) {
+    return 1 << flagIndex;
   }
 
-  private static int indexToFlag(final int flagIndex) {
-    return 1 << flagIndex;
+  private static boolean checkIfAnyFlagIsSet(final int value, final int flags) {
+    return (value & flags) != 0;
   }
 
   private static int combineFlags(final int... flags) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.indexToFlag;
+
 import java.util.List;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -42,10 +44,6 @@ public class MiscHelpersAltair extends MiscHelpers {
   public boolean hasFlag(final byte participationFlags, final int flagIndex) {
     final int flag = indexToFlag(flagIndex);
     return (participationFlags & flag) == flag;
-  }
-
-  protected int indexToFlag(final int flagIndex) {
-    return 1 << flagIndex;
   }
 
   public static class ParticipationIndexAndWeight {
