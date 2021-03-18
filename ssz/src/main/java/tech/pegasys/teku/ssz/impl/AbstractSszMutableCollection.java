@@ -48,7 +48,7 @@ public abstract class AbstractSszMutableCollection<
   }
 
   @Override
-  public void set(int index, SszElementT value) {
+  protected void validateChildSchema(int index, SszElementT value) {
     if (!value.getSchema().equals(getElementSchema())) {
       throw new InvalidValueSchemaException(
           "Expected element to have schema "
@@ -56,7 +56,6 @@ public abstract class AbstractSszMutableCollection<
               + ", but value has schema "
               + value.getSchema());
     }
-    setUnsafe(index, value);
   }
 
   @Override

@@ -41,9 +41,8 @@ public class SszMutablePrimitiveVectorImpl<
   }
 
   @Override
-  public void set(int index, SszElementT value) {
+  protected void validateChildSchema(int index, SszElementT value) {
     // no need to check primitive value schema
-    setUnsafe(index, value);
   }
 
   @Override
