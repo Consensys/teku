@@ -56,43 +56,6 @@ public abstract class AbstractSszMutableComposite<
   private Integer sizeCache;
   private final SszCompositeSchema<?> cachedSchema;
 
-  private static final class ChildChangeRecord<
-      SszChildT extends SszData, SszMutableChildT extends SszChildT> {
-
-    private final SszChildT newValue;
-    private final SszMutableChildT refValue;
-    private boolean refValueInvalidated;
-
-    private ChildChangeRecord(SszChildT newValue, SszMutableChildT refValue) {
-      this.newValue = newValue;
-      this.refValue = refValue;
-    }
-
-    public void invalidateRefValue() {
-      refValueInvalidated = true;
-    }
-
-    public boolean isByRef() {
-      return refValue != null;
-    }
-
-    public boolean isByValue() {
-      return newValue != null;
-    }
-
-    public SszChildT getNewValue() {
-      return newValue;
-    }
-
-    public SszMutableChildT getRefValue() {
-      return refValue;
-    }
-
-    public boolean isRefValueInvalidated() {
-      return refValueInvalidated;
-    }
-  }
-
   private ChildChangeRecord<SszChildT, SszMutableChildT> createChangeRecordByValue(
       SszChildT newValue) {
     return new ChildChangeRecord<>(newValue, null);
@@ -286,4 +249,41 @@ public abstract class AbstractSszMutableComposite<
    * @throws IndexOutOfBoundsException is index is not valid
    */
   protected abstract void checkIndex(int index, boolean set);
+
+  private static final class ChildChangeRecord<
+      SszChildT extends SszData, SszMutableChildT extends SszChildT> {
+
+    private final SszChildT newValue;
+    private final SszMutableChildT refValue;
+    private boolean refValueInvalidated;
+
+    private ChildChangeRecord(SszChildT newValue, SszMutableChildT refValue) {
+      this.newValue = newValue;
+      this.refValue = refValue;
+    }
+
+    public void invalidateRefValue() {
+      refValueInvalidated = true;
+    }
+
+    public boolean isByRef() {
+      return refValue != null;
+    }
+
+    public boolean isByValue() {
+      return newValue != null;
+    }
+
+    public SszChildT getNewValue() {
+      return newValue;
+    }
+
+    public SszMutableChildT getRefValue() {
+      return refValue;
+    }
+
+    public boolean isRefValueInvalidated() {
+      return refValueInvalidated;
+    }
+  }
 }
