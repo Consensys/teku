@@ -18,6 +18,7 @@ import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
@@ -236,6 +237,6 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
   private UInt64 squareRootOrZero(final UInt64 totalActiveBalance) {
     return totalActiveBalance.isZero()
         ? UInt64.ZERO
-        : beaconStateUtil.integerSquareRoot(totalActiveBalance);
+        : MathHelpers.integerSquareRoot(totalActiveBalance);
   }
 }

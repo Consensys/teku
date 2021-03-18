@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.util.ByteUtils.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Collection;
@@ -342,18 +342,6 @@ public class BeaconStateUtil {
                 Math.floorDiv(
                     Math.floorDiv(activeValidatorCount, specConfig.getSlotsPerEpoch()),
                     specConfig.getTargetCommitteeSize()))));
-  }
-
-  public UInt64 integerSquareRoot(UInt64 n) {
-    checkArgument(
-        n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integerSquareRoot()");
-    UInt64 x = n;
-    UInt64 y = x.plus(UInt64.ONE).dividedBy(2);
-    while (y.compareTo(x) < 0) {
-      x = y;
-      y = x.plus(n.dividedBy(x)).dividedBy(2);
-    }
-    return x;
   }
 
   public void slashValidator(MutableBeaconState state, int slashed_index) {

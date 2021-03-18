@@ -14,8 +14,8 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.logic.common.util.ByteUtils.bytesToUInt64;
-import static tech.pegasys.teku.spec.logic.common.util.ByteUtils.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;

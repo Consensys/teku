@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -205,27 +204,6 @@ public class BeaconStateUtilTest {
     Bytes signing_root = beaconStateUtil.computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
-  }
-
-  @Test
-  void sqrtOfSquareNumber() {
-    UInt64 actual = beaconStateUtil.integerSquareRoot(UInt64.valueOf(3481L));
-    UInt64 expected = UInt64.valueOf(59L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void sqrtOfANonSquareNumber() {
-    UInt64 actual = beaconStateUtil.integerSquareRoot(UInt64.valueOf(27L));
-    UInt64 expected = UInt64.valueOf(5L);
-    assertEquals(expected, actual);
-  }
-
-  @Test
-  void sqrtOfANegativeNumber() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> beaconStateUtil.integerSquareRoot(UInt64.valueOf(-1L)));
   }
 
   @Test
