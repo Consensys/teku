@@ -79,7 +79,8 @@ public abstract class AbstractSszPrimitiveSchema<
     return res;
   }
 
-  protected abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue);
+  protected abstract TreeNode updateBackingNode(
+      TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
     return bitsCeilToBytes(getBitsSize());
