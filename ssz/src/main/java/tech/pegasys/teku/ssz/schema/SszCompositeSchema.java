@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import java.util.List;
 import tech.pegasys.teku.ssz.SszComposite;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -84,5 +85,15 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   @Override
   default boolean isPrimitive() {
     return false;
+  }
+
+  @Override
+  default SszCompositeT createFromPackedNode(TreeNode node, int internalIndex) {
+    throw new UnsupportedOperationException("Packed nodes are not supported by composite types");
+  }
+
+  @Override
+  default TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+    throw new UnsupportedOperationException("Packed nodes are not supported by composite types");
   }
 }

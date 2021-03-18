@@ -93,7 +93,7 @@ public abstract class AbstractSszMutableCollection<
               ? original.get(gIndex)
               : LeafNode.EMPTY_LEAF;
       TreeNode newNode =
-          elementType.updateBackingNode(
+          elementType.updatePackedNode(
               originalNode,
               nodeUpdate.getUpdates());
       newValues.add(newNode);
