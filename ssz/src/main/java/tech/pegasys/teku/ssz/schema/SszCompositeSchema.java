@@ -86,9 +86,4 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   default boolean isPrimitive() {
     return false;
   }
-
-  @Override
-  default TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
-    throw new UnsupportedOperationException("Packed nodes are not supported by composite types");
-  }
 }

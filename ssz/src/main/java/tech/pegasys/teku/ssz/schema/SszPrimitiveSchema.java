@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import java.util.List;
+import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
@@ -34,4 +36,29 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
    * leaf node and it's 'internal index' in this node would be `45`
    */
   SszDataT createFromPackedNode(TreeNode node, int internalIndex);
+
+  /**
+   * For packed primitive values. Packs the values to the existing node at 'internal indexes' For
+   * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
+   * it's 'internal index' in this node would be `45`
+   */
+  TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates);
+
+  final class PackedNodeUpdate<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>> {
+    private final int internalIndex;
+    private final SszDataT newValue;
+
+    public PackedNodeUpdate(int internalIndex, SszDataT newValue) {
+      this.internalIndex = internalIndex;
+      this.newValue = newValue;
+    }
+
+    public int getInternalIndex() {
+      return internalIndex;
+    }
+
+    public SszDataT getNewValue() {
+      return newValue;
+    }
+  }
 }

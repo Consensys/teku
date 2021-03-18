@@ -61,10 +61,4 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
           "Invalid index " + index + " for container with size " + size());
     }
   }
-
-  @Override
-  protected TreeUpdates packChanges(
-      Stream<Map.Entry<Integer, SszData>> newChildValues, TreeNode original) {
-    throw new UnsupportedOperationException("Packed values are not supported");
-  }
 }

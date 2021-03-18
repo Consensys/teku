@@ -71,9 +71,9 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+  public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates) {
     TreeNode res = srcNode;
-    for (PackedNodeUpdate update : updates) {
+    for (PackedNodeUpdate<DataT, SszDataT> update : updates) {
       res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
     }
     return res;

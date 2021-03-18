@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema.PackedNodeUpdate;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -84,11 +85,6 @@ public class SszCompositeListTest {
         @Override
         public SszLengthBounds getSszLengthBounds() {
           return SszLengthBounds.ZERO;
-        }
-
-        @Override
-        public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
-          return null;
         }
       };
 

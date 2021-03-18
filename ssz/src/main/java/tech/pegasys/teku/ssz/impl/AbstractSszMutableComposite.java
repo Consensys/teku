@@ -198,25 +198,17 @@ public abstract class AbstractSszMutableComposite<
   protected TreeUpdates changesToNewNodes(
       Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
     SszCompositeSchema<?> type = getSchema();
-    int elementsPerChunk = type.getElementsPerChunk();
-    if (elementsPerChunk == 1) {
-      return newChildValues
-          .map(
-              e ->
-                  new TreeUpdates.Update(
-                      type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
-          .collect(TreeUpdates.collector());
-    } else {
-      return packChanges(newChildValues, original);
+    if (type.getElementsPerChunk() > 1) {
+      throw new IllegalStateException(
+          "Packed primitive types are not supported by this implementation");
     }
+    return newChildValues
+        .map(
+            e ->
+                new TreeUpdates.Update(
+                    type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
+        .collect(TreeUpdates.collector());
   }
-
-  /**
-   * Converts a set of changed view with their indexes to the {@link TreeUpdates} instance for views
-   * which support packed values (i.e. several child views per backing tree node)
-   */
-  protected abstract TreeUpdates packChanges(
-      Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original);
 
   /**
    * Should be implemented by subclasses to create respectful immutable view with backing tree and

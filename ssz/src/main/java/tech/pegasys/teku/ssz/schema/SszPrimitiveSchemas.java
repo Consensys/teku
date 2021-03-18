@@ -144,7 +144,7 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+        public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<UInt64, SszUInt64>> updates) {
           if (updates.size() == 4) {
             byte[] data = new byte[32];
             for (int i = 0; i < 4; i++) {
