@@ -108,7 +108,7 @@ public class EpochTransitionBenchmark {
     localChain.initializeStorage();
 
     blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
-    blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
+    blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing 63 blocks from " + blocksFile);
 
     for (int i = 0; i < 63; i++) {
