@@ -173,9 +173,15 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder initialState(final String initialState) {
+    public Builder customInitialState(final String initialState) {
       this.initialState = Optional.of(initialState);
       this.usingCustomInitialState = true;
+      return this;
+    }
+
+    public Builder defaultInitialState(final String initialState) {
+      this.initialState = Optional.of(initialState);
+      this.usingCustomInitialState = false;
       return this;
     }
 
@@ -305,7 +311,7 @@ public class Eth2NetworkConfiguration {
           .constants(PRATER.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
-          .initialState(
+          .defaultInitialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
           .discoveryBootnodes(
               // q9f Bootnodes
