@@ -129,7 +129,7 @@ public class Eth2NetworkOptions {
       builder.eth1DepositContractAddress(eth1DepositContractAddress);
     }
     if (StringUtils.isNotBlank(initialState)) {
-      builder.initialState(initialState);
+      builder.customInitialState(initialState);
     }
     if (forkChoiceBalanceAttackMitigationEnabled != null) {
       builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
