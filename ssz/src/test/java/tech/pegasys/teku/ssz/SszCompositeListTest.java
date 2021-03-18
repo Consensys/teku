@@ -18,6 +18,7 @@ import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
@@ -83,6 +84,11 @@ public class SszCompositeListTest {
         @Override
         public SszLengthBounds getSszLengthBounds() {
           return SszLengthBounds.ZERO;
+        }
+
+        @Override
+        public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+          return null;
         }
       };
 

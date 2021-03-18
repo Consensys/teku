@@ -88,11 +88,6 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   }
 
   @Override
-  default SszCompositeT createFromPackedNode(TreeNode node, int internalIndex) {
-    throw new UnsupportedOperationException("Packed nodes are not supported by composite types");
-  }
-
-  @Override
   default TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
     throw new UnsupportedOperationException("Packed nodes are not supported by composite types");
   }
