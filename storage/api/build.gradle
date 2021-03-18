@@ -4,3 +4,9 @@ dependencies {
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) { artifactId 'storage-api' }
+    }
+}
