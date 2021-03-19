@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitStrategy;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 
 /**
@@ -28,31 +30,38 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
  */
 public class LRUCache<K, V> implements Cache<K, V> {
 
-  private final Map<K, V> cacheData;
-  private final int maxCapacity;
-
-  /**
-   * Creates cache
-   *
-   * @param capacity Size of the cache
-   */
-  public LRUCache(int capacity) {
-    this(capacity, Collections.emptyMap());
+  public static <K, V> LRUCache<K, V> create(int capacity) {
+    return new LRUCache<>(Collections.emptyMap(), initEntries -> {
+      Map<K, V> map = LimitedMap.create(capacity);
+      map.putAll(initEntries);
+      return map;
+    });
   }
 
-  private LRUCache(int capacity, Map<K, V> initialCachedContent) {
-    this.maxCapacity = capacity;
-    Map<K, V> cacheMap = LimitedMap.create(maxCapacity);
-    // copy safely, initialCachedContent is always a SynchronizedMap instance
-    synchronized (initialCachedContent) {
-      cacheMap.putAll(initialCachedContent);
-    }
-    this.cacheData = cacheMap;
+  public static <K, V> LRUCache<K, V> createHashMapBacked(int capacity) {
+    return new LRUCache<>(Collections.emptyMap(),
+        initEntries -> {
+          Map<K, V> map = SynchronizedLimitedMap
+              .create(capacity, LimitStrategy.DROP_OLDEST_ELEMENT);
+          synchronized (initEntries) {
+            map.putAll(initEntries);
+          }
+          return map;
+        });
+  }
+
+  private final Function<Map<K, V>, Map<K, V>> backStorageCopier;
+  private final Map<K, V> cacheData;
+
+  private LRUCache(Map<K, V> initialCachedContent, Function<Map<K, V>, Map<K, V>> backStorageCopier) {
+
+    this.backStorageCopier = backStorageCopier;
+    this.cacheData = backStorageCopier.apply(initialCachedContent);
   }
 
   @Override
   public Cache<K, V> copy() {
-    return new LRUCache<>(maxCapacity, cacheData);
+    return new LRUCache<>(cacheData, backStorageCopier);
   }
 
   /**

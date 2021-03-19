@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,45 +13,44 @@
 
 package tech.pegasys.teku.infrastructure.collections;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Helper that creates a map with a maximum capacity. */
-public final class LimitedMap {
-  private LimitedMap() {}
+public final class LimitedHashMap {
+  private LimitedHashMap() {}
 
   /**
-   * Creates a limited map. The returned map is safe for concurrent access and evicts the least
-   * recently used items.
+   * Creates a limited map with a default initial capacity.
    *
    * @param maxSize The maximum number of elements to keep in the map.
+   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(final int maxSize) {
-    return defaultBuilder(maxSize).<K, V>build().asMap();
+  public static <K, V> Map<K, V> create(final int maxSize, final LimitStrategy mode) {
+    return create(16, maxSize, mode);
   }
 
   /**
-   * Creates a limited map using soft references for values. The returned map is safe for concurrent
-   * access and evicts the least recently used items.
+   * Creates a limited map.
    *
-   * <p>Items may be evicted before maxSize is reached if the garbage collector needs to free up
-   * memory.
-   *
+   * @param initialCapacity The initial size to allocate for the map.
    * @param maxSize The maximum number of elements to keep in the map.
+   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
-   * @return A map that will evict elements when the max size is exceeded or when the GC evicts
-   *     them.
+   * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> createSoft(final int maxSize) {
-    return defaultBuilder(maxSize).softValues().<K, V>build().asMap();
-  }
-
-  private static CacheBuilder<Object, Object> defaultBuilder(final int maxSize) {
-    return CacheBuilder.newBuilder().maximumSize(maxSize);
+  public static <K, V> Map<K, V> create(
+      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
+    final boolean useAccessOrder = mode.equals(LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    return new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
+      @Override
+      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
+        return size() > maxSize;
+      }
+    };
   }
 }

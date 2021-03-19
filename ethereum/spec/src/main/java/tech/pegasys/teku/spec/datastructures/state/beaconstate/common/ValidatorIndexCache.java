@@ -39,7 +39,7 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this.validatorIndexes = new LRUCache<>(Integer.MAX_VALUE - 1);
+    this.validatorIndexes = LRUCache.createHashMapBacked(Integer.MAX_VALUE - 1);
     this.lastIndex = new AtomicInteger(INDEX_NONE);
   }
 
