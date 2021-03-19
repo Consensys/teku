@@ -19,6 +19,7 @@ import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.impl.AbstractSszComposite;
 import tech.pegasys.teku.ssz.impl.SszMutableVectorImpl;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszMutablePrimitiveVectorImpl<
@@ -26,8 +27,22 @@ public class SszMutablePrimitiveVectorImpl<
     extends SszMutableVectorImpl<SszElementT, SszElementT>
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
 
+  private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
+
+  @SuppressWarnings("unchecked")
   public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
+    elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
+  }
+
+  @Override
+  public SszPrimitiveSchema<ElementT, SszElementT> getPrimitiveElementSchema() {
+    return elementSchemaCache;
+  }
+
+  @Override
+  protected void validateChildSchema(int index, SszElementT value) {
+    // no need to check primitive value schema
   }
 
   @Override
