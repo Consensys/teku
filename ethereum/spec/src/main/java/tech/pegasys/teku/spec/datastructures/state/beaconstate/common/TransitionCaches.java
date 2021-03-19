@@ -15,10 +15,10 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.independent.TotalBalances;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
@@ -64,7 +64,7 @@ public class TransitionCaches {
 
   private final Cache<UInt64, List<Integer>> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
-  private final Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee;
+  private final Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee;
   private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
@@ -89,7 +89,7 @@ public class TransitionCaches {
   private TransitionCaches(
       Cache<UInt64, List<Integer>> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
-      Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee,
+      Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee,
       Cache<UInt64, UInt64> attestersTotalBalance,
       Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
@@ -126,7 +126,7 @@ public class TransitionCaches {
   }
 
   /** (slot, committeeIndex) -> (committee) cache */
-  public Cache<Pair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
+  public Cache<TekuPair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
     return beaconCommittee;
   }
 
