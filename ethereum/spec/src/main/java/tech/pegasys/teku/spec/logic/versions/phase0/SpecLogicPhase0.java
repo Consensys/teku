@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -39,7 +40,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final BlockProcessorPhase0 blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final MiscHelpers miscHelpers) {
     super(
         committeeUtil,
         validatorsUtil,
@@ -50,7 +52,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        miscHelpers);
   }
 
   public static SpecLogicPhase0 create(
@@ -74,6 +77,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
+    final MiscHelpers miscHelpers = new MiscHelpers();
 
     return new SpecLogicPhase0(
         committeeUtil,
@@ -85,6 +89,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        miscHelpers);
   }
 }
