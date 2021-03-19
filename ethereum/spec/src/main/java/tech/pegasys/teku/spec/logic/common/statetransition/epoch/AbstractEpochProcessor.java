@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -27,6 +26,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -59,11 +60,12 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
+  private static void applyDeltas(
+      final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
     final SszMutableUInt64List balances = state.getBalances();
     int validatorsCount = state.getValidators().size();
     for (int i = 0; i < validatorsCount; i++) {
-      final Deltas.Delta delta = attestationDeltas.getDelta(i);
+      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
       balances.setElement(
           i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
@@ -173,7 +175,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         return;
       }
 
-      Deltas attestationDeltas =
+      RewardAndPenaltyDeltas attestationDeltas =
           createRewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
 
       AbstractEpochProcessor.applyDeltas(state, attestationDeltas);

@@ -13,41 +13,45 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 
 public interface RewardsAndPenaltiesCalculator {
-  Deltas getAttestationDeltas() throws IllegalArgumentException;
+  RewardAndPenaltyDeltas getAttestationDeltas() throws IllegalArgumentException;
 
-  Deltas getDeltas(Step step) throws IllegalArgumentException;
+  RewardAndPenaltyDeltas getDeltas(Step step) throws IllegalArgumentException;
 
   void applySourceDelta(
       ValidatorStatus validator,
       UInt64 baseReward,
       TotalBalances totalBalances,
       UInt64 finalityDelay,
-      Deltas.Delta delta);
+      RewardAndPenalty delta);
 
   void applyTargetDelta(
       ValidatorStatus validator,
       UInt64 baseReward,
       TotalBalances totalBalances,
       UInt64 finalityDelay,
-      Deltas.Delta delta);
+      RewardAndPenalty delta);
 
   void applyHeadDelta(
       ValidatorStatus validator,
       UInt64 baseReward,
       TotalBalances totalBalances,
       UInt64 finalityDelay,
-      Deltas.Delta delta);
+      RewardAndPenalty delta);
 
   void applyInclusionDelayDelta(
-      ValidatorStatus validator, UInt64 baseReward, Deltas.Delta delta, Deltas deltas);
+      ValidatorStatus validator,
+      UInt64 baseReward,
+      RewardAndPenalty delta,
+      RewardAndPenaltyDeltas deltas);
 
   void applyInactivityPenaltyDelta(
-      ValidatorStatus validator, UInt64 baseReward, UInt64 finalityDelay, Deltas.Delta delta);
+      ValidatorStatus validator, UInt64 baseReward, UInt64 finalityDelay, RewardAndPenalty delta);
 
   void applyAttestationComponentDelta(
       boolean indexInUnslashedAttestingIndices,
@@ -55,15 +59,15 @@ public interface RewardsAndPenaltiesCalculator {
       TotalBalances totalBalances,
       UInt64 baseReward,
       UInt64 finalityDelay,
-      Deltas.Delta delta);
+      RewardAndPenalty delta);
 
   interface Step {
     void apply(
-        final Deltas deltas,
+        final RewardAndPenaltyDeltas deltas,
         final TotalBalances totalBalances,
         final UInt64 finalityDelay,
         final ValidatorStatus validator,
         final UInt64 baseReward,
-        final Deltas.Delta delta);
+        final RewardAndPenalty delta);
   }
 }

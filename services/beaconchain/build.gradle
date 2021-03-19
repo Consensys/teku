@@ -5,7 +5,6 @@ dependencies {
   implementation project(':data:provider')
   implementation project(':ethereum:core')
   implementation project(':ethereum:networks')
-  implementation project(':ethereum:independent')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:weaksubjectivity')

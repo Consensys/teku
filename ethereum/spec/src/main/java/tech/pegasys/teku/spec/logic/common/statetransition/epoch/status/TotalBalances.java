@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.independent;
+package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 
