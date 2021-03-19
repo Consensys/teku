@@ -17,6 +17,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
@@ -32,14 +33,15 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
         .createBlockBody(
-            beaconBlockBody.getRandao_reveal(),
-            beaconBlockBody.getEth1_data(),
-            beaconBlockBody.getGraffiti(),
-            beaconBlockBody.getProposer_slashings(),
-            beaconBlockBody.getAttester_slashings(),
-            beaconBlockBody.getAttestations(),
-            beaconBlockBody.getDeposits(),
-            beaconBlockBody.getVoluntary_exits());
+            new SimpleBlockBodyContentProvider(
+                beaconBlockBody.getRandao_reveal(),
+                beaconBlockBody.getEth1_data(),
+                beaconBlockBody.getGraffiti(),
+                beaconBlockBody.getAttestations(),
+                beaconBlockBody.getProposer_slashings(),
+                beaconBlockBody.getAttester_slashings(),
+                beaconBlockBody.getDeposits(),
+                beaconBlockBody.getVoluntary_exits()));
   }
 
   @Override

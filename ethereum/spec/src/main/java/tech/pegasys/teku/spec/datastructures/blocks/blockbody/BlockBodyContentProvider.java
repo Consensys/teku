@@ -13,30 +13,35 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.SszList;
 
-public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  T createBlockBody(BlockBodyContentProvider contentProvider);
+public interface BlockBodyContentProvider {
 
-  T createEmpty();
+  BLSSignature getRandaoReveal();
 
-  @Override
-  T createFromBackingNode(TreeNode node);
+  Eth1Data getEth1Data();
 
-  SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema();
+  Bytes32 getGraffiti();
 
-  SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema();
+  SszList<Attestation> getAttestations();
 
-  SszListSchema<Attestation, ?> getAttestationsSchema();
+  SszList<ProposerSlashing> getProposerSlashings();
 
-  SszListSchema<Deposit, ?> getDepositsSchema();
+  SszList<AttesterSlashing> getAttesterSlashings();
 
-  SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
+  SszList<Deposit> getDeposits();
+
+  SszList<SignedVoluntaryExit> getVoluntaryExits();
+
+  Optional<SyncAggregate> getSyncAggregate();
 }

@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -94,39 +96,84 @@ public class BlockFactory {
     } else {
       blockSlotState = spec.processSlots(blockPreState, newSlot);
     }
-    SszList<Attestation> attestations =
-        attestationPool.getAttestationsForBlock(
-            blockSlotState, new AttestationForkChecker(blockSlotState));
-
-    // Collect slashings to include
-    final SszList<ProposerSlashing> proposerSlashings =
-        proposerSlashingPool.getItemsForBlock(blockSlotState);
-    final SszList<AttesterSlashing> attesterSlashings =
-        attesterSlashingPool.getItemsForBlock(blockSlotState);
-
-    // Collect exits to include
-    final SszList<SignedVoluntaryExit> voluntaryExits =
-        voluntaryExitPool.getItemsForBlock(blockSlotState);
-
-    // Collect deposits
-    Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
-    final SszList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
     return spec.createNewUnsignedBlock(
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
-            randaoReveal,
             blockSlotState,
             parentRoot,
-            eth1Data,
-            optionalGraffiti.orElse(graffiti),
-            attestations,
-            proposerSlashings,
-            attesterSlashings,
-            deposits,
-            voluntaryExits)
+            new OnDemandBlockBodyContentProvider(
+                randaoReveal, blockPreState, blockSlotState, optionalGraffiti))
         .getBlock();
+  }
+
+  private class OnDemandBlockBodyContentProvider implements BlockBodyContentProvider {
+    private final BLSSignature randaoReveal;
+    private final BeaconState blockPreState;
+    private final BeaconState blockSlotState;
+    private final Optional<Bytes32> optionalGraffiti;
+    private final Eth1Data eth1Vote;
+
+    OnDemandBlockBodyContentProvider(
+        final BLSSignature randaoReveal,
+        final BeaconState blockPreState,
+        final BeaconState blockSlotState,
+        final Optional<Bytes32> optionalGraffiti) {
+      this.randaoReveal = randaoReveal;
+      this.blockPreState = blockPreState;
+      this.blockSlotState = blockSlotState;
+      this.optionalGraffiti = optionalGraffiti;
+      // Eth1 vote is needed to calculate deposits so just compute it ahead of time.
+      // It's currently required for all hard forks so no advantage to delay computation.
+      this.eth1Vote = eth1DataCache.getEth1Vote(blockPreState);
+    }
+
+    @Override
+    public BLSSignature getRandaoReveal() {
+      return randaoReveal;
+    }
+
+    @Override
+    public Eth1Data getEth1Data() {
+      return eth1Vote;
+    }
+
+    @Override
+    public Bytes32 getGraffiti() {
+      return optionalGraffiti.orElse(graffiti);
+    }
+
+    @Override
+    public SszList<Attestation> getAttestations() {
+      return attestationPool.getAttestationsForBlock(
+          blockSlotState, new AttestationForkChecker(blockSlotState));
+    }
+
+    @Override
+    public SszList<ProposerSlashing> getProposerSlashings() {
+      return proposerSlashingPool.getItemsForBlock(blockSlotState);
+    }
+
+    @Override
+    public SszList<AttesterSlashing> getAttesterSlashings() {
+      return attesterSlashingPool.getItemsForBlock(blockSlotState);
+    }
+
+    @Override
+    public SszList<Deposit> getDeposits() {
+      return depositProvider.getDeposits(blockPreState, eth1Vote);
+    }
+
+    @Override
+    public SszList<SignedVoluntaryExit> getVoluntaryExits() {
+      return voluntaryExitPool.getItemsForBlock(blockSlotState);
+    }
+
+    @Override
+    public Optional<SyncAggregate> getSyncAggregate() {
+      return Optional.empty();
+    }
   }
 }

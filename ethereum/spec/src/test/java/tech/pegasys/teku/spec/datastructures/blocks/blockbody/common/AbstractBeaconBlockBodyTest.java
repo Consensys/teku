@@ -29,6 +29,8 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -45,25 +47,25 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final BLSSignature blsSignature = dataStructureUtil.randomSignature();
-  private final Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
-  private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-  private final SszList<ProposerSlashing> proposerSlashings =
+  protected BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+  protected Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+  protected Bytes32 graffiti = dataStructureUtil.randomBytes32();
+  protected SszList<ProposerSlashing> proposerSlashings =
       blockBodyLists.createProposerSlashings(
           dataStructureUtil.randomProposerSlashing(),
           dataStructureUtil.randomProposerSlashing(),
           dataStructureUtil.randomProposerSlashing());
-  private final SszList<AttesterSlashing> attesterSlashings =
+  protected SszList<AttesterSlashing> attesterSlashings =
       blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
-  private final SszList<Attestation> attestations =
+  protected SszList<Attestation> attestations =
       blockBodyLists.createAttestations(
           dataStructureUtil.randomAttestation(),
           dataStructureUtil.randomAttestation(),
           dataStructureUtil.randomAttestation());
-  private final SszList<Deposit> deposits =
+  protected SszList<Deposit> deposits =
       blockBodyLists.createDeposits(
           dataStructureUtil.randomDeposits(MAX_DEPOSITS).toArray(new Deposit[0]));
-  private final SszList<SignedVoluntaryExit> voluntaryExits =
+  protected SszList<SignedVoluntaryExit> voluntaryExits =
       blockBodyLists.createVoluntaryExits(
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit(),
@@ -72,28 +74,16 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   private final T defaultBlockBody = createDefaultBlockBody();
   BeaconBlockBodySchema<?> blockBodySchema = defaultBlockBody.getSchema();
 
-  protected abstract T createBlockBody(
-      BLSSignature randaoReveal,
-      Eth1Data eth1Data,
-      Bytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits);
+  private T createBlockBody() {
+    return createBlockBody(createContentProvider());
+  }
+
+  protected abstract T createBlockBody(final BlockBodyContentProvider contentProvider);
 
   protected abstract BeaconBlockBodySchema<T> getBlockBodySchema();
 
   protected T createDefaultBlockBody() {
-    return createBlockBody(
-        blsSignature,
-        eth1Data,
-        graffiti,
-        proposerSlashings,
-        attesterSlashings,
-        attestations,
-        deposits,
-        voluntaryExits);
+    return createBlockBody();
   }
 
   @Test
@@ -118,16 +108,8 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   @Test
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
-    T testBeaconBlockBody =
-        createBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            reversed(proposerSlashings),
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+    this.proposerSlashings = reversed(proposerSlashings);
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -135,21 +117,12 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   @Test
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
     // Create copy of attesterSlashings and change the element to ensure it is different.
-    SszList<AttesterSlashing> otherAttesterSlashings =
+    attesterSlashings =
         Stream.concat(
                 Stream.of(dataStructureUtil.randomAttesterSlashing()), attesterSlashings.stream())
             .collect(blockBodySchema.getAttesterSlashingsSchema().collector());
 
-    T testBeaconBlockBody =
-        createBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            otherAttesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -157,18 +130,9 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   @Test
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
     // Create copy of attestations and reverse to ensure it is different.
-    SszList<Attestation> reverseAttestations = reversed(attestations);
+    attestations = reversed(attestations);
 
-    T testBeaconBlockBody =
-        createBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            reverseAttestations,
-            deposits,
-            voluntaryExits);
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -176,18 +140,9 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
     // Create copy of deposits and reverse to ensure it is different.
-    SszList<Deposit> reverseDeposits = reversed(deposits);
+    deposits = reversed(deposits);
 
-    T testBeaconBlockBody =
-        createBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            reverseDeposits,
-            voluntaryExits);
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -195,18 +150,9 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    SszList<SignedVoluntaryExit> reverseVoluntaryExits = reversed(voluntaryExits);
+    voluntaryExits = reversed(voluntaryExits);
 
-    T testBeaconBlockBody =
-        createBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            reverseVoluntaryExits);
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -216,5 +162,17 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     BeaconBlockBody newBeaconBlockBody =
         getBlockBodySchema().sszDeserialize(defaultBlockBody.sszSerialize());
     assertEquals(defaultBlockBody, newBeaconBlockBody);
+  }
+
+  protected BlockBodyContentProvider createContentProvider() {
+    return new SimpleBlockBodyContentProvider(
+        randaoReveal,
+        eth1Data,
+        graffiti,
+        attestations,
+        proposerSlashings,
+        attesterSlashings,
+        deposits,
+        voluntaryExits);
   }
 }

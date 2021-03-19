@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -110,26 +109,18 @@ public class BeaconBlockBodySchemaAltair
   }
 
   @Override
-  public BeaconBlockBodyAltair createBlockBody(
-      BLSSignature randaoReveal,
-      Eth1Data eth1Data,
-      Bytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits) {
+  public BeaconBlockBodyAltair createBlockBody(final BlockBodyContentProvider contentProvider) {
     return new BeaconBlockBodyAltair(
         this,
-        new SszSignature(randaoReveal),
-        eth1Data,
-        SszBytes32.of(graffiti),
-        proposerSlashings,
-        attesterSlashings,
-        attestations,
-        deposits,
-        voluntaryExits,
-        getSyncAggregateSchema().createEmpty());
+        new SszSignature(contentProvider.getRandaoReveal()),
+        contentProvider.getEth1Data(),
+        SszBytes32.of(contentProvider.getGraffiti()),
+        contentProvider.getProposerSlashings(),
+        contentProvider.getAttesterSlashings(),
+        contentProvider.getAttestations(),
+        contentProvider.getDeposits(),
+        contentProvider.getVoluntaryExits(),
+        contentProvider.getSyncAggregate().orElseGet(getSyncAggregateSchema()::createEmpty));
   }
 
   @Override
