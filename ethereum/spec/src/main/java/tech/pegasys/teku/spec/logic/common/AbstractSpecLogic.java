@@ -125,17 +125,17 @@ public class AbstractSpecLogic implements SpecLogic {
   }
 
   @Override
-  public Predicates getPredicates() {
+  public Predicates predicates() {
     return predicates;
   }
 
   @Override
-  public MiscHelpers getMiscHelpers() {
+  public MiscHelpers miscHelpers() {
     return miscHelpers;
   }
 
   @Override
-  public BeaconStateAccessors getBeaconStateAccessors() {
+  public BeaconStateAccessors beaconStateAccessors() {
     return beaconStateAccessors;
   }
 }

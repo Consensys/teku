@@ -326,7 +326,7 @@ public class BeaconStateUtilTest {
    */
   private void assertAttestersBalancesSumToTotalBalancesOverEpoch(final BeaconState state) {
     final UInt64 expectedTotalBalance =
-        genesisSpec.getBeaconStateAccessors().getTotalActiveBalance(state);
+        genesisSpec.beaconStateAccessors().getTotalActiveBalance(state);
     UInt64 actualTotalBalance = UInt64.ZERO;
     for (int i = 0; i < specConfig.getSlotsPerEpoch(); i++) {
       actualTotalBalance =

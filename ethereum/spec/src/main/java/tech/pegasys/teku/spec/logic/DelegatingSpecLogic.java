@@ -85,17 +85,17 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
-  public MiscHelpers getMiscHelpers() {
-    return specLogic.getMiscHelpers();
+  public MiscHelpers miscHelpers() {
+    return specLogic.miscHelpers();
   }
 
   @Override
-  public BeaconStateAccessors getBeaconStateAccessors() {
-    return specLogic.getBeaconStateAccessors();
+  public BeaconStateAccessors beaconStateAccessors() {
+    return specLogic.beaconStateAccessors();
   }
 
   @Override
-  public Predicates getPredicates() {
-    return specLogic.getPredicates();
+  public Predicates predicates() {
+    return specLogic.predicates();
   }
 }

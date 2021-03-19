@@ -34,7 +34,7 @@ public class BeaconStateAccessorsTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
-  private final BeaconStateAccessors beaconStateAccessors = genesisSpec.getBeaconStateAccessors();
+  private final BeaconStateAccessors beaconStateAccessors = genesisSpec.beaconStateAccessors();
   private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
 
   @Test
