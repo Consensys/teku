@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -42,8 +43,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
-    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil);
+      final ValidatorsUtil validatorsUtil,
+      final BeaconStateAccessors beaconStateAccessors) {
+    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil, beaconStateAccessors);
   }
 
   @Override
@@ -77,7 +79,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
                 state.getSlot().minus(data.getSlot()),
                 UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
-        if (data.getTarget().getEpoch().equals(beaconStateUtil.getCurrentEpoch(state))) {
+        if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
           state.getCurrent_epoch_attestations().append(pendingAttestation);
         } else {
           state.getPrevious_epoch_attestations().append(pendingAttestation);

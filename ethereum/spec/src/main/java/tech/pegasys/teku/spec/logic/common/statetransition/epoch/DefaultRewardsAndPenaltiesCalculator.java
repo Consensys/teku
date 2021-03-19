@@ -18,30 +18,30 @@ import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas.Delta;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 // TODO(#3356) Merge RewardsAndPenalties interface into this class
 public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenaltiesCalculator {
 
   private final SpecConfig specConfig;
-  private final BeaconStateUtil beaconStateUtil;
   private final BeaconState state;
   private final ValidatorStatuses validatorStatuses;
+  private final BeaconStateAccessors beaconStateAccessors;
 
   public DefaultRewardsAndPenaltiesCalculator(
       final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
       final BeaconState state,
-      final ValidatorStatuses validatorStatuses) {
+      final ValidatorStatuses validatorStatuses,
+      final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
-    this.beaconStateUtil = beaconStateUtil;
     this.state = state;
     this.validatorStatuses = validatorStatuses;
+    this.beaconStateAccessors = beaconStateAccessors;
   }
 
   /**
@@ -217,7 +217,7 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
   }
 
   private UInt64 getFinalityDelay() {
-    return beaconStateUtil
+    return beaconStateAccessors
         .getPreviousEpoch(state)
         .minus(state.getFinalized_checkpoint().getEpoch());
   }

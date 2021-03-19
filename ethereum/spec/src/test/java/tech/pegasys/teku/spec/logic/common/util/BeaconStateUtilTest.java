@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,6 +37,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
-import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -53,37 +52,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class BeaconStateUtilTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconStateUtil beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
+  private final SpecVersion genesisSpec = spec.getGenesisSpec();
+  private final BeaconStateUtil beaconStateUtil = genesisSpec.getBeaconStateUtil();
   private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
   private final long SLOTS_PER_EPOCH = specConfig.getSlotsPerEpoch();
-
-  @Test
-  void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
-    BeaconState beaconState = createBeaconState().updated(state -> state.setSlot(GENESIS_SLOT));
-    assertEquals(GENESIS_EPOCH.increment(), beaconStateUtil.getNextEpoch(beaconState));
-  }
-
-  @Test
-  void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
-    BeaconState beaconState = createBeaconState().updated(state -> state.setSlot(GENESIS_SLOT));
-    assertEquals(GENESIS_EPOCH, beaconStateUtil.getPreviousEpoch(beaconState));
-  }
-
-  @Test
-  void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
-    BeaconState beaconState =
-        createBeaconState()
-            .updated(state -> state.setSlot(GENESIS_SLOT.plus(specConfig.getSlotsPerEpoch())));
-    assertEquals(GENESIS_EPOCH, beaconStateUtil.getPreviousEpoch(beaconState));
-  }
-
-  @Test
-  void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
-    BeaconState beaconState =
-        createBeaconState()
-            .updated(state -> state.setSlot(GENESIS_SLOT.plus(2L * specConfig.getSlotsPerEpoch())));
-    assertEquals(GENESIS_EPOCH.increment(), beaconStateUtil.getPreviousEpoch(beaconState));
-  }
 
   @Test
   void getPreviousDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
@@ -166,26 +138,6 @@ public class BeaconStateUtilTest {
         .validator(dataStructureUtil.randomValidator())
         .validator(dataStructureUtil.randomValidator())
         .build();
-  }
-
-  @Test
-  void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
-    // Data Setup
-    BeaconState state = createBeaconState();
-    Committee committee = new Committee(UInt64.ONE, Arrays.asList(0, 1, 2));
-
-    // Calculate Expected Results
-    UInt64 expectedBalance = UInt64.ZERO;
-    for (UInt64 balance : state.getBalances().asListUnboxed()) {
-      if (balance.isLessThan(specConfig.getMaxEffectiveBalance())) {
-        expectedBalance = expectedBalance.plus(balance);
-      } else {
-        expectedBalance = expectedBalance.plus(specConfig.getMaxEffectiveBalance());
-      }
-    }
-
-    UInt64 totalBalance = beaconStateUtil.getTotalBalance(state, committee.getCommittee());
-    assertEquals(expectedBalance, totalBalance);
   }
 
   @Test
@@ -373,7 +325,8 @@ public class BeaconStateUtilTest {
    * sate.
    */
   private void assertAttestersBalancesSumToTotalBalancesOverEpoch(final BeaconState state) {
-    final UInt64 expectedTotalBalance = beaconStateUtil.getTotalActiveBalance(state);
+    final UInt64 expectedTotalBalance =
+        genesisSpec.getBeaconStateAccessors().getTotalActiveBalance(state);
     UInt64 actualTotalBalance = UInt64.ZERO;
     for (int i = 0; i < specConfig.getSlotsPerEpoch(); i++) {
       actualTotalBalance =

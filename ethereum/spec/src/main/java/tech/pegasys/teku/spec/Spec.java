@@ -191,11 +191,11 @@ public class Spec {
 
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
-    return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
+    return atState(state).getBeaconStateAccessors().getCurrentEpoch(state);
   }
 
   public UInt64 getPreviousEpoch(final BeaconState state) {
-    return atState(state).getBeaconStateUtil().getPreviousEpoch(state);
+    return atState(state).getBeaconStateAccessors().getPreviousEpoch(state);
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
@@ -431,15 +431,15 @@ public class Spec {
     return blockProcessor.isEnoughVotesToUpdateEth1Data(existingVotes + additionalVotes);
   }
 
-  // Validator Utils
   public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return atState(state).getValidatorsUtil().getMaxLookaheadEpoch(state);
+    return atState(state).getBeaconStateAccessors().getMaxLookaheadEpoch(state);
   }
 
   public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).getValidatorsUtil().getActiveValidatorIndices(state, epoch);
+    return atEpoch(epoch).getBeaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
+  // Validator Utils
   public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
     return getActiveValidatorIndices(state, epoch).size();
   }

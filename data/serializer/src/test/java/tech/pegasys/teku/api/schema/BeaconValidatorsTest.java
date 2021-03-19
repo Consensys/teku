@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
@@ -36,6 +37,8 @@ class BeaconValidatorsTest {
 
   private final Spec spec = SpecFactory.createMinimal();
   private final BeaconStateUtil beaconStateUtil = spec.getGenesisSpec().getBeaconStateUtil();
+  private final BeaconStateAccessors beaconStateAccessors =
+      spec.getGenesisSpec().getBeaconStateAccessors();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
@@ -60,7 +63,7 @@ class BeaconValidatorsTest {
         new BeaconValidators(
             beaconState,
             true,
-            beaconStateUtil.getCurrentEpoch(beaconState),
+            beaconStateAccessors.getCurrentEpoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
     int expectedNextPageToken =

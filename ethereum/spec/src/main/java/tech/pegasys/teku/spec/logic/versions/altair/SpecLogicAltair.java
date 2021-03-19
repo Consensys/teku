@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -31,6 +32,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
   private SpecLogicAltair(
+      final Predicates predicates,
+      final MiscHelpersAltair miscHelpers,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -40,10 +44,11 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final BlockProcessorAltair blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil,
-      final MiscHelpersAltair miscHelpers,
-      final BeaconStateAccessorsAltair beaconStateAccessors) {
+      final BlockProposalUtil blockProposalUtil) {
     super(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -53,26 +58,40 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil,
-        miscHelpers,
-        beaconStateAccessors);
+        blockProposalUtil);
   }
 
   public static SpecLogicAltair create(
       final SpecConfigAltair config, final SchemaDefinitions schemaDefinitions) {
+    // Helpers
+    final Predicates predicates = new Predicates();
+    final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
+    final BeaconStateAccessorsAltair beaconStateAccessors =
+        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+
     // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
+        new BeaconStateUtil(
+            config,
+            schemaDefinitions,
+            validatorsUtil,
+            committeeUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtil(config, beaconStateUtil, validatorsUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
-        new ValidatorStatusFactoryAltair(beaconStateUtil, attestationUtil, validatorsUtil);
+        new ValidatorStatusFactoryAltair(
+            beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
     final EpochProcessorAltair epochProcessor =
-        new EpochProcessorAltair(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+        new EpochProcessorAltair(
+            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
     final BlockProcessorAltair blockProcessorUtil =
-        new BlockProcessorAltair(config, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorAltair(
+            config, beaconStateUtil, attestationUtil, validatorsUtil, beaconStateAccessors);
     final StateTransition stateTransition =
         StateTransition.create(
             config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
@@ -81,11 +100,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 
-    // Helpers
-    final MiscHelpersAltair miscHelpersAltair = new MiscHelpersAltair();
-    final BeaconStateAccessorsAltair beaconStateAccessors = new BeaconStateAccessorsAltair();
-
     return new SpecLogicAltair(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -95,8 +113,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil,
-        miscHelpersAltair,
-        beaconStateAccessors);
+        blockProposalUtil);
   }
 }
