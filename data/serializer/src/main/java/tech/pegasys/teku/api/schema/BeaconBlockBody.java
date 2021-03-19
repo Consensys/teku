@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -88,26 +87,33 @@ public class BeaconBlockBody {
       asInternalBeaconBlockBody(final SpecVersion spec) {
     BeaconBlockBodySchema<?> schema = spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
-        new SimpleBlockBodyContentProvider(
-            randao_reveal.asInternalBLSSignature(),
-            new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
-                eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash),
-            graffiti,
-            attestations.stream()
-                .map(Attestation::asInternalAttestation)
-                .collect(schema.getAttestationsSchema().collector()),
-            proposer_slashings.stream()
-                .map(ProposerSlashing::asInternalProposerSlashing)
-                .collect(schema.getProposerSlashingsSchema().collector()),
-            attester_slashings.stream()
-                .map(AttesterSlashing::asInternalAttesterSlashing)
-                .collect(schema.getAttesterSlashingsSchema().collector()),
-            deposits.stream()
-                .map(Deposit::asInternalDeposit)
-                .collect(schema.getDepositsSchema().collector()),
-            voluntary_exits.stream()
-                .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
-                .collect(schema.getVoluntaryExitsSchema().collector())));
+        builder ->
+            builder
+                .randaoReveal(randao_reveal.asInternalBLSSignature())
+                .eth1Data(
+                    new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
+                        eth1_data.deposit_root, eth1_data.deposit_count, eth1_data.block_hash))
+                .graffiti(graffiti)
+                .attestations(
+                    attestations.stream()
+                        .map(Attestation::asInternalAttestation)
+                        .collect(schema.getAttestationsSchema().collector()))
+                .proposerSlashings(
+                    proposer_slashings.stream()
+                        .map(ProposerSlashing::asInternalProposerSlashing)
+                        .collect(schema.getProposerSlashingsSchema().collector()))
+                .attesterSlashings(
+                    attester_slashings.stream()
+                        .map(AttesterSlashing::asInternalAttesterSlashing)
+                        .collect(schema.getAttesterSlashingsSchema().collector()))
+                .deposits(
+                    deposits.stream()
+                        .map(Deposit::asInternalDeposit)
+                        .collect(schema.getDepositsSchema().collector()))
+                .voluntaryExits(
+                    voluntary_exits.stream()
+                        .map(SignedVoluntaryExit::asInternalSignedVoluntaryExit)
+                        .collect(schema.getVoluntaryExitsSchema().collector())));
   }
 
   @Override

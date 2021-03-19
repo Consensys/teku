@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
+import java.util.function.Consumer;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
 
   @Override
-  protected BeaconBlockBodyPhase0 createBlockBody(final BlockBodyContentProvider contentProvider) {
+  protected BeaconBlockBodyPhase0 createBlockBody(
+      final Consumer<BeaconBlockBodyContent> contentProvider) {
     return getBlockBodySchema().createBlockBody(contentProvider);
   }
 

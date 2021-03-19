@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -524,30 +523,48 @@ public final class DataStructureUtil {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
-        new SimpleBlockBodyContentProvider(
-            randomSignature(),
-            randomEth1Data(),
-            Bytes32.ZERO,
-            randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3),
-            randomSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1),
-            randomSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1),
-            randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1),
-            randomSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1)));
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .attestations(
+                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                .proposerSlashings(
+                    randomSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                .attesterSlashings(
+                    randomSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                .deposits(
+                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                .voluntaryExits(
+                    randomSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1)));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
-        new SimpleBlockBodyContentProvider(
-            randomSignature(),
-            randomEth1Data(),
-            Bytes32.ZERO,
-            randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation),
-            randomFullSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing),
-            randomFullSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing),
-            randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex),
-            randomFullSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .attestations(
+                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                .proposerSlashings(
+                    randomFullSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
+                .attesterSlashings(
+                    randomFullSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                .deposits(
+                    randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
+                .voluntaryExits(
+                    randomFullSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
   }
 
   public ProposerSlashing randomProposerSlashing() {

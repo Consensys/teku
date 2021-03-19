@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import java.util.function.Consumer;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -23,7 +24,7 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  T createBlockBody(BlockBodyContentProvider contentProvider);
+  T createBlockBody(Consumer<BeaconBlockBodyContent> bodyBuilder);
 
   T createEmpty();
 

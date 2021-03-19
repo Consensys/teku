@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -75,15 +74,16 @@ public class BlockProposalTestUtil {
             get_beacon_proposer_index(blockSlotState, newSlot),
             blockSlotState,
             parentBlockSigningRoot,
-            new SimpleBlockBodyContentProvider(
-                randaoReveal,
-                eth1Data,
-                Bytes32.ZERO,
-                attestations,
-                slashings,
-                blockBodyLists.createAttesterSlashings(),
-                deposits,
-                exits));
+            builder ->
+                builder
+                    .randaoReveal(randaoReveal)
+                    .eth1Data(eth1Data)
+                    .graffiti(Bytes32.ZERO)
+                    .attestations(attestations)
+                    .proposerSlashings(slashings)
+                    .attesterSlashings(blockBodyLists.createAttesterSlashings())
+                    .deposits(deposits)
+                    .voluntaryExits(exits));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

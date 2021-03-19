@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -355,12 +356,12 @@ public class Spec {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final BlockBodyContentProvider contentProvider)
+      final Consumer<BeaconBlockBodyContent> bodyBuilder)
       throws StateTransitionException {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, contentProvider);
+            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
   }
 
   // Block Processing Utils

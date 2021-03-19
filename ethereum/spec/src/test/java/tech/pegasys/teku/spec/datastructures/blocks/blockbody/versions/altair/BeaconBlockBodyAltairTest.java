@@ -15,9 +15,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
@@ -36,7 +37,8 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   }
 
   @Override
-  protected BeaconBlockBodyAltair createBlockBody(final BlockBodyContentProvider contentProvider) {
+  protected BeaconBlockBodyAltair createBlockBody(
+      final Consumer<BeaconBlockBodyContent> contentProvider) {
     return getBlockBodySchema().createBlockBody(contentProvider);
   }
 

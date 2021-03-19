@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
-import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -25,23 +25,24 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.ssz.SszList;
 
-public interface BlockBodyContentProvider {
+public interface BeaconBlockBodyContent {
 
-  BLSSignature getRandaoReveal();
+  BeaconBlockBodyContent randaoReveal(BLSSignature randaoReveal);
 
-  Eth1Data getEth1Data();
+  BeaconBlockBodyContent eth1Data(Eth1Data eth1Data);
 
-  Bytes32 getGraffiti();
+  BeaconBlockBodyContent graffiti(Bytes32 graffiti);
 
-  SszList<Attestation> getAttestations();
+  BeaconBlockBodyContent attestations(SszList<Attestation> attestations);
 
-  SszList<ProposerSlashing> getProposerSlashings();
+  BeaconBlockBodyContent proposerSlashings(SszList<ProposerSlashing> proposerSlashings);
 
-  SszList<AttesterSlashing> getAttesterSlashings();
+  BeaconBlockBodyContent attesterSlashings(SszList<AttesterSlashing> attesterSlashings);
 
-  SszList<Deposit> getDeposits();
+  BeaconBlockBodyContent deposits(SszList<Deposit> deposits);
 
-  SszList<SignedVoluntaryExit> getVoluntaryExits();
+  BeaconBlockBodyContent voluntaryExits(SszList<SignedVoluntaryExit> voluntaryExits);
 
-  Optional<SyncAggregate> getSyncAggregate();
+  // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
+  BeaconBlockBodyContent syncAggregate(Supplier<SyncAggregate> syncAggregateSupplier);
 }

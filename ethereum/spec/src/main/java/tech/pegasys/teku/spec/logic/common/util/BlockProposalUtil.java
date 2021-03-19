@@ -15,12 +15,13 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -43,7 +44,7 @@ public class BlockProposalUtil {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final BlockBodyContentProvider contentProvider)
+      final Consumer<BeaconBlockBodyContent> bodyBuilder)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -53,7 +54,7 @@ public class BlockProposalUtil {
 
     // Create block body
     final BeaconBlockBody beaconBlockBody =
-        schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(contentProvider);
+        schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;

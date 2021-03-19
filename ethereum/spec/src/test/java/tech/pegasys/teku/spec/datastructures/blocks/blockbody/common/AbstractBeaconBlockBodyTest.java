@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,9 +29,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BlockBodyContentProvider;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.SimpleBlockBodyContentProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -78,7 +78,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     return createBlockBody(createContentProvider());
   }
 
-  protected abstract T createBlockBody(final BlockBodyContentProvider contentProvider);
+  protected abstract T createBlockBody(final Consumer<BeaconBlockBodyContent> contentProvider);
 
   protected abstract BeaconBlockBodySchema<T> getBlockBodySchema();
 
@@ -164,15 +164,16 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, newBeaconBlockBody);
   }
 
-  protected BlockBodyContentProvider createContentProvider() {
-    return new SimpleBlockBodyContentProvider(
-        randaoReveal,
-        eth1Data,
-        graffiti,
-        attestations,
-        proposerSlashings,
-        attesterSlashings,
-        deposits,
-        voluntaryExits);
+  protected Consumer<BeaconBlockBodyContent> createContentProvider() {
+    return builder ->
+        builder
+            .randaoReveal(randaoReveal)
+            .eth1Data(eth1Data)
+            .graffiti(graffiti)
+            .attestations(attestations)
+            .proposerSlashings(proposerSlashings)
+            .attesterSlashings(attesterSlashings)
+            .deposits(deposits)
+            .voluntaryExits(voluntaryExits);
   }
 }
