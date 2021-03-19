@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
+
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -32,7 +34,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     return config
         .getEffectiveBalanceIncrement()
         .times(config.getBaseRewardFactor())
-        .dividedBy(getTotalActiveBalance(state));
+        .dividedBy(integerSquareRoot(getTotalActiveBalance(state)));
   }
 
   public UInt64 getBaseReward(final BeaconState state, final int validatorIndex) {
