@@ -22,15 +22,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
-  private final SpecConfig specConfig;
+  private final BeaconStateSchema<?, ?> beaconStateSchema;
+  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
-    this.specConfig = specConfig;
+    this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
+    this.beaconBlockBodySchema = BeaconBlockBodySchemaPhase0.create(specConfig);
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
-    return BeaconStateSchemaPhase0.create(specConfig);
+    return beaconStateSchema;
   }
 
   @Override
@@ -45,6 +47,6 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
 
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return BeaconBlockBodySchemaPhase0.create(specConfig);
+    return beaconBlockBodySchema;
   }
 }

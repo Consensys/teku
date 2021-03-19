@@ -38,11 +38,13 @@ public abstract class AbstractSszPrimitiveSchema<
     implements SszPrimitiveSchema<DataT, SszDataT> {
 
   private final int bitsSize;
+  private final int sszSize;
 
   protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;
+    this.sszSize = getSSZBytesSize();
   }
 
   @Override
@@ -81,7 +83,7 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public int getSszFixedPartSize() {
-    return getSSZBytesSize();
+    return sszSize;
   }
 
   @Override

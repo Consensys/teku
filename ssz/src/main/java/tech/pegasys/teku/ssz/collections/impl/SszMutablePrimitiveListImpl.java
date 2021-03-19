@@ -18,6 +18,7 @@ import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.ssz.impl.SszMutableListImpl;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszMutablePrimitiveListImpl<
@@ -25,9 +26,23 @@ public class SszMutablePrimitiveListImpl<
     extends SszMutableListImpl<SszElementT, SszElementT>
     implements SszMutablePrimitiveList<ElementT, SszElementT> {
 
+  private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
+
+  @SuppressWarnings("unchecked")
   public SszMutablePrimitiveListImpl(
       SszPrimitiveListImpl<ElementT, SszElementT> backingImmutableData) {
     super(backingImmutableData);
+    elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
+  }
+
+  @Override
+  public SszPrimitiveSchema<ElementT, SszElementT> getPrimitiveElementSchema() {
+    return elementSchemaCache;
+  }
+
+  @Override
+  protected void validateChildSchema(int index, SszElementT value) {
+    // no need to check primitive value schema
   }
 
   @Override
