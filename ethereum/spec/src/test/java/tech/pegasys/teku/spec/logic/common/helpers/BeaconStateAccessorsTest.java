@@ -59,15 +59,6 @@ public class BeaconStateAccessorsTest {
     assertEquals(GENESIS_EPOCH.increment(), beaconStateAccessors.getPreviousEpoch(beaconState));
   }
 
-  private BeaconState createBeaconState() {
-    return new BeaconStateTestBuilder(dataStructureUtil)
-        .forkVersion(specConfig.getGenesisForkVersion())
-        .validator(dataStructureUtil.randomValidator())
-        .validator(dataStructureUtil.randomValidator())
-        .validator(dataStructureUtil.randomValidator())
-        .build();
-  }
-
   @Test
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
@@ -86,5 +77,14 @@ public class BeaconStateAccessorsTest {
 
     UInt64 totalBalance = beaconStateAccessors.getTotalBalance(state, committee.getCommittee());
     assertEquals(expectedBalance, totalBalance);
+  }
+
+  private BeaconState createBeaconState() {
+    return new BeaconStateTestBuilder(dataStructureUtil)
+        .forkVersion(specConfig.getGenesisForkVersion())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .validator(dataStructureUtil.randomValidator())
+        .build();
   }
 }

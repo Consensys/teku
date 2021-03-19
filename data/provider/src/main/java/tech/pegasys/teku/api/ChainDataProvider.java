@@ -54,7 +54,6 @@ import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.Merkleizable;
@@ -313,8 +312,7 @@ public class ChainDataProvider {
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final List<String> validators,
       final Set<ValidatorStatus> statusFilter) {
-    final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    final UInt64 epoch = specVersion.getBeaconStateAccessors().getCurrentEpoch(state);
+    final UInt64 epoch = spec.getCurrentEpoch(state);
     return getValidatorSelector(state, validators)
         .filter(getStatusPredicate(state, statusFilter))
         .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
@@ -334,8 +332,7 @@ public class ChainDataProvider {
   private ValidatorResponse getValidatorFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final String validatorIdParam) {
-    final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    final UInt64 epoch = specVersion.getBeaconStateAccessors().getCurrentEpoch(state);
+    final UInt64 epoch = spec.getCurrentEpoch(state);
     return getValidatorSelector(state, List.of(validatorIdParam))
         .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
         .flatMap(Optional::stream)
@@ -392,8 +389,7 @@ public class ChainDataProvider {
   private IntPredicate getStatusPredicate(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final Set<ValidatorStatus> statusFilter) {
-    final SpecVersion specVersion = spec.atSlot(state.getSlot());
-    final UInt64 epoch = specVersion.getBeaconStateAccessors().getCurrentEpoch(state);
+    final UInt64 epoch = spec.getCurrentEpoch(state);
     return statusFilter.isEmpty()
         ? i -> true
         : i -> statusFilter.contains(getValidatorStatus(state, i, epoch, FAR_FUTURE_EPOCH));
