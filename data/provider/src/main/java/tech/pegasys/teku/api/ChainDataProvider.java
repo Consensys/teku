@@ -370,15 +370,13 @@ public class ChainDataProvider {
             ? __ -> true
             : (assignment) -> assignment.getCommitteeIndex().compareTo(committeeIndex.get()) == 0;
 
-    final UInt64 stateEpoch =
-        spec.atSlot(state.getSlot()).getBeaconStateUtil().computeEpochAtSlot(state.getSlot());
+    final UInt64 stateEpoch = spec.computeEpochAtSlot(state.getSlot());
     if (epoch.isPresent() && epoch.get().isGreaterThan(stateEpoch.plus(ONE))) {
       throw new BadRequestException(
           "Epoch " + epoch.get() + " is too far ahead of state epoch " + stateEpoch);
     }
     if (slot.isPresent()) {
-      final UInt64 computeEpochAtSlot =
-          spec.atSlot(slot.get()).getBeaconStateUtil().computeEpochAtSlot(slot.get());
+      final UInt64 computeEpochAtSlot = spec.computeEpochAtSlot(slot.get());
       if (!computeEpochAtSlot.equals(epoch.orElse(stateEpoch))) {
         throw new BadRequestException(
             "Slot " + slot.get() + " is not in epoch " + epoch.orElse(stateEpoch));

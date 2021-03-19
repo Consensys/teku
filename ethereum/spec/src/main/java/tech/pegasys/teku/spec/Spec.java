@@ -91,7 +91,7 @@ public class Spec {
 
   public SpecVersion atSlot(final UInt64 slot) {
     // Calculate using the latest spec
-    final UInt64 epoch = getLatestSpec().getBeaconStateUtil().computeEpochAtSlot(slot);
+    final UInt64 epoch = getLatestSpec().getMiscHelpers().computeEpochAtSlot(slot);
     return atEpoch(epoch);
   }
 
@@ -203,7 +203,7 @@ public class Spec {
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
-    return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+    return atSlot(slot).getMiscHelpers().computeEpochAtSlot(slot);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {

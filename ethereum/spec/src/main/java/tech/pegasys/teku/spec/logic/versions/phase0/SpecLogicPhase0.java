@@ -83,7 +83,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             miscHelpers,
             beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil, miscHelpers);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
             beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -92,12 +92,17 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
     final BlockProcessorPhase0 blockProcessorUtil =
         new BlockProcessorPhase0(
-            config, beaconStateUtil, attestationUtil, validatorsUtil, beaconStateAccessors);
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            validatorsUtil,
+            beaconStateAccessors,
+            miscHelpers);
     final StateTransition stateTransition =
         StateTransition.create(
             config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 

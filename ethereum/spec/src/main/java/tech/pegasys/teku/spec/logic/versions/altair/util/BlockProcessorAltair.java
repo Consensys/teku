@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.logic.common.util.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
@@ -31,8 +32,15 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final BeaconStateAccessors beaconStateAccessors) {
-    super(specConfig, beaconStateUtil, attestationUtil, validatorsUtil, beaconStateAccessors);
+      final BeaconStateAccessors beaconStateAccessors,
+      final MiscHelpersAltair miscHelpers) {
+    super(
+        specConfig,
+        beaconStateUtil,
+        attestationUtil,
+        validatorsUtil,
+        miscHelpers,
+        beaconStateAccessors);
   }
 
   @Override

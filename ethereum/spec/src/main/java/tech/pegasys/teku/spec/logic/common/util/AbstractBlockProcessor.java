@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
@@ -60,6 +61,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
+  protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
 
   protected AbstractBlockProcessor(
@@ -67,11 +69,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
+      final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
+    this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
@@ -143,7 +147,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
   @Override
   public void verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
       throws InvalidSignatureException {
-    UInt64 epoch = beaconStateUtil.computeEpochAtSlot(block.getSlot());
+    UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
