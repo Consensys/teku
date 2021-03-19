@@ -85,6 +85,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
+  public Predicates predicates() {
+    return specLogic.predicates();
+  }
+
+  @Override
   public MiscHelpers miscHelpers() {
     return specLogic.miscHelpers();
   }
@@ -92,10 +97,5 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BeaconStateAccessors beaconStateAccessors() {
     return specLogic.beaconStateAccessors();
-  }
-
-  @Override
-  public Predicates predicates() {
-    return specLogic.predicates();
   }
 }

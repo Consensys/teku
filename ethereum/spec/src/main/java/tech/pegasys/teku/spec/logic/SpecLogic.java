@@ -48,9 +48,9 @@ public interface SpecLogic {
 
   ValidatorStatusFactory getValidatorStatusFactory();
 
+  Predicates predicates();
+
   MiscHelpers miscHelpers();
 
   BeaconStateAccessors beaconStateAccessors();
-
-  Predicates predicates();
 }
