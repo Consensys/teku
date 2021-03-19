@@ -43,7 +43,8 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     validatorIndexProvider.lookupValidators();
     blockDuties.onSlot(slot);
     attestationDuties.onSlot(slot);
-    final UInt64 firstSlotOfEpoch = spec.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (slot.equals(firstSlotOfEpoch.plus(1))) {
       statusLogger.checkValidatorStatusChanges();
     }
