@@ -144,11 +144,12 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
+        public TreeNode updatePackedNode(
+            TreeNode srcNode, List<PackedNodeUpdate<UInt64, SszUInt64>> updates) {
           if (updates.size() == 4) {
             byte[] data = new byte[32];
             for (int i = 0; i < 4; i++) {
-              long longValue = ((SszUInt64) updates.get(i).getNewValue()).longValue();
+              long longValue = updates.get(i).getNewValue().longValue();
               int off = i * 8;
               data[off + 0] = (byte) longValue;
               data[off + 1] = (byte) (longValue >> 8);
@@ -161,7 +162,7 @@ public interface SszPrimitiveSchemas {
             }
             return LeafNode.create(Bytes.wrap(data));
           } else {
-            return super.updateBackingNode(srcNode, updates);
+            return super.updatePackedNode(srcNode, updates);
           }
         }
 
