@@ -13,19 +13,10 @@
 
 package tech.pegasys.teku.ssz.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
-import tech.pegasys.teku.ssz.schema.SszSchema.PackedNodeUpdate;
-import tech.pegasys.teku.ssz.tree.LeafNode;
-import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUpdates;
 
 public abstract class AbstractSszMutableCollection<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
@@ -56,69 +47,6 @@ public abstract class AbstractSszMutableCollection<
               + getSchema().getChildSchema(index)
               + ", but value has schema "
               + value.getSchema());
-    }
-  }
-
-  @Override
-  protected TreeUpdates packChanges(
-      Stream<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
-    SszCollectionSchema<?, ?> type = getSchema();
-    SszSchema<?> elementType = type.getElementSchema();
-    int elementsPerChunk = type.getElementsPerChunk();
-
-    List<Map.Entry<Integer, SszElementT>> newChildren = newChildValues.collect(Collectors.toList());
-    int prevChildNodeIndex = 0;
-    List<NodeUpdate> nodeUpdates = new ArrayList<>();
-    NodeUpdate curNodeUpdate = null;
-
-    for (Map.Entry<Integer, SszElementT> entry : newChildren) {
-      int childIndex = entry.getKey();
-      int childNodeIndex = childIndex / elementsPerChunk;
-
-      if (curNodeUpdate == null || childNodeIndex != prevChildNodeIndex) {
-        long gIndex = type.getChildGeneralizedIndex(childNodeIndex);
-        curNodeUpdate = new NodeUpdate(gIndex, elementsPerChunk);
-        nodeUpdates.add(curNodeUpdate);
-        prevChildNodeIndex = childNodeIndex;
-      }
-      curNodeUpdate.addUpdate(childIndex % elementsPerChunk, entry.getValue());
-    }
-
-    List<Long> gIndexes = new ArrayList<>();
-    List<TreeNode> newValues = new ArrayList<>();
-    for (NodeUpdate nodeUpdate : nodeUpdates) {
-      long gIndex = nodeUpdate.getNodeGIndex();
-      TreeNode originalNode =
-          nodeUpdate.getUpdates().size() < elementsPerChunk
-              ? original.get(gIndex)
-              : LeafNode.EMPTY_LEAF;
-      TreeNode newNode = elementType.updateBackingNode(originalNode, nodeUpdate.getUpdates());
-      newValues.add(newNode);
-      gIndexes.add(gIndex);
-    }
-
-    return new TreeUpdates(gIndexes, newValues);
-  }
-
-  private static class NodeUpdate {
-    private final List<PackedNodeUpdate> updates;
-    private final long nodeGIndex;
-
-    public NodeUpdate(long nodeGIndex, int maxElementsPerChunk) {
-      this.updates = new ArrayList<>(maxElementsPerChunk);
-      this.nodeGIndex = nodeGIndex;
-    }
-
-    public void addUpdate(int internalNodeIndex, SszData newValue) {
-      updates.add(new PackedNodeUpdate(internalNodeIndex, newValue));
-    }
-
-    public long getNodeGIndex() {
-      return nodeGIndex;
-    }
-
-    public List<PackedNodeUpdate> getUpdates() {
-      return updates;
     }
   }
 }

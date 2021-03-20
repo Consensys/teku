@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.schema;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
@@ -57,32 +56,6 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   boolean isPrimitive();
 
-  /**
-   * For packed primitive values. Extracts a packed value from the tree node by its 'internal
-   * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
-   * leaf node and it's 'internal index' in this node would be `45`
-   */
-  default SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
-    return createFromBackingNode(node);
-  }
-
-  /**
-   * For packed primitive values. Packs the value to the existing node at 'internal index' For
-   * example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and
-   * it's 'internal index' in this node would be `45`
-   */
-  default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
-    return newValue.getBackingNode();
-  }
-
-  default TreeNode updateBackingNode(TreeNode srcNode, List<PackedNodeUpdate> updates) {
-    TreeNode res = srcNode;
-    for (PackedNodeUpdate update : updates) {
-      res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
-    }
-    return res;
-  }
-
   default Bytes sszSerialize(SszDataT view) {
     return sszSerializeTree(view.getBackingNode());
   }
@@ -97,23 +70,5 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
-  }
-
-  final class PackedNodeUpdate {
-    private final int internalIndex;
-    private final SszData newValue;
-
-    public PackedNodeUpdate(int internalIndex, SszData newValue) {
-      this.internalIndex = internalIndex;
-      this.newValue = newValue;
-    }
-
-    public int getInternalIndex() {
-      return internalIndex;
-    }
-
-    public SszData getNewValue() {
-      return newValue;
-    }
   }
 }

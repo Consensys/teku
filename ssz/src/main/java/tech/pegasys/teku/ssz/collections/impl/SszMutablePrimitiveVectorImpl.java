@@ -18,31 +18,31 @@ import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.impl.AbstractSszComposite;
-import tech.pegasys.teku.ssz.impl.SszMutableVectorImpl;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszMutablePrimitiveVectorImpl<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
-    extends SszMutableVectorImpl<SszElementT, SszElementT>
+    extends AbstractSszMutablePrimitiveCollection<ElementT, SszElementT>
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
-
-  private final SszPrimitiveSchema<ElementT, SszElementT> elementSchemaCache;
 
   @SuppressWarnings("unchecked")
   public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
-    elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
   }
 
   @Override
-  public SszPrimitiveSchema<ElementT, SszElementT> getPrimitiveElementSchema() {
-    return elementSchemaCache;
+  protected void checkIndex(int index, boolean set) {
+    if (index < 0 || index >= size()) {
+      throw new IndexOutOfBoundsException(
+          "Invalid index " + index + " for vector with size " + size());
+    }
   }
 
   @Override
-  protected void validateChildSchema(int index, SszElementT value) {
-    // no need to check primitive value schema
+  @SuppressWarnings("unchecked")
+  public SszPrimitiveVectorSchema<ElementT, SszElementT, ?> getSchema() {
+    return (SszPrimitiveVectorSchema<ElementT, SszElementT, ?>) super.getSchema();
   }
 
   @Override
@@ -54,7 +54,7 @@ public class SszMutablePrimitiveVectorImpl<
   @Override
   protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
       TreeNode backingNode, IntCache<SszElementT> childrenCache) {
-    return new SszPrimitiveVectorImpl<>(getSchema(), backingNode);
+    return new SszPrimitiveVectorImpl<>(getSchema(), backingNode, childrenCache);
   }
 
   @Override
