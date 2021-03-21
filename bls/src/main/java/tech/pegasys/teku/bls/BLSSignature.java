@@ -25,9 +25,13 @@ import tech.pegasys.teku.bls.impl.Signature;
 
 public class BLSSignature {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
   public static final int SSZ_BLS_SIGNATURE_SIZE = BLSConstants.BLS_SIGNATURE_SIZE;
+  private static final Bytes INFINITY_BYTES =
+      Bytes.fromHexString(
+          "0x"
+              + "c000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000");
 
   /**
    * Creates an empty signature (all zero bytes). Note that this is not a valid signature.
@@ -36,6 +40,10 @@ public class BLSSignature {
    */
   public static BLSSignature empty() {
     return BLSSignature.fromBytesCompressed(Bytes.wrap(new byte[SSZ_BLS_SIGNATURE_SIZE]));
+  }
+
+  public static BLSSignature infinity() {
+    return BLSSignature.fromBytesCompressed(INFINITY_BYTES);
   }
 
   public static BLSSignature fromBytesCompressed(Bytes bytes) {
