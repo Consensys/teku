@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ValidatorTimingActions implements ValidatorTimingChannel {
@@ -44,9 +43,8 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     validatorIndexProvider.lookupValidators();
     blockDuties.onSlot(slot);
     attestationDuties.onSlot(slot);
-    final BeaconStateUtil beaconStateUtil = spec.atSlot(slot).getBeaconStateUtil();
-    final UInt64 firstSlotOfEpoch =
-        beaconStateUtil.computeStartSlotAtEpoch(beaconStateUtil.computeEpochAtSlot(slot));
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (slot.equals(firstSlotOfEpoch.plus(1))) {
       statusLogger.checkValidatorStatusChanges();
     }

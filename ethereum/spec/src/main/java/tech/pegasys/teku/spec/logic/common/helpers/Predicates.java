@@ -14,17 +14,21 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 
-public class MiscHelpers {
-  protected final SpecConfig specConfig;
+public class Predicates {
 
-  public MiscHelpers(final SpecConfig specConfig) {
-    this.specConfig = specConfig;
-  }
-
-  public UInt64 computeEpochAtSlot(UInt64 slot) {
-    // TODO this should take into account hard forks
-    return slot.dividedBy(specConfig.getSlotsPerEpoch());
+  /**
+   * Check if (this) validator is active in the given epoch.
+   *
+   * @param epoch - The epoch under consideration.
+   * @return A boolean indicating if the validator is active.
+   * @see <a>
+   *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
+   *     </a>
+   */
+  public boolean isActiveValidator(Validator validator, UInt64 epoch) {
+    return validator.getActivation_epoch().compareTo(epoch) <= 0
+        && epoch.compareTo(validator.getExit_epoch()) < 0;
   }
 }

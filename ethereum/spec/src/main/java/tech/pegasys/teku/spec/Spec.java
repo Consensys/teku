@@ -92,7 +92,7 @@ public class Spec {
 
   public SpecVersion atSlot(final UInt64 slot) {
     // Calculate using the latest spec
-    final UInt64 epoch = getLatestSpec().getBeaconStateUtil().computeEpochAtSlot(slot);
+    final UInt64 epoch = getLatestSpec().miscHelpers().computeEpochAtSlot(slot);
     return atEpoch(epoch);
   }
 
@@ -192,11 +192,11 @@ public class Spec {
 
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
-    return atState(state).getBeaconStateUtil().getCurrentEpoch(state);
+    return atState(state).beaconStateAccessors().getCurrentEpoch(state);
   }
 
   public UInt64 getPreviousEpoch(final BeaconState state) {
-    return atState(state).getBeaconStateUtil().getPreviousEpoch(state);
+    return atState(state).beaconStateAccessors().getPreviousEpoch(state);
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
@@ -204,7 +204,7 @@ public class Spec {
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
-    return atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+    return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
@@ -414,15 +414,15 @@ public class Spec {
     return blockProcessor.isEnoughVotesToUpdateEth1Data(existingVotes + additionalVotes);
   }
 
-  // Validator Utils
   public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return atState(state).getValidatorsUtil().getMaxLookaheadEpoch(state);
+    return atState(state).beaconStateAccessors().getMaxLookaheadEpoch(state);
   }
 
   public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).getValidatorsUtil().getActiveValidatorIndices(state, epoch);
+    return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
+  // Validator Utils
   public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
     return getActiveValidatorIndices(state, epoch).size();
   }
