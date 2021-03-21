@@ -528,14 +528,14 @@ public final class DataStructureUtil {
                 .randaoReveal(randomSignature())
                 .eth1Data(randomEth1Data())
                 .graffiti(Bytes32.ZERO)
-                .attestations(
-                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
                 .proposerSlashings(
                     randomSszList(
                         schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
                 .attesterSlashings(
                     randomSszList(
                         schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                .attestations(
+                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
                 .deposits(
                     randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                 .voluntaryExits(
@@ -552,14 +552,14 @@ public final class DataStructureUtil {
                 .randaoReveal(randomSignature())
                 .eth1Data(randomEth1Data())
                 .graffiti(Bytes32.ZERO)
-                .attestations(
-                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
                 .proposerSlashings(
                     randomFullSszList(
                         schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
                 .attesterSlashings(
                     randomFullSszList(
                         schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                .attestations(
+                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
                 .deposits(
                     randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
                 .voluntaryExits(
