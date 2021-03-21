@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -140,6 +141,29 @@ public interface SszPrimitiveSchemas {
           Bytes curVal = ((LeafNode) srcNode).getData();
           Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
           return LeafNode.create(newBytes);
+        }
+
+        @Override
+        public TreeNode updatePackedNode(
+            TreeNode srcNode, List<PackedNodeUpdate<UInt64, SszUInt64>> updates) {
+          if (updates.size() == 4) {
+            byte[] data = new byte[32];
+            for (int i = 0; i < 4; i++) {
+              long longValue = updates.get(i).getNewValue().longValue();
+              int off = i * 8;
+              data[off + 0] = (byte) longValue;
+              data[off + 1] = (byte) (longValue >> 8);
+              data[off + 2] = (byte) (longValue >> 16);
+              data[off + 3] = (byte) (longValue >> 24);
+              data[off + 4] = (byte) (longValue >> 32);
+              data[off + 5] = (byte) (longValue >> 40);
+              data[off + 6] = (byte) (longValue >> 48);
+              data[off + 7] = (byte) (longValue >> 56);
+            }
+            return LeafNode.create(Bytes.wrap(data));
+          } else {
+            return super.updatePackedNode(srcNode, updates);
+          }
         }
 
         @Override

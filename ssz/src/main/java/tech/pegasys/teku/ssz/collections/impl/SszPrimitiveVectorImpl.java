@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.collections.impl;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.ssz.SszPrimitive;
+import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.ssz.impl.SszVectorImpl;
@@ -25,8 +26,13 @@ public class SszPrimitiveVectorImpl<
         ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
     extends SszVectorImpl<SszElementT> implements SszPrimitiveVector<ElementT, SszElementT> {
 
-  public SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
+  }
+
+  SszPrimitiveVectorImpl(
+      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+    super(schema, backingNode, cache);
   }
 
   public SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {

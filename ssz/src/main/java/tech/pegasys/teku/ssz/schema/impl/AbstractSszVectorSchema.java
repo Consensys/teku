@@ -42,6 +42,7 @@ public abstract class AbstractSszVectorSchema<
     implements SszVectorSchema<SszElementT, SszVectorT> {
 
   private final boolean isListBacking;
+  private final int fixedPartSize;
 
   protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
@@ -59,6 +60,7 @@ public abstract class AbstractSszVectorSchema<
       SszSchemaHints hints) {
     super(vectorLength, elementSchema, hints);
     this.isListBacking = isListBacking;
+    this.fixedPartSize = calcSszFixedPartSize();
   }
 
   @Override
@@ -128,9 +130,17 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int getSszFixedPartSize() {
-    int bitsPerChild = isFixedSize() ? getSszElementBitSize() : SSZ_LENGTH_SIZE * 8;
-    return bitsCeilToBytes(getLength() * bitsPerChild);
+  public final int getSszFixedPartSize() {
+    return fixedPartSize;
+  }
+
+  private int calcSszFixedPartSize() {
+    if (isListBacking) {
+      return 0;
+    } else {
+      int bitsPerChild = isFixedSize() ? getSszElementBitSize() : SSZ_LENGTH_SIZE * 8;
+      return bitsCeilToBytes(getLength() * bitsPerChild);
+    }
   }
 
   @Override
