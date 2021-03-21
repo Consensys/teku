@@ -113,20 +113,23 @@ public class BlockFactory {
     final SszList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
+    final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(blockPreState);
 
     return spec.createNewUnsignedBlock(
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
-            randaoReveal,
             blockSlotState,
             parentRoot,
-            eth1Data,
-            optionalGraffiti.orElse(graffiti),
-            attestations,
-            proposerSlashings,
-            attesterSlashings,
-            deposits,
-            voluntaryExits)
+            bodyBuilder ->
+                bodyBuilder
+                    .randaoReveal(randaoReveal)
+                    .eth1Data(eth1Vote)
+                    .graffiti(optionalGraffiti.orElse(graffiti))
+                    .attestations(attestations)
+                    .proposerSlashings(proposerSlashings)
+                    .attesterSlashings(attesterSlashings)
+                    .deposits(deposits)
+                    .voluntaryExits(voluntaryExits))
         .getBlock();
   }
 }

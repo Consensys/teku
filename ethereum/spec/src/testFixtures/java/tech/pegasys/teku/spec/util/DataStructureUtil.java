@@ -523,28 +523,48 @@ public final class DataStructureUtil {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1),
-        randomSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1),
-        randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3),
-        randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1),
-        randomSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .proposerSlashings(
+                    randomSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                .attesterSlashings(
+                    randomSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                .attestations(
+                    randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                .deposits(
+                    randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                .voluntaryExits(
+                    randomSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1)));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
     BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema.createBlockBody(
-        randomSignature(),
-        randomEth1Data(),
-        Bytes32.ZERO,
-        randomFullSszList(schema.getProposerSlashingsSchema(), this::randomProposerSlashing),
-        randomFullSszList(schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing),
-        randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation),
-        randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex),
-        randomFullSszList(schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit));
+        builder ->
+            builder
+                .randaoReveal(randomSignature())
+                .eth1Data(randomEth1Data())
+                .graffiti(Bytes32.ZERO)
+                .proposerSlashings(
+                    randomFullSszList(
+                        schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
+                .attesterSlashings(
+                    randomFullSszList(
+                        schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                .attestations(
+                    randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                .deposits(
+                    randomFullSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex))
+                .voluntaryExits(
+                    randomFullSszList(
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit)));
   }
 
   public ProposerSlashing randomProposerSlashing() {
