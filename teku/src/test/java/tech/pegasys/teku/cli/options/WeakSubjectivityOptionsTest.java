@@ -42,6 +42,19 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void weakSubjectivityCheckpoint_shouldLoadFromUrl() {
+    final String checkpointParam =
+        this.getClass().getResource("/" + "ws_checkpoint.json").getPath();
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--ws-checkpoint", checkpointParam);
+    assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).isPresent();
+    final Checkpoint checkpoint =
+        getResultingTekuConfiguration().weakSubjectivity().getWeakSubjectivityCheckpoint().get();
+
+    assertThat(checkpoint.getEpoch()).isEqualTo(UInt64.valueOf(24187));
+  }
+
+  @Test
   public void weakSubjectivityCheckpoint_handleBadValue() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
