@@ -17,18 +17,20 @@ import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory {
   public ValidatorStatusFactoryAltair(
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
-    super(beaconStateUtil, attestationUtil, validatorsUtil);
+      final BeaconStateAccessors beaconStateAccessors,
+      final Predicates predicates) {
+    super(beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
   }
 
   @Override

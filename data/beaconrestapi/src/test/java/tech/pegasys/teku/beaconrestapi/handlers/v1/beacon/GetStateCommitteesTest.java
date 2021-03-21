@@ -45,10 +45,7 @@ public class GetStateCommitteesTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldGetCommitteesFromState() throws Exception {
     final UInt64 slot = dataStructureUtil.randomUInt64();
-    final UInt64 epoch =
-        spec.getGenesisSpec()
-            .getBeaconStateUtil()
-            .computeEpochAtSlot(dataStructureUtil.randomUInt64());
+    final UInt64 epoch = spec.computeEpochAtSlot(dataStructureUtil.randomUInt64());
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap())
         .thenReturn(

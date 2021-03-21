@@ -13,12 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -26,30 +21,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.ssz.SszList;
 
 public class ValidatorsUtil {
-
-  private final SpecConfig specConfig;
-
-  public ValidatorsUtil(final SpecConfig specConfig) {
-    this.specConfig = specConfig;
-  }
-
-  /**
-   * Check if (this) validator is active in the given epoch.
-   *
-   * @param epoch - The epoch under consideration.
-   * @return A boolean indicating if the validator is active.
-   * @see <a>
-   *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
-   *     </a>
-   */
-  public boolean isActiveValidator(Validator validator, UInt64 epoch) {
-    return validator.getActivation_epoch().compareTo(epoch) <= 0
-        && epoch.compareTo(validator.getExit_epoch()) < 0;
-  }
 
   /**
    * Check if validator is eligible for activation.
@@ -85,43 +58,6 @@ public class ValidatorsUtil {
                       .invalidateWithNewValue(pubKey, i.intValue());
                   return pubKey;
                 }));
-  }
-
-  /**
-   * Get active validator indices at ``epoch``.
-   *
-   * @param state - Current BeaconState
-   * @param epoch - The epoch under consideration.
-   * @return A list of indices representing the active validators for the given epoch.
-   */
-  public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
-    final UInt64 stateEpoch =
-        tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch(state);
-    final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
-    checkArgument(
-        epoch.isLessThanOrEqualTo(maxLookaheadEpoch),
-        "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
-        epoch,
-        stateEpoch);
-    return BeaconStateCache.getTransitionCaches(state)
-        .getActiveValidators()
-        .get(
-            epoch,
-            e -> {
-              SszList<Validator> validators = state.getValidators();
-              return IntStream.range(0, validators.size())
-                  .filter(index -> isActiveValidator(validators.get(index), epoch))
-                  .boxed()
-                  .collect(Collectors.toList());
-            });
-  }
-
-  public UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
-  }
-
-  private UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
-    return stateEpoch.plus(specConfig.getMaxSeedLookahead());
   }
 
   @SuppressWarnings("DoNotReturnNullOptionals")

@@ -22,23 +22,27 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractValidatorStatusFactory implements ValidatorStatusFactory {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
-  protected final ValidatorsUtil validatorsUtil;
+  protected final Predicates predicates;
+  protected final BeaconStateAccessors beaconStateAccessors;
 
   protected AbstractValidatorStatusFactory(
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final Predicates predicates,
+      final BeaconStateAccessors beaconStateAccessors) {
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
-    this.validatorsUtil = validatorsUtil;
+    this.predicates = predicates;
+    this.beaconStateAccessors = beaconStateAccessors;
   }
 
   protected abstract void processAttestations(
@@ -51,8 +55,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
   public ValidatorStatuses createValidatorStatuses(final BeaconState state) {
     final SszList<Validator> validators = state.getValidators();
 
-    final UInt64 currentEpoch = beaconStateUtil.getCurrentEpoch(state);
-    final UInt64 previousEpoch = beaconStateUtil.getPreviousEpoch(state);
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
 
     final List<ValidatorStatus> statuses =
         validators.stream()
@@ -78,8 +82,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
         validator.isSlashed(),
         validator.getWithdrawable_epoch().isLessThanOrEqualTo(currentEpoch),
         validator.getEffective_balance(),
-        validatorsUtil.isActiveValidator(validator, currentEpoch),
-        validatorsUtil.isActiveValidator(validator, previousEpoch));
+        predicates.isActiveValidator(validator, currentEpoch),
+        predicates.isActiveValidator(validator, previousEpoch));
   }
 
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {

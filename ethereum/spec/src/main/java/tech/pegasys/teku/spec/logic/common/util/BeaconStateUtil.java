@@ -18,11 +18,9 @@ import static java.lang.Math.toIntExact;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.util.ByteUtils.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +52,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
@@ -78,15 +79,25 @@ public class BeaconStateUtil {
   private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
 
+  private final Predicates predicates;
+  private final MiscHelpers miscHelpers;
+  private final BeaconStateAccessors beaconStateAccessors;
+
   public BeaconStateUtil(
       final SpecConfig specConfig,
       final SchemaDefinitions schemaDefinitions,
       final ValidatorsUtil validatorsUtil,
-      final CommitteeUtil committeeUtil) {
+      final CommitteeUtil committeeUtil,
+      final Predicates predicates,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
+    this.predicates = predicates;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
   }
 
   public boolean isValidGenesisState(UInt64 genesisTime, int activeValidatorCount) {
@@ -102,26 +113,8 @@ public class BeaconStateUtil {
     return genesisTime.compareTo(specConfig.getMinGenesisTime()) >= 0;
   }
 
-  public UInt64 computeEpochAtSlot(UInt64 slot) {
-    // TODO this should take into account hard forks
-    return slot.dividedBy(specConfig.getSlotsPerEpoch());
-  }
-
-  public UInt64 getCurrentEpoch(BeaconState state) {
-    return computeEpochAtSlot(state.getSlot());
-  }
-
-  UInt64 getNextEpoch(BeaconState state) {
-    return getCurrentEpoch(state).plus(UInt64.ONE);
-  }
-
-  public UInt64 getPreviousEpoch(BeaconState state) {
-    UInt64 currentEpoch = getCurrentEpoch(state);
-    return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
-  }
-
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
-    final UInt64 currentEpoch = computeEpochAtSlot(slot);
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
     return computeStartSlotAtEpoch(currentEpoch).equals(slot) ? currentEpoch : currentEpoch.plus(1);
   }
 
@@ -170,13 +163,13 @@ public class BeaconStateUtil {
         .get(
             requestedSlot,
             slot -> {
-              UInt64 epoch = computeEpochAtSlot(slot);
+              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
                           getSeed(state, epoch, specConfig.getDomainBeaconProposer()),
                           uintToBytes(slot.longValue(), 8)));
-              List<Integer> indices = validatorsUtil.getActiveValidatorIndices(state, epoch);
+              List<Integer> indices = beaconStateAccessors.getActiveValidatorIndices(state, epoch);
               return committeeUtil.computeProposerIndex(state, indices, seed);
             });
   }
@@ -186,11 +179,11 @@ public class BeaconStateUtil {
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
-    return getDutyDependentRoot(state, getPreviousEpoch(state));
+    return getDutyDependentRoot(state, beaconStateAccessors.getPreviousEpoch(state));
   }
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
-    return getDutyDependentRoot(state, getCurrentEpoch(state));
+    return getDutyDependentRoot(state, beaconStateAccessors.getCurrentEpoch(state));
   }
 
   public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
@@ -198,7 +191,8 @@ public class BeaconStateUtil {
   }
 
   public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
-    UInt64 epoch = (messageEpoch == null) ? getCurrentEpoch(state) : messageEpoch;
+    UInt64 epoch =
+        (messageEpoch == null) ? beaconStateAccessors.getCurrentEpoch(state) : messageEpoch;
     return getDomain(domainType, epoch, state.getFork(), state.getGenesis_validators_root());
   }
 
@@ -218,34 +212,16 @@ public class BeaconStateUtil {
     return computeDomain(domainType, forkVersion, genesisValidatorsRoot);
   }
 
-  public UInt64 getTotalBalance(BeaconState state, Collection<Integer> indices) {
-    UInt64 sum = UInt64.ZERO;
-    SszList<Validator> validator_registry = state.getValidators();
-    for (Integer index : indices) {
-      sum = sum.plus(validator_registry.get(index).getEffective_balance());
-    }
-    return sum.max(specConfig.getEffectiveBalanceIncrement());
-  }
-
-  public UInt64 getTotalActiveBalance(BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(
-            getCurrentEpoch(state),
-            epoch ->
-                getTotalBalance(state, validatorsUtil.getActiveValidatorIndices(state, epoch)));
-  }
-
   public List<UInt64> getEffectiveBalances(final BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getEffectiveBalances()
         .get(
-            getCurrentEpoch(state),
+            beaconStateAccessors.getCurrentEpoch(state),
             epoch ->
                 state.getValidators().stream()
                     .map(
                         validator ->
-                            validatorsUtil.isActiveValidator(validator, epoch)
+                            predicates.isActiveValidator(validator, epoch)
                                 ? validator.getEffective_balance()
                                 : UInt64.ZERO)
                     .collect(toUnmodifiableList()));
@@ -264,7 +240,7 @@ public class BeaconStateUtil {
             .map(Validator::getExit_epoch)
             .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
             .collect(toList());
-    exit_epochs.add(computeActivationExitEpoch(getCurrentEpoch(state)));
+    exit_epochs.add(computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state)));
     UInt64 exit_queue_epoch = Collections.max(exit_epochs);
     final UInt64 final_exit_queue_epoch = exit_queue_epoch;
     UInt64 exit_queue_churn =
@@ -299,7 +275,9 @@ public class BeaconStateUtil {
 
   public UInt64 getValidatorChurnLimit(BeaconState state) {
     final int activeValidatorCount =
-        validatorsUtil.getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
+        beaconStateAccessors
+            .getActiveValidatorIndices(state, beaconStateAccessors.getCurrentEpoch(state))
+            .size();
     return getValidatorChurnLimit(activeValidatorCount);
   }
 
@@ -322,7 +300,8 @@ public class BeaconStateUtil {
   }
 
   public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices = validatorsUtil.getActiveValidatorIndices(state, epoch);
+    List<Integer> active_validator_indices =
+        beaconStateAccessors.getActiveValidatorIndices(state, epoch);
     return UInt64.valueOf(
         Math.max(
             1,
@@ -344,18 +323,6 @@ public class BeaconStateUtil {
                     specConfig.getTargetCommitteeSize()))));
   }
 
-  public UInt64 integerSquareRoot(UInt64 n) {
-    checkArgument(
-        n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integerSquareRoot()");
-    UInt64 x = n;
-    UInt64 y = x.plus(UInt64.ONE).dividedBy(2);
-    while (y.compareTo(x) < 0) {
-      x = y;
-      y = x.plus(n.dividedBy(x)).dividedBy(2);
-    }
-    return x;
-  }
-
   public void slashValidator(MutableBeaconState state, int slashed_index) {
     slashValidator(state, slashed_index, -1);
   }
@@ -369,7 +336,7 @@ public class BeaconStateUtil {
             p -> {
               final SszList<Validator> validators = state.getValidators();
               final UInt64 committeeCount =
-                  getCommitteeCountPerSlot(state, computeEpochAtSlot(slot));
+                  getCommitteeCountPerSlot(state, miscHelpers.computeEpochAtSlot(slot));
               return UInt64.range(UInt64.ZERO, committeeCount)
                   .flatMap(committee -> streamEffectiveBalancesForCommittee(state, slot, committee))
                   .reduce(UInt64.ZERO, UInt64::plus);
@@ -391,7 +358,7 @@ public class BeaconStateUtil {
         .get(
             Pair.of(slot, index),
             p -> {
-              UInt64 epoch = computeEpochAtSlot(slot);
+              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
               int committeeIndex =
                   slot.mod(specConfig.getSlotsPerEpoch())
@@ -401,7 +368,7 @@ public class BeaconStateUtil {
               int count = committees_per_slot.times(specConfig.getSlotsPerEpoch()).intValue();
               return committeeUtil.computeCommittee(
                   state,
-                  validatorsUtil.getActiveValidatorIndices(state, epoch),
+                  beaconStateAccessors.getActiveValidatorIndices(state, epoch),
                   getSeed(state, epoch, specConfig.getDomainBeaconAttester()),
                   committeeIndex,
                   count);
@@ -423,12 +390,12 @@ public class BeaconStateUtil {
   }
 
   private UInt64 getEarliestQueryableSlotForTargetSlot(final UInt64 slot) {
-    final UInt64 epoch = computeEpochAtSlot(slot);
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     return getEarliestQueryableSlotForTargetEpoch(epoch);
   }
 
   private void slashValidator(MutableBeaconState state, int slashedIndex, int whistleblowerIndex) {
-    UInt64 epoch = getCurrentEpoch(state);
+    UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
     initiateValidatorExit(state, slashedIndex);
 
     Validator validator = state.getValidators().get(slashedIndex);
@@ -497,8 +464,8 @@ public class BeaconStateUtil {
   public boolean isSlotAtNthEpochBoundary(
       final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
     checkArgument(n > 0, "Parameter n must be greater than 0");
-    final UInt64 blockEpoch = computeEpochAtSlot(blockSlot);
-    final UInt64 parentEpoch = computeEpochAtSlot(parentSlot);
+    final UInt64 blockEpoch = miscHelpers.computeEpochAtSlot(blockSlot);
+    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
@@ -520,7 +487,7 @@ public class BeaconStateUtil {
     return computeSubnetForCommittee(
         attestationSlot,
         committeeIndex,
-        getCommitteeCountPerSlot(state, computeEpochAtSlot(attestationSlot)));
+        getCommitteeCountPerSlot(state, miscHelpers.computeEpochAtSlot(attestationSlot)));
   }
 
   public void processDeposit(MutableBeaconState state, Deposit deposit) {
@@ -642,8 +609,8 @@ public class BeaconStateUtil {
 
   private void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
-    UInt64 epoch = computeEpochAtSlot(requestedSlot);
-    final UInt64 stateEpoch = getCurrentEpoch(state);
+    UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final UInt64 stateEpoch = beaconStateAccessors.getCurrentEpoch(state);
     checkArgument(
         epoch.equals(stateEpoch),
         "Cannot calculate proposer index for a slot outside the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
