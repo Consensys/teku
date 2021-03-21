@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -353,32 +354,14 @@ public class Spec {
   public BeaconBlockAndState createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
-      final BLSSignature randaoReveal,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Eth1Data eth1Data,
-      final Bytes32 graffiti,
-      final SszList<Attestation> attestations,
-      final SszList<ProposerSlashing> proposerSlashings,
-      final SszList<AttesterSlashing> attesterSlashings,
-      final SszList<Deposit> deposits,
-      final SszList<SignedVoluntaryExit> voluntaryExits)
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder)
       throws StateTransitionException {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot,
-            proposerIndex,
-            randaoReveal,
-            blockSlotState,
-            parentBlockSigningRoot,
-            eth1Data,
-            graffiti,
-            attestations,
-            proposerSlashings,
-            attesterSlashings,
-            deposits,
-            voluntaryExits);
+            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
   }
 
   // Block Processing Utils

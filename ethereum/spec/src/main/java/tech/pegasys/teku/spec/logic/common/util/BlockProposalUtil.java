@@ -15,24 +15,18 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalUtil {
 
@@ -48,16 +42,9 @@ public class BlockProposalUtil {
   public BeaconBlockAndState createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
-      final BLSSignature randaoReveal,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Eth1Data eth1Data,
-      final Bytes32 graffiti,
-      final SszList<Attestation> attestations,
-      final SszList<ProposerSlashing> proposerSlashings,
-      final SszList<AttesterSlashing> attesterSlashings,
-      final SszList<Deposit> deposits,
-      final SszList<SignedVoluntaryExit> voluntaryExits)
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder)
       throws StateTransitionException {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -67,17 +54,7 @@ public class BlockProposalUtil {
 
     // Create block body
     final BeaconBlockBody beaconBlockBody =
-        schemaDefinitions
-            .getBeaconBlockBodySchema()
-            .createBlockBody(
-                randaoReveal,
-                eth1Data,
-                graffiti,
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits);
+        schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;

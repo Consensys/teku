@@ -61,7 +61,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
     final SszMutableUInt64List balances = state.getBalances();
-    for (int i = 0; i < state.getValidators().size(); i++) {
+    int validatorsCount = state.getValidators().size();
+    for (int i = 0; i < validatorsCount; i++) {
       final Deltas.Delta delta = attestationDeltas.getDelta(i);
       balances.setElement(
           i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));

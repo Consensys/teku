@@ -11,23 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.Consumer;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
-public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
+class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
+
+  @Test
+  void shouldCreateWithEmtpySyncAggregate() {
+    // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
+    // one to make the block valid
+
+    final BeaconBlockBodyAltair blockBody = createDefaultBlockBody();
+    final SyncAggregate emptySyncAggregate =
+        SyncAggregateSchema.create(
+                spec.getGenesisSpecConfig().toVersionAltair().orElseThrow().getSyncCommitteeSize())
+            .createEmpty();
+    assertThat(blockBody.getSyncAggregate()).isEqualTo(emptySyncAggregate);
+  }
 
   @Override
-  protected BeaconBlockBodyPhase0 createBlockBody(
+  protected BeaconBlockBodyAltair createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     return getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override
-  protected BeaconBlockBodySchema<BeaconBlockBodyPhase0> getBlockBodySchema() {
-    return BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
+  protected BeaconBlockBodySchema<BeaconBlockBodyAltair> getBlockBodySchema() {
+    return BeaconBlockBodySchemaAltair.create(spec.getGenesisSpecConfig());
   }
 }
