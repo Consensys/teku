@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
+import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -104,24 +104,10 @@ public class BeaconBlockBodySchemaPhase0
 
   @Override
   public BeaconBlockBodyPhase0 createBlockBody(
-      BLSSignature randao_reveal,
-      Eth1Data eth1_data,
-      Bytes32 graffiti,
-      SszList<ProposerSlashing> proposer_slashings,
-      SszList<AttesterSlashing> attester_slashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntary_exits) {
-    return new BeaconBlockBodyPhase0(
-        this,
-        new SszSignature(randao_reveal),
-        eth1_data,
-        SszBytes32.of(graffiti),
-        proposer_slashings,
-        attester_slashings,
-        attestations,
-        deposits,
-        voluntary_exits);
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+    final BeaconBlockBodyBuilderPhase0 builder = new BeaconBlockBodyBuilderPhase0().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
   @Override

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
+import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -110,26 +110,13 @@ public class BeaconBlockBodySchemaAltair
   }
 
   @Override
-  public BeaconBlockBodyAltair createBlockBody(
-      BLSSignature randaoReveal,
-      Eth1Data eth1Data,
-      Bytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits) {
-    return new BeaconBlockBodyAltair(
-        this,
-        new SszSignature(randaoReveal),
-        eth1Data,
-        SszBytes32.of(graffiti),
-        proposerSlashings,
-        attesterSlashings,
-        attestations,
-        deposits,
-        voluntaryExits,
-        getSyncAggregateSchema().createEmpty());
+  public BeaconBlockBodyAltair createBlockBody(final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    final BeaconBlockBodyBuilderAltair bodyContent =
+        new BeaconBlockBodyBuilderAltair().schema(this);
+    // Provide a default empty sync aggregate
+    bodyContent.syncAggregate(getSyncAggregateSchema()::createEmpty);
+    bodyBuilder.accept(bodyContent);
+    return bodyContent.build();
   }
 
   @Override

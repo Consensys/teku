@@ -33,14 +33,16 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
         .createBlockBody(
-            beaconBlockBody.getRandao_reveal(),
-            beaconBlockBody.getEth1_data(),
-            beaconBlockBody.getGraffiti(),
-            beaconBlockBody.getProposer_slashings(),
-            beaconBlockBody.getAttester_slashings(),
-            beaconBlockBody.getAttestations(),
-            beaconBlockBody.getDeposits(),
-            beaconBlockBody.getVoluntary_exits());
+            builder ->
+                builder
+                    .randaoReveal(beaconBlockBody.getRandao_reveal())
+                    .eth1Data(beaconBlockBody.getEth1_data())
+                    .graffiti(beaconBlockBody.getGraffiti())
+                    .attestations(beaconBlockBody.getAttestations())
+                    .proposerSlashings(beaconBlockBody.getProposer_slashings())
+                    .attesterSlashings(beaconBlockBody.getAttester_slashings())
+                    .deposits(beaconBlockBody.getDeposits())
+                    .voluntaryExits(beaconBlockBody.getVoluntary_exits()));
   }
 
   @Override

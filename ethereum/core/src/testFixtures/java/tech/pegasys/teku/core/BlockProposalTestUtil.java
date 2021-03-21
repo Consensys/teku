@@ -72,16 +72,18 @@ public class BlockProposalTestUtil {
         spec.createNewUnsignedBlock(
             newSlot,
             get_beacon_proposer_index(blockSlotState, newSlot),
-            randaoReveal,
             blockSlotState,
             parentBlockSigningRoot,
-            eth1Data,
-            Bytes32.ZERO,
-            attestations,
-            slashings,
-            blockBodyLists.createAttesterSlashings(),
-            deposits,
-            exits);
+            builder ->
+                builder
+                    .randaoReveal(randaoReveal)
+                    .eth1Data(eth1Data)
+                    .graffiti(Bytes32.ZERO)
+                    .attestations(attestations)
+                    .proposerSlashings(slashings)
+                    .attesterSlashings(blockBodyLists.createAttesterSlashings())
+                    .deposits(deposits)
+                    .voluntaryExits(exits));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
