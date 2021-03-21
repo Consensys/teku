@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
@@ -28,18 +29,21 @@ interface ValidatorStatsAltair extends BeaconStateAltair {
     return getValidatorStats(getCurrentEpochParticipation());
   }
 
-  private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> validatorFlags) {
+  private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> participationFlags) {
 
     final int numberOfCorrectValidators =
         Math.toIntExact(
-            validatorFlags.stream()
+            participationFlags.stream()
                 .map(SszByte::get)
-                .filter(ValidatorFlag::isTimelyTarget)
+                .filter(ParticipationFlags::isTimelyTarget)
                 .count());
 
     final int numberOfLiveValidators =
         Math.toIntExact(
-            validatorFlags.stream().map(SszByte::get).filter(ValidatorFlag::isAnyFlagSet).count());
+            participationFlags.stream()
+                .map(SszByte::get)
+                .filter(ParticipationFlags::isAnyFlagSet)
+                .count());
 
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
   }

@@ -87,6 +87,7 @@ public class SszCompositeListTest {
       };
 
   static class TestView implements SszData {
+
     TreeNode node;
     public final int v;
 
