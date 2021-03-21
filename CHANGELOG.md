@@ -12,5 +12,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
   
 ### Additions and Improvements
+- `--ws-checkpoint` CLI now accepts a URL optionally, and will load the `ws_checkpoint` field from that URL.
 
 ### Bug Fixes
