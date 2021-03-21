@@ -13,19 +13,25 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final BeaconStateSchema<?, ?> beaconStateSchema;
+  private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
+  private final BeaconBlockSchema beaconBlockSchema;
+  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
   public SchemaDefinitionsAltair(final SpecConfig specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
+    this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
+    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
+    this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
   }
 
   @Override
@@ -35,17 +41,16 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
 
   @Override
   public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return new SignedBeaconBlockSchema(getBeaconBlockSchema());
+    return signedBeaconBlockSchema;
   }
 
   @Override
   public BeaconBlockSchema getBeaconBlockSchema() {
-    return new BeaconBlockSchema(getBeaconBlockBodySchema());
+    return beaconBlockSchema;
   }
 
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    // TODO(#3648) - Implement altair block body
-    throw new NotImplementedException();
+    return beaconBlockBodySchema;
   }
 }

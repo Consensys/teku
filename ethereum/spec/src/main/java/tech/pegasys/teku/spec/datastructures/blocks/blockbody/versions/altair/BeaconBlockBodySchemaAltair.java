@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -27,15 +27,15 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.containers.ContainerSchema8;
+import tech.pegasys.teku.ssz.containers.ContainerSchema9;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class BeaconBlockBodySchemaPhase0
-    extends ContainerSchema8<
-        BeaconBlockBodyPhase0,
+public class BeaconBlockBodySchemaAltair
+    extends ContainerSchema9<
+        BeaconBlockBodyAltair,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -43,10 +43,11 @@ public class BeaconBlockBodySchemaPhase0
         SszList<AttesterSlashing>,
         SszList<Attestation>,
         SszList<Deposit>,
-        SszList<SignedVoluntaryExit>>
-    implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
+        SszList<SignedVoluntaryExit>,
+        SyncAggregate>
+    implements BeaconBlockBodySchema<BeaconBlockBodyAltair> {
 
-  private BeaconBlockBodySchemaPhase0(
+  private BeaconBlockBodySchemaAltair(
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -54,7 +55,8 @@ public class BeaconBlockBodySchemaPhase0
       NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
       NamedSchema<SszList<Attestation>> attestationsSchema,
       NamedSchema<SszList<Deposit>> depositsSchema,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
+      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
+      NamedSchema<SyncAggregate> syncAggregateSchema) {
     super(
         "BeaconBlockBody",
         randaoRevealSchema,
@@ -64,25 +66,28 @@ public class BeaconBlockBodySchemaPhase0
         attesterSlashingsSchema,
         attestationsSchema,
         depositsSchema,
-        voluntaryExitsSchema);
+        voluntaryExitsSchema,
+        syncAggregateSchema);
   }
 
-  public static BeaconBlockBodySchemaPhase0 create(final SpecConfig specConfig) {
+  public static BeaconBlockBodySchemaAltair create(final SpecConfig specConfig) {
     return create(
         specConfig.getMaxProposerSlashings(),
         specConfig.getMaxAttesterSlashings(),
         specConfig.getMaxAttestations(),
         specConfig.getMaxDeposits(),
-        specConfig.getMaxVoluntaryExits());
+        specConfig.getMaxVoluntaryExits(),
+        specConfig.toVersionAltair().orElseThrow().getSyncCommitteeSize());
   }
 
-  private static BeaconBlockBodySchemaPhase0 create(
+  private static BeaconBlockBodySchemaAltair create(
       final long maxProposerSlashings,
       final long maxAttesterSlashings,
       final long maxAttestations,
       final long maxDeposits,
-      final long maxVoluntaryExits) {
-    return new BeaconBlockBodySchemaPhase0(
+      final long maxVoluntaryExits,
+      final int syncCommitteeSize) {
+    return new BeaconBlockBodySchemaAltair(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -99,34 +104,37 @@ public class BeaconBlockBodySchemaPhase0
             BlockBodyFields.DEPOSITS.name(), SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits)),
         namedSchema(
             BlockBodyFields.VOLUNTARY_EXITS.name(),
-            SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)));
+            SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)),
+        namedSchema(
+            BlockBodyFields.SYNC_AGGREGATE.name(), SyncAggregateSchema.create(syncCommitteeSize)));
   }
 
   @Override
-  public BeaconBlockBodyPhase0 createBlockBody(
-      BLSSignature randao_reveal,
-      Eth1Data eth1_data,
+  public BeaconBlockBodyAltair createBlockBody(
+      BLSSignature randaoReveal,
+      Eth1Data eth1Data,
       Bytes32 graffiti,
-      SszList<ProposerSlashing> proposer_slashings,
-      SszList<AttesterSlashing> attester_slashings,
+      SszList<ProposerSlashing> proposerSlashings,
+      SszList<AttesterSlashing> attesterSlashings,
       SszList<Attestation> attestations,
       SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntary_exits) {
-    return new BeaconBlockBodyPhase0(
+      SszList<SignedVoluntaryExit> voluntaryExits) {
+    return new BeaconBlockBodyAltair(
         this,
-        new SszSignature(randao_reveal),
-        eth1_data,
+        new SszSignature(randaoReveal),
+        eth1Data,
         SszBytes32.of(graffiti),
-        proposer_slashings,
-        attester_slashings,
+        proposerSlashings,
+        attesterSlashings,
         attestations,
         deposits,
-        voluntary_exits);
+        voluntaryExits,
+        getSyncAggregateSchema().createEmpty());
   }
 
   @Override
-  public BeaconBlockBodyPhase0 createEmpty() {
-    return new BeaconBlockBodyPhase0(this);
+  public BeaconBlockBodyAltair createEmpty() {
+    return new BeaconBlockBodyAltair(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -159,8 +167,12 @@ public class BeaconBlockBodySchemaPhase0
     return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
   }
 
+  public SyncAggregateSchema getSyncAggregateSchema() {
+    return (SyncAggregateSchema) getFieldSchema8();
+  }
+
   @Override
-  public BeaconBlockBodyPhase0 createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBodyPhase0(this, node);
+  public BeaconBlockBodyAltair createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyAltair(this, node);
   }
 }

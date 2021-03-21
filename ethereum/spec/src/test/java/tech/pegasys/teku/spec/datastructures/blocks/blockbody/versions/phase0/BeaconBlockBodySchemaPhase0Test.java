@@ -18,44 +18,27 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class BeaconBlockBodySchemaPhase0Test {
-  public void tearDown() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
-  }
 
   @Test
   public void create_minimal() {
-    final Spec spec = setupMinimalSpec();
-    final BeaconBlockBodySchemaPhase0 specA =
-        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
-    final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create();
+    final Spec spec = SpecFactory.createMinimal();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final BeaconBlockBodySchemaPhase0 specA = BeaconBlockBodySchemaPhase0.create(specConfig);
+    final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create(specConfig);
 
     assertThat(specA).isEqualTo(specB);
   }
 
   @Test
   public void create_mainnet() {
-    final Spec spec = setupMainnetSpec();
-    final BeaconBlockBodySchemaPhase0 specA =
-        BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
-    final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create();
+    final Spec spec = SpecFactory.createMainnet();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final BeaconBlockBodySchemaPhase0 specA = BeaconBlockBodySchemaPhase0.create(specConfig);
+    final BeaconBlockBodySchemaPhase0 specB = BeaconBlockBodySchemaPhase0.create(specConfig);
 
     assertThat(specA).isEqualTo(specB);
-  }
-
-  private Spec setupMinimalSpec() {
-    Constants.setConstants("minimal");
-    SpecDependent.resetAll();
-    return SpecFactory.createMinimal();
-  }
-
-  private Spec setupMainnetSpec() {
-    Constants.setConstants("mainnet");
-    SpecDependent.resetAll();
-    return SpecFactory.createMainnet();
   }
 }
