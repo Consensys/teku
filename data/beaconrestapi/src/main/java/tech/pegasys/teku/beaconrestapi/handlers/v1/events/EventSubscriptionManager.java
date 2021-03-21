@@ -28,13 +28,13 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.response.v1.BlockEvent;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -170,7 +170,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block) {
     try {
-      final String newBlockJsonString = jsonProvider.objectToJSON(new SignedBeaconBlock(block));
+      final String newBlockJsonString =
+          jsonProvider.objectToJSON(BlockEvent.fromSignedBeaconBlock(block));
       notifySubscribersOfEvent(EventType.block, newBlockJsonString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);

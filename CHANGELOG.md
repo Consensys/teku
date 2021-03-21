@@ -14,3 +14,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+- Block events now only return the slot and root, rather than the entire signed block.
