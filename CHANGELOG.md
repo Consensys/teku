@@ -12,7 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
   
 ### Breaking Changes
-- The events api `/eth/v1/events` block event structure no longer returns the full signed block, it returns the slot and root as detailed in the standard API specification.
+- The events api `/eth/v1/events` - `block` event now returns the slot and root as detailed in the standard API specification.
 
 ### Additions and Improvements
 
