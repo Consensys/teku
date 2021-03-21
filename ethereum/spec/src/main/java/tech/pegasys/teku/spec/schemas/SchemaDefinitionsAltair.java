@@ -23,9 +23,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final BeaconStateSchema<?, ?> beaconStateSchema;
+  private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
+  private final BeaconBlockSchema beaconBlockSchema;
+  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
   public SchemaDefinitionsAltair(final SpecConfig specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
+    this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
+    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
+    this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
   }
 
   @Override
@@ -35,16 +41,16 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
 
   @Override
   public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return new SignedBeaconBlockSchema(getBeaconBlockSchema());
+    return signedBeaconBlockSchema;
   }
 
   @Override
   public BeaconBlockSchema getBeaconBlockSchema() {
-    return new BeaconBlockSchema(getBeaconBlockBodySchema());
+    return beaconBlockSchema;
   }
 
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return BeaconBlockBodySchemaAltair.create(specConfig);
+    return beaconBlockBodySchema;
   }
 }
