@@ -13,40 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import java.util.function.Consumer;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SszList;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
 
   @Override
   protected BeaconBlockBodyPhase0 createBlockBody(
-      final BLSSignature randaoReveal,
-      final Eth1Data eth1Data,
-      final Bytes32 graffiti,
-      final SszList<ProposerSlashing> proposerSlashings,
-      final SszList<AttesterSlashing> attesterSlashings,
-      final SszList<Attestation> attestations,
-      final SszList<Deposit> deposits,
-      final SszList<SignedVoluntaryExit> voluntaryExits) {
-    return getBlockBodySchema()
-        .createBlockBody(
-            randaoReveal,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits);
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    return getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override
