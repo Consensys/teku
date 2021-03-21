@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -44,16 +45,19 @@ public class ForkChoiceUtil {
   private final BeaconStateUtil beaconStateUtil;
   private final AttestationUtil attestationUtil;
   private final StateTransition stateTransition;
+  private final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final StateTransition stateTransition) {
+      final StateTransition stateTransition,
+      final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.stateTransition = stateTransition;
+    this.miscHelpers = miscHelpers;
   }
 
   public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -81,7 +85,7 @@ public class ForkChoiceUtil {
   }
 
   public UInt64 computeSlotsSinceEpochStart(UInt64 slot) {
-    final UInt64 epoch = beaconStateUtil.computeEpochAtSlot(slot);
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 epochStartSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
     return slot.minus(epochStartSlot);
   }
@@ -218,7 +222,7 @@ public class ForkChoiceUtil {
       final ReadOnlyStore store, final Attestation attestation) {
     final Checkpoint target = attestation.getData().getTarget();
 
-    UInt64 current_epoch = beaconStateUtil.computeEpochAtSlot(getCurrentSlot(store));
+    UInt64 current_epoch = miscHelpers.computeEpochAtSlot(getCurrentSlot(store));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
     UInt64 previous_epoch =
@@ -233,7 +237,7 @@ public class ForkChoiceUtil {
 
     if (!target
         .getEpoch()
-        .equals(beaconStateUtil.computeEpochAtSlot(attestation.getData().getSlot()))) {
+        .equals(miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()))) {
       return AttestationProcessingResult.invalid("Attestation slot must be within specified epoch");
     }
 

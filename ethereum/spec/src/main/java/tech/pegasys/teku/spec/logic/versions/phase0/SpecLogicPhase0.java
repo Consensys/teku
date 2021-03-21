@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -31,6 +33,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 public class SpecLogicPhase0 extends AbstractSpecLogic {
 
   private SpecLogicPhase0(
+      final Predicates predicates,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -40,9 +45,11 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final BlockProcessorPhase0 blockProcessorUtil,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil,
-      final MiscHelpers miscHelpers) {
+      final BlockProposalUtil blockProposalUtil) {
     super(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -52,34 +59,57 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil,
-        miscHelpers);
+        blockProposalUtil);
   }
 
   public static SpecLogicPhase0 create(
       final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+    // Helpers
+    final Predicates predicates = new Predicates();
+    final MiscHelpers miscHelpers = new MiscHelpers(config);
+    final BeaconStateAccessors beaconStateAccessors =
+        new BeaconStateAccessors(config, predicates, miscHelpers);
+
+    // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
+        new BeaconStateUtil(
+            config,
+            schemaDefinitions,
+            validatorsUtil,
+            committeeUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil, miscHelpers);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
-        new ValidatorStatusFactoryPhase0(beaconStateUtil, attestationUtil, validatorsUtil);
+        new ValidatorStatusFactoryPhase0(
+            beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
     final EpochProcessorPhase0 epochProcessor =
-        new EpochProcessorPhase0(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+        new EpochProcessorPhase0(
+            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
     final BlockProcessorPhase0 blockProcessorUtil =
-        new BlockProcessorPhase0(config, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorPhase0(
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            validatorsUtil,
+            beaconStateAccessors,
+            miscHelpers);
     final StateTransition stateTransition =
         StateTransition.create(
             config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
-    final MiscHelpers miscHelpers = new MiscHelpers();
 
     return new SpecLogicPhase0(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -89,7 +119,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         blockProcessorUtil,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil,
-        miscHelpers);
+        blockProposalUtil);
   }
 }

@@ -73,7 +73,7 @@ public class EventSubscriptionManagerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);
   // chain reorg fields
   private final UInt64 slot = UInt64.valueOf("1024100");
-  private final UInt64 epoch = spec.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+  private final UInt64 epoch = spec.computeEpochAtSlot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
   private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(
