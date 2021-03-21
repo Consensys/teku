@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -78,7 +78,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     return createBlockBody(createContentProvider());
   }
 
-  protected abstract T createBlockBody(final Consumer<BeaconBlockBodyContent> contentProvider);
+  protected abstract T createBlockBody(final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
   protected abstract BeaconBlockBodySchema<T> getBlockBodySchema();
 
@@ -164,7 +164,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, newBeaconBlockBody);
   }
 
-  protected Consumer<BeaconBlockBodyContent> createContentProvider() {
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
     return builder ->
         builder
             .randaoReveal(randaoReveal)

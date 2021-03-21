@@ -16,22 +16,22 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyContent;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyContentPhase0 extends AbstractBeaconBlockBodyContent {
+public class BeaconBlockBodyBuilderPhase0 extends AbstractBeaconBlockBodyBuilder {
   private BeaconBlockBodySchemaPhase0 schema;
 
-  public BeaconBlockBodyContentPhase0 schema(final BeaconBlockBodySchemaPhase0 schema) {
+  public BeaconBlockBodyBuilderPhase0 schema(final BeaconBlockBodySchemaPhase0 schema) {
     this.schema = schema;
     return this;
   }
 
   @Override
-  public BeaconBlockBodyContent syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
+  public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
     // No sync aggregate in phase 0
     return this;
   }

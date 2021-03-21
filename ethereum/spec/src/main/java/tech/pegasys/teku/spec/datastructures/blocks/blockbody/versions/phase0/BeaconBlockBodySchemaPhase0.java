@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -104,8 +104,8 @@ public class BeaconBlockBodySchemaPhase0
 
   @Override
   public BeaconBlockBodyPhase0 createBlockBody(
-      final Consumer<BeaconBlockBodyContent> builderConsumer) {
-    final BeaconBlockBodyContentPhase0 builder = new BeaconBlockBodyContentPhase0().schema(this);
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+    final BeaconBlockBodyBuilderPhase0 builder = new BeaconBlockBodyBuilderPhase0().schema(this);
     builderConsumer.accept(builder);
     return builder.build();
   }

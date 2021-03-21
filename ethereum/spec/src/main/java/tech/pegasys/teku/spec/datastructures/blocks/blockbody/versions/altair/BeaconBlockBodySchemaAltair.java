@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -110,9 +110,9 @@ public class BeaconBlockBodySchemaAltair
   }
 
   @Override
-  public BeaconBlockBodyAltair createBlockBody(final Consumer<BeaconBlockBodyContent> bodyBuilder) {
-    final BeaconBlockBodyContentAltair bodyContent =
-        new BeaconBlockBodyContentAltair().schema(this);
+  public BeaconBlockBodyAltair createBlockBody(final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    final BeaconBlockBodyBuilderAltair bodyContent =
+        new BeaconBlockBodyBuilderAltair().schema(this);
     // Provide a default empty sync aggregate
     bodyContent.syncAggregate(getSyncAggregateSchema()::createEmpty);
     bodyBuilder.accept(bodyContent);

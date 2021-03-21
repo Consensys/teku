@@ -25,24 +25,24 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.ssz.SszList;
 
-public interface BeaconBlockBodyContent {
+public interface BeaconBlockBodyBuilder {
 
-  BeaconBlockBodyContent randaoReveal(BLSSignature randaoReveal);
+  BeaconBlockBodyBuilder randaoReveal(BLSSignature randaoReveal);
 
-  BeaconBlockBodyContent eth1Data(Eth1Data eth1Data);
+  BeaconBlockBodyBuilder eth1Data(Eth1Data eth1Data);
 
-  BeaconBlockBodyContent graffiti(Bytes32 graffiti);
+  BeaconBlockBodyBuilder graffiti(Bytes32 graffiti);
 
-  BeaconBlockBodyContent attestations(SszList<Attestation> attestations);
+  BeaconBlockBodyBuilder attestations(SszList<Attestation> attestations);
 
-  BeaconBlockBodyContent proposerSlashings(SszList<ProposerSlashing> proposerSlashings);
+  BeaconBlockBodyBuilder proposerSlashings(SszList<ProposerSlashing> proposerSlashings);
 
-  BeaconBlockBodyContent attesterSlashings(SszList<AttesterSlashing> attesterSlashings);
+  BeaconBlockBodyBuilder attesterSlashings(SszList<AttesterSlashing> attesterSlashings);
 
-  BeaconBlockBodyContent deposits(SszList<Deposit> deposits);
+  BeaconBlockBodyBuilder deposits(SszList<Deposit> deposits);
 
-  BeaconBlockBodyContent voluntaryExits(SszList<SignedVoluntaryExit> voluntaryExits);
+  BeaconBlockBodyBuilder voluntaryExits(SszList<SignedVoluntaryExit> voluntaryExits);
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
-  BeaconBlockBodyContent syncAggregate(Supplier<SyncAggregate> syncAggregateSupplier);
+  BeaconBlockBodyBuilder syncAggregate(Supplier<SyncAggregate> syncAggregateSupplier);
 }

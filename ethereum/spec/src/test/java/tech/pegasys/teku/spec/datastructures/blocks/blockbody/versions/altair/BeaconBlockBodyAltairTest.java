@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyContent;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
@@ -38,7 +38,7 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
 
   @Override
   protected BeaconBlockBodyAltair createBlockBody(
-      final Consumer<BeaconBlockBodyContent> contentProvider) {
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     return getBlockBodySchema().createBlockBody(contentProvider);
   }
 
