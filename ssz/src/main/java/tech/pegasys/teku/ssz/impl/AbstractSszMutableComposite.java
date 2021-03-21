@@ -15,14 +15,9 @@ package tech.pegasys.teku.ssz.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.SszComposite;
@@ -56,21 +51,48 @@ public abstract class AbstractSszMutableComposite<
 
   protected AbstractSszComposite<SszChildT> backingImmutableData;
   private Consumer<SszMutableData> invalidator;
-  private final Map<Integer, SszChildT> childrenChanges = new HashMap<>();
-  private final Map<Integer, SszMutableChildT> childrenRefs = new HashMap<>();
-  private final Set<Integer> childrenRefsChanged = new HashSet<>();
+  private final Map<Integer, ChildChangeRecord<SszChildT, SszMutableChildT>> childrenChanges =
+      new HashMap<>();
   private Integer sizeCache;
+  private final SszCompositeSchema<?> cachedSchema;
+
+  private ChildChangeRecord<SszChildT, SszMutableChildT> createChangeRecordByValue(
+      SszChildT newValue) {
+    return new ChildChangeRecord<>(newValue, null);
+  }
+
+  private ChildChangeRecord<SszChildT, SszMutableChildT> createChangeRecordByRef(
+      SszMutableChildT childRef) {
+    return new ChildChangeRecord<>(null, childRef);
+  }
 
   /** Creates a new mutable instance with backing immutable data */
   protected AbstractSszMutableComposite(AbstractSszComposite<SszChildT> backingImmutableData) {
     this.backingImmutableData = backingImmutableData;
     sizeCache = backingImmutableData.size();
+    cachedSchema = backingImmutableData.getSchema();
   }
 
   @Override
   public void set(int index, SszChildT value) {
     checkIndex(index, true);
     checkNotNull(value);
+    validateChildSchema(index, value);
+
+    ChildChangeRecord<SszChildT, SszMutableChildT> oldChangeRecord =
+        childrenChanges.put(index, createChangeRecordByValue(value));
+    if (oldChangeRecord != null && oldChangeRecord.isByRef()) {
+      // restore old value to be consistent
+      childrenChanges.put(index, oldChangeRecord);
+      throw new IllegalStateException(
+          "A child couldn't be simultaneously modified by value and accessed by ref");
+    }
+
+    sizeCache = index >= sizeCache ? index + 1 : sizeCache;
+    invalidate();
+  }
+
+  protected void validateChildSchema(int index, SszChildT value) {
     if (!value.getSchema().equals(getSchema().getChildSchema(index))) {
       throw new InvalidValueSchemaException(
           "Expected child to have schema "
@@ -78,53 +100,47 @@ public abstract class AbstractSszMutableComposite<
               + ", but value has schema "
               + value.getSchema());
     }
-    if (childrenRefs.containsKey(index)) {
-      throw new IllegalStateException(
-          "A child couldn't be simultaneously modified by value and accessed by ref");
-    }
-    childrenChanges.put(index, value);
-    sizeCache = index >= sizeCache ? index + 1 : sizeCache;
-    invalidate();
   }
 
   @Override
   public SszChildT get(int index) {
     checkIndex(index, false);
-    SszChildT ret = childrenChanges.get(index);
-    if (ret != null) {
-      return ret;
-    } else if (childrenRefs.containsKey(index)) {
-      return childrenRefs.get(index);
-    } else {
+    ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = childrenChanges.get(index);
+    if (changeRecord == null) {
       return backingImmutableData.get(index);
+    } else if (changeRecord.isByValue()) {
+      return changeRecord.getNewValue();
+    } else {
+      return changeRecord.getRefValue();
     }
   }
 
   @Override
   public SszMutableChildT getByRef(int index) {
-    SszMutableChildT ret = childrenRefs.get(index);
-    if (ret == null) {
+    ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = childrenChanges.get(index);
+    if (changeRecord != null && changeRecord.isByRef()) {
+      return changeRecord.getRefValue();
+    } else {
       SszChildT readView = get(index);
-      childrenChanges.remove(index);
       @SuppressWarnings("unchecked")
       SszMutableChildT w = (SszMutableChildT) readView.createWritableCopy();
+      ChildChangeRecord<SszChildT, SszMutableChildT> newChangeRecord = createChangeRecordByRef(w);
+      childrenChanges.put(index, newChangeRecord);
       if (w instanceof SszMutableComposite) {
         ((SszMutableComposite<?>) w)
             .setInvalidator(
                 viewWrite -> {
-                  childrenRefsChanged.add(index);
+                  newChangeRecord.invalidateRefValue();
                   invalidate();
                 });
       }
-      childrenRefs.put(index, w);
-      ret = w;
+      return newChangeRecord.getRefValue();
     }
-    return ret;
   }
 
   @Override
   public SszCompositeSchema<?> getSchema() {
-    return backingImmutableData.getSchema();
+    return cachedSchema;
   }
 
   @Override
@@ -132,8 +148,6 @@ public abstract class AbstractSszMutableComposite<
   public void clear() {
     backingImmutableData = (AbstractSszComposite<SszChildT>) getSchema().getDefault();
     childrenChanges.clear();
-    childrenRefs.clear();
-    childrenRefsChanged.clear();
     sizeCache = backingImmutableData.size();
     invalidate();
   }
@@ -146,24 +160,28 @@ public abstract class AbstractSszMutableComposite<
   @Override
   @SuppressWarnings("unchecked")
   public SszComposite<SszChildT> commitChanges() {
-    if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
+    if (childrenChanges.isEmpty()) {
       return backingImmutableData;
     } else {
       IntCache<SszChildT> cache = backingImmutableData.transferCache();
-      List<Map.Entry<Integer, SszChildT>> changesList =
-          Stream.concat(
-                  childrenChanges.entrySet().stream(),
-                  childrenRefsChanged.stream()
-                      .map(
-                          idx ->
-                              new SimpleImmutableEntry<>(
-                                  idx,
-                                  (SszChildT)
-                                      ((SszMutableData) childrenRefs.get(idx)).commitChanges())))
+      Stream<Map.Entry<Integer, SszChildT>> changesList =
+          childrenChanges.entrySet().stream()
+              .map(
+                  entry -> {
+                    ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = entry.getValue();
+                    Integer childIndex = entry.getKey();
+                    final SszChildT newValue;
+                    if (changeRecord.isByValue()) {
+                      newValue = changeRecord.getNewValue();
+                    } else {
+                      newValue =
+                          (SszChildT) ((SszMutableData) changeRecord.getRefValue()).commitChanges();
+                    }
+                    return Map.entry(childIndex, newValue);
+                  })
               .sorted(Map.Entry.comparingByKey())
-              .collect(Collectors.toList());
-      // pre-fill the read cache with changed values
-      changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
+              // pre-fill the read cache with changed values
+              .peek(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableData.getBackingNode();
       TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
@@ -178,27 +196,19 @@ public abstract class AbstractSszMutableComposite<
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
-      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
+      Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
     SszCompositeSchema<?> type = getSchema();
-    int elementsPerChunk = type.getElementsPerChunk();
-    if (elementsPerChunk == 1) {
-      return newChildValues.stream()
-          .map(
-              e ->
-                  new TreeUpdates.Update(
-                      type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
-          .collect(TreeUpdates.collector());
-    } else {
-      return packChanges(newChildValues, original);
+    if (type.getElementsPerChunk() > 1) {
+      throw new IllegalStateException(
+          "Packed primitive types are not supported by this implementation");
     }
+    return newChildValues
+        .map(
+            e ->
+                new TreeUpdates.Update(
+                    type.getChildGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
+        .collect(TreeUpdates.collector());
   }
-
-  /**
-   * Converts a set of changed view with their indexes to the {@link TreeUpdates} instance for views
-   * which support packed values (i.e. several child views per backing tree node)
-   */
-  protected abstract TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original);
 
   /**
    * Should be implemented by subclasses to create respectful immutable view with backing tree and
@@ -231,4 +241,41 @@ public abstract class AbstractSszMutableComposite<
    * @throws IndexOutOfBoundsException is index is not valid
    */
   protected abstract void checkIndex(int index, boolean set);
+
+  private static final class ChildChangeRecord<
+      SszChildT extends SszData, SszMutableChildT extends SszChildT> {
+
+    private final SszChildT newValue;
+    private final SszMutableChildT refValue;
+    private boolean refValueInvalidated;
+
+    private ChildChangeRecord(SszChildT newValue, SszMutableChildT refValue) {
+      this.newValue = newValue;
+      this.refValue = refValue;
+    }
+
+    public void invalidateRefValue() {
+      refValueInvalidated = true;
+    }
+
+    public boolean isByRef() {
+      return refValue != null;
+    }
+
+    public boolean isByValue() {
+      return newValue != null;
+    }
+
+    public SszChildT getNewValue() {
+      return newValue;
+    }
+
+    public SszMutableChildT getRefValue() {
+      return refValue;
+    }
+
+    public boolean isRefValueInvalidated() {
+      return refValueInvalidated;
+    }
+  }
 }

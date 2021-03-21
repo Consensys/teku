@@ -72,6 +72,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
+  private final int fixedPartSize;
 
   protected AbstractSszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
@@ -87,6 +88,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
         childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
+    this.fixedPartSize = calcSszFixedPartSize();
   }
 
   protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
@@ -99,6 +101,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.childrenSchemas = childrenSchemas;
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
+    this.fixedPartSize = calcSszFixedPartSize();
   }
 
   @Override
@@ -185,6 +188,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public int getSszFixedPartSize() {
+    return fixedPartSize;
+  }
+
+  protected int calcSszFixedPartSize() {
     int size = 0;
     for (int i = 0; i < getFieldsCount(); i++) {
       SszSchema<?> childType = getChildSchema(i);
@@ -195,14 +202,18 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public int getSszVariablePartSize(TreeNode node) {
-    int size = 0;
-    for (int i = 0; i < getFieldsCount(); i++) {
-      SszSchema<?> childType = getChildSchema(i);
-      if (!childType.isFixedSize()) {
-        size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
+    if (isFixedSize()) {
+      return 0;
+    } else {
+      int size = 0;
+      for (int i = 0; i < getFieldsCount(); i++) {
+        SszSchema<?> childType = getChildSchema(i);
+        if (!childType.isFixedSize()) {
+          size += childType.getSszSize(node.get(getChildGeneralizedIndex(i)));
+        }
       }
+      return size;
     }
-    return size;
   }
 
   @Override
