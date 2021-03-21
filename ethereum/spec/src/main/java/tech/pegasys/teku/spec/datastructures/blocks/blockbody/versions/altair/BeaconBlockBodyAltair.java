@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -24,14 +24,14 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.containers.Container8;
+import tech.pegasys.teku.ssz.containers.Container9;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-class BeaconBlockBodyPhase0
-    extends Container8<
-        BeaconBlockBodyPhase0,
+class BeaconBlockBodyAltair
+    extends Container9<
+        BeaconBlockBodyAltair,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -39,37 +39,40 @@ class BeaconBlockBodyPhase0
         SszList<AttesterSlashing>,
         SszList<Attestation>,
         SszList<Deposit>,
-        SszList<SignedVoluntaryExit>>
+        SszList<SignedVoluntaryExit>,
+        SyncAggregate>
     implements BeaconBlockBody {
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type) {
+  BeaconBlockBodyAltair(BeaconBlockBodySchemaAltair type) {
     super(type);
   }
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type, TreeNode backingNode) {
+  BeaconBlockBodyAltair(BeaconBlockBodySchemaAltair type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  BeaconBlockBodyPhase0(
-      BeaconBlockBodySchemaPhase0 type,
-      SszSignature randao_reveal,
-      Eth1Data eth1_data,
+  BeaconBlockBodyAltair(
+      BeaconBlockBodySchemaAltair type,
+      SszSignature randaoReveal,
+      Eth1Data eth1Data,
       SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposer_slashings,
-      SszList<AttesterSlashing> attester_slashings,
+      SszList<ProposerSlashing> proposerSlashings,
+      SszList<AttesterSlashing> attesterSlashings,
       SszList<Attestation> attestations,
       SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntary_exits) {
+      SszList<SignedVoluntaryExit> voluntaryExits,
+      SyncAggregate syncAggregate) {
     super(
         type,
-        randao_reveal,
-        eth1_data,
+        randaoReveal,
+        eth1Data,
         graffiti,
-        proposer_slashings,
-        attester_slashings,
+        proposerSlashings,
+        attesterSlashings,
         attestations,
         deposits,
-        voluntary_exits);
+        voluntaryExits,
+        syncAggregate);
   }
 
   @Override
@@ -112,8 +115,12 @@ class BeaconBlockBodyPhase0
     return getField7();
   }
 
+  public SyncAggregate getSyncAggregate() {
+    return getField8();
+  }
+
   @Override
-  public BeaconBlockBodySchemaPhase0 getSchema() {
-    return (BeaconBlockBodySchemaPhase0) super.getSchema();
+  public BeaconBlockBodySchemaAltair getSchema() {
+    return (BeaconBlockBodySchemaAltair) super.getSchema();
   }
 }
