@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.collections.cache;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.collections.LimitStrategy;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
 
 /**
@@ -33,8 +31,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
   public static <K, V> LRUCache<K, V> create(int capacity) {
     return new LRUCache<>(
         SynchronizedLimitedMap.createEmpty(),
-        initEntries -> SynchronizedLimitedMap
-            .create(capacity, LimitStrategy.DROP_OLDEST_ELEMENT, initEntries));
+        initEntries ->
+            SynchronizedLimitedMap.create(
+                capacity, LimitStrategy.DROP_OLDEST_ELEMENT, initEntries));
   }
 
   private final Function<Map<K, V>, Map<K, V>> backStorageCopier;

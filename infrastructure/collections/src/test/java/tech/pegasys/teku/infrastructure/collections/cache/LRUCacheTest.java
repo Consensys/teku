@@ -157,7 +157,7 @@ public class LRUCacheTest {
     assertThat(cache.getCached(2)).contains(102);
   }
 
-    @Test
+  @Test
   void copy_shouldCreateIsolatedInstance() {
     cache.get(0, __ -> 100);
     cache.get(1, __ -> 101);
