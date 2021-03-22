@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSc
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -292,7 +293,8 @@ public final class DataStructureUtil {
 
   public SyncCommittee randomSyncCommittee() {
     final SyncCommitteeSchema syncCommitteeSchema =
-        spec.getGenesisSchemaDefinitions().getSyncCommitteeSchema();
+        ((BeaconStateSchemaAltair) spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+            .getCurrentSyncCommitteeSchema();
     return syncCommitteeSchema.create(
         randomSszVector(
             syncCommitteeSchema.getPubkeysSchema(), () -> new SszPublicKey(randomPublicKey())),

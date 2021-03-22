@@ -18,7 +18,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
@@ -27,24 +26,17 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final SyncCommitteeSchema syncCommitteeSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
-    this.syncCommitteeSchema = new SyncCommitteeSchema(specConfig);
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return beaconStateSchema;
-  }
-
-  @Override
-  public SyncCommitteeSchema getSyncCommitteeSchema() {
-    return syncCommitteeSchema;
   }
 
   @Override

@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SyncCommitteeTest {
@@ -32,7 +33,9 @@ class SyncCommitteeTest {
     final Bytes serialized = original.sszSerialize();
 
     final SyncCommittee deserialized =
-        spec.getGenesisSchemaDefinitions().getSyncCommitteeSchema().sszDeserialize(serialized);
+        ((BeaconStateSchemaAltair) spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+            .getCurrentSyncCommitteeSchema()
+            .sszDeserialize(serialized);
     assertThat(deserialized).isEqualTo(original);
   }
 }

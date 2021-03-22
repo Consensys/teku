@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszList;
@@ -40,6 +41,17 @@ public interface BeaconStateAltair extends BeaconState {
   default SszList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    return getAny(fieldIndex);
+  }
+
+  default SyncCommittee getCurrentSyncCommittee() {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
+    return getAny(fieldIndex);
+  }
+
+  default SyncCommittee getNextSyncCommittee() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name());
     return getAny(fieldIndex);
   }
 
