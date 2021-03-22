@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
@@ -46,6 +47,13 @@ public class SyncCommittee
     @Override
     public SyncCommittee createFromBackingNode(TreeNode node) {
       return new SyncCommittee(this, node);
+    }
+
+    public SyncCommittee create(
+        final List<SszPublicKey> pubkeys, final List<SszPublicKey> pubkeyAggregates) {
+      return create(
+          getPubkeysSchema().createFromElements(pubkeys),
+          getPubkeyAggregatesSchema().createFromElements(pubkeyAggregates));
     }
 
     public SyncCommittee create(

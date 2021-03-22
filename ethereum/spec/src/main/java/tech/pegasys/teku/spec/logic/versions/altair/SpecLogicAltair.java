@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
@@ -98,7 +99,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateAccessors,
             miscHelpers);
     final StateTransition stateTransition =
-        StateTransition.create(
+        StateTransitionAltair.create(
             config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);

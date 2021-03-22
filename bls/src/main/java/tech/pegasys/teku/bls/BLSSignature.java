@@ -110,6 +110,10 @@ public class BLSSignature {
     return signature.get();
   }
 
+  public boolean isInfinity() {
+    return getSignature().isInfinity();
+  }
+
   @Override
   public String toString() {
     return toBytesCompressed().toString();
