@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
 
@@ -47,14 +48,17 @@ public class AttestationUtil {
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final ValidatorsUtil validatorsUtil;
+  private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final ValidatorsUtil validatorsUtil,
+      final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorsUtil = validatorsUtil;
+    this.miscHelpers = miscHelpers;
   }
 
   /**
@@ -215,7 +219,7 @@ public class AttestationUtil {
   // Get attestation data that does not include attester specific shard or crosslink information
   public AttestationData getGenericAttestationData(
       UInt64 slot, BeaconState state, BeaconBlockSummary block, final UInt64 committeeIndex) {
-    UInt64 epoch = beaconStateUtil.computeEpochAtSlot(slot);
+    UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.getRoot();
     UInt64 start_slot = beaconStateUtil.computeStartSlotAtEpoch(epoch);

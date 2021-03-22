@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.logic.common;
 
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -26,6 +29,11 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class AbstractSpecLogic implements SpecLogic {
+  // Helpers
+  protected final Predicates predicates;
+  protected final MiscHelpers miscHelpers;
+  protected final BeaconStateAccessors beaconStateAccessors;
+  // Utils
   protected final CommitteeUtil committeeUtil;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
@@ -38,6 +46,9 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final BlockProposalUtil blockProposalUtil;
 
   public AbstractSpecLogic(
+      final Predicates predicates,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -48,6 +59,9 @@ public class AbstractSpecLogic implements SpecLogic {
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
+    this.predicates = predicates;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
     this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
@@ -108,5 +122,20 @@ public class AbstractSpecLogic implements SpecLogic {
   @Override
   public ValidatorStatusFactory getValidatorStatusFactory() {
     return validatorStatusFactory;
+  }
+
+  @Override
+  public Predicates predicates() {
+    return predicates;
+  }
+
+  @Override
+  public MiscHelpers miscHelpers() {
+    return miscHelpers;
+  }
+
+  @Override
+  public BeaconStateAccessors beaconStateAccessors() {
+    return beaconStateAccessors;
   }
 }

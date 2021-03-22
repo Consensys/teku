@@ -11,14 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.util;
+package tech.pegasys.teku.spec.logic.common.helpers;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ByteUtils {
+public class MathHelpers {
+
+  public static UInt64 integerSquareRoot(UInt64 n) {
+    checkArgument(
+        n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integerSquareRoot()");
+    UInt64 x = n;
+    UInt64 y = x.plus(UInt64.ONE).dividedBy(2);
+    while (y.compareTo(x) < 0) {
+      x = y;
+      y = x.plus(n.dividedBy(x)).dividedBy(2);
+    }
+    return x;
+  }
+
   public static Bytes uintToBytes(long value, int numBytes) {
     int longBytes = Long.SIZE / 8;
     Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);

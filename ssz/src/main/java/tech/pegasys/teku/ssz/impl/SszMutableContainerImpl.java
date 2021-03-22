@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.impl;
 
-import java.util.List;
-import java.util.Map;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszMutableContainer;
@@ -23,7 +21,6 @@ import tech.pegasys.teku.ssz.SszMutableRefContainer;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUpdates;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {
@@ -60,11 +57,5 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for container with size " + size());
     }
-  }
-
-  @Override
-  protected TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszData>> newChildValues, TreeNode original) {
-    throw new UnsupportedOperationException("Packed values are not supported");
   }
 }

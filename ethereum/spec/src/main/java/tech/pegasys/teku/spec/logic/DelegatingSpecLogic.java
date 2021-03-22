@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.logic;
 
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -79,5 +82,20 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public ValidatorStatusFactory getValidatorStatusFactory() {
     return specLogic.getValidatorStatusFactory();
+  }
+
+  @Override
+  public Predicates predicates() {
+    return specLogic.predicates();
+  }
+
+  @Override
+  public MiscHelpers miscHelpers() {
+    return specLogic.miscHelpers();
+  }
+
+  @Override
+  public BeaconStateAccessors beaconStateAccessors() {
+    return specLogic.beaconStateAccessors();
   }
 }

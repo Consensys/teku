@@ -108,11 +108,16 @@ public abstract class AbstractSszCollectionSchema<
     if (isFixedSize()) {
       return 0;
     } else {
-      int size = 0;
-      for (int i = 0; i < length; i++) {
-        size += getElementSchema().getSszSize(vectorNode.get(getChildGeneralizedIndex(i)));
+      SszSchema<SszElementT> elementSchema = getElementSchema();
+      if (elementSchema.isFixedSize()) {
+        return elementSchema.getSszFixedPartSize() * length;
+      } else {
+        int size = 0;
+        for (int i = 0; i < length; i++) {
+          size += elementSchema.getSszSize(vectorNode.get(getChildGeneralizedIndex(i)));
+        }
+        return size;
       }
-      return size;
     }
   }
 

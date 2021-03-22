@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
@@ -35,7 +34,6 @@ class BeaconValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final Spec spec = SpecFactory.createMinimal();
-  private final BeaconStateUtil beaconStateUtil = spec.getGenesisSpec().getBeaconStateUtil();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
@@ -60,16 +58,14 @@ class BeaconValidatorsTest {
         new BeaconValidators(
             beaconState,
             true,
-            beaconStateUtil.getCurrentEpoch(beaconState),
+            spec.getCurrentEpoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
     int expectedNextPageToken =
         beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     long activeValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconState),
-            true,
-            beaconStateUtil.computeEpochAtSlot(beaconState.getSlot()));
+            getValidators(beaconState), true, spec.computeEpochAtSlot(beaconState.getSlot()));
     assertThat(validators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, activeValidatorCount));
     assertThat(validators.total_size).isEqualTo(activeValidatorCount);
@@ -160,9 +156,7 @@ class BeaconValidatorsTest {
     SszList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconState),
-            true,
-            beaconStateUtil.computeEpochAtSlot(beaconState.getSlot()));
+            getValidators(beaconState), true, spec.computeEpochAtSlot(beaconState.getSlot()));
     int originalValidatorCount = allValidators.size();
 
     assertThat(originalActiveValidatorCount)
@@ -180,9 +174,7 @@ class BeaconValidatorsTest {
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconStateW),
-            true,
-            beaconStateUtil.computeEpochAtSlot(beaconStateW.getSlot()));
+            getValidators(beaconStateW), true, spec.computeEpochAtSlot(beaconStateW.getSlot()));
 
     SszList<Validator> updatedValidators = beaconStateW.getValidators();
 

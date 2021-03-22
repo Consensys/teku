@@ -58,6 +58,6 @@ public class ConfigProvider {
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
-    return spec.atSlot(slot).getBeaconStateUtil().computeEpochAtSlot(slot);
+    return spec.computeEpochAtSlot(slot);
   }
 }

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
+import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -32,8 +32,6 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<
@@ -47,12 +45,6 @@ public class BeaconBlockBodySchemaPhase0
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>>
     implements BeaconBlockBodySchema<BeaconBlockBodyPhase0> {
-
-  // TODO(#3648) - remove this field (version schemas that depend on this field through
-  // SchemaDefinitions)
-  @Deprecated
-  public static final SpecDependent<BeaconBlockBodySchemaPhase0> SSZ_SCHEMA =
-      SpecDependent.of(BeaconBlockBodySchemaPhase0::create);
 
   private BeaconBlockBodySchemaPhase0(
       NamedSchema<SszSignature> randaoRevealSchema,
@@ -84,16 +76,6 @@ public class BeaconBlockBodySchemaPhase0
         specConfig.getMaxVoluntaryExits());
   }
 
-  @Deprecated
-  public static BeaconBlockBodySchemaPhase0 create() {
-    return create(
-        Constants.MAX_PROPOSER_SLASHINGS,
-        Constants.MAX_ATTESTER_SLASHINGS,
-        Constants.MAX_ATTESTATIONS,
-        Constants.MAX_DEPOSITS,
-        Constants.MAX_VOLUNTARY_EXITS);
-  }
-
   private static BeaconBlockBodySchemaPhase0 create(
       final long maxProposerSlashings,
       final long maxAttesterSlashings,
@@ -122,24 +104,10 @@ public class BeaconBlockBodySchemaPhase0
 
   @Override
   public BeaconBlockBodyPhase0 createBlockBody(
-      BLSSignature randao_reveal,
-      Eth1Data eth1_data,
-      Bytes32 graffiti,
-      SszList<ProposerSlashing> proposer_slashings,
-      SszList<AttesterSlashing> attester_slashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntary_exits) {
-    return new BeaconBlockBodyPhase0(
-        this,
-        new SszSignature(randao_reveal),
-        eth1_data,
-        SszBytes32.of(graffiti),
-        proposer_slashings,
-        attester_slashings,
-        attestations,
-        deposits,
-        voluntary_exits);
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+    final BeaconBlockBodyBuilderPhase0 builder = new BeaconBlockBodyBuilderPhase0().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
   @Override

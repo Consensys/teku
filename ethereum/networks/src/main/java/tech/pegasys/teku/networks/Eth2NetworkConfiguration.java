@@ -43,7 +43,7 @@ public class Eth2NetworkConfiguration {
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
-  private final Optional<Eth1Address> eth1DepositContractAddress;
+  private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
 
@@ -55,7 +55,7 @@ public class Eth2NetworkConfiguration {
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
-      final Optional<Eth1Address> eth1DepositContractAddress,
+      final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled) {
     this.spec = spec;
@@ -65,7 +65,10 @@ public class Eth2NetworkConfiguration {
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
-    this.eth1DepositContractAddress = eth1DepositContractAddress;
+    this.eth1DepositContractAddress =
+        eth1DepositContractAddress == null
+            ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
+            : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
   }
@@ -115,7 +118,7 @@ public class Eth2NetworkConfiguration {
     return discoveryBootnodes;
   }
 
-  public Optional<Eth1Address> getEth1DepositContractAddress() {
+  public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
@@ -139,7 +142,7 @@ public class Eth2NetworkConfiguration {
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
-    private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
+    private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
 
@@ -148,7 +151,7 @@ public class Eth2NetworkConfiguration {
 
       final Spec spec = SpecFactory.create(constants);
       // if the deposit contract was not set, default from constants
-      if (eth1DepositContractAddress.isEmpty()) {
+      if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
             spec.getGenesisSpec().getConfig().getDepositContractAddress().toHexString());
       }
@@ -170,9 +173,15 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder initialState(final String initialState) {
+    public Builder customInitialState(final String initialState) {
       this.initialState = Optional.of(initialState);
       this.usingCustomInitialState = true;
+      return this;
+    }
+
+    public Builder defaultInitialState(final String initialState) {
+      this.initialState = Optional.of(initialState);
+      this.usingCustomInitialState = false;
       return this;
     }
 
@@ -198,11 +207,11 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder eth1DepositContractAddress(final String eth1Address) {
-      this.eth1DepositContractAddress = Optional.of(Eth1Address.fromHexString(eth1Address));
+      this.eth1DepositContractAddress = Eth1Address.fromHexString(eth1Address);
       return this;
     }
 
-    public Builder eth1DepositContractAddress(final Optional<Eth1Address> eth1Address) {
+    public Builder eth1DepositContractAddress(final Eth1Address eth1Address) {
       checkNotNull(eth1Address);
       this.eth1DepositContractAddress = eth1Address;
       return this;
@@ -250,7 +259,7 @@ public class Eth2NetworkConfiguration {
       startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
       startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
       discoveryBootnodes = new ArrayList<>();
-      eth1DepositContractAddress = Optional.empty();
+      eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
 
       return this;
@@ -302,7 +311,7 @@ public class Eth2NetworkConfiguration {
           .constants(PRATER.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
-          .initialState(
+          .defaultInitialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
           .discoveryBootnodes(
               // q9f Bootnodes
