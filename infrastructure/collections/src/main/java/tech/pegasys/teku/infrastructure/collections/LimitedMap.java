@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.collections;
 
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.util.Map;
 

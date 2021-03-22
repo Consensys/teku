@@ -13,26 +13,21 @@
 
 package tech.pegasys.teku.benchmarks;
 
-import com.google.common.cache.CacheBuilder;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
@@ -49,6 +44,7 @@ public class TransitionCachesBenchmark {
 
   @Param({"1048576"})
   int validatorsCount;
+
   long counter;
 
   private final TransitionCaches fullCache = TransitionCaches.createNewEmpty();
@@ -61,8 +57,7 @@ public class TransitionCachesBenchmark {
         fullCache
             .getBeaconCommittee()
             .invalidateWithNewValue(
-                TekuPair.of(UInt64.valueOf(slot), UInt64.valueOf(committeeIndex)),
-                SOME_INT_LIST);
+                TekuPair.of(UInt64.valueOf(slot), UInt64.valueOf(committeeIndex)), SOME_INT_LIST);
       }
     }
 
@@ -73,9 +68,7 @@ public class TransitionCachesBenchmark {
     }
 
     for (int epoch = 0; epoch < 8; epoch++) {
-      fullCache
-          .getActiveValidators()
-          .invalidateWithNewValue(UInt64.valueOf(epoch), SOME_INT_LIST);
+      fullCache.getActiveValidators().invalidateWithNewValue(UInt64.valueOf(epoch), SOME_INT_LIST);
     }
 
     for (int validatorIdx = 0; validatorIdx < validatorsCount; validatorIdx++) {
@@ -90,12 +83,8 @@ public class TransitionCachesBenchmark {
     fullCache.getBeaconProposerIndex().invalidateWithNewValue(UInt64.ONE, 0x777);
     fullCache.getTotalActiveBalance().invalidateWithNewValue(UInt64.ZERO, UInt64.ZERO);
     fullCache.getTotalActiveBalance().invalidateWithNewValue(UInt64.ONE, UInt64.ZERO);
-    fullCache
-        .getCommitteeShuffle()
-        .invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
-    fullCache
-        .getCommitteeShuffle()
-        .invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
+    fullCache.getCommitteeShuffle().invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
+    fullCache.getCommitteeShuffle().invalidateWithNewValue(Bytes32.random(), SOME_INT_LIST);
     fullCache.getEffectiveBalances().invalidateWithNewValue(UInt64.ONE, List.of(UInt64.ONE));
   }
 
@@ -106,8 +95,8 @@ public class TransitionCachesBenchmark {
       counter = 10000;
     }
     Cache<TekuPair<UInt64, UInt64>, List<Integer>> cache = fullCache.getBeaconCommittee();
-    List<Integer> res = cache
-        .get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
+    List<Integer> res =
+        cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
     bh.consume(res);
   }
 
@@ -118,8 +107,8 @@ public class TransitionCachesBenchmark {
     }
     counter++;
     Cache<TekuPair<UInt64, UInt64>, List<Integer>> cache = fullCache.getBeaconCommittee();
-    List<Integer> res = cache
-        .get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
+    List<Integer> res =
+        cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
     bh.consume(res);
   }
 

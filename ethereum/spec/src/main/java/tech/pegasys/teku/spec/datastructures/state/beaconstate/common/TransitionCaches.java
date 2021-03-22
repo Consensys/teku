@@ -75,15 +75,15 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private TransitionCaches() {
-    activeValidators = LRUCache.createHashMapBacked(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = LRUCache.createHashMapBacked(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = LRUCache.createHashMapBacked(MAX_BEACON_COMMITTEE_CACHE);
-    attestersTotalBalance = LRUCache.createHashMapBacked(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = LRUCache.createHashMapBacked(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = LRUCache.createHashMapBacked(Integer.MAX_VALUE - 1);
+    activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
+    attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = LRUCache.createHashMapBacked(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = LRUCache.createHashMapBacked(MAX_EFFECTIVE_BALANCE_CACHE);
+    committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
   }
 
   private TransitionCaches(

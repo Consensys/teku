@@ -17,9 +17,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitStrategy;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
@@ -31,29 +31,17 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 public class LRUCache<K, V> implements Cache<K, V> {
 
   public static <K, V> LRUCache<K, V> create(int capacity) {
-    return new LRUCache<>(Collections.emptyMap(), initEntries -> {
-      Map<K, V> map = LimitedMap.create(capacity);
-      map.putAll(initEntries);
-      return map;
-    });
-  }
-
-  public static <K, V> LRUCache<K, V> createHashMapBacked(int capacity) {
-    return new LRUCache<>(Collections.emptyMap(),
-        initEntries -> {
-          Map<K, V> map = SynchronizedLimitedMap
-              .create(capacity, LimitStrategy.DROP_OLDEST_ELEMENT);
-          synchronized (initEntries) {
-            map.putAll(initEntries);
-          }
-          return map;
-        });
+    return new LRUCache<>(
+        SynchronizedLimitedMap.createEmpty(),
+        initEntries -> SynchronizedLimitedMap
+            .create(capacity, LimitStrategy.DROP_OLDEST_ELEMENT, initEntries));
   }
 
   private final Function<Map<K, V>, Map<K, V>> backStorageCopier;
   private final Map<K, V> cacheData;
 
-  private LRUCache(Map<K, V> initialCachedContent, Function<Map<K, V>, Map<K, V>> backStorageCopier) {
+  private LRUCache(
+      Map<K, V> initialCachedContent, Function<Map<K, V>, Map<K, V>> backStorageCopier) {
 
     this.backStorageCopier = backStorageCopier;
     this.cacheData = backStorageCopier.apply(initialCachedContent);
