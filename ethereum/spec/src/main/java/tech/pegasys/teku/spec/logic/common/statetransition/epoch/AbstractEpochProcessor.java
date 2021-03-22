@@ -60,7 +60,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  private static void applyDeltas(
+  protected static void applyDeltas(
       final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
     final SszMutableUInt64List balances = state.getBalances();
     int validatorsCount = state.getValidators().size();
@@ -166,30 +166,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   }
 
   /** Processes rewards and penalties */
-  @Override
-  public void processRewardsAndPenalties(
-      MutableBeaconState state, ValidatorStatuses validatorStatuses)
-      throws EpochProcessingException {
-    try {
-      if (beaconStateAccessors.getCurrentEpoch(state).equals(SpecConfig.GENESIS_EPOCH)) {
-        return;
-      }
-
-      RewardAndPenaltyDeltas attestationDeltas =
-          createRewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
-
-      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
-    } catch (IllegalArgumentException e) {
-      throw new EpochProcessingException(e);
-    }
-  }
-
-  @Override
-  public RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
-      final BeaconState state, final ValidatorStatuses validatorStatuses) {
-    return new DefaultRewardsAndPenaltiesCalculator(
-        specConfig, state, validatorStatuses, beaconStateAccessors);
-  }
 
   /**
    * Processes validator registry updates

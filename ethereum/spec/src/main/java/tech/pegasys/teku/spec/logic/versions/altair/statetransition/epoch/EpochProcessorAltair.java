@@ -19,6 +19,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -32,6 +34,13 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
       final BeaconStateAccessors beaconStateAccessors) {
     super(
         specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+  }
+
+  @Override
+  public void processRewardsAndPenalties(
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
+      throws EpochProcessingException {
+    throw new NotImplementedException("TODO");
   }
 
   @Override

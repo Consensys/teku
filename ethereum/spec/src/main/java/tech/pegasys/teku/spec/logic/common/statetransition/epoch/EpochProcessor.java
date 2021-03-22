@@ -31,9 +31,6 @@ public interface EpochProcessor {
   void processRewardsAndPenalties(MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException;
 
-  RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
-      BeaconState state, ValidatorStatuses validatorStatuses);
-
   void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
       throws EpochProcessingException;
 
