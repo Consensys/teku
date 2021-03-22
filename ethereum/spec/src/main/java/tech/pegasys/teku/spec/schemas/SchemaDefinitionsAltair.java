@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -27,7 +27,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
-  public SchemaDefinitionsAltair(final SpecConfig specConfig) {
+  public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);

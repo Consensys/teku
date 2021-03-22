@@ -82,6 +82,10 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
                         + specConfig.getClass().getSimpleName()));
   }
 
+  public Bytes4 getAltairForkVersion() {
+    return altairForkVersion;
+  }
+
   public UInt64 getInactivityPenaltyQuotientAltair() {
     return inactivityPenaltyQuotientAltair;
   }
