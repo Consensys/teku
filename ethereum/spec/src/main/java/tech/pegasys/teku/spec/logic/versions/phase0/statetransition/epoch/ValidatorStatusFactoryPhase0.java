@@ -58,11 +58,11 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
               final AttestationUpdates updates = new AttestationUpdates();
               final Checkpoint target = data.getTarget();
               if (target.getEpoch().equals(currentEpoch)) {
-                updates.currentEpochAttester = true;
+                updates.currentEpochSourceAttester = true;
                 updates.currentEpochTargetAttester =
                     matchesEpochStartBlock(state, currentEpoch, target.getRoot());
               } else if (target.getEpoch().equals(previousEpoch)) {
-                updates.previousEpochAttester = true;
+                updates.previousEpochSourceAttester = true;
 
                 updates.inclusionInfo =
                     Optional.of(
@@ -88,17 +88,17 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
   }
 
   private static class AttestationUpdates {
-    private boolean currentEpochAttester = false;
+    private boolean currentEpochSourceAttester = false;
     private boolean currentEpochTargetAttester = false;
-    private boolean previousEpochAttester = false;
+    private boolean previousEpochSourceAttester = false;
     private boolean previousEpochTargetAttester = false;
     private boolean previousEpochHeadAttester = false;
     private Optional<InclusionInfo> inclusionInfo = Optional.empty();
 
     public void apply(final ValidatorStatus status) {
-      status.updateCurrentEpochAttester(currentEpochAttester);
+      status.updateCurrentEpochSourceAttester(currentEpochSourceAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
-      status.updatePreviousEpochAttester(previousEpochAttester);
+      status.updatePreviousEpochSourceAttester(previousEpochSourceAttester);
       status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);
       status.updateInclusionInfo(inclusionInfo);

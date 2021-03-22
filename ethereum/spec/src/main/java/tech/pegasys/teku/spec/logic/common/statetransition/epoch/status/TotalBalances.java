@@ -21,25 +21,25 @@ public class TotalBalances {
 
   private final UInt64 currentEpoch;
   private final UInt64 previousEpoch;
-  private final UInt64 currentEpochAttesters;
+  private final UInt64 currentEpochSourceAttesters;
   private final UInt64 currentEpochTargetAttesters;
-  private final UInt64 previousEpochAttesters;
+  private final UInt64 previousEpochSourceAttesters;
   private final UInt64 previousEpochTargetAttesters;
   private final UInt64 previousEpochHeadAttesters;
 
   public TotalBalances(
       UInt64 currentEpoch,
       UInt64 previousEpoch,
-      UInt64 currentEpochAttesters,
+      UInt64 currentEpochSourceAttesters,
       UInt64 currentEpochTargetAttesters,
-      UInt64 previousEpochAttesters,
+      UInt64 previousEpochSourceAttesters,
       UInt64 previousEpochTargetAttesters,
       UInt64 previousEpochHeadAttesters) {
     this.currentEpoch = currentEpoch;
     this.previousEpoch = previousEpoch;
-    this.currentEpochAttesters = currentEpochAttesters;
+    this.currentEpochSourceAttesters = currentEpochSourceAttesters;
     this.currentEpochTargetAttesters = currentEpochTargetAttesters;
-    this.previousEpochAttesters = previousEpochAttesters;
+    this.previousEpochSourceAttesters = previousEpochSourceAttesters;
     this.previousEpochTargetAttesters = previousEpochTargetAttesters;
     this.previousEpochHeadAttesters = previousEpochHeadAttesters;
   }
@@ -52,22 +52,42 @@ public class TotalBalances {
     return previousEpoch.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
-  public UInt64 getCurrentEpochAttesters() {
-    return currentEpochAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+  /**
+   * @return The sum of effective balances of all attesters from the current epoch that attested to
+   *     the correct source (justified checkpoint).
+   */
+  public UInt64 getCurrentEpochSourceAttesters() {
+    return currentEpochSourceAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
+  /**
+   * @return The sum of effective balances of all attesters from the current epoch that attested to
+   *     the correct target (epoch boundary block).
+   */
   public UInt64 getCurrentEpochTargetAttesters() {
     return currentEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
-  public UInt64 getPreviousEpochAttesters() {
-    return previousEpochAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+  /**
+   * @return The sum of effective balances of all attesters from the previous epoch that attested to
+   *     the correct source (justified checkpoint).
+   */
+  public UInt64 getPreviousEpochSourceAttesters() {
+    return previousEpochSourceAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
+  /**
+   * @return The sum of effective balances of all attesters from the previous epoch that attested to
+   *     the correct target (epoch boundary block).
+   */
   public UInt64 getPreviousEpochTargetAttesters() {
     return previousEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
+  /**
+   * @return The sum of effective balances of all attesters from the previous epoch that attested to
+   *     the correct head block at their assigned slot.
+   */
   public UInt64 getPreviousEpochHeadAttesters() {
     return previousEpochHeadAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
   }

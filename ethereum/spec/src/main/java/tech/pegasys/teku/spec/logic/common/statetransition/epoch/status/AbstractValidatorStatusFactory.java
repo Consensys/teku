@@ -88,9 +88,9 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
     UInt64 currentEpoch = UInt64.ZERO;
     UInt64 previousEpoch = UInt64.ZERO;
-    UInt64 currentEpochAttesters = UInt64.ZERO;
+    UInt64 currentEpochSourceAttesters = UInt64.ZERO;
     UInt64 currentEpochTargetAttesters = UInt64.ZERO;
-    UInt64 previousEpochAttesters = UInt64.ZERO;
+    UInt64 previousEpochSourceAttesters = UInt64.ZERO;
     UInt64 previousEpochTargetAttesters = UInt64.ZERO;
     UInt64 previousEpochHeadAttesters = UInt64.ZERO;
 
@@ -106,16 +106,16 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
       if (status.isSlashed()) {
         continue;
       }
-      if (status.isCurrentEpochAttester()) {
-        currentEpochAttesters = currentEpochAttesters.plus(balance);
+      if (status.isCurrentEpochSourceAttester()) {
+        currentEpochSourceAttesters = currentEpochSourceAttesters.plus(balance);
 
         if (status.isCurrentEpochTargetAttester()) {
           currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
         }
       }
 
-      if (status.isPreviousEpochAttester()) {
-        previousEpochAttesters = previousEpochAttesters.plus(balance);
+      if (status.isPreviousEpochSourceAttester()) {
+        previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
         if (status.isPreviousEpochTargetAttester()) {
           previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
         }
@@ -127,9 +127,9 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     return new TotalBalances(
         currentEpoch,
         previousEpoch,
-        currentEpochAttesters,
+        currentEpochSourceAttesters,
         currentEpochTargetAttesters,
-        previousEpochAttesters,
+        previousEpochSourceAttesters,
         previousEpochTargetAttesters,
         previousEpochHeadAttesters);
   }

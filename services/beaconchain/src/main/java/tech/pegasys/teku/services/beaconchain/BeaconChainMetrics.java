@@ -206,7 +206,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
               // is actually "previous" by the time we're actually updating the metrics
               previousEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
               previousEpochParticipationWeight.set(
-                  totalBalances.getCurrentEpochAttesters().longValue());
+                  totalBalances.getCurrentEpochSourceAttesters().longValue());
             });
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(head.getSlot());
