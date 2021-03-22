@@ -34,7 +34,7 @@ public class ShufflingTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final ShufflingData shufflingData =
         loadYaml(testDefinition, "mapping.yaml", ShufflingData.class);
-    final MiscHelpers miscHelpers = testDefinition.getSpec().atSlot(UInt64.ZERO).miscHelpers();
+    final MiscHelpers miscHelpers = testDefinition.getSpec().getGenesisSpec().miscHelpers();
     final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
     IntStream.range(0, shufflingData.getCount())
         .forEach(
