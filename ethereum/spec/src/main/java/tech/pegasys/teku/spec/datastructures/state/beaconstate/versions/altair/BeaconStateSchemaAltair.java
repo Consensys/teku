@@ -90,21 +90,23 @@ public class BeaconStateSchemaAltair
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX);
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name()));
   }
 
   @SuppressWarnings("unchecked")
   public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
     return (SszPrimitiveListSchema<Byte, SszByte, ?>)
-        getChildSchema(CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX);
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name()));
   }
 
   public SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommitteeSchema) getChildSchema(CURRENT_SYNC_COMMITTEE_FIELD_INDEX);
+    return (SyncCommitteeSchema)
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name()));
   }
 
   public SyncCommitteeSchema getNextSyncCommitteeSchema() {
-    return (SyncCommitteeSchema) getChildSchema(NEXT_SYNC_COMMITTEE_FIELD_INDEX);
+    return (SyncCommitteeSchema)
+        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name()));
   }
 
   @Override

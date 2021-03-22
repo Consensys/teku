@@ -40,8 +40,10 @@ public class SpecVersion extends DelegatingSpecLogic {
   public static SpecVersion createForFork(final Bytes4 fork, final SpecConfig specConfig) {
     if (specConfig.getGenesisForkVersion().equals(fork)) {
       return createPhase0(specConfig);
-    } else if (specConfig.toVersionAltair().isPresent()
-        && SpecConfigAltair.required(specConfig).getAltairForkVersion().equals(fork)) {
+    } else if (specConfig
+        .toVersionAltair()
+        .map(altairConfig -> altairConfig.getAltairForkVersion().equals(fork))
+        .orElse(false)) {
       return createAltair(SpecConfigAltair.required(specConfig));
     } else {
       throw new IllegalArgumentException("Unsupported fork: " + fork);

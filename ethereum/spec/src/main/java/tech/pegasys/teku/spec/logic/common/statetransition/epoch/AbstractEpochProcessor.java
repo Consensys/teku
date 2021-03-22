@@ -373,7 +373,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final int randaoIndex = nextEpoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
     state
         .getRandao_mixes()
-        .setElement(randaoIndex, beaconStateUtil.getRandaoMix(state, currentEpoch));
+        .setElement(randaoIndex, beaconStateAccessors.getRandaoMix(state, currentEpoch));
 
     // Set historical root accumulator
     if (nextEpoch

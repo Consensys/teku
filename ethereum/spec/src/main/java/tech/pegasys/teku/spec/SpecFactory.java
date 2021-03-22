@@ -23,10 +23,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecFactory {
 
-  public static Spec create(final Eth2Network network) {
-    return create(network.configName());
-  }
-
   public static Spec createMinimal() {
     return create(Eth2Network.MINIMAL);
   }
@@ -39,6 +35,10 @@ public class SpecFactory {
 
   public static Spec createMainnet() {
     return create(Eth2Network.MAINNET);
+  }
+
+  public static Spec create(final Eth2Network network) {
+    return create(network.configName());
   }
 
   public static Spec create(final String configName) {

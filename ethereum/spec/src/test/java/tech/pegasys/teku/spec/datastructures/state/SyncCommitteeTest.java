@@ -18,13 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SyncCommitteeTest {
 
-  private final Spec spec = SpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

@@ -14,11 +14,15 @@
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -33,6 +37,7 @@ import tech.pegasys.teku.ssz.SszList;
 
 public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
 
+  private static final int MAX_RANDOM_BYTE = 255; // 2**8 - 1
   private final SpecConfigAltair altairConfig;
 
   public BeaconStateAccessorsAltair(
@@ -60,9 +65,43 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     return increments.times(getBaseRewardPerIncrement(state));
   }
 
+  /**
+   * Return the sequence of sync committee indices (which may include uplicate indices) for a given
+   * state and epoch.
+   *
+   * @param state the state to calculate committees from
+   * @param epoch the epoch to calcualte committees for
+   * @return the sequence of sync committee indices
+   */
   public List<Integer> getSyncCommitteeIndices(final BeaconState state, final UInt64 epoch) {
-    // Implemented in https://github.com/ConsenSys/teku/pull/3754/
-    return null;
+    final int epochsPerSyncCommitteePeriod = altairConfig.getEpochsPerSyncCommitteePeriod();
+    final UInt64 baseEpoch =
+        epoch
+            .dividedBy(epochsPerSyncCommitteePeriod)
+            .minusMinZero(1)
+            .times(epochsPerSyncCommitteePeriod);
+    final List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, baseEpoch);
+    final int activeValidatorCount = activeValidatorIndices.size();
+    final Bytes32 seed = getSeed(state, baseEpoch, altairConfig.getDomainSyncCommittee());
+    int i = 0;
+    final SszList<Validator> validators = state.getValidators();
+    final List<Integer> syncCommitteeIndices = new ArrayList<>();
+    while (syncCommitteeIndices.size() < altairConfig.getSyncCommitteeSize()) {
+      final int shuffledIndex =
+          miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
+      final Integer candidateIndex = activeValidatorIndices.get(shuffledIndex);
+      final int randomByte = Hash.sha2_256(Bytes.wrap(seed, uintToBytes32(i / 32))).get(i % 32);
+      final UInt64 effectiveBalance = validators.get(candidateIndex).getEffective_balance();
+      // Sample with replacement
+      if (effectiveBalance
+          .times(MAX_RANDOM_BYTE)
+          .isGreaterThanOrEqualTo(config.getMaxEffectiveBalance().times(randomByte))) {
+        syncCommitteeIndices.add(candidateIndex);
+      }
+      i++;
+    }
+
+    return syncCommitteeIndices;
   }
 
   /**

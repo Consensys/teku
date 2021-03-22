@@ -233,7 +233,7 @@ public class FuzzUtil {
       // no risk of inconsistency for this particular fuzzing as we only count <= 100
       // inconsistencies would require a validator count > MAX_INT32
       result_bb.putLong(
-          spec.atSlot(UInt64.ZERO).getCommitteeUtil().computeShuffledIndex(i, count, seed));
+          spec.atSlot(UInt64.ZERO).miscHelpers().computeShuffledIndex(i, count, seed));
     }
     return Optional.of(result_bb.array());
   }

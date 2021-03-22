@@ -15,17 +15,22 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class BeaconStateAccessors {
   protected final SpecConfig config;
@@ -99,5 +104,19 @@ public class BeaconStateAccessors {
         .get(
             getCurrentEpoch(state),
             epoch -> getTotalBalance(state, getActiveValidatorIndices(state, epoch)));
+  }
+
+  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
+      throws IllegalArgumentException {
+    UInt64 randaoIndex =
+        epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
+    Bytes32 mix = getRandaoMix(state, randaoIndex);
+    Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
+    return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+  }
+
+  public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
+    int index = epoch.mod(config.getEpochsPerHistoricalVector()).intValue();
+    return state.getRandao_mixes().getElement(index);
   }
 }
