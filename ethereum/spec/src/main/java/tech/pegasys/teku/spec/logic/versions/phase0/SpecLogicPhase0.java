@@ -71,7 +71,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateAccessors(config, predicates, miscHelpers);
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
