@@ -19,6 +19,7 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
@@ -48,12 +49,18 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
   @SuppressWarnings("unchecked")
   @Override
   protected SszElementT getImpl(int index) {
-    SszCollectionSchema<SszElementT, ?> type =
-        (SszCollectionSchema<SszElementT, ?>) this.getSchema();
+    SszCollectionSchema<SszElementT, ?> type = this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
-    TreeNode node =
-        getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
-    return (SszElementT)
-        elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
+    if (elementType.isPrimitive()) {
+      // several primitive values could be packed to a single leaf node
+      SszPrimitiveSchema<?, ?> primitiveElementType = (SszPrimitiveSchema<?, ?>) elementType;
+      TreeNode node =
+          getBackingNode().get(type.getChildGeneralizedIndex(index / type.getElementsPerChunk()));
+      return (SszElementT)
+          primitiveElementType.createFromPackedNode(node, index % type.getElementsPerChunk());
+    } else {
+      TreeNode node = getBackingNode().get(type.getChildGeneralizedIndex(index));
+      return (SszElementT) elementType.createFromBackingNode(node);
+    }
   }
 }

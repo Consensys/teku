@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -38,11 +39,13 @@ public abstract class AbstractSszPrimitiveSchema<
     implements SszPrimitiveSchema<DataT, SszDataT> {
 
   private final int bitsSize;
+  private final int sszSize;
 
   protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;
+    this.sszSize = getSSZBytesSize();
   }
 
   @Override
@@ -52,11 +55,11 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public SszDataT createFromBackingNode(TreeNode node) {
-    return createFromBackingNode(node, 0);
+    return createFromPackedNode(node, 0);
   }
 
   @Override
-  public final SszDataT createFromBackingNode(TreeNode node, int internalIndex) {
+  public final SszDataT createFromPackedNode(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
@@ -68,7 +71,17 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue);
+  public TreeNode updatePackedNode(
+      TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates) {
+    TreeNode res = srcNode;
+    for (PackedNodeUpdate<DataT, SszDataT> update : updates) {
+      res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
+    }
+    return res;
+  }
+
+  protected abstract TreeNode updateBackingNode(
+      TreeNode srcNode, int internalIndex, SszData newValue);
 
   private int getSSZBytesSize() {
     return bitsCeilToBytes(getBitsSize());
@@ -81,7 +94,7 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public int getSszFixedPartSize() {
-    return getSSZBytesSize();
+    return sszSize;
   }
 
   @Override

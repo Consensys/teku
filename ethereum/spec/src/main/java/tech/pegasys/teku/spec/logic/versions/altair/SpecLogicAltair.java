@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -22,6 +23,8 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
@@ -29,6 +32,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
   private SpecLogicAltair(
+      final Predicates predicates,
+      final MiscHelpersAltair miscHelpers,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -40,6 +46,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
     super(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -54,27 +63,52 @@ public class SpecLogicAltair extends AbstractSpecLogic {
 
   public static SpecLogicAltair create(
       final SpecConfigAltair config, final SchemaDefinitions schemaDefinitions) {
+    // Helpers
+    final Predicates predicates = new Predicates();
+    final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
+    final BeaconStateAccessorsAltair beaconStateAccessors =
+        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+
+    // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil(config);
+    final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
-        new BeaconStateUtil(config, schemaDefinitions, validatorsUtil, committeeUtil);
+        new BeaconStateUtil(
+            config,
+            schemaDefinitions,
+            validatorsUtil,
+            committeeUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, validatorsUtil);
+        new AttestationUtil(config, beaconStateUtil, validatorsUtil, miscHelpers);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
-        new ValidatorStatusFactoryAltair(beaconStateUtil, attestationUtil, validatorsUtil);
+        new ValidatorStatusFactoryAltair(
+            beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
     final EpochProcessorAltair epochProcessor =
-        new EpochProcessorAltair(config, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+        new EpochProcessorAltair(
+            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
     final BlockProcessorAltair blockProcessorUtil =
-        new BlockProcessorAltair(config, beaconStateUtil, attestationUtil, validatorsUtil);
+        new BlockProcessorAltair(
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            validatorsUtil,
+            beaconStateAccessors,
+            miscHelpers);
     final StateTransition stateTransition =
         StateTransition.create(
             config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition);
+        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 
     return new SpecLogicAltair(
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,

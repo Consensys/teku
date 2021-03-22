@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -1079,9 +1078,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {
-    final BeaconStateUtil beaconStateUtil = spec.getBeaconStateUtil(block.getSlot());
-    final UInt64 blockEpoch = beaconStateUtil.computeEpochAtSlot(block.getSlot());
-    final UInt64 blockEpochBoundary = beaconStateUtil.computeStartSlotAtEpoch(blockEpoch);
+    final UInt64 blockEpoch = spec.computeEpochAtSlot(block.getSlot());
+    final UInt64 blockEpochBoundary = spec.computeStartSlotAtEpoch(blockEpoch);
     final UInt64 checkpointEpoch =
         equivalentLongs(block.getSlot(), blockEpochBoundary) ? blockEpoch : blockEpoch.plus(ONE);
     return new Checkpoint(checkpointEpoch, block.getMessage().hashTreeRoot());

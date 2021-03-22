@@ -14,6 +14,7 @@
 package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -32,14 +33,16 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
         .createBlockBody(
-            beaconBlockBody.getRandao_reveal(),
-            beaconBlockBody.getEth1_data(),
-            beaconBlockBody.getGraffiti(),
-            beaconBlockBody.getProposer_slashings(),
-            beaconBlockBody.getAttester_slashings(),
-            beaconBlockBody.getAttestations(),
-            beaconBlockBody.getDeposits(),
-            beaconBlockBody.getVoluntary_exits());
+            builder ->
+                builder
+                    .randaoReveal(beaconBlockBody.getRandao_reveal())
+                    .eth1Data(beaconBlockBody.getEth1_data())
+                    .graffiti(beaconBlockBody.getGraffiti())
+                    .attestations(beaconBlockBody.getAttestations())
+                    .proposerSlashings(beaconBlockBody.getProposer_slashings())
+                    .attesterSlashings(beaconBlockBody.getAttester_slashings())
+                    .deposits(beaconBlockBody.getDeposits())
+                    .voluntaryExits(beaconBlockBody.getVoluntary_exits()));
   }
 
   @Override
@@ -50,24 +53,13 @@ public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<B
   }
 
   @Override
-  protected void iterateData(BeaconBlockBody bbb, Blackhole bh) {
+  public void iterateData(BeaconBlockBody bbb, Blackhole bh) {
     SszBenchUtil.iterateData(bbb, bh);
   }
 
   public static void main(String[] args) {
-    new SszBeaconBlockBodyBenchmark().customRun(10, 10000);
-  }
-
-  public static void main1(String[] args) {
-    SszBeaconBlockBodyBenchmark bench = new SszBeaconBlockBodyBenchmark();
-    long cnt = 0;
-    while (true) {
-      bench.benchDeserializeAndIterate(bench.blackhole);
-      //      bench.benchIterate(bench.blackhole);
-      if (cnt % 10000 == 0) {
-        System.out.println("Iterated: " + cnt);
-      }
-      cnt++;
-    }
+    SszBeaconBlockBodyBenchmark benchmark = new SszBeaconBlockBodyBenchmark();
+    BeaconBlockBody blockBody = benchmark.createContainer();
+    new CustomRunner(1000000, 2000).withBench(bh -> benchmark.iterateData(blockBody, bh)).run();
   }
 }

@@ -13,57 +13,40 @@
 
 package tech.pegasys.teku.ssz.impl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import tech.pegasys.teku.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
-import tech.pegasys.teku.ssz.tree.LeafNode;
-import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUpdates;
 
 public abstract class AbstractSszMutableCollection<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>
     extends AbstractSszMutableComposite<SszElementT, SszMutableElementT> {
 
+  private final SszSchema<SszElementT> elementSchema;
+
   protected AbstractSszMutableCollection(AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
+    elementSchema = getSchema().getElementSchema();
+  }
+
+  private SszSchema<SszElementT> getElementSchema() {
+    return elementSchema;
   }
 
   @Override
-  public SszCollectionSchema<?, ?> getSchema() {
-    return (SszCollectionSchema<?, ?>) super.getSchema();
+  @SuppressWarnings("unchecked")
+  public SszCollectionSchema<SszElementT, ?> getSchema() {
+    return (SszCollectionSchema<SszElementT, ?>) super.getSchema();
   }
 
   @Override
-  protected TreeUpdates packChanges(
-      List<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
-    SszCollectionSchema<?, ?> type = getSchema();
-    SszSchema<?> elementType = type.getElementSchema();
-    int elementsPerChunk = type.getElementsPerChunk();
-
-    return newChildValues.stream()
-        .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
-        .entrySet()
-        .stream()
-        .sorted(Map.Entry.comparingByKey())
-        .map(
-            e -> {
-              int nodeIndex = e.getKey();
-              List<Map.Entry<Integer, SszElementT>> nodeVals = e.getValue();
-              long gIndex = type.getChildGeneralizedIndex(nodeIndex);
-              // optimization: when all packed values changed no need to retrieve original node to
-              // merge with
-              TreeNode node =
-                  nodeVals.size() == elementsPerChunk ? LeafNode.EMPTY_LEAF : original.get(gIndex);
-              for (Map.Entry<Integer, SszElementT> entry : nodeVals) {
-                node =
-                    elementType.updateBackingNode(
-                        node, entry.getKey() % elementsPerChunk, entry.getValue());
-              }
-              return new TreeUpdates.Update(gIndex, node);
-            })
-        .collect(TreeUpdates.collector());
+  protected void validateChildSchema(int index, SszElementT value) {
+    if (!value.getSchema().equals(getElementSchema())) {
+      throw new InvalidValueSchemaException(
+          "Expected element to have schema "
+              + getSchema().getChildSchema(index)
+              + ", but value has schema "
+              + value.getSchema());
+    }
   }
 }

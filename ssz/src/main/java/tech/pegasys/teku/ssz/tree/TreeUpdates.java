@@ -78,8 +78,13 @@ public class TreeUpdates {
         updates.stream().map(Update::getNewNode).collect(Collectors.toList()));
   }
 
-  private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes) {
+  public TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes) {
     this(gIndexes, nodes, 1, getDepthAndValidate(gIndexes));
+  }
+
+  public TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, int depth) {
+    this(gIndexes, nodes, 1, depth);
+    assert depth == getDepthAndValidate(gIndexes);
   }
 
   private static TreeUpdates create(

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -27,8 +28,10 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
       final SpecConfig specConfig,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory) {
-    super(specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory);
+      final ValidatorStatusFactory validatorStatusFactory,
+      final BeaconStateAccessors beaconStateAccessors) {
+    super(
+        specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
   }
 
   @Override

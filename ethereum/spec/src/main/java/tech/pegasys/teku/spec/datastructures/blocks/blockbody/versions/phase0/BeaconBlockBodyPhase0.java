@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.containers.Container8;
-import tech.pegasys.teku.ssz.impl.SszUtils;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
@@ -42,8 +41,6 @@ class BeaconBlockBodyPhase0
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>>
     implements BeaconBlockBody {
-
-  private BLSSignature randaoRevealCache;
 
   BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type) {
     super(type);
@@ -77,10 +74,7 @@ class BeaconBlockBodyPhase0
 
   @Override
   public BLSSignature getRandao_reveal() {
-    if (randaoRevealCache == null) {
-      randaoRevealCache = BLSSignature.fromBytesCompressed(SszUtils.getAllBytes(getField0()));
-    }
-    return randaoRevealCache;
+    return getField0().getSignature();
   }
 
   @Override

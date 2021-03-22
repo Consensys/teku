@@ -21,20 +21,22 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory {
 
   public ValidatorStatusFactoryPhase0(
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
-    super(beaconStateUtil, attestationUtil, validatorsUtil);
+      final BeaconStateAccessors beaconStateAccessors,
+      final Predicates predicates) {
+    super(beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
   }
 
   @Override
