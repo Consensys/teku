@@ -38,7 +38,7 @@ public class LRUCacheTest {
     LRUCache<Integer, Integer> cache = LRUCache.create(cacheMaxSize);
     ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-    CompletableFuture[] futures =
+    CompletableFuture<?>[] futures =
         Stream.generate(
                 () ->
                     CompletableFuture.runAsync(
