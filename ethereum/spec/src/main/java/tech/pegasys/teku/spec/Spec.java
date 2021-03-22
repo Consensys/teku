@@ -72,17 +72,14 @@ public class Spec {
     this.forkManifest = forkManifest;
   }
 
-  private Spec(final SpecVersion genesisSpec) {
-    this(genesisSpec, ForkManifest.create(genesisSpec.getConfig()));
-  }
-
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
-    return new Spec(initialSpec);
+    return create(config, ForkManifest.create(config.config()));
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
+    final SpecVersion initialSpec =
+        SpecVersion.createForFork(
+            forkManifest.getGenesisFork().getCurrent_version(), config.config());
     return new Spec(initialSpec, forkManifest);
   }
 

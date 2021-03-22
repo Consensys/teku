@@ -55,7 +55,10 @@ public enum BeaconStateFields {
   FINALIZED_CHECKPOINT,
   // Altair fields
   PREVIOUS_EPOCH_PARTICIPATION,
-  CURRENT_EPOCH_PARTICIPATION;
+  CURRENT_EPOCH_PARTICIPATION,
+  INACTIVITY_SCORES,
+  CURRENT_SYNC_COMMITTEE,
+  NEXT_SYNC_COMMITTEE;
 
   static List<SszField> getCommonFields(final SpecConfig specConfig) {
     SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
