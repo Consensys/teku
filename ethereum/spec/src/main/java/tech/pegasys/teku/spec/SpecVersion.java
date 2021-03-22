@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecVersion extends DelegatingSpecLogic {
   private final SpecConfig config;
@@ -34,6 +35,17 @@ public class SpecVersion extends DelegatingSpecLogic {
     super(specLogic);
     this.config = config;
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  public static SpecVersion createForFork(final Bytes4 fork, final SpecConfig specConfig) {
+    if (specConfig.getGenesisForkVersion().equals(fork)) {
+      return createPhase0(specConfig);
+    } else if (specConfig.toVersionAltair().isPresent()
+        && SpecConfigAltair.required(specConfig).getAltairForkVersion().equals(fork)) {
+      return createAltair(SpecConfigAltair.required(specConfig));
+    } else {
+      throw new IllegalArgumentException("Unsupported fork: " + fork);
+    }
   }
 
   public static SpecVersion createPhase0(final SpecConfig specConfig) {

@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
@@ -33,6 +34,11 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return beaconStateSchema;
+  }
+
+  @Override
+  public SyncCommitteeSchema getSyncCommitteeSchema() {
+    throw new UnsupportedOperationException("SyncCommittee not implemented in phase 0");
   }
 
   @Override

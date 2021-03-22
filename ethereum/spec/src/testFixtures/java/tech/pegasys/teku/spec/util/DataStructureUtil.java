@@ -69,9 +69,12 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszData;
@@ -285,6 +288,17 @@ public final class DataStructureUtil {
 
   public Checkpoint randomCheckpoint() {
     return new Checkpoint(randomEpoch(), randomBytes32());
+  }
+
+  public SyncCommittee randomSyncCommittee() {
+    final SyncCommitteeSchema syncCommitteeSchema =
+        spec.getGenesisSchemaDefinitions().getSyncCommitteeSchema();
+    return syncCommitteeSchema.create(
+        randomSszVector(
+            syncCommitteeSchema.getPubkeysSchema(), () -> new SszPublicKey(randomPublicKey())),
+        randomSszVector(
+            syncCommitteeSchema.getPubkeyAggregatesSchema(),
+            () -> new SszPublicKey(randomPublicKey())));
   }
 
   public AttestationData randomAttestationData() {
