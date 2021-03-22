@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec;
 
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -23,27 +22,21 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecFactory {
 
-  public static Spec create(final Eth2Network network) {
-    return create(network.configName());
-  }
-
   public static Spec createMinimal() {
     return create(Eth2Network.MINIMAL);
-  }
-
-  public static Spec createMinimalAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return create(specConfig, specConfig.getAltairForkVersion());
   }
 
   public static Spec createMainnet() {
     return create(Eth2Network.MAINNET);
   }
 
+  public static Spec create(final Eth2Network network) {
+    return create(network.configName());
+  }
+
   public static Spec create(final String configName) {
     final SpecConfig config = SpecConfigLoader.loadConfig(configName);
-    return create(config, config.getGenesisForkVersion());
+    return create(config);
   }
 
   public static Spec create(final SpecConfig config) {
