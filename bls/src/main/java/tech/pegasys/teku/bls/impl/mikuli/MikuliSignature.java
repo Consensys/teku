@@ -119,6 +119,11 @@ public class MikuliSignature implements Signature {
     return verify(MikuliPublicKey.fromPublicKey(publicKey), hashInGroup2);
   }
 
+  @Override
+  public boolean isInfinity() {
+    return point.isInfinity();
+  }
+
   /**
    * Verify that this signature is correct for the given public key and G2Point.
    *

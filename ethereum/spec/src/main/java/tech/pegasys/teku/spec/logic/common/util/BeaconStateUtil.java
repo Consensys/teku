@@ -507,7 +507,8 @@ public class BeaconStateUtil {
       SszList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
-          index -> validatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+          index ->
+              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
 
       existingIndex =
           IntStream.range(0, validators.size())

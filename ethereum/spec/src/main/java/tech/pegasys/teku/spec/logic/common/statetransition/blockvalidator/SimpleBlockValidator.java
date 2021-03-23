@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 /**
  * Base logic of a block validation
@@ -41,19 +41,19 @@ class SimpleBlockValidator implements BlockValidator {
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final BlockProcessorUtil blockProcessorUtil;
-  private final ValidatorsUtil validatorsUtil;
+  private final BeaconStateAccessors beaconStateAccessors;
   private final BLSSignatureVerifier signatureVerifier;
 
   SimpleBlockValidator(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
-      final ValidatorsUtil validatorsUtil,
+      final BeaconStateAccessors beaconStateAccessors,
       final BLSSignatureVerifier signatureVerifier) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.blockProcessorUtil = blockProcessorUtil;
-    this.validatorsUtil = validatorsUtil;
+    this.beaconStateAccessors = beaconStateAccessors;
     this.signatureVerifier = signatureVerifier;
   }
 
@@ -61,12 +61,12 @@ class SimpleBlockValidator implements BlockValidator {
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final BeaconStateAccessors beaconStateAccessors) {
     this(
         specConfig,
         beaconStateUtil,
         blockProcessorUtil,
-        validatorsUtil,
+        beaconStateAccessors,
         BLSSignatureVerifier.SIMPLE);
   }
 
@@ -120,7 +120,7 @@ class SimpleBlockValidator implements BlockValidator {
       throws BlockProcessingException {
     final int proposerIndex = beaconStateUtil.getBeaconProposerIndex(state, signed_block.getSlot());
     final BLSPublicKey proposerPublicKey =
-        validatorsUtil
+        beaconStateAccessors
             .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
             .orElseThrow(
                 () ->

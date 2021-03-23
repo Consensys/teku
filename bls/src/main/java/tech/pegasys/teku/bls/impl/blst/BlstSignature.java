@@ -31,7 +31,23 @@ import tech.pegasys.teku.bls.impl.Signature;
 class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
+  private static final Bytes INFINITY_BYTES =
+      Bytes.fromHexString(
+          "0x"
+              + "c000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000");
+  static final BlstSignature INFINITY;
+
+  static {
+    P2_Affine ec2Point = new P2_Affine(INFINITY_BYTES.toArrayUnsafe());
+    INFINITY = new BlstSignature(ec2Point, true);
+  }
+
   public static BlstSignature fromBytes(Bytes compressed) {
+    if (compressed.equals(INFINITY_BYTES)) {
+      return INFINITY;
+    }
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
@@ -138,6 +154,12 @@ class BlstSignature implements Signature {
   @Override
   public boolean verify(PublicKey publicKey, Bytes message, String dst) {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  @Override
+  public boolean isInfinity() {
+    return this == INFINITY;
   }
 
   @Override

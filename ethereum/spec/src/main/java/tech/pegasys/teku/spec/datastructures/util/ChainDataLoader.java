@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class ChainDataLoader {
   public static BeaconState loadState(final Spec spec, final String source) throws IOException {
     return spec.deserializeBeaconState(
-        ResourceLoader.urlOrFile()
+        ResourceLoader.urlOrFile("application/octet-stream")
             .loadBytes(source)
             .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
   }

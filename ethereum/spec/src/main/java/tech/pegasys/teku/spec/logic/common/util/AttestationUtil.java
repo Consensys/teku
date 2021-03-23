@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
@@ -47,17 +48,17 @@ public class AttestationUtil {
 
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
-  private final ValidatorsUtil validatorsUtil;
+  private final BeaconStateAccessors beaconStateAccessors;
   private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorsUtil validatorsUtil,
+      final BeaconStateAccessors beaconStateAccessors,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
-    this.validatorsUtil = validatorsUtil;
+    this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
   }
 
@@ -178,7 +179,7 @@ public class AttestationUtil {
     List<BLSPublicKey> pubkeys =
         indices
             .streamUnboxed()
-            .flatMap(i -> validatorsUtil.getValidatorPubKey(state, i).stream())
+            .flatMap(i -> beaconStateAccessors.getValidatorPubKey(state, i).stream())
             .collect(toList());
     if (pubkeys.size() < indices.size()) {
       return AttestationProcessingResult.invalid(
