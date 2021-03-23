@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.collections.cache;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
@@ -28,24 +27,18 @@ import tech.pegasys.teku.infrastructure.collections.SynchronizedLimitedMap;
 public class LRUCache<K, V> implements Cache<K, V> {
 
   public static <K, V> LRUCache<K, V> create(int capacity) {
-    return new LRUCache<>(
-        SynchronizedLimitedMap.createEmpty(),
-        initEntries -> SynchronizedLimitedMap.create(capacity, initEntries));
+    return new LRUCache<>(LimitedMap.create(capacity));
   }
 
-  private final Function<Map<K, V>, Map<K, V>> backStorageCopier;
-  private final Map<K, V> cacheData;
+  private final LimitedMap<K, V> cacheData;
 
-  private LRUCache(
-      Map<K, V> initialCachedContent, Function<Map<K, V>, Map<K, V>> backStorageCopier) {
-
-    this.backStorageCopier = backStorageCopier;
-    this.cacheData = backStorageCopier.apply(initialCachedContent);
+  private LRUCache(LimitedMap<K, V> cacheData) {
+    this.cacheData = cacheData;
   }
 
   @Override
   public Cache<K, V> copy() {
-    return new LRUCache<>(cacheData, backStorageCopier);
+    return new LRUCache<>(cacheData.copy());
   }
 
   /**

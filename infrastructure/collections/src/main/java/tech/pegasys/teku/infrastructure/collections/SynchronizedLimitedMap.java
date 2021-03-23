@@ -14,58 +14,39 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Helper that creates a thread-safe map with a maximum capacity. */
-public final class SynchronizedLimitedMap {
-  private SynchronizedLimitedMap() {}
+final class SynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
 
-  public static <K, V> Map<K, V> createEmpty() {
-    return Collections.emptyMap();
+  private static <K, V> Map<K, V> createLimitedMap(final int maxSize) {
+    return new LinkedHashMap<>(16, 0.75f, true) {
+      @Override
+      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
+        return size() > maxSize;
+      }
+    };
   }
 
-  /**
-   * Creates a limited map with a default initial capacity.
-   *
-   * @param maxSize The maximum number of elements to keep in the map.
-   * @param <K> The key type of the map.
-   * @param <V> The value type of the map.
-   * @return A thread-safe map that will evict elements when the max size is exceeded.
-   */
-  public static <K, V> Map<K, V> create(final int maxSize) {
-    return Collections.synchronizedMap(LimitedHashMap.create(maxSize));
+  private final int maxSize;
+
+  public SynchronizedLimitedMap(final int maxSize) {
+    super(Collections.synchronizedMap(createLimitedMap(maxSize)));
+    this.maxSize = maxSize;
   }
 
-  /**
-   * Creates a limited map with initial entries.
-   *
-   * @param maxSize The maximum number of elements to keep in the map.
-   * @param initSynchronizedLimitedMap initial entries. For this content to be copied safely without
-   *     potential {@link java.util.ConcurrentModificationException} and concurrency issues the
-   *     passed collection should be an instance created by one of {@link SynchronizedLimitedMap}
-   *     methods
-   * @param <K> The key type of the map.
-   * @param <V> The value type of the map.
-   * @return A thread-safe map that will evict elements when the max size is exceeded.
-   */
-  public static <K, V> Map<K, V> create(final int maxSize, Map<K, V> initSynchronizedLimitedMap) {
-    Map<K, V> map = Collections.synchronizedMap(LimitedHashMap.create(maxSize));
-    synchronized (initSynchronizedLimitedMap) {
-      map.putAll(initSynchronizedLimitedMap);
+  @Override
+  public int getMaxSize() {
+    return maxSize;
+  }
+
+  @Override
+  public LimitedMap<K, V> copy() {
+    SynchronizedLimitedMap<K, V> map = new SynchronizedLimitedMap<>(getMaxSize());
+    synchronized (delegate) {
+      map.putAll(delegate);
     }
     return map;
-  }
-
-  /**
-   * Creates a limited map.
-   *
-   * @param initialCapacity The initial size to allocate for the map.
-   * @param maxSize The maximum number of elements to keep in the map.
-   * @param <K> The key type of the map.
-   * @param <V> The value type of the map.
-   * @return A thread-safe map that will evict elements when the max size is exceeded.
-   */
-  public static <K, V> Map<K, V> create(final int initialCapacity, final int maxSize) {
-    return Collections.synchronizedMap(LimitedHashMap.create(initialCapacity, maxSize));
   }
 }
