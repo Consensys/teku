@@ -39,6 +39,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.response.v1.BlockEvent;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
@@ -230,11 +231,12 @@ public class EventSubscriptionManagerTest {
     verify(outputStream).print(stringArgs.capture());
     final String eventString = stringArgs.getValue();
     assertThat(eventString).contains("event: block\n");
-    final SignedBeaconBlock event =
+    final BlockEvent event =
         jsonProvider.jsonToObject(
-            eventString.substring(eventString.indexOf("{")), SignedBeaconBlock.class);
+            eventString.substring(eventString.indexOf("{")), BlockEvent.class);
 
-    assertThat(event).isEqualTo(sampleBlock);
+    assertThat(event)
+        .isEqualTo(BlockEvent.fromSignedBeaconBlock(sampleBlock.asInternalSignedBeaconBlock(spec)));
   }
 
   @Test
