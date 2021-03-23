@@ -37,7 +37,7 @@ public class RewardsTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
 
     final ValidatorStatusFactory statusFactory =
         testDefinition.getSpec().getGenesisSpec().getValidatorStatusFactory();

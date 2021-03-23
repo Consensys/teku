@@ -69,8 +69,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-    final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
+    final BeaconState expectedPostState = loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
     final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
     final EpochProcessor epochProcessor = genesisSpec.getEpochProcessor();

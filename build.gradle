@@ -96,6 +96,7 @@ allprojects {
         exclude '**/proto'
         exclude '**/resources'
         exclude '**/src/*/generated'
+        exclude '**/src/*/generated_tests'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''

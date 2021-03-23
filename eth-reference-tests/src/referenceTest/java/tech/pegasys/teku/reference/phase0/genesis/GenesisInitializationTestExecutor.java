@@ -35,13 +35,15 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
-    final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz");
+    final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz_snappy");
     final Eth1MetaData eth1MetaData = loadYaml(testDefinition, "eth1.yaml", Eth1MetaData.class);
     final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
     final List<Deposit> deposits =
         IntStream.range(0, metaData.getDepositsCount())
             .mapToObj(
-                index -> loadSsz(testDefinition, "deposits_" + index + ".ssz", Deposit.SSZ_SCHEMA))
+                index ->
+                    loadSsz(
+                        testDefinition, "deposits_" + index + ".ssz_snappy", Deposit.SSZ_SCHEMA))
             .collect(Collectors.toList());
 
     final BeaconState result =

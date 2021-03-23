@@ -57,7 +57,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                   "proposer_slashing.ssz_snappy", Operation.PROPOSER_SLASHING))
           .put(
               "operations/block_header",
-              new OperationsTestExecutor<>("block.ssz", Operation.PROCESS_BLOCK_HEADER))
+              new OperationsTestExecutor<>("block.ssz_snappy", Operation.PROCESS_BLOCK_HEADER))
           .put(
               "operations/deposit",
               new OperationsTestExecutor<>("deposit.ssz_snappy", Operation.DEPOSIT))
@@ -79,7 +79,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
 
     final DefaultOperationProcessor standardProcessor =
         new DefaultOperationProcessor(testDefinition.getSpec());
