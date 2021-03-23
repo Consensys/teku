@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
@@ -27,22 +28,15 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBal
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
-public class RewardsAndPenaltiesCalculatorPhase0 implements RewardsAndPenaltiesCalculator {
-
-  private final SpecConfig specConfig;
-  private final BeaconState state;
-  private final ValidatorStatuses validatorStatuses;
-  private final BeaconStateAccessors beaconStateAccessors;
+public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalculator {
 
   public RewardsAndPenaltiesCalculatorPhase0(
       final SpecConfig specConfig,
       final BeaconState state,
       final ValidatorStatuses validatorStatuses,
+      final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
-    this.specConfig = specConfig;
-    this.state = state;
-    this.validatorStatuses = validatorStatuses;
-    this.beaconStateAccessors = beaconStateAccessors;
+    super(specConfig, miscHelpers, beaconStateAccessors, state, validatorStatuses);
   }
 
   /**
@@ -165,7 +159,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 implements RewardsAndPenaltiesC
       final UInt64 finalityDelay,
       final RewardAndPenalty delta) {
 
-    if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
+    if (isInactivityLeak(finalityDelay)) {
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
           specConfig
@@ -210,12 +204,6 @@ public class RewardsAndPenaltiesCalculatorPhase0 implements RewardsAndPenaltiesC
     } else {
       delta.penalize(baseReward);
     }
-  }
-
-  private UInt64 getFinalityDelay() {
-    return beaconStateAccessors
-        .getPreviousEpoch(state)
-        .minus(state.getFinalized_checkpoint().getEpoch());
   }
 
   private UInt64 getBaseReward(

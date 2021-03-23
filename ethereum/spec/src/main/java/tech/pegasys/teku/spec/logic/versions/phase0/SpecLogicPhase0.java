@@ -89,7 +89,12 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
     final EpochProcessorPhase0 epochProcessor =
         new EpochProcessorPhase0(
-            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+            config,
+            miscHelpers,
+            validatorsUtil,
+            beaconStateUtil,
+            validatorStatusFactory,
+            beaconStateAccessors);
     final BlockProcessorPhase0 blockProcessorUtil =
         new BlockProcessorPhase0(
             config,

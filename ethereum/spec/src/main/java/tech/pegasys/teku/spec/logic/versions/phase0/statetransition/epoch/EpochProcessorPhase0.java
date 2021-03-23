@@ -18,11 +18,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -30,36 +30,28 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
   public EpochProcessorPhase0(
       final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final BeaconStateAccessors beaconStateAccessors) {
     super(
-        specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+        specConfig,
+        miscHelpers,
+        validatorsUtil,
+        beaconStateUtil,
+        validatorStatusFactory,
+        beaconStateAccessors);
   }
 
   @Override
-  public void processRewardsAndPenalties(
-      MutableBeaconState state, ValidatorStatuses validatorStatuses)
-      throws EpochProcessingException {
-    try {
-      if (beaconStateAccessors.getCurrentEpoch(state).equals(SpecConfig.GENESIS_EPOCH)) {
-        return;
-      }
+  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses) {
+    final RewardsAndPenaltiesCalculatorPhase0 calculator =
+        new RewardsAndPenaltiesCalculatorPhase0(
+            specConfig, state, validatorStatuses, miscHelpers, beaconStateAccessors);
 
-      RewardAndPenaltyDeltas attestationDeltas =
-          createRewardsAndPenaltiesCalculator(state, validatorStatuses).getDeltas();
-
-      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
-    } catch (IllegalArgumentException e) {
-      throw new EpochProcessingException(e);
-    }
-  }
-
-  private RewardsAndPenaltiesCalculatorPhase0 createRewardsAndPenaltiesCalculator(
-      final BeaconState state, final ValidatorStatuses validatorStatuses) {
-    return new RewardsAndPenaltiesCalculatorPhase0(
-        specConfig, state, validatorStatuses, beaconStateAccessors);
+    return calculator.getDeltas();
   }
 
   @Override

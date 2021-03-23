@@ -13,6 +13,47 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-public interface RewardsAndPenaltiesCalculator {
-  RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+
+public abstract class RewardsAndPenaltiesCalculator {
+  protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
+  protected final BeaconStateAccessors beaconStateAccessors;
+
+  protected final BeaconState state;
+  protected final ValidatorStatuses validatorStatuses;
+
+  protected RewardsAndPenaltiesCalculator(
+      final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconState state,
+      final ValidatorStatuses validatorStatuses) {
+    this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
+    this.state = state;
+    this.validatorStatuses = validatorStatuses;
+  }
+
+  public abstract RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
+
+  protected UInt64 getFinalityDelay() {
+    return beaconStateAccessors
+        .getPreviousEpoch(state)
+        .minus(state.getFinalized_checkpoint().getEpoch());
+  }
+
+  protected boolean isInactivityLeak(final UInt64 finalityDelay) {
+    return finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
+  }
+
+  protected boolean isInactivityLeak() {
+    return getFinalityDelay().isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
+  }
 }

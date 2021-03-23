@@ -52,7 +52,11 @@ public class RewardsTestExecutor implements TestExecutor {
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
     final RewardsAndPenaltiesCalculatorPhase0 calculator =
         new RewardsAndPenaltiesCalculatorPhase0(
-            spec.getConfig(), preState, validatorStatuses, spec.beaconStateAccessors());
+            spec.getConfig(),
+            preState,
+            validatorStatuses,
+            spec.miscHelpers(),
+            spec.beaconStateAccessors());
     runTest(testDefinition, calculator);
   }
 

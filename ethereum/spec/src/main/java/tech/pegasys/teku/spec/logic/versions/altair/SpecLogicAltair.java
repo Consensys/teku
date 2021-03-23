@@ -93,7 +93,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateAccessors);
     final EpochProcessorAltair epochProcessor =
         new EpochProcessorAltair(
-            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+            config,
+            miscHelpers,
+            validatorsUtil,
+            beaconStateUtil,
+            validatorStatusFactory,
+            beaconStateAccessors);
     final BlockProcessorAltair blockProcessorUtil =
         new BlockProcessorAltair(
             config,

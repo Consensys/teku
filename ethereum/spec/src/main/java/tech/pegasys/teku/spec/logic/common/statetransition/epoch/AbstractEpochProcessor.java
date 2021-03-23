@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.ssz.collections.SszUInt64List;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
@@ -49,11 +51,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
@@ -161,6 +165,24 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
       }
 
+    } catch (IllegalArgumentException e) {
+      throw new EpochProcessingException(e);
+    }
+  }
+
+  @Override
+  public void processRewardsAndPenalties(
+      MutableBeaconState state, ValidatorStatuses validatorStatuses)
+      throws EpochProcessingException {
+    try {
+      if (beaconStateAccessors.getCurrentEpoch(state).equals(SpecConfig.GENESIS_EPOCH)) {
+        return;
+      }
+
+      RewardAndPenaltyDeltas attestationDeltas =
+          getRewardAndPenaltyDeltas(state, validatorStatuses);
+
+      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }

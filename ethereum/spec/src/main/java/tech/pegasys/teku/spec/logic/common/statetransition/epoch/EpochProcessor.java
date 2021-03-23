@@ -23,6 +23,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public interface EpochProcessor {
+  RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses);
+
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 
   void processJustificationAndFinalization(MutableBeaconState state, TotalBalances totalBalances)
