@@ -39,27 +39,6 @@ public class ValidatorsUtil {
         && validator.getActivation_epoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
-  public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
-    if (state.getValidators().size() <= validatorIndex.longValue()
-        || validatorIndex.longValue() < 0) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        BeaconStateCache.getTransitionCaches(state)
-            .getValidatorsPubKeys()
-            .get(
-                validatorIndex,
-                i -> {
-                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
-
-                  // eagerly pre-cache pubKey => validatorIndex mapping
-                  BeaconStateCache.getTransitionCaches(state)
-                      .getValidatorIndexCache()
-                      .invalidateWithNewValue(pubKey, i.intValue());
-                  return pubKey;
-                }));
-  }
-
   @SuppressWarnings("DoNotReturnNullOptionals")
   public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
