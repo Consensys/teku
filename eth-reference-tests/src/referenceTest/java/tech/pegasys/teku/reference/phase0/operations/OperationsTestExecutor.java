@@ -15,15 +15,12 @@ package tech.pegasys.teku.reference.phase0.operations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -37,7 +34,7 @@ import tech.pegasys.teku.ssz.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
-  public static final String EXPECTED_STATE_FILE = "post.ssz";
+  public static final String EXPECTED_STATE_FILE = "post.ssz_snappy";
 
   private enum Operation {
     ATTESTER_SLASHING,
@@ -52,20 +49,24 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "operations/attester_slashing",
-              new OperationsTestExecutor<>("attester_slashing.ssz", Operation.ATTESTER_SLASHING))
+              new OperationsTestExecutor<>(
+                  "attester_slashing.ssz_snappy", Operation.ATTESTER_SLASHING))
           .put(
               "operations/proposer_slashing",
-              new OperationsTestExecutor<>("proposer_slashing.ssz", Operation.PROPOSER_SLASHING))
+              new OperationsTestExecutor<>(
+                  "proposer_slashing.ssz_snappy", Operation.PROPOSER_SLASHING))
           .put(
               "operations/block_header",
               new OperationsTestExecutor<>("block.ssz", Operation.PROCESS_BLOCK_HEADER))
-          .put("operations/deposit", new OperationsTestExecutor<>("deposit.ssz", Operation.DEPOSIT))
+          .put(
+              "operations/deposit",
+              new OperationsTestExecutor<>("deposit.ssz_snappy", Operation.DEPOSIT))
           .put(
               "operations/voluntary_exit",
-              new OperationsTestExecutor<>("voluntary_exit.ssz", Operation.VOLUNTARY_EXIT))
+              new OperationsTestExecutor<>("voluntary_exit.ssz_snappy", Operation.VOLUNTARY_EXIT))
           .put(
               "operations/attestation",
-              new OperationsTestExecutor<>("attestation.ssz", Operation.ATTESTATION))
+              new OperationsTestExecutor<>("attestation.ssz_snappy", Operation.ATTESTATION))
           .build();
 
   private final String dataFileName;
@@ -79,91 +80,86 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-    final Path dataPath = testDefinition.getTestDirectory().resolve(dataFileName);
 
     final DefaultOperationProcessor standardProcessor =
         new DefaultOperationProcessor(testDefinition.getSpec());
-    runProcessor(standardProcessor, testDefinition, preState, dataPath);
+    runProcessor(standardProcessor, testDefinition, preState);
   }
 
   private void runProcessor(
       final OperationProcessor processor,
       final TestDefinition testDefinition,
-      final BeaconState preState,
-      final Path dataPath)
+      final BeaconState preState)
       throws Exception {
     if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
-      assertOperationSuccessful(processor, testDefinition, preState, dataPath);
+      assertOperationSuccessful(processor, testDefinition, preState);
     } else {
-      assertOperationInvalid(testDefinition.getSpec(), processor, preState, dataPath);
+      assertOperationInvalid(testDefinition, processor, preState);
     }
   }
 
   private void assertOperationSuccessful(
       final OperationProcessor processor,
       final TestDefinition testDefinition,
-      final BeaconState preState,
-      final Path dataPath)
+      final BeaconState preState)
       throws Exception {
     final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILE);
-    final BeaconState result =
-        applyOperation(testDefinition.getSpec(), processor, preState, dataPath);
+    final BeaconState result = applyOperation(testDefinition, processor, preState);
     assertThat(result).isEqualTo(expectedState);
   }
 
   private void assertOperationInvalid(
-      final Spec spec,
+      final TestDefinition testDefinition,
       final OperationProcessor processor,
-      final BeaconState preState,
-      final Path dataPath) {
-    assertThatThrownBy(() -> applyOperation(spec, processor, preState, dataPath))
+      final BeaconState preState) {
+    assertThatThrownBy(() -> applyOperation(testDefinition, processor, preState))
         .isInstanceOf(BlockProcessingException.class);
   }
 
   private BeaconState applyOperation(
-      final Spec spec,
+      final TestDefinition testDefinition,
       final OperationProcessor processor,
-      final BeaconState preState,
-      final Path dataPath)
+      final BeaconState preState)
       throws Exception {
-    return preState.updated(state -> processOperation(spec, state, dataPath, processor));
+    return preState.updated(state -> processOperation(testDefinition, state, processor));
   }
 
   private void processOperation(
-      final Spec spec,
+      final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final Path dataPath,
       final OperationProcessor processor)
       throws Exception {
     switch (operation) {
       case ATTESTER_SLASHING:
         final AttesterSlashing attesterSlashing =
-            AttesterSlashing.SSZ_SCHEMA.sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+            loadSsz(testDefinition, dataFileName, AttesterSlashing.SSZ_SCHEMA);
         processor.processAttesterSlashing(state, attesterSlashing);
         break;
       case PROPOSER_SLASHING:
         final ProposerSlashing proposerSlashing =
-            ProposerSlashing.SSZ_SCHEMA.sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+            loadSsz(testDefinition, dataFileName, ProposerSlashing.SSZ_SCHEMA);
         processor.processProposerSlashing(state, proposerSlashing);
         break;
       case PROCESS_BLOCK_HEADER:
         final BeaconBlockSummary blockHeader =
-            spec.deserializeBeaconBlock(Bytes.wrap(Files.readAllBytes(dataPath)));
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
         processor.processBlockHeader(state, blockHeader);
         break;
       case DEPOSIT:
-        final Deposit deposit =
-            Deposit.SSZ_SCHEMA.sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+        final Deposit deposit = loadSsz(testDefinition, dataFileName, Deposit.SSZ_SCHEMA);
         processor.processDeposit(state, deposit);
         break;
       case VOLUNTARY_EXIT:
         final SignedVoluntaryExit voluntaryExit =
-            SignedVoluntaryExit.SSZ_SCHEMA.sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+            loadSsz(testDefinition, dataFileName, SignedVoluntaryExit.SSZ_SCHEMA);
         processor.processVoluntaryExit(state, voluntaryExit);
         break;
       case ATTESTATION:
         final Attestation attestation =
-            Attestation.SSZ_SCHEMA.sszDeserialize(Bytes.wrap(Files.readAllBytes(dataPath)));
+            loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
         processor.processAttestation(state, attestation);
         break;
     }

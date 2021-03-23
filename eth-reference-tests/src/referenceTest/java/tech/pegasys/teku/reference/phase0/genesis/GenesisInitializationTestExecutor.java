@@ -14,10 +14,8 @@
 package tech.pegasys.teku.reference.phase0.genesis;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadBytes32FromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadUInt64FromYaml;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,8 +36,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
     final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz");
-    final UInt64 eth1Timestamp = loadUInt64FromYaml(testDefinition, "eth1_timestamp.yaml");
-    final Bytes32 eth1BlockHash = loadBytes32FromSsz(testDefinition, "eth1_block_hash.ssz");
+    final Eth1MetaData eth1MetaData = loadYaml(testDefinition, "eth1.yaml", Eth1MetaData.class);
     final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
     final List<Deposit> deposits =
         IntStream.range(0, metaData.getDepositsCount())
@@ -50,7 +47,8 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
     final BeaconState result =
         genesisSpec
             .getBeaconStateUtil()
-            .initializeBeaconStateFromEth1(eth1BlockHash, eth1Timestamp, deposits);
+            .initializeBeaconStateFromEth1(
+                eth1MetaData.getEth1BlockHash(), eth1MetaData.getEth1Timestamp(), deposits);
     assertThat(result).isEqualTo(expectedGenesisState);
   }
 
@@ -60,6 +58,22 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
 
     public int getDepositsCount() {
       return depositsCount;
+    }
+  }
+
+  private static class Eth1MetaData {
+    @JsonProperty(value = "eth1_block_hash", required = true)
+    private String eth1BlockHash;
+
+    @JsonProperty(value = "eth1_timestamp", required = true)
+    private long eth1Timestamp;
+
+    public Bytes32 getEth1BlockHash() {
+      return Bytes32.fromHexString(eth1BlockHash);
+    }
+
+    public UInt64 getEth1Timestamp() {
+      return UInt64.fromLongBits(eth1Timestamp);
     }
   }
 }

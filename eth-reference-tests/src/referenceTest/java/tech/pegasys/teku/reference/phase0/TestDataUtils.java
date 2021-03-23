@@ -49,16 +49,18 @@ public class TestDataUtils {
     }
   }
 
-  private static Bytes readSszData(final TestDefinition testDefinition, final String fileName)
+  public static Bytes readSszData(final TestDefinition testDefinition, final String fileName)
       throws IOException {
     final Path testDirectory = testDefinition.getTestDirectory();
-    final Path path = testDirectory.resolve(fileName);
-    if (path.toFile().exists()) {
-      return Bytes.wrap(Files.readAllBytes(path));
+    Path path = testDirectory.resolve(fileName);
+    if (!path.toFile().exists()) {
+      path = testDirectory.resolve(fileName + "_snappy");
+    }
+    final byte[] fileContent = Files.readAllBytes(path);
+    if (path.toFile().getName().endsWith("_snappy")) {
+      return Bytes.wrap(Snappy.uncompress(fileContent));
     } else {
-      final Path snappyPath = testDirectory.resolve(fileName + "_snappy");
-      final byte[] snappyContent = Files.readAllBytes(snappyPath);
-      return Bytes.wrap(Snappy.uncompress(snappyContent));
+      return Bytes.wrap(fileContent);
     }
   }
 
