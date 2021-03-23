@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.bls;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -126,5 +127,30 @@ abstract class BLSSignatureTest {
     final BLSSignature signature2 =
         BLSSignature.fromBytesCompressed(Bytes.fromHexString("22".repeat(96)));
     assertNotEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenInfiniteSignatureIsInfinite() {
+    final BLSSignature signature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0x"
+                    + "c000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"));
+    assertThat(signature.isInfinity()).isTrue();
+  }
+
+  @Test
+  void succeedsWhenNonInfiniteSignatureIsNotInfinite() {
+    BLSSignature signature = BLSTestUtil.randomSignature(513);
+    assertThat(signature.isInfinity()).isFalse();
+  }
+
+  @Test
+  void succeedsWhenInvalidSignatureIsNotInfinite() {
+    final BLSSignature signature =
+        BLSSignature.fromBytesCompressed(Bytes.fromHexString("11".repeat(96)));
+    assertThat(signature.isInfinity()).isFalse();
   }
 }

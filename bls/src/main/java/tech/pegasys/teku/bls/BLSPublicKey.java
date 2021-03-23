@@ -15,10 +15,10 @@ package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
@@ -27,8 +27,6 @@ import tech.pegasys.teku.bls.impl.PublicKey;
 
 public final class BLSPublicKey {
 
-  // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
   public static final int SSZ_BLS_PUBKEY_SIZE = BLSConstants.BLS_PUBKEY_SIZE;
 
   /**
@@ -129,10 +127,7 @@ public final class BLSPublicKey {
    * @return the serialization of the compressed form of the signature.
    */
   public Bytes toSSZBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(toBytesCompressed());
-        });
+    return SSZ.encode(writer -> writer.writeFixedBytes(toBytesCompressed()));
   }
 
   public Bytes48 toBytesCompressed() {

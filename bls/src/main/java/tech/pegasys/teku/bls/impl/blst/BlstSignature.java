@@ -196,7 +196,8 @@ public class BlstSignature implements Signature {
   }
 
   @SuppressWarnings("ReferenceEquality")
-  boolean isInfinity() {
+  @Override
+  public boolean isInfinity() {
     return this == INFINITY;
   }
 
