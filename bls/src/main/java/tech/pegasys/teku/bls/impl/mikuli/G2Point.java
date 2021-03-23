@@ -223,6 +223,10 @@ public final class G2Point implements Group<G2Point> {
     return point;
   }
 
+  public boolean isInfinity() {
+    return point.is_infinity();
+  }
+
   @Override
   public String toString() {
     return point.toString();
