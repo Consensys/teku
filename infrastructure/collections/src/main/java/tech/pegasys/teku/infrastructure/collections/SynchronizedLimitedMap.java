@@ -28,20 +28,18 @@ public final class SynchronizedLimitedMap {
    * Creates a limited map with a default initial capacity.
    *
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A thread-safe map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(final int maxSize, final LimitStrategy mode) {
-    return Collections.synchronizedMap(LimitedHashMap.create(maxSize, mode));
+  public static <K, V> Map<K, V> create(final int maxSize) {
+    return Collections.synchronizedMap(LimitedHashMap.create(maxSize));
   }
 
   /**
    * Creates a limited map with initial entries.
    *
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param initSynchronizedLimitedMap initial entries. For this content to be copied safely without
    *     potential {@link java.util.ConcurrentModificationException} and concurrency issues the
    *     passed collection should be an instance created by one of {@link SynchronizedLimitedMap}
@@ -50,9 +48,8 @@ public final class SynchronizedLimitedMap {
    * @param <V> The value type of the map.
    * @return A thread-safe map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(
-      final int maxSize, final LimitStrategy mode, Map<K, V> initSynchronizedLimitedMap) {
-    Map<K, V> map = Collections.synchronizedMap(LimitedHashMap.create(maxSize, mode));
+  public static <K, V> Map<K, V> create(final int maxSize, Map<K, V> initSynchronizedLimitedMap) {
+    Map<K, V> map = Collections.synchronizedMap(LimitedHashMap.create(maxSize));
     synchronized (initSynchronizedLimitedMap) {
       map.putAll(initSynchronizedLimitedMap);
     }
@@ -64,13 +61,11 @@ public final class SynchronizedLimitedMap {
    *
    * @param initialCapacity The initial size to allocate for the map.
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A thread-safe map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(
-      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    return Collections.synchronizedMap(LimitedHashMap.create(initialCapacity, maxSize, mode));
+  public static <K, V> Map<K, V> create(final int initialCapacity, final int maxSize) {
+    return Collections.synchronizedMap(LimitedHashMap.create(initialCapacity, maxSize));
   }
 }

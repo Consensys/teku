@@ -24,13 +24,12 @@ public final class LimitedHashMap {
    * Creates a limited map with a default initial capacity.
    *
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(final int maxSize, final LimitStrategy mode) {
-    return create(16, maxSize, mode);
+  public static <K, V> Map<K, V> create(final int maxSize) {
+    return create(16, maxSize);
   }
 
   /**
@@ -38,15 +37,12 @@ public final class LimitedHashMap {
    *
    * @param initialCapacity The initial size to allocate for the map.
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(
-      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    final boolean useAccessOrder = mode.equals(LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    return new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
+  public static <K, V> Map<K, V> create(final int initialCapacity, final int maxSize) {
+    return new LinkedHashMap<>(initialCapacity, 0.75f, true) {
       @Override
       protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
         return size() > maxSize;
