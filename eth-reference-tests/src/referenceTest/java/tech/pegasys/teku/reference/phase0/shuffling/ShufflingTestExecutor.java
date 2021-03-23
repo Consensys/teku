@@ -22,9 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ShufflingTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> SHUFFLING_TEST_TYPES =
@@ -34,14 +33,12 @@ public class ShufflingTestExecutor implements TestExecutor {
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final ShufflingData shufflingData =
         loadYaml(testDefinition, "mapping.yaml", ShufflingData.class);
-    final CommitteeUtil committeeUtil =
-        testDefinition.getSpec().atSlot(UInt64.ZERO).getCommitteeUtil();
+    final MiscHelpers miscHelpers = testDefinition.getSpec().getGenesisSpec().miscHelpers();
     final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
     IntStream.range(0, shufflingData.getCount())
         .forEach(
             index ->
-                assertThat(
-                        committeeUtil.computeShuffledIndex(index, shufflingData.getCount(), seed))
+                assertThat(miscHelpers.computeShuffledIndex(index, shufflingData.getCount(), seed))
                     .isEqualTo(shufflingData.getMapping(index)));
 
     final int[] inputs = IntStream.range(0, shufflingData.getCount()).toArray();

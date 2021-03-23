@@ -70,7 +70,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(

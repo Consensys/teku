@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecFactory {
-
-  public static Spec create(final Eth2Network network) {
-    return create(network.configName());
-  }
 
   public static Spec createMinimal() {
     return create(Eth2Network.MINIMAL);
@@ -31,13 +30,24 @@ public class SpecFactory {
     return create(Eth2Network.MAINNET);
   }
 
+  public static Spec create(final Eth2Network network) {
+    return create(network.configName());
+  }
+
   public static Spec create(final String configName) {
     final SpecConfig config = SpecConfigLoader.loadConfig(configName);
     return create(config);
   }
 
   public static Spec create(final SpecConfig config) {
+    return create(config, config.getGenesisForkVersion());
+  }
+
+  public static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
     final SpecConfiguration specConfig = SpecConfiguration.builder().config(config).build();
-    return Spec.create(specConfig);
+    final ForkManifest forkManifest =
+        ForkManifest.create(
+            List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
+    return Spec.create(specConfig, forkManifest);
   }
 }

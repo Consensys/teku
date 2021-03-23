@@ -29,44 +29,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class CommitteeUtil {
   private final SpecConfig specConfig;
+  private final MiscHelpers miscHelpers;
 
-  public CommitteeUtil(final SpecConfig specConfig) {
+  public CommitteeUtil(final SpecConfig specConfig, final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
-  }
-
-  public int computeShuffledIndex(int index, int index_count, Bytes32 seed) {
-    checkArgument(index < index_count, "CommitteeUtil.computeShuffledIndex1");
-
-    int indexRet = index;
-    final int shuffleRoundCount = specConfig.getShuffleRoundCount();
-
-    for (int round = 0; round < shuffleRoundCount; round++) {
-
-      Bytes roundAsByte = Bytes.of((byte) round);
-
-      // This needs to be unsigned modulo.
-      int pivot =
-          bytesToUInt64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
-              .mod(index_count)
-              .intValue();
-      int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
-      int position = Math.max(indexRet, flip);
-
-      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256), 4);
-      Bytes hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
-
-      int bitIndex = position & 0xff;
-      int theByte = hashBytes.get(bitIndex / 8);
-      int theBit = (theByte >> (bitIndex & 0x07)) & 1;
-      if (theBit != 0) {
-        indexRet = flip;
-      }
-    }
-
-    return indexRet;
+    this.miscHelpers = miscHelpers;
   }
 
   public int computeProposerIndex(BeaconState state, List<Integer> indices, Bytes32 seed) {
@@ -76,7 +47,7 @@ public class CommitteeUtil {
     final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index = indices.get(computeShuffledIndex(i % total, total, seed));
+      int candidate_index = indices.get(miscHelpers.computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = Hash.sha2_256(Bytes.concatenate(seed, uintToBytes(Math.floorDiv(i, 32), 8)));
       }
