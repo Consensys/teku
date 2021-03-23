@@ -36,7 +36,7 @@ public class SpecFactory {
 
   public static Spec create(final String configName) {
     final SpecConfig config = SpecConfigLoader.loadConfig(configName);
-    return create(config, config.getGenesisForkVersion());
+    return create(config);
   }
 
   public static Spec create(final SpecConfig config) {
