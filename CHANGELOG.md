@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - The events api `/eth/v1/events` - `block` event now returns the slot and root as detailed in the standard API specification, instead of the entire block.
 
 ### Additions and Improvements
+- When downloading the `--initial-state` from a URL, the `Accept: application/octet-stream` header is now set. This provides compatibility with the standard API `/eth/v1/debug/beacon/states/:state_id` endpoint.
 - `--ws-checkpoint` CLI now accepts a URL optionally, and will load the `ws_checkpoint` field from that URL.
 
 ### Bug Fixes
