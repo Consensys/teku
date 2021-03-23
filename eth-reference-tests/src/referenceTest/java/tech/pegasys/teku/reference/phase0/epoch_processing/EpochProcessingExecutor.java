@@ -17,14 +17,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public interface EpochProcessingExecutor {
-  void processSlashings(MutableBeaconState state);
+  enum Operation {
+    PROCESS_SLASHINGS,
+    PROCESS_REGISTRY_UPDATES,
+    PROCESS_REWARDS_AND_PENALTIES,
+    PROCESS_JUSTIFICATION_AND_FINALIZATION,
+    PROCESS_EFFECTIVE_BALANCE_UPDATES,
+    PROCESS_PARTICIPATION_RECORD_UPDATES,
+    PROCESS_SLASHINGS_RESET,
+    PROCESS_ETH1_DATA_RESET,
+    PROCESS_RANDAO_MIXES_RESET,
+    PROCESS_HISTORICAL_ROOTS_UPDATE
+  }
 
-  void processRegistryUpdates(MutableBeaconState state) throws EpochProcessingException;
-
-  void processFinalUpdates(MutableBeaconState state);
-
-  void processRewardsAndPenalties(MutableBeaconState state) throws EpochProcessingException;
-
-  void processJustificationAndFinalization(MutableBeaconState state)
+  void executeOperation(Operation operation, MutableBeaconState preState)
       throws EpochProcessingException;
 }

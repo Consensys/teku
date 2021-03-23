@@ -56,14 +56,11 @@ allprojects {
   apply plugin: 'java-library'
   apply plugin: 'java-test-fixtures'
   apply plugin: 'io.spring.dependency-management'
-  apply plugin: 'jacoco'
   apply plugin: 'net.ltgt.errorprone'
   apply from: "${rootDir}/gradle/versions.gradle"
   apply from: "${rootDir}/gradle/check-licenses.gradle"
 
   version = rootProject.version
-
-  jacoco { toolVersion = '0.8.5' }
 
   task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -209,7 +206,7 @@ allprojects {
 }
 
 // Note: v1.0.0 tests were republished to fix an initial error. This comment forces cache update
-def refTestVersion = 'v1.0.0'
+def refTestVersion = 'v1.1.0-alpha.2'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -439,7 +436,7 @@ subprojects {
     }
     referenceTest {
       java {
-        srcDir file('src/referenceTest/generated')
+        srcDir file('src/referenceTest/generated_tests')
         srcDir file('src/referenceTest/java')
       }
       resources.srcDir file('src/referenceTest/resources')
@@ -697,22 +694,6 @@ task printVersion() {
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
   grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
-}
-
-task jacocoRootReport(type: JacocoReport) {
-  additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-  sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-  classDirectories.from = files(subprojects.sourceSets.main.output)
-  executionData.from = files(subprojects.jacocoTestReport.executionData)  //how to exclude some package/classes com.test.**
-  reports {
-    xml.enabled true
-    csv.enabled true
-    html.destination file("build/reports/jacocoHtml")
-  }
-  onlyIf = { true }
-  doFirst {
-    executionData = files(executionData.findAll { it.exists() })
-  }
 }
 
 configurations { annotationProcessor }

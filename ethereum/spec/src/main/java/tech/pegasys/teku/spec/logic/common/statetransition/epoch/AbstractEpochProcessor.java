@@ -86,7 +86,12 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
-    processFinalUpdates(state);
+    processEth1DataReset(state);
+    processEffectiveBalanceUpdates(state);
+    processSlashingsReset(state);
+    processRandaoMixesReset(state);
+    processHistoricalRootsUpdate(state);
+    processParticipationUpdates(state);
   }
 
   /** Processes justification and finalization */
@@ -297,18 +302,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  /** Processes final updates */
   @Override
-  public void processFinalUpdates(MutableBeaconState state) {
-    processEth1DataReset(state);
-    processEffectiveBalanceUpdates(state);
-    processSlashingsReset(state);
-    processRandaoMixesReset(state);
-    processHistoricalRootsUpdate(state);
-    processParticipationUpdates(state);
-  }
-
-  protected void processEth1DataReset(final MutableBeaconState state) {
+  public void processEth1DataReset(final MutableBeaconState state) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset eth1 data votes
     if (nextEpoch.mod(specConfig.getEpochsPerEth1VotingPeriod()).equals(UInt64.ZERO)) {
@@ -316,7 +311,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  protected void processEffectiveBalanceUpdates(final MutableBeaconState state) {
+  @Override
+  public void processEffectiveBalanceUpdates(final MutableBeaconState state) {
     // Update effective balances with hysteresis
     SszMutableList<Validator> validators = state.getValidators();
     SszUInt64List balances = state.getBalances();
@@ -344,14 +340,16 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  protected void processSlashingsReset(final MutableBeaconState state) {
+  @Override
+  public void processSlashingsReset(final MutableBeaconState state) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset slashings
     int index = nextEpoch.mod(specConfig.getEpochsPerSlashingsVector()).intValue();
     state.getSlashings().setElement(index, UInt64.ZERO);
   }
 
-  protected void processRandaoMixesReset(final MutableBeaconState state) {
+  @Override
+  public void processRandaoMixesReset(final MutableBeaconState state) {
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     // Set randao mix
@@ -361,7 +359,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         .setElement(randaoIndex, beaconStateAccessors.getRandaoMix(state, currentEpoch));
   }
 
-  protected void processHistoricalRootsUpdate(final MutableBeaconState state) {
+  @Override
+  public void processHistoricalRootsUpdate(final MutableBeaconState state) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Set historical root accumulator
     if (nextEpoch

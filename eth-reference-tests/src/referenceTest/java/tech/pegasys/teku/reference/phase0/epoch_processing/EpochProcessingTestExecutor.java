@@ -19,22 +19,13 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingExecutor.Operation;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public class EpochProcessingTestExecutor implements TestExecutor {
-
-  private enum Operation {
-    PROCESS_SLASHINGS,
-    PROCESS_REGISTRY_UPDATES,
-    PROCESS_FINAL_UPDATES,
-    PROCESS_REWARDS_AND_PENALTIES,
-    PROCESS_JUSTIFICATION_AND_FINALIZATION
-  };
 
   public static ImmutableMap<String, TestExecutor> EPOCH_PROCESSING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
@@ -45,14 +36,29 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               "epoch_processing/registry_updates",
               new EpochProcessingTestExecutor(Operation.PROCESS_REGISTRY_UPDATES))
           .put(
-              "epoch_processing/final_updates",
-              new EpochProcessingTestExecutor(Operation.PROCESS_FINAL_UPDATES))
-          .put(
               "epoch_processing/rewards_and_penalties",
               new EpochProcessingTestExecutor(Operation.PROCESS_REWARDS_AND_PENALTIES))
           .put(
               "epoch_processing/justification_and_finalization",
               new EpochProcessingTestExecutor(Operation.PROCESS_JUSTIFICATION_AND_FINALIZATION))
+          .put(
+              "epoch_processing/effective_balance_updates",
+              new EpochProcessingTestExecutor(Operation.PROCESS_EFFECTIVE_BALANCE_UPDATES))
+          .put(
+              "epoch_processing/eth1_data_reset",
+              new EpochProcessingTestExecutor(Operation.PROCESS_ETH1_DATA_RESET))
+          .put(
+              "epoch_processing/participation_record_updates",
+              new EpochProcessingTestExecutor(Operation.PROCESS_PARTICIPATION_RECORD_UPDATES))
+          .put(
+              "epoch_processing/randao_mixes_reset",
+              new EpochProcessingTestExecutor(Operation.PROCESS_RANDAO_MIXES_RESET))
+          .put(
+              "epoch_processing/historical_roots_update",
+              new EpochProcessingTestExecutor(Operation.PROCESS_HISTORICAL_ROOTS_UPDATE))
+          .put(
+              "epoch_processing/slashings_reset",
+              new EpochProcessingTestExecutor(Operation.PROCESS_SLASHINGS_RESET))
           .build();
 
   private final Operation operation;
@@ -71,31 +77,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     final ValidatorStatusFactory validatorStatusFactory = genesisSpec.getValidatorStatusFactory();
     final EpochProcessingExecutor processor =
         new DefaultEpochProcessingExecutor(epochProcessor, validatorStatusFactory);
-    final BeaconState result = preState.updated(state -> executeOperation(processor, state));
+    final BeaconState result =
+        preState.updated(state -> processor.executeOperation(operation, state));
     assertThat(result).isEqualTo(expectedPostState);
-  }
-
-  private void executeOperation(EpochProcessingExecutor processor, MutableBeaconState preState)
-      throws EpochProcessingException {
-    switch (operation) {
-      case PROCESS_SLASHINGS:
-        processor.processSlashings(preState);
-        break;
-      case PROCESS_REGISTRY_UPDATES:
-        processor.processRegistryUpdates(preState);
-        break;
-      case PROCESS_FINAL_UPDATES:
-        processor.processFinalUpdates(preState);
-        break;
-      case PROCESS_REWARDS_AND_PENALTIES:
-        processor.processRewardsAndPenalties(preState);
-        break;
-      case PROCESS_JUSTIFICATION_AND_FINALIZATION:
-        processor.processJustificationAndFinalization(preState);
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Attempted to execute unknown operation type: " + operation);
-    }
   }
 }

@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -41,10 +42,23 @@ public class TestDataUtils {
       final String fileName,
       final Function<Bytes, T> deserializer) {
     try {
-      final Path path = testDefinition.getTestDirectory().resolve(fileName);
-      return deserializer.apply(Bytes.wrap(Files.readAllBytes(path)));
+      final Bytes sszData = readSszData(testDefinition, fileName);
+      return deserializer.apply(sszData);
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
+    }
+  }
+
+  private static Bytes readSszData(final TestDefinition testDefinition, final String fileName)
+      throws IOException {
+    final Path testDirectory = testDefinition.getTestDirectory();
+    final Path path = testDirectory.resolve(fileName);
+    if (path.toFile().exists()) {
+      return Bytes.wrap(Files.readAllBytes(path));
+    } else {
+      final Path snappyPath = testDirectory.resolve(fileName + "_snappy");
+      final byte[] snappyContent = Files.readAllBytes(snappyPath);
+      return Bytes.wrap(Snappy.uncompress(snappyContent));
     }
   }
 
