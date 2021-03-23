@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecConfiguration;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.util.config.Constants;
 
 @Fork(3)
@@ -45,8 +46,7 @@ public class ShuffleBenchmark {
   private final SpecConfiguration specConfiguration =
       SpecConfiguration.builder().config(specConfig).build();
   private final Spec spec = Spec.create(specConfiguration);
-  private final tech.pegasys.teku.spec.logic.common.util.CommitteeUtil committeeUtil =
-      spec.atSlot(UInt64.ZERO).getCommitteeUtil();
+  private final MiscHelpers miscHelpers = spec.atSlot(UInt64.ZERO).miscHelpers();
 
   public ShuffleBenchmark() {
     Constants.setConstants("mainnet");
@@ -57,7 +57,7 @@ public class ShuffleBenchmark {
   @Measurement(iterations = 5)
   public void shuffledIndexBench(Blackhole bh) {
     for (int i = 0; i < indexCount; i++) {
-      int index = committeeUtil.computeShuffledIndex(i, indexCount, seed);
+      int index = miscHelpers.computeShuffledIndex(i, indexCount, seed);
       bh.consume(index);
     }
   }

@@ -70,7 +70,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
@@ -82,7 +82,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             miscHelpers,
             beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, validatorsUtil, miscHelpers);
+        new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -99,7 +99,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             miscHelpers);
     final StateTransition stateTransition =
         StateTransition.create(
-            config, blockProcessorUtil, epochProcessor, beaconStateUtil, validatorsUtil);
+            config, blockProcessorUtil, epochProcessor, beaconStateUtil, beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =

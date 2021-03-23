@@ -72,17 +72,14 @@ public class Spec {
     this.forkManifest = forkManifest;
   }
 
-  private Spec(final SpecVersion genesisSpec) {
-    this(genesisSpec, ForkManifest.create(genesisSpec.getConfig()));
-  }
-
   public static Spec create(final SpecConfiguration config) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
-    return new Spec(initialSpec);
+    return create(config, ForkManifest.create(config.config()));
   }
 
   public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec = SpecVersion.createPhase0(config.config());
+    final SpecVersion initialSpec =
+        SpecVersion.createForFork(
+            forkManifest.getGenesisFork().getCurrent_version(), config.config());
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -429,7 +426,7 @@ public class Spec {
 
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 proposerIndex) {
-    return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
+    return atState(state).beaconStateAccessors().getValidatorPubKey(state, proposerIndex);
   }
 
   public Optional<Integer> getValidatorIndex(

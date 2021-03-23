@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.io.resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
@@ -23,9 +24,12 @@ import org.apache.logging.log4j.Logger;
 
 public class URLResourceLoader extends ResourceLoader {
   private static final Logger LOG = LogManager.getLogger();
+  private final Optional<String> acceptHeader;
 
-  protected URLResourceLoader(final Predicate<String> sourceFilter) {
+  protected URLResourceLoader(
+      final Optional<String> acceptHeader, final Predicate<String> sourceFilter) {
     super(sourceFilter);
+    this.acceptHeader = acceptHeader;
   }
 
   @Override
@@ -36,7 +40,11 @@ public class URLResourceLoader extends ResourceLoader {
     }
 
     try {
-      return Optional.of(new URL(source).openStream());
+      final URL url = new URL(source);
+      final URLConnection connection = url.openConnection();
+      acceptHeader.ifPresent(type -> connection.setRequestProperty("Accept", type));
+      connection.connect();
+      return Optional.of(connection.getInputStream());
     } catch (Exception e) {
       LOG.debug("Failed to load url: " + source, e);
       return Optional.empty();

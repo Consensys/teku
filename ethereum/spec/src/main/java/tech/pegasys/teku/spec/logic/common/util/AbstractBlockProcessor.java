@@ -133,7 +133,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
       UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
 
       Bytes32 mix =
-          beaconStateUtil
+          beaconStateAccessors
               .getRandaoMix(state, epoch)
               .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
       int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
@@ -150,7 +150,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
-        validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
+        beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
     bls.verifyAndThrow(

@@ -71,6 +71,13 @@ public interface Signature {
    */
   boolean verify(PublicKey publicKey, Bytes message, Bytes dst);
 
+  /**
+   * Determine if this Signature is the `G2_POINT_AT_INFINITY`.
+   *
+   * @return true if this signature is the point at infinity, otherwise false.
+   */
+  boolean isInfinity();
+
   /** Implementation must override */
   @Override
   int hashCode();

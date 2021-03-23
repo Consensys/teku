@@ -14,11 +14,9 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -34,7 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 public class CommitteeUtilTest {
   final SpecConfig specConfig = mock(SpecConfig.class);
   private final Spec spec = SpecFactory.createMinimal();
-  CommitteeUtil committeeUtil = new CommitteeUtil(specConfig);
+  CommitteeUtil committeeUtil = new CommitteeUtil(specConfig, spec.getGenesisSpec().miscHelpers());
 
   @Test
   void aggregatorModulo_boundaryTest() {
@@ -59,35 +57,6 @@ public class CommitteeUtilTest {
     assertThat(committeeUtil.getAggregatorModulo(300)).isEqualTo(3);
     assertThat(committeeUtil.getAggregatorModulo(1000)).isEqualTo(10);
     assertThat(committeeUtil.getAggregatorModulo(100000)).isEqualTo(1000);
-  }
-
-  @Test
-  void computeShuffledIndex_boundaryTest() {
-    assertThatThrownBy(() -> committeeUtil.computeShuffledIndex(2, 1, Bytes32.ZERO))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  void computeShuffledIndex_samples() {
-    when(specConfig.getShuffleRoundCount()).thenReturn(90);
-    assertThat(committeeUtil.computeShuffledIndex(320, 2048, Bytes32.ZERO)).isEqualTo(0);
-    assertThat(committeeUtil.computeShuffledIndex(1291, 2048, Bytes32.ZERO)).isEqualTo(1);
-    assertThat(committeeUtil.computeShuffledIndex(933, 2048, Bytes32.ZERO)).isEqualTo(2047);
-  }
-
-  @Test
-  void computeShuffledIndex_testListShuffleAndShuffledIndexCompatibility() {
-    when(specConfig.getShuffleRoundCount()).thenReturn(10);
-    Bytes32 seed = Bytes32.ZERO;
-    int index_count = 3333;
-    int[] indexes = IntStream.range(0, index_count).toArray();
-
-    tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.shuffle_list(indexes, seed);
-    assertThat(indexes)
-        .isEqualTo(
-            IntStream.range(0, index_count)
-                .map(i -> committeeUtil.computeShuffledIndex(i, indexes.length, seed))
-                .toArray());
   }
 
   @Test

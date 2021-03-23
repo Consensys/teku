@@ -137,21 +137,6 @@ public class BeaconStateUtil {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
-  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
-      throws IllegalArgumentException {
-    UInt64 randaoIndex =
-        epoch.plus(
-            specConfig.getEpochsPerHistoricalVector() - specConfig.getMinSeedLookahead() - 1);
-    Bytes32 mix = getRandaoMix(state, randaoIndex);
-    Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
-    return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
-  }
-
-  public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
-    int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
-    return state.getRandao_mixes().getElement(index);
-  }
-
   public int getBeaconProposerIndex(BeaconState state) {
     return getBeaconProposerIndex(state, state.getSlot());
   }
@@ -167,7 +152,8 @@ public class BeaconStateUtil {
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
-                          getSeed(state, epoch, specConfig.getDomainBeaconProposer()),
+                          beaconStateAccessors.getSeed(
+                              state, epoch, specConfig.getDomainBeaconProposer()),
                           uintToBytes(slot.longValue(), 8)));
               List<Integer> indices = beaconStateAccessors.getActiveValidatorIndices(state, epoch);
               return committeeUtil.computeProposerIndex(state, indices, seed);
@@ -369,7 +355,7 @@ public class BeaconStateUtil {
               return committeeUtil.computeCommittee(
                   state,
                   beaconStateAccessors.getActiveValidatorIndices(state, epoch),
-                  getSeed(state, epoch, specConfig.getDomainBeaconAttester()),
+                  beaconStateAccessors.getSeed(state, epoch, specConfig.getDomainBeaconAttester()),
                   committeeIndex,
                   count);
             });
@@ -521,7 +507,8 @@ public class BeaconStateUtil {
       SszList<Validator> validators = state.getValidators();
 
       Function<Integer, BLSPublicKey> validatorPubkey =
-          index -> validatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+          index ->
+              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
 
       existingIndex =
           IntStream.range(0, validators.size())
