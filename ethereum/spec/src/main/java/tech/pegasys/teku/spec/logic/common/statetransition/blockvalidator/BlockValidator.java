@@ -17,9 +17,9 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 /**
  * Dedicated class which performs block validation (apart from {@link BlockProcessorUtil} The
@@ -35,8 +35,9 @@ public interface BlockValidator {
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
-      final ValidatorsUtil validatorsUtil) {
-    return new BatchBlockValidator(specConfig, beaconStateUtil, blockProcessorUtil, validatorsUtil);
+      final BeaconStateAccessors beaconStateAccessors) {
+    return new BatchBlockValidator(
+        specConfig, beaconStateUtil, blockProcessorUtil, beaconStateAccessors);
   }
 
   /**

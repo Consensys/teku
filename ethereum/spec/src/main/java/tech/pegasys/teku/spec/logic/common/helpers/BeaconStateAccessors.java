@@ -19,11 +19,13 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -51,6 +53,27 @@ public class BeaconStateAccessors {
   public UInt64 getPreviousEpoch(BeaconState state) {
     UInt64 currentEpoch = getCurrentEpoch(state);
     return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
+  }
+
+  public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
+    if (state.getValidators().size() <= validatorIndex.longValue()
+        || validatorIndex.longValue() < 0) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BeaconStateCache.getTransitionCaches(state)
+            .getValidatorsPubKeys()
+            .get(
+                validatorIndex,
+                i -> {
+                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
+
+                  // eagerly pre-cache pubKey => validatorIndex mapping
+                  BeaconStateCache.getTransitionCaches(state)
+                      .getValidatorIndexCache()
+                      .invalidateWithNewValue(pubKey, i.intValue());
+                  return pubKey;
+                }));
   }
 
   /**
