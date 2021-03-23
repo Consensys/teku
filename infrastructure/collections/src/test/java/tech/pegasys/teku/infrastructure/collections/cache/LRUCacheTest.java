@@ -148,13 +148,32 @@ public class LRUCacheTest {
     assertThat(cache.getCached(0)).contains(100);
     assertThat(cache.getCached(1)).isEmpty();
     assertThat(cache.getCached(2)).contains(102);
-    assertThat(cache.getCached(maxCacheSize)).contains(100 + maxCacheSize);
+    for (int i = 3; i < maxCacheSize + 1; i++) {
+      assertThat(cache.getCached(i)).contains(100 + i);
+    }
 
     cache.get(maxCacheSize + 1, key -> 100 + key);
     assertThat(cache.size()).isEqualTo(maxCacheSize);
     assertThat(cache.getCached(0)).isEmpty();
     assertThat(cache.getCached(1)).isEmpty();
     assertThat(cache.getCached(2)).contains(102);
+  }
+
+  @Test
+  void invalidate_shouldEvictLeastRecentlyAccessed() {
+    for (int i = 0; i < maxCacheSize; i++) {
+      cache.get(i, key -> key);
+    }
+    cache.get(0, key -> key);
+    cache.get(1, key -> key);
+
+    // should evict least recently used entry '2'
+    cache.get(maxCacheSize, key -> key);
+    assertThat(cache.size()).isEqualTo(maxCacheSize);
+    assertThat(cache.getCached(0)).contains(0);
+    assertThat(cache.getCached(1)).contains(1);
+    assertThat(cache.getCached(2)).isEmpty();
+    assertThat(cache.getCached(3)).contains(3);
   }
 
   @Test
