@@ -204,7 +204,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             totalBalances -> {
               // The TotalBalances are created at the end of the epoch so the "current" balance
               // is actually "previous" by the time we're actually updating the metrics
-              previousEpochTotalWeight.set(totalBalances.getCurrentEpoch().longValue());
+              previousEpochTotalWeight.set(
+                  totalBalances.getCurrentEpochActiveValidators().longValue());
               previousEpochParticipationWeight.set(
                   totalBalances.getCurrentEpochSourceAttesters().longValue());
             });

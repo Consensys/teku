@@ -157,7 +157,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in current epoch for a total of 12.
-    assertThat(validatorStatusFactory.createTotalBalances(statuses).getCurrentEpoch())
+    assertThat(
+            validatorStatusFactory.createTotalBalances(statuses).getCurrentEpochActiveValidators())
         .isEqualTo(balance(12));
   }
 
@@ -169,7 +170,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in previous epoch for a total of 12.
-    assertThat(validatorStatusFactory.createTotalBalances(statuses).getPreviousEpoch())
+    assertThat(
+            validatorStatusFactory.createTotalBalances(statuses).getPreviousEpochActiveValidators())
         .isEqualTo(balance(12));
   }
 
@@ -235,8 +237,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(emptyList());
     final UInt64 effectiveBalanceInc = genesisConfig.getEffectiveBalanceIncrement();
 
-    assertThat(balances.getCurrentEpoch()).isEqualTo(effectiveBalanceInc);
-    assertThat(balances.getPreviousEpoch()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getCurrentEpochActiveValidators()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getPreviousEpochActiveValidators()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getCurrentEpochSourceAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpochSourceAttesters()).isEqualTo(effectiveBalanceInc);

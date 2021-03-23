@@ -20,8 +20,8 @@ public class TotalBalances {
 
   private final UInt64 effectiveBalanceIncrement;
 
-  private final UInt64 currentEpoch;
-  private final UInt64 previousEpoch;
+  private final UInt64 currentEpochActiveValidators;
+  private final UInt64 previousEpochActiveValidators;
   private final UInt64 currentEpochSourceAttesters;
   private final UInt64 currentEpochTargetAttesters;
   private final UInt64 previousEpochSourceAttesters;
@@ -30,16 +30,16 @@ public class TotalBalances {
 
   public TotalBalances(
       final SpecConfig specConfig,
-      UInt64 currentEpoch,
-      UInt64 previousEpoch,
+      UInt64 currentEpochActiveValidators,
+      UInt64 previousEpochActiveValidators,
       UInt64 currentEpochSourceAttesters,
       UInt64 currentEpochTargetAttesters,
       UInt64 previousEpochSourceAttesters,
       UInt64 previousEpochTargetAttesters,
       UInt64 previousEpochHeadAttesters) {
     this.effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    this.currentEpoch = currentEpoch;
-    this.previousEpoch = previousEpoch;
+    this.currentEpochActiveValidators = currentEpochActiveValidators;
+    this.previousEpochActiveValidators = previousEpochActiveValidators;
     this.currentEpochSourceAttesters = currentEpochSourceAttesters;
     this.currentEpochTargetAttesters = currentEpochTargetAttesters;
     this.previousEpochSourceAttesters = previousEpochSourceAttesters;
@@ -47,12 +47,14 @@ public class TotalBalances {
     this.previousEpochHeadAttesters = previousEpochHeadAttesters;
   }
 
-  public UInt64 getCurrentEpoch() {
-    return currentEpoch.max(effectiveBalanceIncrement);
+  /** @return The sum of effective balances of all active validators from the current epoch. */
+  public UInt64 getCurrentEpochActiveValidators() {
+    return currentEpochActiveValidators.max(effectiveBalanceIncrement);
   }
 
-  public UInt64 getPreviousEpoch() {
-    return previousEpoch.max(effectiveBalanceIncrement);
+  /** @return The sum of effective balances of all active validators from the previous epoch. */
+  public UInt64 getPreviousEpochActiveValidators() {
+    return previousEpochActiveValidators.max(effectiveBalanceIncrement);
   }
 
   /**

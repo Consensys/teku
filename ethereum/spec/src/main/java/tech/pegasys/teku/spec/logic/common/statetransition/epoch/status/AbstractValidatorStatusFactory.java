@@ -72,7 +72,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
     BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
-        .get(currentEpoch, __ -> totalBalances.getCurrentEpoch());
+        .get(currentEpoch, __ -> totalBalances.getCurrentEpochActiveValidators());
 
     return new ValidatorStatuses(statuses, totalBalances);
   }
@@ -90,8 +90,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
   }
 
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
-    UInt64 currentEpoch = UInt64.ZERO;
-    UInt64 previousEpoch = UInt64.ZERO;
+    UInt64 currentEpochActiveValidators = UInt64.ZERO;
+    UInt64 previousEpochActiveValidators = UInt64.ZERO;
     UInt64 currentEpochSourceAttesters = UInt64.ZERO;
     UInt64 currentEpochTargetAttesters = UInt64.ZERO;
     UInt64 previousEpochSourceAttesters = UInt64.ZERO;
@@ -101,10 +101,10 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     for (ValidatorStatus status : statuses) {
       final UInt64 balance = status.getCurrentEpochEffectiveBalance();
       if (status.isActiveInCurrentEpoch()) {
-        currentEpoch = currentEpoch.plus(balance);
+        currentEpochActiveValidators = currentEpochActiveValidators.plus(balance);
       }
       if (status.isActiveInPreviousEpoch()) {
-        previousEpoch = previousEpoch.plus(balance);
+        previousEpochActiveValidators = previousEpochActiveValidators.plus(balance);
       }
 
       if (status.isSlashed()) {
@@ -130,8 +130,8 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     }
     return new TotalBalances(
         specConfig,
-        currentEpoch,
-        previousEpoch,
+        currentEpochActiveValidators,
+        previousEpochActiveValidators,
         currentEpochSourceAttesters,
         currentEpochTargetAttesters,
         previousEpochSourceAttesters,

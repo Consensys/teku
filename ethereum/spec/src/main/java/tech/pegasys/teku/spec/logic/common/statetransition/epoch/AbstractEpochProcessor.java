@@ -86,7 +86,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
           processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
           processRewardsAndPenalties(state, validatorStatuses);
           processRegistryUpdates(state, validatorStatuses.getStatuses());
-          processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
+          processSlashings(
+              state, validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators());
           processFinalUpdates(state);
         });
   }
@@ -117,7 +118,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getPreviousEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
         Checkpoint newCheckpoint =
             new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
@@ -128,7 +129,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getCurrentEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);

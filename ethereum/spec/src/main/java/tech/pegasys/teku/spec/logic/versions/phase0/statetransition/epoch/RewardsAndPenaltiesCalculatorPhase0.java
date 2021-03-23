@@ -63,7 +63,8 @@ public class RewardsAndPenaltiesCalculatorPhase0 implements RewardsAndPenaltiesC
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
     final UInt64 finalityDelay = getFinalityDelay();
 
-    final UInt64 totalActiveBalanceSquareRoot = squareRootOrZero(totalBalances.getCurrentEpoch());
+    final UInt64 totalActiveBalanceSquareRoot =
+        squareRootOrZero(totalBalances.getCurrentEpochActiveValidators());
 
     for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus validator = statuses.get(index);
@@ -193,7 +194,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 implements RewardsAndPenaltiesC
       final UInt64 baseReward,
       final UInt64 finalityDelay,
       final RewardAndPenalty delta) {
-    final UInt64 totalBalance = totalBalances.getCurrentEpoch();
+    final UInt64 totalBalance = totalBalances.getCurrentEpochActiveValidators();
     if (indexInUnslashedAttestingIndices) {
       if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
         // Since full base reward will be canceled out by inactivity penalty deltas,
