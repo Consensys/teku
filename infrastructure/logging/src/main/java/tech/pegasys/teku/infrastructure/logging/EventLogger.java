@@ -88,7 +88,7 @@ public class EventLogger {
         String.format(
             "Sync Event  *** Weak subjectivity check failed block: %s, slot: %s",
             LogFormatter.formatHashRoot(blockRoot), slot.toString());
-    info(weakSubjectivityFailedEventLog, Color.RED);
+    warn(weakSubjectivityFailedEventLog, Color.RED);
   }
 
   public void slotEvent(
@@ -117,5 +117,9 @@ public class EventLogger {
 
   private void info(final String message, final Color color) {
     log.info(print(message, color));
+  }
+
+  private void warn(final String message, final Color color) {
+    log.warn(print(message, color));
   }
 }
