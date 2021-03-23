@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -112,36 +112,24 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the SyncCommittee
    */
   public SyncCommittee getSyncCommittee(final BeaconState state, final UInt64 epoch) {
-    final SszList<Validator> validators = state.getValidators();
     final List<Integer> indices = getSyncCommitteeIndices(state, epoch);
-    final List<SszPublicKey> pubkeys =
+    final List<BLSPublicKey> pubkeys =
         indices.stream()
-            .map(index -> validators.get(index).getSszPublicKey())
-            .collect(Collectors.toList());
+            .map(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
+            .collect(toList());
 
     final int syncSubcommitteeSize = altairConfig.getSyncSubcommitteeSize();
     final List<SszPublicKey> pubkeyAggregates = new ArrayList<>();
-    Preconditions.checkState(
+    checkState(
         pubkeys.size() % syncSubcommitteeSize == 0,
         "SYNC_COMMITTEE_SIZE must be a multiple of SYNC_SUBCOMMITTEE_SIZE");
-    for (int i = 0; i < indices.size(); i += syncSubcommitteeSize) {
-      // Get subcommittee keys from the cache since we need to aggregate them and this avoids
-      // parsing each key.
-      final List<Integer> subcommitteeIndices = indices.subList(i, i + syncSubcommitteeSize);
-      final List<BLSPublicKey> subcommitteePubkeys =
-          getValidatorPublicKeys(state, subcommitteeIndices);
+    for (int i = 0; i < pubkeys.size(); i += syncSubcommitteeSize) {
+      final List<BLSPublicKey> subcommitteePubkeys = pubkeys.subList(i, i + syncSubcommitteeSize);
       pubkeyAggregates.add(new SszPublicKey(BLSPublicKey.aggregate(subcommitteePubkeys)));
     }
 
     return ((BeaconStateSchemaAltair) state.getSchema())
         .getNextSyncCommitteeSchema()
-        .create(pubkeys, pubkeyAggregates);
-  }
-
-  private List<BLSPublicKey> getValidatorPublicKeys(
-      final BeaconState state, final List<Integer> subcommitteeIndices) {
-    return subcommitteeIndices.stream()
-        .map(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
-        .collect(Collectors.toList());
+        .create(pubkeys.stream().map(SszPublicKey::new).collect(toList()), pubkeyAggregates);
   }
 }

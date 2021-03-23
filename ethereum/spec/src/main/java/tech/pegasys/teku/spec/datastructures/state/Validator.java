@@ -132,12 +132,8 @@ public class Validator
     return getField0().getBytes();
   }
 
-  public SszPublicKey getSszPublicKey() {
-    return getField0();
-  }
-
   public BLSPublicKey getPublicKey() {
-    return getSszPublicKey().getBLSPublicKey();
+    return getField0().getBLSPublicKey();
   }
 
   public Bytes32 getWithdrawal_credentials() {
