@@ -16,10 +16,11 @@ package tech.pegasys.teku.infrastructure.io.resource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class URLResourceLoaderTest {
-  private final ResourceLoader loader = new URLResourceLoader(__ -> true);
+  private final ResourceLoader loader = new URLResourceLoader(Optional.empty(), __ -> true);
 
   @Test
   public void shouldLoadContentFromURL() throws Exception {
