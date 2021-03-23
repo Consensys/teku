@@ -86,7 +86,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
-            beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
+            config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
     final EpochProcessorPhase0 epochProcessor =
         new EpochProcessorPhase0(
             config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);

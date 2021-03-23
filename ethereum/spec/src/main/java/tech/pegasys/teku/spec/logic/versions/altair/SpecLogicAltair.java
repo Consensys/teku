@@ -85,7 +85,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
-            beaconStateUtil, attestationUtil, predicates, miscHelpers, beaconStateAccessors);
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final EpochProcessorAltair epochProcessor =
         new EpochProcessorAltair(
             config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);

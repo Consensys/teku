@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -28,16 +29,19 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractValidatorStatusFactory implements ValidatorStatusFactory {
+  protected final SpecConfig specConfig;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final Predicates predicates;
   protected final BeaconStateAccessors beaconStateAccessors;
 
   protected AbstractValidatorStatusFactory(
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors) {
+    this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.predicates = predicates;
@@ -125,6 +129,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
       }
     }
     return new TotalBalances(
+        specConfig,
         currentEpoch,
         previousEpoch,
         currentEpochSourceAttesters,

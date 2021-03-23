@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
-import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class TotalBalances {
+
+  private final UInt64 effectiveBalanceIncrement;
 
   private final UInt64 currentEpoch;
   private final UInt64 previousEpoch;
@@ -28,6 +29,7 @@ public class TotalBalances {
   private final UInt64 previousEpochHeadAttesters;
 
   public TotalBalances(
+      final SpecConfig specConfig,
       UInt64 currentEpoch,
       UInt64 previousEpoch,
       UInt64 currentEpochSourceAttesters,
@@ -35,6 +37,7 @@ public class TotalBalances {
       UInt64 previousEpochSourceAttesters,
       UInt64 previousEpochTargetAttesters,
       UInt64 previousEpochHeadAttesters) {
+    this.effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
     this.currentEpoch = currentEpoch;
     this.previousEpoch = previousEpoch;
     this.currentEpochSourceAttesters = currentEpochSourceAttesters;
@@ -45,11 +48,11 @@ public class TotalBalances {
   }
 
   public UInt64 getCurrentEpoch() {
-    return currentEpoch.max(EFFECTIVE_BALANCE_INCREMENT);
+    return currentEpoch.max(effectiveBalanceIncrement);
   }
 
   public UInt64 getPreviousEpoch() {
-    return previousEpoch.max(EFFECTIVE_BALANCE_INCREMENT);
+    return previousEpoch.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -57,7 +60,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getCurrentEpochSourceAttesters() {
-    return currentEpochSourceAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+    return currentEpochSourceAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -65,7 +68,7 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getCurrentEpochTargetAttesters() {
-    return currentEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+    return currentEpochTargetAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -73,7 +76,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getPreviousEpochSourceAttesters() {
-    return previousEpochSourceAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+    return previousEpochSourceAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -81,7 +84,7 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getPreviousEpochTargetAttesters() {
-    return previousEpochTargetAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+    return previousEpochTargetAttesters.max(effectiveBalanceIncrement);
   }
 
   /**
@@ -89,6 +92,6 @@ public class TotalBalances {
    *     the correct head block at their assigned slot.
    */
   public UInt64 getPreviousEpochHeadAttesters() {
-    return previousEpochHeadAttesters.max(EFFECTIVE_BALANCE_INCREMENT);
+    return previousEpochHeadAttesters.max(effectiveBalanceIncrement);
   }
 }

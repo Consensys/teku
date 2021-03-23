@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -32,11 +33,12 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory {
 
   public ValidatorStatusFactoryPhase0(
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final BeaconStateAccessors beaconStateAccessors,
       final Predicates predicates) {
-    super(beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
+    super(specConfig, beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
   }
 
   @Override

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -32,12 +33,13 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
   private final MiscHelpersAltair miscHelpersAltair;
 
   public ValidatorStatusFactoryAltair(
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors) {
-    super(beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
+    super(specConfig, beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
     this.miscHelpersAltair = miscHelpers;
   }
 
