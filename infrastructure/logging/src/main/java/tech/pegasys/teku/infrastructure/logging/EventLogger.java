@@ -83,6 +83,14 @@ public class EventLogger {
     info(syncEventLog, Color.WHITE);
   }
 
+  public void weakSubjectivityFailedEvent(final Bytes32 blockRoot, final UInt64 slot) {
+    final String weakSubjectivityFailedEventLog =
+        String.format(
+            "Sync Event  *** Weak subjectivity check failed block: %s, slot: %s",
+            LogFormatter.formatHashRoot(blockRoot), slot.toString());
+    info(weakSubjectivityFailedEventLog, Color.RED);
+  }
+
   public void slotEvent(
       final UInt64 nodeSlot,
       final UInt64 headSlot,
