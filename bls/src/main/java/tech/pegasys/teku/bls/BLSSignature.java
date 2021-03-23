@@ -16,11 +16,12 @@ package tech.pegasys.teku.bls;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.Signature;
 
 public class BLSSignature {
@@ -108,6 +109,14 @@ public class BLSSignature {
 
   Signature getSignature() {
     return signature.get();
+  }
+
+  public boolean isInfinity() {
+    try {
+      return getSignature().isInfinity();
+    } catch (final DeserializeException e) {
+      return false;
+    }
   }
 
   @Override
