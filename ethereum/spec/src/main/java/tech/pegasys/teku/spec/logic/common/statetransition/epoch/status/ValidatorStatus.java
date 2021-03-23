@@ -25,7 +25,6 @@ public class ValidatorStatus {
 
   private boolean currentEpochSourceAttester = false;
   private boolean currentEpochTargetAttester = false;
-  private boolean currentEpochHeadAttester = false;
   private boolean previousEpochSourceAttester = false;
   private boolean previousEpochTargetAttester = false;
   private boolean previousEpochHeadAttester = false;
@@ -45,21 +44,12 @@ public class ValidatorStatus {
     this.activeInPreviousEpoch = activeInPreviousEpoch;
   }
 
-  /**
-   * Roughly corresponds to spec reward and penalties helper get_eligible_validator_indices
-   *
-   * @return True if this validator is eligible for reward and penalty updates
-   */
   public boolean isEligibleValidator() {
     return activeInPreviousEpoch || (slashed && !withdrawableInCurrentEpoch);
   }
 
   public boolean isSlashed() {
     return slashed;
-  }
-
-  public boolean isNotSlashed() {
-    return !slashed;
   }
 
   /**
@@ -107,14 +97,6 @@ public class ValidatorStatus {
   }
 
   /**
-   * @return True if the validator attested to the correct head block at the assigned slot in the
-   *     previous epoch.
-   */
-  public boolean isCurrentEpochHeadAttester() {
-    return currentEpochHeadAttester;
-  }
-
-  /**
    * @return True if the validator correctly attested to the correct source (justified checkpoint)
    *     in the previous epoch.
    */
@@ -154,11 +136,6 @@ public class ValidatorStatus {
   public ValidatorStatus updateCurrentEpochTargetAttester(
       final boolean currentEpochTargetAttester) {
     this.currentEpochTargetAttester |= currentEpochTargetAttester;
-    return this;
-  }
-
-  public ValidatorStatus updateCurrentEpochHeadAttester(final boolean currentEpochHeadAttester) {
-    this.currentEpochHeadAttester |= currentEpochHeadAttester;
     return this;
   }
 

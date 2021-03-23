@@ -21,11 +21,9 @@ public class TotalBalances {
   private final UInt64 effectiveBalanceIncrement;
 
   private final UInt64 currentEpochActiveValidators;
+  private final UInt64 previousEpochActiveValidators;
   private final UInt64 currentEpochSourceAttesters;
   private final UInt64 currentEpochTargetAttesters;
-  private final UInt64 currentEpochHeadAttesters;
-
-  private final UInt64 previousEpochActiveValidators;
   private final UInt64 previousEpochSourceAttesters;
   private final UInt64 previousEpochTargetAttesters;
   private final UInt64 previousEpochHeadAttesters;
@@ -36,7 +34,6 @@ public class TotalBalances {
       UInt64 previousEpochActiveValidators,
       UInt64 currentEpochSourceAttesters,
       UInt64 currentEpochTargetAttesters,
-      final UInt64 currentEpochHeadAttesters,
       UInt64 previousEpochSourceAttesters,
       UInt64 previousEpochTargetAttesters,
       UInt64 previousEpochHeadAttesters) {
@@ -45,7 +42,6 @@ public class TotalBalances {
     this.previousEpochActiveValidators = previousEpochActiveValidators;
     this.currentEpochSourceAttesters = currentEpochSourceAttesters;
     this.currentEpochTargetAttesters = currentEpochTargetAttesters;
-    this.currentEpochHeadAttesters = currentEpochHeadAttesters;
     this.previousEpochSourceAttesters = previousEpochSourceAttesters;
     this.previousEpochTargetAttesters = previousEpochTargetAttesters;
     this.previousEpochHeadAttesters = previousEpochHeadAttesters;
@@ -75,14 +71,6 @@ public class TotalBalances {
    */
   public UInt64 getCurrentEpochTargetAttesters() {
     return currentEpochTargetAttesters.max(effectiveBalanceIncrement);
-  }
-
-  /**
-   * @return The sum of effective balances of all attesters from the current epoch that attested to
-   *     the correct head block at their assigned slot.
-   */
-  public UInt64 getCurrentEpochHeadAttesters() {
-    return currentEpochHeadAttesters;
   }
 
   /**
