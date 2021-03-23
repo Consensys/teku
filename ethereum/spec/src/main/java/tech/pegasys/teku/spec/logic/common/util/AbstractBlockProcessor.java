@@ -150,7 +150,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
-        validatorsUtil.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
+        beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
     bls.verifyAndThrow(

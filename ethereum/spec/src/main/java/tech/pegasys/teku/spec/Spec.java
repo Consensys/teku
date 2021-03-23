@@ -426,7 +426,7 @@ public class Spec {
 
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 proposerIndex) {
-    return atState(state).getValidatorsUtil().getValidatorPubKey(state, proposerIndex);
+    return atState(state).beaconStateAccessors().getValidatorPubKey(state, proposerIndex);
   }
 
   public Optional<Integer> getValidatorIndex(
