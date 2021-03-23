@@ -22,6 +22,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -79,6 +80,7 @@ public class BlockImporter {
     }
 
     if (!weakSubjectivityValidator.isBlockValid(block, getForkChoiceStrategy())) {
+      EventLogger.EVENT_LOG.weakSubjectivityFailedEvent(block.getRoot(), block.getSlot());
       return SafeFuture.completedFuture(BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS);
     }
 
