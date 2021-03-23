@@ -30,12 +30,19 @@ public abstract class ResourceLoader {
   }
 
   public static ResourceLoader urlOrFile() {
-    return urlOrFile(__ -> true);
+    return urlOrFile(Optional.empty(), __ -> true);
   }
 
-  public static ResourceLoader urlOrFile(final Predicate<String> sourceFilter) {
+  public static ResourceLoader urlOrFile(final String acceptHeader) {
+    return urlOrFile(Optional.of(acceptHeader), __ -> true);
+  }
+
+  public static ResourceLoader urlOrFile(
+      final Optional<String> acceptHeader, final Predicate<String> sourceFilter) {
     return new FallbackResourceLoader(
-        sourceFilter, new URLResourceLoader(sourceFilter), new FileResourceLoader(sourceFilter));
+        sourceFilter,
+        new URLResourceLoader(acceptHeader, sourceFilter),
+        new FileResourceLoader(sourceFilter));
   }
 
   public static ResourceLoader classpathUrlOrFile(
@@ -45,7 +52,7 @@ public abstract class ResourceLoader {
     return new FallbackResourceLoader(
         sourceFilter,
         new ClasspathResourceLoader(referenceClass, availableResources, sourceFilter),
-        new URLResourceLoader(sourceFilter),
+        new URLResourceLoader(Optional.empty(), sourceFilter),
         new FileResourceLoader(sourceFilter));
   }
 
