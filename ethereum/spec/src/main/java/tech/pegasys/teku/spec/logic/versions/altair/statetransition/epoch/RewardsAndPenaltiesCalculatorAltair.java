@@ -13,16 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
-import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_HEAD_WEIGHT;
-import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_SOURCE_WEIGHT;
-import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_TARGET_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
@@ -66,25 +62,9 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     final RewardAndPenaltyDeltas deltas =
         new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
 
-    // Process TIMELY_HEAD flag
-    processFlagIndexDeltas(
-        deltas,
-        ValidatorStatus::isCurrentEpochHeadAttester,
-        TotalBalances::getCurrentEpochHeadAttesters,
-        TIMELY_HEAD_WEIGHT);
-    // Process TIMELY_TARGET flag
-    processFlagIndexDeltas(
-        deltas,
-        ValidatorStatus::isCurrentEpochTargetAttester,
-        TotalBalances::getCurrentEpochTargetAttesters,
-        TIMELY_TARGET_WEIGHT);
-    // Process TIMELY_SOURCE flag
-    processFlagIndexDeltas(
-        deltas,
-        ValidatorStatus::isCurrentEpochSourceAttester,
-        TotalBalances::getCurrentEpochSourceAttesters,
-        TIMELY_SOURCE_WEIGHT);
-
+    for (FlagIndexAndWeight flagIndicesAndWeight : miscHelpersAltair.getFlagIndicesAndWeights()) {
+      processFlagIndexDeltas(deltas, flagIndicesAndWeight);
+    }
     processInactivityPenaltyDeltas(deltas);
 
     return deltas;
@@ -97,23 +77,19 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#beacon-state-accessors">Altair
    *     beacon-chain.md</a>
    * @param deltas The deltas accumulator (holding deltas for all validators) to be updated
-   * @param hasFlag A predicate for checking if the current flag is set for a validator
-   * @param unslashedTotalBalances A function that returns the total balance associated with the
-   *     flag being process
-   * @param weight The weight associated with the flag being processed
+   * @param flagIndexAndWeight The flagIndexAndWeight to process
    */
   protected void processFlagIndexDeltas(
-      final RewardAndPenaltyDeltas deltas,
-      final Predicate<ValidatorStatus> hasFlag,
-      final Function<TotalBalances, UInt64> unslashedTotalBalances,
-      final UInt64 weight) {
+      final RewardAndPenaltyDeltas deltas, final FlagIndexAndWeight flagIndexAndWeight) {
 
+    final int flagIndex = flagIndexAndWeight.getIndex();
+    final UInt64 weight = flagIndexAndWeight.getWeight();
     final List<ValidatorStatus> statusList = validatorStatuses.getStatuses();
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
 
     final UInt64 increment = specConfigAltair.getEffectiveBalanceIncrement();
     final UInt64 unslashedParticipatingIncrements =
-        unslashedTotalBalances.apply(totalBalances).dividedBy(increment);
+        getPrevEpochTotalParticipatingBalance(flagIndex);
     final UInt64 activeIncrements =
         totalBalances.getCurrentEpochActiveValidators().dividedBy(increment);
 
@@ -125,7 +101,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
       final RewardAndPenalty validatorDeltas = deltas.getDelta(i);
 
       final UInt64 baseReward = getBaseReward(i);
-      if (isUnslashedParticipatingIndex(validator, hasFlag)) {
+      if (isUnslashedPrevEpochParticipatingIndex(validator, flagIndex)) {
         if (isInactivityLeak()) {
           // This flag reward cancels the inactivity penalty corresponding to the flag index
           validatorDeltas.reward(baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
@@ -166,8 +142,8 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
           validatorDeltas.penalize(getBaseReward(i).times(weight).dividedBy(WEIGHT_DENOMINATOR));
         }
 
-        if (!isUnslashedParticipatingIndex(
-            validator, ValidatorStatus::isPreviousEpochTargetAttester)) {
+        if (!isUnslashedPrevEpochParticipatingIndex(
+            validator, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
           final UInt64 penaltyNumerator =
               validator
                   .getCurrentEpochEffectiveBalance()
@@ -182,13 +158,42 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     }
   }
 
+  private boolean validatorHasPrevEpochParticipationFlag(
+      final ValidatorStatus validator, final int flagIndex) {
+    switch (flagIndex) {
+      case ParticipationFlags.TIMELY_HEAD_FLAG_INDEX:
+        return validator.isPreviousEpochHeadAttester();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
+        return validator.isPreviousEpochTargetAttester();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
+        return validator.isPreviousEpochSourceAttester();
+      default:
+        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    }
+  }
+
+  private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
+    final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+    switch (flagIndex) {
+      case ParticipationFlags.TIMELY_HEAD_FLAG_INDEX:
+        return totalBalances.getPreviousEpochHeadAttesters();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
+        return totalBalances.getPreviousEpochTargetAttesters();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
+        return totalBalances.getPreviousEpochSourceAttesters();
+      default:
+        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    }
+  }
+
+  private boolean isUnslashedPrevEpochParticipatingIndex(
+      final ValidatorStatus validatorStatus, final int flagIndex) {
+    return validatorStatus.isNotSlashed()
+        && validatorHasPrevEpochParticipationFlag(validatorStatus, flagIndex);
+  }
+
   private UInt64 getBaseReward(final int validatorIndex) {
     // TODO - cache this to avoid repeated lookups
     return beaconStateAccessorsAltair.getBaseReward(state, validatorIndex);
-  }
-
-  private boolean isUnslashedParticipatingIndex(
-      final ValidatorStatus validatorStatus, final Predicate<ValidatorStatus> hasFlag) {
-    return validatorStatus.isNotSlashed() && hasFlag.test(validatorStatus);
   }
 }

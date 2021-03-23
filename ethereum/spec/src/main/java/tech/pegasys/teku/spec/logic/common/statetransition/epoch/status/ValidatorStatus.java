@@ -52,6 +52,10 @@ public class ValidatorStatus {
     return slashed;
   }
 
+  public boolean isNotSlashed() {
+    return !slashed;
+  }
+
   /**
    * @return True if the validators withdrawable epoch is less than or equal to the current epoch.
    */
