@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -37,6 +39,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
   private final MiscHelpersAltair miscHelpersAltair;
 
   private final BeaconStateAltair stateAltair;
+  private final Map<Integer, UInt64> baseRewardCache = new HashMap<>();
 
   public RewardsAndPenaltiesCalculatorAltair(
       final SpecConfigAltair specConfig,
@@ -135,11 +138,12 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
         }
 
         final RewardAndPenalty validatorDeltas = deltas.getDelta(i);
+        final UInt64 baseReward = getBaseReward(i);
         for (FlagIndexAndWeight flagIndicesAndWeight :
             miscHelpersAltair.getFlagIndicesAndWeights()) {
           final UInt64 weight = flagIndicesAndWeight.getWeight();
           // This inactivity penalty cancels the flag reward corresponding to the flag index
-          validatorDeltas.penalize(getBaseReward(i).times(weight).dividedBy(WEIGHT_DENOMINATOR));
+          validatorDeltas.penalize(baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
         }
 
         if (!isUnslashedPrevEpochParticipatingIndex(
@@ -193,7 +197,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
   }
 
   private UInt64 getBaseReward(final int validatorIndex) {
-    // TODO - cache this to avoid repeated lookups
-    return beaconStateAccessorsAltair.getBaseReward(state, validatorIndex);
+    return baseRewardCache.computeIfAbsent(
+        validatorIndex, index -> beaconStateAccessorsAltair.getBaseReward(state, validatorIndex));
   }
 }
