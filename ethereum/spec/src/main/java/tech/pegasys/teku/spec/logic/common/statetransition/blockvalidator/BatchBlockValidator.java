@@ -17,9 +17,9 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 /**
  * Advanced block validator which uses {@link BatchSignatureVerifier} to verify all the BLS
@@ -29,20 +29,21 @@ class BatchBlockValidator implements BlockValidator {
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final BlockProcessorUtil blockProcessorUtil;
-  private final ValidatorsUtil validatorsUtil;
+  private final BeaconStateAccessors beaconStateAccessors;
   private final BlockValidator simpleValidator;
 
   BatchBlockValidator(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final BlockProcessorUtil blockProcessorUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.blockProcessorUtil = blockProcessorUtil;
-    this.validatorsUtil = validatorsUtil;
+    this.beaconStateAccessors = beaconStateAccessors;
     this.simpleValidator =
-        new SimpleBlockValidator(specConfig, beaconStateUtil, blockProcessorUtil, validatorsUtil);
+        new SimpleBlockValidator(
+            specConfig, beaconStateUtil, blockProcessorUtil, beaconStateAccessors);
   }
 
   @Override
@@ -53,7 +54,11 @@ class BatchBlockValidator implements BlockValidator {
     BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     SimpleBlockValidator blockValidator =
         new SimpleBlockValidator(
-            specConfig, beaconStateUtil, blockProcessorUtil, validatorsUtil, signatureVerifier);
+            specConfig,
+            beaconStateUtil,
+            blockProcessorUtil,
+            beaconStateAccessors,
+            signatureVerifier);
     BlockValidationResult noBLSValidationResult =
         blockValidator.validatePreState(preState, block, indexedAttestationCache);
     // during the above validatePreState() call BatchSignatureVerifier just collected
