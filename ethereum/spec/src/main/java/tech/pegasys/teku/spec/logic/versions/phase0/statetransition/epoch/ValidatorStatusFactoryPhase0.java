@@ -42,7 +42,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
   }
 
   @Override
-  protected void processAttestations(
+  protected void processParticipation(
       final List<ValidatorStatus> statuses,
       final BeaconState genericState,
       final UInt64 previousEpoch,
@@ -61,8 +61,13 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
               final Checkpoint target = data.getTarget();
               if (target.getEpoch().equals(currentEpoch)) {
                 updates.currentEpochSourceAttester = true;
-                updates.currentEpochTargetAttester =
-                    matchesEpochStartBlock(state, currentEpoch, target.getRoot());
+                if (matchesEpochStartBlock(state, currentEpoch, target.getRoot())) {
+                  updates.currentEpochTargetAttester = true;
+                  updates.currentEpochHeadAttester =
+                      beaconStateUtil
+                          .getBlockRootAtSlot(state, data.getSlot())
+                          .equals(data.getBeacon_block_root());
+                }
               } else if (target.getEpoch().equals(previousEpoch)) {
                 updates.previousEpochSourceAttester = true;
 
@@ -92,6 +97,8 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
   private static class AttestationUpdates {
     private boolean currentEpochSourceAttester = false;
     private boolean currentEpochTargetAttester = false;
+    private boolean currentEpochHeadAttester = false;
+
     private boolean previousEpochSourceAttester = false;
     private boolean previousEpochTargetAttester = false;
     private boolean previousEpochHeadAttester = false;
@@ -100,6 +107,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
     public void apply(final ValidatorStatus status) {
       status.updateCurrentEpochSourceAttester(currentEpochSourceAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
+      status.updateCurrentEpochHeadAttester(currentEpochHeadAttester);
       status.updatePreviousEpochSourceAttester(previousEpochSourceAttester);
       status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);

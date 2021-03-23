@@ -44,7 +44,7 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
   }
 
   @Override
-  protected void processAttestations(
+  protected void processParticipation(
       final List<ValidatorStatus> statuses,
       final BeaconState genericState,
       final UInt64 previousEpoch,
@@ -78,6 +78,10 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
       if (miscHelpersAltair.hasFlag(
           participationFlags.get(), ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
         statuses.get(i).updateCurrentEpochTargetAttester(true);
+      }
+      if (miscHelpersAltair.hasFlag(
+          participationFlags.get(), ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
+        statuses.get(i).updateCurrentEpochHeadAttester(true);
       }
     }
   }

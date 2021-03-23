@@ -48,7 +48,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  protected abstract void processAttestations(
+  protected abstract void processParticipation(
       List<ValidatorStatus> statuses,
       BeaconState genericState,
       UInt64 previousEpoch,
@@ -66,7 +66,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
             .map(validator -> createValidatorStatus(validator, previousEpoch, currentEpoch))
             .collect(Collectors.toCollection(() -> new ArrayList<>(validators.size())));
 
-    processAttestations(statuses, state, previousEpoch, currentEpoch);
+    processParticipation(statuses, state, previousEpoch, currentEpoch);
 
     final TotalBalances totalBalances = createTotalBalances(statuses);
     BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
@@ -94,6 +94,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     UInt64 previousEpochActiveValidators = UInt64.ZERO;
     UInt64 currentEpochSourceAttesters = UInt64.ZERO;
     UInt64 currentEpochTargetAttesters = UInt64.ZERO;
+    UInt64 currentEpochTargetHeadAttesters = UInt64.ZERO;
     UInt64 previousEpochSourceAttesters = UInt64.ZERO;
     UInt64 previousEpochTargetAttesters = UInt64.ZERO;
     UInt64 previousEpochHeadAttesters = UInt64.ZERO;
@@ -115,16 +116,22 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
         if (status.isCurrentEpochTargetAttester()) {
           currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
+
+          if (status.isCurrentEpochHeadAttester()) {
+            currentEpochTargetHeadAttesters = currentEpochTargetHeadAttesters.plus(balance);
+          }
         }
       }
 
       if (status.isPreviousEpochSourceAttester()) {
         previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
+
         if (status.isPreviousEpochTargetAttester()) {
           previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
-        }
-        if (status.isPreviousEpochHeadAttester()) {
-          previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
+
+          if (status.isPreviousEpochHeadAttester()) {
+            previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
+          }
         }
       }
     }
@@ -134,6 +141,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
         previousEpochActiveValidators,
         currentEpochSourceAttesters,
         currentEpochTargetAttesters,
+        currentEpochTargetHeadAttesters,
         previousEpochSourceAttesters,
         previousEpochTargetAttesters,
         previousEpochHeadAttesters);
