@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
@@ -38,11 +39,28 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
     return getAnyByRef(fieldIndex);
   }
 
+  default void setPreviousEpochParticipation(final SszList<SszByte> newValue) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
   @Override
   default SszMutableList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
     return getAnyByRef(fieldIndex);
+  }
+
+  default void setCurrentEpochParticipation(final SszList<SszByte> newValue) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
+  default void clearCurrentEpochParticipation() {
+    setCurrentEpochParticipation(
+        getBeaconStateSchema().getCurrentEpochParticipationSchema().getDefault());
   }
 
   @Override

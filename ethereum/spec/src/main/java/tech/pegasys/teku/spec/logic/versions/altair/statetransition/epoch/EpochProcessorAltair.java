@@ -83,7 +83,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     state.getPreviousEpochParticipation().setAll(state.getCurrentEpochParticipation());
 
     // Reset current epoch participation flags
-    state.getCurrentEpochParticipation().clear();
+    state.clearCurrentEpochParticipation();
     state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 }

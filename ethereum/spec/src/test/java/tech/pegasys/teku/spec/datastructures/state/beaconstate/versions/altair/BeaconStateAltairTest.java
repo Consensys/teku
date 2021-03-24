@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateAltairTest
     extends AbstractBeaconStateTest<BeaconStateAltair, MutableBeaconStateAltair> {
@@ -29,5 +34,33 @@ public class BeaconStateAltairTest
   @Override
   protected BeaconStateAltair randomState() {
     return dataStructureUtil.stateBuilderAltair().build();
+  }
+
+  @Test
+  public void clearAndModifyCurrentEpochParticipation() {
+    final int updatedValueCount = 5;
+    final SszByte newValue = SszByte.of(1);
+    final BeaconStateAltair state = randomState();
+
+    final SszList<SszByte> originalValue = state.getCurrentEpochParticipation();
+    // Modify the state
+    final BeaconStateAltair updated =
+        state.updatedAltair(
+            s -> {
+              // Clear
+              s.clearCurrentEpochParticipation();
+              assertThat(s.getCurrentEpochParticipation().size()).isEqualTo(0);
+              assertThat(s.getCurrentEpochParticipation()).isNotEqualTo(originalValue);
+
+              // Now set some values
+              s.getCurrentEpochParticipation().setAll(newValue, updatedValueCount);
+              assertThat(s.getCurrentEpochParticipation().size()).isEqualTo(5);
+            });
+
+    assertThat(updated.getCurrentEpochParticipation().size()).isEqualTo(5);
+    assertThat(updated.getCurrentEpochParticipation()).isNotEqualTo(originalValue);
+    for (int i = 0; i < updatedValueCount; i++) {
+      assertThat(updated.getCurrentEpochParticipation().get(i)).isEqualTo(newValue);
+    }
   }
 }
