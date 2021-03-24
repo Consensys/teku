@@ -127,18 +127,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .reduce(UInt64.ZERO, UInt64::plus)
             .max(specConfig.getEffectiveBalanceIncrement());
 
+    UInt64 proposerReward = UInt64.ZERO;
     final int beaconProposerIndex = beaconStateUtil.getBeaconProposerIndex(state);
-    includedIndices.forEach(
-        includedIndex -> {
-          final UInt64 effectiveBalance = validators.get(includedIndex).getEffective_balance();
-          final UInt64 inclusionReward =
-              maxSlotRewards.times(effectiveBalance).dividedBy(committeeEffectiveBalance);
-          final UInt64 proposerReward =
-              inclusionReward.dividedBy(specConfig.getProposerRewardQuotient());
-          validatorsUtil.increaseBalance(state, beaconProposerIndex, proposerReward);
-          validatorsUtil.increaseBalance(
-              state, includedIndex, inclusionReward.minus(proposerReward));
-        });
+    for (Integer includedIndex : includedIndices) {
+      final UInt64 effectiveBalance = validators.get(includedIndex).getEffective_balance();
+      final UInt64 inclusionReward =
+          maxSlotRewards.times(effectiveBalance).dividedBy(committeeEffectiveBalance);
+      UInt64 proposerShare = inclusionReward.dividedBy(specConfig.getProposerRewardQuotient());
+      proposerReward = proposerReward.plus(proposerShare);
+      validatorsUtil.increaseBalance(state, includedIndex, inclusionReward.minus(proposerShare));
+    }
+    validatorsUtil.increaseBalance(state, beaconProposerIndex, proposerReward);
   }
 
   private boolean eth2FastAggregateVerify(
