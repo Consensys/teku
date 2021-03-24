@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -51,14 +52,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateAccessorsAltair altairBeaconStateAccessors,
-      final MiscHelpersAltair miscHelpers) {
+      final MiscHelpersAltair miscHelpers,
+      final AttestationDataStateTransitionValidator attestationValidator) {
     super(
         altairSpecConfig,
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
         miscHelpers,
-        altairBeaconStateAccessors);
+        altairBeaconStateAccessors,
+        attestationValidator);
     this.altairSpecConfig = altairSpecConfig;
     this.altairBeaconStateAccessors = altairBeaconStateAccessors;
   }

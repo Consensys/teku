@@ -46,14 +46,16 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateAccessors beaconStateAccessors,
-      final MiscHelpers miscHelpers) {
+      final MiscHelpers miscHelpers,
+      final AttestationDataStateTransitionValidator attestationValidator) {
     super(
         specConfig,
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
         miscHelpers,
-        beaconStateAccessors);
+        beaconStateAccessors,
+        attestationValidator);
   }
 
   @Override
@@ -63,12 +65,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
 
     try {
-      final AttestationDataStateTransitionValidator validator =
-          new AttestationDataStateTransitionValidator();
-
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<OperationInvalidReason> invalidReason = validator.validate(state, data);
+        final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",

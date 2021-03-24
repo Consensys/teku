@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
@@ -66,6 +68,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final ValidatorsUtil validatorsUtil;
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
+  private final AttestationDataStateTransitionValidator attestationValidator;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
@@ -73,13 +76,21 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final MiscHelpers miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final BeaconStateAccessors beaconStateAccessors,
+      final AttestationDataStateTransitionValidator attestationValidator) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.attestationValidator = attestationValidator;
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return attestationValidator.validate(state, data);
   }
 
   /**

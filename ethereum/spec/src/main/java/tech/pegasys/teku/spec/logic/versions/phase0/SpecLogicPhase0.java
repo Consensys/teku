@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -70,6 +71,10 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final BeaconStateAccessors beaconStateAccessors =
         new BeaconStateAccessors(config, predicates, miscHelpers);
 
+    // Operation validaton
+    final AttestationDataStateTransitionValidator attestationValidator =
+        new AttestationDataStateTransitionValidator();
+
     // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
@@ -102,7 +107,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             beaconStateAccessors,
-            miscHelpers);
+            miscHelpers,
+            attestationValidator);
     final StateTransition stateTransition =
         StateTransition.create(
             config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
