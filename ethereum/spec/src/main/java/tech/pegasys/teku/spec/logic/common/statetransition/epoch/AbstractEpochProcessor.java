@@ -81,12 +81,18 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         validatorStatusFactory.createValidatorStatuses(preState);
     return preState.updated(
         state -> {
-          processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
-          processRewardsAndPenalties(state, validatorStatuses);
-          processRegistryUpdates(state, validatorStatuses.getStatuses());
-          processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
-          processFinalUpdates(state);
+          processEpoch(state, validatorStatuses);
         });
+  }
+
+  protected void processEpoch(
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
+      throws EpochProcessingException {
+    processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
+    processRewardsAndPenalties(state, validatorStatuses);
+    processRegistryUpdates(state, validatorStatuses.getStatuses());
+    processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
+    processFinalUpdates(state);
   }
 
   /**
