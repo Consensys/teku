@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochPr
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -68,6 +70,13 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     return calculator.getDeltas();
   }
 
+  @Override
+  protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
+      throws EpochProcessingException {
+    super.processEpoch(preState, state);
+    processSyncCommitteeUpdates(state.toMutableVersionAltair().orElseThrow());
+  }
+
   /**
    * Corresponds to process_participation_flag_updates in beacon-chain spec
    *
@@ -85,5 +94,15 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     // Reset current epoch participation flags
     state.getCurrentEpochParticipation().clear();
     state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
+  }
+
+  protected void processSyncCommitteeUpdates(final MutableBeaconStateAltair state) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
+    if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
+      state.setCurrentSyncCommittee(state.getNextSyncCommittee());
+      state.setNextSyncCommittee(
+          beaconStateAccessorsAltair.getSyncCommittee(
+              state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
+    }
   }
 }
