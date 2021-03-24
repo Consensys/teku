@@ -112,97 +112,86 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
     optionalReorgContext.ifPresent(
         context -> {
-          try {
-            final String reorgEventString =
-                jsonProvider.objectToJSON(
-                    new ChainReorgEvent(
-                        slot,
-                        slot.minus(context.getCommonAncestorSlot()),
-                        context.getOldBestBlockRoot(),
-                        bestBlockRoot,
-                        context.getOldBestStateRoot(),
-                        stateRoot,
-                        configProvider.computeEpochAtSlot(slot)));
-            notifySubscribersOfEvent(EventType.chain_reorg, reorgEventString);
-          } catch (JsonProcessingException ex) {
-            LOG.error(ex);
-          }
+          final ChainReorgEvent reorgEvent =
+              new ChainReorgEvent(
+                  slot,
+                  slot.minus(context.getCommonAncestorSlot()),
+                  context.getOldBestBlockRoot(),
+                  bestBlockRoot,
+                  context.getOldBestStateRoot(),
+                  stateRoot,
+                  configProvider.computeEpochAtSlot(slot));
+          notifySubscribersOfEvent(EventType.chain_reorg, reorgEvent);
         });
 
-    try {
-      final String headEventString =
-          jsonProvider.objectToJSON(
-              new HeadEvent(
-                  slot,
-                  bestBlockRoot,
-                  stateRoot,
-                  epochTransition,
-                  previousDutyDependentRoot,
-                  currentDutyDependentRoot));
-      notifySubscribersOfEvent(EventType.head, headEventString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    final HeadEvent headEvent =
+        new HeadEvent(
+            slot,
+            bestBlockRoot,
+            stateRoot,
+            epochTransition,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot);
+    notifySubscribersOfEvent(EventType.head, headEvent);
   }
 
   protected void onNewVoluntaryExit(
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit,
       final InternalValidationResult result) {
-    try {
-      final String newVoluntaryExitString =
-          jsonProvider.objectToJSON(new SignedVoluntaryExit(exit));
-      notifySubscribersOfEvent(EventType.voluntary_exit, newVoluntaryExitString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    final SignedVoluntaryExit voluntaryExitEvent = new SignedVoluntaryExit(exit);
+    notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
   }
 
   protected void onNewAttestation(final ValidateableAttestation attestation) {
-    try {
-      final String newAttestationJsonString =
-          jsonProvider.objectToJSON(new Attestation(attestation.getAttestation()));
-      notifySubscribersOfEvent(EventType.attestation, newAttestationJsonString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    final Attestation attestationEvent = new Attestation(attestation.getAttestation());
+    notifySubscribersOfEvent(EventType.attestation, attestationEvent);
   }
 
   protected void onNewBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block) {
-    try {
-      final String newBlockJsonString =
-          jsonProvider.objectToJSON(BlockEvent.fromSignedBeaconBlock(block));
-      notifySubscribersOfEvent(EventType.block, newBlockJsonString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    final BlockEvent blockEvent = BlockEvent.fromSignedBeaconBlock(block);
+    notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
   @Override
   public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    try {
-      Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
-      final String checkpointString =
-          jsonProvider.objectToJSON(
-              new FinalizedCheckpointEvent(
-                  checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch()));
-      notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
+    final FinalizedCheckpointEvent checkpointString =
+        new FinalizedCheckpointEvent(
+            checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch());
+    notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
   }
 
   protected void onSyncStateChange(final SyncState syncState) {
+    notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
+  }
+
+  private void notifySubscribersOfEvent(final EventType eventType, final Object event) {
+    final EventSource eventSource = new EventSource(jsonProvider, event);
     try {
-      final String newSyncStateString =
-          jsonProvider.objectToJSON(new SyncStateChangeEvent(syncState.name()));
-      notifySubscribersOfEvent(EventType.sync_state, newSyncStateString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
+      for (EventSubscriber subscriber : eventSubscribers) {
+        subscriber.onEvent(eventType, eventSource);
+      }
+    } catch (final JsonProcessingException e) {
+      LOG.error("Failed to serialize event", e);
     }
   }
 
-  private void notifySubscribersOfEvent(final EventType eventType, final String eventString) {
-    eventSubscribers.forEach(subscriber -> subscriber.onEvent(eventType, eventString));
+  public static class EventSource {
+    private final JsonProvider jsonProvider;
+    private final Object event;
+    private String value;
+
+    public EventSource(final JsonProvider jsonProvider, final Object event) {
+      this.jsonProvider = jsonProvider;
+      this.event = event;
+    }
+
+    public String get() throws JsonProcessingException {
+      if (value == null) {
+        value = jsonProvider.objectToJSON(event);
+      }
+      return value;
+    }
   }
 }

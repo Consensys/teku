@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
 import java.util.List;
 import java.util.Queue;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class EventSubscriber {
@@ -50,12 +52,13 @@ public class EventSubscriber {
     this.sseClient.onClose(closeCallback);
   }
 
-  public void onEvent(final EventType eventType, final String message) {
+  public void onEvent(final EventType eventType, final EventSource message)
+      throws JsonProcessingException {
     if (!eventTypes.contains(eventType)) {
       return;
     }
     if (queuedEvents.size() < maxPendingEvents) {
-      queuedEvents.add(QueuedEvent.of(eventType, message));
+      queuedEvents.add(QueuedEvent.of(eventType, message.get()));
       processEventQueue();
     } else {
       LOG.debug("Closing event connection due to exceeding the pending message limit");

@@ -44,7 +44,7 @@ public class ReputationManager {
   public ReputationManager(
       final MetricsSystem metricsSystem, final TimeProvider timeProvider, final int capacity) {
     this.timeProvider = timeProvider;
-    this.peerReputations = new LRUCache<>(capacity);
+    this.peerReputations = LRUCache.create(capacity);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.NETWORK,
         "peer_reputation_cache_size",
