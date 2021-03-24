@@ -16,8 +16,6 @@ package tech.pegasys.teku.reference.phase0.ssz_static;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -116,8 +114,7 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final Path testDirectory = testDefinition.getTestDirectory();
-    final Bytes inputData = Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
+    final Bytes inputData = TestDataUtils.readSszData(testDefinition, "serialized.ssz_snappy");
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
     final T result = sszType.get().sszDeserialize(inputData);

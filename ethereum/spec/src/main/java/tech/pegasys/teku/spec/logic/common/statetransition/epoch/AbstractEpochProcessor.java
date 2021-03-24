@@ -13,12 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -27,6 +24,9 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -41,6 +41,7 @@ import tech.pegasys.teku.ssz.collections.SszUInt64List;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
@@ -48,25 +49,17 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.beaconStateAccessors = beaconStateAccessors;
-  }
-
-  private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
-    final SszMutableUInt64List balances = state.getBalances();
-    int validatorsCount = state.getValidators().size();
-    for (int i = 0; i < validatorsCount; i++) {
-      final Deltas.Delta delta = attestationDeltas.getDelta(i);
-      balances.setElement(
-          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
-    }
   }
 
   /**
@@ -77,31 +70,26 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
    */
   @Override
   public BeaconState processEpoch(final BeaconState preState) throws EpochProcessingException {
-    final ValidatorStatuses validatorStatuses =
-        validatorStatusFactory.createValidatorStatuses(preState);
-    return preState.updated(
-        state -> {
-          processEpoch(state, validatorStatuses);
-        });
+    return preState.updated(mutableState -> processEpoch(preState, mutableState));
   }
 
-  protected void processEpoch(
-      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
+  protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
       throws EpochProcessingException {
+    final ValidatorStatuses validatorStatuses =
+        validatorStatusFactory.createValidatorStatuses(preState);
     processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());
-    processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
-    processFinalUpdates(state);
+    processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators());
+    processEth1DataReset(state);
+    processEffectiveBalanceUpdates(state);
+    processSlashingsReset(state);
+    processRandaoMixesReset(state);
+    processHistoricalRootsUpdate(state);
+    processParticipationUpdates(state);
   }
 
-  /**
-   * Processes justification and finalization
-   *
-   * @param state
-   * @param totalBalances
-   * @throws EpochProcessingException
-   */
+  /** Processes justification and finalization */
   @Override
   public void processJustificationAndFinalization(
       MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
@@ -121,7 +109,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getPreviousEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
         Checkpoint newCheckpoint =
             new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
@@ -132,7 +120,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getCurrentEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
@@ -169,7 +157,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  /** Processes rewards and penalties */
   @Override
   public void processRewardsAndPenalties(
       MutableBeaconState state, ValidatorStatuses validatorStatuses)
@@ -179,30 +166,28 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         return;
       }
 
-      Deltas attestationDeltas =
-          createRewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
+      RewardAndPenaltyDeltas attestationDeltas =
+          getRewardAndPenaltyDeltas(state, validatorStatuses);
 
-      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
+      applyDeltas(state, attestationDeltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
   }
 
-  @Override
-  public RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
-      final BeaconState state, final ValidatorStatuses validatorStatuses) {
-    return new DefaultRewardsAndPenaltiesCalculator(
-        specConfig, state, validatorStatuses, beaconStateAccessors);
+  protected void applyDeltas(
+      final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
+    final SszMutableUInt64List balances = state.getBalances();
+    // To optimize performance, calculate validator size once outside of the loop
+    int validatorsCount = state.getValidators().size();
+    for (int i = 0; i < validatorsCount; i++) {
+      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+    }
   }
 
-  /**
-   * Processes validator registry updates
-   *
-   * @param state
-   * @throws EpochProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0Beacon-chain.md#registry-updates</a>
-   */
+  /** Processes validator registry updates */
   @Override
   public void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
       throws EpochProcessingException {
@@ -285,13 +270,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  /**
-   * Processes slashings
-   *
-   * @param state
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0Beacon-chain.md#slashings</a>
-   */
+  /** Processes slashings */
   @Override
   public void processSlashings(MutableBeaconState state, final UInt64 totalBalance) {
     UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
@@ -317,28 +296,22 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                 .dividedBy(increment)
                 .times(adjustedTotalSlashingBalance);
         UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
-        decrease_balance(state, index, penalty);
+        validatorsUtil.decreaseBalance(state, index, penalty);
       }
     }
   }
 
-  /**
-   * Processes final updates
-   *
-   * @param state
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0Beacon-chain.md#final-updates</a>
-   */
   @Override
-  public void processFinalUpdates(MutableBeaconState state) {
-    UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
-    UInt64 nextEpoch = currentEpoch.plus(UInt64.ONE);
-
+  public void processEth1DataReset(final MutableBeaconState state) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset eth1 data votes
     if (nextEpoch.mod(specConfig.getEpochsPerEth1VotingPeriod()).equals(UInt64.ZERO)) {
       state.getEth1_data_votes().clear();
     }
+  }
 
+  @Override
+  public void processEffectiveBalanceUpdates(final MutableBeaconState state) {
     // Update effective balances with hysteresis
     SszMutableList<Validator> validators = state.getValidators();
     SszUInt64List balances = state.getBalances();
@@ -364,17 +337,30 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                         .min(specConfig.getMaxEffectiveBalance())));
       }
     }
+  }
 
+  @Override
+  public void processSlashingsReset(final MutableBeaconState state) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset slashings
     int index = nextEpoch.mod(specConfig.getEpochsPerSlashingsVector()).intValue();
     state.getSlashings().setElement(index, UInt64.ZERO);
+  }
 
+  @Override
+  public void processRandaoMixesReset(final MutableBeaconState state) {
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
     // Set randao mix
     final int randaoIndex = nextEpoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
     state
         .getRandao_mixes()
         .setElement(randaoIndex, beaconStateAccessors.getRandaoMix(state, currentEpoch));
+  }
 
+  @Override
+  public void processHistoricalRootsUpdate(final MutableBeaconState state) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Set historical root accumulator
     if (nextEpoch
         .mod(specConfig.getSlotsPerHistoricalRoot() / specConfig.getSlotsPerEpoch())
@@ -383,7 +369,5 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().appendElement(historicalBatch.hashTreeRoot());
     }
-
-    processParticipationUpdates(state);
   }
 }

@@ -22,9 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
+import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -41,10 +40,22 @@ public class TestDataUtils {
       final String fileName,
       final Function<Bytes, T> deserializer) {
     try {
-      final Path path = testDefinition.getTestDirectory().resolve(fileName);
-      return deserializer.apply(Bytes.wrap(Files.readAllBytes(path)));
+      final Bytes sszData = readSszData(testDefinition, fileName);
+      return deserializer.apply(sszData);
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
+    }
+  }
+
+  public static Bytes readSszData(final TestDefinition testDefinition, final String fileName)
+      throws IOException {
+    final Path testDirectory = testDefinition.getTestDirectory();
+    final Path path = testDirectory.resolve(fileName);
+    final byte[] fileContent = Files.readAllBytes(path);
+    if (fileName.endsWith("_snappy")) {
+      return Bytes.wrap(Snappy.uncompress(fileContent));
+    } else {
+      return Bytes.wrap(fileContent);
     }
   }
 
@@ -54,17 +65,6 @@ public class TestDataUtils {
         testDefinition,
         fileName,
         testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconStateSchema());
-  }
-
-  public static Bytes32 loadBytes32FromSsz(
-      final TestDefinition testDefinition, final String fileName) throws IOException {
-    final Path path = testDefinition.getTestDirectory().resolve(fileName);
-    return Bytes32.wrap(Files.readAllBytes(path));
-  }
-
-  public static UInt64 loadUInt64FromYaml(
-      final TestDefinition testDefinition, final String fileName) throws IOException {
-    return UInt64.fromLongBits(loadYaml(testDefinition, fileName, Long.class));
   }
 
   public static <T> T loadYaml(

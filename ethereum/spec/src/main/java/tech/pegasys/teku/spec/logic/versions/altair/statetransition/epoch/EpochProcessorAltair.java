@@ -13,60 +13,96 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
-  private final SpecConfigAltair altairSpecConfig;
-  private final BeaconStateAccessorsAltair altairBeaconStateAccessors;
+  private final SpecConfigAltair specConfigAltair;
+  private final MiscHelpersAltair miscHelpersAltair;
+  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
 
   public EpochProcessorAltair(
-      final SpecConfigAltair altairSpecConfig,
+      final SpecConfigAltair specConfig,
+      final MiscHelpersAltair miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final BeaconStateAccessorsAltair altairBeaconStateAccessors) {
+      final BeaconStateAccessorsAltair beaconStateAccessors) {
     super(
-        altairSpecConfig,
+        specConfig,
+        miscHelpers,
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        altairBeaconStateAccessors);
-    this.altairSpecConfig = altairSpecConfig;
-    this.altairBeaconStateAccessors = altairBeaconStateAccessors;
+        beaconStateAccessors);
+    this.specConfigAltair = specConfig;
+    this.miscHelpersAltair = miscHelpers;
+    this.beaconStateAccessorsAltair = beaconStateAccessors;
   }
 
   @Override
-  protected void processEpoch(
-      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
+  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      final BeaconState genericState, final ValidatorStatuses validatorStatuses) {
+    final BeaconStateAltair state = BeaconStateAltair.required(genericState);
+    final RewardsAndPenaltiesCalculatorAltair calculator =
+        new RewardsAndPenaltiesCalculatorAltair(
+            specConfigAltair,
+            state,
+            validatorStatuses,
+            miscHelpersAltair,
+            beaconStateAccessorsAltair);
+
+    return calculator.getDeltas();
+  }
+
+  @Override
+  protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
       throws EpochProcessingException {
-    super.processEpoch(state, validatorStatuses);
+    super.processEpoch(preState, state);
     processSyncCommitteeUpdates(state.toMutableVersionAltair().orElseThrow());
   }
 
+  /**
+   * Corresponds to process_participation_flag_updates in beacon-chain spec
+   *
+   * @param genericState The state to process
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#participation-flags-updates">Altair
+   *     Participation Flags updates</a>
+   */
   @Override
   public void processParticipationUpdates(final MutableBeaconState genericState) {
-    throw new NotImplementedException("TODO");
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+
+    state.getPreviousEpochParticipation().setAll(state.getCurrentEpochParticipation());
+
+    // Reset current epoch participation flags
+    state.getCurrentEpochParticipation().clear();
+    state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 
   protected void processSyncCommitteeUpdates(final MutableBeaconStateAltair state) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
-    if (nextEpoch.mod(altairSpecConfig.getEpochsPerSyncCommitteePeriod()).isZero()) {
+    if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
       state.setNextSyncCommittee(
-          altairBeaconStateAccessors.getSyncCommittee(
-              state, nextEpoch.plus(altairSpecConfig.getEpochsPerSyncCommitteePeriod())));
+          beaconStateAccessorsAltair.getSyncCommittee(
+              state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
     }
   }
 }

@@ -13,57 +13,47 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
-public interface RewardsAndPenaltiesCalculator {
-  Deltas getAttestationDeltas() throws IllegalArgumentException;
+public abstract class RewardsAndPenaltiesCalculator {
+  protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
+  protected final BeaconStateAccessors beaconStateAccessors;
 
-  Deltas getDeltas(Step step) throws IllegalArgumentException;
+  protected final BeaconState state;
+  protected final ValidatorStatuses validatorStatuses;
 
-  void applySourceDelta(
-      ValidatorStatus validator,
-      UInt64 baseReward,
-      TotalBalances totalBalances,
-      UInt64 finalityDelay,
-      Deltas.Delta delta);
+  protected RewardsAndPenaltiesCalculator(
+      final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconState state,
+      final ValidatorStatuses validatorStatuses) {
+    this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
+    this.state = state;
+    this.validatorStatuses = validatorStatuses;
+  }
 
-  void applyTargetDelta(
-      ValidatorStatus validator,
-      UInt64 baseReward,
-      TotalBalances totalBalances,
-      UInt64 finalityDelay,
-      Deltas.Delta delta);
+  public abstract RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
 
-  void applyHeadDelta(
-      ValidatorStatus validator,
-      UInt64 baseReward,
-      TotalBalances totalBalances,
-      UInt64 finalityDelay,
-      Deltas.Delta delta);
+  protected UInt64 getFinalityDelay() {
+    return beaconStateAccessors
+        .getPreviousEpoch(state)
+        .minus(state.getFinalized_checkpoint().getEpoch());
+  }
 
-  void applyInclusionDelayDelta(
-      ValidatorStatus validator, UInt64 baseReward, Deltas.Delta delta, Deltas deltas);
+  protected boolean isInactivityLeak(final UInt64 finalityDelay) {
+    return finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
+  }
 
-  void applyInactivityPenaltyDelta(
-      ValidatorStatus validator, UInt64 baseReward, UInt64 finalityDelay, Deltas.Delta delta);
-
-  void applyAttestationComponentDelta(
-      boolean indexInUnslashedAttestingIndices,
-      UInt64 attestingBalance,
-      TotalBalances totalBalances,
-      UInt64 baseReward,
-      UInt64 finalityDelay,
-      Deltas.Delta delta);
-
-  interface Step {
-    void apply(
-        final Deltas deltas,
-        final TotalBalances totalBalances,
-        final UInt64 finalityDelay,
-        final ValidatorStatus validator,
-        final UInt64 baseReward,
-        final Deltas.Delta delta);
+  protected boolean isInactivityLeak() {
+    return getFinalityDelay().isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
   }
 }

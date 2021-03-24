@@ -11,24 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.primitive;
+package tech.pegasys.teku.reference.phase0.forkchoice;
 
-import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import com.google.common.collect.ImmutableMap;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
-
-  public static SszByte ZERO = SszByte.of(0);
-
-  public static SszByte of(int value) {
-    return new SszByte((byte) value);
-  }
-
-  public static SszByte of(byte value) {
-    return new SszByte(value);
-  }
-
-  private SszByte(Byte value) {
-    super(value, SszPrimitiveSchemas.BYTE_SCHEMA);
-  }
+public class ForkChoiceTestExecutor {
+  public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
+      ImmutableMap.of("fork_choice/get_head", TestExecutor.IGNORE_TESTS);
 }
