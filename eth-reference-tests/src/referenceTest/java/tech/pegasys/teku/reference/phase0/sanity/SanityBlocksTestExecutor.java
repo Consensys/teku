@@ -35,20 +35,20 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 
 public class SanityBlocksTestExecutor implements TestExecutor {
 
-  private static final String EXPECTED_STATE_FILENAME = "post.ssz";
+  private static final String EXPECTED_STATE_FILENAME = "post.ssz_snappy";
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final SanityBlocksMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", SanityBlocksMetaData.class);
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
     final List<SignedBeaconBlock> blocks =
         IntStream.range(0, metaData.getBlocksCount())
             .mapToObj(
                 index ->
                     loadSsz(
                         testDefinition,
-                        "blocks_" + index + ".ssz",
+                        "blocks_" + index + ".ssz_snappy",
                         testDefinition.getSpec()::deserializeSignedBeaconBlock))
             .collect(Collectors.toList());
 

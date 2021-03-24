@@ -14,16 +14,12 @@
 package tech.pegasys.teku.reference.phase0.rewards;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -43,7 +39,7 @@ public class RewardsTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
 
     final ValidatorStatusFactory statusFactory =
         testDefinition.getSpec().getGenesisSpec().getValidatorStatusFactory();
@@ -61,11 +57,10 @@ public class RewardsTestExecutor implements TestExecutor {
   }
 
   private void runTest(
-      final TestDefinition testDefinition, final RewardsAndPenaltiesCalculatorPhase0 calculator)
-      throws Throwable {
+      final TestDefinition testDefinition, final RewardsAndPenaltiesCalculatorPhase0 calculator) {
     assertDeltas(
         testDefinition,
-        "head_deltas.yaml",
+        "head_deltas.ssz_snappy",
         apply(
             calculator,
             (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
@@ -73,7 +68,7 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, totalBalances, finalityDelay, delta)));
     assertDeltas(
         testDefinition,
-        "inactivity_penalty_deltas.yaml",
+        "inactivity_penalty_deltas.ssz_snappy",
         apply(
             calculator,
             (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
@@ -81,14 +76,14 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, finalityDelay, delta)));
     assertDeltas(
         testDefinition,
-        "inclusion_delay_deltas.yaml",
+        "inclusion_delay_deltas.ssz_snappy",
         apply(
             calculator,
             (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
                 calculator.applyInclusionDelayDelta(validator, baseReward, delta, deltas)));
     assertDeltas(
         testDefinition,
-        "source_deltas.yaml",
+        "source_deltas.ssz_snappy",
         apply(
             calculator,
             (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
@@ -96,7 +91,7 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, totalBalances, finalityDelay, delta)));
     assertDeltas(
         testDefinition,
-        "target_deltas.yaml",
+        "target_deltas.ssz_snappy",
         apply(
             calculator,
             (deltas, totalBalances, finalityDelay, validator, baseReward, delta) ->
@@ -112,31 +107,12 @@ public class RewardsTestExecutor implements TestExecutor {
   private void assertDeltas(
       final TestDefinition testDefinition,
       final String expectedResultsFileName,
-      final Supplier<RewardAndPenaltyDeltas> function)
-      throws IOException {
+      final Supplier<RewardAndPenaltyDeltas> function) {
     final RewardAndPenaltyDeltas expectedDeltas =
-        loadYaml(testDefinition, expectedResultsFileName, DeltaYaml.class).getDeltas();
+        loadSsz(testDefinition, expectedResultsFileName, ExpectedDeltas.SSZ_SCHEMA).getDeltas();
     final RewardAndPenaltyDeltas actualDeltas = function.get();
     assertThat(actualDeltas)
         .describedAs(expectedResultsFileName)
         .isEqualToComparingFieldByField(expectedDeltas);
-  }
-
-  private static class DeltaYaml {
-
-    @JsonProperty(value = "rewards", required = true)
-    private List<Long> rewards;
-
-    @JsonProperty(value = "penalties", required = true)
-    private List<Long> penalties;
-
-    public RewardAndPenaltyDeltas getDeltas() {
-      final RewardAndPenaltyDeltas deltas = new RewardAndPenaltyDeltas(rewards.size());
-      for (int i = 0; i < rewards.size(); i++) {
-        deltas.getDelta(i).reward(UInt64.fromLongBits(rewards.get(i)));
-        deltas.getDelta(i).penalize(UInt64.fromLongBits(penalties.get(i)));
-      }
-      return deltas;
-    }
   }
 }

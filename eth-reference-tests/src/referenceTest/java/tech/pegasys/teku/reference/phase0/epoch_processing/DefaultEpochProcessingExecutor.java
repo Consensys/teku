@@ -29,6 +29,45 @@ public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
   }
 
   @Override
+  public void executeOperation(final Operation operation, final MutableBeaconState state)
+      throws EpochProcessingException {
+    switch (operation) {
+      case PROCESS_SLASHINGS:
+        processSlashings(state);
+        break;
+      case PROCESS_REGISTRY_UPDATES:
+        processRegistryUpdates(state);
+        break;
+      case PROCESS_REWARDS_AND_PENALTIES:
+        processRewardsAndPenalties(state);
+        break;
+      case PROCESS_JUSTIFICATION_AND_FINALIZATION:
+        processJustificationAndFinalization(state);
+        break;
+      case PROCESS_EFFECTIVE_BALANCE_UPDATES:
+        epochProcessor.processEffectiveBalanceUpdates(state);
+        break;
+      case PROCESS_PARTICIPATION_RECORD_UPDATES:
+        epochProcessor.processParticipationUpdates(state);
+        break;
+      case PROCESS_ETH1_DATA_RESET:
+        epochProcessor.processEth1DataReset(state);
+        break;
+      case PROCESS_SLASHINGS_RESET:
+        epochProcessor.processSlashingsReset(state);
+        break;
+      case PROCESS_RANDAO_MIXES_RESET:
+        epochProcessor.processRandaoMixesReset(state);
+        break;
+      case PROCESS_HISTORICAL_ROOTS_UPDATE:
+        epochProcessor.processHistoricalRootsUpdate(state);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "Attempted to execute unknown operation type: " + operation);
+    }
+  }
+
   public void processSlashings(final MutableBeaconState state) {
     epochProcessor.processSlashings(
         state,
@@ -38,26 +77,18 @@ public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
             .getCurrentEpochActiveValidators());
   }
 
-  @Override
   public void processRegistryUpdates(final MutableBeaconState state)
       throws EpochProcessingException {
     epochProcessor.processRegistryUpdates(
         state, validatorStatusFactory.createValidatorStatuses(state).getStatuses());
   }
 
-  @Override
-  public void processFinalUpdates(final MutableBeaconState state) {
-    epochProcessor.processFinalUpdates(state);
-  }
-
-  @Override
   public void processRewardsAndPenalties(final MutableBeaconState state)
       throws EpochProcessingException {
     epochProcessor.processRewardsAndPenalties(
         state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
-  @Override
   public void processJustificationAndFinalization(final MutableBeaconState state)
       throws EpochProcessingException {
     epochProcessor.processJustificationAndFinalization(

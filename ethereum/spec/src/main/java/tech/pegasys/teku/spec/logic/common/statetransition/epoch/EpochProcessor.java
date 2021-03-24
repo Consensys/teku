@@ -39,7 +39,15 @@ public interface EpochProcessor {
 
   void processSlashings(MutableBeaconState state, UInt64 totalBalance);
 
-  void processFinalUpdates(MutableBeaconState state);
-
   void processParticipationUpdates(MutableBeaconState genericState);
+
+  void processEth1DataReset(MutableBeaconState state);
+
+  void processEffectiveBalanceUpdates(MutableBeaconState state);
+
+  void processSlashingsReset(MutableBeaconState state);
+
+  void processRandaoMixesReset(MutableBeaconState state);
+
+  void processHistoricalRootsUpdate(MutableBeaconState state);
 }
