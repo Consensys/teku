@@ -90,9 +90,10 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     final List<ValidatorStatus> statusList = validatorStatuses.getStatuses();
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
 
+    // Factored out from balances to avoid uint64 overflow
     final UInt64 increment = specConfigAltair.getEffectiveBalanceIncrement();
     final UInt64 unslashedParticipatingIncrements =
-        getPrevEpochTotalParticipatingBalance(flagIndex);
+        getPrevEpochTotalParticipatingBalance(flagIndex).dividedBy(increment);
     final UInt64 activeIncrements =
         totalBalances.getCurrentEpochActiveValidators().dividedBy(increment);
 
