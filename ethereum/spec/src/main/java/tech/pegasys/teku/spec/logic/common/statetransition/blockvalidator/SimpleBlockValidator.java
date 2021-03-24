@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 
 /**
  * Base logic of a block validation
@@ -40,19 +40,19 @@ class SimpleBlockValidator implements BlockValidator {
 
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
-  private final BlockProcessorUtil blockProcessorUtil;
+  private final BlockProcessor blockProcessor;
   private final BeaconStateAccessors beaconStateAccessors;
   private final BLSSignatureVerifier signatureVerifier;
 
   SimpleBlockValidator(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
-      final BlockProcessorUtil blockProcessorUtil,
+      final BlockProcessor blockProcessor,
       final BeaconStateAccessors beaconStateAccessors,
       final BLSSignatureVerifier signatureVerifier) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
-    this.blockProcessorUtil = blockProcessorUtil;
+    this.blockProcessor = blockProcessor;
     this.beaconStateAccessors = beaconStateAccessors;
     this.signatureVerifier = signatureVerifier;
   }
@@ -60,12 +60,12 @@ class SimpleBlockValidator implements BlockValidator {
   public SimpleBlockValidator(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
-      final BlockProcessorUtil blockProcessorUtil,
+      final BlockProcessor blockProcessor,
       final BeaconStateAccessors beaconStateAccessors) {
     this(
         specConfig,
         beaconStateUtil,
-        blockProcessorUtil,
+        blockProcessor,
         beaconStateAccessors,
         BLSSignatureVerifier.SIMPLE);
   }
@@ -82,16 +82,16 @@ class SimpleBlockValidator implements BlockValidator {
       // Verify body
       BeaconBlock blockMessage = block.getMessage();
       BeaconBlockBody blockBody = blockMessage.getBody();
-      blockProcessorUtil.verifyAttestations(
+      blockProcessor.verifyAttestations(
           preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
-      blockProcessorUtil.verifyRandao(preState, blockMessage, signatureVerifier);
+      blockProcessor.verifyRandao(preState, blockMessage, signatureVerifier);
 
-      if (!blockProcessorUtil.verifyProposerSlashings(
+      if (!blockProcessor.verifyProposerSlashings(
           preState, blockBody.getProposer_slashings(), signatureVerifier)) {
         return BlockValidationResult.FAILED;
       }
 
-      if (!blockProcessorUtil.verifyVoluntaryExits(
+      if (!blockProcessor.verifyVoluntaryExits(
           preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
         return BlockValidationResult.FAILED;
       }

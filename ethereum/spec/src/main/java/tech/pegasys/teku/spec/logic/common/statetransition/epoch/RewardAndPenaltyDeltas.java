@@ -19,17 +19,17 @@ import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class Deltas {
-  private final List<Delta> deltas;
+public class RewardAndPenaltyDeltas {
+  private final List<RewardAndPenalty> deltas;
 
-  public Deltas(final int validatorCount) {
+  public RewardAndPenaltyDeltas(final int validatorCount) {
     this.deltas = new ArrayList<>(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
-      deltas.add(new Delta());
+      deltas.add(new RewardAndPenalty());
     }
   }
 
-  public Delta getDelta(final int validatorIndex) {
+  public RewardAndPenalty getDelta(final int validatorIndex) {
     return deltas.get(validatorIndex);
   }
 
@@ -38,7 +38,7 @@ public class Deltas {
     return MoreObjects.toStringHelper(this).add("deltas", deltas).toString();
   }
 
-  public static class Delta {
+  public static class RewardAndPenalty {
     private UInt64 reward = UInt64.ZERO;
     private UInt64 penalty = UInt64.ZERO;
 
@@ -50,7 +50,7 @@ public class Deltas {
       penalty = penalty.plus(amount);
     }
 
-    public void add(final Delta other) {
+    public void add(final RewardAndPenalty other) {
       reward(other.reward);
       penalize(other.penalty);
     }
@@ -71,7 +71,7 @@ public class Deltas {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final Delta delta = (Delta) o;
+      final RewardAndPenalty delta = (RewardAndPenalty) o;
       return Objects.equals(reward, delta.reward) && Objects.equals(penalty, delta.penalty);
     }
 

@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
@@ -41,6 +42,11 @@ public interface BeaconStateAltair extends BeaconState {
   default SszList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    return getAny(fieldIndex);
+  }
+
+  default SszUInt64List getInactivityScores() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
     return getAny(fieldIndex);
   }
 

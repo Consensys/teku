@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
@@ -47,13 +48,13 @@ import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 
 @ExtendWith(BouncyCastleExtension.class)
-class BlockProcessorUtilTest {
+class BlockProcessorTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final SpecConfig specConfig = genesisSpec.getConfig();
-  private final BlockProcessorUtil blockProcessorUtil = genesisSpec.getBlockProcessorUtil();
+  private final BlockProcessor blockProcessor = genesisSpec.getBlockProcessor();
 
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
@@ -221,7 +222,7 @@ class BlockProcessorUtilTest {
         schema.of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
-    return beaconState.updated(state -> blockProcessorUtil.processDeposits(state, deposits));
+    return beaconState.updated(state -> blockProcessor.processDeposits(state, deposits));
   }
 
   private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {

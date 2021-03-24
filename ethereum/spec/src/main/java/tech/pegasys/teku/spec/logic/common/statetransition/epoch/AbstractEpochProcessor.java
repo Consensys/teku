@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -27,6 +26,9 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.ssz.collections.SszUInt64List;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
@@ -48,25 +51,17 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.beaconStateAccessors = beaconStateAccessors;
-  }
-
-  private static void applyDeltas(final MutableBeaconState state, final Deltas attestationDeltas) {
-    final SszMutableUInt64List balances = state.getBalances();
-    int validatorsCount = state.getValidators().size();
-    for (int i = 0; i < validatorsCount; i++) {
-      final Deltas.Delta delta = attestationDeltas.getDelta(i);
-      balances.setElement(
-          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
-    }
   }
 
   /**
@@ -84,7 +79,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
           processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
           processRewardsAndPenalties(state, validatorStatuses);
           processRegistryUpdates(state, validatorStatuses.getStatuses());
-          processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpoch());
+          processSlashings(
+              state, validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators());
           processFinalUpdates(state);
         });
   }
@@ -115,7 +111,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getPreviousEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
         Checkpoint newCheckpoint =
             new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
@@ -126,7 +122,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (totalBalances
           .getCurrentEpochTargetAttesters()
           .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpoch().times(2))) {
+          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
@@ -163,7 +159,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  /** Processes rewards and penalties */
   @Override
   public void processRewardsAndPenalties(
       MutableBeaconState state, ValidatorStatuses validatorStatuses)
@@ -173,20 +168,25 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         return;
       }
 
-      Deltas attestationDeltas =
-          createRewardsAndPenaltiesCalculator(state, validatorStatuses).getAttestationDeltas();
+      RewardAndPenaltyDeltas attestationDeltas =
+          getRewardAndPenaltyDeltas(state, validatorStatuses);
 
-      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
+      applyDeltas(state, attestationDeltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
   }
 
-  @Override
-  public RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
-      final BeaconState state, final ValidatorStatuses validatorStatuses) {
-    return new DefaultRewardsAndPenaltiesCalculator(
-        specConfig, state, validatorStatuses, beaconStateAccessors);
+  protected void applyDeltas(
+      final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
+    final SszMutableUInt64List balances = state.getBalances();
+    // To optimize performance, calculate validator size once outside of the loop
+    int validatorsCount = state.getValidators().size();
+    for (int i = 0; i < validatorsCount; i++) {
+      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+    }
   }
 
   /**

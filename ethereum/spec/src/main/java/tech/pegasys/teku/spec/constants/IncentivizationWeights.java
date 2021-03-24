@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.spec.constants;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 public class IncentivizationWeights {
-  public static final int TIMELY_HEAD_WEIGHT = 12;
-  public static final int TIMELY_SOURCE_WEIGHT = 12;
-  public static final int TIMELY_TARGET_WEIGHT = 24;
-  public static final int SYNC_REWARD_WEIGHT = 8;
-  public static final int WEIGHT_DENOMINATOR = 64;
+  public static final UInt64 TIMELY_HEAD_WEIGHT = UInt64.valueOf(12);
+  public static final UInt64 TIMELY_SOURCE_WEIGHT = UInt64.valueOf(12);
+  public static final UInt64 TIMELY_TARGET_WEIGHT = UInt64.valueOf(24);
+  public static final UInt64 SYNC_REWARD_WEIGHT = UInt64.valueOf(8);
+  public static final UInt64 WEIGHT_DENOMINATOR = UInt64.valueOf(64);
 }
