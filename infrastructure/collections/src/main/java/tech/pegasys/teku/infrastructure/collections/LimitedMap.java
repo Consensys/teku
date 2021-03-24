@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,9 +16,7 @@ package tech.pegasys.teku.infrastructure.collections;
 import com.google.common.cache.CacheBuilder;
 import java.util.Map;
 
-/** Helper that creates a map with a maximum capacity. */
-public final class LimitedMap {
-  private LimitedMap() {}
+public interface LimitedMap<K, V> extends Map<K, V> {
 
   /**
    * Creates a limited map. The returned map is safe for concurrent access and evicts the least
@@ -29,8 +27,8 @@ public final class LimitedMap {
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(final int maxSize) {
-    return defaultBuilder(maxSize).<K, V>build().asMap();
+  static <K, V> LimitedMap<K, V> create(final int maxSize) {
+    return new SynchronizedLimitedMap<>(maxSize);
   }
 
   /**
@@ -46,11 +44,11 @@ public final class LimitedMap {
    * @return A map that will evict elements when the max size is exceeded or when the GC evicts
    *     them.
    */
-  public static <K, V> Map<K, V> createSoft(final int maxSize) {
-    return defaultBuilder(maxSize).softValues().<K, V>build().asMap();
+  static <K, V> Map<K, V> createSoft(final int maxSize) {
+    return CacheBuilder.newBuilder().maximumSize(maxSize).softValues().<K, V>build().asMap();
   }
 
-  private static CacheBuilder<Object, Object> defaultBuilder(final int maxSize) {
-    return CacheBuilder.newBuilder().maximumSize(maxSize);
-  }
+  int getMaxSize();
+
+  LimitedMap<K, V> copy();
 }
