@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
@@ -67,8 +68,22 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     return calculator.getDeltas();
   }
 
+  /**
+   * Corresponds to process_participation_flag_updates in beacon-chain spec
+   *
+   * @param genericState The state to process
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#participation-flags-updates">Altair
+   *     Participation Flags updates</a>
+   */
   @Override
   public void processParticipationUpdates(final MutableBeaconState genericState) {
-    throw new NotImplementedException("TODO");
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+
+    state.getPreviousEpochParticipation().setAll(state.getCurrentEpochParticipation());
+
+    // Reset current epoch participation flags
+    state.getCurrentEpochParticipation().clear();
+    state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 }
