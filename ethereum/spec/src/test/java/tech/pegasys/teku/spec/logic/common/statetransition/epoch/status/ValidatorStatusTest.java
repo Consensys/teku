@@ -169,17 +169,17 @@ class ValidatorStatusTest {
   static Stream<Arguments> flags() {
     return Stream.of(
         flag(
-            "currentEpochAttester",
-            ValidatorStatus::isCurrentEpochAttester,
-            ValidatorStatus::updateCurrentEpochAttester),
+            "currentEpochSourceAttester",
+            ValidatorStatus::isCurrentEpochSourceAttester,
+            ValidatorStatus::updateCurrentEpochSourceAttester),
         flag(
             "currentEpochTargetAttester",
             ValidatorStatus::isCurrentEpochTargetAttester,
             ValidatorStatus::updateCurrentEpochTargetAttester),
         flag(
-            "previousEpochAttester",
-            ValidatorStatus::isPreviousEpochAttester,
-            ValidatorStatus::updatePreviousEpochAttester),
+            "previousEpochSourceAttester",
+            ValidatorStatus::isPreviousEpochSourceAttester,
+            ValidatorStatus::updatePreviousEpochSourceAttester),
         flag(
             "previousEpochTargetAttester",
             ValidatorStatus::isPreviousEpochTargetAttester,

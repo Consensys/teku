@@ -24,17 +24,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractValidatorStatusFactoryTest {
 
-  protected final Spec spec = SpecFactory.createMinimal();
+  protected final Spec spec = createSpec();
   private final AbstractValidatorStatusFactory validatorStatusFactory = createFactory();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -44,6 +42,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
   }
 
   protected abstract AbstractValidatorStatusFactory createFactory();
+
+  protected abstract Spec createSpec();
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
@@ -158,7 +158,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in current epoch for a total of 12.
-    assertThat(validatorStatusFactory.createTotalBalances(statuses).getCurrentEpoch())
+    assertThat(
+            validatorStatusFactory.createTotalBalances(statuses).getCurrentEpochActiveValidators())
         .isEqualTo(balance(12));
   }
 
@@ -170,7 +171,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
             new ValidatorStatus(true, true, balance(5), true, true),
             new ValidatorStatus(false, false, balance(13), false, false));
     // Should include both statuses active in previous epoch for a total of 12.
-    assertThat(validatorStatusFactory.createTotalBalances(statuses).getPreviousEpoch())
+    assertThat(
+            validatorStatusFactory.createTotalBalances(statuses).getPreviousEpochActiveValidators())
         .isEqualTo(balance(12));
   }
 
@@ -184,9 +186,9 @@ public abstract class AbstractValidatorStatusFactoryTest {
 
     final UInt64 expectedBalance = balance(11 + 6);
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(statuses);
-    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(expectedBalance);
+    assertThat(balances.getCurrentEpochSourceAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(expectedBalance);
-    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(expectedBalance);
+    assertThat(balances.getPreviousEpochSourceAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(expectedBalance);
     assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(expectedBalance);
   }
@@ -196,18 +198,18 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final List<ValidatorStatus> statuses =
         List.of(
             createValidator(7)
-                .updateCurrentEpochAttester(true)
+                .updateCurrentEpochSourceAttester(true)
                 .updateCurrentEpochTargetAttester(true),
             createValidator(9)
-                .updateCurrentEpochAttester(true)
+                .updateCurrentEpochSourceAttester(true)
                 .updateCurrentEpochTargetAttester(true),
-            createValidator(14).updateCurrentEpochAttester(true),
+            createValidator(14).updateCurrentEpochSourceAttester(true),
             createValidator(17)
-                .updateCurrentEpochAttester(false)
-                .updatePreviousEpochAttester(true));
+                .updateCurrentEpochSourceAttester(false)
+                .updatePreviousEpochSourceAttester(true));
 
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(statuses);
-    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
+    assertThat(balances.getCurrentEpochSourceAttesters()).isEqualTo(balance(7 + 9 + 14));
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(balance(7 + 9));
   }
 
@@ -216,17 +218,17 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final List<ValidatorStatus> statuses =
         List.of(
             createValidator(7)
-                .updatePreviousEpochAttester(true)
+                .updatePreviousEpochSourceAttester(true)
                 .updatePreviousEpochTargetAttester(true),
             createValidator(9)
-                .updatePreviousEpochAttester(true)
+                .updatePreviousEpochSourceAttester(true)
                 .updatePreviousEpochTargetAttester(true)
                 .updatePreviousEpochHeadAttester(true),
-            createValidator(14).updatePreviousEpochAttester(true),
-            createValidator(17).updateCurrentEpochAttester(true));
+            createValidator(14).updatePreviousEpochSourceAttester(true),
+            createValidator(17).updateCurrentEpochSourceAttester(true));
 
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(statuses);
-    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(balance(7 + 9 + 14));
+    assertThat(balances.getPreviousEpochSourceAttesters()).isEqualTo(balance(7 + 9 + 14));
     assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(balance(7 + 9));
     assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(balance(9));
   }
@@ -236,11 +238,11 @@ public abstract class AbstractValidatorStatusFactoryTest {
     final TotalBalances balances = validatorStatusFactory.createTotalBalances(emptyList());
     final UInt64 effectiveBalanceInc = genesisConfig.getEffectiveBalanceIncrement();
 
-    assertThat(balances.getCurrentEpoch()).isEqualTo(effectiveBalanceInc);
-    assertThat(balances.getPreviousEpoch()).isEqualTo(effectiveBalanceInc);
-    assertThat(balances.getCurrentEpochAttesters()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getCurrentEpochActiveValidators()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getPreviousEpochActiveValidators()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getCurrentEpochSourceAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getCurrentEpochTargetAttesters()).isEqualTo(effectiveBalanceInc);
-    assertThat(balances.getPreviousEpochAttesters()).isEqualTo(effectiveBalanceInc);
+    assertThat(balances.getPreviousEpochSourceAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(effectiveBalanceInc);
   }
@@ -252,8 +254,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
   private ValidatorStatus createWithAllAttesterFlags(
       final boolean slashed, final int effectiveBalance) {
     return new ValidatorStatus(slashed, true, balance(effectiveBalance), true, true)
-        .updateCurrentEpochAttester(true)
-        .updatePreviousEpochAttester(true)
+        .updateCurrentEpochSourceAttester(true)
+        .updatePreviousEpochSourceAttester(true)
         .updateCurrentEpochTargetAttester(true)
         .updatePreviousEpochTargetAttester(true)
         .updatePreviousEpochHeadAttester(true);
