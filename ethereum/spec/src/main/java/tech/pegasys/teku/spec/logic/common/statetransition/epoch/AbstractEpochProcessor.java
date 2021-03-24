@@ -64,17 +64,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  protected static void applyDeltas(
-      final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
-    final SszMutableUInt64List balances = state.getBalances();
-    int validatorsCount = state.getValidators().size();
-    for (int i = 0; i < validatorsCount; i++) {
-      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
-      balances.setElement(
-          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
-    }
-  }
-
   /**
    * Processes epoch
    *
@@ -182,9 +171,20 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       RewardAndPenaltyDeltas attestationDeltas =
           getRewardAndPenaltyDeltas(state, validatorStatuses);
 
-      AbstractEpochProcessor.applyDeltas(state, attestationDeltas);
+      applyDeltas(state, attestationDeltas);
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
+    }
+  }
+
+  protected void applyDeltas(
+      final MutableBeaconState state, final RewardAndPenaltyDeltas attestationDeltas) {
+    final SszMutableUInt64List balances = state.getBalances();
+    int validatorsCount = state.getValidators().size();
+    for (int i = 0; i < validatorsCount; i++) {
+      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
+      balances.setElement(
+          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }
   }
 
