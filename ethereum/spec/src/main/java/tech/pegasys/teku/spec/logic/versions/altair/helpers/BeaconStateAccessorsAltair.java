@@ -105,7 +105,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   }
 
   /**
-   * Return the sync comittee for a given state and epoch.
+   * Return the sync committee for a given state and epoch.
    *
    * @param state the state to get the sync committee for
    * @param epoch the epoch to get the sync committee for
