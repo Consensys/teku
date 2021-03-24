@@ -44,7 +44,7 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
   }
 
   @Override
-  protected void processAttestations(
+  protected void processParticipation(
       final List<ValidatorStatus> statuses,
       final BeaconState genericState,
       final UInt64 previousEpoch,

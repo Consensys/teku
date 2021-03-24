@@ -48,7 +48,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  protected abstract void processAttestations(
+  protected abstract void processParticipation(
       List<ValidatorStatus> statuses,
       BeaconState genericState,
       UInt64 previousEpoch,
@@ -66,7 +66,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
             .map(validator -> createValidatorStatus(validator, previousEpoch, currentEpoch))
             .collect(Collectors.toCollection(() -> new ArrayList<>(validators.size())));
 
-    processAttestations(statuses, state, previousEpoch, currentEpoch);
+    processParticipation(statuses, state, previousEpoch, currentEpoch);
 
     final TotalBalances totalBalances = createTotalBalances(statuses);
     BeaconStateCache.getTransitionCaches(state).setLatestTotalBalances(totalBalances);
