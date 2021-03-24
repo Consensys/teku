@@ -421,7 +421,7 @@ public class BeaconStateUtil {
         state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
   }
 
-  private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
+  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
     SigningData domainWrappedObject =
         new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
