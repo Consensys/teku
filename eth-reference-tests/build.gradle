@@ -17,10 +17,12 @@ dependencies {
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
   referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
   referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+  referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 
 task cleanReferenceTestClasses(type: Delete) {
   delete project.file('src/referenceTest/generated')
+  delete project.file('src/referenceTest/generated_tests')
 }
 
 task generateReferenceTestClasses(type: JavaExec) {
@@ -29,7 +31,7 @@ task generateReferenceTestClasses(type: JavaExec) {
   description = "Generate reference test classes"
   classpath = project.project(':eth-tests').sourceSets.referenceTest.runtimeClasspath
   main = 'tech.pegasys.teku.ethtests.ReferenceTestGenerator'
-  args = [project.file('src/referenceTest/generated').absolutePath]
+  args = [project.file('src/referenceTest/generated_tests').absolutePath]
   systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
 }
 

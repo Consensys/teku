@@ -51,6 +51,7 @@ config/peer_ids.dat
 config/*.key
 eth-reference-tests/src/test/
 eth-reference-tests/src/referenceTest/generated/
+eth-reference-tests/src/referenceTest/generated_tests/
 eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
 
 
