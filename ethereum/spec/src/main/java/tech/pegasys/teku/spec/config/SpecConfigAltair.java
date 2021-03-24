@@ -27,7 +27,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
   // Misc
   private final int syncCommitteeSize;
   private final int syncSubcommitteeSize;
-  private final int inactivityScoreBias;
+  private final UInt64 inactivityScoreBias;
 
   // Time
   private final int epochsPerSyncCommitteePeriod;
@@ -50,7 +50,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final int proportionalSlashingMultiplierAltair,
       final int syncCommitteeSize,
       final int syncSubcommitteeSize,
-      final int inactivityScoreBias,
+      final UInt64 inactivityScoreBias,
       final int epochsPerSyncCommitteePeriod,
       final Bytes4 domainSyncCommittee,
       final Bytes4 altairForkVersion,
@@ -106,6 +106,10 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return syncSubcommitteeSize;
   }
 
+  public UInt64 getInactivityScoreBias() {
+    return inactivityScoreBias;
+  }
+
   public int getEpochsPerSyncCommitteePeriod() {
     return epochsPerSyncCommitteePeriod;
   }
@@ -129,7 +133,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && proportionalSlashingMultiplierAltair == that.proportionalSlashingMultiplierAltair
         && syncCommitteeSize == that.syncCommitteeSize
         && syncSubcommitteeSize == that.syncSubcommitteeSize
-        && inactivityScoreBias == that.inactivityScoreBias
+        && Objects.equals(inactivityScoreBias, that.inactivityScoreBias)
         && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
         && maxValidLightClientUpdates == that.maxValidLightClientUpdates

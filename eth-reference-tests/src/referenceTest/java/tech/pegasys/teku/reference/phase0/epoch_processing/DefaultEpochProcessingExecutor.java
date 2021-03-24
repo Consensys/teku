@@ -32,7 +32,10 @@ public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
   public void processSlashings(final MutableBeaconState state) {
     epochProcessor.processSlashings(
         state,
-        validatorStatusFactory.createValidatorStatuses(state).getTotalBalances().getCurrentEpoch());
+        validatorStatusFactory
+            .createValidatorStatuses(state)
+            .getTotalBalances()
+            .getCurrentEpochActiveValidators());
   }
 
   @Override

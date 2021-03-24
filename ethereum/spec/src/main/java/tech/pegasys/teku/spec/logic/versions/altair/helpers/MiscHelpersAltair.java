@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.indexToFlag;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -53,9 +54,9 @@ public class MiscHelpersAltair extends MiscHelpers {
 
   public static class FlagIndexAndWeight {
     final int index;
-    final int weight;
+    final UInt64 weight;
 
-    private FlagIndexAndWeight(final int index, final int weight) {
+    private FlagIndexAndWeight(final int index, final UInt64 weight) {
       this.index = index;
       this.weight = weight;
     }
@@ -64,7 +65,7 @@ public class MiscHelpersAltair extends MiscHelpers {
       return index;
     }
 
-    public int getWeight() {
+    public UInt64 getWeight() {
       return weight;
     }
   }

@@ -68,6 +68,9 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
   static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateAltair state) {
     stringBuilder
         .add("previous_epoch_participation", state.getPreviousEpochParticipation())
-        .add("current_epoch_participation", state.getCurrentEpochParticipation());
+        .add("current_epoch_participation", state.getCurrentEpochParticipation())
+        .add("inactivity_scores", state.getInactivityScores())
+        .add("current_sync_committee", state.getCurrentSyncCommittee())
+        .add("next_sync_committee", state.getNextSyncCommittee());
   }
 }

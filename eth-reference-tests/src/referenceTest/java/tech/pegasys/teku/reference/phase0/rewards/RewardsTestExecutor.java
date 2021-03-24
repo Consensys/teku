@@ -25,11 +25,13 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.RewardsAndPenaltiesCalculatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.RewardsAndPenaltiesCalculatorPhase0.Step;
 
 public class RewardsTestExecutor implements TestExecutor {
 
@@ -46,17 +48,20 @@ public class RewardsTestExecutor implements TestExecutor {
     final ValidatorStatusFactory statusFactory =
         testDefinition.getSpec().getGenesisSpec().getValidatorStatusFactory();
     final ValidatorStatuses validatorStatuses = statusFactory.createValidatorStatuses(preState);
-    final RewardsAndPenaltiesCalculator calculator =
-        testDefinition
-            .getSpec()
-            .getGenesisSpec()
-            .getEpochProcessor()
-            .createRewardsAndPenaltiesCalculator(preState, validatorStatuses);
+
+    final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
+    final RewardsAndPenaltiesCalculatorPhase0 calculator =
+        new RewardsAndPenaltiesCalculatorPhase0(
+            spec.getConfig(),
+            preState,
+            validatorStatuses,
+            spec.miscHelpers(),
+            spec.beaconStateAccessors());
     runTest(testDefinition, calculator);
   }
 
   private void runTest(
-      final TestDefinition testDefinition, final RewardsAndPenaltiesCalculator calculator)
+      final TestDefinition testDefinition, final RewardsAndPenaltiesCalculatorPhase0 calculator)
       throws Throwable {
     assertDeltas(
         testDefinition,
@@ -99,20 +104,19 @@ public class RewardsTestExecutor implements TestExecutor {
                     validator, baseReward, totalBalances, finalityDelay, delta)));
   }
 
-  private Supplier<Deltas> apply(
-      final RewardsAndPenaltiesCalculator calculator,
-      final RewardsAndPenaltiesCalculator.Step step) {
+  private Supplier<RewardAndPenaltyDeltas> apply(
+      final RewardsAndPenaltiesCalculatorPhase0 calculator, final Step step) {
     return () -> calculator.getDeltas(step);
   }
 
   private void assertDeltas(
       final TestDefinition testDefinition,
       final String expectedResultsFileName,
-      final Supplier<Deltas> function)
+      final Supplier<RewardAndPenaltyDeltas> function)
       throws IOException {
-    final Deltas expectedDeltas =
+    final RewardAndPenaltyDeltas expectedDeltas =
         loadYaml(testDefinition, expectedResultsFileName, DeltaYaml.class).getDeltas();
-    final Deltas actualDeltas = function.get();
+    final RewardAndPenaltyDeltas actualDeltas = function.get();
     assertThat(actualDeltas)
         .describedAs(expectedResultsFileName)
         .isEqualToComparingFieldByField(expectedDeltas);
@@ -126,8 +130,8 @@ public class RewardsTestExecutor implements TestExecutor {
     @JsonProperty(value = "penalties", required = true)
     private List<Long> penalties;
 
-    public Deltas getDeltas() {
-      final Deltas deltas = new Deltas(rewards.size());
+    public RewardAndPenaltyDeltas getDeltas() {
+      final RewardAndPenaltyDeltas deltas = new RewardAndPenaltyDeltas(rewards.size());
       for (int i = 0; i < rewards.size(); i++) {
         deltas.getDelta(i).reward(UInt64.fromLongBits(rewards.get(i)));
         deltas.getDelta(i).penalize(UInt64.fromLongBits(penalties.get(i)));

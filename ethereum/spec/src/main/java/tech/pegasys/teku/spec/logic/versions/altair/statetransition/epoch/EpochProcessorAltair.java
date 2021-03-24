@@ -15,23 +15,56 @@ package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
+  private final SpecConfigAltair specConfigAltair;
+  private final MiscHelpersAltair miscHelpersAltair;
+  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
+
   public EpochProcessorAltair(
       final SpecConfigAltair specConfig,
+      final MiscHelpersAltair miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final BeaconStateAccessorsAltair beaconStateAccessors) {
     super(
-        specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+        specConfig,
+        miscHelpers,
+        validatorsUtil,
+        beaconStateUtil,
+        validatorStatusFactory,
+        beaconStateAccessors);
+    this.specConfigAltair = specConfig;
+    this.miscHelpersAltair = miscHelpers;
+    this.beaconStateAccessorsAltair = beaconStateAccessors;
+  }
+
+  @Override
+  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      final BeaconState genericState, final ValidatorStatuses validatorStatuses) {
+    final BeaconStateAltair state = BeaconStateAltair.required(genericState);
+    final RewardsAndPenaltiesCalculatorAltair calculator =
+        new RewardsAndPenaltiesCalculatorAltair(
+            specConfigAltair,
+            state,
+            validatorStatuses,
+            miscHelpersAltair,
+            beaconStateAccessorsAltair);
+
+    return calculator.getDeltas();
   }
 
   @Override
