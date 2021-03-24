@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
@@ -84,12 +83,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     state.getPreviousEpochParticipation().setAll(state.getCurrentEpochParticipation());
 
     // Reset current epoch participation flags
-    final SszMutableList<SszByte> currentParticipationFlags = state.getCurrentEpochParticipation();
-    currentParticipationFlags.clear();
-    // To optimize performance, calculate validator size once outside of the loop
-    final int validatorCount = state.getValidators().size();
-    for (int i = 0; i < validatorCount; i++) {
-      currentParticipationFlags.set(i, SszByte.of(0));
-    }
+    state.getCurrentEpochParticipation().clear();
+    state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 }
