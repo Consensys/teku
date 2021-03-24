@@ -41,7 +41,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final AttestationUtil attestationUtil,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
-      final BlockProcessorAltair blockProcessorUtil,
+      final BlockProcessorAltair blockProcessor,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -55,7 +55,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         attestationUtil,
         validatorStatusFactory,
         epochProcessor,
-        blockProcessorUtil,
+        blockProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
@@ -99,7 +99,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateUtil,
             validatorStatusFactory,
             beaconStateAccessors);
-    final BlockProcessorAltair blockProcessorUtil =
+    final BlockProcessorAltair blockProcessor =
         new BlockProcessorAltair(
             config,
             beaconStateUtil,
@@ -109,7 +109,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             miscHelpers);
     final StateTransition stateTransition =
         StateTransition.create(
-            config, blockProcessorUtil, epochProcessor, beaconStateUtil, beaconStateAccessors);
+            config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -125,7 +125,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         attestationUtil,
         validatorStatusFactory,
         epochProcessor,
-        blockProcessorUtil,
+        blockProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);

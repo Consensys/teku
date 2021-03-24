@@ -47,13 +47,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -364,24 +364,24 @@ public class Spec {
   // Block Processing Utils
   public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processBlockHeader(state, blockHeader);
+    atState(state).getBlockProcessor().processBlockHeader(state, blockHeader);
   }
 
   public void processProposerSlashings(
       MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processProposerSlashings(state, proposerSlashings);
+    atState(state).getBlockProcessor().processProposerSlashings(state, proposerSlashings);
   }
 
   public void processAttesterSlashings(
       MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processAttesterSlashings(state, attesterSlashings);
+    atState(state).getBlockProcessor().processAttesterSlashings(state, attesterSlashings);
   }
 
   public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processAttestations(state, attestations);
+    atState(state).getBlockProcessor().processAttestations(state, attestations);
   }
 
   public void processAttestations(
@@ -390,23 +390,23 @@ public class Spec {
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
-        .getBlockProcessorUtil()
+        .getBlockProcessor()
         .processAttestations(state, attestations, indexedAttestationCache);
   }
 
   public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processDeposits(state, deposits);
+    atState(state).getBlockProcessor().processDeposits(state, deposits);
   }
 
   public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    atState(state).getBlockProcessorUtil().processVoluntaryExits(state, exits);
+    atState(state).getBlockProcessor().processVoluntaryExits(state, exits);
   }
 
   public boolean isEnoughVotesToUpdateEth1Data(
       BeaconState state, Eth1Data eth1Data, final int additionalVotes) {
-    final BlockProcessorUtil blockProcessor = atState(state).getBlockProcessorUtil();
+    final BlockProcessor blockProcessor = atState(state).getBlockProcessor();
     final long existingVotes = blockProcessor.getVoteCount(state, eth1Data);
     return blockProcessor.isEnoughVotesToUpdateEth1Data(existingVotes + additionalVotes);
   }
