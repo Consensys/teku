@@ -26,14 +26,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractValidatorStatusFactoryTest {
 
-  protected final Spec spec = SpecFactory.createMinimal();
+  protected final Spec spec = createSpec();
   private final AbstractValidatorStatusFactory validatorStatusFactory = createFactory();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -43,6 +42,8 @@ public abstract class AbstractValidatorStatusFactoryTest {
   }
 
   protected abstract AbstractValidatorStatusFactory createFactory();
+
+  protected abstract Spec createSpec();
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})

@@ -188,8 +188,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  /** Processes rewards and penalties */
-
   /**
    * Processes validator registry updates
    *
