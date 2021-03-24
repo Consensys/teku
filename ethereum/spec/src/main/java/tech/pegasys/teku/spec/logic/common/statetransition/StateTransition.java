@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
@@ -34,39 +35,37 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 
 public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfig specConfig;
-  private final BlockProcessorUtil blockProcessorUtil;
+  private final BlockProcessor blockProcessor;
   private final EpochProcessor epochProcessor;
 
   private final BlockValidator blockValidator;
 
   private StateTransition(
       final SpecConfig specConfig,
-      final BlockProcessorUtil blockProcessorUtil,
+      final BlockProcessor blockProcessor,
       final EpochProcessor epochProcessor,
       final BlockValidator blockValidator) {
     this.specConfig = specConfig;
-    this.blockProcessorUtil = blockProcessorUtil;
+    this.blockProcessor = blockProcessor;
     this.epochProcessor = epochProcessor;
     this.blockValidator = blockValidator;
   }
 
   public static StateTransition create(
       final SpecConfig specConfig,
-      final BlockProcessorUtil blockProcessorUtil,
+      final BlockProcessor blockProcessor,
       final EpochProcessor epochProcessor,
       final BeaconStateUtil beaconStateUtil,
       final BeaconStateAccessors beaconStateAccessors) {
     final BlockValidator blockValidator =
-        BlockValidator.standard(
-            specConfig, beaconStateUtil, blockProcessorUtil, beaconStateAccessors);
-    return new StateTransition(specConfig, blockProcessorUtil, epochProcessor, blockValidator);
+        BlockValidator.standard(specConfig, beaconStateUtil, blockProcessor, beaconStateAccessors);
+    return new StateTransition(specConfig, blockProcessor, epochProcessor, blockValidator);
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
@@ -149,10 +148,10 @@ public class StateTransition {
       throws BlockProcessingException {
     return preState.updated(
         state -> {
-          blockProcessorUtil.processBlockHeader(state, block);
-          blockProcessorUtil.processRandaoNoValidation(state, block.getBody());
-          blockProcessorUtil.processEth1Data(state, block.getBody());
-          blockProcessorUtil.processOperationsNoValidation(state, block.getBody());
+          blockProcessor.processBlockHeader(state, block);
+          blockProcessor.processRandaoNoValidation(state, block.getBody());
+          blockProcessor.processEth1Data(state, block.getBody());
+          blockProcessor.processOperationsNoValidation(state, block.getBody());
         });
   }
 

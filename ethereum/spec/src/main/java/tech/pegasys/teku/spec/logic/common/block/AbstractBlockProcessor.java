@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.util;
+package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
@@ -53,9 +53,12 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
+import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SszList;
 
-public abstract class AbstractBlockProcessor implements BlockProcessorUtil {
+public abstract class AbstractBlockProcessor implements BlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
   protected final SpecConfig specConfig;
   protected final BeaconStateUtil beaconStateUtil;

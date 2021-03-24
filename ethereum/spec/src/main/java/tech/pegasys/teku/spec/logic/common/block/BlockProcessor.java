@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.util;
+package tech.pegasys.teku.spec.logic.common.block;
 
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SszList;
 
-public interface BlockProcessorUtil {
+public interface BlockProcessor {
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
 
