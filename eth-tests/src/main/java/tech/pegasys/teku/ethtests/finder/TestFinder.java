@@ -19,6 +19,11 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public interface TestFinder {
+
+  default Stream<TestDefinition> findTests(String spec, Path testRoot) throws IOException {
+    return findTests(testRoot.toFile().getName(), spec, testRoot);
+  }
+
   @MustBeClosed
-  Stream<TestDefinition> findTests(String spec, Path testRoot) throws IOException;
+  Stream<TestDefinition> findTests(String phase, String spec, Path testRoot) throws IOException;
 }

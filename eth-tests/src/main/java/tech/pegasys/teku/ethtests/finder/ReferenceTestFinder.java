@@ -27,7 +27,7 @@ public class ReferenceTestFinder {
 
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "eth2.0-spec-tests", "tests");
-  public static final String PHASE_TEST_DIR = "phase0";
+  public static final List<String> SUPPORTED_PHASES = List.of("phase0", "altair");
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
@@ -37,14 +37,21 @@ public class ReferenceTestFinder {
   @MustBeClosed
   private static Stream<TestDefinition> findTestTypes(final Path specDirectory) {
     final String spec = specDirectory.getFileName().toString();
-    final Path phase0Tests = specDirectory.resolve(PHASE_TEST_DIR);
-    return Stream.of(
-            new BlsTestFinder(),
-            new SszTestFinder("ssz_generic"),
-            new SszTestFinder("ssz_static"),
-            new ShufflingTestFinder(),
-            new PyspecTestFinder())
-        .flatMap(unchecked(finder -> finder.findTests(spec, phase0Tests)));
+    return SUPPORTED_PHASES.stream()
+        .flatMap(
+            phase -> {
+              final Path phaseDirectory = specDirectory.resolve(phase);
+              if (!phaseDirectory.toFile().isDirectory()) {
+                return Stream.empty();
+              }
+              return Stream.of(
+                      new BlsTestFinder(),
+                      new SszTestFinder("ssz_generic"),
+                      new SszTestFinder("ssz_static"),
+                      new ShufflingTestFinder(),
+                      new PyspecTestFinder())
+                  .flatMap(unchecked(finder -> finder.findTests(spec, phaseDirectory)));
+            });
   }
 
   @MustBeClosed

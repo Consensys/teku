@@ -20,8 +20,12 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
+    return createAltair(Eth2Network.MINIMAL.configName());
+  }
+
+  public static Spec createAltair(final String specName) {
     final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+        SpecConfigAltair.required(SpecConfigLoader.loadConfig(specName));
     return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
   }
 }

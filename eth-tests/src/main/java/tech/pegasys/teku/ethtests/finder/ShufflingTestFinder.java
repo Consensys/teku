@@ -25,8 +25,8 @@ public class ShufflingTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String spec, final Path testRoot)
-      throws IOException {
+  public Stream<TestDefinition> findTests(
+      final String phase, final String spec, final Path testRoot) throws IOException {
     final Path shufflingDir = testRoot.resolve(SHUFFLING_TEST_CATEGORY);
     if (!shufflingDir.toFile().exists()) {
       return Stream.empty();
@@ -37,7 +37,7 @@ public class ShufflingTestFinder implements TestFinder {
             testDir -> {
               final String testName = shufflingDir.relativize(testDir).toString();
               return new TestDefinition(
-                  spec, SHUFFLING_TEST_CATEGORY, testName, testRoot.relativize(testDir));
+                  phase, spec, SHUFFLING_TEST_CATEGORY, testName, testRoot.relativize(testDir));
             });
   }
 }

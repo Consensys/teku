@@ -31,26 +31,28 @@ public class SszTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String spec, final Path testRoot)
-      throws IOException {
+  public Stream<TestDefinition> findTests(
+      final String phase, final String spec, final Path testRoot) throws IOException {
     final Path sszStaticDir = testRoot.resolve(testDirectoryName);
     if (!sszStaticDir.toFile().exists()) {
       return Stream.empty();
     }
     return Files.list(sszStaticDir)
-        .flatMap(unchecked(dir -> findSszStaticTests(spec, testRoot, dir)));
+        .flatMap(unchecked(dir -> findSszStaticTests(phase, spec, testRoot, dir)));
   }
 
   @MustBeClosed
   private static Stream<TestDefinition> findSszStaticTests(
-      final String spec, final Path phase0Tests, final Path testCategoryDir) throws IOException {
-    final String testType = phase0Tests.relativize(testCategoryDir).toString();
+      final String phase, final String spec, final Path phaseDir, final Path testCategoryDir)
+      throws IOException {
+    final String testType = phaseDir.relativize(testCategoryDir).toString();
     return Files.walk(testCategoryDir)
         .filter(path -> path.resolve("serialized.ssz_snappy").toFile().exists())
         .map(
             testDir -> {
               final String testName = testCategoryDir.relativize(testDir).toString();
-              return new TestDefinition(spec, testType, testName, phase0Tests.relativize(testDir));
+              return new TestDefinition(
+                  phase, spec, testType, testName, phaseDir.relativize(testDir));
             });
   }
 }

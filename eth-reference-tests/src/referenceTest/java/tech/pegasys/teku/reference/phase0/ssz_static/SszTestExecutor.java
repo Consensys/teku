@@ -21,6 +21,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -43,6 +45,28 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BeaconBlockBody",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockBodySchema))
+          .put(
+              "ssz_static/SyncCommittee",
+              new SszTestExecutor<>(
+                  schemas ->
+                      BeaconStateSchemaAltair.required(schemas.getBeaconStateSchema())
+                          .getCurrentSyncCommitteeSchema()))
+          .put(
+              "ssz_static/SyncAggregate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      BeaconBlockBodySchemaAltair.required(schemas.getBeaconBlockBodySchema())
+                          .getSyncAggregateSchema()))
+
+          // Not yet implemented Altair
+          .put("ssz_static/ContributionAndProof", IGNORE_TESTS)
+          .put("ssz_static/SignedContributionAndProof", IGNORE_TESTS)
+          .put("ssz_static/SyncCommitteeContribution", IGNORE_TESTS)
+          .put("ssz_static/SyncCommitteeSignature", IGNORE_TESTS)
+          .put("ssz_static/SyncCommitteeSigningData", IGNORE_TESTS)
+          .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
+          .put("ssz_static/LightClientStore", IGNORE_TESTS)
+          .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -41,6 +42,14 @@ public class BeaconStateSchemaAltair
   @VisibleForTesting
   BeaconStateSchemaAltair(final SpecConfig specConfig) {
     super("BeaconStateAltair", getUniqueFields(specConfig), specConfig);
+  }
+
+  public static BeaconStateSchemaAltair required(final BeaconStateSchema<?, ?> schema) {
+    Preconditions.checkArgument(
+        schema instanceof BeaconStateSchemaAltair,
+        "Expected an altair state schema but got %s",
+        schema.getClass());
+    return (BeaconStateSchemaAltair) schema;
   }
 
   public static BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> create(

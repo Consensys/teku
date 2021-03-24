@@ -64,7 +64,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         TestDataUtils.loadSsz(
             testDefinition, "anchor_block.ssz_snappy", spec::deserializeBeaconBlock);
 
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
     recentChainData.initializeFromAnchorPoint(
         AnchorPoint.fromInitialBlockAndState(

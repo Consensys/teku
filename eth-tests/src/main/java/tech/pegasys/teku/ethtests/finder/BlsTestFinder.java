@@ -28,25 +28,28 @@ public class BlsTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String spec, final Path testRoot)
-      throws IOException {
+  public Stream<TestDefinition> findTests(
+      final String phase, final String spec, final Path testRoot) throws IOException {
     final Path blsTestDir = testRoot.resolve("bls");
     if (!blsTestDir.toFile().exists()) {
       return Stream.empty();
     }
-    return Files.list(blsTestDir).flatMap(unchecked(dir -> findBlsTests(spec, testRoot, dir)));
+    return Files.list(blsTestDir)
+        .flatMap(unchecked(dir -> findBlsTests(phase, spec, testRoot, dir)));
   }
 
   @MustBeClosed
   private Stream<TestDefinition> findBlsTests(
-      final String spec, final Path testRoot, final Path testCategoryDir) throws IOException {
+      final String phase, final String spec, final Path testRoot, final Path testCategoryDir)
+      throws IOException {
     final String testType = testRoot.relativize(testCategoryDir).toString();
     return Files.walk(testCategoryDir)
         .filter(path -> path.resolve(BLS_DATA_FILE).toFile().exists())
         .map(
             testDir -> {
               final String testName = testCategoryDir.relativize(testDir).toString();
-              return new TestDefinition(spec, testType, testName, testRoot.relativize(testDir));
+              return new TestDefinition(
+                  phase, spec, testType, testName, testRoot.relativize(testDir));
             });
   }
 }
