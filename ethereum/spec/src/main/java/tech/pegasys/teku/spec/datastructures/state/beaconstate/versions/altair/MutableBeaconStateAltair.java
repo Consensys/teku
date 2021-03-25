@@ -60,11 +60,6 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
     set(fieldIndex, newValue);
   }
 
-  default void clearCurrentEpochParticipation() {
-    setCurrentEpochParticipation(
-        getBeaconStateSchema().getCurrentEpochParticipationSchema().getDefault());
-  }
-
   @Override
   default SszMutableUInt64List getInactivityScores() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
