@@ -493,7 +493,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         boolean proof_is_valid =
             !BLS_VERIFY_DEPOSIT
                 || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
-        if (!proof_is_valid) {
+        if (proof_is_valid) {
+          if (pubKeyToIndexMap == null) {
+            LOG.debug("Adding new validator to state: {}", state.getValidators().size());
+          }
+          processNewValidator(state, deposit);
+        } else {
           if (deposit instanceof DepositWithIndex) {
             LOG.debug(
                 "Skipping invalid deposit with index {} and pubkey {}",
@@ -506,18 +511,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
           }
-          return;
         }
       }
-
-      if (pubKeyToIndexMap == null) {
-        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
-      }
-      state.getValidators().append(getValidatorFromDeposit(deposit));
-      state.getBalances().appendElement(amount);
     } else {
       validatorsUtil.increaseBalance(state, existingIndex.getAsInt(), amount);
     }
+  }
+
+  protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
+    state.getValidators().append(getValidatorFromDeposit(deposit));
+    state.getBalances().appendElement(deposit.getData().getAmount());
   }
 
   private Validator getValidatorFromDeposit(Deposit deposit) {

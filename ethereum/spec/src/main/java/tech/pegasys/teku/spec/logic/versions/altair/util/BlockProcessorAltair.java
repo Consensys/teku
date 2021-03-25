@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszVector;
+import tech.pegasys.teku.ssz.primitive.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
 
@@ -71,6 +74,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState state, final SszList<Attestation> attestations)
       throws BlockProcessingException {
     throw new NotImplementedException("TODO");
+  }
+
+  @Override
+  protected void processNewValidator(final MutableBeaconState genericState, final Deposit deposit) {
+    super.processNewValidator(genericState, deposit);
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+
+    state.getPreviousEpochParticipation().append(SszByte.ZERO);
+    state.getCurrentEpochParticipation().append(SszByte.ZERO);
+    state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
   public void processSyncCommittee(

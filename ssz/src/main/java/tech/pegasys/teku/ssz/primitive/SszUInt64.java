@@ -19,6 +19,8 @@ import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 
 public class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
 
+  public static final SszUInt64 ZERO = SszUInt64.of(UInt64.ZERO);
+
   public static SszUInt64 of(UInt64 val) {
     return new SszUInt64(val);
   }
