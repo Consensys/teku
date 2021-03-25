@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
@@ -46,7 +47,7 @@ public class StateTransition {
 
   private final BlockValidator blockValidator;
 
-  private StateTransition(
+  protected StateTransition(
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
       final EpochProcessor epochProcessor,
@@ -146,13 +147,15 @@ public class StateTransition {
    */
   public BeaconState processBlock(BeaconState preState, BeaconBlock block)
       throws BlockProcessingException {
-    return preState.updated(
-        state -> {
-          blockProcessor.processBlockHeader(state, block);
-          blockProcessor.processRandaoNoValidation(state, block.getBody());
-          blockProcessor.processEth1Data(state, block.getBody());
-          blockProcessor.processOperationsNoValidation(state, block.getBody());
-        });
+    return preState.updated(state -> processBlock(state, block));
+  }
+
+  protected void processBlock(final MutableBeaconState state, final BeaconBlock block)
+      throws BlockProcessingException {
+    blockProcessor.processBlockHeader(state, block);
+    blockProcessor.processRandaoNoValidation(state, block.getBody());
+    blockProcessor.processEth1Data(state, block.getBody());
+    blockProcessor.processOperationsNoValidation(state, block.getBody());
   }
 
   /**

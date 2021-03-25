@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszList;
@@ -61,6 +62,17 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
   default void clearCurrentEpochParticipation() {
     setCurrentEpochParticipation(
         getBeaconStateSchema().getCurrentEpochParticipationSchema().getDefault());
+  }
+
+  default void setCurrentSyncCommittee(SyncCommittee currentSyncCommittee) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
+    set(fieldIndex, currentSyncCommittee);
+  }
+
+  default void setNextSyncCommittee(SyncCommittee nextSyncCommittee) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name());
+    set(fieldIndex, nextSyncCommittee);
   }
 
   @Override

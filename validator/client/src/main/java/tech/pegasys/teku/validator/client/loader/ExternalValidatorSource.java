@@ -36,16 +36,19 @@ public class ExternalValidatorSource implements ValidatorSource {
   private final Supplier<HttpClient> externalSignerHttpClientFactory;
   private final PublicKeyLoader publicKeyLoader;
   private final ThrottlingTaskQueue externalSignerTaskQueue;
+  private final MetricsSystem metricsSystem;
 
   private ExternalValidatorSource(
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
-      final ThrottlingTaskQueue externalSignerTaskQueue) {
+      final ThrottlingTaskQueue externalSignerTaskQueue,
+      final MetricsSystem metricsSystem) {
     this.config = config;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.publicKeyLoader = publicKeyLoader;
     this.externalSignerTaskQueue = externalSignerTaskQueue;
+    this.metricsSystem = metricsSystem;
   }
 
   public static ExternalValidatorSource create(
@@ -62,7 +65,11 @@ public class ExternalValidatorSource implements ValidatorSource {
             "external_signer_request_queue_size");
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, asyncRunner);
     return new ExternalValidatorSource(
-        config, externalSignerHttpClientFactory, publicKeyLoader, externalSignerTaskQueue);
+        config,
+        externalSignerHttpClientFactory,
+        publicKeyLoader,
+        externalSignerTaskQueue,
+        metricsSystem);
   }
 
   @Override
@@ -112,7 +119,8 @@ public class ExternalValidatorSource implements ValidatorSource {
           config.getValidatorExternalSignerUrl(),
           publicKey,
           config.getValidatorExternalSignerTimeout(),
-          externalSignerTaskQueue);
+          externalSignerTaskQueue,
+          metricsSystem);
     }
   }
 }

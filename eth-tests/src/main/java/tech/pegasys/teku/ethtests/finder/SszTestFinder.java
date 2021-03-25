@@ -46,7 +46,7 @@ public class SszTestFinder implements TestFinder {
       final String spec, final Path phase0Tests, final Path testCategoryDir) throws IOException {
     final String testType = phase0Tests.relativize(testCategoryDir).toString();
     return Files.walk(testCategoryDir)
-        .filter(path -> path.resolve("serialized.ssz").toFile().exists())
+        .filter(path -> path.resolve("serialized.ssz_snappy").toFile().exists())
         .map(
             testDir -> {
               final String testName = testCategoryDir.relativize(testDir).toString();
