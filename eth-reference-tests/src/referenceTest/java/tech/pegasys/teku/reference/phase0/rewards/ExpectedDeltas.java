@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.reference.phase0.rewards;
 
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.containers.ContainerSchema2;
@@ -29,10 +29,10 @@ public class ExpectedDeltas extends Container2<ExpectedDeltas, SszUInt64List, Ss
     super(schema, backingNode);
   }
 
-  public Deltas getDeltas() {
+  public RewardAndPenaltyDeltas getDeltas() {
     final SszUInt64List rewards = getField0();
     final SszUInt64List penalties = getField1();
-    final Deltas deltas = new Deltas(rewards.size());
+    final RewardAndPenaltyDeltas deltas = new RewardAndPenaltyDeltas(rewards.size());
     for (int i = 0; i < rewards.size(); i++) {
       deltas.getDelta(i).reward(rewards.get(i).get());
       deltas.getDelta(i).penalize(penalties.get(i).get());

@@ -41,8 +41,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -75,7 +76,7 @@ public class EpochTransitionBenchmark {
   BeaconState preEpochTransitionState;
   MutableBeaconState preEpochTransitionMutableState;
   ValidatorStatuses validatorStatuses;
-  Deltas attestationDeltas;
+  RewardAndPenaltyDeltas attestationDeltas;
 
   @Param({"32768"})
   int validatorsCount = 32768;
@@ -125,9 +126,7 @@ public class EpochTransitionBenchmark {
             .createValidatorStatuses(preEpochTransitionState);
     preEpochTransitionState.updated(mbs -> preEpochTransitionMutableState = mbs);
     attestationDeltas =
-        epochProcessor
-            .createRewardsAndPenaltiesCalculator(preEpochTransitionState, validatorStatuses)
-            .getAttestationDeltas();
+        epochProcessor.getRewardAndPenaltyDeltas(preEpochTransitionState, validatorStatuses);
 
     System.out.println("Done!");
   }
@@ -155,7 +154,7 @@ public class EpochTransitionBenchmark {
     final SszMutableUInt64List balances = preEpochTransitionMutableState.getBalances();
     int validatorsSize = preEpochTransitionMutableState.getValidators().size();
     for (int i = 0; i < validatorsSize; i++) {
-      final Deltas.Delta delta = attestationDeltas.getDelta(i);
+      final RewardAndPenalty delta = attestationDeltas.getDelta(i);
       balances.setElement(
           i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
     }

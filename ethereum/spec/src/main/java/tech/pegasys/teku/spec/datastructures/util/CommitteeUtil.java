@@ -32,11 +32,11 @@ import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -237,7 +237,7 @@ public class CommitteeUtil {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
-            Pair.of(slot, index),
+            TekuPair.of(slot, index),
             p -> {
               UInt64 epoch = compute_epoch_at_slot(slot);
               UInt64 committees_per_slot = get_committee_count_per_slot(state, epoch);

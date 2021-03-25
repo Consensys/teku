@@ -38,7 +38,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class EventSubscriberTest {
   private static final int MAX_PENDING_EVENTS = 10;
@@ -48,6 +50,7 @@ public class EventSubscriberTest {
   private final Runnable onCloseCallback = mock(Runnable.class);
   private final ServletResponse servletResponse = mock(ServletResponse.class);
   private final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private final Context context = new Context(req, res, Collections.emptyMap());
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -73,14 +76,14 @@ public class EventSubscriberTest {
   }
 
   @Test
-  void shouldDisconnectAfterTooManyRequestsAreLogged() {
+  void shouldDisconnectAfterTooManyRequestsAreLogged() throws Exception {
     EventSubscriber eventSubscriber =
         new EventSubscriber(
             List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
-      eventSubscriber.onEvent(EventType.head, "test");
+      eventSubscriber.onEvent(EventType.head, event("test"));
     }
     verify(onCloseCallback).run();
   }
@@ -93,7 +96,7 @@ public class EventSubscriberTest {
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
-      eventSubscriber.onEvent(EventType.head, "test");
+      eventSubscriber.onEvent(EventType.head, event("test"));
     }
     verify(onCloseCallback).run();
     verify(asyncContext).complete();
@@ -110,7 +113,9 @@ public class EventSubscriberTest {
             onCloseCallback,
             asyncRunner,
             MAX_PENDING_EVENTS);
-    allEventTypes.forEach(eventType -> eventSubscriber.onEvent(eventType, "test"));
+    for (EventType eventType : allEventTypes) {
+      eventSubscriber.onEvent(eventType, event("test"));
+    }
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
     verify(outputStream, times(allEventTypes.size())).print(anyString());
@@ -123,13 +128,13 @@ public class EventSubscriberTest {
             List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
-      eventSubscriber.onEvent(EventType.head, "test");
+      eventSubscriber.onEvent(EventType.head, event("test"));
     }
     asyncRunner.executeQueuedActions();
     verify(outputStream, times(10)).print(anyString());
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
-      eventSubscriber.onEvent(EventType.head, "test");
+      eventSubscriber.onEvent(EventType.head, event("test"));
     }
 
     verify(onCloseCallback, never()).run();
@@ -137,13 +142,15 @@ public class EventSubscriberTest {
 
   @ParameterizedTest
   @EnumSource(EventType.class)
-  void shouldNotSendEventsIfNotSubscribed(final EventType eventType) {
+  void shouldNotSendEventsIfNotSubscribed(final EventType eventType) throws Exception {
     EventSubscriber subscriber =
         new EventSubscriber(
             List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
-    allEventTypes.stream()
-        .filter(val -> val.compareTo(eventType) != 0)
-        .forEach(value -> subscriber.onEvent(value, "test"));
+    for (EventType val : allEventTypes) {
+      if (val.compareTo(eventType) != 0) {
+        subscriber.onEvent(val, event("test"));
+      }
+    }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
 
@@ -154,10 +161,14 @@ public class EventSubscriberTest {
         new EventSubscriber(
             List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
-    subscriber.onEvent(eventType, "test");
+    subscriber.onEvent(eventType, event("test"));
 
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
     verify(outputStream).print(anyString());
+  }
+
+  private EventSource event(final String message) {
+    return new EventSource(jsonProvider, message);
   }
 }
