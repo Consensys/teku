@@ -14,15 +14,18 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public interface EpochProcessor {
+  RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses);
+
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 
   void processJustificationAndFinalization(MutableBeaconState state, TotalBalances totalBalances)
@@ -31,15 +34,20 @@ public interface EpochProcessor {
   void processRewardsAndPenalties(MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException;
 
-  RewardsAndPenaltiesCalculator createRewardsAndPenaltiesCalculator(
-      BeaconState state, ValidatorStatuses validatorStatuses);
-
   void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
       throws EpochProcessingException;
 
   void processSlashings(MutableBeaconState state, UInt64 totalBalance);
 
-  void processFinalUpdates(MutableBeaconState state);
-
   void processParticipationUpdates(MutableBeaconState genericState);
+
+  void processEth1DataReset(MutableBeaconState state);
+
+  void processEffectiveBalanceUpdates(MutableBeaconState state);
+
+  void processSlashingsReset(MutableBeaconState state);
+
+  void processRandaoMixesReset(MutableBeaconState state);
+
+  void processHistoricalRootsUpdate(MutableBeaconState state);
 }

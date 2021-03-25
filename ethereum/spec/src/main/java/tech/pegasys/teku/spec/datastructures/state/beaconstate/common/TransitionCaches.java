@@ -15,14 +15,14 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.independent.TotalBalances;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {
@@ -64,7 +64,7 @@ public class TransitionCaches {
 
   private final Cache<UInt64, List<Integer>> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
-  private final Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee;
+  private final Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee;
   private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
@@ -75,21 +75,21 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private TransitionCaches() {
-    activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
-    beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
-    beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
-    attestersTotalBalance = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
-    totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
-    validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
+    activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
+    beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
+    beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
+    attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
     validatorIndexCache = new ValidatorIndexCache();
-    committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
-    effectiveBalances = new LRUCache<>(MAX_EFFECTIVE_BALANCE_CACHE);
+    committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
+    effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
   }
 
   private TransitionCaches(
       Cache<UInt64, List<Integer>> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
-      Cache<Pair<UInt64, UInt64>, List<Integer>> beaconCommittee,
+      Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee,
       Cache<UInt64, UInt64> attestersTotalBalance,
       Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
@@ -126,7 +126,7 @@ public class TransitionCaches {
   }
 
   /** (slot, committeeIndex) -> (committee) cache */
-  public Cache<Pair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
+  public Cache<TekuPair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
     return beaconCommittee;
   }
 

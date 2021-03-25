@@ -29,7 +29,7 @@ public class GenesisValidityTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final BeaconState state = loadStateFromSsz(testDefinition, "genesis.ssz");
+    final BeaconState state = loadStateFromSsz(testDefinition, "genesis.ssz_snappy");
     final Spec spec = testDefinition.getSpec();
     final BeaconStateUtil beaconStateUtil = spec.atEpoch(UInt64.ZERO).getBeaconStateUtil();
     final boolean expectedValidity = loadYaml(testDefinition, "is_valid.yaml", Boolean.class);

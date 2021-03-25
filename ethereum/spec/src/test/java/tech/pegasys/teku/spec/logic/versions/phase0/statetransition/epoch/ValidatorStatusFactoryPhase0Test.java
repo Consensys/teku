@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactoryTest;
@@ -23,5 +25,10 @@ class ValidatorStatusFactoryPhase0Test extends AbstractValidatorStatusFactoryTes
   protected AbstractValidatorStatusFactory createFactory() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     return (ValidatorStatusFactoryPhase0) genesisSpec.getValidatorStatusFactory();
+  }
+
+  @Override
+  protected Spec createSpec() {
+    return SpecFactory.createMinimal();
   }
 }

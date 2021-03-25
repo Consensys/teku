@@ -11,37 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.List;
-import tech.pegasys.teku.independent.TotalBalances;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.Deltas.Delta;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
-// TODO(#3356) Merge RewardsAndPenalties interface into this class
-public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenaltiesCalculator {
+public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalculator {
 
-  private final SpecConfig specConfig;
-  private final BeaconState state;
-  private final ValidatorStatuses validatorStatuses;
-  private final BeaconStateAccessors beaconStateAccessors;
-
-  public DefaultRewardsAndPenaltiesCalculator(
+  public RewardsAndPenaltiesCalculatorPhase0(
       final SpecConfig specConfig,
       final BeaconState state,
       final ValidatorStatuses validatorStatuses,
+      final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
-    this.specConfig = specConfig;
-    this.state = state;
-    this.validatorStatuses = validatorStatuses;
-    this.beaconStateAccessors = beaconStateAccessors;
+    super(specConfig, miscHelpers, beaconStateAccessors, state, validatorStatuses);
   }
 
   /**
@@ -51,18 +46,19 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
    * @throws IllegalArgumentException
    */
   @Override
-  public Deltas getAttestationDeltas() throws IllegalArgumentException {
+  public RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException {
     return getDeltas(this::applyAllDeltas);
   }
 
-  @Override
-  public Deltas getDeltas(final Step step) throws IllegalArgumentException {
-    final Deltas deltas = new Deltas(validatorStatuses.getValidatorCount());
+  public RewardAndPenaltyDeltas getDeltas(final Step step) throws IllegalArgumentException {
+    final RewardAndPenaltyDeltas deltas =
+        new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
     final UInt64 finalityDelay = getFinalityDelay();
 
-    final UInt64 totalActiveBalanceSquareRoot = squareRootOrZero(totalBalances.getCurrentEpoch());
+    final UInt64 totalActiveBalanceSquareRoot =
+        squareRootOrZero(totalBalances.getCurrentEpochActiveValidators());
 
     for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus validator = statuses.get(index);
@@ -71,19 +67,19 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
       }
 
       final UInt64 baseReward = getBaseReward(validator, totalActiveBalanceSquareRoot);
-      final Delta delta = deltas.getDelta(index);
+      final RewardAndPenalty delta = deltas.getDelta(index);
       step.apply(deltas, totalBalances, finalityDelay, validator, baseReward, delta);
     }
     return deltas;
   }
 
   private void applyAllDeltas(
-      final Deltas deltas,
+      final RewardAndPenaltyDeltas deltas,
       final TotalBalances totalBalances,
       final UInt64 finalityDelay,
       final ValidatorStatus validator,
       final UInt64 baseReward,
-      final Delta delta) {
+      final RewardAndPenalty delta) {
     applySourceDelta(validator, baseReward, totalBalances, finalityDelay, delta);
     applyTargetDelta(validator, baseReward, totalBalances, finalityDelay, delta);
     applyHeadDelta(validator, baseReward, totalBalances, finalityDelay, delta);
@@ -91,29 +87,27 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     applyInactivityPenaltyDelta(validator, baseReward, finalityDelay, delta);
   }
 
-  @Override
   public void applySourceDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
       final TotalBalances totalBalances,
       final UInt64 finalityDelay,
-      final Delta delta) {
+      final RewardAndPenalty delta) {
     applyAttestationComponentDelta(
-        validator.isPreviousEpochAttester() && !validator.isSlashed(),
-        totalBalances.getPreviousEpochAttesters(),
+        validator.isPreviousEpochSourceAttester() && !validator.isSlashed(),
+        totalBalances.getPreviousEpochSourceAttesters(),
         totalBalances,
         baseReward,
         finalityDelay,
         delta);
   }
 
-  @Override
   public void applyTargetDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
       final TotalBalances totalBalances,
       final UInt64 finalityDelay,
-      final Delta delta) {
+      final RewardAndPenalty delta) {
     applyAttestationComponentDelta(
         validator.isPreviousEpochTargetAttester() && !validator.isSlashed(),
         totalBalances.getPreviousEpochTargetAttesters(),
@@ -123,13 +117,12 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
         delta);
   }
 
-  @Override
   public void applyHeadDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
       final TotalBalances totalBalances,
       final UInt64 finalityDelay,
-      final Delta delta) {
+      final RewardAndPenalty delta) {
     applyAttestationComponentDelta(
         validator.isPreviousEpochHeadAttester() && !validator.isSlashed(),
         totalBalances.getPreviousEpochHeadAttesters(),
@@ -139,13 +132,12 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
         delta);
   }
 
-  @Override
   public void applyInclusionDelayDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
-      final Delta delta,
-      final Deltas deltas) {
-    if (validator.isPreviousEpochAttester() && !validator.isSlashed()) {
+      final RewardAndPenalty delta,
+      final RewardAndPenaltyDeltas deltas) {
+    if (validator.isPreviousEpochSourceAttester() && !validator.isSlashed()) {
       final InclusionInfo inclusionInfo =
           validator
               .getInclusionInfo()
@@ -161,14 +153,13 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     }
   }
 
-  @Override
   public void applyInactivityPenaltyDelta(
       final ValidatorStatus validator,
       final UInt64 baseReward,
       final UInt64 finalityDelay,
-      final Delta delta) {
+      final RewardAndPenalty delta) {
 
-    if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
+    if (isInactivityLeak(finalityDelay)) {
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
           specConfig
@@ -190,15 +181,14 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     return baseReward.dividedBy(specConfig.getProposerRewardQuotient());
   }
 
-  @Override
   public void applyAttestationComponentDelta(
       final boolean indexInUnslashedAttestingIndices,
       final UInt64 attestingBalance,
       final TotalBalances totalBalances,
       final UInt64 baseReward,
       final UInt64 finalityDelay,
-      final Delta delta) {
-    final UInt64 totalBalance = totalBalances.getCurrentEpoch();
+      final RewardAndPenalty delta) {
+    final UInt64 totalBalance = totalBalances.getCurrentEpochActiveValidators();
     if (indexInUnslashedAttestingIndices) {
       if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
         // Since full base reward will be canceled out by inactivity penalty deltas,
@@ -214,12 +204,6 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     } else {
       delta.penalize(baseReward);
     }
-  }
-
-  private UInt64 getFinalityDelay() {
-    return beaconStateAccessors
-        .getPreviousEpoch(state)
-        .minus(state.getFinalized_checkpoint().getEpoch());
   }
 
   private UInt64 getBaseReward(
@@ -238,5 +222,15 @@ public class DefaultRewardsAndPenaltiesCalculator implements RewardsAndPenalties
     return totalActiveBalance.isZero()
         ? UInt64.ZERO
         : MathHelpers.integerSquareRoot(totalActiveBalance);
+  }
+
+  public interface Step {
+    void apply(
+        final RewardAndPenaltyDeltas deltas,
+        final TotalBalances totalBalances,
+        final UInt64 finalityDelay,
+        final ValidatorStatus validator,
+        final UInt64 baseReward,
+        final RewardAndPenalty delta);
   }
 }

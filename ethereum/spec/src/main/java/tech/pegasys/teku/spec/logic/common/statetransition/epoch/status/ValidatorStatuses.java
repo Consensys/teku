@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import java.util.List;
-import tech.pegasys.teku.independent.TotalBalances;
 
 public class ValidatorStatuses {
   private final List<ValidatorStatus> statuses;

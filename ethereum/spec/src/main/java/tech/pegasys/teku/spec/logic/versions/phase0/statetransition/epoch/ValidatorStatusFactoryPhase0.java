@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -32,15 +33,16 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory {
 
   public ValidatorStatusFactoryPhase0(
+      final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final BeaconStateAccessors beaconStateAccessors,
       final Predicates predicates) {
-    super(beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
+    super(specConfig, beaconStateUtil, attestationUtil, predicates, beaconStateAccessors);
   }
 
   @Override
-  protected void processAttestations(
+  protected void processParticipation(
       final List<ValidatorStatus> statuses,
       final BeaconState genericState,
       final UInt64 previousEpoch,
@@ -58,11 +60,11 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
               final AttestationUpdates updates = new AttestationUpdates();
               final Checkpoint target = data.getTarget();
               if (target.getEpoch().equals(currentEpoch)) {
-                updates.currentEpochAttester = true;
+                updates.currentEpochSourceAttester = true;
                 updates.currentEpochTargetAttester =
                     matchesEpochStartBlock(state, currentEpoch, target.getRoot());
               } else if (target.getEpoch().equals(previousEpoch)) {
-                updates.previousEpochAttester = true;
+                updates.previousEpochSourceAttester = true;
 
                 updates.inclusionInfo =
                     Optional.of(
@@ -88,17 +90,17 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
   }
 
   private static class AttestationUpdates {
-    private boolean currentEpochAttester = false;
+    private boolean currentEpochSourceAttester = false;
     private boolean currentEpochTargetAttester = false;
-    private boolean previousEpochAttester = false;
+    private boolean previousEpochSourceAttester = false;
     private boolean previousEpochTargetAttester = false;
     private boolean previousEpochHeadAttester = false;
     private Optional<InclusionInfo> inclusionInfo = Optional.empty();
 
     public void apply(final ValidatorStatus status) {
-      status.updateCurrentEpochAttester(currentEpochAttester);
+      status.updateCurrentEpochSourceAttester(currentEpochSourceAttester);
       status.updateCurrentEpochTargetAttester(currentEpochTargetAttester);
-      status.updatePreviousEpochAttester(previousEpochAttester);
+      status.updatePreviousEpochSourceAttester(previousEpochSourceAttester);
       status.updatePreviousEpochTargetAttester(previousEpochTargetAttester);
       status.updatePreviousEpochHeadAttester(previousEpochHeadAttester);
       status.updateInclusionInfo(inclusionInfo);

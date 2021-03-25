@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common;
 
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -22,7 +23,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlockProcessorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
@@ -40,7 +40,7 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final AttestationUtil attestationUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
-  protected final BlockProcessorUtil blockProcessorUtil;
+  protected final BlockProcessor blockProcessor;
   protected final StateTransition stateTransition;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
@@ -55,7 +55,7 @@ public class AbstractSpecLogic implements SpecLogic {
       final AttestationUtil attestationUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
-      final BlockProcessorUtil blockProcessorUtil,
+      final BlockProcessor blockProcessor,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -68,7 +68,7 @@ public class AbstractSpecLogic implements SpecLogic {
     this.attestationUtil = attestationUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.epochProcessor = epochProcessor;
-    this.blockProcessorUtil = blockProcessorUtil;
+    this.blockProcessor = blockProcessor;
     this.stateTransition = stateTransition;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
@@ -100,8 +100,8 @@ public class AbstractSpecLogic implements SpecLogic {
   }
 
   @Override
-  public BlockProcessorUtil getBlockProcessorUtil() {
-    return blockProcessorUtil;
+  public BlockProcessor getBlockProcessor() {
+    return blockProcessor;
   }
 
   @Override
