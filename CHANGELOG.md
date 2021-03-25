@@ -20,4 +20,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reduced CPU usage by avoiding creation of REST API events when there are no subscribers.
 
 ### Bug Fixes
+- Fixed issue in discv5 where nonce was incorrectly reused.
 - Block events now only return the slot and root, rather than the entire signed block.
