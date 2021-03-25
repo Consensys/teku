@@ -16,10 +16,12 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateBuilderAltair
@@ -28,6 +30,9 @@ public class BeaconStateBuilderAltair
 
   private SszList<SszByte> previousEpochParticipation;
   private SszList<SszByte> currentEpochParticipation;
+  private SszUInt64List inactivityScores;
+  private SyncCommittee currentSyncCommittee;
+  private SyncCommittee nextSyncCommittee;
 
   private BeaconStateBuilderAltair(
       final Spec spec,
@@ -44,8 +49,11 @@ public class BeaconStateBuilderAltair
 
   @Override
   protected void setUniqueFields(final MutableBeaconStateAltair state) {
-    state.getPreviousEpochParticipation().setAll(previousEpochParticipation);
-    state.getCurrentEpochParticipation().setAll(currentEpochParticipation);
+    state.setPreviousEpochParticipation(previousEpochParticipation);
+    state.setCurrentEpochParticipation(currentEpochParticipation);
+    state.setInactivityScores(inactivityScores);
+    state.setCurrentSyncCommittee(currentSyncCommittee);
+    state.setNextSyncCommittee(nextSyncCommittee);
   }
 
   public static BeaconStateBuilderAltair create(
@@ -75,6 +83,11 @@ public class BeaconStateBuilderAltair
             getBeaconStateSchemaAltair().getCurrentEpochParticipationSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomSszByte);
+    inactivityScores =
+        dataStructureUtil.randomSszUInt64List(
+            getBeaconStateSchemaAltair().getInactivityScoresSchema(), defaultItemsInSSZLists);
+    currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
+    nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
   }
 
   public BeaconStateBuilderAltair previousEpochAttestations(final SszList<SszByte> value) {
@@ -86,6 +99,24 @@ public class BeaconStateBuilderAltair
   public BeaconStateBuilderAltair currentEpochAttestations(final SszList<SszByte> value) {
     checkNotNull(value);
     this.currentEpochParticipation = value;
+    return this;
+  }
+
+  public BeaconStateBuilderAltair inactivityScores(final SszUInt64List inactivityScores) {
+    checkNotNull(inactivityScores);
+    this.inactivityScores = inactivityScores;
+    return this;
+  }
+
+  public BeaconStateBuilderAltair currentSyncCommittee(final SyncCommittee currentSyncCommittee) {
+    checkNotNull(currentSyncCommittee);
+    this.currentSyncCommittee = currentSyncCommittee;
+    return this;
+  }
+
+  public BeaconStateBuilderAltair nextSyncCommittee(final SyncCommittee nextSyncCommittee) {
+    checkNotNull(nextSyncCommittee);
+    this.nextSyncCommittee = nextSyncCommittee;
     return this;
   }
 }
