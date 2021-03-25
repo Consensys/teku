@@ -87,8 +87,7 @@ public abstract class AbstractSszMutableComposite<
       immutableValue = value;
     }
 
-    ChildChangeRecord<SszChildT, SszMutableChildT> oldChangeRecord =
-        childrenChanges.put(index, createChangeRecordByValue(immutableValue));
+    childrenChanges.put(index, createChangeRecordByValue(immutableValue));
 
     sizeCache = index >= sizeCache ? index + 1 : sizeCache;
     invalidate();
