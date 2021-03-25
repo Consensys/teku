@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -55,6 +57,11 @@ class BlockProcessorTest {
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final SpecConfig specConfig = genesisSpec.getConfig();
   private final BlockProcessor blockProcessor = genesisSpec.getBlockProcessor();
+
+  @Test
+  void ensureVerifyDepositDefaultsToTrue() {
+    assertThat(AbstractBlockProcessor.BLS_VERIFY_DEPOSIT).isTrue();
+  }
 
   @Test
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()

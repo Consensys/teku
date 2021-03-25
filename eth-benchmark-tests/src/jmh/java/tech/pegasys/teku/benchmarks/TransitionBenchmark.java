@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -68,7 +68,7 @@ public abstract class TransitionBenchmark {
   @Setup(Level.Trial)
   public void init() throws Exception {
     Constants.setConstants("mainnet");
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
