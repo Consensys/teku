@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
@@ -76,12 +76,16 @@ public class ForkManifest {
     return forkSchedule.floorEntry(epoch).getValue();
   }
 
+  public Fork next(final UInt64 epoch) {
+    return forkSchedule.ceilingEntry(epoch).getValue();
+  }
+
   public Fork getGenesisFork() {
     return forkSchedule.firstEntry().getValue();
   }
 
-  public List<Fork> getForkSchedule() {
-    return new ArrayList<>(forkSchedule.values());
+  public Collection<Fork> getForkSchedule() {
+    return Collections.unmodifiableCollection(forkSchedule.values());
   }
 
   @Override
