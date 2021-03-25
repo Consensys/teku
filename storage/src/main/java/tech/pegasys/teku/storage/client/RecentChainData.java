@@ -357,7 +357,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Fork> getNextFork() {
-    return getCurrentEpoch().map(spec.getForkManifest()::next);
+    return getCurrentEpoch().flatMap(spec.getForkManifest()::getNext);
   }
 
   /**
