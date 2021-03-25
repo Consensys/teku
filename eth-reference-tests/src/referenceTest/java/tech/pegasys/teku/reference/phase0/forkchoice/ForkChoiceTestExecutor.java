@@ -188,7 +188,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private <T> T get(final Map<String, Object> yamlData, final String key) {
     return (T) yamlData.get(key);
   }
