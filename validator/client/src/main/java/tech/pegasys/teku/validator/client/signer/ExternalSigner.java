@@ -101,8 +101,7 @@ public class ExternalSigner implements Signer {
             signingRootForRandaoReveal(epoch, forkInfo),
             SignType.RANDAO_REVEAL,
             Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)),
-            slashableGenericMessage("randao reveal"))
-        .whenComplete(this::recordMetrics);
+            slashableGenericMessage("randao reveal"));
   }
 
   @Override
@@ -115,8 +114,7 @@ public class ExternalSigner implements Signer {
                 new tech.pegasys.teku.api.schema.BeaconBlock(block),
                 FORK_INFO,
                 forkInfo(forkInfo)),
-            slashableBlockMessage(block))
-        .whenComplete(this::recordMetrics);
+            slashableBlockMessage(block));
   }
 
   @Override
@@ -130,8 +128,7 @@ public class ExternalSigner implements Signer {
                 new tech.pegasys.teku.api.schema.AttestationData(attestationData),
                 FORK_INFO,
                 forkInfo(forkInfo)),
-            slashableAttestationMessage(attestationData))
-        .whenComplete(this::recordMetrics);
+            slashableAttestationMessage(attestationData));
   }
 
   private void recordMetrics(final BLSSignature result, final Throwable error) {
@@ -154,8 +151,7 @@ public class ExternalSigner implements Signer {
                     signingRootForSignAggregationSlot(slot, forkInfo),
                     SignType.AGGREGATION_SLOT,
                     Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
-                    slashableGenericMessage("aggregation slot"))
-                .whenComplete(this::recordMetrics));
+                    slashableGenericMessage("aggregation slot")));
   }
 
   @Override
@@ -169,8 +165,7 @@ public class ExternalSigner implements Signer {
                 new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof),
                 FORK_INFO,
                 forkInfo(forkInfo)),
-            slashableGenericMessage("aggregate and proof"))
-        .whenComplete(this::recordMetrics);
+            slashableGenericMessage("aggregate and proof"));
   }
 
   @Override
@@ -184,8 +179,7 @@ public class ExternalSigner implements Signer {
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit),
                 FORK_INFO,
                 forkInfo(forkInfo)),
-            slashableGenericMessage("voluntary exit"))
-        .whenComplete(this::recordMetrics);
+            slashableGenericMessage("voluntary exit"));
   }
 
   @Override
@@ -223,7 +217,8 @@ public class ExternalSigner implements Signer {
               .sendAsync(request, BodyHandlers.ofString())
               .handleAsync(
                   (response, error) -> this.getBlsSignature(response, error, slashableMessage));
-        });
+        })
+        .whenComplete(this::recordMetrics);
   }
 
   private String createSigningRequestBody(
