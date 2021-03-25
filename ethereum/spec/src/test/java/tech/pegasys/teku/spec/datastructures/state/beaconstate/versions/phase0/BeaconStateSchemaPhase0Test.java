@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -25,6 +26,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 
 public class BeaconStateSchemaPhase0Test
     extends AbstractBeaconStateSchemaTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
+
+  @Override
+  protected Spec createSpec() {
+    return TestSpecFactory.createMinimalPhase0();
+  }
 
   @Override
   protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(

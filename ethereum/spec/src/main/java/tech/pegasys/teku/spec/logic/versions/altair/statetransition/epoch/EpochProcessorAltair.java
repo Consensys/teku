@@ -89,7 +89,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   public void processParticipationUpdates(final MutableBeaconState genericState) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
 
-    state.getPreviousEpochParticipation().setAll(state.getCurrentEpochParticipation());
+    state.setPreviousEpochParticipation(state.getCurrentEpochParticipation());
 
     // Reset current epoch participation flags
     state.getCurrentEpochParticipation().clear();

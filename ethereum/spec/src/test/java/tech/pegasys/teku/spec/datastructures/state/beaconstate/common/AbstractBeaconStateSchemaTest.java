@@ -43,7 +43,10 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 public abstract class AbstractBeaconStateSchemaTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = createSpec();
+
+  protected abstract Spec createSpec();
+
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
