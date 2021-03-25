@@ -305,6 +305,12 @@ public class ForkChoice {
     onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
   }
 
+  public void onTick(final UInt64 currentTime) {
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    spec.onTick(transaction, currentTime);
+    transaction.commit().join();
+  }
+
   private ForkChoiceStrategy getForkChoiceStrategy() {
     forkChoiceExecutor.checkOnEventThread();
     return recentChainData

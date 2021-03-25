@@ -101,7 +101,6 @@ import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
@@ -805,9 +804,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       return;
     }
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    spec.onTick(transaction, currentTime);
-    transaction.commit().join();
+    forkChoice.onTick(currentTime);
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     if (genesisTime.isGreaterThan(currentTime)) {
