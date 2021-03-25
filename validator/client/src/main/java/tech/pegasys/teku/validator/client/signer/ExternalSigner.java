@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDIT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -31,16 +32,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -59,53 +65,85 @@ public class ExternalSigner implements Signer {
   private final HttpClient httpClient;
   private final ThrottlingTaskQueue taskQueue;
 
+  private final Counter successCounter;
+  private final Counter failedCounter;
+  private final Counter timeoutCounter;
+
   public ExternalSigner(
       final HttpClient httpClient,
       final URL signingServiceUrl,
       final BLSPublicKey blsPublicKey,
       final Duration timeout,
-      final ThrottlingTaskQueue taskQueue) {
+      final ThrottlingTaskQueue taskQueue,
+      final MetricsSystem metricsSystem) {
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
+
+    final LabelledMetric<Counter> labelledCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR,
+            "external_signer_requests",
+            "Completed external signer counts",
+            "success",
+            "failed",
+            "timeout");
+    successCounter = labelledCounter.labels("success");
+    failedCounter = labelledCounter.labels("failed");
+    timeoutCounter = labelledCounter.labels("timeout");
   }
 
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return sign(
-        signingRootForRandaoReveal(epoch, forkInfo),
-        SignType.RANDAO_REVEAL,
-        Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)),
-        slashableGenericMessage("randao reveal"));
+            signingRootForRandaoReveal(epoch, forkInfo),
+            SignType.RANDAO_REVEAL,
+            Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)),
+            slashableGenericMessage("randao reveal"))
+        .whenComplete(this::recordMetrics);
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignBlock(block, forkInfo),
-        SignType.BLOCK,
-        Map.of(
-            "block",
-            new tech.pegasys.teku.api.schema.BeaconBlock(block),
-            FORK_INFO,
-            forkInfo(forkInfo)),
-        slashableBlockMessage(block));
+            signingRootForSignBlock(block, forkInfo),
+            SignType.BLOCK,
+            Map.of(
+                "block",
+                new tech.pegasys.teku.api.schema.BeaconBlock(block),
+                FORK_INFO,
+                forkInfo(forkInfo)),
+            slashableBlockMessage(block))
+        .whenComplete(this::recordMetrics);
   }
 
   @Override
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignAttestationData(attestationData, forkInfo),
-        SignType.ATTESTATION,
-        Map.of(
-            "attestation",
-            new tech.pegasys.teku.api.schema.AttestationData(attestationData),
-            FORK_INFO,
-            forkInfo(forkInfo)),
-        slashableAttestationMessage(attestationData));
+            signingRootForSignAttestationData(attestationData, forkInfo),
+            SignType.ATTESTATION,
+            Map.of(
+                "attestation",
+                new tech.pegasys.teku.api.schema.AttestationData(attestationData),
+                FORK_INFO,
+                forkInfo(forkInfo)),
+            slashableAttestationMessage(attestationData))
+        .whenComplete(this::recordMetrics);
+  }
+
+  private void recordMetrics(final BLSSignature result, final Throwable error) {
+    if (error != null) {
+      if (Throwables.getRootCause(error) instanceof HttpTimeoutException) {
+        timeoutCounter.inc();
+      } else {
+        failedCounter.inc();
+      }
+    } else {
+      successCounter.inc();
+    }
   }
 
   @Override
@@ -113,38 +151,41 @@ public class ExternalSigner implements Signer {
     return taskQueue.queueTask(
         () ->
             sign(
-                signingRootForSignAggregationSlot(slot, forkInfo),
-                SignType.AGGREGATION_SLOT,
-                Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
-                slashableGenericMessage("aggregation slot")));
+                    signingRootForSignAggregationSlot(slot, forkInfo),
+                    SignType.AGGREGATION_SLOT,
+                    Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
+                    slashableGenericMessage("aggregation slot"))
+                .whenComplete(this::recordMetrics));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
-        SignType.AGGREGATE_AND_PROOF,
-        Map.of(
-            "aggregate_and_proof",
-            new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof),
-            FORK_INFO,
-            forkInfo(forkInfo)),
-        slashableGenericMessage("aggregate and proof"));
+            signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
+            SignType.AGGREGATE_AND_PROOF,
+            Map.of(
+                "aggregate_and_proof",
+                new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof),
+                FORK_INFO,
+                forkInfo(forkInfo)),
+            slashableGenericMessage("aggregate and proof"))
+        .whenComplete(this::recordMetrics);
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
-        SignType.VOLUNTARY_EXIT,
-        Map.of(
-            "voluntary_exit",
-            new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit),
-            FORK_INFO,
-            forkInfo(forkInfo)),
-        slashableGenericMessage("voluntary exit"));
+            signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
+            SignType.VOLUNTARY_EXIT,
+            Map.of(
+                "voluntary_exit",
+                new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit),
+                FORK_INFO,
+                forkInfo(forkInfo)),
+            slashableGenericMessage("voluntary exit"))
+        .whenComplete(this::recordMetrics);
   }
 
   @Override
