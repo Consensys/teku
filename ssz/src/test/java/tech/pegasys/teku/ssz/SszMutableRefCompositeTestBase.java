@@ -119,6 +119,41 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
 
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
+  default void set_mutableValueShouldNotBeShared(
+      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+    SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
+
+    SszData newChildValue = generator.randomData(childSchema);
+    SszMutableData mutableChild = newChildValue.createWritableCopy();
+    SszData sszMutableChildUpdated1 = updateSomething(mutableChild);
+    data.set(updateChildIndex, mutableChild);
+
+    // updating `mutableChild` should not affect `data`
+    SszData sszMutableChildUpdated2 = updateSomething(mutableChild);
+
+    assertThatSszData((SszData) data.getByRef(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated1);
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated1);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isEqualByAllMeansTo(sszMutableChildUpdated1);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isNotEqualByAllMeansTo(sszMutableChildUpdated2);
+
+    // and vice versa: updating `data` child should not affect `mutableChild`
+    SszMutableData childByRef = data.getByRef(updateChildIndex);
+    SszData sszMutableChildUpdated3 = updateSomething(childByRef);
+
+    assertThatSszData((SszData) mutableChild).isEqualByGettersTo(sszMutableChildUpdated2);
+    assertThatSszData(mutableChild.commitChanges()).isEqualByAllMeansTo(sszMutableChildUpdated2);
+    assertThatSszData((SszData) data.getByRef(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated3);
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated3);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isEqualByAllMeansTo(sszMutableChildUpdated3);
+  }
+
+  @MethodSource("sszMutableByRefCompositeArguments")
+  @ParameterizedTest
   default void getByRef_childUpdateByRefThenSetShouldWork(
       SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
