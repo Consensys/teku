@@ -23,6 +23,11 @@ import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
 
+  @Override
+  default BeaconStateSchemaAltair getBeaconStateSchema() {
+    return (BeaconStateSchemaAltair) getSchema();
+  }
+
   static BeaconStateAltair required(final BeaconState state) {
     return state
         .toVersionAltair()
