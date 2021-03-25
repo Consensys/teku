@@ -49,13 +49,20 @@ public class TestDefinition {
 
   public Spec getSpec() {
     if (spec == null) {
-      if ("altair".equals(phase)) {
-        spec = TestSpecFactory.createAltair(specName);
-      } else {
-        spec = SpecFactory.create(specName);
-      }
+      spec = createSpec();
     }
     return spec;
+  }
+
+  private Spec createSpec() {
+    switch (phase) {
+      case "altair":
+        return TestSpecFactory.createAltair(specName);
+      case "phase0":
+        return SpecFactory.create(specName);
+      default:
+        throw new UnsupportedOperationException("Unsupported phase: " + phase);
+    }
   }
 
   public String getTestType() {
