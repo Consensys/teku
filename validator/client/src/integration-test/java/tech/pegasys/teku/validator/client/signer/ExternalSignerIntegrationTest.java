@@ -38,7 +38,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +52,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -73,7 +73,7 @@ public class ExternalSignerIntegrationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final ThrottlingTaskQueue queue =
       new ThrottlingTaskQueue(8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
 
@@ -98,7 +98,8 @@ public class ExternalSignerIntegrationTest {
             config.getValidatorExternalSignerUrl(),
             KEYPAIR.getPublicKey(),
             TIMEOUT,
-            queue);
+            queue,
+            metricsSystem);
   }
 
   @AfterEach
@@ -114,6 +115,8 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer failed to sign and returned invalid response status code: 404");
+
+    validateMetrics(0, 1, 0);
   }
 
   @Test
@@ -127,6 +130,8 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer failed to sign due to java.net.http.HttpTimeoutException: request timed out");
+
+    validateMetrics(0, 0, 1);
   }
 
   @Test
@@ -138,6 +143,8 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
+
+    validateMetrics(0, 1, 0);
   }
 
   @Test
@@ -148,6 +155,8 @@ public class ExternalSignerIntegrationTest {
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableBlockMessage(block).get());
+
+    validateMetrics(0, 1, 0);
   }
 
   @Test
@@ -158,6 +167,8 @@ public class ExternalSignerIntegrationTest {
     assertThatThrownBy(() -> externalSigner.signAttestationData(attestationData, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableAttestationMessage(attestationData).get());
+
+    validateMetrics(0, 1, 0);
   }
 
   @Test
@@ -168,6 +179,8 @@ public class ExternalSignerIntegrationTest {
     assertThatThrownBy(() -> externalSigner.createRandaoReveal(epoch, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableGenericMessage("randao reveal").get());
+
+    validateMetrics(0, 1, 0);
   }
 
   @Test
@@ -193,6 +206,8 @@ public class ExternalSignerIntegrationTest {
                 new tech.pegasys.teku.api.schema.BeaconBlock(block)));
 
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+
+    validateMetrics(1, 0, 0);
   }
 
   @Test
@@ -218,6 +233,8 @@ public class ExternalSignerIntegrationTest {
                 new tech.pegasys.teku.api.schema.AttestationData(attestationData)));
 
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+
+    validateMetrics(1, 0, 0);
   }
 
   @Test
@@ -238,6 +255,8 @@ public class ExternalSignerIntegrationTest {
             SignType.RANDAO_REVEAL,
             Map.of("fork_info", createForkInfo(), "randao_reveal", Map.of("epoch", epoch)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+
+    validateMetrics(1, 0, 0);
   }
 
   @Test
@@ -259,6 +278,7 @@ public class ExternalSignerIntegrationTest {
             SignType.AGGREGATION_SLOT,
             Map.of("fork_info", createForkInfo(), "aggregation_slot", Map.of("slot", slot)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(1, 0, 0);
   }
 
   @Test
@@ -285,6 +305,7 @@ public class ExternalSignerIntegrationTest {
                 "aggregate_and_proof",
                 new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(1, 0, 0);
   }
 
   @Test
@@ -308,6 +329,7 @@ public class ExternalSignerIntegrationTest {
                 "voluntary_exit",
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(1, 0, 0);
   }
 
   private Map<String, Object> createForkInfo() {
@@ -327,5 +349,14 @@ public class ExternalSignerIntegrationTest {
             .withContentType(MediaType.APPLICATION_JSON)
             .withBody(json(jsonProvider.objectToJSON(signingRequestBody), STRICT))
             .withPath(ExternalSigner.EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey));
+  }
+
+  private void validateMetrics(
+      final long successCount, final long failCount, final long timeoutCount) {
+    final StubCounter labelledCounter =
+        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests");
+    assertThat(labelledCounter.getValue("success")).isEqualTo(successCount);
+    assertThat(labelledCounter.getValue("failed")).isEqualTo(failCount);
+    assertThat(labelledCounter.getValue("timeout")).isEqualTo(timeoutCount);
   }
 }
