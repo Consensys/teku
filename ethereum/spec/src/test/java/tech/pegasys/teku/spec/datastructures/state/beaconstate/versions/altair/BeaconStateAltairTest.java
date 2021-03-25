@@ -13,12 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
 public class BeaconStateAltairTest
     extends AbstractBeaconStateTest<BeaconStateAltair, MutableBeaconStateAltair> {
+
+  @Override
+  protected Spec createSpec() {
+    return TestSpecFactory.createMinimalAltair();
+  }
 
   @Override
   protected BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> getSchema(
