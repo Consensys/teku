@@ -152,6 +152,24 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
         .isEqualByAllMeansTo(sszMutableChildUpdated3);
   }
 
+  @MethodSource("sszMutableByRefCompositeArguments")
+  @ParameterizedTest
+  default void getByRef_childUpdateByRefThenSetShouldWork(
+      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+    SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
+
+    SszMutableData byRef = data.getByRef(updateChildIndex);
+    SszData newChildValueByRef = updateSomething(byRef);
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValueByRef);
+
+    SszData newChildValue = generator.randomData(childSchema);
+    data.set(updateChildIndex, newChildValue);
+
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValue);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isEqualByAllMeansTo(newChildValue);
+  }
+
   @SuppressWarnings("unchecked")
   static SszData updateSomething(SszMutableData mutableData) {
     Assumptions.assumeTrue(mutableData instanceof SszMutableComposite);
