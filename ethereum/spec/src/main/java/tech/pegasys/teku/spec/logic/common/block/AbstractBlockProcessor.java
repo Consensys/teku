@@ -415,6 +415,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  /**
+   * Corresponds to beacon-chain spec function "process_attestation", excluding the assertion on
+   * is_valid_indexed_attestation (this is what "no validation" refers to)
+   *
+   * @param genericState The state corresponding to the block being processed
+   * @param attestation An attestation in the body of the block being processed
+   */
   protected abstract void processAttestationNoValidation(
       final MutableBeaconState genericState, final Attestation attestation);
 
