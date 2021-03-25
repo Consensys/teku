@@ -656,7 +656,7 @@ public class SpecConfigBuilder {
     // Misc
     private Integer syncCommitteeSize;
     private Integer syncSubcommitteeSize;
-    private Integer inactivityScoreBias;
+    private UInt64 inactivityScoreBias;
 
     // Time
     private Integer epochsPerSyncCommitteePeriod;
@@ -752,7 +752,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public AltairBuilder inactivityScoreBias(final Integer inactivityScoreBias) {
+    public AltairBuilder inactivityScoreBias(final UInt64 inactivityScoreBias) {
       checkNotNull(inactivityScoreBias);
       this.inactivityScoreBias = inactivityScoreBias;
       return this;

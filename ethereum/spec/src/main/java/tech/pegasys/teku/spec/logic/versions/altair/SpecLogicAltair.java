@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
@@ -41,8 +41,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final AttestationUtil attestationUtil,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
-      final BlockProcessorAltair blockProcessorUtil,
-      final StateTransition stateTransition,
+      final BlockProcessorAltair blockProcessor,
+      final StateTransitionAltair stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
     super(
@@ -55,7 +55,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         attestationUtil,
         validatorStatusFactory,
         epochProcessor,
-        blockProcessorUtil,
+        blockProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
@@ -85,11 +85,21 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
-            beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final EpochProcessorAltair epochProcessor =
         new EpochProcessorAltair(
-            config, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
-    final BlockProcessorAltair blockProcessorUtil =
+            config,
+            miscHelpers,
+            validatorsUtil,
+            beaconStateUtil,
+            validatorStatusFactory,
+            beaconStateAccessors);
+    final BlockProcessorAltair blockProcessor =
         new BlockProcessorAltair(
             config,
             beaconStateUtil,
@@ -97,9 +107,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateAccessors,
             miscHelpers);
-    final StateTransition stateTransition =
-        StateTransition.create(
-            config, blockProcessorUtil, epochProcessor, beaconStateUtil, beaconStateAccessors);
+    final StateTransitionAltair stateTransition =
+        StateTransitionAltair.create(
+            config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -115,7 +125,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         attestationUtil,
         validatorStatusFactory,
         epochProcessor,
-        blockProcessorUtil,
+        blockProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);

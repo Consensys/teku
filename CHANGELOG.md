@@ -18,6 +18,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - When downloading the `--initial-state` from a URL, the `Accept: application/octet-stream` header is now set. This provides compatibility with the standard API `/eth/v1/debug/beacon/states/:state_id` endpoint.
 - `--ws-checkpoint` CLI now accepts a URL optionally, and will load the `ws_checkpoint` field from that URL.
 - Upgraded to use BLS implementation BLST version 0.3.3.
+- Reduced CPU usage by avoiding creation of REST API events when there are no subscribers.
 
 ### Bug Fixes
+- Fixed issue in discv5 where nonce was incorrectly reused.
 - Block events now only return the slot and root, rather than the entire signed block.

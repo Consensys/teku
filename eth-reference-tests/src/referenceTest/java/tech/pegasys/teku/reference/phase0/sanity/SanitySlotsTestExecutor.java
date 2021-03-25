@@ -30,8 +30,8 @@ public class SanitySlotsTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final int numberOfSlots = loadYaml(testDefinition, "slots.yaml", Integer.class);
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-    final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
+    final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
     final UInt64 endSlot = preState.getSlot().plus(numberOfSlots);
 

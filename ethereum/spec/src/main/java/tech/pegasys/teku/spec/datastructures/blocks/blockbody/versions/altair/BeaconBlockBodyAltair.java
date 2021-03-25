@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -29,7 +31,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-class BeaconBlockBodyAltair
+public class BeaconBlockBodyAltair
     extends Container9<
         BeaconBlockBodyAltair,
         SszSignature,
@@ -73,6 +75,14 @@ class BeaconBlockBodyAltair
         deposits,
         voluntaryExits,
         syncAggregate);
+  }
+
+  public static BeaconBlockBodyAltair required(final BeaconBlockBody body) {
+    checkArgument(
+        body instanceof BeaconBlockBodyAltair,
+        "Expected altair block body but got %s",
+        body.getClass());
+    return (BeaconBlockBodyAltair) body;
   }
 
   @Override

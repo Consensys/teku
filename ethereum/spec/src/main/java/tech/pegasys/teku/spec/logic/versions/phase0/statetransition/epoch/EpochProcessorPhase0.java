@@ -14,11 +14,15 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -26,12 +30,28 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
   public EpochProcessorPhase0(
       final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
       final BeaconStateAccessors beaconStateAccessors) {
     super(
-        specConfig, validatorsUtil, beaconStateUtil, validatorStatusFactory, beaconStateAccessors);
+        specConfig,
+        miscHelpers,
+        validatorsUtil,
+        beaconStateUtil,
+        validatorStatusFactory,
+        beaconStateAccessors);
+  }
+
+  @Override
+  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses) {
+    final RewardsAndPenaltiesCalculatorPhase0 calculator =
+        new RewardsAndPenaltiesCalculatorPhase0(
+            specConfig, state, validatorStatuses, miscHelpers, beaconStateAccessors);
+
+    return calculator.getDeltas();
   }
 
   @Override
