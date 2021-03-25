@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,12 +26,9 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SszList;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -58,43 +51,22 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
         attestationValidator);
   }
 
-  @Override
-  public void processAttestationsNoValidation(
-      MutableBeaconState genericState, SszList<Attestation> attestations)
-      throws BlockProcessingException {
+  protected void processAttestationNoValidation(
+      final MutableBeaconState genericState, final Attestation attestation) {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
+    final AttestationData data = attestation.getData();
 
-    try {
-      for (Attestation attestation : attestations) {
-        AttestationData data = attestation.getData();
-        final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
-        checkArgument(
-            invalidReason.isEmpty(),
-            "process_attestations: %s",
-            invalidReason.map(OperationInvalidReason::describe).orElse(""));
+    PendingAttestation pendingAttestation =
+        new PendingAttestation(
+            attestation.getAggregation_bits(),
+            data,
+            state.getSlot().minus(data.getSlot()),
+            UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
 
-        List<Integer> committee =
-            beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
-        checkArgument(
-            attestation.getAggregation_bits().size() == committee.size(),
-            "process_attestations: Attestation aggregation bits and committee don't have the same length");
-
-        PendingAttestation pendingAttestation =
-            new PendingAttestation(
-                attestation.getAggregation_bits(),
-                data,
-                state.getSlot().minus(data.getSlot()),
-                UInt64.valueOf(beaconStateUtil.getBeaconProposerIndex(state)));
-
-        if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
-          state.getCurrent_epoch_attestations().append(pendingAttestation);
-        } else {
-          state.getPrevious_epoch_attestations().append(pendingAttestation);
-        }
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
+    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
+      state.getCurrent_epoch_attestations().append(pendingAttestation);
+    } else {
+      state.getPrevious_epoch_attestations().append(pendingAttestation);
     }
   }
 }

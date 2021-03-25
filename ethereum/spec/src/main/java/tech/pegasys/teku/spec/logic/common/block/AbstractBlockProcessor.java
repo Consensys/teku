@@ -93,6 +93,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return attestationValidator.validate(state, data);
   }
 
+  protected void assertAttestationValid(
+      final MutableBeaconState state, final Attestation attestation) {
+    final AttestationData data = attestation.getData();
+
+    final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
+    checkArgument(
+        invalidReason.isEmpty(),
+        "process_attestations: %s",
+        invalidReason.map(OperationInvalidReason::describe).orElse(""));
+
+    List<Integer> committee =
+        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+    checkArgument(
+        attestation.getAggregation_bits().size() == committee.size(),
+        "process_attestations: Attestation aggregation bits and committee don't have the same length");
+  }
+
   /**
    * Processes block header
    *
@@ -380,6 +397,26 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     processAttestationsNoValidation(state, attestations);
     verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
   }
+
+  @Override
+  public void processAttestationsNoValidation(
+      final MutableBeaconState state, final SszList<Attestation> attestations)
+      throws BlockProcessingException {
+    try {
+      for (Attestation attestation : attestations) {
+        // Validate
+        assertAttestationValid(state, attestation);
+
+        processAttestationNoValidation(state, attestation);
+      }
+    } catch (IllegalArgumentException e) {
+      LOG.warn(e.getMessage());
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  protected abstract void processAttestationNoValidation(
+      final MutableBeaconState genericState, final Attestation attestation);
 
   @Override
   public void verifyAttestations(
