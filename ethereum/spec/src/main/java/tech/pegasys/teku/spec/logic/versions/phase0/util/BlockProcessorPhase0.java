@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -31,7 +29,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
-  private static final Logger LOG = LogManager.getLogger();
 
   public BlockProcessorPhase0(
       final SpecConfig specConfig,
@@ -51,6 +48,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
         attestationValidator);
   }
 
+  @Override
   protected void processAttestationNoValidation(
       final MutableBeaconState genericState, final Attestation attestation) {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);

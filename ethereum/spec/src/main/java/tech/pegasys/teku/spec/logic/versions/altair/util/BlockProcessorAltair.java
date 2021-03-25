@@ -18,8 +18,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSqu
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -50,8 +48,6 @@ import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final SpecConfigAltair specConfigAltair;
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
