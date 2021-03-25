@@ -74,13 +74,21 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void set(int index, SszChildT value) {
     checkIndex(index, true);
     checkNotNull(value);
     validateChildSchema(index, value);
 
+    final SszChildT immutableValue;
+    if (value instanceof SszMutableData) {
+      immutableValue = (SszChildT) ((SszMutableData) value).commitChanges();
+    } else {
+      immutableValue = value;
+    }
+
     ChildChangeRecord<SszChildT, SszMutableChildT> oldChangeRecord =
-        childrenChanges.put(index, createChangeRecordByValue(value));
+        childrenChanges.put(index, createChangeRecordByValue(immutableValue));
     if (oldChangeRecord != null && oldChangeRecord.isByRef()) {
       // restore old value to be consistent
       childrenChanges.put(index, oldChangeRecord);
