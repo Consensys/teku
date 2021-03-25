@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -58,7 +59,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszMutableData mutableChild = data.getByRef(updateChildIndex);
     SszData newChildValue = updateSomething(mutableChild);
 
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+    assertThatSszData(data.get(updateChildIndex))
         .isEqualByGettersTo(newChildValue)
         .isEqualBySszTo(newChildValue);
     IntStream.range(0, data.size())
@@ -66,22 +67,20 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
         .forEach(
             i -> {
               if (i != updateChildIndex) {
-                SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
+                assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
               }
             });
 
     SszComposite<SszData> updatedData = data.commitChanges();
 
-    SszDataAssert.assertThatSszData(updatedData).isNotEqualByAllMeansTo(data);
-    SszDataAssert.assertThatSszData(updatedData.get(updateChildIndex))
-        .isEqualByAllMeansTo(newChildValue);
+    assertThatSszData(updatedData).isNotEqualByAllMeansTo(data);
+    assertThatSszData(updatedData.get(updateChildIndex)).isEqualByAllMeansTo(newChildValue);
     IntStream.range(0, data.size())
         .limit(32)
         .forEach(
             i -> {
               if (i != updateChildIndex) {
-                SszDataAssert.assertThatSszData(updatedData.get(i))
-                    .isEqualByAllMeansTo(origData.get(i));
+                assertThatSszData(updatedData.get(i)).isEqualByAllMeansTo(origData.get(i));
               }
             });
   }
@@ -108,15 +107,49 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszData newChildValue = generator.randomData(childSchema);
     data.set(updateChildIndex, newChildValue);
 
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+    assertThatSszData(data.get(updateChildIndex))
         .isNotEqualByAllMeansTo(origData.get(updateChildIndex));
     SszMutableData byRef = data.getByRef(updateChildIndex);
     SszData newChildValueByRef = updateSomething(byRef);
 
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
-        .isEqualByGettersTo(newChildValueByRef);
-    SszDataAssert.assertThatSszData(data.commitChanges().get(updateChildIndex))
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValueByRef);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
         .isEqualByAllMeansTo(newChildValueByRef);
+  }
+
+  @MethodSource("sszMutableByRefCompositeArguments")
+  @ParameterizedTest
+  default void set_mutableValueShouldNotBeShared(
+      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+    SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
+
+    SszData newChildValue = generator.randomData(childSchema);
+    SszMutableData mutableChild = newChildValue.createWritableCopy();
+    SszData sszMutableChildUpdated1 = updateSomething(mutableChild);
+    data.set(updateChildIndex, mutableChild);
+
+    // updating `mutableChild` should not affect `data`
+    SszData sszMutableChildUpdated2 = updateSomething(mutableChild);
+
+    assertThatSszData((SszData) data.getByRef(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated1);
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated1);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isEqualByAllMeansTo(sszMutableChildUpdated1);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isNotEqualByAllMeansTo(sszMutableChildUpdated2);
+
+    // and vice versa: updating `data` child should not affect `mutableChild`
+    SszMutableData childByRef = data.getByRef(updateChildIndex);
+    SszData sszMutableChildUpdated3 = updateSomething(childByRef);
+
+    assertThatSszData((SszData) mutableChild).isEqualByGettersTo(sszMutableChildUpdated2);
+    assertThatSszData(mutableChild.commitChanges()).isEqualByAllMeansTo(sszMutableChildUpdated2);
+    assertThatSszData((SszData) data.getByRef(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated3);
+    assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated3);
+    assertThatSszData(data.commitChanges().get(updateChildIndex))
+        .isEqualByAllMeansTo(sszMutableChildUpdated3);
   }
 
   @SuppressWarnings("unchecked")
