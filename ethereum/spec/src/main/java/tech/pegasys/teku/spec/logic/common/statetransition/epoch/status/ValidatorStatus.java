@@ -23,9 +23,9 @@ public class ValidatorStatus {
   private final boolean activeInCurrentEpoch;
   private final boolean activeInPreviousEpoch;
 
-  private boolean currentEpochAttester = false;
+  private boolean currentEpochSourceAttester = false;
   private boolean currentEpochTargetAttester = false;
-  private boolean previousEpochAttester = false;
+  private boolean previousEpochSourceAttester = false;
   private boolean previousEpochTargetAttester = false;
   private boolean previousEpochHeadAttester = false;
 
@@ -52,14 +52,30 @@ public class ValidatorStatus {
     return slashed;
   }
 
+  public boolean isNotSlashed() {
+    return !slashed;
+  }
+
+  /**
+   * @return True if the validators withdrawable epoch is less than or equal to the current epoch.
+   */
   public boolean isWithdrawableInCurrentEpoch() {
     return withdrawableInCurrentEpoch;
   }
 
+  /**
+   * @return True if the validator is "active" in this epoch. In other words the current epoch is in
+   *     the range between the validator's activation epoch (inclusive) and exit epoch (exclusive).
+   */
   public boolean isActiveInCurrentEpoch() {
     return activeInCurrentEpoch;
   }
 
+  /**
+   * @return True if the validator is "active" in the previous epoch. In other words the previous
+   *     epoch is in the range between the validator's activation epoch (inclusive) and exit epoch
+   *     (exclusive).
+   */
   public boolean isActiveInPreviousEpoch() {
     return activeInPreviousEpoch;
   }
@@ -68,32 +84,56 @@ public class ValidatorStatus {
     return currentEpochEffectiveBalance;
   }
 
-  public boolean isCurrentEpochAttester() {
-    return currentEpochAttester;
+  /**
+   * @return True if the validator correctly attested to the correct source (justified checkpoint)
+   *     in the current epoch.
+   */
+  public boolean isCurrentEpochSourceAttester() {
+    return currentEpochSourceAttester;
   }
 
+  /**
+   * @return True if the validator correctly attested to the correct target (epoch boundary block)
+   *     in the current epoch.
+   */
   public boolean isCurrentEpochTargetAttester() {
     return currentEpochTargetAttester;
   }
 
-  public boolean isPreviousEpochAttester() {
-    return previousEpochAttester;
+  /**
+   * @return True if the validator correctly attested to the correct source (justified checkpoint)
+   *     in the previous epoch.
+   */
+  public boolean isPreviousEpochSourceAttester() {
+    return previousEpochSourceAttester;
   }
 
+  /**
+   * @return True if the validator correctly attested to the correct target (epoch boundary block)
+   *     in the previous epoch.
+   */
   public boolean isPreviousEpochTargetAttester() {
     return previousEpochTargetAttester;
   }
 
+  /**
+   * @return True if the validator attested to the correct head block at the assigned slot in the
+   *     previous epoch.
+   */
   public boolean isPreviousEpochHeadAttester() {
     return previousEpochHeadAttester;
   }
 
+  /**
+   * @return If available, return information on the distance in slots between the time an
+   *     attestation was produced, and when it was included in a block.
+   */
   public Optional<InclusionInfo> getInclusionInfo() {
     return inclusionInfo;
   }
 
-  public ValidatorStatus updateCurrentEpochAttester(final boolean currentEpochAttester) {
-    this.currentEpochAttester |= currentEpochAttester;
+  public ValidatorStatus updateCurrentEpochSourceAttester(final boolean currentEpochAttester) {
+    this.currentEpochSourceAttester |= currentEpochAttester;
     return this;
   }
 
@@ -103,8 +143,8 @@ public class ValidatorStatus {
     return this;
   }
 
-  public ValidatorStatus updatePreviousEpochAttester(final boolean previousEpochAttester) {
-    this.previousEpochAttester |= previousEpochAttester;
+  public ValidatorStatus updatePreviousEpochSourceAttester(final boolean previousEpochAttester) {
+    this.previousEpochSourceAttester |= previousEpochAttester;
     return this;
   }
 

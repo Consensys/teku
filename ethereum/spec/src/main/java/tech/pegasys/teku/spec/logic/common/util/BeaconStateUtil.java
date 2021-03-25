@@ -28,7 +28,6 @@ import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -342,7 +342,7 @@ public class BeaconStateUtil {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
-            Pair.of(slot, index),
+            TekuPair.of(slot, index),
             p -> {
               UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
@@ -421,7 +421,7 @@ public class BeaconStateUtil {
         state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
   }
 
-  private Bytes computeSigningRoot(Bytes bytes, Bytes32 domain) {
+  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
     SigningData domainWrappedObject =
         new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
