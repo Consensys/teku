@@ -17,7 +17,10 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStateAltair {
@@ -31,7 +34,6 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
                     "Expected a altair state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Participation
   @Override
   default SszMutableList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
@@ -39,11 +41,34 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
     return getAnyByRef(fieldIndex);
   }
 
+  default void setPreviousEpochParticipation(final SszList<SszByte> newValue) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
   @Override
   default SszMutableList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
     return getAnyByRef(fieldIndex);
+  }
+
+  default void setCurrentEpochParticipation(final SszList<SszByte> newValue) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
+  @Override
+  default SszMutableUInt64List getInactivityScores() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
+    return getAny(fieldIndex);
+  }
+
+  default void setInactivityScores(SszUInt64List newValue) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
+    set(fieldIndex, newValue);
   }
 
   default void setCurrentSyncCommittee(SyncCommittee currentSyncCommittee) {
