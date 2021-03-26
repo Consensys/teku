@@ -41,7 +41,7 @@ public class NoopSignature extends MikuliSignature {
   }
 
   @Override
-  public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
+  public boolean verify(PublicKey publicKey, Bytes message, String dst) {
     LOG.warn("BLS verification is disabled");
     return true;
   }
