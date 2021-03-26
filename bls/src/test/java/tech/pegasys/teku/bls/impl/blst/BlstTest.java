@@ -22,15 +22,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
+import tech.pegasys.teku.bls.impl.BLS12381;
 
 public class BlstTest {
   private static final Random random = new Random(1);
 
-  private static BlstBLS12381 BLS;
+  private static BLS12381 BLS;
 
   @BeforeAll
   static void setup() {
-    BLS = BlstBLS12381.INSTANCE.orElseThrow();
+    BLS = BlstLoader.INSTANCE.orElseThrow();
   }
 
   @Test

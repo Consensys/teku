@@ -103,11 +103,12 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final BlockProcessorPhase0 blockProcessor =
         new BlockProcessorPhase0(
             config,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors,
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            beaconStateAccessors,
-            miscHelpers,
             attestationValidator);
     final StateTransition stateTransition =
         StateTransition.create(

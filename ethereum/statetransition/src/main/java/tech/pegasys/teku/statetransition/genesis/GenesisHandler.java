@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
-import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -47,7 +47,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     this.recentChainData = recentChainData;
     this.timeProvider = timeProvider;
     this.spec = spec;
-    this.genesisGenerator = new GenesisGenerator(spec.getGenesisSchemaDefinitions());
+    this.genesisGenerator = spec.createGenesisGenerator();
   }
 
   @Override

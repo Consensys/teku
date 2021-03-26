@@ -106,4 +106,14 @@ class ForkManifestTest {
     assertThat(forkManifest.get(UInt64.valueOf(200L))).isEqualTo(thirdFork);
     assertThat(forkManifest.get(UInt64.MAX_VALUE)).isEqualTo(thirdFork);
   }
+
+  @Test
+  void shouldGetNextFork() {
+    assertThat(forkManifest.getNext(UInt64.ZERO)).contains(secondFork);
+    assertThat(forkManifest.getNext(UInt64.ONE)).contains(secondFork);
+    assertThat(forkManifest.getNext(secondFork.getEpoch().decrement())).contains(secondFork);
+    assertThat(forkManifest.getNext(secondFork.getEpoch())).contains(thirdFork);
+    assertThat(forkManifest.getNext(thirdFork.getEpoch())).isEmpty();
+    assertThat(forkManifest.getNext(UInt64.MAX_VALUE)).isEmpty();
+  }
 }

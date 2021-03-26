@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.bls;
+package tech.pegasys.teku.spec.logic.versions.altair.block;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import tech.pegasys.teku.bls.impl.blst.BlstLoader;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessorTest;
 
-public class BlstBlsTest extends BLSTest {
+public class BlockProcessorAltairTest extends BlockProcessorTest {
 
-  @BeforeAll
-  public static void init() {
-    BLS.setBlsImplementation(BlstLoader.INSTANCE.orElseThrow());
-  }
-
-  @AfterAll
-  public static void cleanup() {
-    BLS.resetBlsImplementation();
+  @Override
+  protected Spec createSpec() {
+    return TestSpecFactory.createMinimalAltair();
   }
 }

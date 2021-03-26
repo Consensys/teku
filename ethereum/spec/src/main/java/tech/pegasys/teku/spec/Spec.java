@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -161,6 +162,17 @@ public class Spec {
 
   public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
     return atSlot(slot).getConfig().getSecondsPerEth1Block();
+  }
+
+  // Genesis
+  public BeaconState initializeBeaconStateFromEth1(
+      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
+    return GenesisGenerator.initializeBeaconStateFromEth1(
+        getGenesisSpec(), eth1BlockHash, eth1Timestamp, deposits);
+  }
+
+  public GenesisGenerator createGenesisGenerator() {
+    return new GenesisGenerator(getGenesisSpec());
   }
 
   // Serialization
