@@ -102,11 +102,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BlockProcessorAltair blockProcessor =
         new BlockProcessorAltair(
             config,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors,
             beaconStateUtil,
             attestationUtil,
-            validatorsUtil,
-            beaconStateAccessors,
-            miscHelpers);
+            validatorsUtil);
     final StateTransitionAltair stateTransition =
         StateTransitionAltair.create(
             config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);

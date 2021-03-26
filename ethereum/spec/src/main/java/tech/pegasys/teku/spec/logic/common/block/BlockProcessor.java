@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.block;
 
+import java.util.Map;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -87,6 +89,11 @@ public interface BlockProcessor {
 
   void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException;
+
+  void processDepositWithoutCheckingMerkleProof(
+      final MutableBeaconState state,
+      final Deposit deposit,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap);
 
   void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException;

@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -86,12 +86,12 @@ public class BlockImporterTest {
 
   @BeforeAll
   public static void init() {
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
   }
 
   @AfterAll
   public static void dispose() {
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
   }
 
   @BeforeEach
