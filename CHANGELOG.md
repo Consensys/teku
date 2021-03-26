@@ -13,6 +13,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - validator-client now publishes `validator_current_epoch` which is the epoch based on slot events on the validator client.
-- Added a labelled counter to metrics for external signer requests, `validator_external_signer_requests`, with labels `success`, `failed`, `timeout`
+- Added a labelled counter to metrics for external signer requests, `validator_external_signer_requests`, with a result label containing `success`, `failed`, `timeout`
+- Added a labelled counter to metrics for storing the results of duties, `validator_duties_performed`, with a `type` and `result`.
 
 ### Bug Fixes
