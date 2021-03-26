@@ -24,6 +24,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
@@ -41,7 +42,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
-      final ValidatorTimingChannel validatorTimingChannel) {
+      final ValidatorTimingChannel validatorTimingChannel,
+      final MetricsSystem metricsSystem) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
@@ -51,7 +53,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + ","
                 + EventType.chain_reorg);
     this.eventSource =
-        new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
+        new EventSource.Builder(
+                new EventSourceHandler(validatorTimingChannel, metricsSystem), eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))

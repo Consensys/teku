@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - validator-client now publishes `validator_current_epoch` which is the epoch based on slot events on the validator client.
 - Reduced CPU usage by avoiding creation of REST API events when there are no subscribers.
 - Added a labelled counter to metrics for external signer requests, `validator_external_signer_requests`, with labels `success`, `failed`, `timeout`
+- Added a labelled counter to metrics for event stream errors, `event_stream_failures`, storing a count of `reason`, one of disconnect or error.
 
 ### Bug Fixes
 - Fixed issue in discv5 where nonce was incorrectly reused.
