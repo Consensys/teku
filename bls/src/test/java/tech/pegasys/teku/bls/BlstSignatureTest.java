@@ -15,13 +15,13 @@ package tech.pegasys.teku.bls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
+import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 
 public class BlstSignatureTest extends BLSSignatureTest {
 
   @BeforeAll
   public static void init() {
-    BLS.setBlsImplementation(BlstBLS12381.INSTANCE.get());
+    BLS.setBlsImplementation(BlstLoader.INSTANCE.orElseThrow());
   }
 
   @AfterAll
