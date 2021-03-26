@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
@@ -85,6 +87,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
+  private final AttestationDataStateTransitionValidator attestationValidator;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
@@ -93,7 +96,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final ValidatorsUtil validatorsUtil,
+      final AttestationDataStateTransitionValidator attestationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
     this.beaconStateUtil = beaconStateUtil;
@@ -101,6 +105,30 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.attestationValidator = attestationValidator;
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return attestationValidator.validate(state, data);
+  }
+
+  protected void assertAttestationValid(
+      final MutableBeaconState state, final Attestation attestation) {
+    final AttestationData data = attestation.getData();
+
+    final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
+    checkArgument(
+        invalidReason.isEmpty(),
+        "process_attestations: %s",
+        invalidReason.map(OperationInvalidReason::describe).orElse(""));
+
+    List<Integer> committee =
+        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+    checkArgument(
+        attestation.getAggregation_bits().size() == committee.size(),
+        "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
   /**
@@ -390,6 +418,34 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     processAttestationsNoValidation(state, attestations);
     verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
   }
+
+  @Override
+  public void processAttestationsNoValidation(
+      final MutableBeaconState state, final SszList<Attestation> attestations)
+      throws BlockProcessingException {
+    try {
+      for (Attestation attestation : attestations) {
+        // Validate
+        assertAttestationValid(state, attestation);
+
+        processAttestationNoValidation(state, attestation);
+      }
+    } catch (IllegalArgumentException e) {
+      LOG.warn(e.getMessage());
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  /**
+   * Corresponds to beacon-chain spec function "process_attestation", excluding the assertion on
+   * is_valid_indexed_attestation (this is what "no validation" refers to), and excluding common
+   * validations found in {@link #assertAttestationValid}
+   *
+   * @param genericState The state corresponding to the block being processed
+   * @param attestation An attestation in the body of the block being processed
+   */
+  protected abstract void processAttestationNoValidation(
+      final MutableBeaconState genericState, final Attestation attestation);
 
   @Override
   public void verifyAttestations(
