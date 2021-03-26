@@ -20,7 +20,16 @@ package tech.pegasys.teku.ssz;
  * @param <ElementType> Type of elements
  */
 public interface SszMutableVector<ElementType extends SszData>
-    extends SszMutableComposite<ElementType>, SszVector<ElementType> {
+    extends SszMutableCollection<ElementType>, SszVector<ElementType> {
+
+  /**
+   * Set all elements to the given value.
+   *
+   * @param value The value to set
+   */
+  default void setAll(ElementType value) {
+    setAll(value, 0, size());
+  }
 
   @Override
   SszVector<ElementType> commitChanges();

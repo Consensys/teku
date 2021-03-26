@@ -39,6 +39,8 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public interface BeaconState extends SszContainer, ValidatorStats {
 
+  BeaconStateSchema<?, ?> getBeaconStateSchema();
+
   default UInt64 getGenesis_time() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME.name());
     return ((SszUInt64) get(fieldIndex)).get();

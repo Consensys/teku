@@ -193,6 +193,10 @@ public final class DataStructureUtil {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
+  public SszUInt64List randomSszUInt64List(SszUInt64ListSchema<?> schema, final long numItems) {
+    return randomSszUInt64List(schema, numItems, this::randomUInt64);
+  }
+
   public SszUInt64List randomSszUInt64List(
       SszUInt64ListSchema<?> schema, final long numItems, Supplier<UInt64> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());

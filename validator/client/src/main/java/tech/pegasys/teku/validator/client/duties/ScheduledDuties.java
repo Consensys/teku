@@ -19,8 +19,12 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.client.Validator;
@@ -33,10 +37,21 @@ public class ScheduledDuties {
 
   private final ValidatorDutyFactory dutyFactory;
   private final Bytes32 dependentRoot;
+  private final LabelledMetric<Counter> dutiesPerformedCounter;
 
-  public ScheduledDuties(final ValidatorDutyFactory dutyFactory, final Bytes32 dependentRoot) {
+  public ScheduledDuties(
+      final ValidatorDutyFactory dutyFactory,
+      final Bytes32 dependentRoot,
+      final MetricsSystem metricsSystem) {
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
+    dutiesPerformedCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR,
+            "duties_performed",
+            "Count of the failed duties, by duty type",
+            "type",
+            "result");
   }
 
   public Bytes32 getDependentRoot() {
@@ -103,12 +118,18 @@ public class ScheduledDuties {
     }
     duty.performDuty()
         .finish(
-            result ->
-                result.report(
-                    duty.getProducedType(), slot, duty.getValidatorIdString(), VALIDATOR_LOGGER),
-            error ->
-                VALIDATOR_LOGGER.dutyFailed(
-                    duty.getProducedType(), slot, duty.getValidatorIdString(), error));
+            result -> reportDutySuccess(result, duty, slot),
+            error -> reportDutyFailure(error, duty, slot));
+  }
+
+  private void reportDutyFailure(final Throwable error, final Duty duty, final UInt64 slot) {
+    dutiesPerformedCounter.labels(duty.getProducedType(), "failed").inc();
+    VALIDATOR_LOGGER.dutyFailed(duty.getProducedType(), slot, duty.getValidatorIdString(), error);
+  }
+
+  private void reportDutySuccess(final DutyResult result, final Duty duty, final UInt64 slot) {
+    dutiesPerformedCounter.labels(duty.getProducedType(), "success").inc();
+    result.report(duty.getProducedType(), slot, duty.getValidatorIdString(), VALIDATOR_LOGGER);
   }
 
   private void discardDutiesBeforeSlot(

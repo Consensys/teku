@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDIT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -31,16 +32,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -59,17 +65,32 @@ public class ExternalSigner implements Signer {
   private final HttpClient httpClient;
   private final ThrottlingTaskQueue taskQueue;
 
+  private final Counter successCounter;
+  private final Counter failedCounter;
+  private final Counter timeoutCounter;
+
   public ExternalSigner(
       final HttpClient httpClient,
       final URL signingServiceUrl,
       final BLSPublicKey blsPublicKey,
       final Duration timeout,
-      final ThrottlingTaskQueue taskQueue) {
+      final ThrottlingTaskQueue taskQueue,
+      final MetricsSystem metricsSystem) {
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
+
+    final LabelledMetric<Counter> labelledCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR,
+            "external_signer_requests",
+            "Completed external signer counts",
+            "result");
+    successCounter = labelledCounter.labels("success");
+    failedCounter = labelledCounter.labels("failed");
+    timeoutCounter = labelledCounter.labels("timeout");
   }
 
   @Override
@@ -106,6 +127,18 @@ public class ExternalSigner implements Signer {
             FORK_INFO,
             forkInfo(forkInfo)),
         slashableAttestationMessage(attestationData));
+  }
+
+  private void recordMetrics(final BLSSignature result, final Throwable error) {
+    if (error != null) {
+      if (Throwables.getRootCause(error) instanceof HttpTimeoutException) {
+        timeoutCounter.inc();
+      } else {
+        failedCounter.inc();
+      }
+    } else {
+      successCounter.inc();
+    }
   }
 
   @Override
@@ -167,22 +200,23 @@ public class ExternalSigner implements Signer {
       final Supplier<String> slashableMessage) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.of(
-        () -> {
-          final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
-          final URI uri =
-              signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
-          final HttpRequest request =
-              HttpRequest.newBuilder()
-                  .uri(uri)
-                  .timeout(timeout)
-                  .header("Content-Type", "application/json")
-                  .POST(BodyPublishers.ofString(requestBody))
-                  .build();
-          return httpClient
-              .sendAsync(request, BodyHandlers.ofString())
-              .handleAsync(
-                  (response, error) -> this.getBlsSignature(response, error, slashableMessage));
-        });
+            () -> {
+              final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
+              final URI uri =
+                  signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
+              final HttpRequest request =
+                  HttpRequest.newBuilder()
+                      .uri(uri)
+                      .timeout(timeout)
+                      .header("Content-Type", "application/json")
+                      .POST(BodyPublishers.ofString(requestBody))
+                      .build();
+              return httpClient
+                  .sendAsync(request, BodyHandlers.ofString())
+                  .handleAsync(
+                      (response, error) -> this.getBlsSignature(response, error, slashableMessage));
+            })
+        .whenComplete(this::recordMetrics);
   }
 
   private String createSigningRequestBody(
