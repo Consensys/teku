@@ -11,10 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.util;
+package tech.pegasys.teku.spec.genesis;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_active_validator;
 
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -58,8 +60,34 @@ class GenesisGeneratorTest {
   private final Spec spec = SpecFactory.createMinimal();
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final GenesisGenerator genesisGenerator =
-      new GenesisGenerator(spec.getGenesisSchemaDefinitions());
+  private final GenesisGenerator genesisGenerator = new GenesisGenerator(genesisSpec);
+
+  @Test
+  void initializeBeaconStateFromEth1_shouldIgnoreInvalidSignedDeposits() {
+    List<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
+    DepositWithIndex deposit = deposits.get(1);
+    DepositData depositData = deposit.getData();
+    DepositWithIndex invalidSigDeposit =
+        new DepositWithIndex(
+            new DepositData(
+                depositData.getPubkey(),
+                depositData.getWithdrawal_credentials(),
+                depositData.getAmount(),
+                BLSSignature.empty()),
+            deposit.getIndex());
+    deposits.set(1, invalidSigDeposit);
+
+    BeaconState state =
+        GenesisGenerator.initializeBeaconStateFromEth1(
+            genesisSpec, Bytes32.ZERO, UInt64.ZERO, deposits);
+    assertEquals(2, state.getValidators().size());
+    assertEquals(
+        deposits.get(0).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(0).getPubkeyBytes());
+    assertEquals(
+        deposits.get(2).getData().getPubkey().toBytesCompressed(),
+        state.getValidators().get(1).getPubkeyBytes());
+  }
 
   @Test
   public void shouldGenerateSameGenesisAsSpecMethodForSingleDeposit() {
@@ -69,9 +97,8 @@ class GenesisGeneratorTest {
     final UInt64 genesisTime = UInt64.valueOf(982928293223232L);
 
     final BeaconState expectedState =
-        genesisSpec
-            .getBeaconStateUtil()
-            .initializeBeaconStateFromEth1(eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
+        GenesisGenerator.initializeBeaconStateFromEth1(
+            genesisSpec, eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
     genesisGenerator.updateCandidateState(
         eth1BlockHash1, genesisTime.minus(UInt64.ONE), INITIAL_DEPOSITS.subList(0, 8));

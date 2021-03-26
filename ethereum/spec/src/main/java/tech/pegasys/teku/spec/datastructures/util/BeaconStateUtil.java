@@ -14,14 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.compute_proposer_index;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
@@ -29,10 +27,7 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
-import static tech.pegasys.teku.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-import static tech.pegasys.teku.util.config.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.teku.util.config.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
 import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
@@ -47,23 +42,11 @@ import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.OptionalInt;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -79,134 +62,8 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
+@Deprecated
 public class BeaconStateUtil {
-
-  private static final Logger LOG = LogManager.getLogger(BeaconStateUtil.class);
-
-  /**
-   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
-   * Setting to <code>false</code> significantly speeds up state initialization
-   */
-  public static boolean BLS_VERIFY_DEPOSIT = true;
-
-  /**
-   * Processes deposits
-   *
-   * @param state
-   * @param deposit
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
-   */
-  @Deprecated
-  public static void process_deposit(MutableBeaconState state, Deposit deposit) {
-    checkArgument(
-        is_valid_merkle_branch(
-            deposit.getData().hashTreeRoot(),
-            deposit.getProof(),
-            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
-            toIntExact(state.getEth1_deposit_index().longValue()),
-            state.getEth1_data().getDeposit_root()),
-        "process_deposit: Verify the Merkle branch");
-
-    process_deposit_without_checking_merkle_proof(state, deposit, null);
-  }
-
-  @Deprecated
-  static void process_deposit_without_checking_merkle_proof(
-      final MutableBeaconState state,
-      final Deposit deposit,
-      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
-    state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
-
-    final BLSPublicKey pubkey = deposit.getData().getPubkey();
-    final UInt64 amount = deposit.getData().getAmount();
-
-    OptionalInt existingIndex;
-    if (pubKeyToIndexMap != null) {
-      Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
-      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
-    } else {
-      SszList<Validator> validators = state.getValidators();
-
-      Function<Integer, BLSPublicKey> validatorPubkey =
-          index -> ValidatorsUtil.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
-
-      existingIndex =
-          IntStream.range(0, validators.size())
-              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
-              .findFirst();
-    }
-
-    if (existingIndex.isEmpty()) {
-
-      // Verify the deposit signature (proof of possession) which is not checked by the deposit
-      // contract
-      if (BLS_VERIFY_DEPOSIT) {
-        final DepositMessage deposit_message =
-            new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-        final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
-        final Bytes signing_root = compute_signing_root(deposit_message, domain);
-        boolean proof_is_valid =
-            !BLS_VERIFY_DEPOSIT
-                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
-        if (!proof_is_valid) {
-          if (deposit instanceof DepositWithIndex) {
-            LOG.debug(
-                "Skipping invalid deposit with index {} and pubkey {}",
-                ((DepositWithIndex) deposit).getIndex(),
-                pubkey);
-          } else {
-            LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-          }
-          if (pubKeyToIndexMap != null) {
-            // The validator won't be created so the calculated index won't be correct
-            pubKeyToIndexMap.remove(pubkey);
-          }
-          return;
-        }
-      }
-
-      if (pubKeyToIndexMap == null) {
-        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
-      }
-      state.getValidators().append(getValidatorFromDeposit(deposit));
-      state.getBalances().appendElement(amount);
-    } else {
-      increase_balance(state, existingIndex.getAsInt(), amount);
-    }
-  }
-
-  @Deprecated
-  private static Validator getValidatorFromDeposit(Deposit deposit) {
-    final UInt64 amount = deposit.getData().getAmount();
-    final UInt64 effectiveBalance =
-        amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
-    return new Validator(
-        deposit.getData().getPubkey(),
-        deposit.getData().getWithdrawal_credentials(),
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
-  }
-
-  @Deprecated
-  public static boolean is_valid_genesis_state(UInt64 genesisTime, int activeValidatorCount) {
-    return isItMinGenesisTimeYet(genesisTime)
-        && isThereEnoughNumberOfValidators(activeValidatorCount);
-  }
-
-  @Deprecated
-  private static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
-    return activeValidatorCount >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-  }
-
-  @Deprecated
-  private static boolean isItMinGenesisTimeYet(final UInt64 genesisTime) {
-    return genesisTime.compareTo(MIN_GENESIS_TIME) >= 0;
-  }
 
   /**
    * Verify that the given ``leaf`` is on the merkle branch ``branch`` starting with the given
