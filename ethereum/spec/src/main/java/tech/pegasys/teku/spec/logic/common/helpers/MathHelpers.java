@@ -22,6 +22,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MathHelpers {
 
+  public static UInt64 integerSquareRoot(int n) {
+    return integerSquareRoot(UInt64.valueOf(n));
+  }
+
   public static UInt64 integerSquareRoot(UInt64 n) {
     checkArgument(
         n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integerSquareRoot()");
