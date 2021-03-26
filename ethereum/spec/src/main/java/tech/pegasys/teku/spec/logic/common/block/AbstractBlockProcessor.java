@@ -458,67 +458,75 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final MutableBeaconState state,
       final Deposit deposit,
       final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+    final BLSPublicKey pubkey = deposit.getData().getPubkey();
+
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
 
-    final BLSPublicKey pubkey = deposit.getData().getPubkey();
-    final UInt64 amount = deposit.getData().getAmount();
-
+    // Find the validator index associated with this deposit, if it exists
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
       final Integer cachedIndex =
           pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SszList<Validator> validators = state.getValidators();
-
       Function<Integer, BLSPublicKey> validatorPubkey =
           index ->
               beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
-
       existingIndex =
-          IntStream.range(0, validators.size())
+          IntStream.range(0, state.getValidators().size())
               .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
               .findFirst();
     }
 
     if (existingIndex.isEmpty()) {
-
+      // This is a new validator
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
-      if (BLS_VERIFY_DEPOSIT) {
-        final DepositMessage deposit_message =
-            new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-        final Bytes32 domain = beaconStateUtil.computeDomain(specConfig.getDomainDeposit());
-        final Bytes signing_root = beaconStateUtil.computeSigningRoot(deposit_message, domain);
-        boolean proof_is_valid =
-            !BLS_VERIFY_DEPOSIT
-                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
-        if (proof_is_valid) {
-          if (pubKeyToIndexMap == null) {
-            LOG.debug("Adding new validator to state: {}", state.getValidators().size());
-          }
-          processNewValidator(state, deposit);
-        } else {
-          if (deposit instanceof DepositWithIndex) {
-            LOG.debug(
-                "Skipping invalid deposit with index {} and pubkey {}",
-                ((DepositWithIndex) deposit).getIndex(),
-                pubkey);
-          } else {
-            LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-          }
-          if (pubKeyToIndexMap != null) {
-            // The validator won't be created so the calculated index won't be correct
-            pubKeyToIndexMap.remove(pubkey);
-          }
-        }
+      if (depositSignatureIsValid(deposit, pubkey)) {
+        processNewValidator(state, deposit);
+      } else {
+        handleInvalidDeposit(deposit, pubkey, pubKeyToIndexMap);
       }
     } else {
-      validatorsUtil.increaseBalance(state, existingIndex.getAsInt(), amount);
+      // This validator already exists, increase their balance
+      validatorsUtil.increaseBalance(
+          state, existingIndex.getAsInt(), deposit.getData().getAmount());
     }
   }
 
+  private void handleInvalidDeposit(
+      final Deposit deposit,
+      BLSPublicKey pubkey,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+    if (deposit instanceof DepositWithIndex) {
+      LOG.debug(
+          "Skipping invalid deposit with index {} and pubkey {}",
+          ((DepositWithIndex) deposit).getIndex(),
+          pubkey);
+    } else {
+      LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
+    }
+    if (pubKeyToIndexMap != null) {
+      // The validator won't be created so the calculated index won't be correct
+      pubKeyToIndexMap.remove(pubkey);
+    }
+  }
+
+  private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
+    if (!BLS_VERIFY_DEPOSIT) {
+      return true;
+    }
+
+    final UInt64 amount = deposit.getData().getAmount();
+    final DepositMessage deposit_message =
+        new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+    final Bytes32 domain = beaconStateUtil.computeDomain(specConfig.getDomainDeposit());
+    final Bytes signing_root = beaconStateUtil.computeSigningRoot(deposit_message, domain);
+    return BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
+  }
+
   protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
+    LOG.debug("Adding new validator to state: {} + 1 validator(s)", state.getValidators().size());
     state.getValidators().append(getValidatorFromDeposit(deposit));
     state.getBalances().appendElement(deposit.getData().getAmount());
   }
