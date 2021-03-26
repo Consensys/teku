@@ -16,12 +16,14 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -76,12 +78,21 @@ public class ForkManifest {
     return forkSchedule.floorEntry(epoch).getValue();
   }
 
+  public Optional<Fork> getNext(final UInt64 epoch) {
+    if (epoch.equals(UInt64.MAX_VALUE)) {
+      // Epoch MAX_VALUE is the end of time, there shall be no more forks.
+      return Optional.empty();
+    }
+    return Optional.ofNullable(forkSchedule.ceilingEntry(epoch.increment()))
+        .map(Map.Entry::getValue);
+  }
+
   public Fork getGenesisFork() {
     return forkSchedule.firstEntry().getValue();
   }
 
-  public List<Fork> getForkSchedule() {
-    return new ArrayList<>(forkSchedule.values());
+  public Collection<Fork> getForkSchedule() {
+    return Collections.unmodifiableCollection(forkSchedule.values());
   }
 
   @Override
