@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -373,7 +374,13 @@ public class Spec {
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
   }
 
-  // Block Processing Utils
+  // Block Processor Utils
+
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return atState(state).getBlockProcessor().validateAttestation(state, data);
+  }
+
   public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
     atState(state).getBlockProcessor().processBlockHeader(state, blockHeader);

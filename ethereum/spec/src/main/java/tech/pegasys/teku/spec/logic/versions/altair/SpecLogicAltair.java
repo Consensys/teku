@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -69,6 +70,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
 
+    // Operation validaton
+    final AttestationDataStateTransitionValidator attestationValidator =
+        new AttestationDataStateTransitionValidator();
+
     // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
@@ -107,7 +112,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateAccessors,
             beaconStateUtil,
             attestationUtil,
-            validatorsUtil);
+            validatorsUtil,
+            attestationValidator);
     final StateTransitionAltair stateTransition =
         StateTransitionAltair.create(
             config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
