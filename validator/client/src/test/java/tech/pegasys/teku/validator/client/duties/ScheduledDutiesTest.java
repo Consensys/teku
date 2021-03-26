@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,17 +26,25 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubCounter;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ScheduledDutiesTest {
-
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ScheduledDuties duties =
-      new ScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"));
+      new ScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
   public void shouldDiscardMissedBlockProductionDuties() {
@@ -59,6 +68,7 @@ class ScheduledDutiesTest {
     // But the duty for slot 2 is still performed as scheduled
     duties.produceBlock(TWO);
     verify(duty2).performDuty();
+    validateMetrics("block", 2, 0);
   }
 
   @Test
@@ -84,6 +94,7 @@ class ScheduledDutiesTest {
     // But the duty for slot 2 is still performed as scheduled
     duties.produceAttestations(TWO);
     verify(duty2).performDuty();
+    validateMetrics("attestation", 2, 0);
   }
 
   @Test
@@ -112,11 +123,29 @@ class ScheduledDutiesTest {
     // But the duty for slot 2 is still performed as scheduled
     duties.performAggregation(TWO);
     verify(duty2).performDuty();
+
+    validateMetrics("aggregate", 2, 0);
   }
 
   private <T extends Duty> T mockDuty(final Class<T> dutyType) {
     final T mockDuty = mock(dutyType);
-    when(mockDuty.performDuty()).thenReturn(new SafeFuture<>());
+    if (dutyType.equals(BlockProductionDuty.class)) {
+      when(mockDuty.getProducedType()).thenReturn("block");
+    } else if (dutyType.equals(AttestationProductionDuty.class)) {
+      when(mockDuty.getProducedType()).thenReturn("attestation");
+    } else if (dutyType.equals(AggregationDuty.class)) {
+      when(mockDuty.getProducedType()).thenReturn("aggregate");
+    }
+    when(mockDuty.performDuty())
+        .thenReturn(
+            SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
     return mockDuty;
+  }
+
+  private void validateMetrics(final String duty, final long successCount, final long failCount) {
+    final StubCounter labelledCounter =
+        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "duties_performed");
+    assertThat(labelledCounter.getValue(duty, "success")).isEqualTo(successCount);
+    assertThat(labelledCounter.getValue(duty, "failed")).isEqualTo(failCount);
   }
 }
