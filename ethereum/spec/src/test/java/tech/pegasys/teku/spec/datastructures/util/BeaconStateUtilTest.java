@@ -410,11 +410,6 @@ class BeaconStateUtilTest {
   // *************** END Shuffling Tests *****************
 
   @Test
-  void ensureVerifyDepositDefaultsToTrue() {
-    assertThat(BeaconStateUtil.BLS_VERIFY_DEPOSIT).isTrue();
-  }
-
-  @Test
   void compute_next_epoch_boundary_slotAtBoundary() {
     final UInt64 expectedEpoch = UInt64.valueOf(2);
     final UInt64 slot = compute_start_slot_at_epoch(expectedEpoch);

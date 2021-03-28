@@ -11,13 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.bls;
+package tech.pegasys.teku.bls.impl.blst;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Random;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import tech.pegasys.teku.bls.impl.blst.BlstLoader;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSSecretKeyTest;
 
-public class BlstBlsTest extends BLSTest {
+public class BlstSecretKeyTest extends BLSSecretKeyTest {
 
   @BeforeAll
   public static void init() {
@@ -27,5 +32,14 @@ public class BlstBlsTest extends BLSTest {
   @AfterAll
   public static void cleanup() {
     BLS.resetBlsImplementation();
+  }
+
+  @Test
+  void shouldBeZeroKeyAfterDestroy() {
+    final BlstSecretKey secretKey = BlstSecretKey.generateNew(new Random());
+    assertThat(secretKey.isZero()).isFalse();
+
+    secretKey.destroy();
+    assertThat(secretKey).isEqualTo(BlstSecretKey.ZERO_SK);
   }
 }

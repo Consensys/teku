@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
@@ -254,12 +253,14 @@ public class DepositProviderTest {
     deposits.forEach(
         deposit ->
             assertThat(
-                    BeaconStateUtil.isValidMerkleBranch(
-                        deposit.getData().hashTreeRoot(),
-                        deposit.getProof(),
-                        genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
-                        ((DepositWithIndex) deposit).getIndex().intValue(),
-                        depositMerkleTree.getRoot()))
+                    genesisSpec
+                        .predicates()
+                        .isValidMerkleBranch(
+                            deposit.getData().hashTreeRoot(),
+                            deposit.getProof(),
+                            genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
+                            ((DepositWithIndex) deposit).getIndex().intValue(),
+                            depositMerkleTree.getRoot()))
                 .isTrue());
   }
 
