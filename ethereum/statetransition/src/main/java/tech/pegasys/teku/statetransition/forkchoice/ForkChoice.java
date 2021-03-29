@@ -247,9 +247,6 @@ public class ForkChoice {
       return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     }
 
-    // TODO: Can we optimise and avoid running findHead if the justified checkpoint changes?
-    // This can be the only block we have with the new justified checkpoint so must be the head
-
     // Otherwise, use fork choice to find the new chain head as if this block is on time the
     // proposer weighting may cause us to reorg.
     // During sync, this may be noticeably slower than just comparing the chain head due to the way
