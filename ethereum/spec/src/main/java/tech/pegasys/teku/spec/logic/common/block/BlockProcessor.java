@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
@@ -55,7 +54,10 @@ public interface BlockProcessor {
 
   long getVoteCount(BeaconState state, Eth1Data eth1Data);
 
-  void processOperationsNoValidation(MutableBeaconState state, BeaconBlockBody body)
+  void processOperationsNoValidation(
+      MutableBeaconState state,
+      BeaconBlockBody body,
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
   void processProposerSlashings(
@@ -84,18 +86,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
-  /**
-   * Process attestations, skipping validations defined in spec method is_valid_indexed_attestation.
-   * See: {@link AttestationUtil#isValidIndexedAttestation}
-   *
-   * @param state
-   * @param attestations
-   * @throws BlockProcessingException
-   */
-  void processAttestationsNoValidation(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException;
-
-  void verifyAttestations(
+  void verifyAttestationSignatures(
       BeaconState state,
       SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,

@@ -122,7 +122,8 @@ public class StateTransition {
         validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
     try {
       // Process_block
-      BeaconState postState = processBlock(blockSlotState, signedBlock.getMessage());
+      BeaconState postState =
+          processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
 
       BlockValidationResult blockValidationResult =
           blockValidator.validate(blockSlotState, signedBlock, postState, indexedAttestationCache);
@@ -147,15 +148,24 @@ public class StateTransition {
    */
   public BeaconState processBlock(BeaconState preState, BeaconBlock block)
       throws BlockProcessingException {
-    return preState.updated(state -> processBlock(state, block));
+    return processBlock(preState, block, IndexedAttestationCache.NOOP);
   }
 
-  protected void processBlock(final MutableBeaconState state, final BeaconBlock block)
+  protected BeaconState processBlock(
+      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
+  }
+
+  protected void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     blockProcessor.processBlockHeader(state, block);
     blockProcessor.processRandaoNoValidation(state, block.getBody());
     blockProcessor.processEth1Data(state, block.getBody());
-    blockProcessor.processOperationsNoValidation(state, block.getBody());
+    blockProcessor.processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
   }
 
   /**
