@@ -88,10 +88,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     return new ForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
-  public SlotAndBlockRoot findHead(final Checkpoint justifiedCheckpoint) {
+  public SlotAndBlockRoot findHead(
+      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
-      final ProtoNode bestNode = protoArray.findHead(justifiedCheckpoint.getRoot());
+      final ProtoNode bestNode =
+          protoArray.findHead(
+              justifiedCheckpoint.getRoot(),
+              justifiedCheckpoint.getEpoch(),
+              finalizedCheckpoint.getEpoch());
       return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
     } finally {
       protoArrayLock.readLock().unlock();
@@ -231,7 +236,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = justifiedStateBalances;
 
-      return protoArray.findHead(justifiedRoot).getBlockRoot();
+      return protoArray.findHead(justifiedRoot, justifiedEpoch, finalizedEpoch).getBlockRoot();
     } finally {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();
