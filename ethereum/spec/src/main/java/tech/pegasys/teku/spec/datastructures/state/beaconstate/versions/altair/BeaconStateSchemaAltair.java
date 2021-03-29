@@ -108,6 +108,11 @@ public class BeaconStateSchemaAltair
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name()));
   }
 
+  public SszUInt64ListSchema<?> getInactivityScoresSchema() {
+    return (SszUInt64ListSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name()));
+  }
+
   public SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name()));

@@ -19,7 +19,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -41,7 +40,6 @@ public class MockStartBeaconStateGenerator {
 
   public BeaconState createInitialBeaconState(
       final UInt64 genesisTime, final List<DepositData> initialDepositData) {
-    final SpecVersion genesisSpec = spec.getGenesisSpec();
     final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
       final DepositData data = initialDepositData.get(index);
@@ -49,9 +47,7 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final BeaconState initialState =
-        genesisSpec
-            .getBeaconStateUtil()
-            .initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits);
+        spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits);
     return initialState.updated(state -> state.setGenesis_time(genesisTime));
   }
 }

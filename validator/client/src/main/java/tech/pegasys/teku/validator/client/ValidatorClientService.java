@@ -147,7 +147,8 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
+                dependentRoot ->
+                    new ScheduledDuties(validatorDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -157,7 +158,8 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                dependentRoot -> new ScheduledDuties(validatorDutyFactory, dependentRoot),
+                dependentRoot ->
+                    new ScheduledDuties(validatorDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider));
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();

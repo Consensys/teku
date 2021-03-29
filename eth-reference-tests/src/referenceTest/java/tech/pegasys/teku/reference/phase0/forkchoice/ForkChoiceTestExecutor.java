@@ -114,7 +114,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final Attestation attestation =
         TestDataUtils.loadSsz(
             testDefinition, attestationName + ".ssz_snappy", Attestation.SSZ_SCHEMA);
-    forkChoice.onAttestation(ValidateableAttestation.from(attestation));
+    assertThat(forkChoice.onAttestation(ValidateableAttestation.from(attestation))).isCompleted();
   }
 
   private void applyBlock(
@@ -126,7 +126,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
-    forkChoice.onBlock(block);
+    assertThat(forkChoice.onBlock(block)).isCompleted();
   }
 
   @SuppressWarnings("unchecked")
@@ -139,7 +139,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
-    forkChoice.processHead();
+    assertThat(forkChoice.processHead()).isCompleted();
     final UpdatableStore store = recentChainData.getStore();
     final Map<String, Object> checks = get(step, "checks");
     for (String checkType : checks.keySet()) {
@@ -189,7 +189,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private <T> T get(final Map<String, Object> yamlData, final String key) {
     return (T) yamlData.get(key);
   }

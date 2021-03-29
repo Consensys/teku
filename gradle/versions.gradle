@@ -39,7 +39,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.8.0-RELEASE'
-    dependency 'tech.pegasys:jblst:0.2.0-RELEASE'
+    dependency 'tech.pegasys:jblst:0.3.3-1'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 

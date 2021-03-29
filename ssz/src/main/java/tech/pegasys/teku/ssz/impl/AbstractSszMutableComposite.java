@@ -74,19 +74,20 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void set(int index, SszChildT value) {
     checkIndex(index, true);
     checkNotNull(value);
     validateChildSchema(index, value);
 
-    ChildChangeRecord<SszChildT, SszMutableChildT> oldChangeRecord =
-        childrenChanges.put(index, createChangeRecordByValue(value));
-    if (oldChangeRecord != null && oldChangeRecord.isByRef()) {
-      // restore old value to be consistent
-      childrenChanges.put(index, oldChangeRecord);
-      throw new IllegalStateException(
-          "A child couldn't be simultaneously modified by value and accessed by ref");
+    final SszChildT immutableValue;
+    if (value instanceof SszMutableData) {
+      immutableValue = (SszChildT) ((SszMutableData) value).commitChanges();
+    } else {
+      immutableValue = value;
     }
+
+    childrenChanges.put(index, createChangeRecordByValue(immutableValue));
 
     sizeCache = index >= sizeCache ? index + 1 : sizeCache;
     invalidate();

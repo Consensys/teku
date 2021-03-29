@@ -6,11 +6,13 @@ dependencies {
   referenceTestImplementation project(':ethereum:networks')
   referenceTestImplementation project(':ethereum:spec')
   referenceTestImplementation testFixtures(project(':ethereum:spec'))
+  referenceTestImplementation project(':ethereum:statetransition')
   referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':ssz')
   referenceTestImplementation project(':storage')
   referenceTestImplementation testFixtures(project(':storage'))
   referenceTestImplementation project(':infrastructure:async')
+  referenceTestImplementation testFixtures(project(':infrastructure:async'))
   referenceTestImplementation project(':util')
 
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'

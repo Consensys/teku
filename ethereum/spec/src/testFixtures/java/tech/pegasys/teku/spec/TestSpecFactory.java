@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -27,5 +28,10 @@ public class TestSpecFactory {
     final SpecConfigAltair specConfig =
         SpecConfigAltair.required(SpecConfigLoader.loadConfig(specName));
     return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+  }
+
+  public static Spec createMinimalPhase0() {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
   }
 }

@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -34,7 +34,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
+    final Spec spec = testDefinition.getSpec();
     final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz_snappy");
     final Eth1MetaData eth1MetaData = loadYaml(testDefinition, "eth1.yaml", Eth1MetaData.class);
     final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
@@ -47,10 +47,8 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
             .collect(Collectors.toList());
 
     final BeaconState result =
-        genesisSpec
-            .getBeaconStateUtil()
-            .initializeBeaconStateFromEth1(
-                eth1MetaData.getEth1BlockHash(), eth1MetaData.getEth1Timestamp(), deposits);
+        spec.initializeBeaconStateFromEth1(
+            eth1MetaData.getEth1BlockHash(), eth1MetaData.getEth1Timestamp(), deposits);
     assertThat(result).isEqualTo(expectedGenesisState);
   }
 

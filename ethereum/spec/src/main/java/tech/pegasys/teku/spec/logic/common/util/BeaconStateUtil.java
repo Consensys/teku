@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -23,27 +22,17 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.OptionalInt;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -51,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.util.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -60,7 +48,6 @@ import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -68,11 +55,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class BeaconStateUtil {
 
   private static final Logger LOG = LogManager.getLogger();
-  /**
-   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
-   * Setting to <code>false</code> significantly speeds up state initialization
-   */
-  public final boolean BLS_VERIFY_DEPOSIT = true;
 
   private final SpecConfig specConfig;
   private final SchemaDefinitions schemaDefinitions;
@@ -427,26 +409,6 @@ public class BeaconStateUtil {
     return domainWrappedObject.hashTreeRoot();
   }
 
-  public static boolean isValidMerkleBranch(
-      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
-    Bytes32 value = leaf;
-    for (int i = 0; i < depth; i++) {
-      if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
-      } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
-      }
-    }
-    return value.equals(root);
-  }
-
-  public BeaconState initializeBeaconStateFromEth1(
-      Bytes32 eth1_block_hash, UInt64 eth1_timestamp, List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator(schemaDefinitions);
-    genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
-    return genesisGenerator.getGenesisState();
-  }
-
   public boolean isSlotAtNthEpochBoundary(
       final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
     checkArgument(n > 0, "Parameter n must be greater than 0");
@@ -474,102 +436,6 @@ public class BeaconStateUtil {
         attestationSlot,
         committeeIndex,
         getCommitteeCountPerSlot(state, miscHelpers.computeEpochAtSlot(attestationSlot)));
-  }
-
-  public void processDeposit(MutableBeaconState state, Deposit deposit) {
-    checkArgument(
-        isValidMerkleBranch(
-            deposit.getData().hashTreeRoot(),
-            deposit.getProof(),
-            specConfig.getDepositContractTreeDepth() + 1, // Add 1 for the List length mix-in
-            toIntExact(state.getEth1_deposit_index().longValue()),
-            state.getEth1_data().getDeposit_root()),
-        "process_deposit: Verify the Merkle branch");
-
-    processDepositWithoutCheckingMerkleProof(state, deposit, null);
-  }
-
-  void processDepositWithoutCheckingMerkleProof(
-      final MutableBeaconState state,
-      final Deposit deposit,
-      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
-    state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
-
-    final BLSPublicKey pubkey = deposit.getData().getPubkey();
-    final UInt64 amount = deposit.getData().getAmount();
-
-    OptionalInt existingIndex;
-    if (pubKeyToIndexMap != null) {
-      final Integer cachedIndex =
-          pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
-      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
-    } else {
-      SszList<Validator> validators = state.getValidators();
-
-      Function<Integer, BLSPublicKey> validatorPubkey =
-          index ->
-              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
-
-      existingIndex =
-          IntStream.range(0, validators.size())
-              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
-              .findFirst();
-    }
-
-    if (existingIndex.isEmpty()) {
-
-      // Verify the deposit signature (proof of possession) which is not checked by the deposit
-      // contract
-      if (BLS_VERIFY_DEPOSIT) {
-        final DepositMessage deposit_message =
-            new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-        final Bytes32 domain = computeDomain(specConfig.getDomainDeposit());
-        final Bytes signing_root = computeSigningRoot(deposit_message, domain);
-        boolean proof_is_valid =
-            !BLS_VERIFY_DEPOSIT
-                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
-        if (!proof_is_valid) {
-          if (deposit instanceof DepositWithIndex) {
-            LOG.debug(
-                "Skipping invalid deposit with index {} and pubkey {}",
-                ((DepositWithIndex) deposit).getIndex(),
-                pubkey);
-          } else {
-            LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-          }
-          if (pubKeyToIndexMap != null) {
-            // The validator won't be created so the calculated index won't be correct
-            pubKeyToIndexMap.remove(pubkey);
-          }
-          return;
-        }
-      }
-
-      if (pubKeyToIndexMap == null) {
-        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
-      }
-      state.getValidators().append(getValidatorFromDeposit(deposit));
-      state.getBalances().appendElement(amount);
-    } else {
-      validatorsUtil.increaseBalance(state, existingIndex.getAsInt(), amount);
-    }
-  }
-
-  private Validator getValidatorFromDeposit(Deposit deposit) {
-    final UInt64 amount = deposit.getData().getAmount();
-    final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(specConfig.getMaxEffectiveBalance());
-    return new Validator(
-        deposit.getData().getPubkey(),
-        deposit.getData().getWithdrawal_credentials(),
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 
   private Bytes32 computeDomain(

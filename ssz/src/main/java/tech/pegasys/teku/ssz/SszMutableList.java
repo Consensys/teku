@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  * Mutable SSZ List with immutable elements. This type of list can be modified by setting or
  * appending immutable elements
@@ -22,38 +20,13 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @param <SszElementT> Type of list elements
  */
 public interface SszMutableList<SszElementT extends SszData>
-    extends SszMutableComposite<SszElementT>, SszList<SszElementT> {
+    extends SszMutableCollection<SszElementT>, SszList<SszElementT> {
 
   @Override
   void set(int index, SszElementT value);
 
   @Override
   SszList<SszElementT> commitChanges();
-
-  /**
-   * Set the same value across the specified indices
-   *
-   * @param value The value to set
-   * @param startIndex The first index in the range to be modified (inclusive)
-   * @param endIndex The last index in the range to be modified (exclusive)
-   */
-  default void setAll(SszElementT value, int startIndex, int endIndex) {
-    checkArgument(
-        startIndex <= endIndex, "Start index must be less than or equal to the end index");
-    for (int i = startIndex; i < endIndex; i++) {
-      set(i, value);
-    }
-  }
-
-  /**
-   * Set the same value from index zero (inclusive) up to {@code endIndex} (exclusive).
-   *
-   * @param value The value to set
-   * @param endIndex The index defining the end of the range to set (exclusive)
-   */
-  default void setAll(SszElementT value, int endIndex) {
-    setAll(value, 0, endIndex);
-  }
 
   /**
    * Appends a new immutable value to the end of the list. Size is incremented

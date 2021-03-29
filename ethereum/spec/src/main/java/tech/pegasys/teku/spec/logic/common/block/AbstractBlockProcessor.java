@@ -15,15 +15,21 @@ package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
@@ -36,8 +42,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -46,8 +57,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
@@ -59,27 +72,64 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
+  /**
+   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
+   * Setting to <code>false</code> significantly speeds up state initialization
+   */
+  public static boolean BLS_VERIFY_DEPOSIT = true;
+
   private static final Logger LOG = LogManager.getLogger();
+
   protected final SpecConfig specConfig;
-  protected final BeaconStateUtil beaconStateUtil;
-  protected final AttestationUtil attestationUtil;
-  protected final ValidatorsUtil validatorsUtil;
+  protected final Predicates predicates;
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
 
+  protected final BeaconStateUtil beaconStateUtil;
+  protected final AttestationUtil attestationUtil;
+  protected final ValidatorsUtil validatorsUtil;
+  private final AttestationDataStateTransitionValidator attestationValidator;
+
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
+      final Predicates predicates,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final MiscHelpers miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final AttestationDataStateTransitionValidator attestationValidator) {
     this.specConfig = specConfig;
+    this.predicates = predicates;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.attestationValidator = attestationValidator;
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validateAttestation(
+      final BeaconState state, final AttestationData data) {
+    return attestationValidator.validate(state, data);
+  }
+
+  protected void assertAttestationValid(
+      final MutableBeaconState state, final Attestation attestation) {
+    final AttestationData data = attestation.getData();
+
+    final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
+    checkArgument(
+        invalidReason.isEmpty(),
+        "process_attestations: %s",
+        invalidReason.map(OperationInvalidReason::describe).orElse(""));
+
+    List<Integer> committee =
+        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+    checkArgument(
+        attestation.getAggregation_bits().size() == committee.size(),
+        "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
   /**
@@ -201,7 +251,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
   @Override
-  public void processOperationsNoValidation(MutableBeaconState state, BeaconBlockBody body)
+  public void processOperationsNoValidation(
+      MutableBeaconState state,
+      BeaconBlockBody body,
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     try {
 
@@ -219,7 +272,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
       processProposerSlashingsNoValidation(state, body.getProposer_slashings());
       processAttesterSlashings(state, body.getAttester_slashings());
-      processAttestationsNoValidation(state, body.getAttestations());
+      processAttestations(state, body.getAttestations(), indexedAttestationCache, false);
       processDeposits(state, body.getDeposits());
       processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
@@ -366,25 +419,77 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    processAttestationsNoValidation(state, attestations);
-    verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
+    processAttestations(state, attestations, indexedAttestationCache, true);
   }
 
+  protected void processAttestations(
+      MutableBeaconState state,
+      SszList<Attestation> attestations,
+      IndexedAttestationCache indexedAttestationCache,
+      final boolean verifySignatures)
+      throws BlockProcessingException {
+    final IndexedAttestationProvider indexedAttestationProvider =
+        createIndexedAttestationProvider(state, indexedAttestationCache);
+    try {
+      for (Attestation attestation : attestations) {
+        // Validate
+        assertAttestationValid(state, attestation);
+        processAttestation(state, attestation, indexedAttestationProvider);
+        if (verifySignatures) {
+          verifyAttestationSignatures(
+              state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
+        }
+      }
+    } catch (IllegalArgumentException e) {
+      LOG.warn(e.getMessage());
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  private IndexedAttestationProvider createIndexedAttestationProvider(
+      BeaconState state, IndexedAttestationCache indexedAttestationCache) {
+    return (attestation) ->
+        indexedAttestationCache.computeIfAbsent(
+            attestation, () -> attestationUtil.getIndexedAttestation(state, attestation));
+  }
+
+  /**
+   * Corresponds to fork-specific logic from "process_attestation" spec method. Common validation
+   * and signature verification logic can be found in {@link #processAttestations}.
+   *
+   * @param genericState The state corresponding to the block being processed
+   * @param attestation An attestation in the body of the block being processed
+   * @param indexedAttestationProvider
+   */
+  protected abstract void processAttestation(
+      final MutableBeaconState genericState,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider);
+
   @Override
-  public void verifyAttestations(
+  public void verifyAttestationSignatures(
       BeaconState state,
       SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
+    verifyAttestationSignatures(
+        state,
+        attestations,
+        signatureVerifier,
+        createIndexedAttestationProvider(state, indexedAttestationCache));
+  }
+
+  protected void verifyAttestationSignatures(
+      BeaconState state,
+      SszList<Attestation> attestations,
+      BLSSignatureVerifier signatureVerifier,
+      IndexedAttestationProvider indexedAttestationProvider)
+      throws BlockProcessingException {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .map(
-                attestation ->
-                    indexedAttestationCache.computeIfAbsent(
-                        attestation,
-                        () -> attestationUtil.getIndexedAttestation(state, attestation)))
+            .map(indexedAttestationProvider::getIndexedAttestation)
             .map(
                 attestation ->
                     attestationUtil.isValidIndexedAttestation(
@@ -411,12 +516,120 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
-        beaconStateUtil.processDeposit(state, deposit);
+        processDeposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  public void processDeposit(MutableBeaconState state, Deposit deposit) {
+    checkArgument(
+        predicates.isValidMerkleBranch(
+            deposit.getData().hashTreeRoot(),
+            deposit.getProof(),
+            specConfig.getDepositContractTreeDepth() + 1, // Add 1 for the List length mix-in
+            toIntExact(state.getEth1_deposit_index().longValue()),
+            state.getEth1_data().getDeposit_root()),
+        "process_deposit: Verify the Merkle branch");
+
+    processDepositWithoutCheckingMerkleProof(state, deposit, null);
+  }
+
+  @Override
+  public void processDepositWithoutCheckingMerkleProof(
+      final MutableBeaconState state,
+      final Deposit deposit,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+    final BLSPublicKey pubkey = deposit.getData().getPubkey();
+
+    state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UInt64.ONE));
+
+    // Find the validator index associated with this deposit, if it exists
+    OptionalInt existingIndex;
+    if (pubKeyToIndexMap != null) {
+      final Integer cachedIndex =
+          pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
+      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
+    } else {
+      Function<Integer, BLSPublicKey> validatorPubkey =
+          index ->
+              beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(index)).orElse(null);
+      existingIndex =
+          IntStream.range(0, state.getValidators().size())
+              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
+              .findFirst();
+    }
+
+    if (existingIndex.isEmpty()) {
+      // This is a new validator
+      // Verify the deposit signature (proof of possession) which is not checked by the deposit
+      // contract
+      if (depositSignatureIsValid(deposit, pubkey)) {
+        processNewValidator(state, deposit);
+      } else {
+        handleInvalidDeposit(deposit, pubkey, pubKeyToIndexMap);
+      }
+    } else {
+      // This validator already exists, increase their balance
+      validatorsUtil.increaseBalance(
+          state, existingIndex.getAsInt(), deposit.getData().getAmount());
+    }
+  }
+
+  private void handleInvalidDeposit(
+      final Deposit deposit,
+      BLSPublicKey pubkey,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+    if (deposit instanceof DepositWithIndex) {
+      LOG.debug(
+          "Skipping invalid deposit with index {} and pubkey {}",
+          ((DepositWithIndex) deposit).getIndex(),
+          pubkey);
+    } else {
+      LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
+    }
+    if (pubKeyToIndexMap != null) {
+      // The validator won't be created so the calculated index won't be correct
+      pubKeyToIndexMap.remove(pubkey);
+    }
+  }
+
+  private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
+    if (!BLS_VERIFY_DEPOSIT) {
+      return true;
+    }
+
+    final UInt64 amount = deposit.getData().getAmount();
+    final DepositMessage deposit_message =
+        new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+    final Bytes32 domain = beaconStateUtil.computeDomain(specConfig.getDomainDeposit());
+    final Bytes signing_root = beaconStateUtil.computeSigningRoot(deposit_message, domain);
+    return BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
+  }
+
+  protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
+    state.getValidators().append(getValidatorFromDeposit(deposit));
+    state.getBalances().appendElement(deposit.getData().getAmount());
+  }
+
+  private Validator getValidatorFromDeposit(Deposit deposit) {
+    final UInt64 amount = deposit.getData().getAmount();
+    final UInt64 effectiveBalance =
+        amount
+            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
+            .min(specConfig.getMaxEffectiveBalance());
+    return new Validator(
+        deposit.getData().getPubkey(),
+        deposit.getData().getWithdrawal_credentials(),
+        effectiveBalance,
+        false,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 
   /**
@@ -478,5 +691,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     }
     return true;
+  }
+
+  protected interface IndexedAttestationProvider {
+    IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 }
