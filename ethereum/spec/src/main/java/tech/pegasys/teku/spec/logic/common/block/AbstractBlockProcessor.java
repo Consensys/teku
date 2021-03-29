@@ -582,7 +582,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
-    LOG.debug("Adding new validator to state: {} + 1 validator(s)", state.getValidators().size());
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
     state.getValidators().append(getValidatorFromDeposit(deposit));
     state.getBalances().appendElement(deposit.getData().getAmount());
   }
