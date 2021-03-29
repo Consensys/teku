@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -46,7 +47,9 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.FlagIndexAndWeight;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszVector;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.ssz.primitive.SszByte;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final SpecConfigAltair specConfigAltair;
@@ -78,8 +81,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  protected void processAttestationNoValidation(
-      final MutableBeaconState genericState, final Attestation attestation) {
+  protected void processAttestation(
+      final MutableBeaconState genericState,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationData data = attestation.getData();
 
@@ -125,9 +130,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
     // Update epoch participation flags
     UInt64 proposerRewardNumerator = UInt64.ZERO;
-    final List<Integer> attestingIndices =
-        attestationUtil.getAttestingIndices(state, data, attestation.getAggregation_bits());
-    for (Integer index : attestingIndices) {
+    final SszUInt64List attestingIndices =
+        indexedAttestationProvider.getIndexedAttestation(attestation).getAttesting_indices();
+    for (SszUInt64 attestingIndex : attestingIndices) {
+      final int index = attestingIndex.get().intValue();
       final byte participationFlags = epochParticipation.get(index).get();
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
       boolean shouldUpdate = false;
@@ -153,6 +159,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         validatorsUtil.increaseBalance(state, proposerIndex, proposerReward);
       }
     }
+  }
+
+  @Override
+  protected void processNewValidator(final MutableBeaconState genericState, final Deposit deposit) {
+    super.processNewValidator(genericState, deposit);
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+
+    state.getPreviousEpochParticipation().append(SszByte.ZERO);
+    state.getCurrentEpochParticipation().append(SszByte.ZERO);
+    state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
   public void processSyncCommittee(

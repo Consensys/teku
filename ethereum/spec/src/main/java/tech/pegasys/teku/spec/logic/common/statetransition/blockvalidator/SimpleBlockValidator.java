@@ -82,7 +82,7 @@ class SimpleBlockValidator implements BlockValidator {
       // Verify body
       BeaconBlock blockMessage = block.getMessage();
       BeaconBlockBody blockBody = blockMessage.getBody();
-      blockProcessor.verifyAttestations(
+      blockProcessor.verifyAttestationSignatures(
           preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
       blockProcessor.verifyRandao(preState, blockMessage, signatureVerifier);
 
