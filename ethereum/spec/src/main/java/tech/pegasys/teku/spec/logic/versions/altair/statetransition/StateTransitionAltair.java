@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition;
 
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
@@ -52,9 +53,12 @@ public class StateTransitionAltair extends StateTransition {
   }
 
   @Override
-  protected void processBlock(final MutableBeaconState state, final BeaconBlock block)
+  protected void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    super.processBlock(state, block);
+    super.processBlock(state, block, indexedAttestationCache);
     blockProcessorAltair.processSyncCommittee(
         state.toMutableVersionAltair().orElseThrow(),
         BeaconBlockBodyAltair.required(block.getBody()).getSyncAggregate());

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -33,8 +34,10 @@ class EventSourceHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final EventSourceHandler handler = new EventSourceHandler(validatorTimingChannel);
+  private final EventSourceHandler handler =
+      new EventSourceHandler(validatorTimingChannel, metricsSystem);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {
