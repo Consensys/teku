@@ -16,6 +16,7 @@ package tech.pegasys.teku.bls.impl.mikuli;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
@@ -69,11 +70,12 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public MikuliSignature sign(Bytes message, Bytes dst) {
+  public MikuliSignature sign(Bytes message, String dst) {
     if (scalarValue.isZero()) {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     } else {
-      G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+      Bytes dstBytes = Bytes.wrap(dst.getBytes(StandardCharsets.US_ASCII));
+      G2Point hashInGroup2 = new G2Point(hashToG2(message, dstBytes));
       G2Point signaturePoint = hashInGroup2.mul(scalarValue);
       return new MikuliSignature(signaturePoint);
     }

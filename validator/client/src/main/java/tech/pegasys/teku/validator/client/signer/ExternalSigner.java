@@ -87,9 +87,7 @@ public class ExternalSigner implements Signer {
             TekuMetricCategory.VALIDATOR,
             "external_signer_requests",
             "Completed external signer counts",
-            "success",
-            "failed",
-            "timeout");
+            "result");
     successCounter = labelledCounter.labels("success");
     failedCounter = labelledCounter.labels("failed");
     timeoutCounter = labelledCounter.labels("timeout");

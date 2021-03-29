@@ -11,14 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.util;
+package tech.pegasys.teku.spec.genesis;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.process_deposit_without_checking_merkle_proof;
-import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +23,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -45,16 +42,20 @@ public class GenesisGenerator {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecVersion genesisSpec;
+  private final SpecConfig specConfig;
+
   private final MutableBeaconState state;
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
-  private final SszListSchema<DepositData, ?> depositDataListSchema =
-      SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << DEPOSIT_CONTRACT_TREE_DEPTH);
-  private final SszMutableList<DepositData> depositDataList =
-      depositDataListSchema.getDefault().createWritableCopy();
+  private final SszMutableList<DepositData> depositDataList;
 
   private int activeValidatorCount = 0;
 
-  public GenesisGenerator(final SchemaDefinitions schemaDefinitions) {
+  public GenesisGenerator(final SpecVersion genesisSpec) {
+    this.genesisSpec = genesisSpec;
+    this.specConfig = genesisSpec.getConfig();
+    final SchemaDefinitions schemaDefinitions = genesisSpec.getSchemaDefinitions();
+
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
     Bytes32 latestBlockRoot =
         schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
@@ -64,7 +65,23 @@ public class GenesisGenerator {
             genesisSlot, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(
-        new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UInt64.valueOf(GENESIS_EPOCH)));
+        new Fork(
+            specConfig.getGenesisForkVersion(), specConfig.getGenesisForkVersion(), GENESIS_EPOCH));
+
+    depositDataList =
+        SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << specConfig.getDepositContractTreeDepth())
+            .getDefault()
+            .createWritableCopy();
+  }
+
+  public static BeaconState initializeBeaconStateFromEth1(
+      final SpecVersion genesisSpec,
+      Bytes32 eth1BlockHash,
+      UInt64 eth1Timestamp,
+      List<? extends Deposit> deposits) {
+    final GenesisGenerator genesisGenerator = new GenesisGenerator(genesisSpec);
+    genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    return genesisGenerator.getGenesisState();
   }
 
   public void updateCandidateState(
@@ -83,7 +100,9 @@ public class GenesisGenerator {
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
           // We do still verify the signature
-          process_deposit_without_checking_merkle_proof(state, deposit, keyCache);
+          genesisSpec
+              .getBlockProcessor()
+              .processDepositWithoutCheckingMerkleProof(state, deposit, keyCache);
 
           processActivation(deposit);
         });
@@ -96,20 +115,22 @@ public class GenesisGenerator {
       return;
     }
     Validator validator = state.getValidators().get(index);
-    if (validator.getActivation_epoch().equals(UInt64.valueOf(GENESIS_EPOCH))) {
+    if (validator.getActivation_epoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
     UInt64 balance = state.getBalances().getElement(index);
     UInt64 effective_balance =
-        balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)).min(MAX_EFFECTIVE_BALANCE);
+        balance
+            .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
+            .min(specConfig.getMaxEffectiveBalance());
 
     UInt64 activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
     UInt64 activation_epoch = validator.getActivation_epoch();
 
-    if (effective_balance.equals(MAX_EFFECTIVE_BALANCE)) {
-      activation_eligibility_epoch = UInt64.valueOf(GENESIS_EPOCH);
-      activation_epoch = UInt64.valueOf(GENESIS_EPOCH);
+    if (effective_balance.equals(specConfig.getMaxEffectiveBalance())) {
+      activation_eligibility_epoch = GENESIS_EPOCH;
+      activation_epoch = GENESIS_EPOCH;
       activeValidatorCount++;
     }
 

@@ -29,11 +29,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -42,12 +43,13 @@ import tech.pegasys.teku.util.config.Constants;
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final AttestationDataStateTransitionValidator attestationDataValidator =
-      mock(AttestationDataStateTransitionValidator.class);
+
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Spec mockSpec = mock(Spec.class);
 
   private final AggregatingAttestationPool aggregatingPool =
-      new AggregatingAttestationPool(attestationDataValidator, new NoOpMetricsSystem());
+      new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem());
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
@@ -96,7 +98,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldReturnEmptyListWhenNoAttestationsAvailable() {
-    when(attestationDataValidator.validate(any(), any())).thenReturn(Optional.empty());
+    when(mockSpec.validateAttestation(any(), any())).thenReturn(Optional.empty());
     assertThat(
             aggregatingPool.getAttestationsForBlock(
                 dataStructureUtil.randomBeaconState(), forkChecker))
@@ -109,7 +111,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 2);
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
 
-    when(attestationDataValidator.validate(any(), any()))
+    when(mockSpec.validateAttestation(any(), any()))
         .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
 
     assertThat(
@@ -128,12 +130,10 @@ class AggregatingAttestationPoolTest {
         addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
 
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    when(attestationDataValidator.validate(state, attestation1.getData()))
+    when(mockSpec.validateAttestation(state, attestation1.getData()))
         .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
-    when(attestationDataValidator.validate(state, attestation2.getData()))
-        .thenReturn(Optional.empty());
-    when(attestationDataValidator.validate(state, attestation3.getData()))
-        .thenReturn(Optional.empty());
+    when(mockSpec.validateAttestation(state, attestation2.getData())).thenReturn(Optional.empty());
+    when(mockSpec.validateAttestation(state, attestation3.getData())).thenReturn(Optional.empty());
 
     assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
         .containsExactlyInAnyOrder(attestation2, attestation3);
