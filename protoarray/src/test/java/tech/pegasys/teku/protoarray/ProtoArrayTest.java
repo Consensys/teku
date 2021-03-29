@@ -90,11 +90,23 @@ class ProtoArrayTest {
     addBlock(1, blockRootB, Bytes32.ZERO);
 
     protoArray.applyProposerWeighting(proposerWeightingB);
-    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot()).getBlockRoot())
+    assertThat(
+            protoArray
+                .findHead(
+                    GENESIS_CHECKPOINT.getRoot(),
+                    GENESIS_CHECKPOINT.getEpoch(),
+                    GENESIS_CHECKPOINT.getEpoch())
+                .getBlockRoot())
         .isEqualTo(blockRootB);
 
     protoArray.applyProposerWeighting(proposerWeightingA);
-    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot()).getBlockRoot())
+    assertThat(
+            protoArray
+                .findHead(
+                    GENESIS_CHECKPOINT.getRoot(),
+                    GENESIS_CHECKPOINT.getEpoch(),
+                    GENESIS_CHECKPOINT.getEpoch())
+                .getBlockRoot())
         .isEqualTo(blockRootA);
   }
 

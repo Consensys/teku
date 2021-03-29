@@ -20,3 +20,4 @@ For information on changes in released versions of Teku, see the [releases page]
   - `validator_event_stream_invalid_events_total` counts the number of invalid events found on the event stream.
   
 ### Bug Fixes
+- Fixed `ProtoArray: Best node is not viable for head` error.
