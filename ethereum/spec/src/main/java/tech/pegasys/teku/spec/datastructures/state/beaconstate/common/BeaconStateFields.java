@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
@@ -59,6 +61,36 @@ public enum BeaconStateFields {
   INACTIVITY_SCORES,
   CURRENT_SYNC_COMMITTEE,
   NEXT_SYNC_COMMITTEE;
+
+  public static void copyCommonFieldsFromSource(
+      final MutableBeaconState state, final BeaconState source) {
+    // Version
+    state.setGenesis_time(source.getGenesis_time());
+    state.setGenesis_validators_root(source.getGenesis_validators_root());
+    state.setSlot(source.getSlot());
+    state.setFork(source.getFork());
+    // History
+    state.setLatest_block_header(source.getLatest_block_header());
+    state.setBlock_roots(source.getBlock_roots());
+    state.setState_roots(source.getState_roots());
+    state.setHistorical_roots(source.getHistorical_roots());
+    // Eth1
+    state.setEth1_data(source.getEth1_data());
+    state.setEth1_data_votes(source.getEth1_data_votes());
+    state.setEth1_deposit_index(source.getEth1_deposit_index());
+    // Registry
+    state.setValidators(source.getValidators());
+    state.setBalances(source.getBalances());
+    // Randomness
+    state.setRandao_mixes(source.getRandao_mixes());
+    // Slashings
+    state.setSlashings(source.getSlashings());
+    // Finality
+    state.setJustification_bits(source.getJustification_bits());
+    state.setPrevious_justified_checkpoint(source.getPrevious_justified_checkpoint());
+    state.setCurrent_justified_checkpoint(source.getPrevious_justified_checkpoint());
+    state.setFinalized_checkpoint(source.getFinalized_checkpoint());
+  }
 
   static List<SszField> getCommonFields(final SpecConfig specConfig) {
     SszField fork_field = new SszField(3, BeaconStateFields.FORK.name(), Fork.SSZ_SCHEMA);
