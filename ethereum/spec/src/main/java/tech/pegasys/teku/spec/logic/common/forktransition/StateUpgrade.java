@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.common.forktransition;
 
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface StateUpgrade<TStateOrig extends BeaconState, TStateUpgraded extends BeaconState> {
+public interface StateUpgrade<T extends BeaconState> {
 
-  TStateUpgraded upgrade(TStateOrig state);
+  T upgrade(BeaconState state);
 }

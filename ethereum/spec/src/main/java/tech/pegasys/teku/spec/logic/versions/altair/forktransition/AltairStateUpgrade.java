@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
-public class AltairStateUpgrade implements StateUpgrade<BeaconState, BeaconStateAltair> {
+public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
   final SpecConfigAltair specConfig;
   final SchemaDefinitionsAltair schemaDefinitions;
   final BeaconStateAccessorsAltair beaconStateAccessors;
