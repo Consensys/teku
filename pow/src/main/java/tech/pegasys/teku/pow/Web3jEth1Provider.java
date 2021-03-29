@@ -28,6 +28,7 @@ import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthChainId;
+import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -133,5 +134,10 @@ public class Web3jEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<BigInteger> getChainId() {
     return sendAsync(web3j.ethChainId()).thenApply(EthChainId::getChainId);
+  }
+
+  @Override
+  public SafeFuture<Boolean> ethSyncing() {
+    return sendAsync(web3j.ethSyncing()).thenApply(EthSyncing::isSyncing);
   }
 }
