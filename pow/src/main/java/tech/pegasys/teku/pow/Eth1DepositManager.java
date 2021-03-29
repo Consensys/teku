@@ -166,7 +166,7 @@ public class Eth1DepositManager {
 
   private SafeFuture<EthBlock.Block> getHead() {
     return waitForEth1ProviderToBeInSync()
-        .thenCompose((__) -> getLatestEth1BlockNumber())
+        .thenCompose(__ -> getLatestEth1BlockNumber())
         .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary)
         .thenApply(number -> number.minus(Constants.ETH1_FOLLOW_DISTANCE))
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
@@ -193,10 +193,11 @@ public class Eth1DepositManager {
                 LOG.info(
                     "Eth1DepositManager failed to get the head of Eth1: still syncing. Retrying in {} seconds.",
                     Constants.ETH1_SYNCING_RETRY_TIMEOUT.toSeconds());
-                return asyncRunner
-                    .getDelayedFuture(Constants.ETH1_SYNCING_RETRY_TIMEOUT)
-                    .thenCompose(__ -> waitForEth1ProviderToBeInSync());
-              } else return SafeFuture.COMPLETE;
+                return asyncRunner.runAfterDelay(
+                    this::waitForEth1ProviderToBeInSync, Constants.ETH1_SYNCING_RETRY_TIMEOUT);
+              } else {
+                return SafeFuture.COMPLETE;
+              }
             });
   }
 
