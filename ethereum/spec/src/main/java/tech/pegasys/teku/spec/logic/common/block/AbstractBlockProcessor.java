@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -250,7 +251,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
   @Override
-  public void processOperationsNoValidation(MutableBeaconState state, BeaconBlockBody body)
+  public void processOperationsNoValidation(
+      MutableBeaconState state,
+      BeaconBlockBody body,
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     try {
 
@@ -268,7 +272,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
       processProposerSlashingsNoValidation(state, body.getProposer_slashings());
       processAttesterSlashings(state, body.getAttester_slashings());
-      processAttestationsNoValidation(state, body.getAttestations());
+      processAttestations(state, body.getAttestations(), indexedAttestationCache, false);
       processDeposits(state, body.getDeposits());
       processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
@@ -415,20 +419,26 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       SszList<Attestation> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    processAttestationsNoValidation(state, attestations);
-    verifyAttestations(state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationCache);
+    processAttestations(state, attestations, indexedAttestationCache, true);
   }
 
-  @Override
-  public void processAttestationsNoValidation(
-      final MutableBeaconState state, final SszList<Attestation> attestations)
+  protected void processAttestations(
+      MutableBeaconState state,
+      SszList<Attestation> attestations,
+      IndexedAttestationCache indexedAttestationCache,
+      final boolean verifySignatures)
       throws BlockProcessingException {
+    final IndexedAttestationProvider indexedAttestationProvider =
+        createIndexedAttestationProvider(state, indexedAttestationCache);
     try {
       for (Attestation attestation : attestations) {
         // Validate
         assertAttestationValid(state, attestation);
-
-        processAttestationNoValidation(state, attestation);
+        processAttestation(state, attestation, indexedAttestationProvider);
+        if (verifySignatures) {
+          verifyAttestationSignatures(
+              state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
+        }
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -436,32 +446,50 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  private IndexedAttestationProvider createIndexedAttestationProvider(
+      BeaconState state, IndexedAttestationCache indexedAttestationCache) {
+    return (attestation) ->
+        indexedAttestationCache.computeIfAbsent(
+            attestation, () -> attestationUtil.getIndexedAttestation(state, attestation));
+  }
+
   /**
-   * Corresponds to beacon-chain spec function "process_attestation", excluding the assertion on
-   * is_valid_indexed_attestation (this is what "no validation" refers to), and excluding common
-   * validations found in {@link #assertAttestationValid}
+   * Corresponds to fork-specific logic from "process_attestation" spec method. Common validation
+   * and signature verification logic can be found in {@link #processAttestations}.
    *
    * @param genericState The state corresponding to the block being processed
    * @param attestation An attestation in the body of the block being processed
+   * @param indexedAttestationProvider
    */
-  protected abstract void processAttestationNoValidation(
-      final MutableBeaconState genericState, final Attestation attestation);
+  protected abstract void processAttestation(
+      final MutableBeaconState genericState,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider);
 
   @Override
-  public void verifyAttestations(
+  public void verifyAttestationSignatures(
       BeaconState state,
       SszList<Attestation> attestations,
       BLSSignatureVerifier signatureVerifier,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
+    verifyAttestationSignatures(
+        state,
+        attestations,
+        signatureVerifier,
+        createIndexedAttestationProvider(state, indexedAttestationCache));
+  }
+
+  protected void verifyAttestationSignatures(
+      BeaconState state,
+      SszList<Attestation> attestations,
+      BLSSignatureVerifier signatureVerifier,
+      IndexedAttestationProvider indexedAttestationProvider)
+      throws BlockProcessingException {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .map(
-                attestation ->
-                    indexedAttestationCache.computeIfAbsent(
-                        attestation,
-                        () -> attestationUtil.getIndexedAttestation(state, attestation)))
+            .map(indexedAttestationProvider::getIndexedAttestation)
             .map(
                 attestation ->
                     attestationUtil.isValidIndexedAttestation(
@@ -663,5 +691,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     }
     return true;
+  }
+
+  protected interface IndexedAttestationProvider {
+    IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 }
