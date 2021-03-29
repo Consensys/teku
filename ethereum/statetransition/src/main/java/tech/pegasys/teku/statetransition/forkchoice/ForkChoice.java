@@ -251,7 +251,9 @@ public class ForkChoice {
     // proposer weighting may cause us to reorg.
     // During sync, this may be noticeably slower than just comparing the chain head due to the way
     // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
-    return forkChoiceStrategy.findHead(recentChainData.getJustifiedCheckpoint().orElseThrow());
+    final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
+    final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
+    return forkChoiceStrategy.findHead(justifiedCheckpoint, finalizedCheckpoint);
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
