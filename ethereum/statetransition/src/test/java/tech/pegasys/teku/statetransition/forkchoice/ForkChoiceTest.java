@@ -286,7 +286,7 @@ class ForkChoiceTest {
 
     // Update ProtoArray to avoid the special case of considering the anchor
     // epoch as allowing all nodes to be a valid head.
-    forkChoice.processHead(epoch4StartSlot);
+    processHead(epoch4StartSlot);
 
     prepEpochForJustification(chainUpdater, epoch4StartSlot);
 
