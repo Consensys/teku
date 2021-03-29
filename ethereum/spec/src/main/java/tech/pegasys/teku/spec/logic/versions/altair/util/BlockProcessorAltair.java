@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -158,6 +159,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         validatorsUtil.increaseBalance(state, proposerIndex, proposerReward);
       }
     }
+  }
+
+  @Override
+  protected void processNewValidator(final MutableBeaconState genericState, final Deposit deposit) {
+    super.processNewValidator(genericState, deposit);
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+
+    state.getPreviousEpochParticipation().append(SszByte.ZERO);
+    state.getCurrentEpochParticipation().append(SszByte.ZERO);
+    state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
   public void processSyncCommittee(
