@@ -18,12 +18,14 @@ For information on changes in released versions of Teku, see the [releases page]
 - Upgraded to use BLS implementation BLST version 0.3.3.
 - When downloading the `--initial-state` from a URL, the `Accept: application/octet-stream` header is now set. This provides compatibility with the standard API `/eth/v1/debug/beacon/states/:state_id` endpoint.
 - `--ws-checkpoint` CLI now accepts a URL optionally, and will load the `ws_checkpoint` field from that URL.
-- validator-client now publishes `validator_current_epoch` which is the epoch based on slot events on the validator client.
 - Reduced CPU usage by avoiding creation of REST API events when there are no subscribers.
-- Added a labelled counter to metrics for external signer requests, `validator_external_signer_requests`, with labels `success`, `failed`, `timeout`
-- Added a labelled counter to metrics for storing the results of duties, `validator_duties_performed`, with a `type` and `result`.
-- Added a labelled counter to metrics for event stream, `validator_event_stream`, which has a `reason` label. The reason will be one of (disconnect, connect, error, timeout, invalidEvent).
-
+- Added new metrics to Validators
+  - `validator_current_epoch` is the epoch based on slot events on the validator client.
+  - `validator_external_signer_requests` with labels `success`, `failed`, `timeout`.
+  - `validator_duties_performed` with labels `type` and `result`.
+  - `validator_event_stream_disconnections_total` which has a `reason` label. The reason will be one of (disconnect, connect, error, timeout, invalidEvent).
+  - `validator_event_stream_invalid_events_total` counts the number of invalid events found on the event stream.
+  
 ### Bug Fixes
 - Fixed issue in discv5 where nonce was incorrectly reused.
 - Block events now only return the slot and root, rather than the entire signed block.

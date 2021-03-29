@@ -38,7 +38,6 @@ class EventSourceHandler implements EventHandler {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel;
-  private final Counter connectCounter;
   private final Counter disconnectCounter;
   private final Counter invalidEventCounter;
   private final Counter timeoutCounter;
@@ -47,19 +46,25 @@ class EventSourceHandler implements EventHandler {
   public EventSourceHandler(
       final ValidatorTimingChannel validatorTimingChannel, final MetricsSystem metricsSystem) {
     this.validatorTimingChannel = validatorTimingChannel;
+    invalidEventCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            "event_stream_invalid_events_total",
+            "Event stream Invalid Events");
+
     final LabelledMetric<Counter> eventSourceMetrics =
         metricsSystem.createLabelledCounter(
-            TekuMetricCategory.VALIDATOR, "event_stream", "Event stream status counters", "reason");
-    connectCounter = eventSourceMetrics.labels("connect");
+            TekuMetricCategory.VALIDATOR,
+            "event_stream_disconnections_total",
+            "Event stream disconnect status counters",
+            "reason");
     disconnectCounter = eventSourceMetrics.labels("disconnect");
-    invalidEventCounter = eventSourceMetrics.labels("invalidEvent");
     timeoutCounter = eventSourceMetrics.labels("timeout");
     errorCounter = eventSourceMetrics.labels("error");
   }
 
   @Override
   public void onOpen() {
-    connectCounter.inc();
     VALIDATOR_LOGGER.connectedToBeaconNode();
     // We might have missed some events while connecting or reconnected so ensure the duties are
     // recalculated
