@@ -81,7 +81,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 validatorTimingChannel,
                 useIndependentAttestationTiming,
                 spec),
-            validatorTimingChannel);
+            validatorTimingChannel,
+            serviceConfig.getMetricsSystem());
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
   }
