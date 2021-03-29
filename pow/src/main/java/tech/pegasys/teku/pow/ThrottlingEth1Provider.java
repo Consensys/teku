@@ -90,4 +90,9 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   public SafeFuture<BigInteger> getChainId() {
     return taskQueue.queueTask(delegate::getChainId);
   }
+
+  @Override
+  public SafeFuture<Boolean> ethSyncing() {
+    return taskQueue.queueTask(delegate::ethSyncing);
+  }
 }
