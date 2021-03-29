@@ -22,9 +22,13 @@ import com.launchdarkly.eventsource.MessageEvent;
 import java.net.SocketTimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -34,9 +38,29 @@ class EventSourceHandler implements EventHandler {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel;
+  private final Counter disconnectCounter;
+  private final Counter invalidEventCounter;
+  private final Counter timeoutCounter;
+  private final Counter errorCounter;
 
-  public EventSourceHandler(final ValidatorTimingChannel validatorTimingChannel) {
+  public EventSourceHandler(
+      final ValidatorTimingChannel validatorTimingChannel, final MetricsSystem metricsSystem) {
     this.validatorTimingChannel = validatorTimingChannel;
+    invalidEventCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            "event_stream_invalid_events_total",
+            "Event stream Invalid Events");
+
+    final LabelledMetric<Counter> eventSourceMetrics =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR,
+            "event_stream_disconnections_total",
+            "Event stream disconnect status counters",
+            "reason");
+    disconnectCounter = eventSourceMetrics.labels("disconnect");
+    timeoutCounter = eventSourceMetrics.labels("timeout");
+    errorCounter = eventSourceMetrics.labels("error");
   }
 
   @Override
@@ -49,6 +73,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onClosed() {
+    disconnectCounter.inc();
     LOG.info("Beacon chain event stream closed");
   }
 
@@ -66,6 +91,7 @@ class EventSourceHandler implements EventHandler {
           LOG.warn("Received unexpected event type: " + event);
       }
     } catch (final IllegalArgumentException | JsonProcessingException e) {
+      invalidEventCounter.inc();
       LOG.warn(
           "Received invalid event from beacon node. Event type: {} Event data: {}",
           event,
@@ -99,9 +125,12 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onError(final Throwable t) {
     if (Throwables.getRootCause(t) instanceof SocketTimeoutException) {
+      timeoutCounter.inc();
       LOG.info(
-          "Timed out waiting for events from beacon node event stream. Reconnecting. This is normal if the beacon node is still syncing.");
+          "Timed out waiting for events from beacon node event stream. "
+              + "Reconnecting. This is normal if the beacon node is still syncing.");
     } else {
+      errorCounter.inc();
       VALIDATOR_LOGGER.beaconNodeConnectionError(t);
     }
   }

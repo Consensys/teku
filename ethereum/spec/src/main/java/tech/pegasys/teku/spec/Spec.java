@@ -350,11 +350,6 @@ public class Spec {
             signedBlock, blockSlotState, validateStateRootAndSignatures, indexedAttestationCache);
   }
 
-  public BeaconState processBlock(BeaconState preState, BeaconBlock block)
-      throws BlockProcessingException {
-    return atBlock(block).getStateTransition().processBlock(preState, block);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     return atSlot(slot).getStateTransition().processSlots(preState, slot);

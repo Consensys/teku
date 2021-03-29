@@ -63,7 +63,7 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
   @Override
   default SszMutableUInt64List getInactivityScores() {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
-    return getAny(fieldIndex);
+    return getAnyByRef(fieldIndex);
   }
 
   default void setInactivityScores(SszUInt64List newValue) {
