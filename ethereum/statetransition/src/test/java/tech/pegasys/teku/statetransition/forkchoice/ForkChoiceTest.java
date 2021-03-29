@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -264,6 +265,81 @@ class ForkChoiceTest {
     // And we should be able to apply the new weightings without making the fork block's weight
     // negative
     assertDoesNotThrow(() -> forkChoice.processHead(updatedAttestationSlot));
+  }
+
+  @Test
+  void onBlock_shouldHandleNonCanonicalBlockThatUpdatesJustifiedCheckpoint() {
+    // If the new block is not the child of the current head block we use `ProtoArray.findHead`
+    // to check if it should become the new head.  If importing that block caused the justified
+    // checkpoint to be updated, then the justified epoch in ProtoArray won't match the justified
+    // epoch of the new head so it considers the head invalid.  Normally that update is done when
+    // applying pending votes.
+
+    final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+    final UInt64 epoch4StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
+
+    // Set the time to be the start of epoch 3 so all the blocks we need are valid
+    chainUpdater.setTime(
+        spec.getSlotStartTime(epoch4StartSlot, genesis.getState().getGenesis_time()));
+
+    justifyEpoch(chainUpdater, 2);
+
+    // Update ProtoArray to avoid the special case of considering the anchor
+    // epoch as allowing all nodes to be a valid head.
+    processHead(epoch4StartSlot);
+
+    prepEpochForJustification(chainUpdater, epoch4StartSlot);
+
+    // Switch head to a different fork so the next block has to use findHead
+    chainUpdater.updateBestBlock(chainBuilder.fork().generateNextBlock());
+
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(epoch4StartSlot);
+    importBlock(epoch4Block);
+
+    // Should now have justified epoch 3
+    assertThat(recentChainData.getJustifiedCheckpoint())
+        .map(Checkpoint::getEpoch)
+        .contains(UInt64.valueOf(3));
+
+    // The only block with the newly justified checkpoint is epoch4Block so it should become head
+    assertThat(recentChainData.getBestBlockRoot()).contains(epoch4Block.getRoot());
+  }
+
+  private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
+    final UInt64 nextEpochStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch + 1));
+    // Advance chain to an epoch we can actually justify
+    prepEpochForJustification(chainUpdater, nextEpochStartSlot);
+
+    // Trigger epoch transition into next epoch.
+    importBlock(chainBuilder.generateBlockAtSlot(nextEpochStartSlot));
+
+    // Should now have justified epoch
+    assertThat(recentChainData.getJustifiedCheckpoint())
+        .map(Checkpoint::getEpoch)
+        .contains(UInt64.valueOf(epoch));
+  }
+
+  private void prepEpochForJustification(
+      final ChainUpdater chainUpdater, final UInt64 nextEpochStartSlot) {
+    UInt64 headSlot = chainUpdater.getHeadSlot();
+    final UInt64 targetHeadSlot = nextEpochStartSlot.minus(2);
+    while (headSlot.isLessThan(targetHeadSlot)) {
+      SignedBlockAndState headBlock = chainBuilder.generateBlockAtSlot(headSlot.plus(1));
+      importBlock(headBlock);
+      assertThat(recentChainData.getBestBlockRoot()).contains(headBlock.getRoot());
+      headSlot = headBlock.getSlot();
+    }
+
+    // Add a block with enough attestations to justify the epoch.
+    final BlockOptions epoch2BlockOptions = BlockOptions.create();
+    final UInt64 newBlockSlot = headSlot.increment();
+    chainBuilder
+        .streamValidAttestationsForBlockAtSlot(newBlockSlot)
+        .forEach(epoch2BlockOptions::addAttestation);
+    final SignedBlockAndState epoch2Block =
+        chainBuilder.generateBlockAtSlot(newBlockSlot, epoch2BlockOptions);
+
+    importBlock(epoch2Block);
   }
 
   @Test

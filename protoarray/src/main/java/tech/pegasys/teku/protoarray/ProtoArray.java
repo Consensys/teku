@@ -144,7 +144,14 @@ public class ProtoArray {
    * @param justifiedRoot the root of the justified checkpoint
    * @return the best node according to fork choice
    */
-  public ProtoNode findHead(Bytes32 justifiedRoot) {
+  public ProtoNode findHead(Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+    if (!this.justifiedEpoch.equals(justifiedEpoch)
+        || !this.finalizedEpoch.equals(finalizedEpoch)) {
+      this.justifiedEpoch = justifiedEpoch;
+      this.finalizedEpoch = finalizedEpoch;
+      // Justified or finalized epoch changed we we have to re-evaluate all best descendants.
+      applyToNodes(this::updateBestDescendantOfParent);
+    }
     int justifiedIndex =
         indices
             .get(justifiedRoot)
