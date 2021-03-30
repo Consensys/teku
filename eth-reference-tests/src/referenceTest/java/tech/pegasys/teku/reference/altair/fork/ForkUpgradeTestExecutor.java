@@ -14,16 +14,17 @@
 package tech.pegasys.teku.reference.altair.fork;
 
 import com.google.common.collect.ImmutableMap;
+import org.assertj.core.api.Assertions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestExecutor;
 
 public class ForkUpgradeTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> FORK_UPGRADE_TEST_TYPES =
-      ImmutableMap.of("fork/fork", new ForkUpgradeTestExecutor());
+      ImmutableMap.of("fork/fork", TestExecutor.IGNORE_TESTS);
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    // TODO
+    Assertions.fail("Not implemented");
   }
 }
