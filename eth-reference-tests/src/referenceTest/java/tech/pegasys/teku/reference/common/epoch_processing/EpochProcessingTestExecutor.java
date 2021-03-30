@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.epoch_processing;
+package tech.pegasys.teku.reference.common.epoch_processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
+import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingExecutor.Operation;
+import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingExecutor.Operation;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;

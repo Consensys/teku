@@ -11,23 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0;
+package tech.pegasys.teku.reference;
 
-public enum BlsSetting {
-  DEFAULT,
-  REQUIRED,
-  IGNORED;
+import org.opentest4j.TestAbortedException;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-  public static BlsSetting forCode(final int code) {
-    switch (code) {
-      case 0:
-        return DEFAULT;
-      case 1:
-        return REQUIRED;
-      case 2:
-        return IGNORED;
-      default:
-        throw new IllegalArgumentException("Unsupported bls setting: " + code);
-    }
-  }
+public interface TestExecutor {
+  TestExecutor IGNORE_TESTS =
+      testDefinition -> {
+        throw new TestAbortedException(
+            "Test " + testDefinition.getDisplayName() + " has been ignored");
+      };
+
+  void runTest(TestDefinition testDefinition) throws Throwable;
 }

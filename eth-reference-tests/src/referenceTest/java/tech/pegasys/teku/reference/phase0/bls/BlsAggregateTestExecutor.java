@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestDataUtils;
+import tech.pegasys.teku.reference.TestDataUtils;
 
 public class BlsAggregateTestExecutor extends BlsTestExecutor {
 

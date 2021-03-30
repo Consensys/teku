@@ -11,14 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests.finder;
+package tech.pegasys.teku.reference;
 
-import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.stream.Stream;
+public enum BlsSetting {
+  DEFAULT,
+  REQUIRED,
+  IGNORED;
 
-public interface TestFinder {
-  @MustBeClosed
-  Stream<TestDefinition> findTests(String fork, String config, Path testRoot) throws IOException;
+  public static BlsSetting forCode(final int code) {
+    switch (code) {
+      case 0:
+        return DEFAULT;
+      case 1:
+        return REQUIRED;
+      case 2:
+        return IGNORED;
+      default:
+        throw new IllegalArgumentException("Unsupported bls setting: " + code);
+    }
+  }
 }

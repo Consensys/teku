@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests.finder;
+package tech.pegasys.teku.reference.altair.fork;
 
-import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.stream.Stream;
+import com.google.common.collect.ImmutableMap;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.TestExecutor;
 
-public interface TestFinder {
-  @MustBeClosed
-  Stream<TestDefinition> findTests(String fork, String config, Path testRoot) throws IOException;
+public class ForkUpgradeTestExecutor implements TestExecutor {
+
+  public static final ImmutableMap<String, TestExecutor> FORK_UPGRADE_TEST_TYPES =
+      ImmutableMap.of("fork/fork", new ForkUpgradeTestExecutor());
+
+  @Override
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    // TODO
+  }
 }

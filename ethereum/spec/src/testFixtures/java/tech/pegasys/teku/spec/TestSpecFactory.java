@@ -30,4 +30,15 @@ public class TestSpecFactory {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
     return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
   }
+
+  public static Spec createMainnetAltair() {
+    final SpecConfigAltair specConfig =
+        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
+    return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+  }
+
+  public static Spec createMainnetPhase0() {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName());
+    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
+  }
 }
