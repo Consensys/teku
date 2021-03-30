@@ -82,6 +82,11 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
     return logStatus(delegate.getChainId());
   }
 
+  @Override
+  public SafeFuture<Boolean> ethSyncing() {
+    return logStatus(delegate.ethSyncing());
+  }
+
   private <T> SafeFuture<T> logStatus(final SafeFuture<T> action) {
     return action
         .thenPeek((t) -> eth1StatusLogger.success())

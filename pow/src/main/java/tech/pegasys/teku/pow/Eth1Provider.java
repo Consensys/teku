@@ -50,4 +50,6 @@ public interface Eth1Provider {
   SafeFuture<EthCall> ethCall(String from, String to, String data, UInt64 blockNumber);
 
   SafeFuture<BigInteger> getChainId();
+
+  SafeFuture<Boolean> ethSyncing();
 }
