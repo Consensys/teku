@@ -14,7 +14,7 @@
 package tech.pegasys.teku.reference.phase0.shuffling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.shuffle_list;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ShufflingTestExecutor implements TestExecutor {

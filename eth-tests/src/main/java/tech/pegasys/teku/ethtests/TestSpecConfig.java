@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,17 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0;
+package tech.pegasys.teku.ethtests;
 
-import org.opentest4j.TestAbortedException;
-import tech.pegasys.teku.ethtests.finder.TestDefinition;
-
-public interface TestExecutor {
-  TestExecutor IGNORE_TESTS =
-      testDefinition -> {
-        throw new TestAbortedException(
-            "Test " + testDefinition.getDisplayName() + " has been ignored");
-      };
-
-  void runTest(TestDefinition testDefinition) throws Throwable;
+public class TestSpecConfig {
+  public static String MINIMAL = "minimal";
+  public static String MAINNET = "mainnet";
 }

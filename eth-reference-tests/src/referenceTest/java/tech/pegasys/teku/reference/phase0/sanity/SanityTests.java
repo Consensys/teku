@@ -14,7 +14,7 @@
 package tech.pegasys.teku.reference.phase0.sanity;
 
 import com.google.common.collect.ImmutableMap;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.TestExecutor;
 
 public class SanityTests {
 

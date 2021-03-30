@@ -16,7 +16,7 @@ package tech.pegasys.teku.reference.phase0.bls;
 import com.google.common.collect.ImmutableMap;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.TestExecutor;
 
 public class BlsTests {
 

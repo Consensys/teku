@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests.finder;
+package tech.pegasys.teku.ethtests;
 
-import com.google.errorprone.annotations.MustBeClosed;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.stream.Stream;
-
-public interface TestFinder {
-  @MustBeClosed
-  Stream<TestDefinition> findTests(String fork, String config, Path testRoot) throws IOException;
+public class TestFork {
+  public static String PHASE0 = "phase0";
+  public static String ALTAIR = "altair";
 }
