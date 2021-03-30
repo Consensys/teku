@@ -60,7 +60,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         chainHeadChannel,
         eventBus,
         spec);
-    eventBus.register(this);
   }
 
   public static Builder builder() {

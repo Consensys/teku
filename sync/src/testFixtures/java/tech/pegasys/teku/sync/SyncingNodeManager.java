@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
@@ -59,6 +60,7 @@ public class SyncingNodeManager {
   private final BeaconChainUtil chainUtil;
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final ForwardSync syncService;
+  private final BlockGossipChannel blockGossipChannel;
 
   private SyncingNodeManager(
       final EventBus eventBus,
@@ -73,6 +75,7 @@ public class SyncingNodeManager {
     this.chainUtil = chainUtil;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.syncService = syncService;
+    this.blockGossipChannel = eventChannels.getPublisher(BlockGossipChannel.class);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -173,5 +176,9 @@ public class SyncingNodeManager {
   public void setSlot(UInt64 slot) {
     eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
     chainUtil().setSlot(slot);
+  }
+
+  public void gossipBlock(final SignedBeaconBlock block) {
+    blockGossipChannel.publishBlock(block);
   }
 }

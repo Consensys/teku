@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +26,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -67,7 +67,7 @@ public class Eth2P2PNetworkBuilder {
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
   private P2PConfig config;
-  private EventBus eventBus;
+  private EventChannels eventChannels;
   private RecentChainData recentChainData;
   private OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   private OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
@@ -134,7 +134,7 @@ public class Eth2P2PNetworkBuilder {
         metricsSystem,
         network,
         eth2PeerManager,
-        eventBus,
+        eventChannels,
         recentChainData,
         attestationSubnetService,
         gossipEncoding,
@@ -198,7 +198,7 @@ public class Eth2P2PNetworkBuilder {
 
   private void validate() {
     assertNotNull("config", config);
-    assertNotNull("eventBus", eventBus);
+    assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("keyValueStore", keyValueStore);
@@ -222,9 +222,9 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
-    checkNotNull(eventBus);
-    this.eventBus = eventBus;
+  public Eth2P2PNetworkBuilder eventChannels(final EventChannels eventChannels) {
+    checkNotNull(eventChannels);
+    this.eventChannels = eventChannels;
     return this;
   }
 

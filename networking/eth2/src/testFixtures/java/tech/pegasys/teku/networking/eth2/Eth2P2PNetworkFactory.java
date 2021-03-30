@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
@@ -106,6 +107,7 @@ public class Eth2P2PNetworkFactory {
     protected List<Eth2P2PNetwork> peers = new ArrayList<>();
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
+    protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -243,7 +245,7 @@ public class Eth2P2PNetworkFactory {
             metricsSystem,
             network,
             eth2PeerManager,
-            eventBus,
+            eventChannels,
             recentChainData,
             attestationSubnetService,
             gossipEncoding,
@@ -285,6 +287,14 @@ public class Eth2P2PNetworkFactory {
     private void setDefaults() {
       if (eventBus == null) {
         eventBus = new EventBus();
+      }
+      if (eventChannels == null) {
+        eventChannels =
+            EventChannels.createSyncChannels(
+                (error, subscriber, invokedMethod, args) -> {
+                  throw new RuntimeException(error);
+                },
+                new NoOpMetricsSystem());
       }
       if (asyncRunner == null) {
         asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -377,6 +387,12 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
       checkNotNull(eventBus);
       this.eventBus = eventBus;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eventChannels(final EventChannels eventChannels) {
+      checkNotNull(eventChannels);
+      this.eventChannels = eventChannels;
       return this;
     }
 
