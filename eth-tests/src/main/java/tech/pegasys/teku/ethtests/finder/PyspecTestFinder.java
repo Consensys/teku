@@ -28,24 +28,27 @@ public class PyspecTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String spec, final Path testRoot)
-      throws IOException {
+  public Stream<TestDefinition> findTests(
+      final String fork, final String config, final Path testRoot) throws IOException {
     return Files.walk(testRoot)
         .filter(path -> path.resolve(PYSPEC_TEST_DIRECTORY_NAME).toFile().exists())
         .flatMap(
-            unchecked(testCategoryDir -> findPyspecTestCases(spec, testRoot, testCategoryDir)));
+            unchecked(
+                testCategoryDir -> findPyspecTestCases(fork, config, testRoot, testCategoryDir)));
   }
 
   @MustBeClosed
   private static Stream<TestDefinition> findPyspecTestCases(
-      final String spec, final Path testRoot, final Path testCategoryDir) throws IOException {
+      final String fork, final String config, final Path testRoot, final Path testCategoryDir)
+      throws IOException {
     final String testType = testRoot.relativize(testCategoryDir).toString();
     final Path pyspecDir = testCategoryDir.resolve(PYSPEC_TEST_DIRECTORY_NAME);
     return Files.list(pyspecDir)
         .map(
             testDir -> {
               final String testName = pyspecDir.relativize(testDir).toString();
-              return new TestDefinition(spec, testType, testName, testRoot.relativize(testDir));
+              return new TestDefinition(
+                  fork, config, testType, testName, testRoot.relativize(testDir));
             });
   }
 }

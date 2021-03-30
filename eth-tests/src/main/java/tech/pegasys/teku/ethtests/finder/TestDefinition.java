@@ -14,35 +14,56 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
+import tech.pegasys.teku.ethtests.TestFork;
+import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class TestDefinition {
-  private final String specName;
+  private final String fork;
+  private final String configName;
   private final String testType;
   private final String testName;
   private final Path pathFromPhaseTestDir;
   private Spec spec;
 
   public TestDefinition(
-      final String specName,
+      final String fork,
+      final String configName,
       final String testType,
       final String testName,
       final Path pathFromPhaseTestDir) {
-    this.specName = specName;
+    this.configName = configName;
+    this.fork = fork;
     this.testType = testType.replace("\\", "/");
     this.testName = testName.replace("\\", "/");
     this.pathFromPhaseTestDir = pathFromPhaseTestDir;
   }
 
-  public String getSpecName() {
-    return specName;
+  public String getConfigName() {
+    return configName;
+  }
+
+  public String getFork() {
+    return fork;
   }
 
   public Spec getSpec() {
     if (spec == null) {
-      spec = SpecFactory.create(specName);
+      if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.PHASE0)) {
+        spec = TestSpecFactory.createMainnetPhase0();
+      } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.ALTAIR)) {
+        spec = TestSpecFactory.createMainnetAltair();
+      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.PHASE0)) {
+        spec = TestSpecFactory.createMinimalPhase0();
+      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.ALTAIR)) {
+        spec = TestSpecFactory.createMinimalAltair();
+      } else {
+        // Set generic value
+        spec = TestSpecFactory.createMinimalPhase0();
+      }
     }
+
     return spec;
   }
 
@@ -56,7 +77,7 @@ public class TestDefinition {
 
   @Override
   public String toString() {
-    return specName + " - " + testType + " - " + testName;
+    return fork + " - " + configName + " - " + testType + " - " + testName;
   }
 
   public String getDisplayName() {
@@ -69,7 +90,7 @@ public class TestDefinition {
 
   public Path getTestDirectory() {
     return ReferenceTestFinder.findReferenceTestRootDirectory()
-        .resolve(Path.of(specName, ReferenceTestFinder.PHASE_TEST_DIR))
+        .resolve(Path.of(configName, fork))
         .resolve(pathFromPhaseTestDir);
   }
 }

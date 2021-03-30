@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package $TEST_PACKAGE$;
+package tech.pegasys.teku.reference.altair.fork;
 
-import java.nio.file.Path;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.google.common.collect.ImmutableMap;
+import org.assertj.core.api.Assertions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.Eth2ReferenceTestCase;
+import tech.pegasys.teku.reference.TestExecutor;
 
-@DisplayName("$FORK$ - $CONFIG$ - $TEST_TYPE$")
-public class $TEST_CLASS_NAME$ extends Eth2ReferenceTestCase {
+public class ForkUpgradeTestExecutor implements TestExecutor {
 
-  @Test
-  @DisplayName("$TEST_NAME$")
-  void $TEST_METHOD_NAME$() throws Throwable {
-    runReferenceTest(
-        new TestDefinition("$FORK$", "$CONFIG$", "$TEST_TYPE$", "$TEST_NAME$", Path.of("$RELATIVE_PATH$")));
+  public static final ImmutableMap<String, TestExecutor> FORK_UPGRADE_TEST_TYPES =
+      ImmutableMap.of("fork/fork", TestExecutor.IGNORE_TESTS);
+
+  @Override
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    Assertions.fail("Not implemented");
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0;
+package tech.pegasys.teku.reference;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
    */
-  private static final String TEST_TYPE = "fork_choice";
+  private static final String TEST_TYPE = "epoch_processing/effective_balance_updates";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
   private static final String SPEC = "";
@@ -56,7 +56,8 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   static Stream<Arguments> loadReferenceTests() throws IOException {
     return ReferenceTestFinder.findReferenceTests()
         .filter(
-            testDefinition -> SPEC.isBlank() || testDefinition.getSpecName().equalsIgnoreCase(SPEC))
+            testDefinition ->
+                SPEC.isBlank() || testDefinition.getConfigName().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }

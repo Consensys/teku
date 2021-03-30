@@ -16,7 +16,7 @@ package tech.pegasys.teku.reference.phase0.bls;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
