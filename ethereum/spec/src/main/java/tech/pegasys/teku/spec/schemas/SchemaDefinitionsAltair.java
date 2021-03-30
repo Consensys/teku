@@ -18,11 +18,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
-  private final BeaconStateSchema<?, ?> beaconStateSchema;
+  private final BeaconStateSchemaAltair beaconStateSchema;
   private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -35,7 +34,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   }
 
   @Override
-  public BeaconStateSchema<?, ?> getBeaconStateSchema() {
+  public BeaconStateSchemaAltair getBeaconStateSchema() {
     return beaconStateSchema;
   }
 

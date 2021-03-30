@@ -18,7 +18,6 @@ import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.primitive.SszByte;
@@ -43,8 +42,7 @@ public class BeaconStateSchemaAltair
     super("BeaconStateAltair", getUniqueFields(specConfig), specConfig);
   }
 
-  public static BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> create(
-      final SpecConfig specConfig) {
+  public static BeaconStateSchemaAltair create(final SpecConfig specConfig) {
     return new BeaconStateSchemaAltair(specConfig);
   }
 
