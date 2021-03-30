@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 
 @SuppressWarnings("MustBeClosedChecker")
@@ -27,7 +28,7 @@ public class ReferenceTestFinder {
 
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "eth2.0-spec-tests", "tests");
-  public static final String PHASE_TEST_DIR = "phase0";
+  private static List<String> SUPPORTED_FORKS = List.of(TestFork.PHASE0, TestFork.ALTAIR);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
@@ -36,15 +37,23 @@ public class ReferenceTestFinder {
 
   @MustBeClosed
   private static Stream<TestDefinition> findTestTypes(final Path specDirectory) {
-    final String spec = specDirectory.getFileName().toString();
-    final Path phase0Tests = specDirectory.resolve(PHASE_TEST_DIR);
-    return Stream.of(
-            new BlsTestFinder(),
-            new SszTestFinder("ssz_generic"),
-            new SszTestFinder("ssz_static"),
-            new ShufflingTestFinder(),
-            new PyspecTestFinder())
-        .flatMap(unchecked(finder -> finder.findTests(spec, phase0Tests)));
+    return SUPPORTED_FORKS.stream()
+        .flatMap(
+            fork -> {
+              final String spec = specDirectory.getFileName().toString();
+              final Path testsPath = specDirectory.resolve(fork);
+              if (!testsPath.toFile().exists()) {
+                return Stream.empty();
+              }
+
+              return Stream.of(
+                      new BlsTestFinder(),
+                      new SszTestFinder("ssz_generic"),
+                      new SszTestFinder("ssz_static"),
+                      new ShufflingTestFinder(),
+                      new PyspecTestFinder())
+                  .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
+            });
   }
 
   @MustBeClosed

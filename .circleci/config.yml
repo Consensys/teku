@@ -85,7 +85,7 @@ commands:
               MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
               TARGET="build/test-results/$MODULE"
               mkdir -p "$TARGET"
-              cp -rf ${FILE}/*/* "$TARGET"
+              find ${FILE} -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I{} cp -rf {} $TARGET
             done
       - store_test_results:
           path: build/test-results
