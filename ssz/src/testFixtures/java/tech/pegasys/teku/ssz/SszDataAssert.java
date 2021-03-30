@@ -42,7 +42,9 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
               .mapToObj(i -> "  ".repeat(i) + res.get(i))
               .collect(Collectors.joining("\n"));
       errMessage += " ERROR: " + res.get(res.size() - 1);
-      failWithActualExpectedAndMessage(actual, expected, errMessage);
+      failWithMessage(
+          "Expected %s's to be equal by getter, but found differences:\n%s",
+          expected.getClass().getSimpleName(), errMessage);
     }
     return this;
   }

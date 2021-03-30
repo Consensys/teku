@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.reference.altair.fork;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
@@ -66,9 +65,9 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
             (SpecConfigAltair) spec.getConfig(),
             (SchemaDefinitionsAltair) spec.getSchemaDefinitions(),
             (BeaconStateAccessorsAltair) spec.beaconStateAccessors());
-    final BeaconStateAltair updated = stateUpgrade.upgrade(preState);
+    final BeaconState updated = stateUpgrade.upgrade(preState);
 
-    assertThat(updated).isEqualTo(postState);
+    assertThatSszData(updated).isEqualByGettersTo(postState);
   }
 
   private static class MetaData {
