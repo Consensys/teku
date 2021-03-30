@@ -117,6 +117,7 @@ public class SyncingNodeManager {
             .builder()
             .spec(spec)
             .eventBus(eventBus)
+            .eventChannels(eventChannels)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock);
 
