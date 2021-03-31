@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.forks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -25,8 +25,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
@@ -39,7 +43,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  */
 public class GossipForkManager {
 
+  private static final Logger LOG = LogManager.getLogger();
   private static final int EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE = 2;
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch;
   private final Set<ForkGossipSubscriptions> activeSubscriptions = new HashSet<>();
@@ -47,8 +53,10 @@ public class GossipForkManager {
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   private GossipForkManager(
+      final Spec spec,
       final RecentChainData recentChainData,
       final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
     this.forksByActivationEpoch = forksByActivationEpoch;
   }
@@ -69,7 +77,7 @@ public class GossipForkManager {
       // If this is the first call, activate the subscription at the current epoch
       // and any subscriptions for forks happening soon
       startSubscriptions(
-          getSubscriptionActiveAt(newEpoch)
+          getSubscriptionActiveAtEpoch(newEpoch)
               .orElseThrow(() -> new IllegalStateException("No fork active at epoch " + newEpoch)));
       forksByActivationEpoch
           .subMap(newEpoch, false, newEpoch.plus(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE), true)
@@ -87,8 +95,7 @@ public class GossipForkManager {
                 false,
                 newEpoch.minusMinZero(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
                 true)
-            .keySet()
-            .stream()
+            .keySet().stream()
             // Deactivate the fork prior to the newly activated one if any
             .map(forksByActivationEpoch::lowerEntry)
             .filter(Objects::nonNull)
@@ -118,6 +125,32 @@ public class GossipForkManager {
     activeSubscriptions.clear();
   }
 
+  public synchronized void publishAttestation(final ValidateableAttestation attestation) {
+    getSubscriptionActiveAtSlot(attestation.getData().getSlot())
+        .filter(this::isActive)
+        .ifPresentOrElse(
+            subscription -> subscription.publishAttestation(attestation),
+            () ->
+                LOG.warn(
+                    "Not publishing attestation because no gossip subscriptions are active for slot {}",
+                    attestation.getData().getSlot()));
+  }
+
+  public synchronized void publishBlock(final SignedBeaconBlock block) {
+    getSubscriptionActiveAtSlot(block.getSlot())
+        .filter(this::isActive)
+        .ifPresentOrElse(
+            subscription -> subscription.publishBlock(block),
+            () ->
+                LOG.warn(
+                    "Not publishing block because no gossip subscriptions are active for slot {}",
+                    block.getSlot()));
+  }
+
+  private boolean isActive(final ForkGossipSubscriptions subscriptions) {
+    return activeSubscriptions.contains(subscriptions);
+  }
+
   private void startSubscriptions(final ForkGossipSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
@@ -131,23 +164,26 @@ public class GossipForkManager {
     }
   }
 
-  private Optional<ForkGossipSubscriptions> getSubscriptionActiveAt(final UInt64 epoch) {
-    return Optional.ofNullable(forksByActivationEpoch.floorEntry(epoch)).map(Map.Entry::getValue);
+  private Optional<ForkGossipSubscriptions> getSubscriptionActiveAtSlot(final UInt64 slot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    return getSubscriptionActiveAtEpoch(epoch);
   }
 
-  public interface ForkGossipSubscriptions {
-    UInt64 getActivationEpoch();
-
-    void startGossip(Bytes32 genesisValidatorsRoot);
-
-    void stopGossip();
+  private Optional<ForkGossipSubscriptions> getSubscriptionActiveAtEpoch(final UInt64 epoch) {
+    return Optional.ofNullable(forksByActivationEpoch.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
   public static class Builder {
 
+    private Spec spec;
     private RecentChainData recentChainData;
     private final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch =
         new TreeMap<>();
+
+    public Builder spec(final Spec spec) {
+      this.spec = spec;
+      return this;
+    }
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -164,9 +200,10 @@ public class GossipForkManager {
     }
 
     public GossipForkManager build() {
+      checkNotNull(spec, "Must supply spec");
       checkNotNull(recentChainData, "Must supply recentChainData");
       checkState(!forksByActivationEpoch.isEmpty(), "Must specify at least one fork");
-      return new GossipForkManager(recentChainData, forksByActivationEpoch);
+      return new GossipForkManager(spec, recentChainData, forksByActivationEpoch);
     }
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.forks;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,12 +27,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.GossipForkManager.ForkGossipSubscriptions;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class GossipForkManagerTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x12345678446687");
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   @BeforeEach
@@ -171,6 +178,92 @@ class GossipForkManagerTest {
     verify(laterFork).startGossip(GENESIS_VALIDATORS_ROOT);
   }
 
+  @Test
+  void shouldPublishAttestationToForkForAttestationsSlot() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(1);
+    final ForkGossipSubscriptions thirdFork = forkAtEpoch(2);
+
+    final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    final ValidateableAttestation firstForkAttestation =
+        ValidateableAttestation.fromValidator(dataStructureUtil.randomAttestation(0));
+    final ValidateableAttestation secondForkAttestation =
+        ValidateableAttestation.fromValidator(
+            dataStructureUtil.randomAttestation(
+                spec.computeStartSlotAtEpoch(UInt64.ONE).longValue()));
+    final ValidateableAttestation thirdForkAttestation =
+        ValidateableAttestation.fromValidator(
+            dataStructureUtil.randomAttestation(
+                spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).longValue()));
+
+    manager.publishAttestation(firstForkAttestation);
+    verify(firstFork).publishAttestation(firstForkAttestation);
+    verify(secondFork, never()).publishAttestation(firstForkAttestation);
+    verify(thirdFork, never()).publishAttestation(firstForkAttestation);
+
+    manager.publishAttestation(secondForkAttestation);
+    verify(firstFork, never()).publishAttestation(secondForkAttestation);
+    verify(secondFork).publishAttestation(secondForkAttestation);
+    verify(thirdFork, never()).publishAttestation(secondForkAttestation);
+
+    manager.publishAttestation(thirdForkAttestation);
+    verify(firstFork, never()).publishAttestation(thirdForkAttestation);
+    verify(secondFork, never()).publishAttestation(thirdForkAttestation);
+    verify(thirdFork).publishAttestation(thirdForkAttestation);
+  }
+
+  @Test
+  void shouldNotPublishAttestationsToForksThatAreNotActive() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromValidator(
+            dataStructureUtil.randomAttestation(
+                spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch()).longValue()));
+
+    manager.publishAttestation(attestation);
+
+    verify(firstFork, never()).publishAttestation(attestation);
+    verify(secondFork, never()).publishAttestation(attestation);
+  }
+
+  @Test
+  void shouldPublishBlockToForkForBlockSlot() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(1);
+    final ForkGossipSubscriptions thirdFork = forkAtEpoch(2);
+
+    final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    final SignedBeaconBlock firstForkBlock = dataStructureUtil.randomSignedBeaconBlock(0);
+    final SignedBeaconBlock secondForkBlock =
+        dataStructureUtil.randomSignedBeaconBlock(spec.computeStartSlotAtEpoch(UInt64.ONE));
+    final SignedBeaconBlock thirdForkBlock =
+        dataStructureUtil.randomSignedBeaconBlock(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+
+    manager.publishBlock(firstForkBlock);
+    verify(firstFork).publishBlock(firstForkBlock);
+    verify(secondFork, never()).publishBlock(firstForkBlock);
+    verify(thirdFork, never()).publishBlock(firstForkBlock);
+
+    manager.publishBlock(secondForkBlock);
+    verify(firstFork, never()).publishBlock(secondForkBlock);
+    verify(secondFork).publishBlock(secondForkBlock);
+    verify(thirdFork, never()).publishBlock(secondForkBlock);
+
+    manager.publishBlock(thirdForkBlock);
+    verify(firstFork, never()).publishBlock(thirdForkBlock);
+    verify(secondFork, never()).publishBlock(thirdForkBlock);
+    verify(thirdFork).publishBlock(thirdForkBlock);
+  }
+
   private ForkGossipSubscriptions forkAtEpoch(final long epoch) {
     final ForkGossipSubscriptions subscriptions =
         mock(ForkGossipSubscriptions.class, "subscriptionsForEpoch" + epoch);
@@ -185,6 +278,6 @@ class GossipForkManagerTest {
   }
 
   private GossipForkManager.Builder builder() {
-    return GossipForkManager.builder().recentChainData(recentChainData);
+    return GossipForkManager.builder().recentChainData(recentChainData).spec(spec);
   }
 }
