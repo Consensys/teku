@@ -86,6 +86,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return altairForkVersion;
   }
 
+  // Updated penalty values
   public UInt64 getInactivityPenaltyQuotientAltair() {
     return inactivityPenaltyQuotientAltair;
   }
@@ -95,6 +96,22 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
   }
 
   public int getProportionalSlashingMultiplierAltair() {
+    return proportionalSlashingMultiplierAltair;
+  }
+
+  // Override original penalty values
+  @Override
+  public UInt64 getInactivityPenaltyQuotient() {
+    return inactivityPenaltyQuotientAltair;
+  }
+
+  @Override
+  public int getMinSlashingPenaltyQuotient() {
+    return minSlashingPenaltyQuotientAltair;
+  }
+
+  @Override
+  public int getProportionalSlashingMultiplier() {
     return proportionalSlashingMultiplierAltair;
   }
 
