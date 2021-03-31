@@ -110,8 +110,7 @@ public class GossipForkManager {
             false,
             newEpoch.plus(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
             true)
-        .values()
-        .stream()
+        .values().stream()
         // Don't bother starting subscriptions that will be immediately stopped
         .filter(subscription -> !subscriptionsToStop.contains(subscription))
         .forEach(this::startSubscriptions);
