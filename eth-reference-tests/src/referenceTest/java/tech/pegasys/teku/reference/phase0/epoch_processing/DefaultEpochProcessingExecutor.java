@@ -62,6 +62,9 @@ public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
       case PROCESS_HISTORICAL_ROOTS_UPDATE:
         epochProcessor.processHistoricalRootsUpdate(state);
         break;
+      case SYNC_COMMITTEE_UPDATES:
+        epochProcessor.processSyncCommitteeUpdates(state);
+        break;
       default:
         throw new UnsupportedOperationException(
             "Attempted to execute unknown operation type: " + operation);

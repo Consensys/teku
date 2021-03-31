@@ -27,7 +27,8 @@ public interface EpochProcessingExecutor {
     PROCESS_SLASHINGS_RESET,
     PROCESS_ETH1_DATA_RESET,
     PROCESS_RANDAO_MIXES_RESET,
-    PROCESS_HISTORICAL_ROOTS_UPDATE
+    PROCESS_HISTORICAL_ROOTS_UPDATE,
+    SYNC_COMMITTEE_UPDATES
   }
 
   void executeOperation(Operation operation, MutableBeaconState preState)

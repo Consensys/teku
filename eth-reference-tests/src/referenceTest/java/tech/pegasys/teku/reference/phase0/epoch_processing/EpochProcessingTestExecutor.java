@@ -59,6 +59,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/slashings_reset",
               new EpochProcessingTestExecutor(Operation.PROCESS_SLASHINGS_RESET))
+          .put(
+              "epoch_processing/sync_committee_updates",
+              new EpochProcessingTestExecutor(Operation.SYNC_COMMITTEE_UPDATES))
           .build();
 
   private final Operation operation;

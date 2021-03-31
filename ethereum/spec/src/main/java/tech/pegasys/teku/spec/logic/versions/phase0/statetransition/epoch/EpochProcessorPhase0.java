@@ -64,4 +64,9 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
     state.getCurrent_epoch_attestations().clear();
   }
+
+  @Override
+  public void processSyncCommitteeUpdates(final MutableBeaconState state) {
+    // Nothing to do
+  }
 }
