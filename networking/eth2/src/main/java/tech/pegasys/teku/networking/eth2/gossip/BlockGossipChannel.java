@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.events;
+package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.lang.reflect.Method;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface ChannelExceptionHandler {
-  ChannelExceptionHandler THROWING_HANDLER =
-      (error, subscriber, invokedMethod, args) -> {
-        throw new RuntimeException(error);
-      };
-
-  void handleException(Throwable error, Object subscriber, Method invokedMethod, Object[] args);
+public interface BlockGossipChannel extends VoidReturningChannelInterface {
+  void publishBlock(SignedBeaconBlock block);
 }
