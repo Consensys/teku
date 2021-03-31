@@ -242,6 +242,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   @Override
+  public void onEpoch(final UInt64 epoch) {
+    if (gossipStarted.get()) {
+      gossipForkManager.configureGossipForEpoch(epoch);
+    }
+  }
+
+  @Override
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
     gossipForkManager.subscribeToAttestationSubnetId(subnetId);
   }
