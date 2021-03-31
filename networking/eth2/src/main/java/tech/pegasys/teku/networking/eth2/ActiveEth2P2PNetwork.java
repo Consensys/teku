@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
@@ -28,10 +27,12 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
@@ -70,7 +71,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
-  private final EventBus eventBus;
+  private final EventChannels eventChannels;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
@@ -109,7 +110,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
-      final EventBus eventBus,
+      final EventChannels eventChannels,
       final RecentChainData recentChainData,
       final AttestationSubnetService attestationSubnetService,
       final GossipEncoding gossipEncoding,
@@ -130,7 +131,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
-    this.eventBus = eventBus;
+    this.eventChannels = eventChannels;
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
     this.gossipConfigurator = gossipConfigurator;
@@ -198,13 +199,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     blockGossipManager =
         new BlockGossipManager(
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            forkInfo,
-            eventBus,
-            blockProcessor);
+            spec, asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockProcessor);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -249,6 +244,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
     processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
+    eventChannels.subscribe(BlockGossipChannel.class, blockGossipManager::publishBlock);
 
     setTopicScoringParams();
   }

@@ -19,13 +19,14 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -54,7 +55,6 @@ public class ValidatorApiHandlerIntegrationTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
-  private final EventBus eventBus = storageSystem.eventBus();
   private final Spec spec = SpecFactory.createMinimal();
 
   // Other dependencies are mocked, but these can be updated as needed
@@ -68,6 +68,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
+  private final BlockGossipChannel blockGossipChannel = Mockito.mock(BlockGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
@@ -79,11 +80,11 @@ public class ValidatorApiHandlerIntegrationTest {
           syncStateProvider,
           blockFactory,
           blockImportChannel,
+          blockGossipChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,
           activeValidatorTracker,
-          eventBus,
           mock(DutyMetrics.class),
           performanceTracker,
           spec,

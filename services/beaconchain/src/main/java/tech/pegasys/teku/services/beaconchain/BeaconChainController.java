@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -467,6 +468,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
+    final BlockGossipChannel blockGossipChannel =
+        eventChannels.getPublisher(BlockGossipChannel.class);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
@@ -474,11 +477,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService,
             blockFactory,
             blockImportChannel,
+            blockGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
             activeValidatorTracker,
-            eventBus,
             DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec),
             performanceTracker,
             spec,
@@ -568,7 +571,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.p2pNetwork =
         Eth2P2PNetworkBuilder.create()
             .config(beaconConfig.p2pConfig())
-            .eventBus(eventBus)
+            .eventChannels(eventChannels)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
@@ -602,11 +605,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             slotEventsChannelPublisher,
             new EpochCachePrimer(spec, recentChainData));
-  }
-
-  @VisibleForTesting
-  WeakSubjectivityValidator getWeakSubjectivityValidator() {
-    return weakSubjectivityValidator;
   }
 
   public void initAttestationPool() {

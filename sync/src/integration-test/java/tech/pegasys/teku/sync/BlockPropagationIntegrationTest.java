@@ -31,7 +31,6 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
@@ -93,7 +92,7 @@ public class BlockPropagationIntegrationTest {
 
     // Propagate new block
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
-    node1.eventBus().post(new ProposedBlockEvent(newBlock));
+    node1.gossipBlock(newBlock);
 
     // Verify that node2 fetches required blocks in response
     Waiter.waitFor(
