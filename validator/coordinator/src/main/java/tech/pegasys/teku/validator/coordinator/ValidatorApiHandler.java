@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -62,7 +62,6 @@ import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -91,11 +90,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
   private final BlockImportChannel blockImportChannel;
+  private final BlockGossipChannel blockGossipChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final ActiveValidatorTracker activeValidatorTracker;
-  private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
   private final Spec spec;
@@ -107,11 +106,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
+      final BlockGossipChannel blockGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final ActiveValidatorTracker activeValidatorTracker,
-      final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker,
       final Spec spec,
@@ -121,11 +120,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
+    this.blockGossipChannel = blockGossipChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.activeValidatorTracker = activeValidatorTracker;
-    this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
     this.performanceTracker = performanceTracker;
     this.spec = spec;
@@ -428,7 +427,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     performanceTracker.saveProducedBlock(block);
-    eventBus.post(new ProposedBlockEvent(block));
+    blockGossipChannel.publishBlock(block);
     return blockImportChannel
         .importBlock(block)
         .thenApply(

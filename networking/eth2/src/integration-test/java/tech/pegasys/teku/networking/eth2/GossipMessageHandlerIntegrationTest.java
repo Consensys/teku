@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
@@ -106,7 +105,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(blockSlot);
-    node1.eventBus().post(new ProposedBlockEvent(newBlock));
+    node1.gossipBlock(newBlock);
 
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
@@ -152,7 +151,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate invalid block from network 1
     final SignedBeaconBlock newBlock =
         node1.chainUtil().createBlockAtSlotFromInvalidProposer(blockSlot);
-    node1.eventBus().post(new ProposedBlockEvent(newBlock));
+    node1.gossipBlock(newBlock);
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
