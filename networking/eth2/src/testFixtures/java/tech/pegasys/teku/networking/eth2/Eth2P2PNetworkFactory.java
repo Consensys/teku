@@ -42,10 +42,13 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
+import tech.pegasys.teku.networking.eth2.gossip.GossipSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -239,26 +242,39 @@ public class Eth2P2PNetworkFactory {
                 config.getNetworkConfig(),
                 config.getSpec());
 
+        final GossipForkManager.Builder gossipForkManagerBuilder =
+            GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+        gossipForkManagerBuilder.fork(
+            new GossipSubscriptionsPhase0(
+                spec.getForkManifest().get(UInt64.ZERO),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                attesterSlashingGossipPublisher,
+                proposerSlashingProcessor,
+                proposerSlashingGossipPublisher,
+                voluntaryExitProcessor,
+                voluntaryExitPublisher));
+        final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
+
         return new ActiveEth2P2PNetwork(
             spec,
             asyncRunner,
-            metricsSystem,
             network,
             eth2PeerManager,
+            gossipForkManager,
             eventChannels,
             recentChainData,
             attestationSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            attesterSlashingGossipPublisher,
-            proposerSlashingProcessor,
-            proposerSlashingGossipPublisher,
-            voluntaryExitProcessor,
-            voluntaryExitPublisher,
             processedAttestationSubscriptionProvider);
       }
     }

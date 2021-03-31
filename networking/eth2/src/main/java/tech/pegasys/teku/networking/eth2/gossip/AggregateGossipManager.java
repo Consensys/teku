@@ -25,7 +25,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
-public class AggregateGossipManager {
+public class AggregateGossipManager implements GossipManager {
   public static String TOPIC_NAME = AggregateAttestationTopicHandler.TOPIC_NAME;
 
   private final GossipEncoding gossipEncoding;
@@ -58,6 +58,7 @@ public class AggregateGossipManager {
     channel.gossip(data);
   }
 
+  @Override
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
       // Close gossip channels

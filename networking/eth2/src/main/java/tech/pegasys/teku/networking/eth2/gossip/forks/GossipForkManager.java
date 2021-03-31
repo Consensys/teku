@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -96,12 +95,11 @@ public class GossipForkManager {
                 false,
                 newEpoch.minusMinZero(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
                 true)
-            .keySet()
-            .stream()
+            .keySet().stream()
             // Deactivate the fork prior to the newly activated one if any
             .map(forksByActivationEpoch::lowerEntry)
             .filter(Objects::nonNull)
-            .map(Entry::getValue)
+            .map(Map.Entry::getValue)
             .collect(Collectors.toSet());
 
     // Start subscriptions that will activate soon
