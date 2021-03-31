@@ -28,8 +28,11 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -128,27 +131,45 @@ public class Eth2P2PNetworkBuilder {
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
+    final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
+
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
         asyncRunner,
-        metricsSystem,
         network,
         eth2PeerManager,
+        gossipForkManager,
         eventChannels,
         recentChainData,
         attestationSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
-        gossipedBlockProcessor,
-        gossipedAttestationConsumer,
-        gossipedAggregateProcessor,
-        gossipedAttesterSlashingConsumer,
-        attesterSlashingGossipPublisher,
-        gossipedProposerSlashingConsumer,
-        proposerSlashingGossipPublisher,
-        gossipedVoluntaryExitConsumer,
-        voluntaryExitGossipPublisher,
         processedAttestationSubscriptionProvider);
+  }
+
+  private GossipForkManager buildGossipForkManager(
+      final GossipEncoding gossipEncoding, final DiscoveryNetwork<?> network) {
+    final GossipForkManager.Builder gossipForkManagerBuilder =
+        GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+    gossipForkManagerBuilder.fork(
+        new GossipForkSubscriptionsPhase0(
+            spec.getForkManifest().get(UInt64.ZERO),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            attesterSlashingGossipPublisher,
+            gossipedProposerSlashingConsumer,
+            proposerSlashingGossipPublisher,
+            gossipedVoluntaryExitConsumer,
+            voluntaryExitGossipPublisher));
+    return gossipForkManagerBuilder.build();
   }
 
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
