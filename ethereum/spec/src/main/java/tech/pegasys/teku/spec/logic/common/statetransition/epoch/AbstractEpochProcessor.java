@@ -283,7 +283,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             .getSlashings()
             .streamUnboxed()
             .reduce(UInt64.ZERO, UInt64::plus)
-            .times(specConfig.getProportionalSlashingMultiplier())
+            .times(getProportionalSlashingMultiplier())
             .min(totalBalance);
 
     SszList<Validator> validators = state.getValidators();
@@ -303,6 +303,10 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         beaconStateMutators.decreaseBalance(state, index, penalty);
       }
     }
+  }
+
+  protected int getProportionalSlashingMultiplier() {
+    return specConfig.getProportionalSlashingMultiplier();
   }
 
   @Override

@@ -108,4 +108,9 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
               state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
     }
   }
+
+  @Override
+  protected int getProportionalSlashingMultiplier() {
+    return specConfigAltair.getProportionalSlashingMultiplierAltair();
+  }
 }
