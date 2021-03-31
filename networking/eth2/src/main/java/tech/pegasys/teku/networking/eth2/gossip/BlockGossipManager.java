@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
-public class BlockGossipManager {
+public class BlockGossipManager implements GossipManager {
   public static String TOPIC_NAME = "beacon_block";
 
   private final GossipEncoding gossipEncoding;
@@ -64,6 +64,7 @@ public class BlockGossipManager {
     channel.gossip(data);
   }
 
+  @Override
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
       // Close gossip channels

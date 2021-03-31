@@ -195,9 +195,11 @@ public class SlotProcessorTest {
 
     // event logger reports slot 100
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final UInt64 epoch = compute_epoch_at_slot(slot);
+    verify(p2pNetwork).onEpoch(epoch);
     verify(eventLogger)
         .epochEvent(
-            compute_epoch_at_slot(slot),
+            epoch,
             recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot());

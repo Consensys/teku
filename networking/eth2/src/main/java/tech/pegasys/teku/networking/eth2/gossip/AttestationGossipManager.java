@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
-public class AttestationGossipManager {
+public class AttestationGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AttestationSubnetSubscriptions subnetSubscriptions;
@@ -78,6 +78,7 @@ public class AttestationGossipManager {
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 
+  @Override
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
       subnetSubscriptions.close();
