@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Upgraded to use BLS implementation BLST version 0.3.3.
 - Teku now waits for Eth1 nodes to finish syncing before requesting data from them. Thanks to Enrico Del Fante.
+- Reduced CPU usage required when processing gossip message by optimising peer scoring.
 - Added new metrics to Validators
   - `validator_external_signer_requests` with labels `success`, `failed`, `timeout`.
   - `validator_duties_performed` with labels `type` and `result`.
