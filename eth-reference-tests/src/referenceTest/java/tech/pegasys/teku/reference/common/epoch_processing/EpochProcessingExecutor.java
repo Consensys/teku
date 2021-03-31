@@ -11,25 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.epoch_processing;
+package tech.pegasys.teku.reference.common.epoch_processing;
 
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
-public class DefaultEpochProcessingExecutor implements EpochProcessingExecutor {
+public class EpochProcessingExecutor {
   private final EpochProcessor epochProcessor;
   private final ValidatorStatusFactory validatorStatusFactory;
 
-  public DefaultEpochProcessingExecutor(
+  public EpochProcessingExecutor(
       final EpochProcessor epochProcessor, final ValidatorStatusFactory validatorStatusFactory) {
     this.epochProcessor = epochProcessor;
     this.validatorStatusFactory = validatorStatusFactory;
   }
 
-  @Override
-  public void executeOperation(final Operation operation, final MutableBeaconState state)
+  public void executeOperation(final EpochOperation operation, final MutableBeaconState state)
       throws EpochProcessingException {
     switch (operation) {
       case PROCESS_SLASHINGS:
