@@ -29,4 +29,8 @@ public interface ForkGossipSubscriptions {
   void publishAttestation(ValidateableAttestation attestation);
 
   void publishBlock(SignedBeaconBlock block);
+
+  void subscribeToAttestationSubnetId(int subnetId);
+
+  void unsubscribeFromAttestationSubnetId(int subnetId);
 }

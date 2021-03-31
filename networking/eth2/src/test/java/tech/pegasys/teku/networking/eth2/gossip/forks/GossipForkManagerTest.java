@@ -264,6 +264,114 @@ class GossipForkManagerTest {
     verify(thirdFork).publishBlock(thirdForkBlock);
   }
 
+  @Test
+  void shouldSubscribeToAttestationSubnetsPriorToStarting() {
+    final ForkGossipSubscriptions fork = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(fork);
+
+    manager.subscribeToAttestationSubnetId(1);
+    manager.subscribeToAttestationSubnetId(2);
+    manager.subscribeToAttestationSubnetId(5);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    verify(fork).subscribeToAttestationSubnetId(1);
+    verify(fork).subscribeToAttestationSubnetId(2);
+    verify(fork).subscribeToAttestationSubnetId(5);
+  }
+
+  @Test
+  void shouldSubscribeToCurrentAttestationSubnetsWhenNewForkActivates() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    manager.subscribeToAttestationSubnetId(1);
+    manager.subscribeToAttestationSubnetId(2);
+    manager.subscribeToAttestationSubnetId(5);
+
+    manager.configureGossipForEpoch(UInt64.valueOf(8));
+
+    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(secondFork).subscribeToAttestationSubnetId(1);
+    verify(secondFork).subscribeToAttestationSubnetId(2);
+    verify(secondFork).subscribeToAttestationSubnetId(5);
+  }
+
+  @Test
+  void shouldSubscribeActiveForksToAttestationSubnets() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    manager.subscribeToAttestationSubnetId(1);
+    manager.subscribeToAttestationSubnetId(2);
+    manager.subscribeToAttestationSubnetId(5);
+
+    verify(firstFork).subscribeToAttestationSubnetId(1);
+    verify(firstFork).subscribeToAttestationSubnetId(2);
+    verify(firstFork).subscribeToAttestationSubnetId(5);
+  }
+
+  @Test
+  void shouldUnsubscribeActiveForksFromAttestationSubnets() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    manager.subscribeToAttestationSubnetId(1);
+    verify(firstFork).subscribeToAttestationSubnetId(1);
+
+    manager.unsubscribeFromAttestationSubnetId(1);
+    verify(firstFork).unsubscribeFromAttestationSubnetId(1);
+  }
+
+  @Test
+  void shouldNotSubscribeToSubnetThatWasUnsubscribedPriorToStarting() {
+    final ForkGossipSubscriptions fork = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(fork);
+
+    manager.subscribeToAttestationSubnetId(1);
+    manager.subscribeToAttestationSubnetId(2);
+    manager.subscribeToAttestationSubnetId(5);
+
+    manager.unsubscribeFromAttestationSubnetId(2);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    verify(fork).subscribeToAttestationSubnetId(1);
+    verify(fork, never()).subscribeToAttestationSubnetId(2);
+    verify(fork).subscribeToAttestationSubnetId(5);
+  }
+
+  @Test
+  void shouldNotSubscribeToSubnetThatWasUnsubscribedWhenNewForkActivates() {
+    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
+    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    manager.subscribeToAttestationSubnetId(1);
+    manager.subscribeToAttestationSubnetId(2);
+    manager.subscribeToAttestationSubnetId(5);
+
+    manager.unsubscribeFromAttestationSubnetId(2);
+
+    manager.configureGossipForEpoch(UInt64.valueOf(8));
+
+    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(secondFork).subscribeToAttestationSubnetId(1);
+    verify(secondFork, never()).subscribeToAttestationSubnetId(2);
+    verify(secondFork).subscribeToAttestationSubnetId(5);
+  }
+
   private ForkGossipSubscriptions forkAtEpoch(final long epoch) {
     final ForkGossipSubscriptions subscriptions =
         mock(ForkGossipSubscriptions.class, "subscriptionsForEpoch" + epoch);

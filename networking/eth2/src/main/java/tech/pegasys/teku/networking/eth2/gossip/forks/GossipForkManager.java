@@ -49,6 +49,7 @@ public class GossipForkManager {
   private final RecentChainData recentChainData;
   private final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch;
   private final Set<ForkGossipSubscriptions> activeSubscriptions = new HashSet<>();
+  private final Set<Integer> currentSubnetSubscriptions = new HashSet<>();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
 
@@ -95,7 +96,8 @@ public class GossipForkManager {
                 false,
                 newEpoch.minusMinZero(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
                 true)
-            .keySet().stream()
+            .keySet()
+            .stream()
             // Deactivate the fork prior to the newly activated one if any
             .map(forksByActivationEpoch::lowerEntry)
             .filter(Objects::nonNull)
@@ -147,6 +149,20 @@ public class GossipForkManager {
                     block.getSlot()));
   }
 
+  public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
+    if (currentSubnetSubscriptions.add(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.subscribeToAttestationSubnetId(subnetId));
+    }
+  }
+
+  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
+    if (currentSubnetSubscriptions.remove(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.unsubscribeFromAttestationSubnetId(subnetId));
+    }
+  }
+
   private boolean isActive(final ForkGossipSubscriptions subscriptions) {
     return activeSubscriptions.contains(subscriptions);
   }
@@ -155,6 +171,7 @@ public class GossipForkManager {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
+      currentSubnetSubscriptions.forEach(subscription::subscribeToAttestationSubnetId);
     }
   }
 
