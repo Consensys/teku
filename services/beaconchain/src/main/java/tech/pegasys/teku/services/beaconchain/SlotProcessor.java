@@ -188,6 +188,7 @@ public class SlotProcessor {
     onTickSlotStart = nodeSlot.getValue();
     forkChoiceTrigger.onSlotStarted(onTickSlotStart);
     if (nodeSlot.getValue().equals(spec.computeStartSlotAtEpoch(nodeEpoch))) {
+      p2pNetwork.onEpoch(nodeEpoch);
       recentChainData
           .getFinalizedCheckpoint()
           .ifPresent(

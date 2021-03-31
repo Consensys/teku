@@ -15,33 +15,22 @@ package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
-import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -52,13 +41,8 @@ import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -68,7 +52,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private final Spec spec;
   private final AsyncRunner asyncRunner;
-  private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventChannels eventChannels;
@@ -78,73 +61,37 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final GossipConfigurator gossipConfigurator;
   private final AttestationSubnetService attestationSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
-  private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
 
-  // Gossip managers
-  private BlockGossipManager blockGossipManager;
-  private AttestationGossipManager attestationGossipManager;
-  private AggregateGossipManager aggregateGossipManager;
-  private VoluntaryExitGossipManager voluntaryExitGossipManager;
-  private ProposerSlashingGossipManager proposerSlashingGossipManager;
-  private AttesterSlashingGossipManager attesterSlashingGossipManager;
+  private final GossipForkManager gossipForkManager;
 
   private long discoveryNetworkAttestationSubnetsSubscription;
-
-  // Upstream consumers
-  private final OperationProcessor<SignedBeaconBlock> blockProcessor;
-  private final OperationProcessor<ValidateableAttestation> attestationProcessor;
-  private final OperationProcessor<ValidateableAttestation> aggregateProcessor;
-  private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
-  private final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
-  private final OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
-  private final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
-  private final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
-  private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
 
   private volatile Cancellable gossipUpdateTask;
 
   public ActiveEth2P2PNetwork(
       final Spec spec,
       final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
+      final GossipForkManager gossipForkManager,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
       final AttestationSubnetService attestationSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
-      final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<ValidateableAttestation> attestationProcessor,
-      final OperationProcessor<ValidateableAttestation> aggregateProcessor,
-      final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher,
-      final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher,
-      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
-    this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
+    this.gossipForkManager = gossipForkManager;
     this.eventChannels = eventChannels;
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
     this.gossipConfigurator = gossipConfigurator;
     this.attestationSubnetService = attestationSubnetService;
-    this.blockProcessor = blockProcessor;
-    this.attestationProcessor = attestationProcessor;
-    this.aggregateProcessor = aggregateProcessor;
-    this.attesterSlashingProcessor = attesterSlashingProcessor;
-    this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
-    this.proposerSlashingProcessor = proposerSlashingProcessor;
-    this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
-    this.voluntaryExitProcessor = voluntaryExitProcessor;
-    this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
@@ -191,60 +138,14 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     }
 
     LOG.info("Starting eth2 gossip");
-    final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
-
-    AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(
-            asyncRunner, discoveryNetwork, gossipEncoding, recentChainData, attestationProcessor);
-
-    blockGossipManager =
-        new BlockGossipManager(
-            spec, asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockProcessor);
-
-    attestationGossipManager =
-        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
-
-    aggregateGossipManager =
-        new AggregateGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, aggregateProcessor);
-
-    voluntaryExitGossipManager =
-        new VoluntaryExitGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            forkInfo,
-            voluntaryExitProcessor,
-            voluntaryExitGossipPublisher);
-
-    proposerSlashingGossipManager =
-        new ProposerSlashingGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            forkInfo,
-            proposerSlashingProcessor,
-            proposerSlashingGossipPublisher);
-
-    attesterSlashingGossipManager =
-        new AttesterSlashingGossipManager(
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            forkInfo,
-            attesterSlashingProcessor,
-            attesterSlashingGossipPublisher);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
 
-    pendingSubnetSubscriptions.forEach(this::subscribeToAttestationSubnetId);
-    pendingSubnetSubscriptions.clear();
-
-    processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
-    processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
-    eventChannels.subscribe(BlockGossipChannel.class, blockGossipManager::publishBlock);
+    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
+    eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
 
     setTopicScoringParams();
   }
@@ -258,9 +159,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         asyncRunner.runWithFixedDelay(
             this::updateDynamicTopicScoring,
             Duration.ofMinutes(1),
-            (err) -> {
-              LOG.error("Encountered error while attempting to updating gossip topic scoring", err);
-            });
+            (err) ->
+                LOG.error(
+                    "Encountered error while attempting to updating gossip topic scoring", err));
   }
 
   private void updateDynamicTopicScoring() {
@@ -297,12 +198,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     if (gossipStarted.get()) {
       gossipUpdateTask.cancel();
-      blockGossipManager.shutdown();
-      attestationGossipManager.shutdown();
-      aggregateGossipManager.shutdown();
-      voluntaryExitGossipManager.shutdown();
-      proposerSlashingGossipManager.shutdown();
-      attesterSlashingGossipManager.shutdown();
+      gossipForkManager.stopGossip();
       attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     }
 
@@ -346,21 +242,20 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   @Override
-  public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
-    if (attestationGossipManager == null) {
-      pendingSubnetSubscriptions.add(subnetId);
-    } else {
-      attestationGossipManager.subscribeToSubnetId(subnetId);
+  public void onEpoch(final UInt64 epoch) {
+    if (gossipStarted.get()) {
+      gossipForkManager.configureGossipForEpoch(epoch);
     }
   }
 
   @Override
+  public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
+    gossipForkManager.subscribeToAttestationSubnetId(subnetId);
+  }
+
+  @Override
   public synchronized void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    if (attestationGossipManager == null) {
-      pendingSubnetSubscriptions.remove(subnetId);
-    } else {
-      attestationGossipManager.unsubscribeFromSubnetId(subnetId);
-    }
+    gossipForkManager.unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Override
