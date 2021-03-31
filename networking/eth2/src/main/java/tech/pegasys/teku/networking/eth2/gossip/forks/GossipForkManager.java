@@ -46,8 +46,8 @@ public class GossipForkManager {
   private static final int EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE = 2;
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch;
-  private final Set<ForkGossipSubscriptions> activeSubscriptions = new HashSet<>();
+  private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch;
+  private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
   private final Set<Integer> currentSubnetSubscriptions = new HashSet<>();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
@@ -55,7 +55,7 @@ public class GossipForkManager {
   private GossipForkManager(
       final Spec spec,
       final RecentChainData recentChainData,
-      final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch) {
+      final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forksByActivationEpoch = forksByActivationEpoch;
@@ -88,7 +88,7 @@ public class GossipForkManager {
 
     // Find subscriptions that are no longer required
     // First find the new forks that activated at least two epochs ago
-    final Set<ForkGossipSubscriptions> subscriptionsToStop =
+    final Set<GossipForkSubscriptions> subscriptionsToStop =
         forksByActivationEpoch
             .subMap(
                 previousEpoch.get().minusMinZero(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
@@ -111,8 +111,8 @@ public class GossipForkManager {
             newEpoch.plus(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
             true)
         .values()
-        // Don't bother starting subscriptions that will be immediately stopped
         .stream()
+        // Don't bother starting subscriptions that will be immediately stopped
         .filter(subscription -> !subscriptionsToStop.contains(subscription))
         .forEach(this::startSubscriptions);
 
@@ -121,7 +121,7 @@ public class GossipForkManager {
 
   public synchronized void stopGossip() {
     // Stop all active gossips
-    activeSubscriptions.forEach(ForkGossipSubscriptions::stopGossip);
+    activeSubscriptions.forEach(GossipForkSubscriptions::stopGossip);
     activeSubscriptions.clear();
   }
 
@@ -161,11 +161,11 @@ public class GossipForkManager {
     }
   }
 
-  private boolean isActive(final ForkGossipSubscriptions subscriptions) {
+  private boolean isActive(final GossipForkSubscriptions subscriptions) {
     return activeSubscriptions.contains(subscriptions);
   }
 
-  private void startSubscriptions(final ForkGossipSubscriptions subscription) {
+  private void startSubscriptions(final GossipForkSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
@@ -173,18 +173,18 @@ public class GossipForkManager {
     }
   }
 
-  private void stopSubscriptions(final ForkGossipSubscriptions subscriptions) {
+  private void stopSubscriptions(final GossipForkSubscriptions subscriptions) {
     if (activeSubscriptions.remove(subscriptions)) {
       subscriptions.stopGossip();
     }
   }
 
-  private Optional<ForkGossipSubscriptions> getSubscriptionActiveAtSlot(final UInt64 slot) {
+  private Optional<GossipForkSubscriptions> getSubscriptionActiveAtSlot(final UInt64 slot) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     return getSubscriptionActiveAtEpoch(epoch);
   }
 
-  private Optional<ForkGossipSubscriptions> getSubscriptionActiveAtEpoch(final UInt64 epoch) {
+  private Optional<GossipForkSubscriptions> getSubscriptionActiveAtEpoch(final UInt64 epoch) {
     return Optional.ofNullable(forksByActivationEpoch.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
@@ -192,7 +192,7 @@ public class GossipForkManager {
 
     private Spec spec;
     private RecentChainData recentChainData;
-    private final NavigableMap<UInt64, ForkGossipSubscriptions> forksByActivationEpoch =
+    private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch =
         new TreeMap<>();
 
     public Builder spec(final Spec spec) {
@@ -205,7 +205,7 @@ public class GossipForkManager {
       return this;
     }
 
-    public Builder fork(final ForkGossipSubscriptions forkSubscriptions) {
+    public Builder fork(final GossipForkSubscriptions forkSubscriptions) {
       final UInt64 activationEpoch = forkSubscriptions.getActivationEpoch();
       checkState(
           !forksByActivationEpoch.containsKey(activationEpoch),

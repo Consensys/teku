@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface ForkGossipSubscriptions {
+public interface GossipForkSubscriptions {
 
   UInt64 getActivationEpoch();
 

@@ -64,7 +64,7 @@ class GossipForkManagerTest {
 
   @Test
   void shouldActivateCurrentForkOnStart() {
-    final ForkGossipSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
     final GossipForkManager manager = builder().fork(currentForkSubscriptions).build();
     manager.configureGossipForEpoch(UInt64.ZERO);
 
@@ -73,8 +73,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldActivateCurrentAndNextForkOnStartIfNextForkWithinTwoEpochs() {
-    final ForkGossipSubscriptions currentForkSubscriptions = forkAtEpoch(0);
-    final ForkGossipSubscriptions nextForkSubscriptions = forkAtEpoch(5);
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions nextForkSubscriptions = forkAtEpoch(5);
     final GossipForkManager manager =
         managerForForks(currentForkSubscriptions, nextForkSubscriptions);
 
@@ -86,10 +86,10 @@ class GossipForkManagerTest {
 
   @Test
   void shouldActivateMultipleFutureForksIfTheyAreWithinTwoEpochs() {
-    final ForkGossipSubscriptions currentFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions nextFork = forkAtEpoch(2);
-    final ForkGossipSubscriptions laterFork = forkAtEpoch(3);
-    final ForkGossipSubscriptions tooLateFork = forkAtEpoch(4);
+    final GossipForkSubscriptions currentFork = forkAtEpoch(0);
+    final GossipForkSubscriptions nextFork = forkAtEpoch(2);
+    final GossipForkSubscriptions laterFork = forkAtEpoch(3);
+    final GossipForkSubscriptions tooLateFork = forkAtEpoch(4);
 
     managerForForks(currentFork, nextFork, laterFork, tooLateFork)
         .configureGossipForEpoch(UInt64.ONE);
@@ -102,8 +102,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldNotStartNextForkIfNotWithinTwoEpochs() {
-    final ForkGossipSubscriptions currentForkSubscriptions = forkAtEpoch(0);
-    final ForkGossipSubscriptions nextForkSubscriptions = forkAtEpoch(5);
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions nextForkSubscriptions = forkAtEpoch(5);
     final GossipForkManager manager =
         managerForForks(currentForkSubscriptions, nextForkSubscriptions);
 
@@ -115,9 +115,9 @@ class GossipForkManagerTest {
 
   @Test
   void shouldStopActiveSubscriptionsOnStop() {
-    final ForkGossipSubscriptions currentForkSubscriptions = forkAtEpoch(0);
-    final ForkGossipSubscriptions nextForkSubscriptions = forkAtEpoch(5);
-    final ForkGossipSubscriptions laterForkSubscriptions = forkAtEpoch(10);
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions nextForkSubscriptions = forkAtEpoch(5);
+    final GossipForkSubscriptions laterForkSubscriptions = forkAtEpoch(10);
     final GossipForkManager manager =
         managerForForks(currentForkSubscriptions, nextForkSubscriptions, laterForkSubscriptions);
     manager.configureGossipForEpoch(UInt64.valueOf(3));
@@ -131,8 +131,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldStopForkTwoEpochsAfterTheNextOneActivates() {
-    final ForkGossipSubscriptions genesisFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions newFork = forkAtEpoch(5);
+    final GossipForkSubscriptions genesisFork = forkAtEpoch(0);
+    final GossipForkSubscriptions newFork = forkAtEpoch(5);
 
     final GossipForkManager manager = managerForForks(genesisFork, newFork);
     manager.configureGossipForEpoch(UInt64.valueOf(4));
@@ -157,9 +157,9 @@ class GossipForkManagerTest {
   @Test
   void shouldProcessForkChangesWhenEpochsAreMissed() {
     // We may skip epochs if we fall behind and skip slots to catch up
-    final ForkGossipSubscriptions genesisFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions newFork = forkAtEpoch(3);
-    final ForkGossipSubscriptions laterFork = forkAtEpoch(6);
+    final GossipForkSubscriptions genesisFork = forkAtEpoch(0);
+    final GossipForkSubscriptions newFork = forkAtEpoch(3);
+    final GossipForkSubscriptions laterFork = forkAtEpoch(6);
 
     final GossipForkManager manager = managerForForks(genesisFork, newFork, laterFork);
 
@@ -180,9 +180,9 @@ class GossipForkManagerTest {
 
   @Test
   void shouldPublishAttestationToForkForAttestationsSlot() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(1);
-    final ForkGossipSubscriptions thirdFork = forkAtEpoch(2);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(1);
+    final GossipForkSubscriptions thirdFork = forkAtEpoch(2);
 
     final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -216,8 +216,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldNotPublishAttestationsToForksThatAreNotActive() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
 
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -235,9 +235,9 @@ class GossipForkManagerTest {
 
   @Test
   void shouldPublishBlockToForkForBlockSlot() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(1);
-    final ForkGossipSubscriptions thirdFork = forkAtEpoch(2);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(1);
+    final GossipForkSubscriptions thirdFork = forkAtEpoch(2);
 
     final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -266,7 +266,7 @@ class GossipForkManagerTest {
 
   @Test
   void shouldSubscribeToAttestationSubnetsPriorToStarting() {
-    final ForkGossipSubscriptions fork = forkAtEpoch(0);
+    final GossipForkSubscriptions fork = forkAtEpoch(0);
     final GossipForkManager manager = managerForForks(fork);
 
     manager.subscribeToAttestationSubnetId(1);
@@ -282,8 +282,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldSubscribeToCurrentAttestationSubnetsWhenNewForkActivates() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -302,8 +302,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldSubscribeActiveForksToAttestationSubnets() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -319,8 +319,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldUnsubscribeActiveForksFromAttestationSubnets() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -334,7 +334,7 @@ class GossipForkManagerTest {
 
   @Test
   void shouldNotSubscribeToSubnetThatWasUnsubscribedPriorToStarting() {
-    final ForkGossipSubscriptions fork = forkAtEpoch(0);
+    final GossipForkSubscriptions fork = forkAtEpoch(0);
     final GossipForkManager manager = managerForForks(fork);
 
     manager.subscribeToAttestationSubnetId(1);
@@ -352,8 +352,8 @@ class GossipForkManagerTest {
 
   @Test
   void shouldNotSubscribeToSubnetThatWasUnsubscribedWhenNewForkActivates() {
-    final ForkGossipSubscriptions firstFork = forkAtEpoch(0);
-    final ForkGossipSubscriptions secondFork = forkAtEpoch(10);
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
@@ -372,14 +372,14 @@ class GossipForkManagerTest {
     verify(secondFork).subscribeToAttestationSubnetId(5);
   }
 
-  private ForkGossipSubscriptions forkAtEpoch(final long epoch) {
-    final ForkGossipSubscriptions subscriptions =
-        mock(ForkGossipSubscriptions.class, "subscriptionsForEpoch" + epoch);
+  private GossipForkSubscriptions forkAtEpoch(final long epoch) {
+    final GossipForkSubscriptions subscriptions =
+        mock(GossipForkSubscriptions.class, "subscriptionsForEpoch" + epoch);
     when(subscriptions.getActivationEpoch()).thenReturn(UInt64.valueOf(epoch));
     return subscriptions;
   }
 
-  private GossipForkManager managerForForks(final ForkGossipSubscriptions... subscriptions) {
+  private GossipForkManager managerForForks(final GossipForkSubscriptions... subscriptions) {
     final GossipForkManager.Builder builder = builder();
     Stream.of(subscriptions).forEach(builder::fork);
     return builder.build();

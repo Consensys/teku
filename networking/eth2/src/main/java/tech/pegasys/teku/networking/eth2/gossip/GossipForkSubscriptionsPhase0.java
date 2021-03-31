@@ -20,7 +20,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.forks.ForkGossipSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class GossipSubscriptionsPhase0 implements ForkGossipSubscriptions {
+public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   private final List<GossipManager> gossipManagers = new ArrayList<>();
   private final Fork fork;
@@ -60,7 +60,7 @@ public class GossipSubscriptionsPhase0 implements ForkGossipSubscriptions {
   private AggregateGossipManager aggregateGossipManager;
   private BlockGossipManager blockGossipManager;
 
-  public GossipSubscriptionsPhase0(
+  public GossipForkSubscriptionsPhase0(
       final Fork fork,
       final Spec spec,
       final AsyncRunner asyncRunner,

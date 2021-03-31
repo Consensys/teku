@@ -29,8 +29,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
-import tech.pegasys.teku.networking.eth2.gossip.GossipSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
@@ -152,7 +152,7 @@ public class Eth2P2PNetworkBuilder {
     final GossipForkManager.Builder gossipForkManagerBuilder =
         GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
     gossipForkManagerBuilder.fork(
-        new GossipSubscriptionsPhase0(
+        new GossipForkSubscriptionsPhase0(
             spec.getForkManifest().get(UInt64.ZERO),
             spec,
             asyncRunner,
