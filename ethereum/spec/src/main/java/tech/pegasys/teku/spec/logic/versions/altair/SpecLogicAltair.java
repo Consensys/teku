@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
@@ -72,8 +73,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
-    final BeaconStateMutators beaconStateMutators =
-        new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
+    final BeaconStateMutatorsAltair beaconStateMutators =
+        new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
     final AttestationDataStateTransitionValidator attestationValidator =
