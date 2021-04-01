@@ -121,13 +121,14 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             .map(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
             .collect(toList());
 
-    final int syncSubcommitteeSize = altairConfig.getSyncSubcommitteeSize();
+    final int syncPubkeysPerAggregate = altairConfig.getSyncPubkeysPerAggregate();
     final List<SszPublicKey> pubkeyAggregates = new ArrayList<>();
     checkState(
-        pubkeys.size() % syncSubcommitteeSize == 0,
-        "SYNC_COMMITTEE_SIZE must be a multiple of SYNC_SUBCOMMITTEE_SIZE");
-    for (int i = 0; i < pubkeys.size(); i += syncSubcommitteeSize) {
-      final List<BLSPublicKey> subcommitteePubkeys = pubkeys.subList(i, i + syncSubcommitteeSize);
+        pubkeys.size() % syncPubkeysPerAggregate == 0,
+        "SYNC_COMMITTEE_SIZE must be a multiple of SYNC_PUBKEYS_PER_AGGREGATE");
+    for (int i = 0; i < pubkeys.size(); i += syncPubkeysPerAggregate) {
+      final List<BLSPublicKey> subcommitteePubkeys =
+          pubkeys.subList(i, i + syncPubkeysPerAggregate);
       pubkeyAggregates.add(new SszPublicKey(BLSPublicKey.aggregate(subcommitteePubkeys)));
     }
 

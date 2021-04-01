@@ -41,7 +41,7 @@ public class SyncCommittee
               SszVectorSchema.create(
                   SszPublicKeySchema.INSTANCE,
                   specConfigAltair.getSyncCommitteeSize()
-                      / specConfigAltair.getSyncSubcommitteeSize())));
+                      / specConfigAltair.getSyncPubkeysPerAggregate())));
     }
 
     @Override
