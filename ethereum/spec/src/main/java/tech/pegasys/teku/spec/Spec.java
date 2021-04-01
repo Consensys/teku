@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Preconditions;
+import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -48,6 +51,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
+import tech.pegasys.teku.spec.logic.ForkAndMilestone;
+import tech.pegasys.teku.spec.logic.Milestone;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -121,6 +126,26 @@ public class Spec {
 
   public ForkManifest getForkManifest() {
     return forkManifest;
+  }
+
+  public Collection<ForkAndMilestone> getEnabledMilestones() {
+    return forkManifest.getForkSchedule().stream()
+        .map(fork -> new ForkAndMilestone(fork, getMilestoneForFork(fork)))
+        .collect(toList());
+  }
+
+  private Milestone getMilestoneForFork(final Fork fork) {
+    final SpecConfig specConfig = getSpecConfig(fork.getEpoch());
+    if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
+      return Milestone.PHASE0;
+    } else if (specConfig
+        .toVersionAltair()
+        .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
+        .orElse(false)) {
+      return Milestone.ALTAIR;
+    } else {
+      throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
+    }
   }
 
   public Fork fork(final UInt64 epoch) {
