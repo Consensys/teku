@@ -13,11 +13,17 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import com.google.common.base.Preconditions;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignatureSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningDataSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair implements SchemaDefinitions {
@@ -25,12 +31,29 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
+  private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
+  private final ContributionAndProofSchema contributionAndProofSchema;
+  private final SignedContributionAndProofSchema signedContributionAndProofSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
+    this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
+    this.contributionAndProofSchema =
+        ContributionAndProofSchema.create(syncCommitteeContributionSchema);
+    this.signedContributionAndProofSchema =
+        SignedContributionAndProofSchema.create(contributionAndProofSchema);
+  }
+
+  public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
+    Preconditions.checkArgument(
+        schemaDefinitions instanceof SchemaDefinitionsAltair,
+        "Expected definitions of type %s by got %s",
+        SchemaDefinitionsAltair.class,
+        schemaDefinitions.getClass());
+    return (SchemaDefinitionsAltair) schemaDefinitions;
   }
 
   @Override
@@ -51,5 +74,25 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  public SyncCommitteeContributionSchema getSyncCommitteeContributionSchema() {
+    return syncCommitteeContributionSchema;
+  }
+
+  public ContributionAndProofSchema getContributionAndProofSchema() {
+    return contributionAndProofSchema;
+  }
+
+  public SignedContributionAndProofSchema getSignedContributionAndProofSchema() {
+    return signedContributionAndProofSchema;
+  }
+
+  public SyncCommitteeSignatureSchema getSyncCommitteeSignatureSchema() {
+    return SyncCommitteeSignatureSchema.INSTANCE;
+  }
+
+  public SyncCommitteeSigningDataSchema getSyncCommitteeSigningDataSchema() {
+    return SyncCommitteeSigningDataSchema.INSTANCE;
   }
 }
