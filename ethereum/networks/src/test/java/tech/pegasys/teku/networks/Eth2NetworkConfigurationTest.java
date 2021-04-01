@@ -20,7 +20,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
@@ -111,7 +110,7 @@ public class Eth2NetworkConfigurationTest {
   @Test
   public void bootnodesFromMainnetNetworkDefaults_CanBeParsed() {
     final Eth2NetworkConfiguration config =
-            Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults().build();
+        Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults().build();
 
     List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
 
@@ -121,7 +120,7 @@ public class Eth2NetworkConfigurationTest {
   @Test
   public void bootnodesFromPraterNetworkDefaults_CanBeParsed() {
     final Eth2NetworkConfiguration config =
-            Eth2NetworkConfiguration.builder().applyPraterNetworkDefaults().build();
+        Eth2NetworkConfiguration.builder().applyPraterNetworkDefaults().build();
 
     List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
 
@@ -131,7 +130,7 @@ public class Eth2NetworkConfigurationTest {
   @Test
   public void bootnodesFromPyrmontNetworkDefaults_CanBeParsed() {
     final Eth2NetworkConfiguration config =
-            Eth2NetworkConfiguration.builder().applyPyrmontNetworkDefaults().build();
+        Eth2NetworkConfiguration.builder().applyPyrmontNetworkDefaults().build();
 
     List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
 
@@ -152,9 +151,9 @@ public class Eth2NetworkConfigurationTest {
     final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
 
     return bootnodes.stream()
-            .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
-            .map(nodeRecordFactory::fromBase64)
-            .collect(Collectors.toList());
+        .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
+        .map(nodeRecordFactory::fromBase64)
+        .collect(Collectors.toList());
   }
 
   @FunctionalInterface
