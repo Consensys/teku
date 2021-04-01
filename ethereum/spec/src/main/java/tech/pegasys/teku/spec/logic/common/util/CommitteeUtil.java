@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
-import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,41 +24,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class CommitteeUtil {
   private final SpecConfig specConfig;
-  private final MiscHelpers miscHelpers;
 
-  public CommitteeUtil(final SpecConfig specConfig, final MiscHelpers miscHelpers) {
+  public CommitteeUtil(final SpecConfig specConfig) {
     this.specConfig = specConfig;
-    this.miscHelpers = miscHelpers;
-  }
-
-  public int computeProposerIndex(BeaconState state, List<Integer> indices, Bytes32 seed) {
-    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
-    UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
-    int i = 0;
-    final int total = indices.size();
-    Bytes32 hash = null;
-    while (true) {
-      int candidate_index = indices.get(miscHelpers.computeShuffledIndex(i % total, total, seed));
-      if (i % 32 == 0) {
-        hash = Hash.sha2_256(Bytes.concatenate(seed, uintToBytes(Math.floorDiv(i, 32), 8)));
-      }
-      int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
-      UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
-      if (effective_balance
-          .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(random_byte))) {
-        return candidate_index;
-      }
-      i++;
-    }
   }
 
   public int getAggregatorModulo(final int committeeSize) {

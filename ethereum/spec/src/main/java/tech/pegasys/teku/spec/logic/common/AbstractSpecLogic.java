@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
@@ -33,6 +34,7 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final Predicates predicates;
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
+  protected final BeaconStateMutators beaconStateMutators;
   // Utils
   protected final CommitteeUtil committeeUtil;
   protected final ValidatorsUtil validatorsUtil;
@@ -49,6 +51,7 @@ public class AbstractSpecLogic implements SpecLogic {
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -62,6 +65,7 @@ public class AbstractSpecLogic implements SpecLogic {
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.beaconStateMutators = beaconStateMutators;
     this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
@@ -137,5 +141,10 @@ public class AbstractSpecLogic implements SpecLogic {
   @Override
   public BeaconStateAccessors beaconStateAccessors() {
     return beaconStateAccessors;
+  }
+
+  @Override
+  public BeaconStateMutators beaconStateMutators() {
+    return beaconStateMutators;
   }
 }

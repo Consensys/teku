@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
@@ -97,5 +98,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BeaconStateAccessors beaconStateAccessors() {
     return specLogic.beaconStateAccessors();
+  }
+
+  @Override
+  public BeaconStateMutators beaconStateMutators() {
+    return specLogic.beaconStateMutators();
   }
 }
