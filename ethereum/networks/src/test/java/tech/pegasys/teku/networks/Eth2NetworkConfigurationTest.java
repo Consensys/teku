@@ -14,11 +14,15 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -104,6 +108,36 @@ public class Eth2NetworkConfigurationTest {
     }
   }
 
+  @Test
+  public void bootnodesFromMainnetNetworkDefaults_CanBeParsed() {
+    final Eth2NetworkConfiguration config =
+            Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults().build();
+
+    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
+
+    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
+  }
+
+  @Test
+  public void bootnodesFromPraterNetworkDefaults_CanBeParsed() {
+    final Eth2NetworkConfiguration config =
+            Eth2NetworkConfiguration.builder().applyPraterNetworkDefaults().build();
+
+    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
+
+    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
+  }
+
+  @Test
+  public void bootnodesFromPyrmontNetworkDefaults_CanBeParsed() {
+    final Eth2NetworkConfiguration config =
+            Eth2NetworkConfiguration.builder().applyPyrmontNetworkDefaults().build();
+
+    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
+
+    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
+  }
+
   public static Stream<Arguments> getDefinedNetworks() {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
@@ -112,6 +146,15 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
+  }
+
+  private List<NodeRecord> parseBootnodes(List<String> bootnodes) {
+    final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
+
+    return bootnodes.stream()
+            .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
+            .map(nodeRecordFactory::fromBase64)
+            .collect(Collectors.toList());
   }
 
   @FunctionalInterface
