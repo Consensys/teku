@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
@@ -81,6 +82,7 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofManager;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -154,18 +156,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
+  private volatile SignedContributionAndProofManager signedContributionAndProofManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
-  private final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
-      new GossipPublisher<>();
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
-  private final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher =
-      new GossipPublisher<>();
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  private final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
-      new GossipPublisher<>();
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
@@ -534,6 +531,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
+  private void initSyncCommitteeManagers() {
+    signedContributionAndProofManager = new SignedContributionAndProofManager();
+  }
+
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!beaconConfig.p2pConfig().getNetworkConfig().isEnabled()) {
@@ -542,6 +543,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
 
     beaconConfig.p2pConfig().getNetworkConfig().validateListenPortAvailable();
+
+    final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
+        new GossipPublisher<>();
+    final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher =
+        new GossipPublisher<>();
+    final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
+        new GossipPublisher<>();
+    final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher =
+        new GossipPublisher<>();
 
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
@@ -565,6 +575,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           }
         });
 
+    // TODO: Subscribe to added operations in the sign contribution and proof pool and publish
+
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
@@ -582,6 +594,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
+            .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
+            .gossipedSignedContributionAndProofProcessor(new SignedContributionAndProofManager()::add)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(

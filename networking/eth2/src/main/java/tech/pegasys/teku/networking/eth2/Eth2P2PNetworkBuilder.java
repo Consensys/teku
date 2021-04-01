@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.ForkAndMilestone;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -96,6 +97,9 @@ public class Eth2P2PNetworkBuilder {
   private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
   private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
   private Spec spec;
+  private OperationProcessor<SignedContributionAndProof>
+      gossipedSignedContributionAndProofProcessor;
+  private GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
 
   private Eth2P2PNetworkBuilder() {}
 
@@ -199,7 +203,9 @@ public class Eth2P2PNetworkBuilder {
             gossipedProposerSlashingConsumer,
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher);
+            voluntaryExitGossipPublisher,
+            gossipedSignedContributionAndProofProcessor,
+            signedContributionAndProofGossipPublisher);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndMilestone.getMilestone());
@@ -265,6 +271,10 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedProposerSlashingProcessor", gossipedProposerSlashingConsumer);
     assertNotNull("gossipedVoluntaryExitProcessor", gossipedVoluntaryExitConsumer);
     assertNotNull("voluntaryExitGossipPublisher", voluntaryExitGossipPublisher);
+    assertNotNull(
+        "signedContributionAndProofGossipPublisher", signedContributionAndProofGossipPublisher);
+    assertNotNull(
+        "gossipedSignedContributionAndProofProcessor", gossipedSignedContributionAndProofProcessor);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -368,6 +378,21 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
     checkNotNull(gossipedVoluntaryExitProcessor);
     this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedSignedContributionAndProofProcessor(
+      final OperationProcessor<SignedContributionAndProof>
+          gossipedSignedContributionAndProofProcessor) {
+    checkNotNull(gossipedSignedContributionAndProofProcessor);
+    this.gossipedSignedContributionAndProofProcessor = gossipedSignedContributionAndProofProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder signedContributionAndProofGossipPublisher(
+      final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher) {
+    checkNotNull(signedContributionAndProofGossipPublisher);
+    this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
     return this;
   }
 
