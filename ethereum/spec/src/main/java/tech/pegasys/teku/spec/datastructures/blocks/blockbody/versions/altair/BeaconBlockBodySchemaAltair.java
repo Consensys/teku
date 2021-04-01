@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -107,6 +109,14 @@ public class BeaconBlockBodySchemaAltair
             SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)),
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE.name(), SyncAggregateSchema.create(syncCommitteeSize)));
+  }
+
+  public static BeaconBlockBodySchemaAltair required(final BeaconBlockBodySchema<?> schema) {
+    checkArgument(
+        schema instanceof BeaconBlockBodySchemaAltair,
+        "Expected a BeaconBlockBodySchemaAltair but was %s",
+        schema.getClass());
+    return (BeaconBlockBodySchemaAltair) schema;
   }
 
   @Override
