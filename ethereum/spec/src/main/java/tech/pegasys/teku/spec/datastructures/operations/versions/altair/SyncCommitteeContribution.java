@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.containers.Container5;
@@ -65,5 +68,25 @@ public class SyncCommitteeContribution
       final SszBitvector arg3,
       final SszSignature arg4) {
     super(schema, arg0, arg1, arg2, arg3, arg4);
+  }
+
+  public UInt64 getSlot() {
+    return getField0().get();
+  }
+
+  public Bytes32 getBeaconBlockRoot() {
+    return getField1().get();
+  }
+
+  public UInt64 getSubcommitteeIndex() {
+    return getField2().get();
+  }
+
+  public SszBitvector getAggregationBits() {
+    return getField3();
+  }
+
+  public BLSSignature getSignature() {
+    return getField4().getSignature();
   }
 }

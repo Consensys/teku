@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.containers.Container4;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
@@ -24,5 +27,21 @@ public class SyncCommitteeSignature
 
   SyncCommitteeSignature(final SyncCommitteeSignatureSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public UInt64 getSlot() {
+    return getField0().get();
+  }
+
+  public Bytes32 getBeaconBlockRoot() {
+    return getField1().get();
+  }
+
+  public UInt64 getValidatorIndex() {
+    return getField2().get();
+  }
+
+  public BLSSignature getSignature() {
+    return getField3().getSignature();
   }
 }
