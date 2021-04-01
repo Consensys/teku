@@ -178,7 +178,7 @@ public class BeaconStateAccessors {
 
   private void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
-    UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
     checkArgument(
         epoch.equals(stateEpoch),
