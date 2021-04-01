@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -23,12 +24,13 @@ import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
@@ -36,6 +38,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -50,6 +53,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         predicates,
         miscHelpers,
         beaconStateAccessors,
+        beaconStateMutators,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
@@ -69,13 +73,15 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+    final BeaconStateMutatorsAltair beaconStateMutators =
+        new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
     final AttestationDataStateTransitionValidator attestationValidator =
         new AttestationDataStateTransitionValidator();
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config, miscHelpers);
+    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
     final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
@@ -100,16 +106,18 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new EpochProcessorAltair(
             config,
             miscHelpers,
+            beaconStateAccessors,
+            beaconStateMutators,
             validatorsUtil,
             beaconStateUtil,
-            validatorStatusFactory,
-            beaconStateAccessors);
+            validatorStatusFactory);
     final BlockProcessorAltair blockProcessor =
         new BlockProcessorAltair(
             config,
             predicates,
             miscHelpers,
             beaconStateAccessors,
+            beaconStateMutators,
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
@@ -126,6 +134,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         predicates,
         miscHelpers,
         beaconStateAccessors,
+        beaconStateMutators,
         committeeUtil,
         validatorsUtil,
         beaconStateUtil,
