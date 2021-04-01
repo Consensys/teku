@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.primitive.SszByte;
@@ -83,6 +86,14 @@ public class BeaconStateSchemaAltair
         inactivityScores,
         currentSyncCommitteeField,
         nextSyncCommitteeField);
+  }
+
+  public static BeaconStateSchemaAltair required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaAltair,
+        "Expected a BeaconStateSchemaAltair but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaAltair) schema;
   }
 
   @SuppressWarnings("unchecked")

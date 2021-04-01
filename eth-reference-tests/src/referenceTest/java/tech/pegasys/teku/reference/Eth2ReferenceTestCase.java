@@ -34,12 +34,13 @@ import tech.pegasys.teku.util.config.SpecDependent;
 public abstract class Eth2ReferenceTestCase {
 
   private final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
-      ImmutableMap.<String, TestExecutor>builder().build();
-
-  private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
+          .build();
+
+  private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
