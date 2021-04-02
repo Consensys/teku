@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
@@ -84,6 +85,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final Predicates predicates;
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
+  protected final BeaconStateMutators beaconStateMutators;
 
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
@@ -95,12 +97,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final AttestationDataStateTransitionValidator attestationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
+    this.beaconStateMutators = beaconStateMutators;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
@@ -150,7 +154,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           "process_block_header: Verify that the slots match");
       checkArgument(
           blockHeader.getProposerIndex().longValue()
-              == beaconStateUtil.getBeaconProposerIndex(state),
+              == beaconStateAccessors.getBeaconProposerIndex(state),
           "process_block_header: Verify that proposer index is the correct index");
       checkArgument(
           blockHeader.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
@@ -320,7 +324,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             "process_proposer_slashings: %s",
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        beaconStateUtil.slashValidator(
+        beaconStateMutators.slashValidator(
             state,
             toIntExact(proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
       }
@@ -381,7 +385,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
         indicesToSlash.forEach(
             indexToSlash ->
-                beaconStateUtil.slashValidator(state, toIntExact(indexToSlash.longValue())));
+                beaconStateMutators.slashValidator(state, toIntExact(indexToSlash.longValue())));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -573,7 +577,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     } else {
       // This validator already exists, increase their balance
-      validatorsUtil.increaseBalance(
+      beaconStateMutators.increaseBalance(
           state, existingIndex.getAsInt(), deposit.getData().getAmount());
     }
   }
@@ -668,7 +672,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        beaconStateUtil.initiateValidatorExit(
+        beaconStateMutators.initiateValidatorExit(
             state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {

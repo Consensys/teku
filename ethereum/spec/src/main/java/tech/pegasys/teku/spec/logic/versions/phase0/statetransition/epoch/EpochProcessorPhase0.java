@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -31,17 +32,19 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   public EpochProcessorPhase0(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final ValidatorStatusFactory validatorStatusFactory) {
     super(
         specConfig,
         miscHelpers,
+        beaconStateAccessors,
+        beaconStateMutators,
         validatorsUtil,
         beaconStateUtil,
-        validatorStatusFactory,
-        beaconStateAccessors);
+        validatorStatusFactory);
   }
 
   @Override
@@ -60,5 +63,10 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
     state.getCurrent_epoch_attestations().clear();
+  }
+
+  @Override
+  public void processSyncCommitteeUpdates(final MutableBeaconState state) {
+    // Nothing to do
   }
 }

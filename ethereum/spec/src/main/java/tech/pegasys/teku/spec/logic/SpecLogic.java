@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
@@ -53,4 +54,6 @@ public interface SpecLogic {
   MiscHelpers miscHelpers();
 
   BeaconStateAccessors beaconStateAccessors();
+
+  BeaconStateMutators beaconStateMutators();
 }

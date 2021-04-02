@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 public class CommitteeUtilTest {
   final SpecConfig specConfig = mock(SpecConfig.class);
   private final Spec spec = SpecFactory.createMinimal();
-  CommitteeUtil committeeUtil = new CommitteeUtil(specConfig, spec.getGenesisSpec().miscHelpers());
+  CommitteeUtil committeeUtil = new CommitteeUtil(specConfig);
 
   @Test
   void aggregatorModulo_boundaryTest() {

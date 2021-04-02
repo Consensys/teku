@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockV
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.util.BlockProcessorAltair;
 
 public class StateTransitionAltair extends StateTransition {
 

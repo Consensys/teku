@@ -26,7 +26,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
 
   // Misc
   private final int syncCommitteeSize;
-  private final int syncSubcommitteeSize;
+  private final int syncPubkeysPerAggregate;
   private final UInt64 inactivityScoreBias;
 
   // Time
@@ -49,7 +49,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final int altairMinSlashingPenaltyQuotient,
       final int proportionalSlashingMultiplierAltair,
       final int syncCommitteeSize,
-      final int syncSubcommitteeSize,
+      final int syncPubkeysPerAggregate,
       final UInt64 inactivityScoreBias,
       final int epochsPerSyncCommitteePeriod,
       final Bytes4 domainSyncCommittee,
@@ -62,7 +62,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
     this.proportionalSlashingMultiplierAltair = proportionalSlashingMultiplierAltair;
     this.syncCommitteeSize = syncCommitteeSize;
-    this.syncSubcommitteeSize = syncSubcommitteeSize;
+    this.syncPubkeysPerAggregate = syncPubkeysPerAggregate;
     this.inactivityScoreBias = inactivityScoreBias;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
     this.domainSyncCommittee = domainSyncCommittee;
@@ -102,8 +102,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return syncCommitteeSize;
   }
 
-  public int getSyncSubcommitteeSize() {
-    return syncSubcommitteeSize;
+  public int getSyncPubkeysPerAggregate() {
+    return syncPubkeysPerAggregate;
   }
 
   public UInt64 getInactivityScoreBias() {
@@ -132,7 +132,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && minSlashingPenaltyQuotientAltair == that.minSlashingPenaltyQuotientAltair
         && proportionalSlashingMultiplierAltair == that.proportionalSlashingMultiplierAltair
         && syncCommitteeSize == that.syncCommitteeSize
-        && syncSubcommitteeSize == that.syncSubcommitteeSize
+        && syncPubkeysPerAggregate == that.syncPubkeysPerAggregate
         && Objects.equals(inactivityScoreBias, that.inactivityScoreBias)
         && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
@@ -151,7 +151,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         minSlashingPenaltyQuotientAltair,
         proportionalSlashingMultiplierAltair,
         syncCommitteeSize,
-        syncSubcommitteeSize,
+        syncPubkeysPerAggregate,
         inactivityScoreBias,
         epochsPerSyncCommitteePeriod,
         domainSyncCommittee,
