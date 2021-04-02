@@ -226,10 +226,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     // Compute the participant and proposer sync rewards
     final SszMutableList<Validator> validators = state.getValidators();
     final UInt64 committeeEffectiveBalance =
-        includedIndices.stream()
-            .map(includedIndex -> validators.get(includedIndex).getEffective_balance())
-            .reduce(UInt64.ZERO, UInt64::plus)
-            .max(specConfig.getEffectiveBalanceIncrement());
+        beaconStateAccessorsAltair.getTotalBalance(state, includedIndices);
 
     UInt64 proposerReward = UInt64.ZERO;
     final int beaconProposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);

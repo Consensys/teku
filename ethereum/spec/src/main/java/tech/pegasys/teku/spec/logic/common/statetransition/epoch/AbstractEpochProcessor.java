@@ -91,6 +91,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRandaoMixesReset(state);
     processHistoricalRootsUpdate(state);
     processParticipationUpdates(state);
+    processSyncCommitteeUpdates(state);
   }
 
   /** Processes justification and finalization */
