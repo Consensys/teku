@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochPr
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -73,13 +72,6 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     return calculator.getDeltas();
   }
 
-  @Override
-  protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
-      throws EpochProcessingException {
-    super.processEpoch(preState, state);
-    processSyncCommitteeUpdates(state.toMutableVersionAltair().orElseThrow());
-  }
-
   /**
    * Corresponds to process_participation_flag_updates in beacon-chain spec
    *
@@ -99,7 +91,9 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 
-  protected void processSyncCommitteeUpdates(final MutableBeaconStateAltair state) {
+  @Override
+  public void processSyncCommitteeUpdates(final MutableBeaconState genericState) {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
     if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
