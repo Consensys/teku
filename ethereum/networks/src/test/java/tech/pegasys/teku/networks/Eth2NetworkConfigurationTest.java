@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.util.List;
@@ -107,34 +106,19 @@ public class Eth2NetworkConfigurationTest {
     }
   }
 
-  @Test
-  public void bootnodesFromMainnetNetworkDefaults_CanBeParsed() {
-    final Eth2NetworkConfiguration config =
-        Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults().build();
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getDefinedNetworks")
+  public void bootnodesFromNetworkDefaults_CanBeParsed(
+      final Eth2Network network, final NetworkDefinition networkDefinition) {
+    final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
+    final Eth2NetworkConfiguration.Builder networkConfigBuilder =
+        Eth2NetworkConfiguration.builder();
+    networkDefinition.configure(networkConfigBuilder);
 
     List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
 
-    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
-  }
-
-  @Test
-  public void bootnodesFromPraterNetworkDefaults_CanBeParsed() {
-    final Eth2NetworkConfiguration config =
-        Eth2NetworkConfiguration.builder().applyPraterNetworkDefaults().build();
-
-    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
-
-    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
-  }
-
-  @Test
-  public void bootnodesFromPyrmontNetworkDefaults_CanBeParsed() {
-    final Eth2NetworkConfiguration config =
-        Eth2NetworkConfiguration.builder().applyPyrmontNetworkDefaults().build();
-
-    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
-
-    assertTrue(nodeRecords.size() == config.getDiscoveryBootnodes().size());
+    assertThat(nodeRecords.stream().map(NodeRecord::asEnr))
+        .containsExactlyInAnyOrderElementsOf(config.getDiscoveryBootnodes());
   }
 
   public static Stream<Arguments> getDefinedNetworks() {
@@ -142,6 +126,7 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
         Arguments.of(Eth2Network.PYRMONT, (NetworkDefinition) b -> b.applyPyrmontNetworkDefaults()),
+        Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()));
