@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
@@ -46,20 +47,23 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final BeaconStateAccessors beaconStateAccessors;
+  protected final BeaconStateMutators beaconStateMutators;
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final ValidatorStatusFactory validatorStatusFactory) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
+    this.beaconStateMutators = beaconStateMutators;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
-    this.beaconStateAccessors = beaconStateAccessors;
   }
 
   /**
@@ -218,7 +222,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             && status
                 .getCurrentEpochEffectiveBalance()
                 .isLessThanOrEqualTo(specConfig.getEjectionBalance())) {
-          beaconStateUtil.initiateValidatorExit(state, index);
+          beaconStateMutators.initiateValidatorExit(state, index);
         }
       }
 
@@ -254,7 +258,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               .collect(Collectors.toList());
 
       // Dequeued validators for activation up to churn limit (without resetting activation epoch)
-      int churnLimit = beaconStateUtil.getValidatorChurnLimit(state).intValue();
+      int churnLimit = beaconStateAccessors.getValidatorChurnLimit(state).intValue();
       int sublistSize = Math.min(churnLimit, activationQueue.size());
       for (Integer index : activationQueue.subList(0, sublistSize)) {
         state
@@ -263,7 +267,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                 index,
                 validator ->
                     validator.withActivation_epoch(
-                        beaconStateUtil.computeActivationExitEpoch(currentEpoch)));
+                        miscHelpers.computeActivationExitEpoch(currentEpoch)));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
@@ -279,7 +283,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             .getSlashings()
             .streamUnboxed()
             .reduce(UInt64.ZERO, UInt64::plus)
-            .times(specConfig.getProportionalSlashingMultiplier())
+            .times(getProportionalSlashingMultiplier())
             .min(totalBalance);
 
     SszList<Validator> validators = state.getValidators();
@@ -296,9 +300,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                 .dividedBy(increment)
                 .times(adjustedTotalSlashingBalance);
         UInt64 penalty = penaltyNumerator.dividedBy(totalBalance).times(increment);
-        validatorsUtil.decreaseBalance(state, index, penalty);
+        beaconStateMutators.decreaseBalance(state, index, penalty);
       }
     }
+  }
+
+  protected int getProportionalSlashingMultiplier() {
+    return specConfig.getProportionalSlashingMultiplier();
   }
 
   @Override
