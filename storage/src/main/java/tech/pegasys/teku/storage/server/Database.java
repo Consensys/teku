@@ -118,6 +118,8 @@ public interface Database extends AutoCloseable {
 
   Optional<ProtoArraySnapshot> getProtoArraySnapshot();
 
+  void addNonCanonicalBlock(final SignedBeaconBlock block);
+
   void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);

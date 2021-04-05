@@ -114,7 +114,9 @@ public abstract class AbstractDatabaseTest {
 
   // This method shouldn't be called outside of createStorage
   protected abstract StorageSystem createStorageSystemInternal(
-      final StateStorageMode storageMode, final StoreConfig storeConfig);
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks);
 
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
@@ -122,13 +124,15 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected StorageSystem createStorage(final StateStorageMode storageMode) {
-    return createStorage(storageMode, StoreConfig.createDefault());
+    return createStorage(storageMode, StoreConfig.createDefault(), false);
   }
 
   protected StorageSystem createStorage(
-      final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode, storeConfig);
+    storageSystem = createStorageSystemInternal(storageMode, storeConfig, storeNonCanonicalBlocks);
     setDefaultStorage(storageSystem);
 
     return storageSystem;
@@ -662,6 +666,16 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void startupFromNonGenesisState_archive() {
     testStartupFromNonGenesisState(StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void nonCanonicalBlock_shouldGetByRoot() {
+    createStorage(storageMode, StoreConfig.createDefault(), true);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(dataStructureUtil.randomUInt64());
+    database.addNonCanonicalBlock(block);
+    assertThat(database.getSignedBlock(block.getRoot())).contains(block);
   }
 
   public void testStartupFromNonGenesisState(final StateStorageMode storageMode) {

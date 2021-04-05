@@ -55,12 +55,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final long stateStorageFrequency;
   private final Eth1Address eth1Address;
   private final Spec spec;
+  private final boolean storeNonCanonicalBlocks;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StateStorageMode dataStorageMode,
       final Eth1Address depositContractAddress,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     this(
         metricsSystem,
@@ -70,6 +72,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
         depositContractAddress,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -80,6 +83,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Eth1Address eth1Address,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     this(
         metricsSystem,
@@ -89,6 +93,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         createDatabaseVersion,
         stateStorageFrequency,
         eth1Address,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -100,6 +105,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final DatabaseVersion createDatabaseVersion,
       final long stateStorageFrequency,
       final Eth1Address eth1Address,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
@@ -110,6 +116,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
     this.eth1Address = eth1Address;
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.spec = spec;
 
     this.createDatabaseVersion = createDatabaseVersion;
@@ -214,6 +221,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           RocksDbConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
+          storeNonCanonicalBlocks,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -237,6 +245,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
+          storeNonCanonicalBlocks,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -287,6 +296,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
+          storeNonCanonicalBlocks,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -310,6 +320,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
+          storeNonCanonicalBlocks,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -360,6 +371,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           V6SchemaFinalized.create(spec),
           stateStorageMode,
           stateStorageFrequency,
+          storeNonCanonicalBlocks,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

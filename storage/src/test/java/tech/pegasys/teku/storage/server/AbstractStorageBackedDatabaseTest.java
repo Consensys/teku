@@ -41,14 +41,19 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   private final List<File> tmpDirectories = new ArrayList<>();
 
   protected abstract StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig);
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks);
 
   @Override
   protected StorageSystem createStorageSystemInternal(
-      final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     final File tmpDir = Files.createTempDir();
     tmpDirectories.add(tmpDir);
-    return createStorageSystem(tmpDir, storageMode, storeConfig);
+    return createStorageSystem(tmpDir, storageMode, storeConfig, storeNonCanonicalBlocks);
   }
 
   @Override
@@ -63,9 +68,17 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   }
 
   protected StorageSystem createStorage(final File tempDir, final StateStorageMode storageMode) {
+    return createStorage(tempDir, storageMode, false);
+  }
+
+  protected StorageSystem createStorage(
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final boolean storeNonCanonicalBlocks) {
     this.storageMode = storageMode;
     final StorageSystem storage =
-        createStorageSystem(tempDir, storageMode, StoreConfig.createDefault());
+        createStorageSystem(
+            tempDir, storageMode, StoreConfig.createDefault(), storeNonCanonicalBlocks);
     setDefaultStorage(storage);
     return storage;
   }

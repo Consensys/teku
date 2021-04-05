@@ -159,6 +159,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public void addNonCanonicalBlock(final SignedBeaconBlock block) {}
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override

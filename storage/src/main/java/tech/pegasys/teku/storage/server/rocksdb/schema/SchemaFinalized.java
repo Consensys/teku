@@ -26,4 +26,6 @@ public interface SchemaFinalized extends Schema {
   RocksDbColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
 
   RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
+
+  RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
 }

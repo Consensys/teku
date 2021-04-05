@@ -109,6 +109,7 @@ public class RocksDbDatabase implements Database {
   private final RocksDbProtoArrayDao protoArrayDao;
 
   private final Spec spec;
+  private final boolean storeNonCanonicalBlocks;
 
   public static Database createV4(
       final MetricsSystem metricsSystem,
@@ -116,6 +117,7 @@ public class RocksDbDatabase implements Database {
       final RocksDbConfiguration finalizedConfiguration,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final RocksDbAccessor hotDb =
         RocksDbInstanceFactory.create(
@@ -130,7 +132,13 @@ public class RocksDbDatabase implements Database {
             finalizedConfiguration,
             V4SchemaFinalized.create(spec).getAllColumns());
     return createV4(
-        metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, spec);
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   public static Database createV6(
@@ -141,6 +149,7 @@ public class RocksDbDatabase implements Database {
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final RocksDbAccessor hotDb;
     final RocksDbAccessor finalizedDb;
@@ -171,6 +180,7 @@ public class RocksDbDatabase implements Database {
         schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -180,6 +190,7 @@ public class RocksDbDatabase implements Database {
       final RocksDbConfiguration finalizedConfiguration,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final List<RocksDbColumn<?, ?>> v4FinalizedColumns =
         V4SchemaFinalized.create(spec).getAllColumns();
@@ -190,7 +201,13 @@ public class RocksDbDatabase implements Database {
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
     return createV4(
-        metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency, spec);
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        stateStorageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   public static Database createLevelDbV2(
@@ -201,6 +218,7 @@ public class RocksDbDatabase implements Database {
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final RocksDbAccessor hotDb;
     final RocksDbAccessor finalizedDb;
@@ -231,6 +249,7 @@ public class RocksDbDatabase implements Database {
         schemaFinalized,
         stateStorageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -240,13 +259,21 @@ public class RocksDbDatabase implements Database {
       final RocksDbAccessor finalizedDb,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.create(spec));
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(
             finalizedDb, V4SchemaFinalized.create(spec), stateStorageFrequency);
     return new RocksDbDatabase(
-        metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode, spec);
+        metricsSystem,
+        dao,
+        finalizedDbDao,
+        dao,
+        dao,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   static Database createV6(
@@ -257,12 +284,20 @@ public class RocksDbDatabase implements Database {
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, schemaHot);
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(finalizedDb, schemaFinalized, stateStorageFrequency);
     return new RocksDbDatabase(
-        metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode, spec);
+        metricsSystem,
+        dao,
+        finalizedDbDao,
+        dao,
+        dao,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   private RocksDbDatabase(
@@ -272,6 +307,7 @@ public class RocksDbDatabase implements Database {
       final RocksDbEth1Dao eth1Dao,
       final RocksDbProtoArrayDao protoArrayDao,
       final StateStorageMode stateStorageMode,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     checkNotNull(spec);
     this.metricsSystem = metricsSystem;
@@ -280,6 +316,7 @@ public class RocksDbDatabase implements Database {
     this.protoArrayDao = protoArrayDao;
     this.stateStorageMode = stateStorageMode;
     this.hotDao = hotDao;
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.spec = spec;
   }
 
@@ -541,7 +578,10 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    return hotDao.getHotBlock(root).or(() -> finalizedDao.getFinalizedBlock(root));
+    return hotDao
+        .getHotBlock(root)
+        .or(() -> finalizedDao.getFinalizedBlock(root))
+        .or(() -> finalizedDao.getNonCanonicalBlock(root));
   }
 
   @Override
@@ -617,6 +657,18 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public void addNonCanonicalBlock(final SignedBeaconBlock block) {
+    if (!storeNonCanonicalBlocks) {
+      return;
+    }
+    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      LOG.debug("Non canonical block {}", block.getRoot().toHexString());
+      updater.addNonCanonicalBlock(block);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -671,8 +723,8 @@ public class RocksDbDatabase implements Database {
     updateFinalizedData(
         update.getFinalizedChildToParentMap(),
         update.getFinalizedBlocks(),
-        update.getFinalizedStates());
-
+        update.getFinalizedStates(),
+        update.getDeletedHotBlocks());
     LOG.trace("Applying hot updates");
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
@@ -711,10 +763,17 @@ public class RocksDbDatabase implements Database {
   private void updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, BeaconState> finalizedStates) {
+      final Map<Bytes32, BeaconState> finalizedStates,
+      final Set<Bytes32> deletedHotBlocks) {
     if (finalizedChildToParentMap.isEmpty()) {
       // Nothing to do
       return;
+    }
+
+    if (storeNonCanonicalBlocks) {
+      deletedHotBlocks.stream()
+          .filter(root -> !finalizedChildToParentMap.keySet().contains(root))
+          .forEach(this::storeNonCanonicalBlock);
     }
 
     switch (stateStorageMode) {
@@ -728,6 +787,12 @@ public class RocksDbDatabase implements Database {
       default:
         throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
+  }
+
+  private void storeNonCanonicalBlock(final Bytes32 root) {
+    getHotBlock(root)
+        .ifPresentOrElse(
+            this::addNonCanonicalBlock, () -> LOG.debug("Non canonical block not found {}", root));
   }
 
   private void updateFinalizedDataArchiveMode(
