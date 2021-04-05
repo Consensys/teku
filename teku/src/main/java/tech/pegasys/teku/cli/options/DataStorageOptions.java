@@ -46,7 +46,7 @@ public class DataStorageOptions {
   @CommandLine.Option(
       names = {"--Xdata-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Store non canonical blocks",
+      description = "Store non-canonical blocks",
       fallbackValue = "true",
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled = false;
