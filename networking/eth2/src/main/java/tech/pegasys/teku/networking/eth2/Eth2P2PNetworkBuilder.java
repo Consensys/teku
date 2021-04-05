@@ -28,11 +28,12 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.containers.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -151,9 +153,22 @@ public class Eth2P2PNetworkBuilder {
       final GossipEncoding gossipEncoding, final DiscoveryNetwork<?> network) {
     final GossipForkManager.Builder gossipForkManagerBuilder =
         GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
-    gossipForkManagerBuilder.fork(
-        new GossipForkSubscriptionsPhase0(
-            spec.getForkManifest().get(UInt64.ZERO),
+    spec.getEnabledMilestones().stream()
+        .map(
+            forkAndSpecMilestone ->
+                createSubscriptions(forkAndSpecMilestone, network, gossipEncoding))
+        .forEach(gossipForkManagerBuilder::fork);
+    return gossipForkManagerBuilder.build();
+  }
+
+  private GossipForkSubscriptions createSubscriptions(
+      final ForkAndSpecMilestone forkAndSpecMilestone,
+      final DiscoveryNetwork<?> network,
+      final GossipEncoding gossipEncoding) {
+    switch (forkAndSpecMilestone.getSpecMilestone()) {
+      case PHASE0:
+        return new GossipForkSubscriptionsPhase0(
+            forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,
             metricsSystem,
@@ -168,8 +183,29 @@ public class Eth2P2PNetworkBuilder {
             gossipedProposerSlashingConsumer,
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher));
-    return gossipForkManagerBuilder.build();
+            voluntaryExitGossipPublisher);
+      case ALTAIR:
+        return new GossipForkSubscriptionsAltair(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            attesterSlashingGossipPublisher,
+            gossipedProposerSlashingConsumer,
+            proposerSlashingGossipPublisher,
+            gossipedVoluntaryExitConsumer,
+            voluntaryExitGossipPublisher);
+      default:
+        throw new UnsupportedOperationException(
+            "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
+    }
   }
 
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {

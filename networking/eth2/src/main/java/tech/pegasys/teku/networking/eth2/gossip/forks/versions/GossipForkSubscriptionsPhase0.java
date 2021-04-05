@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +19,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.GossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
+import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
