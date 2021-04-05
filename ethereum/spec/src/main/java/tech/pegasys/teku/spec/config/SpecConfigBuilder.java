@@ -655,7 +655,7 @@ public class SpecConfigBuilder {
 
     // Misc
     private Integer syncCommitteeSize;
-    private Integer syncSubcommitteeSize;
+    private Integer syncPubkeysPerAggregate;
     private UInt64 inactivityScoreBias;
 
     // Time
@@ -681,7 +681,7 @@ public class SpecConfigBuilder {
           minSlashingPenaltyQuotientAltair,
           proportionalSlashingMultiplierAltair,
           syncCommitteeSize,
-          syncSubcommitteeSize,
+          syncPubkeysPerAggregate,
           inactivityScoreBias,
           epochsPerSyncCommitteePeriod,
           domainSyncCommittee,
@@ -697,7 +697,7 @@ public class SpecConfigBuilder {
       validateConstant(
           "proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
       validateConstant("syncCommitteeSize", syncCommitteeSize);
-      validateConstant("syncSubcommitteeSize", syncSubcommitteeSize);
+      validateConstant("syncPubkeysPerAggregate", syncPubkeysPerAggregate);
       validateConstant("inactivityScoreBias", inactivityScoreBias);
       validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
       validateConstant("domainSyncCommittee", domainSyncCommittee);
@@ -734,9 +734,9 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public AltairBuilder syncSubcommitteeSize(final Integer syncSubcommitteeSize) {
-      checkNotNull(syncSubcommitteeSize);
-      this.syncSubcommitteeSize = syncSubcommitteeSize;
+    public AltairBuilder syncPubkeysPerAggregate(final Integer syncPubkeysPerAggregate) {
+      checkNotNull(syncPubkeysPerAggregate);
+      this.syncPubkeysPerAggregate = syncPubkeysPerAggregate;
       return this;
     }
 
