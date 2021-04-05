@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -43,8 +45,7 @@ public class BeaconStateSchemaAltair
     super("BeaconStateAltair", getUniqueFields(specConfig), specConfig);
   }
 
-  public static BeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> create(
-      final SpecConfig specConfig) {
+  public static BeaconStateSchemaAltair create(final SpecConfig specConfig) {
     return new BeaconStateSchemaAltair(specConfig);
   }
 
@@ -85,6 +86,14 @@ public class BeaconStateSchemaAltair
         inactivityScores,
         currentSyncCommitteeField,
         nextSyncCommitteeField);
+  }
+
+  public static BeaconStateSchemaAltair required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaAltair,
+        "Expected a BeaconStateSchemaAltair but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaAltair) schema;
   }
 
   @SuppressWarnings("unchecked")

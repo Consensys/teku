@@ -39,12 +39,16 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
+import tech.pegasys.teku.networking.eth2.gossip.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -106,6 +110,7 @@ public class Eth2P2PNetworkFactory {
     protected List<Eth2P2PNetwork> peers = new ArrayList<>();
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
+    protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
@@ -237,26 +242,39 @@ public class Eth2P2PNetworkFactory {
                 config.getNetworkConfig(),
                 config.getSpec());
 
+        final GossipForkManager.Builder gossipForkManagerBuilder =
+            GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+        gossipForkManagerBuilder.fork(
+            new GossipForkSubscriptionsPhase0(
+                spec.getForkManifest().get(UInt64.ZERO),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                attesterSlashingGossipPublisher,
+                proposerSlashingProcessor,
+                proposerSlashingGossipPublisher,
+                voluntaryExitProcessor,
+                voluntaryExitPublisher));
+        final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
+
         return new ActiveEth2P2PNetwork(
             spec,
             asyncRunner,
-            metricsSystem,
             network,
             eth2PeerManager,
-            eventBus,
+            gossipForkManager,
+            eventChannels,
             recentChainData,
             attestationSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            attesterSlashingGossipPublisher,
-            proposerSlashingProcessor,
-            proposerSlashingGossipPublisher,
-            voluntaryExitProcessor,
-            voluntaryExitPublisher,
             processedAttestationSubscriptionProvider);
       }
     }
@@ -285,6 +303,14 @@ public class Eth2P2PNetworkFactory {
     private void setDefaults() {
       if (eventBus == null) {
         eventBus = new EventBus();
+      }
+      if (eventChannels == null) {
+        eventChannels =
+            EventChannels.createSyncChannels(
+                (error, subscriber, invokedMethod, args) -> {
+                  throw new RuntimeException(error);
+                },
+                new NoOpMetricsSystem());
       }
       if (asyncRunner == null) {
         asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -377,6 +403,12 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
       checkNotNull(eventBus);
       this.eventBus = eventBus;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eventChannels(final EventChannels eventChannels) {
+      checkNotNull(eventChannels);
+      this.eventChannels = eventChannels;
       return this;
     }
 

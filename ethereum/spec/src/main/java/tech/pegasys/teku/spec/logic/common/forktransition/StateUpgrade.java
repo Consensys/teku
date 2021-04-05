@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0;
+package tech.pegasys.teku.spec.logic.common.forktransition;
 
-public enum BlsSetting {
-  DEFAULT,
-  REQUIRED,
-  IGNORED;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-  public static BlsSetting forCode(final int code) {
-    switch (code) {
-      case 0:
-        return DEFAULT;
-      case 1:
-        return REQUIRED;
-      case 2:
-        return IGNORED;
-      default:
-        throw new IllegalArgumentException("Unsupported bls setting: " + code);
-    }
-  }
+public interface StateUpgrade<T extends BeaconState> {
+
+  T upgrade(BeaconState state);
 }

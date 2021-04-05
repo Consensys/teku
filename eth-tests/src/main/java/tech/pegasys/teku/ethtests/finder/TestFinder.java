@@ -20,5 +20,5 @@ import java.util.stream.Stream;
 
 public interface TestFinder {
   @MustBeClosed
-  Stream<TestDefinition> findTests(String spec, Path testRoot) throws IOException;
+  Stream<TestDefinition> findTests(String fork, String config, Path testRoot) throws IOException;
 }

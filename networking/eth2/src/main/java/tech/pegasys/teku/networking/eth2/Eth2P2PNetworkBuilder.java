@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,9 +26,13 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -67,7 +70,7 @@ public class Eth2P2PNetworkBuilder {
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
   private P2PConfig config;
-  private EventBus eventBus;
+  private EventChannels eventChannels;
   private RecentChainData recentChainData;
   private OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   private OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
@@ -128,27 +131,45 @@ public class Eth2P2PNetworkBuilder {
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
+    final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
+
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
         asyncRunner,
-        metricsSystem,
         network,
         eth2PeerManager,
-        eventBus,
+        gossipForkManager,
+        eventChannels,
         recentChainData,
         attestationSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
-        gossipedBlockProcessor,
-        gossipedAttestationConsumer,
-        gossipedAggregateProcessor,
-        gossipedAttesterSlashingConsumer,
-        attesterSlashingGossipPublisher,
-        gossipedProposerSlashingConsumer,
-        proposerSlashingGossipPublisher,
-        gossipedVoluntaryExitConsumer,
-        voluntaryExitGossipPublisher,
         processedAttestationSubscriptionProvider);
+  }
+
+  private GossipForkManager buildGossipForkManager(
+      final GossipEncoding gossipEncoding, final DiscoveryNetwork<?> network) {
+    final GossipForkManager.Builder gossipForkManagerBuilder =
+        GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+    gossipForkManagerBuilder.fork(
+        new GossipForkSubscriptionsPhase0(
+            spec.getForkManifest().get(UInt64.ZERO),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            attesterSlashingGossipPublisher,
+            gossipedProposerSlashingConsumer,
+            proposerSlashingGossipPublisher,
+            gossipedVoluntaryExitConsumer,
+            voluntaryExitGossipPublisher));
+    return gossipForkManagerBuilder.build();
   }
 
   protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
@@ -198,7 +219,7 @@ public class Eth2P2PNetworkBuilder {
 
   private void validate() {
     assertNotNull("config", config);
-    assertNotNull("eventBus", eventBus);
+    assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("keyValueStore", keyValueStore);
@@ -222,9 +243,9 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
-    checkNotNull(eventBus);
-    this.eventBus = eventBus;
+  public Eth2P2PNetworkBuilder eventChannels(final EventChannels eventChannels) {
+    checkNotNull(eventChannels);
+    this.eventChannels = eventChannels;
     return this;
   }
 

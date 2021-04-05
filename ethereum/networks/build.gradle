@@ -3,6 +3,8 @@ dependencies {
 
     implementation project(':infrastructure:io')
 
+    testImplementation 'tech.pegasys.discovery:discovery'
+
     testFixturesImplementation project(':ethereum:spec')
     testFixturesImplementation project(':infrastructure:io')
     testFixturesImplementation project(':util')

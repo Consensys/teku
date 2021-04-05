@@ -118,7 +118,8 @@ class SimpleBlockValidator implements BlockValidator {
 
   private void verifyBlockSignature(final BeaconState state, SignedBeaconBlock signed_block)
       throws BlockProcessingException {
-    final int proposerIndex = beaconStateUtil.getBeaconProposerIndex(state, signed_block.getSlot());
+    final int proposerIndex =
+        beaconStateAccessors.getBeaconProposerIndex(state, signed_block.getSlot());
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors
             .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))

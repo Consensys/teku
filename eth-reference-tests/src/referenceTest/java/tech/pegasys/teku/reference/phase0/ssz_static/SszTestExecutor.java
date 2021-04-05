@@ -19,9 +19,12 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestDataUtils;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.TestDataUtils;
+import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
@@ -43,6 +46,49 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BeaconBlockBody",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockBodySchema))
+          .put(
+              "ssz_static/SyncCommittee",
+              new SszTestExecutor<>(
+                  schemas ->
+                      BeaconStateSchemaAltair.required(schemas.getBeaconStateSchema())
+                          .getCurrentSyncCommitteeSchema()))
+          .put(
+              "ssz_static/SyncAggregate",
+              new SszTestExecutor<>(
+                  schemas ->
+                      BeaconBlockBodySchemaAltair.required(schemas.getBeaconBlockBodySchema())
+                          .getSyncAggregateSchema()))
+          .put(
+              "ssz_static/SyncCommitteeContribution",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas)
+                          .getSyncCommitteeContributionSchema()))
+          .put(
+              "ssz_static/ContributionAndProof",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getContributionAndProofSchema()))
+          .put(
+              "ssz_static/SignedContributionAndProof",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas)
+                          .getSignedContributionAndProofSchema()))
+          .put(
+              "ssz_static/SyncCommitteeSignature",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas).getSyncCommitteeSignatureSchema()))
+          .put(
+              "ssz_static/SyncCommitteeSigningData",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsAltair.required(schemas)
+                          .getSyncCommitteeSigningDataSchema()))
+          .put("ssz_static/LightClientStore", IGNORE_TESTS)
+          .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
+          .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)

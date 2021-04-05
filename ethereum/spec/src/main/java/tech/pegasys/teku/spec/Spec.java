@@ -218,7 +218,7 @@ public class Spec {
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
+    return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {

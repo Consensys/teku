@@ -46,15 +46,18 @@ public class ReferenceTestGenerator {
           Resources.toString(Resources.getResource("ReferenceTestTemplate.java"), CHARSET);
       final String testClassName = getTestClassName(testDefinition);
       final String testPackage =
-          "tech.pegasys.teku.reference.phase0."
-              + sanitise(testDefinition.getTestType().toLowerCase(Locale.US));
+          "tech.pegasys.teku.reference."
+              + sanitizePackageName(testDefinition.getFork())
+              + "."
+              + sanitizePackageName(testDefinition.getTestType());
       final String testMethodName = "test" + toCamelCase(testDefinition.getTestName());
       final String content =
           template
               .replace("$TEST_PACKAGE$", testPackage)
               .replace("$TEST_CLASS_NAME$", testClassName)
               .replace("$TEST_METHOD_NAME$", testMethodName)
-              .replace("$SPEC$", testDefinition.getSpecName())
+              .replace("$CONFIG$", testDefinition.getConfigName())
+              .replace("$FORK$", testDefinition.getFork())
               .replace("$TEST_TYPE$", testDefinition.getTestType())
               .replace("$TEST_NAME$", testDefinition.getTestName())
               .replace(
@@ -79,7 +82,7 @@ public class ReferenceTestGenerator {
   }
 
   private static String getTestClassName(final TestDefinition testDefinition) {
-    return toCamelCase(testDefinition.getSpecName())
+    return toCamelCase(testDefinition.getConfigName())
         + toCamelCase(testDefinition.getTestType())
         + toCamelCase(testDefinition.getTestName())
         + "ReferenceTest";
@@ -94,5 +97,9 @@ public class ReferenceTestGenerator {
 
   private static String sanitise(final String input) {
     return input.replaceAll("[^a-zA-Z0-9]", "_");
+  }
+
+  private static String sanitizePackageName(final String packageName) {
+    return sanitise(packageName.toLowerCase(Locale.US));
   }
 }

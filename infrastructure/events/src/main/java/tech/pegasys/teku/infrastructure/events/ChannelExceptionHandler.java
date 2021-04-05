@@ -16,6 +16,10 @@ package tech.pegasys.teku.infrastructure.events;
 import java.lang.reflect.Method;
 
 public interface ChannelExceptionHandler {
+  ChannelExceptionHandler THROWING_HANDLER =
+      (error, subscriber, invokedMethod, args) -> {
+        throw new RuntimeException(error);
+      };
 
   void handleException(Throwable error, Object subscriber, Method invokedMethod, Object[] args);
 }

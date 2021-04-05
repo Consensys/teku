@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
@@ -90,7 +91,9 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final int shuffledIndex =
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
       final Integer candidateIndex = activeValidatorIndices.get(shuffledIndex);
-      final int randomByte = Hash.sha2_256(Bytes.wrap(seed, uintToBytes32(i / 32))).get(i % 32);
+      final int randomByte =
+          ByteUtil.toUnsignedInt(
+              Hash.sha2_256(Bytes.wrap(seed, uintToBytes32(i / 32))).get(i % 32));
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffective_balance();
       // Sample with replacement
       if (effectiveBalance
@@ -118,13 +121,14 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             .map(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
             .collect(toList());
 
-    final int syncSubcommitteeSize = altairConfig.getSyncSubcommitteeSize();
+    final int syncPubkeysPerAggregate = altairConfig.getSyncPubkeysPerAggregate();
     final List<SszPublicKey> pubkeyAggregates = new ArrayList<>();
     checkState(
-        pubkeys.size() % syncSubcommitteeSize == 0,
-        "SYNC_COMMITTEE_SIZE must be a multiple of SYNC_SUBCOMMITTEE_SIZE");
-    for (int i = 0; i < pubkeys.size(); i += syncSubcommitteeSize) {
-      final List<BLSPublicKey> subcommitteePubkeys = pubkeys.subList(i, i + syncSubcommitteeSize);
+        pubkeys.size() % syncPubkeysPerAggregate == 0,
+        "SYNC_COMMITTEE_SIZE must be a multiple of SYNC_PUBKEYS_PER_AGGREGATE");
+    for (int i = 0; i < pubkeys.size(); i += syncPubkeysPerAggregate) {
+      final List<BLSPublicKey> subcommitteePubkeys =
+          pubkeys.subList(i, i + syncPubkeysPerAggregate);
       pubkeyAggregates.add(new SszPublicKey(BLSPublicKey.aggregate(subcommitteePubkeys)));
     }
 

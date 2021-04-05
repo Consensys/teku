@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -27,14 +25,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 
-public class BlockGossipManager {
+public class BlockGossipManager implements GossipManager {
   public static String TOPIC_NAME = "beacon_block";
 
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
-  private final EventBus eventBus;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -44,7 +40,6 @@ public class BlockGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final EventBus eventBus,
       final OperationProcessor<SignedBeaconBlock> processor) {
     this.gossipEncoding = gossipEncoding;
 
@@ -62,21 +57,16 @@ public class BlockGossipManager {
             TOPIC_NAME,
             signedBeaconBlockSchema);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
-
-    this.eventBus = eventBus;
-    eventBus.register(this);
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
-    final Bytes data = gossipEncoding.encode(blockProposedEvent.getBlock());
+  public void publishBlock(final SignedBeaconBlock block) {
+    final Bytes data = gossipEncoding.encode(block);
     channel.gossip(data);
   }
 
+  @Override
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
-      eventBus.unregister(this);
       // Close gossip channels
       channel.close();
     }

@@ -50,4 +50,6 @@ public interface EpochProcessor {
   void processRandaoMixesReset(MutableBeaconState state);
 
   void processHistoricalRootsUpdate(MutableBeaconState state);
+
+  void processSyncCommitteeUpdates(MutableBeaconState state);
 }

@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.epoch_processing;
+package tech.pegasys.teku.reference.common.epoch_processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
+import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
-import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingExecutor.Operation;
+import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -31,39 +30,43 @@ public class EpochProcessingTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "epoch_processing/slashings",
-              new EpochProcessingTestExecutor(Operation.PROCESS_SLASHINGS))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_SLASHINGS))
           .put(
               "epoch_processing/registry_updates",
-              new EpochProcessingTestExecutor(Operation.PROCESS_REGISTRY_UPDATES))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_REGISTRY_UPDATES))
           .put(
               "epoch_processing/rewards_and_penalties",
-              new EpochProcessingTestExecutor(Operation.PROCESS_REWARDS_AND_PENALTIES))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_REWARDS_AND_PENALTIES))
           .put(
               "epoch_processing/justification_and_finalization",
-              new EpochProcessingTestExecutor(Operation.PROCESS_JUSTIFICATION_AND_FINALIZATION))
+              new EpochProcessingTestExecutor(
+                  EpochOperation.PROCESS_JUSTIFICATION_AND_FINALIZATION))
           .put(
               "epoch_processing/effective_balance_updates",
-              new EpochProcessingTestExecutor(Operation.PROCESS_EFFECTIVE_BALANCE_UPDATES))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_EFFECTIVE_BALANCE_UPDATES))
           .put(
               "epoch_processing/eth1_data_reset",
-              new EpochProcessingTestExecutor(Operation.PROCESS_ETH1_DATA_RESET))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_ETH1_DATA_RESET))
           .put(
               "epoch_processing/participation_record_updates",
-              new EpochProcessingTestExecutor(Operation.PROCESS_PARTICIPATION_RECORD_UPDATES))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_RECORD_UPDATES))
           .put(
               "epoch_processing/randao_mixes_reset",
-              new EpochProcessingTestExecutor(Operation.PROCESS_RANDAO_MIXES_RESET))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_RANDAO_MIXES_RESET))
           .put(
               "epoch_processing/historical_roots_update",
-              new EpochProcessingTestExecutor(Operation.PROCESS_HISTORICAL_ROOTS_UPDATE))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_HISTORICAL_ROOTS_UPDATE))
           .put(
               "epoch_processing/slashings_reset",
-              new EpochProcessingTestExecutor(Operation.PROCESS_SLASHINGS_RESET))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_SLASHINGS_RESET))
+          .put(
+              "epoch_processing/sync_committee_updates",
+              new EpochProcessingTestExecutor(EpochOperation.SYNC_COMMITTEE_UPDATES))
           .build();
 
-  private final Operation operation;
+  private final EpochOperation operation;
 
-  public EpochProcessingTestExecutor(final Operation operation) {
+  public EpochProcessingTestExecutor(final EpochOperation operation) {
     this.operation = operation;
   }
 
@@ -76,7 +79,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     final EpochProcessor epochProcessor = genesisSpec.getEpochProcessor();
     final ValidatorStatusFactory validatorStatusFactory = genesisSpec.getValidatorStatusFactory();
     final EpochProcessingExecutor processor =
-        new DefaultEpochProcessingExecutor(epochProcessor, validatorStatusFactory);
+        new EpochProcessingExecutor(epochProcessor, validatorStatusFactory);
     final BeaconState result =
         preState.updated(state -> processor.executeOperation(operation, state));
     assertThat(result).isEqualTo(expectedPostState);

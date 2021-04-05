@@ -17,15 +17,15 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.Eth2ReferenceTestCase;
+import tech.pegasys.teku.reference.Eth2ReferenceTestCase;
 
-@DisplayName("$SPEC$ - $TEST_TYPE")
+@DisplayName("$FORK$ - $CONFIG$ - $TEST_TYPE$")
 public class $TEST_CLASS_NAME$ extends Eth2ReferenceTestCase {
 
   @Test
   @DisplayName("$TEST_NAME$")
   void $TEST_METHOD_NAME$() throws Throwable {
     runReferenceTest(
-        new TestDefinition("$SPEC$", "$TEST_TYPE$", "$TEST_NAME$", Path.of("$RELATIVE_PATH$")));
+        new TestDefinition("$FORK$", "$CONFIG$", "$TEST_TYPE$", "$TEST_NAME$", Path.of("$RELATIVE_PATH$")));
   }
 }

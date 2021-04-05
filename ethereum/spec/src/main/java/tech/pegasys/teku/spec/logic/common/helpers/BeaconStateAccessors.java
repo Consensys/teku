@@ -55,6 +55,17 @@ public class BeaconStateAccessors {
     return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
   }
 
+  public UInt64 getValidatorChurnLimit(BeaconState state) {
+    final int activeValidatorCount =
+        getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
+    return getValidatorChurnLimit(activeValidatorCount);
+  }
+
+  public UInt64 getValidatorChurnLimit(final int activeValidatorCount) {
+    return UInt64.valueOf(config.getMinPerEpochChurnLimit())
+        .max(UInt64.valueOf(activeValidatorCount / config.getChurnLimitQuotient()));
+  }
+
   public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
     if (state.getValidators().size() <= validatorIndex.longValue()
         || validatorIndex.longValue() < 0) {
@@ -141,5 +152,40 @@ public class BeaconStateAccessors {
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(config.getEpochsPerHistoricalVector()).intValue();
     return state.getRandao_mixes().getElement(index);
+  }
+
+  public int getBeaconProposerIndex(BeaconState state) {
+    return getBeaconProposerIndex(state, state.getSlot());
+  }
+
+  public int getBeaconProposerIndex(BeaconState state, UInt64 requestedSlot) {
+    validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBeaconProposerIndex()
+        .get(
+            requestedSlot,
+            slot -> {
+              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+              Bytes32 seed =
+                  Hash.sha2_256(
+                      Bytes.concatenate(
+                          getSeed(state, epoch, config.getDomainBeaconProposer()),
+                          uintToBytes(slot.longValue(), 8)));
+              List<Integer> indices = getActiveValidatorIndices(state, epoch);
+              return miscHelpers.computeProposerIndex(state, indices, seed);
+            });
+  }
+
+  private void validateStateCanCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    checkArgument(
+        epoch.equals(stateEpoch),
+        "Cannot calculate proposer index for a slot outside the current epoch. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
+        requestedSlot,
+        epoch,
+        state.getSlot(),
+        stateEpoch);
   }
 }

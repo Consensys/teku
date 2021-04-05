@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0;
+package tech.pegasys.teku.reference;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
+import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.altair.fork.ForkUpgradeTestExecutor;
+import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
-import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
 import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
@@ -31,12 +33,16 @@ import tech.pegasys.teku.util.config.SpecDependent;
 
 public abstract class Eth2ReferenceTestCase {
 
-  private final ImmutableMap<String, TestExecutor> TEST_TYPES =
+  private final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
+          .build();
+
+  private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
-          .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
@@ -45,8 +51,13 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .build();
 
+  private final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
-    setConstants(testDefinition.getSpecName());
+    setConstants(testDefinition.getConfigName());
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
 
@@ -58,7 +69,21 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    final TestExecutor testExecutor = TEST_TYPES.get(testDefinition.getTestType());
+    TestExecutor testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
+
+    // Look for fork-specific tests if there is no common test type
+    if (testExecutor == null) {
+      if (testDefinition.getFork().equals(TestFork.PHASE0)) {
+        testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
+      } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
+        testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+        if (testExecutor == null) {
+          // Ignore unhandled altair tests for now
+          testExecutor = TestExecutor.IGNORE_TESTS;
+        }
+      }
+    }
+
     if (testExecutor == null) {
       return Assertions.fail("Unsupported test type " + testDefinition.getTestType());
     }

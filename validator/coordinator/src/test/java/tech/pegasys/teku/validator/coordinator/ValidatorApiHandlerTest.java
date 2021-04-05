@@ -30,7 +30,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -66,7 +66,6 @@ import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
@@ -98,7 +97,7 @@ class ValidatorApiHandlerTest {
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
-  private final EventBus eventBus = mock(EventBus.class);
+  private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -112,11 +111,11 @@ class ValidatorApiHandlerTest {
           syncStateProvider,
           blockFactory,
           blockImportChannel,
+          blockGossipChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriptions,
           activeValidatorTracker,
-          eventBus,
           dutyMetrics,
           performanceTracker,
           spec,
@@ -557,7 +556,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
-    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
@@ -569,7 +568,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
-    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result)
         .isCompletedWithValue(
@@ -583,7 +582,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
-    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
