@@ -54,13 +54,13 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.containers.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.logic.ForkAndMilestone;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -154,19 +154,21 @@ public class Eth2P2PNetworkBuilder {
     final GossipForkManager.Builder gossipForkManagerBuilder =
         GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
     spec.getEnabledMilestones().stream()
-        .map(forkAndMilestone -> createSubscriptions(forkAndMilestone, network, gossipEncoding))
+        .map(
+            forkAndSpecMilestone ->
+                createSubscriptions(forkAndSpecMilestone, network, gossipEncoding))
         .forEach(gossipForkManagerBuilder::fork);
     return gossipForkManagerBuilder.build();
   }
 
   private GossipForkSubscriptions createSubscriptions(
-      final ForkAndMilestone forkAndMilestone,
+      final ForkAndSpecMilestone forkAndSpecMilestone,
       final DiscoveryNetwork<?> network,
       final GossipEncoding gossipEncoding) {
-    switch (forkAndMilestone.getMilestone()) {
+    switch (forkAndSpecMilestone.getSpecMilestone()) {
       case PHASE0:
         return new GossipForkSubscriptionsPhase0(
-            forkAndMilestone.getFork(),
+            forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,
             metricsSystem,
@@ -184,7 +186,7 @@ public class Eth2P2PNetworkBuilder {
             voluntaryExitGossipPublisher);
       case ALTAIR:
         return new GossipForkSubscriptionsAltair(
-            forkAndMilestone.getFork(),
+            forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,
             metricsSystem,
@@ -202,7 +204,7 @@ public class Eth2P2PNetworkBuilder {
             voluntaryExitGossipPublisher);
       default:
         throw new UnsupportedOperationException(
-            "Gossip not supported for fork " + forkAndMilestone.getMilestone());
+            "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
     }
   }
 

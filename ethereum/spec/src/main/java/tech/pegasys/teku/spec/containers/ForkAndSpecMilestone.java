@@ -11,24 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic;
+package tech.pegasys.teku.spec.containers;
 
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public class ForkAndMilestone {
+public class ForkAndSpecMilestone {
   private final Fork fork;
-  private final Milestone milestone;
+  private final SpecMilestone specMilestone;
 
-  public ForkAndMilestone(final Fork fork, final Milestone milestone) {
+  public ForkAndSpecMilestone(final Fork fork, final SpecMilestone specMilestone) {
     this.fork = fork;
-    this.milestone = milestone;
+    this.specMilestone = specMilestone;
   }
 
   public Fork getFork() {
     return fork;
   }
 
-  public Milestone getMilestone() {
-    return milestone;
+  public SpecMilestone getSpecMilestone() {
+    return specMilestone;
   }
 }

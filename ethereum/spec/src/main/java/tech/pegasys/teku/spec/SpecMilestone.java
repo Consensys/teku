@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic;
+package tech.pegasys.teku.spec;
 
-public enum Milestone {
+public enum SpecMilestone {
   PHASE0,
   ALTAIR
 }
