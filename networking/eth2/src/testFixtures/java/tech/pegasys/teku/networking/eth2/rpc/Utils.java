@@ -19,6 +19,7 @@ import static java.lang.Integer.min;
 import com.google.common.collect.Streams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +40,12 @@ public class Utils {
     List<List<ByteBuf>> splits =
         List.of(
             List.of(toByteBuf(chunks)),
+            splitIntoEvenChunks(1, chunks).stream()
+                .map(Utils::toByteBuf)
+                .collect(Collectors.toList()),
+            splitIntoEvenChunks(2, chunks).stream()
+                .map(Utils::toByteBuf)
+                .collect(Collectors.toList()),
             Arrays.stream(chunks).map(Utils::toByteBuf).collect(Collectors.toList()),
             Arrays.stream(chunks)
                 .map(Utils::toByteBuf)
@@ -71,6 +78,23 @@ public class Utils {
             .collect(Collectors.toList());
 
     return ret;
+  }
+
+  /**
+   * Combine chunks, then split into even-sized chunks
+   *
+   * @param chunkSize The target chunk size
+   * @param chunks The original chunks
+   * @return
+   */
+  private static List<Bytes> splitIntoEvenChunks(int chunkSize, Bytes... chunks) {
+    final Bytes allBytes = Bytes.concatenate(chunks);
+    final List<Bytes> evenChunks = new ArrayList<>();
+    for (int i = 0; i < allBytes.size(); i += chunkSize) {
+      final int size = Math.min(chunkSize, allBytes.size() - i);
+      evenChunks.add(allBytes.slice(i, size));
+    }
+    return evenChunks;
   }
 
   private static List<List<ByteBuf>> addZeroLenBuffers(List<List<ByteBuf>> bufSets) {

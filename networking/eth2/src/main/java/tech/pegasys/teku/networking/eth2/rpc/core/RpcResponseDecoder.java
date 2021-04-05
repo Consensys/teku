@@ -21,7 +21,10 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.UnrecognizedContextBytesException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -35,15 +38,36 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
  * @param <T>
  */
 public class RpcResponseDecoder<T extends SszData> {
+  private final RpcEncoding encoding;
+  private final Supplier<RpcResponseContextDecoder> contextDecoderSupplier;
+  private final ResponseSchemaSupplier<T> responseSchemaSupplier;
+
   private Optional<Integer> respCodeMaybe = Optional.empty();
+  private Optional<RpcByteBufDecoder<Bytes>> contextDecoder = Optional.empty();
+  private Optional<Bytes> contextBytes = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
-  private final SszSchema<T> responseSchema;
-  private final RpcEncoding encoding;
 
-  public RpcResponseDecoder(SszSchema<T> responseSchema, RpcEncoding encoding) {
-    this.responseSchema = responseSchema;
+  private RpcResponseDecoder(
+      final RpcEncoding encoding,
+      final Supplier<RpcResponseContextDecoder> contextDecoderSupplier,
+      final ResponseSchemaSupplier<T> responseSchemaSupplier) {
     this.encoding = encoding;
+    this.contextDecoderSupplier = contextDecoderSupplier;
+    this.responseSchemaSupplier = responseSchemaSupplier;
+  }
+
+  public static <T extends SszData> RpcResponseDecoder<T> createContextFreeDecoder(
+      final RpcEncoding encoding, final SszSchema<T> schema) {
+    return new RpcResponseDecoder<T>(
+        encoding, RpcResponseContextDecoder::noop, __ -> Optional.of(schema));
+  }
+
+  public static <T extends SszData> RpcResponseDecoder<T> createContextAwareDecoder(
+      final RpcEncoding encoding,
+      final Supplier<RpcResponseContextDecoder> contextDecoderSupplier,
+      final ResponseSchemaSupplier<T> responseSchemaSupplier) {
+    return new RpcResponseDecoder<T>(encoding, contextDecoderSupplier, responseSchemaSupplier);
   }
 
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
@@ -71,12 +95,31 @@ public class RpcResponseDecoder<T extends SszData> {
     int respCode = respCodeMaybe.get();
 
     if (respCode == SUCCESS_RESPONSE_CODE) {
+      // Process context
+      if (contextDecoder.isEmpty()) {
+        contextDecoder = Optional.of(contextDecoderSupplier.get());
+      }
+      if (contextBytes.isEmpty()) {
+        contextBytes = contextDecoder.get().decodeOneMessage(data);
+        if (contextBytes.isEmpty()) {
+          // Wait for more context data
+          return Optional.empty();
+        }
+      }
+
+      // Process payload
       if (payloadDecoder.isEmpty()) {
-        payloadDecoder = Optional.of(encoding.createDecoder(responseSchema));
+        final SszSchema<T> schema =
+            responseSchemaSupplier
+                .getSchema(contextBytes.get())
+                .orElseThrow(() -> new UnrecognizedContextBytesException(contextBytes.get()));
+        payloadDecoder = Optional.of(encoding.createDecoder(schema));
       }
       Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
       if (ret.isPresent()) {
         respCodeMaybe = Optional.empty();
+        contextDecoder = Optional.empty();
+        contextBytes = Optional.empty();
         payloadDecoder = Optional.empty();
       }
       return ret;
@@ -101,23 +144,40 @@ public class RpcResponseDecoder<T extends SszData> {
 
   public void close() {
     payloadDecoder.ifPresent(ByteBufDecoder::close);
+    contextDecoder.ifPresent(ByteBufDecoder::close);
     errorDecoder.ifPresent(ByteBufDecoder::close);
   }
 
   public void complete() throws RpcException {
-    try {
-      if (payloadDecoder.isPresent()) {
-        payloadDecoder.get().complete();
-        payloadDecoder = Optional.empty();
-      }
-    } finally {
-      if (errorDecoder.isPresent()) {
-        errorDecoder.get().complete();
-        errorDecoder = Optional.empty();
-      }
+    final List<RpcException> exceptions = new ArrayList<>();
+    completeDecoder(payloadDecoder).ifPresent(exceptions::add);
+    payloadDecoder = Optional.empty();
+    completeDecoder(contextDecoder).ifPresent(exceptions::add);
+    contextDecoder = Optional.empty();
+    completeDecoder(errorDecoder).ifPresent(exceptions::add);
+    errorDecoder = Optional.empty();
+
+    if (exceptions.size() > 0) {
+      throw exceptions.get(0);
     }
     if (respCodeMaybe.isPresent()) {
       throw new PayloadTruncatedException();
     }
+  }
+
+  private <T> Optional<RpcException> completeDecoder(Optional<RpcByteBufDecoder<T>> decoder) {
+    try {
+      if (decoder.isPresent()) {
+        decoder.get().complete();
+      }
+    } catch (RpcException e) {
+      return Optional.of(e);
+    }
+    return Optional.empty();
+  }
+
+  @FunctionalInterface
+  public interface ResponseSchemaSupplier<T extends SszData> {
+    Optional<SszSchema<T>> getSchema(final Bytes contextBytes);
   }
 }

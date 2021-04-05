@@ -49,6 +49,13 @@ public class RpcException extends Exception {
     }
   }
 
+  public static class UnrecognizedContextBytesException extends RpcException {
+    public UnrecognizedContextBytesException(final Bytes contextBytes) {
+      super(
+          INVALID_REQUEST_CODE, "Failed to recognize context bytes: " + contextBytes.toHexString());
+    }
+  }
+
   // Unexpected message length
   public static class ExtraDataAppendedException extends RpcException {
     public ExtraDataAppendedException() {
