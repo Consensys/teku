@@ -19,11 +19,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -39,17 +39,19 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   public EpochProcessorAltair(
       final SpecConfigAltair specConfig,
       final MiscHelpersAltair miscHelpers,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory,
-      final BeaconStateAccessorsAltair beaconStateAccessors) {
+      final ValidatorStatusFactory validatorStatusFactory) {
     super(
         specConfig,
         miscHelpers,
+        beaconStateAccessors,
+        beaconStateMutators,
         validatorsUtil,
         beaconStateUtil,
-        validatorStatusFactory,
-        beaconStateAccessors);
+        validatorStatusFactory);
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
@@ -68,13 +70,6 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
             beaconStateAccessorsAltair);
 
     return calculator.getDeltas();
-  }
-
-  @Override
-  protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
-      throws EpochProcessingException {
-    super.processEpoch(preState, state);
-    processSyncCommitteeUpdates(state.toMutableVersionAltair().orElseThrow());
   }
 
   /**
@@ -96,7 +91,9 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     state.getCurrentEpochParticipation().setAll(SszByte.ZERO, state.getValidators().size());
   }
 
-  protected void processSyncCommitteeUpdates(final MutableBeaconStateAltair state) {
+  @Override
+  public void processSyncCommitteeUpdates(final MutableBeaconState genericState) {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
     if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
@@ -104,5 +101,10 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
           beaconStateAccessorsAltair.getSyncCommittee(
               state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
     }
+  }
+
+  @Override
+  protected int getProportionalSlashingMultiplier() {
+    return specConfigAltair.getProportionalSlashingMultiplierAltair();
   }
 }

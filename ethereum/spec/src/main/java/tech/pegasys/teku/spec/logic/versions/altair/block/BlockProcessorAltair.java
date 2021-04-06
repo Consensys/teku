@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.altair.util;
+package tech.pegasys.teku.spec.logic.versions.altair.block;
 
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -61,6 +62,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
@@ -70,6 +72,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         predicates,
         miscHelpers,
         beaconStateAccessors,
+        beaconStateMutators,
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
@@ -114,8 +117,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final UInt64 dataSlot = data.getSlot();
     if (isMatchingHead
         && isMatchingTarget
-        && stateSlot.isLessThanOrEqualTo(
-            dataSlot.plus(specConfig.getMinAttestationInclusionDelay()))) {
+        && stateSlot.equals(dataSlot.plus(specConfig.getMinAttestationInclusionDelay()))) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     if (isMatchingSource
@@ -134,7 +136,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         indexedAttestationProvider.getIndexedAttestation(attestation).getAttesting_indices();
     for (SszUInt64 attestingIndex : attestingIndices) {
       final int index = attestingIndex.get().intValue();
-      final byte participationFlags = epochParticipation.get(index).get();
+      byte participationFlags = epochParticipation.get(index).get();
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
       boolean shouldUpdate = false;
       for (FlagIndexAndWeight flagIndicesAndWeight : miscHelpersAltair.getFlagIndicesAndWeights()) {
@@ -144,20 +146,22 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         if (participationFlagIndices.contains(flagIndex)
             && !miscHelpersAltair.hasFlag(participationFlags, flagIndex)) {
           shouldUpdate = true;
-          miscHelpersAltair.addFlag(participationFlags, flagIndex);
+          participationFlags = miscHelpersAltair.addFlag(participationFlags, flagIndex);
           proposerRewardNumerator = proposerRewardNumerator.plus(baseReward.times(weight));
         }
       }
 
       if (shouldUpdate) {
         epochParticipation.set(index, SszByte.of(participationFlags));
-
-        final int proposerIndex = beaconStateUtil.getBeaconProposerIndex(state);
-        final UInt64 proposerReward =
-            proposerRewardNumerator.dividedBy(
-                specConfig.getProposerRewardQuotient().times(WEIGHT_DENOMINATOR));
-        validatorsUtil.increaseBalance(state, proposerIndex, proposerReward);
       }
+    }
+
+    if (!proposerRewardNumerator.isZero()) {
+      final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
+      final UInt64 proposerReward =
+          proposerRewardNumerator.dividedBy(
+              specConfig.getProposerRewardQuotient().times(WEIGHT_DENOMINATOR));
+      beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
     }
   }
 
@@ -171,9 +175,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
+  @Override
   public void processSyncCommittee(
-      final MutableBeaconStateAltair state, final SyncAggregate aggregate)
+      final MutableBeaconState baseState, final SyncAggregate aggregate)
       throws BlockProcessingException {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final List<Integer> committeeIndices =
         beaconStateAccessorsAltair.getSyncCommitteeIndices(
@@ -223,22 +229,20 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     // Compute the participant and proposer sync rewards
     final SszMutableList<Validator> validators = state.getValidators();
     final UInt64 committeeEffectiveBalance =
-        includedIndices.stream()
-            .map(includedIndex -> validators.get(includedIndex).getEffective_balance())
-            .reduce(UInt64.ZERO, UInt64::plus)
-            .max(specConfig.getEffectiveBalanceIncrement());
+        beaconStateAccessorsAltair.getTotalBalance(state, includedIndices);
 
     UInt64 proposerReward = UInt64.ZERO;
-    final int beaconProposerIndex = beaconStateUtil.getBeaconProposerIndex(state);
+    final int beaconProposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
     for (Integer includedIndex : includedIndices) {
       final UInt64 effectiveBalance = validators.get(includedIndex).getEffective_balance();
       final UInt64 inclusionReward =
           maxSlotRewards.times(effectiveBalance).dividedBy(committeeEffectiveBalance);
       UInt64 proposerShare = inclusionReward.dividedBy(specConfig.getProposerRewardQuotient());
       proposerReward = proposerReward.plus(proposerShare);
-      validatorsUtil.increaseBalance(state, includedIndex, inclusionReward.minus(proposerShare));
+      beaconStateMutators.increaseBalance(
+          state, includedIndex, inclusionReward.minus(proposerShare));
     }
-    validatorsUtil.increaseBalance(state, beaconProposerIndex, proposerReward);
+    beaconStateMutators.increaseBalance(state, beaconProposerIndex, proposerReward);
   }
 
   private boolean eth2FastAggregateVerify(

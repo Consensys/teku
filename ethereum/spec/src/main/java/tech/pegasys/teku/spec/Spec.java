@@ -28,6 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.containers.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -128,21 +130,21 @@ public class Spec {
     return forkManifest;
   }
 
-  public Collection<ForkAndMilestone> getEnabledMilestones() {
+  public Collection<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkManifest.getForkSchedule().stream()
-        .map(fork -> new ForkAndMilestone(fork, getMilestoneForFork(fork)))
+        .map(fork -> new ForkAndSpecMilestone(fork, getMilestoneForFork(fork)))
         .collect(toList());
   }
 
-  private Milestone getMilestoneForFork(final Fork fork) {
+  private SpecMilestone getMilestoneForFork(final Fork fork) {
     final SpecConfig specConfig = getSpecConfig(fork.getEpoch());
     if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
-      return Milestone.PHASE0;
+      return SpecMilestone.PHASE0;
     } else if (specConfig
         .toVersionAltair()
         .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
         .orElse(false)) {
-      return Milestone.ALTAIR;
+      return SpecMilestone.ALTAIR;
     } else {
       throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
     }
@@ -243,7 +245,7 @@ public class Spec {
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBeaconProposerIndex(state, slot);
+    return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
@@ -421,6 +423,11 @@ public class Spec {
   public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     atState(state).getBlockProcessor().processAttestations(state, attestations);
+  }
+
+  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessor().processSyncCommittee(state, syncAggregate);
   }
 
   public void processAttestations(

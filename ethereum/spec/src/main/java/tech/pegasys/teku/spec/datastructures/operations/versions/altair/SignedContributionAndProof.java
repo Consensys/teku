@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -23,5 +24,13 @@ public class SignedContributionAndProof
   protected SignedContributionAndProof(
       final SignedContributionAndProofSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public ContributionAndProof getMessage() {
+    return getField0();
+  }
+
+  public BLSSignature getSignature() {
+    return getField1().getSignature();
   }
 }

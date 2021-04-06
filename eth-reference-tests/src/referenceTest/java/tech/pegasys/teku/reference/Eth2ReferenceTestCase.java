@@ -18,12 +18,13 @@ import org.junit.jupiter.api.Assertions;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.altair.fork.ForkUpgradeTestExecutor;
+import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorAltair;
+import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
+import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
-import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
-import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
-import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutor;
+import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutorPhase0;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
@@ -35,25 +36,26 @@ public abstract class Eth2ReferenceTestCase {
 
   private final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(BlsTests.BLS_TEST_TYPES)
+          .putAll(GenesisTests.GENESIS_TEST_TYPES)
+          .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
+          .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
+          .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
           .build();
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .putAll(BlsTests.BLS_TEST_TYPES)
-          .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
-          .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
-          .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
-          .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
-          .putAll(RewardsTestExecutor.REWARDS_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
+          .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
           .build();
 
   private final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {

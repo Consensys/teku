@@ -20,7 +20,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class ValidatorsUtil {
 
@@ -44,34 +43,6 @@ public class ValidatorsUtil {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()
         .getValidatorIndex(state, publicKey);
-  }
-
-  /**
-   * Decrease validator balance by ``delta`` with underflow protection.
-   *
-   * @param state
-   * @param index
-   * @param delta
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
-   */
-  public void decreaseBalance(MutableBeaconState state, int index, UInt64 delta) {
-    state
-        .getBalances()
-        .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
-  }
-
-  /**
-   * Increase validator balance by ``delta``.
-   *
-   * @param state
-   * @param index
-   * @param delta
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
-   */
-  public void increaseBalance(MutableBeaconState state, int index, UInt64 delta) {
-    state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
   }
 
   /**

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -23,5 +24,13 @@ public class SyncCommitteeSigningData
   protected SyncCommitteeSigningData(
       final SyncCommitteeSigningDataSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public UInt64 getSlot() {
+    return getField0().get();
+  }
+
+  public UInt64 getSubcommitteeIndex() {
+    return getField1().get();
   }
 }

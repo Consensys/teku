@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
+
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -23,7 +25,6 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SyncCommitteeContributionSchema
     extends ContainerSchema5<
@@ -52,7 +53,7 @@ public class SyncCommitteeContributionSchema
         namedSchema(
             "aggregation_bits",
             SszBitvectorSchema.create(
-                specConfig.getSyncCommitteeSize() / Constants.SYNC_COMMITTEE_SUBNET_COUNT)),
+                specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 

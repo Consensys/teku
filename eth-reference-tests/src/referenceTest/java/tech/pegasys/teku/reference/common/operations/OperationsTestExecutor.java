@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.operations;
+package tech.pegasys.teku.reference.common.operations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -42,7 +44,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     PROCESS_BLOCK_HEADER,
     DEPOSIT,
     VOLUNTARY_EXIT,
-    ATTESTATION
+    ATTESTATION,
+    SYNC_COMMITTEE
   }
 
   public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -67,6 +70,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/attestation",
               new OperationsTestExecutor<>("attestation.ssz_snappy", Operation.ATTESTATION))
+          .put(
+              "operations/sync_committee",
+              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_COMMITTEE))
           .build();
 
   private final String dataFileName;
@@ -161,6 +167,19 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         final Attestation attestation =
             loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
         processor.processAttestation(state, attestation);
+        break;
+      case SYNC_COMMITTEE:
+        final SyncAggregate syncAggregate =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                BeaconBlockBodySchemaAltair.required(
+                        testDefinition
+                            .getSpec()
+                            .getGenesisSchemaDefinitions()
+                            .getBeaconBlockBodySchema())
+                    .getSyncAggregateSchema());
+        processor.processSyncCommittee(state, syncAggregate);
         break;
     }
   }

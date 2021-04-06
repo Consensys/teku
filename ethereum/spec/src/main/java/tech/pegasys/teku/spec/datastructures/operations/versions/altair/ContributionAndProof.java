@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.containers.Container3;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
@@ -23,5 +25,17 @@ public class ContributionAndProof
 
   ContributionAndProof(final ContributionAndProofSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public UInt64 getAggregatorIndex() {
+    return getField0().get();
+  }
+
+  public SyncCommitteeContribution getContribution() {
+    return getField1();
+  }
+
+  public BLSSignature getSignature() {
+    return getField2().getSignature();
   }
 }
