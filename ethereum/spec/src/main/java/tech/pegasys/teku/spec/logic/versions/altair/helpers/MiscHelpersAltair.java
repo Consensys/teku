@@ -23,16 +23,21 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class MiscHelpersAltair extends MiscHelpers {
+
+  public static final FlagIndexAndWeight TIMELY_HEAD_FLAG_INDEX_AND_WEIGHT =
+      new FlagIndexAndWeight(
+          ParticipationFlags.TIMELY_HEAD_FLAG_INDEX, IncentivizationWeights.TIMELY_HEAD_WEIGHT);
+  public static final FlagIndexAndWeight TIMELY_SOURCE_FLAG_INDEX_AND_WEIGHT =
+      new FlagIndexAndWeight(
+          ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX, IncentivizationWeights.TIMELY_SOURCE_WEIGHT);
+  public static final FlagIndexAndWeight TIMELY_TARGET_FLAG_INDEX_AND_WEIGHT =
+      new FlagIndexAndWeight(
+          ParticipationFlags.TIMELY_TARGET_FLAG_INDEX, IncentivizationWeights.TIMELY_TARGET_WEIGHT);
   private static final List<FlagIndexAndWeight> flagIndicesAndWeights =
       List.of(
-          new FlagIndexAndWeight(
-              ParticipationFlags.TIMELY_HEAD_FLAG_INDEX, IncentivizationWeights.TIMELY_HEAD_WEIGHT),
-          new FlagIndexAndWeight(
-              ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX,
-              IncentivizationWeights.TIMELY_SOURCE_WEIGHT),
-          new FlagIndexAndWeight(
-              ParticipationFlags.TIMELY_TARGET_FLAG_INDEX,
-              IncentivizationWeights.TIMELY_TARGET_WEIGHT));
+          TIMELY_HEAD_FLAG_INDEX_AND_WEIGHT,
+          TIMELY_SOURCE_FLAG_INDEX_AND_WEIGHT,
+          TIMELY_TARGET_FLAG_INDEX_AND_WEIGHT);
 
   public MiscHelpersAltair(final SpecConfig specConfig) {
     super(specConfig);
