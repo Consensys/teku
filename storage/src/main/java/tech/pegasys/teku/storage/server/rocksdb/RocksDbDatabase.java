@@ -775,18 +775,12 @@ public class RocksDbDatabase implements Database {
       storeNonCanonicalBlocks(
           deletedHotBlocks.stream()
               .filter(root -> !finalizedChildToParentMap.containsKey(root))
-              .map(this::getHotBlock)
-              .filter(Optional::isPresent)
-              .map(Optional::get)
+              .flatMap(root -> getHotBlock(root).stream())
               .collect(Collectors.toSet()));
     }
   }
 
   private void storeNonCanonicalBlocks(final Set<SignedBeaconBlock> nonCanonicalBlocks) {
-    if (!storeNonCanonicalBlocks) {
-      return;
-    }
-    checkNotNull(nonCanonicalBlocks, "Non-canonical block set is null");
     int i = 0;
     final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
     while (it.hasNext()) {
