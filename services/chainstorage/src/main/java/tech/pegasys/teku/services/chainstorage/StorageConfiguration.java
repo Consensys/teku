@@ -62,7 +62,7 @@ public class StorageConfiguration {
     return dataStorageCreateDbVersion;
   }
 
-  public boolean isStoreNonCanonicalBlocks() {
+  public boolean isStoreNonCanonicalBlocksEnabled() {
     return storeNonCanonicalBlocks;
   }
 

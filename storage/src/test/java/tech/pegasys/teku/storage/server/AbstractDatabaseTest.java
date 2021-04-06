@@ -669,13 +669,80 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void nonCanonicalBlock_shouldGetByRoot() {
+  public void orphanedBlockStorageTest_withCanonicalBlocks() {
     createStorage(storageMode, StoreConfig.createDefault(), true);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(dataStructureUtil.randomUInt64());
-    database.addNonCanonicalBlock(block);
-    assertThat(database.getSignedBlock(block.getRoot())).contains(block);
+    final CreateForkChainResult forkChainResult = createForkChain(false);
+    assertBlocksAvailable(
+        forkChainResult
+            .getForkChain()
+            .streamBlocksAndStates(4, forkChainResult.getFirstHotBlockSlot().longValue())
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  public void orphanedBlockStorageTest_noCanonicalBlocks() {
+    createStorage(storageMode, StoreConfig.createDefault(), false);
+    final CreateForkChainResult forkChainResult = createForkChain(false);
+    assertBlocksUnavailable(
+        forkChainResult
+            .getForkChain()
+            .streamBlocksAndStates(4, forkChainResult.getFirstHotBlockSlot().longValue())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList()));
+  }
+
+  public static class CreateForkChainResult {
+    private ChainBuilder forkChain;
+    private UInt64 firstHotBlockSlot;
+
+    public CreateForkChainResult(final ChainBuilder forkChain, final UInt64 firstHotBlockSlot) {
+      this.forkChain = forkChain;
+      this.firstHotBlockSlot = firstHotBlockSlot;
+    }
+
+    public ChainBuilder getForkChain() {
+      return forkChain;
+    }
+
+    public UInt64 getFirstHotBlockSlot() {
+      return firstHotBlockSlot;
+    }
+  }
+
+  protected CreateForkChainResult createForkChain(final boolean restartStorage) {
+    // Setup chains
+    // Both chains share block up to slot 3
+    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    primaryChain.generateGenesis(genesisTime, true);
+    primaryChain.generateBlocksUpToSlot(3);
+    final ChainBuilder forkChain = primaryChain.fork();
+    // Primary chain's next block is at 7
+    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
+    // Fork chain's next block is at 6
+    forkChain.generateBlockAtSlot(6);
+    forkChain.generateBlockAtSlot(firstHotBlockSlot);
+
+    // Setup database
+
+    initGenesis();
+
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
+            .collect(Collectors.toSet());
+
+    // Finalize at block 7, making the fork blocks unavailable
+    add(allBlocksAndStates);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+
+    if (restartStorage) {
+      // Close database and rebuild from disk
+      restartStorage();
+    }
+    return new CreateForkChainResult(forkChain, firstHotBlockSlot);
   }
 
   public void testStartupFromNonGenesisState(final StateStorageMode storageMode) {

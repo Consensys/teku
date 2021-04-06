@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -657,18 +658,6 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void addNonCanonicalBlock(final SignedBeaconBlock block) {
-    if (!storeNonCanonicalBlocks) {
-      return;
-    }
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      LOG.debug("Non canonical block {}", block.getRoot().toHexString());
-      updater.addNonCanonicalBlock(block);
-      updater.commit();
-    }
-  }
-
-  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -770,12 +759,6 @@ public class RocksDbDatabase implements Database {
       return;
     }
 
-    if (storeNonCanonicalBlocks) {
-      deletedHotBlocks.stream()
-          .filter(root -> !finalizedChildToParentMap.keySet().contains(root))
-          .forEach(this::storeNonCanonicalBlock);
-    }
-
     switch (stateStorageMode) {
       case ARCHIVE:
         updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
@@ -787,12 +770,37 @@ public class RocksDbDatabase implements Database {
       default:
         throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
+
+    if (storeNonCanonicalBlocks) {
+      storeNonCanonicalBlocks(
+          deletedHotBlocks.stream()
+              .filter(root -> !finalizedChildToParentMap.containsKey(root))
+              .map(this::getHotBlock)
+              .filter(Optional::isPresent)
+              .map(Optional::get)
+              .collect(Collectors.toSet()));
+    }
   }
 
-  private void storeNonCanonicalBlock(final Bytes32 root) {
-    getHotBlock(root)
-        .ifPresentOrElse(
-            this::addNonCanonicalBlock, () -> LOG.debug("Non canonical block not found {}", root));
+  private void storeNonCanonicalBlocks(final Set<SignedBeaconBlock> nonCanonicalBlocks) {
+    if (!storeNonCanonicalBlocks) {
+      return;
+    }
+    checkNotNull(nonCanonicalBlocks, "Non-canonical block set is null");
+    int i = 0;
+    final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
+    while (it.hasNext()) {
+      final int start = i;
+      try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+        while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
+          final SignedBeaconBlock block = it.next();
+          LOG.debug("Non canonical block {}", block.getRoot().toHexString());
+          updater.addNonCanonicalBlock(block);
+          i++;
+        }
+        updater.commit();
+      }
+    }
   }
 
   private void updateFinalizedDataArchiveMode(
