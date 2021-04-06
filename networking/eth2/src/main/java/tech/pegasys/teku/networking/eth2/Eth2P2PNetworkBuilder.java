@@ -62,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.logic.ForkAndMilestone;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -206,7 +205,9 @@ public class Eth2P2PNetworkBuilder {
             gossipedProposerSlashingConsumer,
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher);
+            voluntaryExitGossipPublisher,
+            gossipedSignedContributionAndProofProcessor,
+            signedContributionAndProofGossipPublisher);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());

@@ -46,6 +46,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
+import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
@@ -156,7 +157,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
-  private volatile SignedContributionAndProofManager signedContributionAndProofManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
@@ -308,6 +308,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initAttestationManager();
     initPendingBlocks();
     initBlockManager();
+    initSyncCommitteePools();
     initP2PNetwork();
     initSyncService();
     initSlotProcessor();
@@ -531,8 +532,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
-  private void initSyncCommitteeManagers() {
-    signedContributionAndProofManager = new SignedContributionAndProofManager();
+  private void initSyncCommitteePools() {
   }
 
   public void initP2PNetwork() {
@@ -595,7 +595,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
             .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
-            .gossipedSignedContributionAndProofProcessor(new SignedContributionAndProofManager()::add)
+            .gossipedSignedContributionAndProofProcessor(signedContributionAndProofPool::add)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(
