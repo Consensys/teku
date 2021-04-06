@@ -55,7 +55,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
   private static class GenesisMetaData {
     @JsonProperty(value = "description", required = false)
     private String description;
-    
+
     @JsonProperty(value = "deposits_count", required = true)
     private int depositsCount;
 
