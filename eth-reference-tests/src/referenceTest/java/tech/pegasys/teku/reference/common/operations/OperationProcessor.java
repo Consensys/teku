@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.operations;
+package tech.pegasys.teku.reference.common.operations;
 
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -39,5 +40,8 @@ public interface OperationProcessor {
       throws BlockProcessingException;
 
   void processAttestation(MutableBeaconState state, final Attestation attestation)
+      throws BlockProcessingException;
+
+  void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
       throws BlockProcessingException;
 }
