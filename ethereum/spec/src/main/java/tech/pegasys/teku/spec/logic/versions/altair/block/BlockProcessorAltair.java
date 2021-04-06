@@ -175,9 +175,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
+  @Override
   public void processSyncCommittee(
-      final MutableBeaconStateAltair state, final SyncAggregate aggregate)
+      final MutableBeaconState baseState, final SyncAggregate aggregate)
       throws BlockProcessingException {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final List<Integer> committeeIndices =
         beaconStateAccessorsAltair.getSyncCommitteeIndices(

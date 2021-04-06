@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -420,6 +421,11 @@ public class Spec {
   public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     atState(state).getBlockProcessor().processAttestations(state, attestations);
+  }
+
+  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate)
+      throws BlockProcessingException {
+    atState(state).getBlockProcessor().processSyncCommittee(state, syncAggregate);
   }
 
   public void processAttestations(
