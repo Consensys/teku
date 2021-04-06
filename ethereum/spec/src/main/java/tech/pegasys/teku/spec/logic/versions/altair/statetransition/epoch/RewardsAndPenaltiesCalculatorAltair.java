@@ -82,7 +82,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    * @param deltas The deltas accumulator (holding deltas for all validators) to be updated
    * @param flagIndexAndWeight The flagIndexAndWeight to process
    */
-  protected void processFlagIndexDeltas(
+  public void processFlagIndexDeltas(
       final RewardAndPenaltyDeltas deltas, final FlagIndexAndWeight flagIndexAndWeight) {
 
     final int flagIndex = flagIndexAndWeight.getIndex();
@@ -129,7 +129,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    *     beacon-chain.md</a>
    * @param deltas The deltas accumulator (holding deltas for all validators) to be updated
    */
-  protected void processInactivityPenaltyDeltas(final RewardAndPenaltyDeltas deltas) {
+  public void processInactivityPenaltyDeltas(final RewardAndPenaltyDeltas deltas) {
     if (isInactivityLeak()) {
       final List<ValidatorStatus> statusList = validatorStatuses.getStatuses();
       for (int i = 0; i < statusList.size(); i++) {

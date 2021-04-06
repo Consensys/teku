@@ -29,13 +29,13 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.RewardsAndPenaltiesCalculatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.RewardsAndPenaltiesCalculatorPhase0.Step;
 
-public class RewardsTestExecutor implements TestExecutor {
+public class RewardsTestExecutorPhase0 implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
       ImmutableMap.of(
-          "rewards/basic", new RewardsTestExecutor(),
-          "rewards/leak", new RewardsTestExecutor(),
-          "rewards/random", new RewardsTestExecutor());
+          "rewards/basic", new RewardsTestExecutorPhase0(),
+          "rewards/leak", new RewardsTestExecutorPhase0(),
+          "rewards/random", new RewardsTestExecutorPhase0());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
