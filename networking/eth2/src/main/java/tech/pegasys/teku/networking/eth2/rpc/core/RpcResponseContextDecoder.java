@@ -16,43 +16,54 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.FixedSizeByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
-public abstract class RpcResponseContextDecoder extends AbstractByteBufDecoder<Bytes, RpcException>
-    implements RpcByteBufDecoder<Bytes> {
-  public static RpcResponseContextDecoder noop() {
-    return fixedSize(0);
+public interface RpcResponseContextDecoder<T> extends RpcByteBufDecoder<T> {
+  RpcResponseContextDecoder<Bytes> NOOP = new EmptyContextDecoder();
+
+  static RpcResponseContextDecoder<Bytes> noop() {
+    return NOOP;
   }
 
-  public static RpcResponseContextDecoder bytes4() {
-    return fixedSize(4);
+  static RpcResponseContextDecoder<Bytes4> forkDigest() {
+    return new ForkDigestContextDecoder();
   }
 
-  private static RpcResponseContextDecoder fixedSize(final int size) {
-    return new FixedSizeRpcResponseContextDecoder(size);
-  }
+  class ForkDigestContextDecoder extends FixedSizeByteBufDecoder<Bytes4, RpcException>
+      implements RpcResponseContextDecoder<Bytes4> {
 
-  private static class FixedSizeRpcResponseContextDecoder extends RpcResponseContextDecoder {
-    private final int fixedSize;
+    private ForkDigestContextDecoder() {
+      super(4);
+    }
 
-    public FixedSizeRpcResponseContextDecoder(final int size) {
-      this.fixedSize = size;
+    @Override
+    protected Bytes4 decodeBytes(final Bytes bytes) {
+      return new Bytes4(bytes);
     }
 
     @Override
     protected void throwUnprocessedDataException(final int dataLeft) throws RpcException {
       // Do nothing, exceptional case is handled upstream
     }
+  }
+
+  class EmptyContextDecoder implements RpcResponseContextDecoder<Bytes> {
 
     @Override
-    protected Optional<Bytes> decodeOneImpl(final ByteBuf in) throws RpcException {
-      if (in.readableBytes() < fixedSize) {
-        return Optional.empty();
-      }
-      final byte[] bytes = new byte[fixedSize];
-      in.readBytes(bytes);
-      return Optional.of(Bytes.of(bytes));
+    public Optional<Bytes> decodeOneMessage(final ByteBuf in) throws RpcException {
+      return Optional.of(Bytes.EMPTY);
+    }
+
+    @Override
+    public void complete() throws RpcException {
+      // No-op
+    }
+
+    @Override
+    public void close() {
+      // No-op
     }
   }
 }

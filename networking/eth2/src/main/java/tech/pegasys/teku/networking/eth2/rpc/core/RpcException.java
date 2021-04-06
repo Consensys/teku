@@ -50,9 +50,8 @@ public class RpcException extends Exception {
   }
 
   public static class UnrecognizedContextBytesException extends RpcException {
-    public UnrecognizedContextBytesException(final Bytes contextBytes) {
-      super(
-          INVALID_REQUEST_CODE, "Failed to recognize context bytes: " + contextBytes.toHexString());
+    public UnrecognizedContextBytesException(final String context) {
+      super(INVALID_REQUEST_CODE, "Failed to recognize context bytes: " + context);
     }
   }
 

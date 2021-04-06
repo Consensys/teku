@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcErrorMessa
 public class EncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
   private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ_SNAPPY);
-  private final RpcResponseDecoder<RpcErrorMessage> decoder =
+  private final RpcResponseDecoder<RpcErrorMessage, ?> decoder =
       RpcResponseDecoder.createContextFreeDecoder(
           RpcEncoding.SSZ_SNAPPY, RpcErrorMessage.SSZ_SCHEMA);
 

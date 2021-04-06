@@ -42,7 +42,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   private static final Bytes SUCCESS_CODE = Bytes.of(RpcResponseStatus.SUCCESS_RESPONSE_CODE);
   private static final Bytes ERROR_CODE = Bytes.of(1);
 
-  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage> decoder =
+  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, ?> decoder =
       METHOD.createResponseDecoder();
 
   @Test
@@ -148,8 +148,8 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
         Bytes4.fromHexStringLenient(usePhase0State ? "1" : "2").getWrappedBytes();
     final Bytes compressedState = COMPRESSOR.compress(serializedState);
 
-    final RpcResponseDecoder<BeaconState> decoder =
-        createContextAwareDecoder(spec.getGenesisSpecConfig());
+    final RpcResponseDecoder<BeaconState, ?> decoder =
+        createForkAwareDecoder(spec.getGenesisSpecConfig());
 
     for (Iterable<ByteBuf> testByteBufSlice :
         testByteBufSlices(SUCCESS_CODE, contextBytes, lengthPrefix, compressedState)) {
@@ -184,8 +184,8 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
             ? TestSpecFactory.createMinimalPhase0()
             : TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final RpcResponseDecoder<BeaconState> decoder =
-        createContextAwareDecoder(spec.getGenesisSpecConfig());
+    final RpcResponseDecoder<BeaconState, ?> decoder =
+        createForkAwareDecoder(spec.getGenesisSpecConfig());
 
     final BeaconState state =
         usePhase0State
@@ -228,7 +228,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     }
   }
 
-  private void completeIgnoringUnprocessedData(RpcResponseDecoder<?> decoder) {
+  private void completeIgnoringUnprocessedData(RpcResponseDecoder<?, ?> decoder) {
     try {
       decoder.complete();
     } catch (Exception e) {
@@ -237,23 +237,23 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     }
   }
 
-  private RpcResponseDecoder<BeaconState> createContextAwareDecoder(final SpecConfig config) {
+  private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder(final SpecConfig config) {
     final SszSchema<BeaconState> phase0Schema =
         SszSchema.as(BeaconState.class, BeaconStateSchemaPhase0.create(config));
     final SszSchema<BeaconState> altairSchema =
         SszSchema.as(BeaconState.class, BeaconStateSchemaAltair.create(config));
-    ResponseSchemaSupplier<BeaconState> schemaSupplier =
+    ResponseSchemaSupplier<Bytes4, BeaconState> schemaSupplier =
         (contextBytes) -> {
           Optional<SszSchema<BeaconState>> schema = Optional.empty();
-          if (contextBytes.equals(Bytes4.fromHexStringLenient("0x01").getWrappedBytes())) {
+          if (contextBytes.equals(Bytes4.fromHexStringLenient("0x01"))) {
             schema = Optional.of(phase0Schema);
-          } else if (contextBytes.equals(Bytes4.fromHexStringLenient("0x02").getWrappedBytes())) {
+          } else if (contextBytes.equals(Bytes4.fromHexStringLenient("0x02"))) {
             schema = Optional.of(altairSchema);
           }
           return schema;
         };
 
-    return RpcResponseDecoder.createContextAwareDecoder(
-        ENCODING, RpcResponseContextDecoder::bytes4, schemaSupplier);
+    return RpcResponseDecoder.createForkAwareDecoder(
+        ENCODING, RpcResponseContextDecoder::forkDigest, schemaSupplier);
   }
 }
