@@ -253,7 +253,6 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
           return schema;
         };
 
-    return RpcResponseDecoder.createForkAwareDecoder(
-        ENCODING, RpcResponseContextDecoder::forkDigest, schemaSupplier);
+    return RpcResponseDecoder.createForkAwareDecoder(ENCODING, schemaSupplier);
   }
 }

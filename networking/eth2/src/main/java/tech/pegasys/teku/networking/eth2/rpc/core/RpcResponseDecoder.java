@@ -65,10 +65,9 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
   }
 
   public static <T extends SszData> RpcResponseDecoder<T, Bytes4> createForkAwareDecoder(
-      final RpcEncoding encoding,
-      final Supplier<RpcResponseContextDecoder<Bytes4>> contextDecoderSupplier,
-      final ResponseSchemaSupplier<Bytes4, T> responseSchemaSupplier) {
-    return new RpcResponseDecoder<>(encoding, contextDecoderSupplier, responseSchemaSupplier);
+      final RpcEncoding encoding, final ResponseSchemaSupplier<Bytes4, T> responseSchemaSupplier) {
+    return new RpcResponseDecoder<T, Bytes4>(
+        encoding, RpcResponseContextDecoder::forkDigest, responseSchemaSupplier);
   }
 
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
