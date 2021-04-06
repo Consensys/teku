@@ -74,7 +74,7 @@ public class RewardsTestExecutorAltair implements TestExecutor {
     assertDeltas(
         testDefinition,
         "inactivity_penalty_deltas.ssz_snappy",
-        apply(calculator, validatorStatuses, calculator::processInactivityPenaltyDeltas));
+        apply(validatorStatuses, calculator::processInactivityPenaltyDeltas));
     assertDeltas(
         testDefinition,
         "source_deltas.ssz_snappy",
@@ -92,15 +92,11 @@ public class RewardsTestExecutorAltair implements TestExecutor {
       final ValidatorStatuses validatorStatuses,
       final FlagIndexAndWeight flagIndexAndWeight) {
     return apply(
-        calculator,
-        validatorStatuses,
-        deltas -> calculator.processFlagIndexDeltas(deltas, flagIndexAndWeight));
+        validatorStatuses, deltas -> calculator.processFlagIndexDeltas(deltas, flagIndexAndWeight));
   }
 
   private Supplier<RewardAndPenaltyDeltas> apply(
-      final RewardsAndPenaltiesCalculatorAltair calculator,
-      final ValidatorStatuses validatorStatuses,
-      final Consumer<RewardAndPenaltyDeltas> step) {
+      final ValidatorStatuses validatorStatuses, final Consumer<RewardAndPenaltyDeltas> step) {
     return () -> {
       final RewardAndPenaltyDeltas deltas =
           new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
