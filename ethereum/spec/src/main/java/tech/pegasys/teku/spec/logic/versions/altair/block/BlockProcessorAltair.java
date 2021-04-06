@@ -117,8 +117,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final UInt64 dataSlot = data.getSlot();
     if (isMatchingHead
         && isMatchingTarget
-        && stateSlot.isLessThanOrEqualTo(
-            dataSlot.plus(specConfig.getMinAttestationInclusionDelay()))) {
+        && stateSlot.equals(dataSlot.plus(specConfig.getMinAttestationInclusionDelay()))) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     if (isMatchingSource
@@ -137,7 +136,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         indexedAttestationProvider.getIndexedAttestation(attestation).getAttesting_indices();
     for (SszUInt64 attestingIndex : attestingIndices) {
       final int index = attestingIndex.get().intValue();
-      final byte participationFlags = epochParticipation.get(index).get();
+      byte participationFlags = epochParticipation.get(index).get();
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
       boolean shouldUpdate = false;
       for (FlagIndexAndWeight flagIndicesAndWeight : miscHelpersAltair.getFlagIndicesAndWeights()) {
@@ -147,20 +146,22 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         if (participationFlagIndices.contains(flagIndex)
             && !miscHelpersAltair.hasFlag(participationFlags, flagIndex)) {
           shouldUpdate = true;
-          miscHelpersAltair.addFlag(participationFlags, flagIndex);
+          participationFlags = miscHelpersAltair.addFlag(participationFlags, flagIndex);
           proposerRewardNumerator = proposerRewardNumerator.plus(baseReward.times(weight));
         }
       }
 
       if (shouldUpdate) {
         epochParticipation.set(index, SszByte.of(participationFlags));
-
-        final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-        final UInt64 proposerReward =
-            proposerRewardNumerator.dividedBy(
-                specConfig.getProposerRewardQuotient().times(WEIGHT_DENOMINATOR));
-        beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
       }
+    }
+
+    if (!proposerRewardNumerator.isZero()) {
+      final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
+      final UInt64 proposerReward =
+          proposerRewardNumerator.dividedBy(
+              specConfig.getProposerRewardQuotient().times(WEIGHT_DENOMINATOR));
+      beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
     }
   }
 
@@ -174,9 +175,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     state.getInactivityScores().append(SszUInt64.ZERO);
   }
 
+  @Override
   public void processSyncCommittee(
-      final MutableBeaconStateAltair state, final SyncAggregate aggregate)
+      final MutableBeaconState baseState, final SyncAggregate aggregate)
       throws BlockProcessingException {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final List<Integer> committeeIndices =
         beaconStateAccessorsAltair.getSyncCommitteeIndices(

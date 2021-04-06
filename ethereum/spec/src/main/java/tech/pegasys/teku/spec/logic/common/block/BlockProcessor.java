@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -111,4 +112,7 @@ public interface BlockProcessor {
       BeaconState state,
       SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier);
+
+  void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
+      throws BlockProcessingException;
 }
