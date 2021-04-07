@@ -142,9 +142,13 @@ public class BeaconStateMutators {
 
     UInt64 whistleblower_reward =
         validator.getEffective_balance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-    UInt64 proposer_reward = whistleblower_reward.dividedBy(specConfig.getProposerRewardQuotient());
+    UInt64 proposer_reward = calculateProposerReward(whistleblower_reward);
     increaseBalance(state, proposer_index, proposer_reward);
     increaseBalance(state, whistleblowerIndex, whistleblower_reward.minus(proposer_reward));
+  }
+
+  protected UInt64 calculateProposerReward(final UInt64 whistleblower_reward) {
+    return whistleblower_reward.dividedBy(specConfig.getProposerRewardQuotient());
   }
 
   protected int getMinSlashingPenaltyQuotient() {
