@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
-public class AbstractSpecLogic implements SpecLogic {
+public abstract class AbstractSpecLogic implements SpecLogic {
   // Helpers
   protected final Predicates predicates;
   protected final MiscHelpers miscHelpers;
@@ -47,7 +47,7 @@ public class AbstractSpecLogic implements SpecLogic {
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
 
-  public AbstractSpecLogic(
+  protected AbstractSpecLogic(
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,

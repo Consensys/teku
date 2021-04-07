@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -106,6 +107,10 @@ public class Spec {
 
   public BeaconStateUtil getBeaconStateUtil(final UInt64 slot) {
     return atSlot(slot).getBeaconStateUtil();
+  }
+
+  public Optional<SyncCommitteeUtil> getSyncCommitteeUtil(final UInt64 slot) {
+    return atSlot(slot).getSyncCommitteeUtil();
   }
 
   public SpecVersion getGenesisSpec() {
