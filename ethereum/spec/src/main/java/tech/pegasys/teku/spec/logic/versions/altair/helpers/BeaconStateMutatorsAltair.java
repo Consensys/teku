@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
+
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -27,6 +31,11 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
       final BeaconStateAccessors beaconStateAccessors) {
     super(specConfig, miscHelpers, beaconStateAccessors);
     this.specConfigAltair = specConfig;
+  }
+
+  @Override
+  protected UInt64 calculateProposerReward(final UInt64 whistleblower_reward) {
+    return whistleblower_reward.times(PROPOSER_WEIGHT).dividedBy(WEIGHT_DENOMINATOR);
   }
 
   @Override
