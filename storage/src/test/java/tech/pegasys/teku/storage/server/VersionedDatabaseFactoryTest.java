@@ -41,7 +41,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, spec);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -56,7 +56,7 @@ public class VersionedDatabaseFactoryTest {
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, spec);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -73,6 +73,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V4,
             1L,
             eth1Address,
+            false,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -94,6 +95,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V5,
             1L,
             eth1Address,
+            false,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -118,6 +120,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -143,6 +146,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
 
     try (final Database db = dbFactory.createDatabase()) {
@@ -166,7 +170,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, spec);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -178,7 +182,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, spec);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address, false, spec);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -195,6 +199,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V4,
             1L,
             eth1Address,
+            false,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
@@ -210,6 +215,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V5,
             1L,
             eth1Address,
+            false,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
   }
@@ -225,6 +231,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
     try (Database db = dbFactorySingle.createDatabase()) {}
 
@@ -237,6 +244,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
 
     assertThatThrownBy(
@@ -257,6 +265,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
     try (Database db = dbFactorySeparate.createDatabase()) {}
 
@@ -269,6 +278,7 @@ public class VersionedDatabaseFactoryTest {
             DatabaseVersion.V6,
             1L,
             eth1Address,
+            false,
             spec);
 
     assertThatThrownBy(

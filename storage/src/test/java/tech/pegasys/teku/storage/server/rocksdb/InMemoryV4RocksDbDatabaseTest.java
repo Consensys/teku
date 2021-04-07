@@ -21,15 +21,18 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryV4RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
-
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     return InMemoryStorageSystemBuilder.create()
         .version(DatabaseVersion.V4)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .build();
   }
 }

@@ -35,7 +35,7 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
     final int storageFrequency = 1;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig);
+    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -64,7 +64,7 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
     final int storageFrequency = 0;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig);
+    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -86,7 +86,7 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
     final int storageFrequency = 3;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig);
+    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
@@ -118,7 +118,7 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
     final int storageFrequency = 1;
     StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeConfig);
+    createStorage(StateStorageMode.ARCHIVE, storeConfig, false);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);

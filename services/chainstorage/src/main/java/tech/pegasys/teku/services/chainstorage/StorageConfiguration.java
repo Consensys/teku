@@ -25,17 +25,20 @@ public class StorageConfiguration {
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
   private final Spec spec;
+  private final boolean storeNonCanonicalBlocks;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final DatabaseVersion dataStorageCreateDbVersion,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.spec = spec;
   }
 
@@ -59,6 +62,10 @@ public class StorageConfiguration {
     return dataStorageCreateDbVersion;
   }
 
+  public boolean isStoreNonCanonicalBlocksEnabled() {
+    return storeNonCanonicalBlocks;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -70,6 +77,7 @@ public class StorageConfiguration {
     private long dataStorageFrequency;
     private DatabaseVersion dataStorageCreateDbVersion;
     private Spec spec;
+    private boolean storeNonCanonicalBlocks;
 
     private Builder() {}
 
@@ -98,12 +106,18 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder storeNonCanonicalBlocks(final boolean storeNonCanonicalBlocks) {
+      this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
+      return this;
+    }
+
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
           dataStorageMode,
           dataStorageFrequency,
           dataStorageCreateDbVersion,
+          storeNonCanonicalBlocks,
           spec);
     }
   }
