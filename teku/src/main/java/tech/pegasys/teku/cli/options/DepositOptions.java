@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -27,6 +29,15 @@ public class DepositOptions {
   private String eth1Endpoint = null;
 
   @Option(
+      names = {"--eth1-endpoints"},
+      paramLabel = "<NETWORK>",
+      description = "URLs for Eth1 nodes.",
+      split = ",",
+      arity = "1..*",
+      hidden = true)
+  private List<String> eth1Endpoints = null;
+
+  @Option(
       names = {"--eth1-deposit-contract-max-request-size"},
       paramLabel = "<INTEGER>",
       description =
@@ -39,9 +50,15 @@ public class DepositOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
+    ArrayList<String> mergedEth1Endpoints = new ArrayList<>();
+    if (eth1Endpoint != null) mergedEth1Endpoints.add(eth1Endpoint);
+    if (eth1Endpoints != null) mergedEth1Endpoints.addAll(eth1Endpoints);
+
     builder.powchain(
         b ->
-            b.eth1Endpoint(Optional.ofNullable(eth1Endpoint))
+            b.eth1Endpoints(
+                    Optional.ofNullable(
+                        mergedEth1Endpoints.isEmpty() ? null : List.copyOf(mergedEth1Endpoints)))
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
   }
 }

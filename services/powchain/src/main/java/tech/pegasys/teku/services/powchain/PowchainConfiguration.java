@@ -15,22 +15,24 @@ package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PowchainConfiguration {
-  private final String eth1Endpoint;
+  private final List<String> eth1Endpoints;
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
   private final int eth1LogsMaxBlockRange;
 
   private PowchainConfiguration(
-      final String eth1Endpoint,
+      final List<String> eth1Endpoints,
       final Eth1Address depositContract,
       final Optional<UInt64> depositContractDeployBlock,
       final int eth1LogsMaxBlockRange) {
-    this.eth1Endpoint = eth1Endpoint;
+    this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
@@ -41,11 +43,11 @@ public class PowchainConfiguration {
   }
 
   public boolean isEnabled() {
-    return eth1Endpoint != null;
+    return eth1Endpoints != null && !eth1Endpoints.isEmpty();
   }
 
-  public String getEth1Endpoint() {
-    return eth1Endpoint;
+  public List<String> getEth1Endpoints() {
+    return eth1Endpoints;
   }
 
   public Eth1Address getDepositContract() {
@@ -61,7 +63,7 @@ public class PowchainConfiguration {
   }
 
   public static class Builder {
-    private Optional<String> eth1Endpoint = Optional.empty();
+    private Optional<List<String>> eth1Endpoints = Optional.empty();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
     private int eth1LogsMaxBlockRange;
@@ -71,28 +73,36 @@ public class PowchainConfiguration {
     public PowchainConfiguration build() {
       validate();
       return new PowchainConfiguration(
-          eth1Endpoint.orElse(null),
+          eth1Endpoints.orElse(null),
           depositContract,
           depositContractDeployBlock,
           eth1LogsMaxBlockRange);
     }
 
     private void validate() {
-      if (eth1Endpoint.isPresent()) {
+      if (eth1Endpoints.isPresent()) {
         checkNotNull(
             depositContract,
             "Eth1 deposit contract address is required if an eth1 endpoint is specified.");
       }
     }
 
-    public Builder eth1Endpoint(final String eth1Endpoint) {
-      checkNotNull(eth1Endpoint);
-      return eth1Endpoint(Optional.of(eth1Endpoint));
+    public Builder eth1Endpoints(final List<String> eth1Endpoints) {
+      checkNotNull(eth1Endpoints);
+      return eth1Endpoints(Optional.of(eth1Endpoints));
     }
 
-    public Builder eth1Endpoint(final Optional<String> eth1Endpoint) {
-      checkNotNull(eth1Endpoint);
-      this.eth1Endpoint = eth1Endpoint.filter(s -> !s.isBlank());
+    public Builder eth1Endpoints(final Optional<List<String>> eth1Endpoints) {
+      checkNotNull(eth1Endpoints);
+      if (eth1Endpoints.isEmpty()) {
+        this.eth1Endpoints = Optional.empty();
+      } else {
+        this.eth1Endpoints =
+            Optional.of(
+                eth1Endpoints.get().stream()
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toList()));
+      }
       return this;
     }
 

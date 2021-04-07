@@ -1,0 +1,217 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.pow;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import org.junit.jupiter.api.Test;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+@SuppressWarnings("FutureReturnValueIgnored")
+public class FallbackAwareEth1ProviderSelectorTest {
+
+  @Test
+  void shouldFallbackToOtherNodes() throws ExecutionException, InterruptedException {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final Eth1Provider node1 = mock(Eth1Provider.class);
+    final Eth1Provider node2 = mock(Eth1Provider.class);
+    final Eth1Provider node3 = mock(Eth1Provider.class);
+    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
+    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
+    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
+        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+    // node 1 ready
+    when(node1.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
+    fallbackAwareEth1Provider.getLatestEth1Block();
+
+    // node 1 failing and node 2 ready
+    when(node1.getLatestEth1Block()).thenReturn(failingProviderEthBlock());
+    when(node2.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
+    final SafeFuture<EthBlock.Block> latestEth1Block =
+        fallbackAwareEth1Provider.getLatestEth1Block();
+    assertThat(latestEth1Block.get()).isNotNull();
+
+    // node 1 failing and node 2 are failing
+    when(node1.getLatestEth1Block()).thenReturn(failingProviderEthBlock());
+    when(node2.getLatestEth1Block()).thenReturn(failingProviderEthBlock());
+    assertThat(fallbackAwareEth1Provider.getLatestEth1Block()).isCompletedExceptionally();
+
+    verify(node1, times(3)).getLatestEth1Block();
+    verify(node2, times(2)).getLatestEth1Block();
+  }
+
+  @Test
+  void shouldFallbackWhileHonoringGuarantees() throws ExecutionException, InterruptedException {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final Eth1Provider node1 = mock(Eth1Provider.class);
+    final Eth1Provider node2 = mock(Eth1Provider.class);
+    final Eth1Provider node3 = mock(Eth1Provider.class);
+    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
+    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
+    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
+        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+
+    /** * blockNumber ** */
+
+    // node 1,2 and 3 are all failing
+    when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<EthBlock.Block> blockByNumber =
+        fallbackAwareEth1Provider.getGuaranteedEth1Block((UInt64) any());
+
+    // we expect a delayed action after all nodes has been contacted
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(node1, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node2, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node3, atLeastOnce()).getEth1Block((UInt64) any());
+
+    // now we set node2 to be responsive and execute queued actions
+    when(node2.getEth1Block((UInt64) any())).thenReturn(readyProviderOptionalEthBlock());
+    asyncRunner.executeQueuedActions();
+
+    // we should have now a block
+    assertThat(blockByNumber.get()).isNotNull();
+
+    /** * blockHash ** */
+
+    // node 1,2 and 3 are all failing
+    when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<EthBlock.Block> blockByHash =
+        fallbackAwareEth1Provider.getGuaranteedEth1Block((String) any());
+
+    // we expect a delayed action after all nodes has been contacted
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(node1, atLeastOnce()).getEth1Block((String) any());
+    verify(node2, atLeastOnce()).getEth1Block((String) any());
+    verify(node3, atLeastOnce()).getEth1Block((String) any());
+
+    // now we set node2 to be responsive and execute queued actions
+    when(node2.getEth1Block((String) any())).thenReturn(readyProviderOptionalEthBlock());
+    asyncRunner.executeQueuedActions();
+
+    // we should have now a block
+    assertThat(blockByHash.get()).isNotNull();
+  }
+
+  @Test
+  void shouldFallbackWhileHonoringRetries() throws ExecutionException, InterruptedException {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final Eth1Provider node1 = mock(Eth1Provider.class);
+    final Eth1Provider node2 = mock(Eth1Provider.class);
+    final Eth1Provider node3 = mock(Eth1Provider.class);
+    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
+    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
+    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
+        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+
+    /** * blockNumber ** */
+
+    // node 1,2 and 3 are all failing
+    when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<Optional<EthBlock.Block>> blockByNumber =
+        fallbackAwareEth1Provider.getEth1BlockWithRetry((UInt64) any(), Duration.ofSeconds(5), 2);
+
+    // we expect a delayed action after all nodes has been contacted
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(node1, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node2, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node3, atLeastOnce()).getEth1Block((UInt64) any());
+
+    // now we set node2 to be responsive and execute queued actions
+    when(node2.getEth1Block((UInt64) any())).thenReturn(readyProviderOptionalEthBlock());
+    asyncRunner.executeQueuedActions();
+
+    // we should have now a block
+    assertThat(blockByNumber.get()).isNotNull();
+
+    // retries exhaustion
+    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<Optional<EthBlock.Block>> blockByNumberFail =
+        fallbackAwareEth1Provider.getEth1BlockWithRetry((UInt64) any(), Duration.ofSeconds(5), 1);
+    asyncRunner.executeQueuedActions();
+    assertThat(blockByNumberFail).isCompletedExceptionally();
+
+    /** * blockHash ** */
+
+    // node 1,2 and 3 are all failing
+    when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<Optional<EthBlock.Block>> blockByHash =
+        fallbackAwareEth1Provider.getEth1BlockWithRetry((String) any(), Duration.ofSeconds(5), 2);
+
+    // we expect a delayed action after all nodes has been contacted
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(node1, atLeastOnce()).getEth1Block((String) any());
+    verify(node2, atLeastOnce()).getEth1Block((String) any());
+    verify(node3, atLeastOnce()).getEth1Block((String) any());
+
+    // now we set node2 to be responsive and execute queued actions
+    when(node2.getEth1Block((String) any())).thenReturn(readyProviderOptionalEthBlock());
+    asyncRunner.executeQueuedActions();
+
+    // we should have now a block
+    assertThat(blockByHash.get()).isNotNull();
+
+    // retries exhaustion
+    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    final SafeFuture<Optional<EthBlock.Block>> blockByHashFail =
+        fallbackAwareEth1Provider.getEth1BlockWithRetry((String) any(), Duration.ofSeconds(5), 1);
+    asyncRunner.executeQueuedActions();
+    assertThat(blockByHashFail).isCompletedExceptionally();
+  }
+
+  private static SafeFuture<EthBlock.Block> readyProviderEthBlock() {
+    final SafeFuture<EthBlock.Block> blockSafeFuture = new SafeFuture<>();
+    blockSafeFuture.complete(mock(EthBlock.Block.class));
+    return blockSafeFuture;
+  }
+
+  private static SafeFuture<EthBlock.Block> failingProviderEthBlock() {
+    final SafeFuture<EthBlock.Block> blockSafeFuture = new SafeFuture<>();
+    blockSafeFuture.completeExceptionally(new RuntimeException("cannot get block"));
+    return blockSafeFuture;
+  }
+
+  private static SafeFuture<Optional<EthBlock.Block>> readyProviderOptionalEthBlock() {
+    final SafeFuture<Optional<EthBlock.Block>> blockSafeFuture = new SafeFuture<>();
+    blockSafeFuture.complete(Optional.of(mock(EthBlock.Block.class)));
+    return blockSafeFuture;
+  }
+
+  private static SafeFuture<Optional<EthBlock.Block>> failingProviderOptionalEthBlock() {
+    final SafeFuture<Optional<EthBlock.Block>> blockSafeFuture = new SafeFuture<>();
+    blockSafeFuture.completeExceptionally(new RuntimeException("cannot get block"));
+    return blockSafeFuture;
+  }
+}

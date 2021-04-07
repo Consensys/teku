@@ -363,7 +363,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoint(Optional.empty())
+              b.eth1Endpoints(Optional.empty())
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
@@ -406,7 +406,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
         .powchain(
             b ->
-                b.eth1Endpoint("http://localhost:8545")
+                b.eth1Endpoints(List.of("http://localhost:8545"))
                     .depositContract(address)
                     .eth1LogsMaxBlockRange(10_000))
         .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
