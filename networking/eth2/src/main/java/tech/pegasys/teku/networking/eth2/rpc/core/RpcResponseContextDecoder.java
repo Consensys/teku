@@ -24,6 +24,8 @@ public interface RpcResponseContextDecoder<T> extends RpcByteBufDecoder<T> {
   RpcResponseContextDecoder<Bytes> NOOP = new EmptyContextDecoder();
 
   static RpcResponseContextDecoder<Bytes> noop() {
+    // We can return a static instance here because EmptyContextDecoder holds no state, and is
+    // therefore reusable
     return NOOP;
   }
 
