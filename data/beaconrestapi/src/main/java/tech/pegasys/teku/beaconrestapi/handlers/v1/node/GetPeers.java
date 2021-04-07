@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -52,7 +52,7 @@ public class GetPeers implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get node peers",
-      tags = {TAG_V1_NODE},
+      tags = {TAG_NODE},
       description = "Retrieves data about the node's network peers.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = PeersResponse.class)),
