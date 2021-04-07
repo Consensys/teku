@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
@@ -42,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -147,13 +147,15 @@ public class SignedContributionAndProofValidator {
                 return REJECT;
               }
 
+              final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+
               // [REJECT] The contribution_and_proof.selection_proof is a valid signature of the
               // contribution.slot by the validator with index
               // contribution_and_proof.aggregator_index.
               final Bytes signingRoot =
                   syncCommitteeUtil.getSigningRootForSyncCommitteeSlotSignature(
                       state, contribution.getSlot(), contribution.getSubcommitteeIndex());
-              if (!BLS.verify(
+              if (!signatureVerifier.verify(
                   aggregatorPublicKey.get(),
                   signingRoot,
                   contributionAndProof.getSelectionProof())) {
@@ -163,7 +165,7 @@ public class SignedContributionAndProofValidator {
 
               // [REJECT] The aggregator signature, signed_contribution_and_proof.signature, is
               // valid.
-              if (!BLS.verify(
+              if (!signatureVerifier.verify(
                   aggregatorPublicKey.get(),
                   syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
                   proof.getSignature())) {
@@ -182,11 +184,16 @@ public class SignedContributionAndProofValidator {
                           index -> currentSyncCommittee.getPubkeys().get(index).getBLSPublicKey())
                       .collect(Collectors.toList());
 
-              if (!BLS.fastAggregateVerify(
+              if (!signatureVerifier.verify(
                   contributorPublicKeys,
                   syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(state, contribution),
                   contribution.getSignature())) {
-                LOG.trace("Reejcting proof because aggregate signature is invalid");
+                LOG.trace("Rejecting proof because aggregate signature is invalid");
+                return REJECT;
+              }
+
+              if (!signatureVerifier.batchVerify()) {
+                LOG.trace("Rejecting proof because batch signature check failed");
                 return REJECT;
               }
 
