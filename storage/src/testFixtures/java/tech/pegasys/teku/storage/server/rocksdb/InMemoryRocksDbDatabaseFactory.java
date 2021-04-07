@@ -28,9 +28,16 @@ public class InMemoryRocksDbDatabaseFactory {
       MockRocksDbInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return RocksDbDatabase.createV4(
-        new StubMetricsSystem(), hotDb, coldDb, storageMode, stateStorageFrequency, spec);
+        new StubMetricsSystem(),
+        hotDb,
+        coldDb,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   public static Database createV6(
@@ -38,6 +45,7 @@ public class InMemoryRocksDbDatabaseFactory {
       MockRocksDbInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return RocksDbDatabase.createV6(
         new StubMetricsSystem(),
@@ -47,6 +55,7 @@ public class InMemoryRocksDbDatabaseFactory {
         V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 }

@@ -663,6 +663,8 @@ public class SpecConfigBuilder {
 
     // Signature domains
     private Bytes4 domainSyncCommittee;
+    private Bytes4 domainSyncCommitteeSelectionProof;
+    private Bytes4 domainContributionAndProof;
 
     // Fork
     private Bytes4 altairForkVersion;
@@ -685,6 +687,8 @@ public class SpecConfigBuilder {
           inactivityScoreBias,
           epochsPerSyncCommitteePeriod,
           domainSyncCommittee,
+          domainSyncCommitteeSelectionProof,
+          domainContributionAndProof,
           altairForkVersion,
           minSyncCommitteeParticipants,
           maxValidLightClientUpdates,
@@ -701,6 +705,8 @@ public class SpecConfigBuilder {
       validateConstant("inactivityScoreBias", inactivityScoreBias);
       validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
       validateConstant("domainSyncCommittee", domainSyncCommittee);
+      validateConstant("domainSyncCommitteeSelectionProof", domainSyncCommitteeSelectionProof);
+      validateConstant("domainContributionAndProof", domainContributionAndProof);
       validateConstant("altairForkVersion", altairForkVersion);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
       validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
@@ -749,6 +755,19 @@ public class SpecConfigBuilder {
     public AltairBuilder domainSyncCommittee(final Bytes4 domainSyncCommittee) {
       checkNotNull(domainSyncCommittee);
       this.domainSyncCommittee = domainSyncCommittee;
+      return this;
+    }
+
+    public AltairBuilder domainSyncCommitteeSelectionProof(
+        final Bytes4 domainSyncCommitteeSelectionProof) {
+      checkNotNull(domainSyncCommitteeSelectionProof);
+      this.domainSyncCommitteeSelectionProof = domainSyncCommitteeSelectionProof;
+      return this;
+    }
+
+    public AltairBuilder domainContributionAndProof(final Bytes4 domainContributionAndProof) {
+      checkNotNull(domainContributionAndProof);
+      this.domainContributionAndProof = domainContributionAndProof;
       return this;
     }
 

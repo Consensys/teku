@@ -98,6 +98,11 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   }
 
   @Override
+  public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
+    return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
         .flatMap(this::getFinalizedBlockAtSlot);
@@ -131,6 +136,11 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnSlotsByFinalizedRoot(), block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
+    public void addNonCanonicalBlock(final SignedBeaconBlock block) {
+      transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
 
     @Override
