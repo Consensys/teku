@@ -65,7 +65,7 @@ public class Eth2OutgoingRequestHandler<
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicReference<State> state = new AtomicReference<>(INITIAL);
 
-  private final RpcResponseDecoder<TResponse> responseDecoder;
+  private final RpcResponseDecoder<TResponse, ?> responseDecoder;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
 
   private volatile RpcStream rpcStream;
