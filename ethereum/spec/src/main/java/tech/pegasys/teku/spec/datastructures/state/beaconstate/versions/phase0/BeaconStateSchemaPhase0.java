@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
@@ -32,8 +31,7 @@ public class BeaconStateSchemaPhase0
     super("BeaconStatePhase0", getUniqueFields(specConfig), specConfig);
   }
 
-  public static BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> create(
-      final SpecConfig specConfig) {
+  public static BeaconStateSchemaPhase0 create(final SpecConfig specConfig) {
     return new BeaconStateSchemaPhase0(specConfig);
   }
 
