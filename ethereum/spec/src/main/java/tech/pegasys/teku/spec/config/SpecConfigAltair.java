@@ -34,6 +34,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
 
   // Signature domains
   private final Bytes4 domainSyncCommittee;
+  private final Bytes4 domainSyncCommitteeSelectionProof;
+  private final Bytes4 domainContributionAndProof;
 
   // Fork
   private final Bytes4 altairForkVersion;
@@ -53,6 +55,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final UInt64 inactivityScoreBias,
       final int epochsPerSyncCommitteePeriod,
       final Bytes4 domainSyncCommittee,
+      final Bytes4 domainSyncCommitteeSelectionProof,
+      final Bytes4 domainContributionAndProof,
       final Bytes4 altairForkVersion,
       final int minSyncCommitteeParticipants,
       final int maxValidLightClientUpdates,
@@ -66,6 +70,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     this.inactivityScoreBias = inactivityScoreBias;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
     this.domainSyncCommittee = domainSyncCommittee;
+    this.domainSyncCommitteeSelectionProof = domainSyncCommitteeSelectionProof;
+    this.domainContributionAndProof = domainContributionAndProof;
     this.altairForkVersion = altairForkVersion;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.maxValidLightClientUpdates = maxValidLightClientUpdates;
@@ -118,6 +124,14 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return domainSyncCommittee;
   }
 
+  public Bytes4 getDomainSyncCommitteeSelectionProof() {
+    return domainSyncCommitteeSelectionProof;
+  }
+
+  public Bytes4 getDomainContributionAndProof() {
+    return domainContributionAndProof;
+  }
+
   @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
@@ -140,6 +154,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && lightClientUpdateTimeout == that.lightClientUpdateTimeout
         && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
         && Objects.equals(domainSyncCommittee, that.domainSyncCommittee)
+        && Objects.equals(domainSyncCommitteeSelectionProof, that.domainSyncCommitteeSelectionProof)
+        && Objects.equals(domainContributionAndProof, that.domainContributionAndProof)
         && Objects.equals(altairForkVersion, that.altairForkVersion);
   }
 
@@ -155,6 +171,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         inactivityScoreBias,
         epochsPerSyncCommitteePeriod,
         domainSyncCommittee,
+        domainSyncCommitteeSelectionProof,
+        domainContributionAndProof,
         altairForkVersion,
         minSyncCommitteeParticipants,
         maxValidLightClientUpdates,
