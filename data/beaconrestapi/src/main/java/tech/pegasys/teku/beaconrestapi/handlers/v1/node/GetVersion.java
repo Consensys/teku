@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -45,7 +45,7 @@ public class GetVersion implements Handler {
       summary = "Get node version",
       description =
           "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
-      tags = {TAG_V1_NODE},
+      tags = {TAG_NODE},
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = VersionResponse.class))
       })

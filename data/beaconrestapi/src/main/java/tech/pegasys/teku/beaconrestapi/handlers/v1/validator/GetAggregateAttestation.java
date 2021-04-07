@@ -23,7 +23,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_FORBIDDEN;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
@@ -71,7 +71,7 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
       method = HttpMethod.GET,
       summary = "Get aggregated attestations",
       description = "Aggregates all attestations matching given attestation data root and slot.",
-      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       queryParams = {
         @OpenApiParam(
             name = ATTESTATION_DATA_ROOT,

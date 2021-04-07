@@ -17,7 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import io.javalin.http.Context;
@@ -53,7 +53,7 @@ public class GetGenesis extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get chain genesis details",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       description = "Retrieve details of the chain's genesis which can be used to identify chain.",
       responses = {
         @OpenApiResponse(

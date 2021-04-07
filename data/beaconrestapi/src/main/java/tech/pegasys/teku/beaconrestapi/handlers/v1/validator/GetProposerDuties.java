@@ -21,7 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
@@ -73,7 +73,7 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get proposer duties",
-      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
           "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.\n\n"
               + "Duties should only need to be checked once per epoch, "

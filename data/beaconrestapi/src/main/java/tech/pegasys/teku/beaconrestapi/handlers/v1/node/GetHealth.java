@@ -20,7 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_PARTIAL_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -53,7 +53,7 @@ public class GetHealth implements Handler {
       method = HttpMethod.GET,
       summary = "Get node health",
       description = "Returns node health status in http status codes. Useful for load balancers.",
-      tags = {TAG_V1_NODE},
+      tags = {TAG_NODE},
       responses = {
         @OpenApiResponse(status = RES_OK, description = "Node is ready"),
         @OpenApiResponse(
