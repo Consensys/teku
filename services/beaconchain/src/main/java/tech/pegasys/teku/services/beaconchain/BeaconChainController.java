@@ -576,8 +576,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           }
         });
 
-    // TODO: Subscribe to added operations in the sign contribution and proof pool and publish
-
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
