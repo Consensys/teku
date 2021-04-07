@@ -48,13 +48,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    if (testDefinition.getTestName().equals("filtered_block_tree")) {
-      // filtered_block_tree test is broken.
-      // See https://github.com/ethereum/eth2.0-specs/issues/2269
-      TestExecutor.IGNORE_TESTS.runTest(testDefinition);
-      return;
-    }
-
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
     final BeaconState anchorState =

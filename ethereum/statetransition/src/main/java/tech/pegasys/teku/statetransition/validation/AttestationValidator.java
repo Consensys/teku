@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -71,7 +72,9 @@ public class AttestationValidator {
     }
 
     return singleOrAggregateAttestationChecks(
-            validateableAttestation, validateableAttestation.getReceivedSubnetId())
+            BLSSignatureVerifier.SIMPLE,
+            validateableAttestation,
+            validateableAttestation.getReceivedSubnetId())
         .thenApply(
             result -> {
               if (result.code() != ACCEPT) {
@@ -111,7 +114,9 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final ValidateableAttestation validateableAttestation, final OptionalInt receivedOnSubnetId) {
+      final BLSSignatureVerifier signatureVerifier,
+      final ValidateableAttestation validateableAttestation,
+      final OptionalInt receivedOnSubnetId) {
 
     Attestation attestation = validateableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
@@ -174,7 +179,8 @@ public class AttestationValidator {
                 return InternalValidationResult.REJECT;
               }
 
-              if (!is_valid_indexed_attestation(state, validateableAttestation).isSuccessful()) {
+              if (!is_valid_indexed_attestation(state, validateableAttestation, signatureVerifier)
+                  .isSuccessful()) {
                 return InternalValidationResult.REJECT;
               }
 

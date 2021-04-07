@@ -80,8 +80,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
     return new RpcRequestDecoder<>(requestType, encoding);
   }
 
-  public RpcResponseDecoder<TResponse> createResponseDecoder() {
-    return new RpcResponseDecoder<>(responseType, encoding);
+  public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
+    return RpcResponseDecoder.createContextFreeDecoder(encoding, responseType);
   }
 
   @Override
