@@ -575,6 +575,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
+    signedContributionAndProofPool.subscribeOperationAdded(
+        (item, result) -> {
+          if (result.code().equals(ValidationResultCode.ACCEPT)) {
+            signedContributionAndProofGossipPublisher.publish(item);
+          }
+        });
 
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));

@@ -15,9 +15,13 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SignedContributionAndProofPool {
+
+  public void subscribeOperationAdded(
+      OperationAddedSubscriber<SignedContributionAndProof> subscriber) {}
 
   public SafeFuture<InternalValidationResult> add(
       final SignedContributionAndProof signedContributionAndProof) {
