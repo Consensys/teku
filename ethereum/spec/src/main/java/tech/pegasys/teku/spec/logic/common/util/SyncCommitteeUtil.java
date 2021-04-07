@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
-  // TODO: Should this be in the constants file?
+  // TODO: Should this be in constants file? https://github.com/ethereum/eth2.0-specs/issues/2317
   private static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 4;
 
   private final BeaconStateAccessors beaconStateAccessors;
