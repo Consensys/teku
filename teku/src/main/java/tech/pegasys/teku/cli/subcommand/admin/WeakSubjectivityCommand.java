@@ -113,6 +113,7 @@ public class WeakSubjectivityCommand implements Runnable {
             DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
+            dataStorageOptions.isStoreNonCanonicalBlocks(),
             spec);
     return databaseFactory.createDatabase();
   }

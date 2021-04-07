@@ -24,13 +24,17 @@ public class V1LevelDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesT
 
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.LEVELDB1)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .build();
   }
 }
