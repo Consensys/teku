@@ -46,12 +46,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   private final List<GossipManager> gossipManagers = new ArrayList<>();
   private final Fork fork;
-  private final Spec spec;
-  private final AsyncRunner asyncRunner;
-  private final MetricsSystem metricsSystem;
-  private final DiscoveryNetwork<?> discoveryNetwork;
-  private final RecentChainData recentChainData;
-  private final GossipEncoding gossipEncoding;
+  protected final Spec spec;
+  protected final AsyncRunner asyncRunner;
+  protected final MetricsSystem metricsSystem;
+  protected final DiscoveryNetwork<?> discoveryNetwork;
+  protected final RecentChainData recentChainData;
+  protected final GossipEncoding gossipEncoding;
 
   // Upstream consumers
   private final OperationProcessor<SignedBeaconBlock> blockProcessor;
@@ -109,9 +109,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public void startGossip(final Bytes32 genesisValidatorsRoot) {
+  public final void startGossip(final Bytes32 genesisValidatorsRoot) {
     final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
+    addGossipManagers(forkInfo);
+  }
 
+  protected void addGossipManagers(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             asyncRunner, discoveryNetwork, gossipEncoding, recentChainData, attestationProcessor);
@@ -119,18 +122,18 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     blockGossipManager =
         new BlockGossipManager(
             spec, asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockProcessor);
-    gossipManagers.add(blockGossipManager);
+    addGossipManager(blockGossipManager);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
-    gossipManagers.add(attestationGossipManager);
+    addGossipManager(attestationGossipManager);
 
     aggregateGossipManager =
         new AggregateGossipManager(
             asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, aggregateProcessor);
-    gossipManagers.add(aggregateGossipManager);
+    addGossipManager(aggregateGossipManager);
 
-    gossipManagers.add(
+    addGossipManager(
         new VoluntaryExitGossipManager(
             asyncRunner,
             discoveryNetwork,
@@ -139,7 +142,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             voluntaryExitProcessor,
             voluntaryExitGossipPublisher));
 
-    gossipManagers.add(
+    addGossipManager(
         new ProposerSlashingGossipManager(
             asyncRunner,
             discoveryNetwork,
@@ -148,7 +151,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             proposerSlashingProcessor,
             proposerSlashingGossipPublisher));
 
-    gossipManagers.add(
+    addGossipManager(
         new AttesterSlashingGossipManager(
             asyncRunner,
             discoveryNetwork,
@@ -156,6 +159,10 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             forkInfo,
             attesterSlashingProcessor,
             attesterSlashingGossipPublisher));
+  }
+
+  protected void addGossipManager(final GossipManager gossipManager) {
+    gossipManagers.add(gossipManager);
   }
 
   @Override
