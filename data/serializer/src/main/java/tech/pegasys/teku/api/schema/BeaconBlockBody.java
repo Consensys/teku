@@ -17,7 +17,6 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -43,9 +41,6 @@ public class BeaconBlockBody {
   public final List<Deposit> deposits;
   public final List<SignedVoluntaryExit> voluntary_exits;
 
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  public final SyncAggregate syncAggregate;
-
   @JsonCreator
   public BeaconBlockBody(
       @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
@@ -55,8 +50,7 @@ public class BeaconBlockBody {
       @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
-      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits,
-      @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate) {
+      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
     this.graffiti = graffiti;
@@ -65,7 +59,6 @@ public class BeaconBlockBody {
     this.attestations = attestations;
     this.deposits = deposits;
     this.voluntary_exits = voluntary_exits;
-    this.syncAggregate = syncAggregate;
   }
 
   public BeaconBlockBody(
@@ -88,8 +81,6 @@ public class BeaconBlockBody {
         body.getVoluntary_exits().stream()
             .map(SignedVoluntaryExit::new)
             .collect(Collectors.toList());
-    // FIXME load sync aggregate if present
-    this.syncAggregate = null;
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
