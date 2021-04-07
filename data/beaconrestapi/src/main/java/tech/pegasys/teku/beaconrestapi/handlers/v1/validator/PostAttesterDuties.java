@@ -21,7 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
@@ -75,7 +75,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Get attester duties",
-      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
           "Requests the beacon node to provide a set of attestation duties, "
               + "which should be performed by validators, for a particular epoch. "

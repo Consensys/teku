@@ -25,7 +25,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -69,7 +69,7 @@ public class GetStateCommittees extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get committees at state",
-      tags = {TAG_V1_BEACON},
+      tags = {TAG_BEACON},
       description = "Retrieves the committees for the given state.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       queryParams = {
