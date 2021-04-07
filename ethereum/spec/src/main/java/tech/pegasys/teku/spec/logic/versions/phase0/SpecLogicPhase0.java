@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
@@ -140,5 +142,10 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
+  }
+
+  @Override
+  public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
+    return Optional.empty();
   }
 }

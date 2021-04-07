@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -31,9 +33,12 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
+
+  private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+
   private SpecLogicAltair(
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
@@ -48,7 +53,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final BlockProcessorAltair blockProcessor,
       final StateTransitionAltair stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final SyncCommitteeUtil syncCommitteeUtil) {
     super(
         predicates,
         miscHelpers,
@@ -64,10 +70,11 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
+    this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
   }
 
   public static SpecLogicAltair create(
-      final SpecConfigAltair config, final SchemaDefinitions schemaDefinitions) {
+      final SpecConfigAltair config, final SchemaDefinitionsAltair schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
@@ -129,6 +136,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
+    final SyncCommitteeUtil syncCommitteeUtil =
+        new SyncCommitteeUtil(
+            beaconStateAccessors, beaconStateUtil, config, miscHelpers, schemaDefinitions);
 
     return new SpecLogicAltair(
         predicates,
@@ -144,6 +154,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         blockProcessor,
         stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        syncCommitteeUtil);
+  }
+
+  @Override
+  public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
+    return syncCommitteeUtil;
   }
 }

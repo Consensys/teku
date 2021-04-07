@@ -26,6 +26,13 @@ public class SyncCommitteeSigningData
     super(schema, backingNode);
   }
 
+  protected SyncCommitteeSigningData(
+      final SyncCommitteeSigningDataSchema schema,
+      final SszUInt64 slot,
+      final SszUInt64 subcommitteeIndex) {
+    super(schema, slot, subcommitteeIndex);
+  }
+
   public UInt64 getSlot() {
     return getField0().get();
   }
