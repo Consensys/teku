@@ -159,7 +159,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     if (!proposerRewardNumerator.isZero()) {
       final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
       final UInt64 proposerRewardDenominator =
-          (WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
+          WEIGHT_DENOMINATOR
+              .minus(PROPOSER_WEIGHT)
               .times(WEIGHT_DENOMINATOR)
               .dividedBy(PROPOSER_WEIGHT);
       final UInt64 proposerReward = proposerRewardNumerator.dividedBy(proposerRewardDenominator);
