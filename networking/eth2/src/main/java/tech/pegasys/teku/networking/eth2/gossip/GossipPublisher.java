@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 
 public class GossipPublisher<T> {
-  private Subscribers<PublishedGossipSubscriber<T>> subscribers = Subscribers.create(true);
+  private final Subscribers<PublishedGossipSubscriber<T>> subscribers = Subscribers.create(true);
 
   public void publish(final T gossipMessage) {
     subscribers.deliver(PublishedGossipSubscriber::onGossipPublished, gossipMessage);

@@ -34,6 +34,10 @@ public class Bytes4 {
     return new Bytes4(Bytes.fromHexString(value));
   }
 
+  public static Bytes4 fromHexStringLenient(String value) {
+    return new Bytes4(Bytes.fromHexStringLenient(value, 4));
+  }
+
   public String toHexString() {
     return bytes.toHexString();
   }
