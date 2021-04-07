@@ -125,7 +125,9 @@ public class AttestationUtil {
 
   @Deprecated
   public static AttestationProcessingResult is_valid_indexed_attestation(
-      BeaconState state, ValidateableAttestation attestation) {
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier signatureVerifier) {
     if (attestation.isValidIndexedAttestation()) {
       return AttestationProcessingResult.SUCCESSFUL;
     } else {
@@ -134,7 +136,7 @@ public class AttestationUtil {
             get_indexed_attestation(state, attestation.getAttestation());
         attestation.setIndexedAttestation(indexedAttestation);
         AttestationProcessingResult result =
-            is_valid_indexed_attestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+            is_valid_indexed_attestation(state, indexedAttestation, signatureVerifier);
         if (result.isSuccessful()) {
           attestation.saveCommitteeShufflingSeed(state);
           attestation.setValidIndexedAttestation();

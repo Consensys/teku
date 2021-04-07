@@ -12,6 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
+- Optimised validation of aggregate gossip messages to reduce CPU usage.
 - Upgraded to use BLS implementation BLST version 0.3.3.
 - Teku now waits for Eth1 nodes to finish syncing before requesting data from them. Thanks to Enrico Del Fante.
 - Reduced CPU usage required when processing gossip message by optimising peer scoring.
