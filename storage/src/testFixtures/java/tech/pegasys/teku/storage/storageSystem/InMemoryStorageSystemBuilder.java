@@ -40,6 +40,7 @@ public class InMemoryStorageSystemBuilder {
   private StoreConfig storeConfig = StoreConfig.createDefault();
   private int numberOfValidators = 3;
   private long stateStorageFrequency = 1L;
+  private boolean storeNonCanonicalBlocks = false;
 
   private Spec spec = SpecFactory.createMinimal();
 
@@ -116,6 +117,12 @@ public class InMemoryStorageSystemBuilder {
     return this;
   }
 
+  public InMemoryStorageSystemBuilder storeNonCanonicalBlocks(
+      final boolean storeNonCanonicalBlocks) {
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
+    return this;
+  }
+
   public InMemoryStorageSystemBuilder storageMode(final StateStorageMode storageMode) {
     checkNotNull(storageMode);
     this.storageMode = storageMode;
@@ -165,7 +172,7 @@ public class InMemoryStorageSystemBuilder {
       coldDb = hotDb;
     }
     return InMemoryRocksDbDatabaseFactory.createV6(
-        hotDb, coldDb, storageMode, stateStorageFrequency, spec);
+        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -186,7 +193,7 @@ public class InMemoryStorageSystemBuilder {
               V4SchemaFinalized.create(spec).getAllVariables());
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
-        hotDb, coldDb, storageMode, stateStorageFrequency, spec);
+        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   private void reopenDatabases() {

@@ -43,6 +43,14 @@ public class DataStorageOptions {
       hidden = true)
   private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-non-canonical-blocks-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Store non-canonical blocks",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean storeNonCanonicalBlocksEnabled = false;
+
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
@@ -52,10 +60,15 @@ public class DataStorageOptions {
         b ->
             b.dataStorageMode(dataStorageMode)
                 .dataStorageFrequency(dataStorageFrequency)
-                .dataStorageCreateDbVersion(parseDatabaseVersion()));
+                .dataStorageCreateDbVersion(parseDatabaseVersion())
+                .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled));
   }
 
   private DatabaseVersion parseDatabaseVersion() {
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
+  }
+
+  public boolean isStoreNonCanonicalBlocks() {
+    return storeNonCanonicalBlocksEnabled;
   }
 }

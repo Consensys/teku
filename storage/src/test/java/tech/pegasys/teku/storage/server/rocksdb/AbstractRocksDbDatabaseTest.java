@@ -19,28 +19,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import com.google.common.collect.Streams;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
-import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -287,101 +281,24 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
       @TempDir final Path tempDir, final StateStorageMode storageMode) {
-    // Setup chains
-    // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    primaryChain.generateGenesis(genesisTime, true);
-    primaryChain.generateBlocksUpToSlot(3);
-    final ChainBuilder forkChain = primaryChain.fork();
-    // Primary chain's next block is at 7
-    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
-    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
-    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
-    // Fork chain's next block is at 6
-    forkChain.generateBlockAtSlot(6);
-    forkChain.generateBlockAtSlot(firstHotBlockSlot);
-
-    // Setup database
     createStorage(tempDir.toFile(), storageMode);
-    initGenesis();
-
-    final Set<SignedBlockAndState> allBlocksAndStates =
-        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
-            .collect(Collectors.toSet());
-
-    // Finalize at block 7, making the fork blocks unavailable
-    add(allBlocksAndStates);
-    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
-
-    // Close database and rebuild from disk
-    restartStorage();
-
-    // We should be able to access primary hot blocks and state
-    final List<SignedBlockAndState> expectedHotBlocksAndStates =
-        primaryChain
-            .streamBlocksAndStates(finalizedBlock.getSlot(), chainBuilder.getLatestSlot())
-            .collect(toList());
-    assertHotBlocksAndStatesInclude(expectedHotBlocksAndStates);
+    final CreateForkChainResult forkChainResult = createForkChain(true);
 
     // Fork states should be unavailable
+    final UInt64 firstHotBlockSlot = forkChainResult.getFirstHotBlockSlot();
     final List<Bytes32> unavailableBlockRoots =
-        forkChain
+        forkChainResult
+            .getForkChain()
             .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toList());
     final List<UInt64> unavailableBlockSlots =
-        forkChain
+        forkChainResult
+            .getForkChain()
             .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
             .map(SignedBlockAndState::getSlot)
             .collect(Collectors.toList());
     assertStatesUnavailable(unavailableBlockSlots);
     assertBlocksUnavailable(unavailableBlockRoots);
-  }
-
-  public void shouldStoreProtoArraySnapshotAsCheckpointEpochs() {
-
-    // init ProtoArray
-    final ProtoArray protoArray =
-        ProtoArray.builder()
-            .pruneThreshold(10000)
-            .justifiedEpoch(UInt64.valueOf(100))
-            .finalizedEpoch(UInt64.valueOf(99))
-            .build();
-
-    // add block 1
-    final Bytes32 block1Root = Bytes32.fromHexString("0xdeadbeef");
-    final UInt64 block1JustifiedEpoch = UInt64.valueOf(102);
-    final UInt64 block1FinalizedEpoch = UInt64.valueOf(103);
-    protoArray.onBlock(
-        UInt64.valueOf(10000),
-        block1Root,
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        block1JustifiedEpoch,
-        block1FinalizedEpoch);
-
-    // add block 2
-    final Bytes32 block2Root = Bytes32.fromHexString("0x1234");
-    final UInt64 block2JustifiedEpoch = UInt64.valueOf(101);
-    final UInt64 block2FinalizedEpoch = UInt64.valueOf(100);
-    protoArray.onBlock(
-        UInt64.valueOf(10001),
-        block2Root,
-        Bytes32.fromHexString("0xdeadbeef"),
-        Bytes32.ZERO,
-        block2JustifiedEpoch,
-        block2FinalizedEpoch);
-
-    final ProtoArraySnapshot protoArraySnapshot = ProtoArraySnapshot.create(protoArray);
-    database.putProtoArraySnapshot(protoArraySnapshot);
-
-    assertThat(((RocksDbDatabase) database).hotDao.getHotBlockCheckpointEpochs(block1Root))
-        .contains(new CheckpointEpochs(block1JustifiedEpoch, block1FinalizedEpoch));
-    assertThat(((RocksDbDatabase) database).hotDao.getHotBlockCheckpointEpochs(block2Root))
-        .contains(new CheckpointEpochs(block2JustifiedEpoch, block2FinalizedEpoch));
-
-    // No snapshot is recorded because we're using the new format.
-    assertThat(database.getProtoArraySnapshot()).isEmpty();
   }
 }
