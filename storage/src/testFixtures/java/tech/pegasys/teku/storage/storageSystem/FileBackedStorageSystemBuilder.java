@@ -44,6 +44,7 @@ public class FileBackedStorageSystemBuilder {
   private Path archiveDir;
   private Optional<Path> v6ArchiveDir = Optional.empty();
   private long stateStorageFrequency = 1L;
+  private boolean storeNonCanonicalBlocks = false;
 
   private FileBackedStorageSystemBuilder() {}
 
@@ -103,6 +104,12 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
+  public FileBackedStorageSystemBuilder storeNonCanonicalBlocks(
+      final boolean storeNonCanonicalBlocks) {
+    this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
+    return this;
+  }
+
   public FileBackedStorageSystemBuilder specProvider(final Spec spec) {
     this.spec = spec;
     return this;
@@ -155,6 +162,7 @@ public class FileBackedStorageSystemBuilder {
         RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -174,6 +182,7 @@ public class FileBackedStorageSystemBuilder {
         V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -193,6 +202,7 @@ public class FileBackedStorageSystemBuilder {
         V6SchemaFinalized.create(spec),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -203,6 +213,7 @@ public class FileBackedStorageSystemBuilder {
         RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 
@@ -213,6 +224,7 @@ public class FileBackedStorageSystemBuilder {
         RocksDbConfiguration.v4Settings(archiveDir),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
         spec);
   }
 }

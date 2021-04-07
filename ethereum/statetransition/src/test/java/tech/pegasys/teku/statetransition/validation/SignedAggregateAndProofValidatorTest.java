@@ -166,7 +166,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
 
     assertThat(validator.validate(attestation))
@@ -179,7 +179,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     assertThat(validator.validate(attestation))
@@ -192,7 +192,7 @@ class SignedAggregateAndProofValidatorTest {
         generator.validAggregateAndProof(recentChainData.getChainHead().orElseThrow());
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation))
@@ -205,7 +205,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation))
@@ -223,7 +223,7 @@ class SignedAggregateAndProofValidatorTest {
             .generate();
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation))
@@ -484,7 +484,7 @@ class SignedAggregateAndProofValidatorTest {
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     ValidateableAttestation attestation = ValidateableAttestation.aggregateFromValidator(aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(attestation), eq(OptionalInt.empty())))
+            any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
   }
 

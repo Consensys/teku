@@ -30,6 +30,7 @@ public class V4SchemaFinalized implements SchemaFinalized {
       RocksDbColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private final RocksDbColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
   private final RocksDbColumn<UInt64, BeaconState> finalizedStatesBySlot;
+  private final RocksDbColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       RocksDbColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
 
@@ -39,6 +40,9 @@ public class V4SchemaFinalized implements SchemaFinalized {
             2, UINT64_SERIALIZER, RocksDbSerializer.createSignedBlockSerializer(spec));
     this.finalizedStatesBySlot =
         RocksDbColumn.create(3, UINT64_SERIALIZER, RocksDbSerializer.createStateSerializer(spec));
+    nonCanonicalBlocksByRoot =
+        RocksDbColumn.create(
+            5, BYTES32_SERIALIZER, RocksDbSerializer.createSignedBlockSerializer(spec));
   }
 
   public static SchemaFinalized create(final Spec spec) {
@@ -66,12 +70,18 @@ public class V4SchemaFinalized implements SchemaFinalized {
   }
 
   @Override
+  public RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
+    return nonCanonicalBlocksByRoot;
+  }
+
+  @Override
   public List<RocksDbColumn<?, ?>> getAllColumns() {
     return List.of(
         SLOTS_BY_FINALIZED_ROOT,
         finalizedBlocksBySlot,
         finalizedStatesBySlot,
-        SLOTS_BY_FINALIZED_STATE_ROOT);
+        SLOTS_BY_FINALIZED_STATE_ROOT,
+        nonCanonicalBlocksByRoot);
   }
 
   @Override

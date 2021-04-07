@@ -30,9 +30,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -89,8 +90,9 @@ public class AggregateAttestationValidator {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
+    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     return attestationValidator
-        .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
+        .singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult.isNotProcessable()) {
@@ -122,6 +124,7 @@ public class AggregateAttestationValidator {
                         }
 
                         if (!isSelectionProofValid(
+                            signatureVerifier,
                             aggregateSlot,
                             state,
                             aggregatorPublicKey.get(),
@@ -152,8 +155,14 @@ public class AggregateAttestationValidator {
                           return InternalValidationResult.REJECT;
                         }
 
-                        if (!isSignatureValid(signedAggregate, state, aggregatorPublicKey.get())) {
+                        if (!validateSignature(
+                            signatureVerifier, signedAggregate, state, aggregatorPublicKey.get())) {
                           LOG.trace("Rejecting aggregate with invalid signature");
+                          return InternalValidationResult.REJECT;
+                        }
+
+                        if (!signatureVerifier.batchVerify()) {
+                          LOG.trace("Rejecting aggregate with invalid batch signature");
                           return InternalValidationResult.REJECT;
                         }
 
@@ -172,7 +181,8 @@ public class AggregateAttestationValidator {
             });
   }
 
-  private boolean isSignatureValid(
+  private boolean validateSignature(
+      final BLSSignatureVerifier signatureVerifier,
       final SignedAggregateAndProof signedAggregate,
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey) {
@@ -184,10 +194,12 @@ public class AggregateAttestationValidator {
             state.getFork(),
             state.getGenesis_validators_root());
     final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
-    return BLS.verify(aggregatorPublicKey, signingRoot, signedAggregate.getSignature());
+    return signatureVerifier.verify(
+        aggregatorPublicKey, signingRoot, signedAggregate.getSignature());
   }
 
   private boolean isSelectionProofValid(
+      final BLSSignatureVerifier signatureVerifier,
       final UInt64 aggregateSlot,
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey,
@@ -199,7 +211,7 @@ public class AggregateAttestationValidator {
             state.getFork(),
             state.getGenesis_validators_root());
     final Bytes signingRoot = compute_signing_root(aggregateSlot.longValue(), domain);
-    return BLS.verify(aggregatorPublicKey, signingRoot, selectionProof);
+    return signatureVerifier.verify(aggregatorPublicKey, signingRoot, selectionProof);
   }
 
   private static class AggregatorIndexAndEpoch {
