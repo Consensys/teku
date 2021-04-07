@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.block;
 
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.SYNC_REWARD_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 
@@ -24,14 +26,12 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -158,9 +158,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
     if (!proposerRewardNumerator.isZero()) {
       final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-      final UInt64 proposerReward =
-          proposerRewardNumerator.dividedBy(
-              specConfig.getProposerRewardQuotient().times(WEIGHT_DENOMINATOR));
+      final UInt64 proposerRewardDenominator =
+          (WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
+              .times(WEIGHT_DENOMINATOR)
+              .dividedBy(PROPOSER_WEIGHT);
+      final UInt64 proposerReward = proposerRewardNumerator.dividedBy(proposerRewardDenominator);
       beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
     }
   }
@@ -180,21 +182,21 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState baseState, final SyncAggregate aggregate)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
-    final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final List<Integer> committeeIndices =
         beaconStateAccessorsAltair.getSyncCommitteeIndices(
             state, beaconStateAccessors.getCurrentEpoch(state));
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
-    final List<Integer> includedIndices = new ArrayList<>();
-    final List<BLSPublicKey> includedPubkeys = new ArrayList<>();
+    final List<Integer> participantIndices = new ArrayList<>();
+    final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
     aggregate
         .getSyncCommitteeBits()
         .streamAllSetBits()
         .forEach(
             index -> {
-              includedIndices.add(committeeIndices.get(index));
-              includedPubkeys.add(committeePubkeys.get(index).getBLSPublicKey());
+              participantIndices.add(committeeIndices.get(index));
+              participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey());
             });
+    final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateUtil.getDomain(
             state,
@@ -205,44 +207,36 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             beaconStateUtil.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(
-        includedPubkeys, signingRoot, aggregate.getSyncCommitteeSignature().getSignature())) {
+        participantPubkeys, signingRoot, aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
 
-    // Compute the maximum sync rewards for the slot
+    // Compute participant and proposer rewards
     final UInt64 totalActiveIncrements =
         beaconStateAccessors
             .getTotalActiveBalance(state)
             .dividedBy(specConfig.getEffectiveBalanceIncrement());
     final UInt64 totalBaseRewards =
         beaconStateAccessorsAltair.getBaseRewardPerIncrement(state).times(totalActiveIncrements);
-    final UInt64 maxEpochRewards =
+    final UInt64 maxParticipantRewards =
         totalBaseRewards
-            .times(IncentivizationWeights.SYNC_REWARD_WEIGHT)
-            .dividedBy(IncentivizationWeights.WEIGHT_DENOMINATOR);
-    final UInt64 maxSlotRewards =
-        maxEpochRewards
-            .times(includedIndices.size())
-            .dividedBy(committeeIndices.size())
+            .times(SYNC_REWARD_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR)
             .dividedBy(specConfig.getSlotsPerEpoch());
+    final UInt64 participantReward =
+        maxParticipantRewards.dividedBy(specConfigAltair.getSyncCommitteeSize());
+    final UInt64 proposerReward =
+        participantReward
+            .times(PROPOSER_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
 
-    // Compute the participant and proposer sync rewards
-    final SszMutableList<Validator> validators = state.getValidators();
-    final UInt64 committeeEffectiveBalance =
-        beaconStateAccessorsAltair.getTotalBalance(state, includedIndices);
-
-    UInt64 proposerReward = UInt64.ZERO;
-    final int beaconProposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-    for (Integer includedIndex : includedIndices) {
-      final UInt64 effectiveBalance = validators.get(includedIndex).getEffective_balance();
-      final UInt64 inclusionReward =
-          maxSlotRewards.times(effectiveBalance).dividedBy(committeeEffectiveBalance);
-      UInt64 proposerShare = inclusionReward.dividedBy(specConfig.getProposerRewardQuotient());
-      proposerReward = proposerReward.plus(proposerShare);
-      beaconStateMutators.increaseBalance(
-          state, includedIndex, inclusionReward.minus(proposerShare));
+    // Apply participant and proposer rewards
+    for (Integer participantIndex : participantIndices) {
+      beaconStateMutators.increaseBalance(state, participantIndex, participantReward);
     }
-    beaconStateMutators.increaseBalance(state, beaconProposerIndex, proposerReward);
+    UInt64 totalProposerReward = proposerReward.times(participantIndices.size());
+    beaconStateMutators.increaseBalance(
+        state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
   }
 
   private boolean eth2FastAggregateVerify(
