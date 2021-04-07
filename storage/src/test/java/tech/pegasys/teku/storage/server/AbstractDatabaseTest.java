@@ -114,7 +114,9 @@ public abstract class AbstractDatabaseTest {
 
   // This method shouldn't be called outside of createStorage
   protected abstract StorageSystem createStorageSystemInternal(
-      final StateStorageMode storageMode, final StoreConfig storeConfig);
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks);
 
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
@@ -122,13 +124,15 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected StorageSystem createStorage(final StateStorageMode storageMode) {
-    return createStorage(storageMode, StoreConfig.createDefault());
+    return createStorage(storageMode, StoreConfig.createDefault(), false);
   }
 
   protected StorageSystem createStorage(
-      final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode, storeConfig);
+    storageSystem = createStorageSystemInternal(storageMode, storeConfig, storeNonCanonicalBlocks);
     setDefaultStorage(storageSystem);
 
     return storageSystem;
@@ -662,6 +666,83 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void startupFromNonGenesisState_archive() {
     testStartupFromNonGenesisState(StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void orphanedBlockStorageTest_withCanonicalBlocks() {
+    createStorage(storageMode, StoreConfig.createDefault(), true);
+    final CreateForkChainResult forkChainResult = createForkChain(false);
+    assertBlocksAvailable(
+        forkChainResult
+            .getForkChain()
+            .streamBlocksAndStates(4, forkChainResult.getFirstHotBlockSlot().longValue())
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  public void orphanedBlockStorageTest_noCanonicalBlocks() {
+    createStorage(storageMode, StoreConfig.createDefault(), false);
+    final CreateForkChainResult forkChainResult = createForkChain(false);
+    assertBlocksUnavailable(
+        forkChainResult
+            .getForkChain()
+            .streamBlocksAndStates(4, forkChainResult.getFirstHotBlockSlot().longValue())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList()));
+  }
+
+  public static class CreateForkChainResult {
+    private ChainBuilder forkChain;
+    private UInt64 firstHotBlockSlot;
+
+    public CreateForkChainResult(final ChainBuilder forkChain, final UInt64 firstHotBlockSlot) {
+      this.forkChain = forkChain;
+      this.firstHotBlockSlot = firstHotBlockSlot;
+    }
+
+    public ChainBuilder getForkChain() {
+      return forkChain;
+    }
+
+    public UInt64 getFirstHotBlockSlot() {
+      return firstHotBlockSlot;
+    }
+  }
+
+  protected CreateForkChainResult createForkChain(final boolean restartStorage) {
+    // Setup chains
+    // Both chains share block up to slot 3
+    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    primaryChain.generateGenesis(genesisTime, true);
+    primaryChain.generateBlocksUpToSlot(3);
+    final ChainBuilder forkChain = primaryChain.fork();
+    // Primary chain's next block is at 7
+    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
+    // Fork chain's next block is at 6
+    forkChain.generateBlockAtSlot(6);
+    forkChain.generateBlockAtSlot(firstHotBlockSlot);
+
+    // Setup database
+
+    initGenesis();
+
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
+            .collect(Collectors.toSet());
+
+    // Finalize at block 7, making the fork blocks unavailable
+    add(allBlocksAndStates);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+
+    if (restartStorage) {
+      // Close database and rebuild from disk
+      restartStorage();
+    }
+    return new CreateForkChainResult(forkChain, firstHotBlockSlot);
   }
 
   public void testStartupFromNonGenesisState(final StateStorageMode storageMode) {

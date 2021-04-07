@@ -51,9 +51,13 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
 
+  Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
+
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 

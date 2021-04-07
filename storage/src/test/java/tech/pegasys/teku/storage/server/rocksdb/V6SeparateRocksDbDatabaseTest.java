@@ -24,10 +24,12 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class V6SeparateRocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
-
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
+      final File tempDir,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig,
+      final boolean storeNonCanonicalBlocks) {
     Path mainDataDir = tempDir.toPath().resolve("mainDataDir");
     if (!mainDataDir.toFile().exists()) {
       assertThat(mainDataDir.toFile().mkdir()).isTrue();
@@ -43,6 +45,7 @@ public class V6SeparateRocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHo
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
+        .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
         .build();
   }
 }
