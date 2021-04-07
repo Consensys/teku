@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
+import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -25,10 +26,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0 {
+
+  private final OperationProcessor<SignedContributionAndProof>
+      signedContributionAndProofOperationProcessor;
+  private final GossipPublisher<SignedContributionAndProof>
+      signedContributionAndProofGossipPublisher;
 
   public GossipForkSubscriptionsAltair(
       final Fork fork,
@@ -46,7 +55,10 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher) {
+      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
+      final OperationProcessor<SignedContributionAndProof>
+          signedContributionAndProofOperationProcessor,
+      final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher) {
     super(
         fork,
         spec,
@@ -64,5 +76,24 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         proposerSlashingGossipPublisher,
         voluntaryExitProcessor,
         voluntaryExitGossipPublisher);
+    this.signedContributionAndProofOperationProcessor =
+        signedContributionAndProofOperationProcessor;
+    this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    final SchemaDefinitionsAltair schemaDefinitions =
+        SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
+    addGossipManager(
+        new SignedContributionAndProofGossipManager(
+            schemaDefinitions,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            signedContributionAndProofOperationProcessor,
+            signedContributionAndProofGossipPublisher));
   }
 }
