@@ -19,7 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPP
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -55,7 +55,7 @@ public class PostAttestation extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Submit signed attestations",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = Attestation.class, isArray = true)}),

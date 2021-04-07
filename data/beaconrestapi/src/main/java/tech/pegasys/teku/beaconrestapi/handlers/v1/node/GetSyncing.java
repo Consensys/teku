@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import io.javalin.core.util.Header;
@@ -54,7 +54,7 @@ public class GetSyncing implements Handler {
       description =
           "Requests the beacon node to describe if it's currently syncing or not, "
               + "and if it is, what block it is up to.",
-      tags = {TAG_V1_NODE, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_NODE, TAG_VALIDATOR_REQUIRED},
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)

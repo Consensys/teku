@@ -21,7 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -59,7 +59,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Subscribe to a committee subnet",
-      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = BeaconCommitteeSubscriptionRequest[].class)}),

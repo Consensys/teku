@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -53,7 +53,7 @@ public class PostProposerSlashing extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Submit proposer slashing object",
-      tags = {TAG_V1_BEACON},
+      tags = {TAG_BEACON},
       description =
           "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = ProposerSlashing.class)}),
