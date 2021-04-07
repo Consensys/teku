@@ -83,6 +83,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofPool;
+import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -533,7 +534,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initSyncCommitteePools() {
-    signedContributionAndProofPool = new SignedContributionAndProofPool();
+    signedContributionAndProofPool =
+        new SignedContributionAndProofPool(
+            new SignedContributionAndProofValidator(spec, recentChainData));
   }
 
   public void initP2PNetwork() {

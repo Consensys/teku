@@ -35,7 +35,7 @@ public class ContributionAndProof
     return getField1();
   }
 
-  public BLSSignature getSignature() {
+  public BLSSignature getSelectionProof() {
     return getField2().getSignature();
   }
 }
