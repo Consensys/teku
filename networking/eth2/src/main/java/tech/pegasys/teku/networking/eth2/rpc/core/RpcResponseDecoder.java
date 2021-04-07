@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.UnrecognizedContextBytesException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
@@ -150,6 +151,13 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
 
   public void complete() throws RpcException {
     final List<RpcException> exceptions = new ArrayList<>();
+
+    if (respCodeMaybe.isPresent() && payloadDecoder.isEmpty() && errorDecoder.isEmpty()) {
+      exceptions.add(new MessageTruncatedException());
+    } else if (respCodeMaybe.isPresent()) {
+      exceptions.add(new PayloadTruncatedException());
+    }
+
     completeDecoder(payloadDecoder).ifPresent(exceptions::add);
     payloadDecoder = Optional.empty();
     completeDecoder(contextDecoder).ifPresent(exceptions::add);
@@ -158,10 +166,13 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
     errorDecoder = Optional.empty();
 
     if (exceptions.size() > 0) {
-      throw exceptions.get(0);
-    }
-    if (respCodeMaybe.isPresent()) {
-      throw new PayloadTruncatedException();
+      throw exceptions.stream()
+          .reduce(
+              (a, b) -> {
+                a.addSuppressed(b);
+                return a;
+              })
+          .get();
     }
   }
 

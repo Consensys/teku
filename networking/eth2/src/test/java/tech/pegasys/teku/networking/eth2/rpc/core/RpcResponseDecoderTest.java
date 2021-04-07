@@ -122,6 +122,65 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   @Test
+  public void complete_shouldThrowErrorIfLengthPrefixNotFullyProcessed() {
+    final Bytes lengthPrefix = getLengthPrefix(1024);
+    assertThat(lengthPrefix.size()).isGreaterThan(1);
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(SUCCESS_CODE, lengthPrefix.slice(0, 1))) {
+
+      RpcResponseDecoder<?, ?> decoder = createForkAwareDecoder();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf byteBuf : testByteBufSlice) {
+                  decoder.decodeNextResponses(byteBuf);
+                  byteBuf.release();
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(MessageTruncatedException.class);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
+  public void complete_shouldThrowErrorIfContextNotFullyProcessed() {
+    for (Iterable<ByteBuf> testByteBufSlice : testByteBufSlices(SUCCESS_CODE, Bytes.of(1, 2))) {
+
+      RpcResponseDecoder<?, ?> decoder = createForkAwareDecoder();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf byteBuf : testByteBufSlice) {
+                  decoder.decodeNextResponses(byteBuf);
+                  byteBuf.release();
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(MessageTruncatedException.class);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
+  public void complete_shouldThrowErrorIfErrorMsgNotFullyProcessed() {
+    final Bytes errorCode = Bytes.of(255);
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(errorCode, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA.slice(0, 2))) {
+
+      RpcResponseDecoder<?, ?> decoder = createForkAwareDecoder();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf byteBuf : testByteBufSlice) {
+                  decoder.decodeNextResponses(byteBuf);
+                  byteBuf.release();
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(PayloadTruncatedException.class);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
   public void decodeNextResponse_shouldDecodeBasedOnContext_matchingPhase0Input() throws Exception {
     testDecodeBasedOnContext(true);
   }
@@ -235,6 +294,11 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
       assertThat(e)
           .isInstanceOfAny(MessageTruncatedException.class, PayloadTruncatedException.class);
     }
+  }
+
+  private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder() {
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
+    return createForkAwareDecoder(spec.getGenesisSpecConfig());
   }
 
   private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder(final SpecConfig config) {
