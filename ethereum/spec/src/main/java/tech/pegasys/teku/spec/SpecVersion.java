@@ -57,7 +57,7 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   public static SpecVersion createAltair(final SpecConfigAltair specConfig) {
-    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
+    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
     final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class DelegatingSpecLogic implements SpecLogic {
@@ -78,6 +80,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BlockProposalUtil getBlockProposalUtil() {
     return specLogic.getBlockProposalUtil();
+  }
+
+  @Override
+  public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
+    return specLogic.getSyncCommitteeUtil();
   }
 
   @Override
