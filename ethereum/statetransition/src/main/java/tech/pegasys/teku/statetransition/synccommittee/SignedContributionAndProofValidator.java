@@ -153,7 +153,7 @@ public class SignedContributionAndProofValidator {
               // contribution.slot by the validator with index
               // contribution_and_proof.aggregator_index.
               final Bytes signingRoot =
-                  syncCommitteeUtil.getSigningRootForSyncCommitteeSlotSignature(
+                  syncCommitteeUtil.getSyncCommitteeSigningDataSigningRoot(
                       state, contribution.getSlot(), contribution.getSubcommitteeIndex());
               if (!signatureVerifier.verify(
                   aggregatorPublicKey.get(),

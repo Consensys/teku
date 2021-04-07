@@ -19,7 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,7 +61,7 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state finality checkpoints",
-      tags = {TAG_V1_BEACON},
+      tags = {TAG_BEACON},
       description =
           "Returns finality checkpoints for state with given 'state_id'. In case finality is not yet achieved, checkpoint should return epoch 0 and ZERO_HASH as root.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},

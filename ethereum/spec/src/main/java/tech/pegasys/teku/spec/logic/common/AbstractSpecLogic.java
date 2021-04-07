@@ -47,7 +47,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
 
-  public AbstractSpecLogic(
+  protected AbstractSpecLogic(
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,

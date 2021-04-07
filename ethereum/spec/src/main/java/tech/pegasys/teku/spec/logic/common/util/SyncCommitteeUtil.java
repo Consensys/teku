@@ -33,7 +33,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
-  // TODO: Should this be in the constants file?
+  // TODO: Should this be in constants file? https://github.com/ethereum/eth2.0-specs/issues/2317
   private static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 4;
 
   private final BeaconStateAccessors beaconStateAccessors;
@@ -55,7 +55,6 @@ public class SyncCommitteeUtil {
     this.schemaDefinitionsAltair = schemaDefinitionsAltair;
   }
 
-  // TODO: Find this a better home
   public Bytes getSyncCommitteeSignatureSigningRoot(
       final BeaconState state, final SyncCommitteeContribution contribution) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
@@ -64,7 +63,6 @@ public class SyncCommitteeUtil {
     return beaconStateUtil.computeSigningRoot(contribution.getBeaconBlockRoot(), domain);
   }
 
-  // TODO: Find this a better home
   public Bytes getContributionAndProofSigningRoot(
       final BeaconState state, final ContributionAndProof contributionAndProof) {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
@@ -76,7 +74,6 @@ public class SyncCommitteeUtil {
     return beaconStateUtil.computeSigningRoot(contributionAndProof, domain);
   }
 
-  // TODO: Find this a better home
   public boolean isSyncCommitteeAggregator(final BLSSignature signature) {
     final int modulo =
         Math.max(
@@ -87,8 +84,7 @@ public class SyncCommitteeUtil {
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes().slice(0, 8))).mod(modulo).isZero();
   }
 
-  // TODO: Find this a better home
-  public Bytes getSigningRootForSyncCommitteeSlotSignature(
+  public Bytes getSyncCommitteeSigningDataSigningRoot(
       final BeaconState state, final UInt64 slot, final UInt64 subcommitteeIndex) {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
