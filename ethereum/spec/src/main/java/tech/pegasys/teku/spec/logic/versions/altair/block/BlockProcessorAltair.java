@@ -183,18 +183,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState baseState, final SyncAggregate aggregate)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
-    final List<Integer> committeeIndices =
-        beaconStateAccessorsAltair.getSyncCommitteeIndices(
-            state, beaconStateAccessors.getCurrentEpoch(state));
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
-    final List<Integer> participantIndices = new ArrayList<>();
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
     aggregate
         .getSyncCommitteeBits()
         .streamAllSetBits()
         .forEach(
             index -> {
-              participantIndices.add(committeeIndices.get(index));
               participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey());
             });
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
@@ -232,10 +227,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
 
     // Apply participant and proposer rewards
-    for (Integer participantIndex : participantIndices) {
-      beaconStateMutators.increaseBalance(state, participantIndex, participantReward);
-    }
-    UInt64 totalProposerReward = proposerReward.times(participantIndices.size());
+    participantPubkeys.stream()
+        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
+        .forEach(
+            participantIndex ->
+                beaconStateMutators.increaseBalance(state, participantIndex, participantReward));
+    UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
     beaconStateMutators.increaseBalance(
         state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
   }
