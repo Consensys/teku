@@ -122,6 +122,7 @@ public class ValidatorClientService extends Service {
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     return ValidatorLoader.create(
+        config.getSpec(),
         config.getValidatorConfig(),
         config.getInteropConfig(),
         slashingProtector,

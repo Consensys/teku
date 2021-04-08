@@ -334,7 +334,7 @@ public class BeaconChainUtil {
   }
 
   public Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
+    return new LocalSigner(spec, validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 
   public static class Builder {

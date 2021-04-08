@@ -52,7 +52,7 @@ public class VoluntaryExitTopicHandlerTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final VoluntaryExitGenerator exitGenerator =
-      new VoluntaryExitGenerator(beaconChainUtil.getValidatorKeys());
+      new VoluntaryExitGenerator(spec, beaconChainUtil.getValidatorKeys());
 
   private final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
       new Eth2TopicHandler<>(
