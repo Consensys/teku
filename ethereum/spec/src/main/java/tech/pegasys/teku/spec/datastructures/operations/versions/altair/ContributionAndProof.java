@@ -27,6 +27,14 @@ public class ContributionAndProof
     super(schema, backingNode);
   }
 
+  ContributionAndProof(
+      final ContributionAndProofSchema schema,
+      final SszUInt64 aggregatorIndex,
+      final SyncCommitteeContribution contribution,
+      final SszSignature selectionProof) {
+    super(schema, aggregatorIndex, contribution, selectionProof);
+  }
+
   public UInt64 getAggregatorIndex() {
     return getField0().get();
   }

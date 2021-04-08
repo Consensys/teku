@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -41,6 +41,8 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -101,10 +103,7 @@ public class SignedContributionAndProofValidator {
       return SafeFuture.completedFuture(IGNORE);
     }
 
-    return recentChainData
-        .retrieveStateAtSlot(
-            new SlotAndBlockRoot(contribution.getSlot(), contribution.getBeaconBlockRoot()))
-        .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair))
+    return getState(contribution)
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -112,15 +111,23 @@ public class SignedContributionAndProofValidator {
                 return IGNORE;
               }
               final BeaconStateAltair state = maybeState.get();
-              final SpecVersion specVersion = spec.atSlot(contribution.getSlot());
+              if (state.getSlot().isGreaterThan(contribution.getSlot())) {
+                LOG.trace(
+                    "Rejecting proof because referenced beacon block {} is after contribution slot {}",
+                    state.getSlot(),
+                    contribution.getSignature());
+                return REJECT;
+              }
+
+              final BeaconStateAccessors beaconStateAccessors =
+                  spec.atSlot(contribution.getSlot()).beaconStateAccessors();
 
               // [REJECT] The aggregator's validator index is within the current sync committee
               // i.e. state.validators[aggregate_and_proof.aggregator_index].pubkey in
               // state.current_sync_committee.pubkeys.
               final Optional<BLSPublicKey> aggregatorPublicKey =
-                  specVersion
-                      .beaconStateAccessors()
-                      .getValidatorPubKey(state, contributionAndProof.getAggregatorIndex());
+                  beaconStateAccessors.getValidatorPubKey(
+                      state, contributionAndProof.getAggregatorIndex());
               if (aggregatorPublicKey.isEmpty()) {
                 LOG.trace(
                     "Rejecting proof because aggregator index {} is an unknown validator",
@@ -130,9 +137,10 @@ public class SignedContributionAndProofValidator {
               // Cheaper to compare keys based on the SSZ serialization than the parsed BLS key.
               final SszPublicKey sszAggregatorPublicKey =
                   new SszPublicKey(aggregatorPublicKey.get());
-              final SyncCommittee currentSyncCommittee = state.getCurrentSyncCommittee();
-              if (currentSyncCommittee.getPubkeys().stream()
-                  .noneMatch(key -> key.equals(sszAggregatorPublicKey))) {
+              final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
+              final Map<UInt64, SyncSubcommitteeAssignments> syncSubcommittees =
+                  syncCommitteeUtil.getSyncSubcommittees(state, contributionEpoch);
+              if (!syncSubcommittees.containsKey(contributionAndProof.getAggregatorIndex())) {
                 LOG.trace(
                     "Rejecting proof because aggregator is not in the current sync committee");
                 return REJECT;
@@ -176,6 +184,8 @@ public class SignedContributionAndProofValidator {
               // [REJECT] The aggregate signature is valid for the message beacon_block_root and
               // aggregate pubkey derived from the participation info in aggregation_bits for the
               // subcommittee specified by the subcommittee_index.
+              final SyncCommittee currentSyncCommittee =
+                  syncCommitteeUtil.getSyncCommittee(state, contributionEpoch);
               final List<BLSPublicKey> contributorPublicKeys =
                   contribution
                       .getAggregationBits()
@@ -186,7 +196,7 @@ public class SignedContributionAndProofValidator {
 
               if (!signatureVerifier.verify(
                   contributorPublicKeys,
-                  syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(state, contribution),
+                  syncCommitteeUtil.getSyncCommitteeContributionSigningRoot(state, contribution),
                   contribution.getSignature())) {
                 LOG.trace("Rejecting proof because aggregate signature is invalid");
                 return REJECT;
@@ -204,6 +214,44 @@ public class SignedContributionAndProofValidator {
 
               return ACCEPT;
             });
+  }
+
+  private SafeFuture<Optional<BeaconStateAltair>> getState(
+      final SyncCommitteeContribution contribution) {
+    return recentChainData
+        .retrieveBlockState(contribution.getBeaconBlockRoot())
+        // If the block is from an earlier epoch we need to process slots to the current epoch
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final BeaconState state = maybeState.get();
+              final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
+              if (isStateTooEarly(state, contributionEpoch)) {
+                return recentChainData.retrieveStateAtSlot(
+                    new SlotAndBlockRoot(
+                        contribution.getSlot(), contribution.getBeaconBlockRoot()));
+              } else {
+                return SafeFuture.completedFuture(maybeState);
+              }
+            })
+        .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
+  }
+
+  /**
+   * TODO: Actually this should check sync committee periods, not epochs! The state is usable as
+   * long as it is after Altair activated and at most one epoch prior to the contribution because
+   * sync committees have a one epoch look ahead but the last epoch before the fork doesn't have any
+   * sync committee info.
+   *
+   * @param state the state the contribution will be validated against.
+   * @param contributionEpoch the epoch the contribution is from.
+   * @return true if the given state is from an epoch too early to validate the contribution.
+   */
+  private boolean isStateTooEarly(final BeaconState state, final UInt64 contributionEpoch) {
+    return state.toVersionAltair().isEmpty()
+        || spec.getCurrentEpoch(state).plus(1).isLessThan(contributionEpoch);
   }
 
   private TekuPair<UInt64, UInt64> getUniquenessKey(final SignedContributionAndProof proof) {

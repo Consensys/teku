@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -33,6 +34,9 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
@@ -168,6 +172,19 @@ public class GenesisGenerator {
   private void finalizeState() {
     calculateRandaoMixes();
     calculateDepositRoot();
+    final BeaconStateAccessors beaconStateAccessors = genesisSpec.beaconStateAccessors();
+    if (beaconStateAccessors instanceof BeaconStateAccessorsAltair) {
+      final BeaconStateAccessorsAltair altairAccessors =
+          (BeaconStateAccessorsAltair) beaconStateAccessors;
+      final MutableBeaconStateAltair altairState = MutableBeaconStateAltair.required(state);
+      altairState.setCurrentSyncCommittee(altairAccessors.getSyncCommittee(state, UInt64.ZERO));
+      altairState.setNextSyncCommittee(
+          altairAccessors.getSyncCommittee(
+              state,
+              UInt64.valueOf(
+                  SpecConfigAltair.required(specConfig).getEpochsPerSyncCommitteePeriod())));
+    }
+    genesisSpec.getEpochProcessor().processSyncCommitteeUpdates(state);
     final BeaconState readOnlyState = state.commitChanges();
     state.setGenesis_validators_root(readOnlyState.getValidators().hashTreeRoot());
   }

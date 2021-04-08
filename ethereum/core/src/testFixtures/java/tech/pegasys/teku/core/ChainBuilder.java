@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -44,13 +47,20 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -406,13 +416,85 @@ public class ChainBuilder {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
   }
 
+  public SignedContributionAndProof createValidSignedContributionAndProof() {
+    final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
+    final UInt64 slot = latestBlockAndState.getSlot();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final SyncCommitteeUtil syncCommitteeUtil = specVersion.getSyncCommitteeUtil().orElseThrow();
+
+    final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
+        syncCommitteeUtil.getSyncSubcommittees(latestBlockAndState.getState(), epoch);
+    for (Map.Entry<UInt64, SyncSubcommitteeAssignments> entry :
+        subcommitteeAssignments.entrySet()) {
+      final UInt64 validatorIndex = entry.getKey();
+      final Signer signer = getSigner(validatorIndex.intValue());
+      final SyncSubcommitteeAssignments assignments = entry.getValue();
+      for (int subcommitteeIndex : assignments.getAssignedSubcommittees()) {
+        final SyncCommitteeSigningData syncCommitteeSigningData =
+            syncCommitteeUtil.createSyncCommitteeSigningData(
+                slot, UInt64.valueOf(subcommitteeIndex));
+        final BLSSignature proof =
+            signer
+                .signSyncCommitteeSelectionProof(
+                    syncCommitteeSigningData, latestBlockAndState.getState().getForkInfo())
+                .join();
+        if (syncCommitteeUtil.isSyncCommitteeAggregator(proof)) {
+          return createValidSignedContributionAndProof(
+              syncCommitteeUtil,
+              latestBlockAndState,
+              validatorIndex,
+              signer,
+              subcommitteeIndex,
+              assignments.getParticipationBitIndices(subcommitteeIndex),
+              proof);
+        }
+      }
+    }
+    throw new IllegalStateException("No valid sync subcommittee aggregators found");
+  }
+
+  private SignedContributionAndProof createValidSignedContributionAndProof(
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final SignedBlockAndState latestBlockAndState,
+      final UInt64 aggregatorIndex,
+      final Signer signer,
+      final int subcommitteeIndex,
+      final Set<Integer> subcommitteeParticipationIndices,
+      final BLSSignature selectionProof) {
+
+    final ForkInfo forkInfo = latestBlockAndState.getState().getForkInfo();
+    final BLSSignature syncSignature =
+        signer
+            .signSyncCommitteeSignature(
+                latestBlockAndState.getSlot(), latestBlockAndState.getRoot(), forkInfo)
+            .join();
+    final BLSSignature aggregateSignature =
+        BLS.aggregate(Collections.nCopies(subcommitteeParticipationIndices.size(), syncSignature));
+
+    final SyncCommitteeContribution syncCommitteeContribution =
+        syncCommitteeUtil.createSyncCommitteeContribution(
+            latestBlockAndState.getSlot(),
+            latestBlockAndState.getRoot(),
+            UInt64.valueOf(subcommitteeIndex),
+            subcommitteeParticipationIndices,
+            aggregateSignature);
+    final ContributionAndProof contributionAndProof =
+        syncCommitteeUtil.createContributionAndProof(
+            aggregatorIndex, syncCommitteeContribution, selectionProof);
+
+    return syncCommitteeUtil.createSignedContributionAndProof(
+        contributionAndProof,
+        signer.signContributionAndProof(contributionAndProof, forkInfo).join());
+  }
+
   private Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
+    return new LocalSigner(spec, validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 
   public static final class BlockOptions {
 
-    private List<Attestation> attestations = new ArrayList<>();
+    private final List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
