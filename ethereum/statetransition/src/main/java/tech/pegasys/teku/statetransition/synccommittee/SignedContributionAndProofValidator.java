@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
@@ -135,8 +134,6 @@ public class SignedContributionAndProofValidator {
                 return REJECT;
               }
               // Cheaper to compare keys based on the SSZ serialization than the parsed BLS key.
-              final SszPublicKey sszAggregatorPublicKey =
-                  new SszPublicKey(aggregatorPublicKey.get());
               final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
               final Map<UInt64, SyncSubcommitteeAssignments> syncSubcommittees =
                   syncCommitteeUtil.getSyncSubcommittees(state, contributionEpoch);
