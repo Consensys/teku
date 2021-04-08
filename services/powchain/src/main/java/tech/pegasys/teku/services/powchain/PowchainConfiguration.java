@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,7 +64,7 @@ public class PowchainConfiguration {
   }
 
   public static class Builder {
-    private Optional<List<String>> eth1Endpoints = Optional.empty();
+    private List<String> eth1Endpoints = new ArrayList<>();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
     private int eth1LogsMaxBlockRange;
@@ -73,14 +74,11 @@ public class PowchainConfiguration {
     public PowchainConfiguration build() {
       validate();
       return new PowchainConfiguration(
-          eth1Endpoints.orElse(null),
-          depositContract,
-          depositContractDeployBlock,
-          eth1LogsMaxBlockRange);
+          eth1Endpoints, depositContract, depositContractDeployBlock, eth1LogsMaxBlockRange);
     }
 
     private void validate() {
-      if (eth1Endpoints.isPresent()) {
+      if (!eth1Endpoints.isEmpty()) {
         checkNotNull(
             depositContract,
             "Eth1 deposit contract address is required if an eth1 endpoint is specified.");
@@ -89,19 +87,10 @@ public class PowchainConfiguration {
 
     public Builder eth1Endpoints(final List<String> eth1Endpoints) {
       checkNotNull(eth1Endpoints);
-      return eth1Endpoints(Optional.of(eth1Endpoints));
-    }
-
-    public Builder eth1Endpoints(final Optional<List<String>> eth1Endpoints) {
-      checkNotNull(eth1Endpoints);
-      if (eth1Endpoints.isEmpty()) {
-        this.eth1Endpoints = Optional.empty();
-      } else {
+      this.eth1Endpoints = eth1Endpoints;
+      if (!this.eth1Endpoints.isEmpty()) {
         this.eth1Endpoints =
-            Optional.of(
-                eth1Endpoints.get().stream()
-                    .filter(s -> !s.isBlank())
-                    .collect(Collectors.toList()));
+            eth1Endpoints.stream().filter(s -> !s.isBlank()).collect(Collectors.toList());
       }
       return this;
     }

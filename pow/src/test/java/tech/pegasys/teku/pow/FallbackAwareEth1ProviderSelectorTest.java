@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -34,17 +35,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class FallbackAwareEth1ProviderSelectorTest {
+  StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  final Eth1Provider node1 = mock(Eth1Provider.class);
+  final Eth1Provider node2 = mock(Eth1Provider.class);
+  final Eth1Provider node3 = mock(Eth1Provider.class);
+  final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
+  Eth1ProviderSelector providerSelector;
+  FallbackAwareEth1Provider fallbackAwareEth1Provider;
+
+  @BeforeEach
+  public void setup() {
+    asyncRunner = new StubAsyncRunner();
+    providerSelector = new Eth1ProviderSelector(providers);
+    fallbackAwareEth1Provider = new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+  }
 
   @Test
-  void shouldFallbackToOtherNodes() throws ExecutionException, InterruptedException {
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-    final Eth1Provider node1 = mock(Eth1Provider.class);
-    final Eth1Provider node2 = mock(Eth1Provider.class);
-    final Eth1Provider node3 = mock(Eth1Provider.class);
-    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
-    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
-    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
-        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+  void shouldFallbackOnGetLatestEth1Block() throws ExecutionException, InterruptedException {
     // node 1 ready
     when(node1.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
     fallbackAwareEth1Provider.getLatestEth1Block();
@@ -66,18 +73,8 @@ public class FallbackAwareEth1ProviderSelectorTest {
   }
 
   @Test
-  void shouldFallbackWhileHonoringGuarantees() throws ExecutionException, InterruptedException {
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-    final Eth1Provider node1 = mock(Eth1Provider.class);
-    final Eth1Provider node2 = mock(Eth1Provider.class);
-    final Eth1Provider node3 = mock(Eth1Provider.class);
-    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
-    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
-    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
-        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
-
-    /** * blockNumber ** */
-
+  void shouldFallbackOnGetGuaranteedEth1Block_byBlockNumber()
+      throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
     when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
     when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
@@ -97,9 +94,11 @@ public class FallbackAwareEth1ProviderSelectorTest {
 
     // we should have now a block
     assertThat(blockByNumber.get()).isNotNull();
+  }
 
-    /** * blockHash ** */
-
+  @Test
+  void shouldFallbackOnGetGuaranteedEth1Block_byHash()
+      throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
     when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
     when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
@@ -122,18 +121,8 @@ public class FallbackAwareEth1ProviderSelectorTest {
   }
 
   @Test
-  void shouldFallbackWhileHonoringRetries() throws ExecutionException, InterruptedException {
-    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-    final Eth1Provider node1 = mock(Eth1Provider.class);
-    final Eth1Provider node2 = mock(Eth1Provider.class);
-    final Eth1Provider node3 = mock(Eth1Provider.class);
-    final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
-    final Eth1ProviderSelector providerSelector = new Eth1ProviderSelector(providers);
-    final FallbackAwareEth1Provider fallbackAwareEth1Provider =
-        new FallbackAwareEth1Provider(providerSelector, asyncRunner);
-
-    /** * blockNumber ** */
-
+  void shouldFallbackOnGetEth1BlockWithRetry_byBlockNumber()
+      throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
     when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
     when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
@@ -160,9 +149,11 @@ public class FallbackAwareEth1ProviderSelectorTest {
         fallbackAwareEth1Provider.getEth1BlockWithRetry((UInt64) any(), Duration.ofSeconds(5), 1);
     asyncRunner.executeQueuedActions();
     assertThat(blockByNumberFail).isCompletedExceptionally();
+  }
 
-    /** * blockHash ** */
-
+  @Test
+  void shouldFallbackOnGetEth1BlockWithRetry_byHash()
+      throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
     when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
     when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());

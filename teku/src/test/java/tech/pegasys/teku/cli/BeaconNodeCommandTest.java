@@ -363,7 +363,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoints(Optional.empty())
+              b.eth1Endpoints(new ArrayList<String>())
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(

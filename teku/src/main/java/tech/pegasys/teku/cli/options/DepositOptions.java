@@ -35,7 +35,7 @@ public class DepositOptions {
       split = ",",
       arity = "1..*",
       hidden = true)
-  private List<String> eth1Endpoints = null;
+  private List<String> eth1Endpoints = new ArrayList<>();
 
   @Option(
       names = {"--eth1-deposit-contract-max-request-size"},
@@ -51,14 +51,12 @@ public class DepositOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     ArrayList<String> mergedEth1Endpoints = new ArrayList<>();
-    if (eth1Endpoint != null) mergedEth1Endpoints.add(eth1Endpoint);
-    if (eth1Endpoints != null) mergedEth1Endpoints.addAll(eth1Endpoints);
+    Optional.ofNullable(eth1Endpoint).ifPresent(mergedEth1Endpoints::add);
+    mergedEth1Endpoints.addAll(eth1Endpoints);
 
     builder.powchain(
         b ->
-            b.eth1Endpoints(
-                    Optional.ofNullable(
-                        mergedEth1Endpoints.isEmpty() ? null : List.copyOf(mergedEth1Endpoints)))
+            b.eth1Endpoints(List.copyOf(mergedEth1Endpoints))
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
   }
 }
