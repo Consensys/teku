@@ -30,10 +30,12 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.PingMessageHand
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
@@ -113,8 +115,8 @@ public class BeaconChainMethods {
         STATUS,
         rpcEncoding,
         StatusMessage.SSZ_SCHEMA,
-        StatusMessage.SSZ_SCHEMA,
         true,
+        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, StatusMessage.SSZ_SCHEMA),
         statusHandler,
         peerLookup);
   }
@@ -130,8 +132,9 @@ public class BeaconChainMethods {
         GOODBYE,
         rpcEncoding,
         GoodbyeMessage.SSZ_SCHEMA,
-        GoodbyeMessage.SSZ_SCHEMA,
         false,
+        encoding ->
+            RpcResponseDecoder.createContextFreeDecoder(encoding, GoodbyeMessage.SSZ_SCHEMA),
         goodbyeHandler,
         peerLookup);
   }
@@ -145,13 +148,16 @@ public class BeaconChainMethods {
           final RpcEncoding rpcEncoding) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(recentChainData);
+    final SignedBeaconBlockSchema signedBlockSchema =
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
+
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_ROOT,
         rpcEncoding,
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
-        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
         true,
+        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, signedBlockSchema),
         beaconBlocksByRootHandler,
         peerLookup);
   }
@@ -167,13 +173,16 @@ public class BeaconChainMethods {
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(
             combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final SignedBeaconBlockSchema signedBlockSchema =
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
+
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_RANGE,
         rpcEncoding,
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA,
-        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
         true,
+        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, signedBlockSchema),
         beaconBlocksByRangeHandler,
         peerLookup);
   }
@@ -189,8 +198,9 @@ public class BeaconChainMethods {
         GET_METADATA,
         rpcEncoding,
         EmptyMessage.SSZ_SCHEMA,
-        MetadataMessage.SSZ_SCHEMA,
         true,
+        encoding ->
+            RpcResponseDecoder.createContextFreeDecoder(encoding, MetadataMessage.SSZ_SCHEMA),
         messageHandler,
         peerLookup);
   }
@@ -206,8 +216,8 @@ public class BeaconChainMethods {
         PING,
         rpcEncoding,
         PingMessage.SSZ_SCHEMA,
-        PingMessage.SSZ_SCHEMA,
         true,
+        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, PingMessage.SSZ_SCHEMA),
         statusHandler,
         peerLookup);
   }

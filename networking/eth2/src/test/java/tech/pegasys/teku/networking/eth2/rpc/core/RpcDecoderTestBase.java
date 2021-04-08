@@ -59,8 +59,10 @@ public class RpcDecoderTestBase {
               "",
               ENCODING,
               BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
-              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
               false,
+              encoding ->
+                  RpcResponseDecoder.createContextFreeDecoder(
+                      encoding, BeaconBlocksByRootRequestMessage.SSZ_SCHEMA),
               mock(LocalMessageHandler.class),
               peerLookup);
 

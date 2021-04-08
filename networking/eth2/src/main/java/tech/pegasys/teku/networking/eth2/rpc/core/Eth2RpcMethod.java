@@ -31,8 +31,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
   private final String methodMultistreamId;
   private final RpcEncoding encoding;
   private final SszSchema<TRequest> requestType;
-  private final SszSchema<TResponse> responseType;
   private final boolean expectResponseToRequest;
+  private final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
@@ -44,16 +44,16 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
       final String methodMultistreamId,
       final RpcEncoding encoding,
       final SszSchema<TRequest> requestType,
-      final SszSchema<TResponse> responseType,
       final boolean expectResponseToRequest,
+      final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
     this.asyncRunner = asyncRunner;
     this.expectResponseToRequest = expectResponseToRequest;
+    this.responseResponseDecoderFactory = responseResponseDecoderFactory;
     this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
     this.encoding = encoding;
     this.requestType = requestType;
-    this.responseType = responseType;
     this.localMessageHandler = localMessageHandler;
     this.peerLookup = peerLookup;
 
@@ -81,7 +81,7 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
   }
 
   public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
-    return RpcResponseDecoder.createContextFreeDecoder(encoding, responseType);
+    return responseResponseDecoderFactory.create(encoding);
   }
 
   @Override
@@ -123,5 +123,9 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
   @Override
   public String toString() {
     return "Eth2RpcMethod{" + "id='" + methodMultistreamId + '\'' + '}';
+  }
+
+  public interface ResponseDecoderFactory<T extends SszData> {
+    RpcResponseDecoder<T, ?> create(RpcEncoding encoding);
   }
 }
