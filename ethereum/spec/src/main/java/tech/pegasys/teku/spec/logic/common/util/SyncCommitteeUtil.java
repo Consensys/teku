@@ -168,8 +168,4 @@ public class SyncCommitteeUtil {
       final ContributionAndProof message, final BLSSignature signature) {
     return schemaDefinitionsAltair.getSignedContributionAndProofSchema().create(message, signature);
   }
-
-  private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
-    return epoch.dividedBy(specConfig.getEpochsPerSyncCommitteePeriod());
-  }
 }
