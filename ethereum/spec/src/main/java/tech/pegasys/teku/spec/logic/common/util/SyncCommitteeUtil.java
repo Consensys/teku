@@ -61,11 +61,11 @@ public class SyncCommitteeUtil {
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
       final BeaconState state, final Bytes32 blockRoot) {
     return getSyncCommitteeSignatureSigningRoot(
-        state.getForkInfo(), beaconStateAccessors.getCurrentEpoch(state), blockRoot);
+        blockRoot, beaconStateAccessors.getCurrentEpoch(state), state.getForkInfo());
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
-      final ForkInfo forkInfo, final UInt64 epoch, final Bytes32 blockRoot) {
+      final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
         beaconStateUtil.getDomain(
             specConfig.getDomainSyncCommittee(),
