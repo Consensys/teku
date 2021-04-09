@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -52,33 +53,86 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
     final BeaconStateAltair state = BeaconStateAltair.required(genericState);
 
     final SszList<SszByte> previousParticipation = state.getPreviousEpochParticipation();
-    for (int i = 0; i < previousParticipation.size(); i++) {
-      final SszByte participationFlags = previousParticipation.get(i);
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochSourceAttester(true);
-      }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochTargetAttester(true);
-      }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochHeadAttester(true);
-      }
-    }
-
     final SszList<SszByte> currentParticipation = state.getCurrentEpochParticipation();
-    for (int i = 0; i < currentParticipation.size(); i++) {
-      final SszByte participationFlags = currentParticipation.get(i);
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
-        statuses.get(i).updateCurrentEpochSourceAttester(true);
+    for (int i = 0; i < statuses.size(); i++) {
+      final ValidatorStatus status = statuses.get(i);
+
+      if (status.isActiveInPreviousEpoch()) {
+        final byte previousParticipationFlags = previousParticipation.get(i).get();
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
+          status.updatePreviousEpochSourceAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
+          status.updatePreviousEpochTargetAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
+          status.updatePreviousEpochHeadAttester(true);
+        }
       }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
-        statuses.get(i).updateCurrentEpochTargetAttester(true);
+
+      if (status.isActiveInCurrentEpoch()) {
+        final byte currentParticipationFlags = currentParticipation.get(i).get();
+        if (miscHelpersAltair.hasFlag(
+            currentParticipationFlags, ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
+          status.updateCurrentEpochSourceAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            currentParticipationFlags, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
+          status.updateCurrentEpochTargetAttester(true);
+        }
       }
     }
+  }
+
+  protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
+    UInt64 currentEpochActiveValidators = UInt64.ZERO;
+    UInt64 previousEpochActiveValidators = UInt64.ZERO;
+    UInt64 currentEpochSourceAttesters = UInt64.ZERO;
+    UInt64 currentEpochTargetAttesters = UInt64.ZERO;
+    UInt64 previousEpochSourceAttesters = UInt64.ZERO;
+    UInt64 previousEpochTargetAttesters = UInt64.ZERO;
+    UInt64 previousEpochHeadAttesters = UInt64.ZERO;
+
+    for (ValidatorStatus status : statuses) {
+      final UInt64 balance = status.getCurrentEpochEffectiveBalance();
+      if (status.isActiveInCurrentEpoch()) {
+        currentEpochActiveValidators = currentEpochActiveValidators.plus(balance);
+      }
+      if (status.isActiveInPreviousEpoch()) {
+        previousEpochActiveValidators = previousEpochActiveValidators.plus(balance);
+      }
+
+      if (status.isSlashed()) {
+        continue;
+      }
+      if (status.isCurrentEpochSourceAttester()) {
+        currentEpochSourceAttesters = currentEpochSourceAttesters.plus(balance);
+      }
+      if (status.isCurrentEpochTargetAttester()) {
+        currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
+      }
+
+      if (status.isPreviousEpochSourceAttester()) {
+        previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
+      }
+      if (status.isPreviousEpochTargetAttester()) {
+        previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
+      }
+      if (status.isPreviousEpochHeadAttester()) {
+        previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
+      }
+    }
+    return new TotalBalances(
+        specConfig,
+        currentEpochActiveValidators,
+        previousEpochActiveValidators,
+        currentEpochSourceAttesters,
+        currentEpochTargetAttesters,
+        previousEpochSourceAttesters,
+        previousEpochTargetAttesters,
+        previousEpochHeadAttesters);
   }
 }
