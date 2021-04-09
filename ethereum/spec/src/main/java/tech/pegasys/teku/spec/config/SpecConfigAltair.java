@@ -39,6 +39,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
 
   // Fork
   private final Bytes4 altairForkVersion;
+  private final UInt64 altairForkSlot;
 
   // Sync protocol
   private final int minSyncCommitteeParticipants;
@@ -58,6 +59,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final Bytes4 domainSyncCommitteeSelectionProof,
       final Bytes4 domainContributionAndProof,
       final Bytes4 altairForkVersion,
+      final UInt64 altairForkSlot,
       final int minSyncCommitteeParticipants,
       final int maxValidLightClientUpdates,
       final int lightClientUpdateTimeout) {
@@ -73,6 +75,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     this.domainSyncCommitteeSelectionProof = domainSyncCommitteeSelectionProof;
     this.domainContributionAndProof = domainContributionAndProof;
     this.altairForkVersion = altairForkVersion;
+    this.altairForkSlot = altairForkSlot;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.maxValidLightClientUpdates = maxValidLightClientUpdates;
     this.lightClientUpdateTimeout = lightClientUpdateTimeout;
@@ -90,6 +93,10 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
 
   public Bytes4 getAltairForkVersion() {
     return altairForkVersion;
+  }
+
+  public UInt64 getAltairForkSlot() {
+    return altairForkSlot;
   }
 
   public UInt64 getInactivityPenaltyQuotientAltair() {
@@ -156,7 +163,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && Objects.equals(domainSyncCommittee, that.domainSyncCommittee)
         && Objects.equals(domainSyncCommitteeSelectionProof, that.domainSyncCommitteeSelectionProof)
         && Objects.equals(domainContributionAndProof, that.domainContributionAndProof)
-        && Objects.equals(altairForkVersion, that.altairForkVersion);
+        && Objects.equals(altairForkVersion, that.altairForkVersion)
+        && Objects.equals(altairForkSlot, that.altairForkSlot);
   }
 
   @Override
@@ -174,6 +182,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         domainSyncCommitteeSelectionProof,
         domainContributionAndProof,
         altairForkVersion,
+        altairForkSlot,
         minSyncCommitteeParticipants,
         maxValidLightClientUpdates,
         lightClientUpdateTimeout);
