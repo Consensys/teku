@@ -25,6 +25,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -43,6 +44,7 @@ public class ValidatorLoader {
   }
 
   public static ValidatorLoader create(
+      final Spec spec,
       final ValidatorConfig config,
       final InteropConfig interopConfig,
       final SlashingProtector slashingProtector,
@@ -52,6 +54,7 @@ public class ValidatorLoader {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return create(
+        spec,
         config,
         interopConfig,
         externalSignerHttpClientFactory,
@@ -63,6 +66,7 @@ public class ValidatorLoader {
 
   @VisibleForTesting
   static ValidatorLoader create(
+      final Spec spec,
       final ValidatorConfig config,
       final InteropConfig interopConfig,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
@@ -74,9 +78,10 @@ public class ValidatorLoader {
     if (interopConfig.isInteropEnabled()) {
       validatorSources.add(
           slashingProtected(
-              new MockStartValidatorSource(interopConfig, asyncRunner), slashingProtector));
+              new MockStartValidatorSource(spec, interopConfig, asyncRunner), slashingProtector));
     } else {
       addExternalValidatorSource(
+          spec,
           config,
           externalSignerHttpClientFactory,
           slashingProtector,
@@ -84,13 +89,14 @@ public class ValidatorLoader {
           asyncRunner,
           metricsSystem,
           validatorSources);
-      addLocalValidatorSource(config, slashingProtector, asyncRunner, validatorSources);
+      addLocalValidatorSource(spec, config, slashingProtector, asyncRunner, validatorSources);
     }
 
     return new ValidatorLoader(validatorSources, config.getGraffitiProvider());
   }
 
   private static void addLocalValidatorSource(
+      final Spec spec,
       final ValidatorConfig config,
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
@@ -98,12 +104,13 @@ public class ValidatorLoader {
     if (config.getValidatorKeystorePasswordFilePairs() != null) {
       validatorSources.add(
           slashingProtected(
-              new LocalValidatorSource(config, new KeystoreLocker(), asyncRunner),
+              new LocalValidatorSource(spec, config, new KeystoreLocker(), asyncRunner),
               slashingProtector));
     }
   }
 
   private static void addExternalValidatorSource(
+      final Spec spec,
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final SlashingProtector slashingProtector,
@@ -114,7 +121,12 @@ public class ValidatorLoader {
     if (!config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
       final ValidatorSource externalValidatorSource =
           ExternalValidatorSource.create(
-              metricsSystem, config, externalSignerHttpClientFactory, publicKeyLoader, asyncRunner);
+              spec,
+              metricsSystem,
+              config,
+              externalSignerHttpClientFactory,
+              publicKeyLoader,
+              asyncRunner);
       validatorSources.add(
           config.isValidatorExternalSignerSlashingProtectionEnabled()
               ? slashingProtected(externalValidatorSource, slashingProtector)

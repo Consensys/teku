@@ -23,8 +23,11 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -55,9 +58,26 @@ public class SyncCommitteeUtil {
     this.schemaDefinitionsAltair = schemaDefinitionsAltair;
   }
 
-  public Bytes getSyncCommitteeSignatureSigningRoot(
+  public Bytes32 getSyncCommitteeSignatureSigningRoot(
+      final BeaconState state, final Bytes32 blockRoot) {
+    return getSyncCommitteeSignatureSigningRoot(
+        blockRoot, beaconStateAccessors.getCurrentEpoch(state), state.getForkInfo());
+  }
+
+  public Bytes32 getSyncCommitteeSignatureSigningRoot(
+      final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
+    final Bytes32 domain =
+        beaconStateUtil.getDomain(
+            specConfig.getDomainSyncCommittee(),
+            epoch,
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    return beaconStateUtil.computeSigningRoot(blockRoot, domain);
+  }
+
+  public Bytes getSyncCommitteeContributionSigningRoot(
       final BeaconState state, final SyncCommitteeContribution contribution) {
-    final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(contribution.getSlot());
     final Bytes32 domain =
         beaconStateUtil.getDomain(state, specConfig.getDomainSyncCommittee(), epoch);
     return beaconStateUtil.computeSigningRoot(contribution.getBeaconBlockRoot(), domain);
@@ -65,12 +85,19 @@ public class SyncCommitteeUtil {
 
   public Bytes getContributionAndProofSigningRoot(
       final BeaconState state, final ContributionAndProof contributionAndProof) {
+    final ForkInfo forkInfo = state.getForkInfo();
+    return getContributionAndProofSigningRoot(contributionAndProof, forkInfo);
+  }
+
+  public Bytes getContributionAndProofSigningRoot(
+      final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
         beaconStateUtil.getDomain(
-            state,
             specConfig.getDomainContributionAndProof(),
-            miscHelpers.computeEpochAtSlot(contribution.getSlot()));
+            miscHelpers.computeEpochAtSlot(contribution.getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     return beaconStateUtil.computeSigningRoot(contributionAndProof, domain);
   }
 
@@ -81,18 +108,64 @@ public class SyncCommitteeUtil {
             specConfig.getSyncCommitteeSize()
                 / SYNC_COMMITTEE_SUBNET_COUNT
                 / TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
-    return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes().slice(0, 8))).mod(modulo).isZero();
+    return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
   public Bytes getSyncCommitteeSigningDataSigningRoot(
       final BeaconState state, final UInt64 slot, final UInt64 subcommitteeIndex) {
+    final SyncCommitteeSigningData signingData =
+        createSyncCommitteeSigningData(slot, subcommitteeIndex);
+    final ForkInfo forkInfo = state.getForkInfo();
+    return getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo);
+  }
+
+  public Bytes getSyncCommitteeSigningDataSigningRoot(
+      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
         beaconStateUtil.getDomain(
-            state, domainSyncCommitteeSelectionProof, miscHelpers.computeEpochAtSlot(slot));
-    final SyncCommitteeSigningData signingData =
-        schemaDefinitionsAltair.getSyncCommitteeSigningDataSchema().create(slot, subcommitteeIndex);
+            domainSyncCommitteeSelectionProof,
+            miscHelpers.computeEpochAtSlot(signingData.getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     return beaconStateUtil.computeSigningRoot(signingData, domain);
+  }
+
+  public SyncCommitteeSigningData createSyncCommitteeSigningData(
+      final UInt64 slot, final UInt64 subcommitteeIndex) {
+    return schemaDefinitionsAltair
+        .getSyncCommitteeSigningDataSchema()
+        .create(slot, subcommitteeIndex);
+  }
+
+  public SyncCommitteeContribution createSyncCommitteeContribution(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final UInt64 subcommitteeIndex,
+      final Iterable<Integer> setParticipationBits,
+      final BLSSignature signature) {
+    final SyncCommitteeContributionSchema schema =
+        schemaDefinitionsAltair.getSyncCommitteeContributionSchema();
+    return schema.create(
+        slot,
+        beaconBlockRoot,
+        subcommitteeIndex,
+        schema.getAggregationBitsSchema().ofBits(setParticipationBits),
+        signature);
+  }
+
+  public ContributionAndProof createContributionAndProof(
+      final UInt64 aggregatorIndex,
+      final SyncCommitteeContribution contribution,
+      final BLSSignature selectionProof) {
+    return schemaDefinitionsAltair
+        .getContributionAndProofSchema()
+        .create(aggregatorIndex, contribution, selectionProof);
+  }
+
+  public SignedContributionAndProof createSignedContributionAndProof(
+      final ContributionAndProof message, final BLSSignature signature) {
+    return schemaDefinitionsAltair.getSignedContributionAndProofSchema().create(message, signature);
   }
 }

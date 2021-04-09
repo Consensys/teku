@@ -99,7 +99,7 @@ public class VoluntaryExitGossipIntegrationTest {
     assertThat(stateFuture).isCompleted();
     final BeaconState state = stateFuture.join().orElseThrow();
     final VoluntaryExitGenerator exitGenerator =
-        new VoluntaryExitGenerator(node1.chainUtil().getValidatorKeys());
+        new VoluntaryExitGenerator(spec, node1.chainUtil().getValidatorKeys());
     final SignedVoluntaryExit voluntaryExit = exitGenerator.valid(state, 0);
 
     // Publish voluntary exit

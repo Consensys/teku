@@ -322,7 +322,7 @@ public class AttestationGenerator {
       SszBitlist aggregationBitfield = getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
-          new LocalSigner(attesterKeyPair, SYNC_RUNNER)
+          new LocalSigner(spec, attesterKeyPair, SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);
