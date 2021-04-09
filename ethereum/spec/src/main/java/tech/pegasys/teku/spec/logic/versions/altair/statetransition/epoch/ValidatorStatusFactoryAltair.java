@@ -87,6 +87,7 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
     }
   }
 
+  @Override
   protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
     UInt64 currentEpochActiveValidators = UInt64.ZERO;
     UInt64 previousEpochActiveValidators = UInt64.ZERO;
