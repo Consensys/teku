@@ -123,7 +123,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
                 .exceptionallyCompose(
                     err -> {
                       if (providers.hasNext()) {
-                          LOG.warn("Retrying with next eth1 endpoint", err);
+                        LOG.warn("Retrying with next eth1 endpoint", err);
                         return run(task, providers);
                       } else {
                         LOG.error("All available eth1 endpoints failed", err);
