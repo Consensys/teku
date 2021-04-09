@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -22,12 +23,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.M
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
@@ -100,6 +103,32 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
       state.setNextSyncCommittee(
           beaconStateAccessorsAltair.getSyncCommittee(
               state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
+    }
+  }
+
+  @Override
+  public void processInactivityUpdates(
+      final MutableBeaconState baseState, final ValidatorStatuses validatorStatuses) {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
+    final SszMutableUInt64List inactivityScores = state.getInactivityScores();
+    final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
+    final boolean isInInactivityLeak = beaconStateAccessors.isInactivityLeak(state);
+    for (int i = 0; i < statuses.size(); i++) {
+      final ValidatorStatus validatorStatus = statuses.get(i);
+      if (!validatorStatus.isEligibleValidator()) {
+        continue;
+      }
+
+      if (validatorStatus.isNotSlashed() && validatorStatus.isPreviousEpochTargetAttester()) {
+        final UInt64 currentScore = inactivityScores.getElement(i);
+        if (currentScore.isGreaterThan(0)) {
+          inactivityScores.setElement(i, currentScore.decrement());
+        }
+      } else if (isInInactivityLeak) {
+        final UInt64 currentScore = inactivityScores.getElement(i);
+        inactivityScores.setElement(
+            i, currentScore.plus(specConfigAltair.getInactivityScoreBias()));
+      }
     }
   }
 

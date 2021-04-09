@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.containers.Container5;
-import tech.pegasys.teku.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -28,46 +27,23 @@ public class SyncCommitteeContribution
     extends Container5<
         SyncCommitteeContribution, SszUInt64, SszBytes32, SszUInt64, SszBitvector, SszSignature> {
 
-  protected SyncCommitteeContribution(
-      final ContainerSchema5<
-              SyncCommitteeContribution,
-              SszUInt64,
-              SszBytes32,
-              SszUInt64,
-              SszBitvector,
-              SszSignature>
-          schema) {
+  protected SyncCommitteeContribution(final SyncCommitteeContributionSchema schema) {
     super(schema);
   }
 
   protected SyncCommitteeContribution(
-      final ContainerSchema5<
-              SyncCommitteeContribution,
-              SszUInt64,
-              SszBytes32,
-              SszUInt64,
-              SszBitvector,
-              SszSignature>
-          schema,
-      final TreeNode backingNode) {
+      final SyncCommitteeContributionSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected SyncCommitteeContribution(
-      final ContainerSchema5<
-              SyncCommitteeContribution,
-              SszUInt64,
-              SszBytes32,
-              SszUInt64,
-              SszBitvector,
-              SszSignature>
-          schema,
-      final SszUInt64 arg0,
-      final SszBytes32 arg1,
-      final SszUInt64 arg2,
-      final SszBitvector arg3,
-      final SszSignature arg4) {
-    super(schema, arg0, arg1, arg2, arg3, arg4);
+      final SyncCommitteeContributionSchema schema,
+      final SszUInt64 slot,
+      final SszBytes32 beaconBlockRoot,
+      final SszUInt64 subcommitteeIndex,
+      final SszBitvector aggregationBits,
+      final SszSignature signature) {
+    super(schema, slot, beaconBlockRoot, subcommitteeIndex, aggregationBits, signature);
   }
 
   public UInt64 getSlot() {

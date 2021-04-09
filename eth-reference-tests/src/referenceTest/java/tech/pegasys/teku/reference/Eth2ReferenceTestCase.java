@@ -25,6 +25,8 @@ import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
 import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutorPhase0;
+import tech.pegasys.teku.reference.phase0.sanity.SanityBlocksTestExecutor;
+import tech.pegasys.teku.reference.phase0.sanity.SanitySlotsTestExecutor;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
@@ -47,15 +49,21 @@ public abstract class Eth2ReferenceTestCase {
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
+          .putAll(SanityTests.SANITY_TEST_TYPES)
           .build();
 
   private final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
+          .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
+
+          // Sanity tests include finality which aren't yet passing
+          .put("sanity/blocks", new SanityBlocksTestExecutor())
+          .put("sanity/slots", new SanitySlotsTestExecutor())
+          .put("finality/finality", TestExecutor.IGNORE_TESTS)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
@@ -79,10 +87,6 @@ public abstract class Eth2ReferenceTestCase {
         testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
       } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
         testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-        if (testExecutor == null) {
-          // Ignore unhandled altair tests for now
-          testExecutor = TestExecutor.IGNORE_TESTS;
-        }
       }
     }
 
