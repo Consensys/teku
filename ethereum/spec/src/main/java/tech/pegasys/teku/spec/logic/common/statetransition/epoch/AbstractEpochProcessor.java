@@ -82,6 +82,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final ValidatorStatuses validatorStatuses =
         validatorStatusFactory.createValidatorStatuses(preState);
     processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
+    processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators());
@@ -160,6 +161,12 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
+  }
+
+  @Override
+  public void processInactivityUpdates(
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
+    // Do nothing by default.
   }
 
   @Override
