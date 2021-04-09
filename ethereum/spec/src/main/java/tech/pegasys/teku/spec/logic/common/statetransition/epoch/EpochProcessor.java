@@ -31,6 +31,8 @@ public interface EpochProcessor {
   void processJustificationAndFinalization(MutableBeaconState state, TotalBalances totalBalances)
       throws EpochProcessingException;
 
+  void processInactivityUpdates(MutableBeaconState state, ValidatorStatuses validatorStatuses);
+
   void processRewardsAndPenalties(MutableBeaconState state, ValidatorStatuses validatorStatuses)
       throws EpochProcessingException;
 
