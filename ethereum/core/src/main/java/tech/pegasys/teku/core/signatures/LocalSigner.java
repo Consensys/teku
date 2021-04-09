@@ -19,6 +19,7 @@ import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSi
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
 
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
 public class LocalSigner implements Signer {
 
@@ -84,35 +86,36 @@ public class LocalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSignature(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
-    return SafeFuture.of(
-            () ->
-                spec.getSyncCommitteeUtil(slot)
-                    .orElseThrow()
-                    .getSyncCommitteeSignatureSigningRoot(
-                        forkInfo, spec.computeEpochAtSlot(slot), beaconBlockRoot))
+    return signingRootFromSyncCommitteeUtils(
+            slot,
+            utils ->
+                utils.getSyncCommitteeSignatureSigningRoot(
+                    beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
         .thenCompose(this::sign);
   }
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
       final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
-    return SafeFuture.of(
-            () ->
-                spec.getSyncCommitteeUtil(signingData.getSlot())
-                    .orElseThrow()
-                    .getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo))
+    return signingRootFromSyncCommitteeUtils(
+            signingData.getSlot(),
+            utils -> utils.getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo))
         .thenCompose(this::sign);
   }
 
   @Override
   public SafeFuture<BLSSignature> signContributionAndProof(
       final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
-    return SafeFuture.of(
-            () ->
-                spec.getSyncCommitteeUtil(contributionAndProof.getContribution().getSlot())
-                    .orElseThrow()
-                    .getContributionAndProofSigningRoot(contributionAndProof, forkInfo))
+    return signingRootFromSyncCommitteeUtils(
+            contributionAndProof.getContribution().getSlot(),
+            utils -> utils.getContributionAndProofSigningRoot(contributionAndProof, forkInfo))
         .thenCompose(this::sign);
+  }
+
+  private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
+      final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
+    return SafeFuture.of(
+        () -> createSigningRoot.apply(spec.getSyncCommitteeUtil(slot).orElseThrow()));
   }
 
   @Override
