@@ -176,6 +176,18 @@ public class BeaconStateAccessors {
             });
   }
 
+  public UInt64 getFinalityDelay(final BeaconState state) {
+    return getPreviousEpoch(state).minus(state.getFinalized_checkpoint().getEpoch());
+  }
+
+  public boolean isInactivityLeak(final UInt64 finalityDelay) {
+    return finalityDelay.isGreaterThan(config.getMinEpochsToInactivityPenalty());
+  }
+
+  public boolean isInactivityLeak(final BeaconState state) {
+    return isInactivityLeak(getFinalityDelay(state));
+  }
+
   private void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);

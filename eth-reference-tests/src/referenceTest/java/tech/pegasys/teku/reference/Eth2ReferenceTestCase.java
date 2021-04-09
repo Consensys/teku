@@ -40,6 +40,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
+          .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
@@ -47,7 +48,6 @@ public abstract class Eth2ReferenceTestCase {
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
           .build();
