@@ -63,7 +63,7 @@ public class AggregateGenerator {
   }
 
   private Signer getSignerForValidatorIndex(final int validatorIndex) {
-    return new LocalSigner(validatorKeys.get(validatorIndex), SYNC_RUNNER);
+    return new LocalSigner(spec, validatorKeys.get(validatorIndex), SYNC_RUNNER);
   }
 
   public class Generator {

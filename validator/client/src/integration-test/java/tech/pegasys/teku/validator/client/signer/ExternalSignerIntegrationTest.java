@@ -57,6 +57,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -70,7 +72,8 @@ import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory
 public class ExternalSignerIntegrationTest {
   private static final Duration TIMEOUT = Duration.ofMillis(500);
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = SpecFactory.createMinimal();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -94,6 +97,7 @@ public class ExternalSignerIntegrationTest {
 
     externalSigner =
         new ExternalSigner(
+            spec,
             httpClientExternalSignerFactory.get(),
             config.getValidatorExternalSignerUrl(),
             KEYPAIR.getPublicKey(),

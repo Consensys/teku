@@ -38,7 +38,6 @@ public class ValidatorsUtil {
         && validator.getActivation_epoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
-  @SuppressWarnings("DoNotReturnNullOptionals")
   public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()

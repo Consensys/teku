@@ -27,5 +27,11 @@ public enum SignType {
   @JsonProperty("aggregate_and_proof")
   AGGREGATE_AND_PROOF,
   @JsonProperty("voluntary_exit")
-  VOLUNTARY_EXIT
+  VOLUNTARY_EXIT,
+  @JsonProperty("sync_committee_signature")
+  SYNC_COMMITTEE_SIGNATURE,
+  @JsonProperty("sync_committee_selection_proof")
+  SYNC_COMMITTEE_SELECTION_PROOF,
+  @JsonProperty("sync_committee_contribution_and_proof")
+  SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF
 }
