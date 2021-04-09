@@ -50,10 +50,9 @@ public class TestSpecFactory {
   }
 
   private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
-    final SpecConfiguration specConfig = SpecConfiguration.builder().config(config).build();
     final ForkManifest forkManifest =
         ForkManifest.create(
             List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
-    return Spec.create(specConfig, forkManifest);
+    return Spec.create(config, forkManifest);
   }
 }
