@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
-import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public interface SpecFactory {
   SpecFactory PHASE0 = new Phase0SpecFactory();
@@ -32,14 +30,7 @@ public interface SpecFactory {
     @Override
     public Spec create(String configName) {
       final SpecConfig config = SpecConfigLoader.loadConfig(configName);
-      final ForkManifest forkManifest =
-          ForkManifest.create(
-              List.of(
-                  new Fork(
-                      config.getGenesisForkVersion(),
-                      config.getGenesisForkVersion(),
-                      SpecConfig.GENESIS_EPOCH)));
-      return Spec.create(config, forkManifest);
+      return Spec.create(config, SpecMilestone.PHASE0);
     }
   }
 }

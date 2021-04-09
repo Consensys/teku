@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.spec;
 
-import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -55,9 +53,6 @@ public class TestSpecFactory {
   }
 
   private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
-    final ForkManifest forkManifest =
-        ForkManifest.create(
-            List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
-    return Spec.create(config, forkManifest);
+    return Spec.create(config, SpecMilestone.PHASE0);
   }
 }

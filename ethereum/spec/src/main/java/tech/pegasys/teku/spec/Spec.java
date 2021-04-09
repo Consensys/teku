@@ -13,15 +13,16 @@
 
 package tech.pegasys.teku.spec;
 
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.base.Preconditions;
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -68,32 +69,52 @@ import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Spec {
-  // Eventually we will have multiple SpecVersions, where each version is active for a specific
-  // range of epochs
-  private final SpecVersion genesisSpec;
-  private final ForkManifest forkManifest;
+  private final Map<SpecMilestone, SpecVersion> specVersions;
+  private final ForkSchedule forkSchedule;
 
-  private Spec(final SpecVersion genesisSpec, final ForkManifest forkManifest) {
-    Preconditions.checkArgument(forkManifest != null);
-    Preconditions.checkArgument(genesisSpec != null);
-    this.genesisSpec = genesisSpec;
-    this.forkManifest = forkManifest;
+  private Spec(Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
+    Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
+    Preconditions.checkArgument(forkSchedule != null && forkSchedule.size() == specVersions.size());
+    this.specVersions = specVersions;
+    this.forkSchedule = forkSchedule;
   }
 
-  public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec =
-        SpecVersion.createForFork(forkManifest.getGenesisFork().getCurrent_version(), config);
-    return new Spec(initialSpec, forkManifest);
+  public static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
+    final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
+    final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
+    for (SpecMilestone milestone : SpecMilestone.values()) {
+      if (Arrays.stream(supportedMilestones).noneMatch(Predicate.isEqual(milestone))) {
+        // Milestones cannot be skipped, so we can break at the first unsupported milestone
+        break;
+      }
+
+      final SpecVersion milestoneSpec = SpecVersion.create(milestone, config);
+      forkScheduleBuilder.addNextMilestone(milestone, milestoneSpec);
+      specVersions.put(milestone, milestoneSpec);
+    }
+
+    final ForkSchedule forkSchedule = ForkSchedule.builder().build();
+    return new Spec(specVersions, forkSchedule);
   }
 
   public SpecVersion atEpoch(final UInt64 epoch) {
-    return genesisSpec;
+    return specVersions.get(forkSchedule.getSpecMilestoneAtEpoch(epoch));
   }
 
   public SpecVersion atSlot(final UInt64 slot) {
-    // Calculate using the latest spec
-    final UInt64 epoch = getLatestSpec().miscHelpers().computeEpochAtSlot(slot);
-    return atEpoch(epoch);
+    return specVersions.get(forkSchedule.getSpecMilestoneAtSlot(slot));
+  }
+
+  private SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
+    return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
+  }
+
+  private SpecVersion specVersionFromForkChoice(ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+    final UInt64 latestSlot =
+        forkChoiceStrategy.getChainHeads().values().stream()
+            .max(UInt64::compareTo)
+            .orElse(UInt64.MAX_VALUE);
+    return atSlot(latestSlot);
   }
 
   public SpecConfig getSpecConfig(final UInt64 epoch) {
@@ -124,32 +145,16 @@ public class Spec {
     return getGenesisSpec().getSchemaDefinitions();
   }
 
-  public ForkManifest getForkManifest() {
-    return forkManifest;
+  public ForkSchedule getForkSchedule() {
+    return forkSchedule;
   }
 
-  public Collection<ForkAndSpecMilestone> getEnabledMilestones() {
-    return forkManifest.getForkSchedule().stream()
-        .map(fork -> new ForkAndSpecMilestone(fork, getMilestoneForFork(fork)))
-        .collect(toList());
-  }
-
-  private SpecMilestone getMilestoneForFork(final Fork fork) {
-    final SpecConfig specConfig = getSpecConfig(fork.getEpoch());
-    if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
-      return SpecMilestone.PHASE0;
-    } else if (specConfig
-        .toVersionAltair()
-        .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
-        .orElse(false)) {
-      return SpecMilestone.ALTAIR;
-    } else {
-      throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
-    }
+  public List<ForkAndSpecMilestone> getEnabledMilestones() {
+    return forkSchedule.getActiveMilestones();
   }
 
   public Fork fork(final UInt64 epoch) {
-    return forkManifest.get(epoch);
+    return forkSchedule.getFork(epoch);
   }
 
   // Config helpers
@@ -272,11 +277,15 @@ public class Spec {
 
   // ForkChoice utils
   public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
-    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(currentTime, genesisTime);
+    return atTime(genesisTime, currentTime)
+        .getForkChoiceUtil()
+        .getCurrentSlot(currentTime, genesisTime);
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
-    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(store);
+    return atTime(store.getGenesisTime(), store.getTime())
+        .getForkChoiceUtil()
+        .getCurrentSlot(store);
   }
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
@@ -285,7 +294,9 @@ public class Spec {
 
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return getLatestSpec().getForkChoiceUtil().getAncestor(forkChoiceStrategy, root, slot);
+    return specVersionFromForkChoice(forkChoiceStrategy)
+        .getForkChoiceUtil()
+        .getAncestor(forkChoiceStrategy, root, slot);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
@@ -294,20 +305,20 @@ public class Spec {
       UInt64 startSlot,
       UInt64 step,
       UInt64 count) {
-    return getLatestSpec()
+    return specVersionFromForkChoice(forkChoiceStrategy)
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
-    return getLatestSpec()
+    return specVersionFromForkChoice(forkChoiceStrategy)
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
   }
 
   public void onTick(MutableStore store, UInt64 time) {
-    getLatestSpec().getForkChoiceUtil().onTick(store, time);
+    atTime(store.getGenesisTime(), time).getForkChoiceUtil().onTick(store, time);
   }
 
   public AttestationProcessingResult validateAttestation(
@@ -503,21 +514,16 @@ public class Spec {
     return atSlot(blockSummary.getSlot());
   }
 
-  private SpecVersion getLatestSpec() {
-    // When fork manifest is non-empty, we should pull the newest spec here
-    return genesisSpec;
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final Spec spec = (Spec) o;
-    return Objects.equals(forkManifest, spec.forkManifest);
+    return Objects.equals(forkSchedule, spec.forkSchedule);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(forkManifest);
+    return Objects.hash(forkSchedule);
   }
 }

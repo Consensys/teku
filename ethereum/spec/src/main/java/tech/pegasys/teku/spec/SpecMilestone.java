@@ -13,7 +13,38 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.ssz.type.Bytes4;
+
 public enum SpecMilestone {
   PHASE0,
-  ALTAIR
+  ALTAIR;
+
+  static Optional<Bytes4> getForkVersion(
+      final SpecConfig specConfig, final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        return Optional.of(specConfig.getGenesisForkVersion());
+      case ALTAIR:
+        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
+      default:
+        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
+    }
+  }
+
+  static Optional<UInt64> getForkSlot(final SpecConfig specConfig, final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        // Phase0 can only ever start at slot 0 - no non-zero slot is valid. However, another fork
+        // may also be configured to start at slot 0, effectively overriding phase0
+        return Optional.of(UInt64.ZERO);
+      case ALTAIR:
+        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkSlot);
+      default:
+        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
+    }
+  }
 }

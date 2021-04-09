@@ -26,6 +26,7 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
+  /** @return A map from blockRoot to blockSlot for current chain heads */
   Map<Bytes32, UInt64> getChainHeads();
 
   boolean contains(Bytes32 blockRoot);

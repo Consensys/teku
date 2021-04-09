@@ -246,7 +246,7 @@ public class Eth2P2PNetworkFactory {
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
         gossipForkManagerBuilder.fork(
             new GossipForkSubscriptionsPhase0(
-                spec.getForkManifest().get(UInt64.ZERO),
+                spec.getForkSchedule().getFork(UInt64.ZERO),
                 spec,
                 asyncRunner,
                 metricsSystem,
