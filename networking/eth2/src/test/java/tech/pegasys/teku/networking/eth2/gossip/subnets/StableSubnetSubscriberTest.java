@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -39,7 +39,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class StableSubnetSubscriberTest {
   SpecConfig specConfig =
       TestConfigLoader.loadConfig("minimal", b -> b.epochsPerRandomSubnetSubscription(5));
-  private final Spec spec = SpecFactory.create(specConfig);
+  private final Spec spec = TestSpecFactory.createPhase0(specConfig);
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
 

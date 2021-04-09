@@ -30,7 +30,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.util.config.Constants;
 @Deprecated
 public class BeaconChainUtil {
   // TODO(#3356) Inject spec provider rather than using this default
-  private static final Spec DEFAULT_SPEC_PROVIDER = SpecFactory.createMinimal();
+  private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
 
   private final Spec spec;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
@@ -341,7 +341,7 @@ public class BeaconChainUtil {
     // Required
     private RecentChainData recentChainData;
     // Not required
-    private Spec spec = SpecFactory.createMinimal();
+    private Spec spec = TestSpecFactory.createMinimalPhase0();
     private Integer validatorCount = 3;
     private Boolean signDeposits = true;
     private ForkChoice forkChoice;

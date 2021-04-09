@@ -30,7 +30,7 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
@@ -42,7 +42,7 @@ class StateAtSlotTaskTest {
   private static final UInt64 EPOCH = UInt64.valueOf(2);
   private static final UInt64 SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StateAtSlotTask.AsyncStateProvider stateProvider =
       mock(StateAtSlotTask.AsyncStateProvider.class);
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();

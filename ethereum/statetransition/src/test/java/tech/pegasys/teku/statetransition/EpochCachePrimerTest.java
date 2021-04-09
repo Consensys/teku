@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -41,7 +41,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class EpochCachePrimerTest {
 
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-  private final Spec realSpec = SpecFactory.createMinimal();
+  private final Spec realSpec = TestSpecFactory.createMinimalPhase0();
   private final Spec mockSpec = mock(Spec.class);
   private final BeaconStateUtil beaconStateUtil = mock(BeaconStateUtil.class);
   private final RecentChainData recentChainData = storageSystem.recentChainData();

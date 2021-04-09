@@ -40,7 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -63,7 +63,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
@@ -343,7 +343,7 @@ public class BlockImporterTest {
     final SignedBeaconBlock wsBlock = localChain.createBlockAtSlot(wsEpochSlot);
     final SignedBeaconBlock otherBlock = otherChain.createBlockAtSlot(wsEpochSlot.plus(1));
 
-    final Spec spec = SpecFactory.createMinimal();
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
     final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
     final WeakSubjectivityConfig wsConfig =
         WeakSubjectivityConfig.builder()
@@ -367,7 +367,7 @@ public class BlockImporterTest {
     final SignedBeaconBlock nextBlock = localChain.createAndImportBlockAtSlot(wsEpochSlot.plus(1));
     localChain.setSlot(wsEpochSlot.plus(1));
 
-    final Spec spec = SpecFactory.createMinimal();
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
     final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
     final WeakSubjectivityConfig wsConfig =
         WeakSubjectivityConfig.builder()

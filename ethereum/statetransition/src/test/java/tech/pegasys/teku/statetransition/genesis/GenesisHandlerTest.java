@@ -32,7 +32,7 @@ import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
@@ -48,7 +48,7 @@ public class GenesisHandlerTest {
   private final SpecConfig specConfig =
       TestConfigLoader.loadConfig(
           "minimal", b -> b.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
-  private Spec spec = SpecFactory.create(specConfig);
+  private Spec spec = TestSpecFactory.createPhase0(specConfig);
 
   private static final List<DepositData> INITIAL_DEPOSIT_DATA =
       new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
