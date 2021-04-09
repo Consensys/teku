@@ -149,7 +149,7 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
-      final Spec spec = SpecFactory.create(constants);
+      final Spec spec = SpecFactory.INSTANCE.create(constants);
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(

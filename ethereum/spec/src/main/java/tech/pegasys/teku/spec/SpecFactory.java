@@ -19,22 +19,28 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecFactory {
+public interface SpecFactory {
+  SpecFactory INSTANCE = new Phase0SpecFactory();
 
-  public static Spec create(final String configName) {
-    final SpecConfig config = SpecConfigLoader.loadConfig(configName);
-    return create(config);
-  }
+  Spec create(String configName);
 
-  private static Spec create(final SpecConfig config) {
-    return create(config, config.getGenesisForkVersion());
-  }
+  class Phase0SpecFactory implements SpecFactory {
 
-  private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
-    final SpecConfiguration specConfig = SpecConfiguration.builder().config(config).build();
-    final ForkManifest forkManifest =
-        ForkManifest.create(
-            List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
-    return Spec.create(specConfig, forkManifest);
+    public Spec create(String configName) {
+      final SpecConfig config = SpecConfigLoader.loadConfig(configName);
+      return create(config);
+    }
+
+    private Spec create(final SpecConfig config) {
+      return create(config, config.getGenesisForkVersion());
+    }
+
+    private Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
+      final SpecConfiguration specConfig = SpecConfiguration.builder().config(config).build();
+      final ForkManifest forkManifest =
+          ForkManifest.create(
+              List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
+      return Spec.create(specConfig, forkManifest);
+    }
   }
 }
