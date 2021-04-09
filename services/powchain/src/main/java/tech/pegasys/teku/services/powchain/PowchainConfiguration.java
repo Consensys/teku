@@ -44,7 +44,7 @@ public class PowchainConfiguration {
   }
 
   public boolean isEnabled() {
-    return eth1Endpoints != null && !eth1Endpoints.isEmpty();
+    return !eth1Endpoints.isEmpty();
   }
 
   public List<String> getEth1Endpoints() {
@@ -87,11 +87,8 @@ public class PowchainConfiguration {
 
     public Builder eth1Endpoints(final List<String> eth1Endpoints) {
       checkNotNull(eth1Endpoints);
-      this.eth1Endpoints = eth1Endpoints;
-      if (!this.eth1Endpoints.isEmpty()) {
-        this.eth1Endpoints =
-            eth1Endpoints.stream().filter(s -> !s.isBlank()).collect(Collectors.toList());
-      }
+      this.eth1Endpoints =
+          eth1Endpoints.stream().filter(s -> !s.isBlank()).collect(Collectors.toList());
       return this;
     }
 
