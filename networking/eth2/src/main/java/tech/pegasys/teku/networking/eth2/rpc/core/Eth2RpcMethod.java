@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -60,18 +61,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
     this.rpcEncoder = new RpcEncoder(encoding);
   }
 
-  public String getMultistreamId() {
-    return methodMultistreamId;
-  }
-
-  public RpcEncoding getEncoding() {
-    return encoding;
-  }
-
-  public RpcEncoder getRpcEncoder() {
-    return rpcEncoder;
-  }
-
   public Bytes encodeRequest(TRequest request) {
     return rpcEncoder.encodeRequest(request);
   }
@@ -82,6 +71,38 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
 
   public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
     return responseResponseDecoderFactory.create(encoding);
+  }
+
+  @Override
+  public List<String> getIds() {
+    return List.of(methodMultistreamId);
+  }
+
+  public boolean shouldReceiveResponse() {
+    return expectResponseToRequest;
+  }
+
+  @Override
+  public Eth2IncomingRequestHandler<TRequest, TResponse> createIncomingRequestHandler(
+      final String protocolId) {
+    return new Eth2IncomingRequestHandler<>(
+        protocolId,
+        rpcEncoder,
+        createRequestDecoder(),
+        asyncRunner,
+        peerLookup,
+        localMessageHandler);
+  }
+
+  public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
+      final int maximumResponseChunks) {
+    return new Eth2OutgoingRequestHandler<>(
+        asyncRunner,
+        asyncRunner,
+        methodMultistreamId,
+        createResponseDecoder(),
+        expectResponseToRequest,
+        maximumResponseChunks);
   }
 
   @Override
@@ -99,25 +120,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
   @Override
   public int hashCode() {
     return Objects.hash(methodMultistreamId);
-  }
-
-  @Override
-  public String getId() {
-    return methodMultistreamId;
-  }
-
-  public boolean shouldReceiveResponse() {
-    return expectResponseToRequest;
-  }
-
-  @Override
-  public Eth2IncomingRequestHandler<TRequest, TResponse> createIncomingRequestHandler() {
-    return new Eth2IncomingRequestHandler<>(asyncRunner, this, peerLookup, localMessageHandler);
-  }
-
-  public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
-      final int maximumResponseChunks) {
-    return new Eth2OutgoingRequestHandler<>(asyncRunner, asyncRunner, this, maximumResponseChunks);
   }
 
   @Override

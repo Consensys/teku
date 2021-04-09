@@ -129,7 +129,10 @@ public class PingIntegrationTest {
             .eth2RpcPingInterval(pingPeriod)
             .eth2RpcOutstandingPingThreshold(2)
             // remove PING method
-            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
+            .rpcMethodsModifier(
+                m ->
+                    Stream.of(m)
+                        .filter(t -> t.getIds().stream().noneMatch(id -> id.contains("/ping"))))
             .startNetwork();
     network2 =
         networkFactory

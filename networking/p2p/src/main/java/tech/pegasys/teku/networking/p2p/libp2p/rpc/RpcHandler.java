@@ -72,7 +72,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
             asyncRunner.getDelayedFuture(TIMEOUT),
             () ->
                 new StreamTimeoutException(
-                    "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
+                    "Timed out waiting to initialize stream for protocol(s): "
+                        + String.join(",", rpcMethod.getIds())));
 
     return SafeFuture.notInterrupted(closeInterruptor)
         .thenApply(__ -> connection.muxerSession().createStream(this))
@@ -105,17 +106,18 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   @NotNull
   @Override
   public ProtocolDescriptor getProtocolDescriptor() {
-    return new ProtocolDescriptor(rpcMethod.getId());
+    return new ProtocolDescriptor(rpcMethod.getIds());
   }
 
   @NotNull
   @Override
-  public SafeFuture<Controller> initChannel(P2PChannel channel, String s) {
+  public SafeFuture<Controller> initChannel(
+      final P2PChannel channel, final String selectedProtocol) {
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
     Controller controller = new Controller(nodeId, channel);
     if (!channel.isInitiator()) {
-      controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
+      controller.setRequestHandler(rpcMethod.createIncomingRequestHandler(selectedProtocol));
     }
     channel.pushHandler(controller);
     return controller.activeFuture;

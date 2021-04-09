@@ -126,7 +126,8 @@ public class LibP2PPeer implements Peer {
       RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
     RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
-      throw new IllegalArgumentException("Unknown rpc method invoked: " + rpcMethod.getId());
+      throw new IllegalArgumentException(
+          "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
     return rpcHandler.sendRequest(connection, initialPayload, handler);
   }

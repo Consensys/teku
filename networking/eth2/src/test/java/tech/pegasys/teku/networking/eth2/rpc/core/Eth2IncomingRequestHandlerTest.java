@@ -64,7 +64,9 @@ public class Eth2IncomingRequestHandlerTest
   @Override
   protected Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createRequestHandler(final BeaconChainMethods beaconChainMethods) {
-    return beaconChainMethods.beaconBlocksByRange().createIncomingRequestHandler();
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> method =
+        beaconChainMethods.beaconBlocksByRange();
+    return method.createIncomingRequestHandler(method.getIds().get(0));
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UInt64 slot) {
@@ -74,8 +76,9 @@ public class Eth2IncomingRequestHandlerTest
 
   @Test
   public void testEmptyRequestMessage() {
+    final Eth2RpcMethod<EmptyMessage, MetadataMessage> method = beaconChainMethods.getMetadata();
     Eth2IncomingRequestHandler<EmptyMessage, MetadataMessage> requestHandler =
-        beaconChainMethods.getMetadata().createIncomingRequestHandler();
+        method.createIncomingRequestHandler(method.getIds().get(0));
     requestHandler.readComplete(nodeId, rpcStream);
     asyncRunner.executeQueuedActions();
     // verify non-error response

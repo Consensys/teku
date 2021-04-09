@@ -61,7 +61,7 @@ public class Eth2OutgoingRequestHandlerTest
   @Override
   public void setup() {
     super.setup();
-    rpcEncoder = beaconChainMethods.beaconBlocksByRange().getRpcEncoder();
+    rpcEncoder = new RpcEncoder(getRpcEncoding());
     chunks = IntStream.range(0, maxChunks).mapToObj(this::chunkBytes).collect(Collectors.toList());
 
     finishedProcessingFuture =
@@ -73,8 +73,15 @@ public class Eth2OutgoingRequestHandlerTest
   @Override
   protected Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createRequestHandler(final BeaconChainMethods beaconChainMethods) {
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> method =
+        beaconChainMethods.beaconBlocksByRange();
     return new Eth2OutgoingRequestHandler<>(
-        asyncRequestRunner, timeoutRunner, beaconChainMethods.beaconBlocksByRange(), maxChunks);
+        asyncRequestRunner,
+        timeoutRunner,
+        method.getIds().get(0),
+        method.createResponseDecoder(),
+        method.shouldReceiveResponse(),
+        maxChunks);
   }
 
   @Override

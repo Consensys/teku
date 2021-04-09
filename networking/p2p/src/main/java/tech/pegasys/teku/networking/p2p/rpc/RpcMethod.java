@@ -13,9 +13,23 @@
 
 package tech.pegasys.teku.networking.p2p.rpc;
 
+import java.util.List;
+
 public interface RpcMethod {
 
-  String getId();
+  /**
+   * Return a list of supported protocol ids
+   *
+   * @return A non-empty list of supported protocol ids
+   */
+  List<String> getIds();
 
-  RpcRequestHandler createIncomingRequestHandler();
+  /**
+   * Create a request handler for the selected protocol id, which should be one of the values
+   * returned from getId()
+   *
+   * @param protocolId The protocolId to be handled
+   * @return A request handler for the given protocol id
+   */
+  RpcRequestHandler createIncomingRequestHandler(final String protocolId);
 }

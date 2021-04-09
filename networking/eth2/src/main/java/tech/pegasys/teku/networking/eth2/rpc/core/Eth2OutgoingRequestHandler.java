@@ -56,7 +56,6 @@ public class Eth2OutgoingRequestHandler<
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Eth2RpcMethod<TRequest, TResponse> method;
   private final int maximumResponseChunks;
   private final ResponseStreamImpl<TResponse> responseStream = new ResponseStreamImpl<>();
 
@@ -65,7 +64,9 @@ public class Eth2OutgoingRequestHandler<
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicReference<State> state = new AtomicReference<>(INITIAL);
 
+  private final String protocolId;
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
+  private final boolean shouldReceiveResponse;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
 
   private volatile RpcStream rpcStream;
@@ -73,20 +74,22 @@ public class Eth2OutgoingRequestHandler<
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
       final AsyncRunner timeoutRunner,
-      final Eth2RpcMethod<TRequest, TResponse> method,
+      final String protocolId,
+      final RpcResponseDecoder<TResponse, ?> responseDecoder,
+      final boolean shouldReceiveResponse,
       final int maximumResponseChunks) {
     this.timeoutRunner = timeoutRunner;
-    this.method = method;
     this.maximumResponseChunks = maximumResponseChunks;
 
     responseProcessor =
         new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onAsyncProcessorError);
-    responseDecoder = method.createResponseDecoder();
+    this.responseDecoder = responseDecoder;
+    this.shouldReceiveResponse = shouldReceiveResponse;
+    this.protocolId = protocolId;
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
-    if (!transferToState(
-        method.shouldReceiveResponse() ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
+    if (!transferToState(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
       abortRequest(stream, new IllegalStateException("Unexpected state: " + state));
       return;
     }
@@ -96,7 +99,7 @@ public class Eth2OutgoingRequestHandler<
     // Close the write side of the stream
     stream.closeWriteStream().reportExceptions();
 
-    if (method.shouldReceiveResponse()) {
+    if (shouldReceiveResponse) {
       // Start timer for first bytes
       ensureFirstBytesArriveWithinTimeLimit(stream);
     } else {
@@ -306,6 +309,6 @@ public class Eth2OutgoingRequestHandler<
 
   @Override
   public String toString() {
-    return "Eth2OutgoingRequestHandler{" + "method=" + method + '}';
+    return "Eth2OutgoingRequestHandler{" + protocolId + '}';
   }
 }
