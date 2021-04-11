@@ -15,6 +15,7 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
@@ -24,14 +25,17 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthChainId;
+import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Web3jEth1Provider implements Eth1Provider {
@@ -139,5 +143,23 @@ public class Web3jEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Boolean> ethSyncing() {
     return sendAsync(web3j.ethSyncing()).thenApply(EthSyncing::isSyncing);
+  }
+
+  @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+    return sendAsync(web3j.ethGetLogs(ethFilter))
+        .thenApply(EthLog::getLogs)
+        .thenApply(
+            logs -> {
+              if (logs == null) {
+                // We got a response from the node but it didn't include even an empty list
+                // of logs.  This happens with Infura when more than 10,000 log entries match
+                // so treat as an explicit rejection of the request to allow the requested block
+                // range to be reduced.
+                throw new RejectedRequestException("No logs returned by ETH1 node");
+              }
+              return logs;
+            });
   }
 }

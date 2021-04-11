@@ -15,10 +15,13 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -94,5 +97,11 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Boolean> ethSyncing() {
     return taskQueue.queueTask(delegate::ethSyncing);
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+    return taskQueue.queueTask(() -> delegate.ethGetLogs(ethFilter));
   }
 }

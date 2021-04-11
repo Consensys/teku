@@ -16,15 +16,19 @@ package tech.pegasys.teku.pow;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
 import tech.pegasys.teku.util.config.Constants;
 
 public class FallbackAwareEth1Provider implements Eth1Provider {
@@ -111,23 +115,33 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
     return run(Eth1Provider::ethSyncing);
   }
 
+  @Override
+  @SuppressWarnings("rawtypes")
+  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+    return run(eth1Provider -> eth1Provider.ethGetLogs(ethFilter));
+  }
+
   private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
-    return run(task, eth1ProviderSelector.getProviders().iterator());
+    return run(
+        task, eth1ProviderSelector.getProviders().iterator(), new Eth1RequestExceptionsContainer());
   }
 
   private <T> SafeFuture<T> run(
-      final Function<Eth1Provider, SafeFuture<T>> task, final Iterator<Eth1Provider> providers) {
+      final Function<Eth1Provider, SafeFuture<T>> task,
+      final Iterator<Eth1Provider> providers,
+      Eth1RequestExceptionsContainer exceptionsContainer) {
     return SafeFuture.of(
         () ->
             task.apply(providers.next())
                 .exceptionallyCompose(
                     err -> {
+                      exceptionsContainer.add(err);
                       if (providers.hasNext()) {
                         LOG.warn("Retrying with next eth1 endpoint", err);
-                        return run(task, providers);
+                        return run(task, providers, exceptionsContainer);
                       } else {
-                        LOG.error("All available eth1 endpoints failed", err);
-                        return SafeFuture.failedFuture(err);
+                        LOG.error("All available eth1 endpoints failed", exceptionsContainer);
+                        return SafeFuture.failedFuture(exceptionsContainer);
                       }
                     }));
   }

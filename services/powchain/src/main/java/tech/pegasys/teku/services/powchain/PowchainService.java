@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.pow.DepositContractAccessor;
+import tech.pegasys.teku.pow.DepositEventsAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
 import tech.pegasys.teku.pow.ErrorTrackingEth1Provider;
@@ -80,8 +80,8 @@ public class PowchainService extends Service {
             serviceConfig.getMetricsSystem());
 
     final String depositContract = powConfig.getDepositContract().toHexString();
-    DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(eth1Provider, web3js.get(0), depositContract);
+    DepositEventsAccessor depositEventsAccessor =
+        new DepositEventsAccessor(eth1Provider, depositContract);
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
@@ -99,7 +99,7 @@ public class PowchainService extends Service {
         new DepositFetcher(
             eth1Provider,
             eth1EventsPublisher,
-            depositContractAccessor.getContract(),
+            depositEventsAccessor,
             eth1BlockFetcher,
             asyncRunner,
             powConfig.getEth1LogsMaxBlockRange());
@@ -130,16 +130,12 @@ public class PowchainService extends Service {
   }
 
   private Eth1Provider createEth1Provider(final AsyncRunner asyncRunner, final List<Web3j> web3js) {
-    if (web3js.size() == 1) {
-      return new Web3jEth1Provider(web3js.get(0), asyncRunner);
-    } else {
-      return new FallbackAwareEth1Provider(
-          new Eth1ProviderSelector(
-              web3js.stream()
-                  .map(web3j -> new Web3jEth1Provider(web3j, asyncRunner))
-                  .collect(Collectors.toList())),
-          asyncRunner);
-    }
+    return new FallbackAwareEth1Provider(
+        new Eth1ProviderSelector(
+            web3js.stream()
+                .map(web3j -> new Web3jEth1Provider(web3j, asyncRunner))
+                .collect(Collectors.toList())),
+        asyncRunner);
   }
 
   private List<Web3j> createWeb3js(final PowchainConfiguration config) {

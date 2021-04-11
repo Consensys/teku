@@ -15,9 +15,12 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -85,6 +88,12 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Boolean> ethSyncing() {
     return logStatus(delegate.ethSyncing());
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+    return logStatus(delegate.ethGetLogs(ethFilter));
   }
 
   private <T> SafeFuture<T> logStatus(final SafeFuture<T> action) {

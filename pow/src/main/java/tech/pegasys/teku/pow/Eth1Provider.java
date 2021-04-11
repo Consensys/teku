@@ -15,9 +15,12 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthLog.LogResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -52,4 +55,7 @@ public interface Eth1Provider {
   SafeFuture<BigInteger> getChainId();
 
   SafeFuture<Boolean> ethSyncing();
+
+  @SuppressWarnings("rawtypes")
+  SafeFuture<List<LogResult>> ethGetLogs(EthFilter ethFilter);
 }

@@ -13,12 +13,9 @@
 
 package tech.pegasys.teku.pow.exception;
 
-public class Eth1RequestException extends RuntimeException {
-  public Eth1RequestException(String err) {
-    super(err);
-  }
+public class RejectedRequestException extends RuntimeException {
 
-  public Eth1RequestException(RuntimeException e) {
-    super(e);
+  public RejectedRequestException(final String message) {
+    super(message);
   }
 }

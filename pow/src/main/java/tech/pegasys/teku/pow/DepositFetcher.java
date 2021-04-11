@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
-import java.net.SocketTimeoutException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
-import tech.pegasys.teku.pow.contract.RejectedRequestException;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
@@ -50,7 +49,7 @@ public class DepositFetcher {
 
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
-  private final DepositContract depositContract;
+  private final DepositEventsAccessor depositEventsAccessor;
   private final Eth1BlockFetcher eth1BlockFetcher;
   private final AsyncRunner asyncRunner;
   private final int maxBlockRange;
@@ -58,13 +57,13 @@ public class DepositFetcher {
   public DepositFetcher(
       final Eth1Provider eth1Provider,
       final Eth1EventsChannel eth1EventsChannel,
-      final DepositContract depositContract,
+      final DepositEventsAccessor depositEventsAccessor,
       final Eth1BlockFetcher eth1BlockFetcher,
       final AsyncRunner asyncRunner,
       final int maxBlockRange) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
-    this.depositContract = depositContract;
+    this.depositEventsAccessor = depositEventsAccessor;
     this.eth1BlockFetcher = eth1BlockFetcher;
     this.asyncRunner = asyncRunner;
     this.maxBlockRange = maxBlockRange;
@@ -100,9 +99,10 @@ public class DepositFetcher {
                   err);
 
               final Throwable rootCause = Throwables.getRootCause(err);
-              if (rootCause instanceof SocketTimeoutException
-                  || rootCause instanceof RejectedRequestException) {
-                STATUS_LOG.eth1FetchDepositsTimeout(fetchState.batchSize);
+              if (rootCause instanceof Eth1RequestExceptionsContainer
+                  && ((Eth1RequestExceptionsContainer) rootCause)
+                      .containsExceptionSolvableWithSmallerRange()) {
+                STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
                 fetchState.reduceBatchSize();
               }
 
@@ -124,7 +124,7 @@ public class DepositFetcher {
 
   private SafeFuture<Void> processDepositsInBatch(
       final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
-    return depositContract
+    return depositEventsAccessor
         .depositEventInRange(
             DefaultBlockParameter.valueOf(fromBlockNumber),
             DefaultBlockParameter.valueOf(toBlockNumber))
