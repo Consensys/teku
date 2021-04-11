@@ -52,32 +52,36 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
     final BeaconStateAltair state = BeaconStateAltair.required(genericState);
 
     final SszList<SszByte> previousParticipation = state.getPreviousEpochParticipation();
-    for (int i = 0; i < previousParticipation.size(); i++) {
-      final SszByte participationFlags = previousParticipation.get(i);
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochSourceAttester(true);
-      }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochTargetAttester(true);
-      }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
-        statuses.get(i).updatePreviousEpochHeadAttester(true);
-      }
-    }
-
     final SszList<SszByte> currentParticipation = state.getCurrentEpochParticipation();
-    for (int i = 0; i < currentParticipation.size(); i++) {
-      final SszByte participationFlags = currentParticipation.get(i);
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
-        statuses.get(i).updateCurrentEpochSourceAttester(true);
+    for (int i = 0; i < statuses.size(); i++) {
+      final ValidatorStatus status = statuses.get(i);
+
+      if (status.isActiveInPreviousEpoch()) {
+        final byte previousParticipationFlags = previousParticipation.get(i).get();
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
+          status.updatePreviousEpochSourceAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
+          status.updatePreviousEpochTargetAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            previousParticipationFlags, ParticipationFlags.TIMELY_HEAD_FLAG_INDEX)) {
+          status.updatePreviousEpochHeadAttester(true);
+        }
       }
-      if (miscHelpersAltair.hasFlag(
-          participationFlags.get(), ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
-        statuses.get(i).updateCurrentEpochTargetAttester(true);
+
+      if (status.isActiveInCurrentEpoch()) {
+        final byte currentParticipationFlags = currentParticipation.get(i).get();
+        if (miscHelpersAltair.hasFlag(
+            currentParticipationFlags, ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX)) {
+          status.updateCurrentEpochSourceAttester(true);
+        }
+        if (miscHelpersAltair.hasFlag(
+            currentParticipationFlags, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX)) {
+          status.updateCurrentEpochTargetAttester(true);
+        }
       }
     }
   }

@@ -18,8 +18,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class TotalBalances {
 
-  private final UInt64 effectiveBalanceIncrement;
-
   private final UInt64 currentEpochActiveValidators;
   private final UInt64 previousEpochActiveValidators;
   private final UInt64 currentEpochSourceAttesters;
@@ -37,24 +35,25 @@ public class TotalBalances {
       UInt64 previousEpochSourceAttesters,
       UInt64 previousEpochTargetAttesters,
       UInt64 previousEpochHeadAttesters) {
-    this.effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    this.currentEpochActiveValidators = currentEpochActiveValidators;
-    this.previousEpochActiveValidators = previousEpochActiveValidators;
-    this.currentEpochSourceAttesters = currentEpochSourceAttesters;
-    this.currentEpochTargetAttesters = currentEpochTargetAttesters;
-    this.previousEpochSourceAttesters = previousEpochSourceAttesters;
-    this.previousEpochTargetAttesters = previousEpochTargetAttesters;
-    this.previousEpochHeadAttesters = previousEpochHeadAttesters;
+    UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
+    this.currentEpochActiveValidators = currentEpochActiveValidators.max(effectiveBalanceIncrement);
+    this.previousEpochActiveValidators =
+        previousEpochActiveValidators.max(effectiveBalanceIncrement);
+    this.currentEpochSourceAttesters = currentEpochSourceAttesters.max(effectiveBalanceIncrement);
+    this.currentEpochTargetAttesters = currentEpochTargetAttesters.max(effectiveBalanceIncrement);
+    this.previousEpochSourceAttesters = previousEpochSourceAttesters.max(effectiveBalanceIncrement);
+    this.previousEpochTargetAttesters = previousEpochTargetAttesters.max(effectiveBalanceIncrement);
+    this.previousEpochHeadAttesters = previousEpochHeadAttesters.max(effectiveBalanceIncrement);
   }
 
   /** @return The sum of effective balances of all active validators from the current epoch. */
   public UInt64 getCurrentEpochActiveValidators() {
-    return currentEpochActiveValidators.max(effectiveBalanceIncrement);
+    return currentEpochActiveValidators;
   }
 
   /** @return The sum of effective balances of all active validators from the previous epoch. */
   public UInt64 getPreviousEpochActiveValidators() {
-    return previousEpochActiveValidators.max(effectiveBalanceIncrement);
+    return previousEpochActiveValidators;
   }
 
   /**
@@ -62,7 +61,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getCurrentEpochSourceAttesters() {
-    return currentEpochSourceAttesters.max(effectiveBalanceIncrement);
+    return currentEpochSourceAttesters;
   }
 
   /**
@@ -70,7 +69,7 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getCurrentEpochTargetAttesters() {
-    return currentEpochTargetAttesters.max(effectiveBalanceIncrement);
+    return currentEpochTargetAttesters;
   }
 
   /**
@@ -78,7 +77,7 @@ public class TotalBalances {
    *     the correct source (justified checkpoint).
    */
   public UInt64 getPreviousEpochSourceAttesters() {
-    return previousEpochSourceAttesters.max(effectiveBalanceIncrement);
+    return previousEpochSourceAttesters;
   }
 
   /**
@@ -86,7 +85,7 @@ public class TotalBalances {
    *     the correct target (epoch boundary block).
    */
   public UInt64 getPreviousEpochTargetAttesters() {
-    return previousEpochTargetAttesters.max(effectiveBalanceIncrement);
+    return previousEpochTargetAttesters;
   }
 
   /**
@@ -94,6 +93,6 @@ public class TotalBalances {
    *     the correct head block at their assigned slot.
    */
   public UInt64 getPreviousEpochHeadAttesters() {
-    return previousEpochHeadAttesters.max(effectiveBalanceIncrement);
+    return previousEpochHeadAttesters;
   }
 }
