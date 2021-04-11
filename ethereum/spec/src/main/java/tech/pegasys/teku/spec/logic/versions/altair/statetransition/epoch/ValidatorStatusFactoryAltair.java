@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -85,55 +84,5 @@ public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory
         }
       }
     }
-  }
-
-  @Override
-  protected TotalBalances createTotalBalances(final List<ValidatorStatus> statuses) {
-    UInt64 currentEpochActiveValidators = UInt64.ZERO;
-    UInt64 previousEpochActiveValidators = UInt64.ZERO;
-    UInt64 currentEpochSourceAttesters = UInt64.ZERO;
-    UInt64 currentEpochTargetAttesters = UInt64.ZERO;
-    UInt64 previousEpochSourceAttesters = UInt64.ZERO;
-    UInt64 previousEpochTargetAttesters = UInt64.ZERO;
-    UInt64 previousEpochHeadAttesters = UInt64.ZERO;
-
-    for (ValidatorStatus status : statuses) {
-      final UInt64 balance = status.getCurrentEpochEffectiveBalance();
-      if (status.isActiveInCurrentEpoch()) {
-        currentEpochActiveValidators = currentEpochActiveValidators.plus(balance);
-      }
-      if (status.isActiveInPreviousEpoch()) {
-        previousEpochActiveValidators = previousEpochActiveValidators.plus(balance);
-      }
-
-      if (status.isSlashed()) {
-        continue;
-      }
-      if (status.isCurrentEpochSourceAttester()) {
-        currentEpochSourceAttesters = currentEpochSourceAttesters.plus(balance);
-      }
-      if (status.isCurrentEpochTargetAttester()) {
-        currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
-      }
-
-      if (status.isPreviousEpochSourceAttester()) {
-        previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
-      }
-      if (status.isPreviousEpochTargetAttester()) {
-        previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
-      }
-      if (status.isPreviousEpochHeadAttester()) {
-        previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
-      }
-    }
-    return new TotalBalances(
-        specConfig,
-        currentEpochActiveValidators,
-        previousEpochActiveValidators,
-        currentEpochSourceAttesters,
-        currentEpochTargetAttesters,
-        previousEpochSourceAttesters,
-        previousEpochTargetAttesters,
-        previousEpochHeadAttesters);
   }
 }
