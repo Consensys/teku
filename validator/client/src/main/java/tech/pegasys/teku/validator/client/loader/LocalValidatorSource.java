@@ -39,18 +39,23 @@ import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class LocalValidatorSource implements ValidatorSource {
+
+  private final Spec spec;
   private final ValidatorConfig config;
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
 
   public LocalValidatorSource(
+      final Spec spec,
       final ValidatorConfig config,
       final KeystoreLocker keystoreLocker,
       final AsyncRunner asyncRunner) {
+    this.spec = spec;
     this.config = config;
     this.keystoreLocker = keystoreLocker;
     this.asyncRunner = asyncRunner;
@@ -74,7 +79,7 @@ public class LocalValidatorSource implements ValidatorSource {
       final BLSPublicKey publicKey =
           BLSPublicKey.fromBytesCompressedValidate(Bytes48.wrap(keyStoreData.getPubkey()));
       final String password = loadPassword(passwordPath);
-      return new LocalValidatorProvider(keyStoreData, keystorePath, publicKey, password);
+      return new LocalValidatorProvider(spec, keyStoreData, keystorePath, publicKey, password);
     } catch (final KeyStoreValidationException e) {
       if (Throwables.getRootCause(e) instanceof FileNotFoundException) {
         throw new InvalidConfigurationException(e.getMessage(), e);
@@ -106,16 +111,19 @@ public class LocalValidatorSource implements ValidatorSource {
 
   private class LocalValidatorProvider implements ValidatorProvider {
 
+    private final Spec spec;
     private final KeyStoreData keyStoreData;
     private final Path keystoreFile;
     private final BLSPublicKey publicKey;
     private final String password;
 
     private LocalValidatorProvider(
+        final Spec spec,
         final KeyStoreData keyStoreData,
         final Path keystoreFile,
         final BLSPublicKey publicKey,
         final String password) {
+      this.spec = spec;
       this.keyStoreData = keyStoreData;
       this.keystoreFile = keystoreFile;
       this.publicKey = publicKey;
@@ -136,7 +144,7 @@ public class LocalValidatorSource implements ValidatorSource {
                 "Keystore declares incorrect public key. Was %s but expected %s",
                 getPublicKey(), keyPair.getPublicKey()));
       }
-      return new LocalSigner(keyPair, asyncRunner);
+      return new LocalSigner(spec, keyPair, asyncRunner);
     }
 
     private Bytes32 loadBLSPrivateKey() {

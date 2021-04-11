@@ -112,6 +112,7 @@ class ValidatorLoaderTest {
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -147,6 +148,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -187,6 +189,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -233,6 +236,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -274,6 +278,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -309,6 +314,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -347,6 +353,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -381,6 +388,7 @@ class ValidatorLoaderTest {
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -413,6 +421,7 @@ class ValidatorLoaderTest {
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             disabledInteropConfig,
             httpClientFactory,
@@ -451,6 +460,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             interopConfig,
             httpClientFactory,
@@ -476,6 +486,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            spec,
             config,
             interopConfig,
             httpClientFactory,

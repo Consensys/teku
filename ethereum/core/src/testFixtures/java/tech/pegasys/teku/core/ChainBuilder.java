@@ -407,12 +407,12 @@ public class ChainBuilder {
   }
 
   private Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
+    return new LocalSigner(spec, validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 
   public static final class BlockOptions {
 
-    private List<Attestation> attestations = new ArrayList<>();
+    private final List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}

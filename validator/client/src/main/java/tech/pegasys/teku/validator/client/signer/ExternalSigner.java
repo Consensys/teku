@@ -35,8 +35,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -49,11 +51,15 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
 public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
@@ -62,6 +68,7 @@ public class ExternalSigner implements Signer {
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
+  private final Spec spec;
   private final HttpClient httpClient;
   private final ThrottlingTaskQueue taskQueue;
 
@@ -70,12 +77,14 @@ public class ExternalSigner implements Signer {
   private final Counter timeoutCounter;
 
   public ExternalSigner(
+      final Spec spec,
       final HttpClient httpClient,
       final URL signingServiceUrl,
       final BLSPublicKey blsPublicKey,
       final Duration timeout,
       final ThrottlingTaskQueue taskQueue,
       final MetricsSystem metricsSystem) {
+    this.spec = spec;
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
@@ -181,8 +190,67 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
+  public SafeFuture<BLSSignature> signSyncCommitteeSignature(
+      final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
+    return signingRootFromSyncCommitteeUtils(
+            slot,
+            utils ->
+                utils.getSyncCommitteeSignatureSigningRoot(
+                    beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
+        .thenCompose(
+            signingRoot ->
+                sign(
+                    signingRoot,
+                    SignType.SYNC_COMMITTEE_SIGNATURE,
+                    Map.of("beacon_block_root", beaconBlockRoot, FORK_INFO, forkInfo(forkInfo)),
+                    slashableGenericMessage("sync committee signature")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
+      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
+    return signingRootFromSyncCommitteeUtils(
+            signingData.getSlot(),
+            utils -> utils.getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo))
+        .thenCompose(
+            signingRoot ->
+                sign(
+                    signingRoot,
+                    SignType.SYNC_COMMITTEE_SELECTION_PROOF,
+                    Map.of(
+                        "slot",
+                        signingData.getSlot(),
+                        "subcommittee_index",
+                        signingData.getSubcommitteeIndex(),
+                        FORK_INFO,
+                        forkInfo(forkInfo)),
+                    slashableGenericMessage("sync committee selection proof")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signContributionAndProof(
+      final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
+    return signingRootFromSyncCommitteeUtils(
+            contributionAndProof.getContribution().getSlot(),
+            utils -> utils.getContributionAndProofSigningRoot(contributionAndProof, forkInfo))
+        .thenCompose(
+            signingRoot ->
+                sign(
+                    signingRoot,
+                    SignType.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
+                    Map.of(FORK_INFO, forkInfo(forkInfo)),
+                    slashableGenericMessage("sync committee contribution and proof")));
+  }
+
+  @Override
   public boolean isLocal() {
     return false;
+  }
+
+  private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
+      final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
+    return SafeFuture.of(
+        () -> createSigningRoot.apply(spec.getSyncCommitteeUtil(slot).orElseThrow()));
   }
 
   private Map<String, Object> forkInfo(final ForkInfo forkInfo) {
