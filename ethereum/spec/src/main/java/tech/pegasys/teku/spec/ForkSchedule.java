@@ -56,21 +56,16 @@ public class ForkSchedule {
   }
 
   /**
-   * @return Milestones that are supported. Includes milestones that may be eclipsed by other
-   *     milestones which are activated at the same time.
+   * @return Milestones that are supported. Includes milestones that may be eclipsed by later
+   *     milestones which are activated at the same epoch.
    */
   public Collection<SpecMilestone> getSupportedMilestones() {
     return supportedMilestones;
   }
 
-  /** @return The last milestone scheduled to activate */
-  public SpecMilestone getLastMilestone() {
-    return epochToMilestone.lastEntry().getValue();
-  }
-
   /**
    * @return Milestones that are actively transitioned to. Does not include milestones that are
-   *     immediately eclipsed by later milestones that activate at the same slot.
+   *     immediately eclipsed by later milestones that activate at the same epoch.
    */
   public List<ForkAndSpecMilestone> getActiveMilestones() {
     return milestoneToFork.entrySet().stream()
