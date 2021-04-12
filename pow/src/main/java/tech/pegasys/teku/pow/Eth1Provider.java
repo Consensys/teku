@@ -56,6 +56,5 @@ public interface Eth1Provider {
 
   SafeFuture<Boolean> ethSyncing();
 
-  @SuppressWarnings("rawtypes")
-  SafeFuture<List<LogResult>> ethGetLogs(EthFilter ethFilter);
+  SafeFuture<List<LogResult<?>>> ethGetLogs(EthFilter ethFilter);
 }

@@ -32,7 +32,6 @@ public class DepositEventsAccessor {
     this.contractAddress = contractAddress;
   }
 
-  @SuppressWarnings("rawtypes")
   public SafeFuture<List<DepositContract.DepositEventEventResponse>> depositEventInRange(
       DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
     final EthFilter filter = new EthFilter(startBlock, endBlock, this.contractAddress);

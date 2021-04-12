@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
 
-@SuppressWarnings({"FutureReturnValueIgnored", "rawtypes"})
+@SuppressWarnings("FutureReturnValueIgnored")
 public class FallbackAwareEth1ProviderSelectorTest {
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   final Eth1Provider node1 = mock(Eth1Provider.class);
@@ -73,7 +73,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
     when(node1.ethGetLogs(ethLogFilter))
         .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
     when(node2.ethGetLogs(ethLogFilter)).thenReturn(readyProviderGetLogs());
-    final SafeFuture<List<EthLog.LogResult>> logList =
+    final SafeFuture<List<EthLog.LogResult<?>>> logList =
         fallbackAwareEth1Provider.ethGetLogs(ethLogFilter);
     assertThat(logList.get()).isNotNull();
 
@@ -296,15 +296,15 @@ public class FallbackAwareEth1ProviderSelectorTest {
     assertThat(blockByHashFail).isCompletedExceptionally();
   }
 
-  private static SafeFuture<List<EthLog.LogResult>> readyProviderGetLogs() {
-    final SafeFuture<List<EthLog.LogResult>> logListSafeFuture = new SafeFuture<>();
+  private static SafeFuture<List<EthLog.LogResult<?>>> readyProviderGetLogs() {
+    final SafeFuture<List<EthLog.LogResult<?>>> logListSafeFuture = new SafeFuture<>();
     logListSafeFuture.complete(List.of());
     return logListSafeFuture;
   }
 
-  private static SafeFuture<List<EthLog.LogResult>> failingProviderGetLogsWithError(
+  private static SafeFuture<List<EthLog.LogResult<?>>> failingProviderGetLogsWithError(
       Throwable error) {
-    final SafeFuture<List<EthLog.LogResult>> logListSafeFuture = new SafeFuture<>();
+    final SafeFuture<List<EthLog.LogResult<?>>> logListSafeFuture = new SafeFuture<>();
     logListSafeFuture.completeExceptionally(error);
     return logListSafeFuture;
   }

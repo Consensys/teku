@@ -147,7 +147,7 @@ public class Web3jEth1Provider implements Eth1Provider {
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
     return sendAsync(web3j.ethGetLogs(ethFilter))
         .thenApply(EthLog::getLogs)
         .thenApply(
@@ -159,7 +159,7 @@ public class Web3jEth1Provider implements Eth1Provider {
                 // range to be reduced.
                 throw new RejectedRequestException("No logs returned by ETH1 node");
               }
-              return logs;
+              return (List<EthLog.LogResult<?>>) (List) logs;
             });
   }
 }

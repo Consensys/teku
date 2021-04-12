@@ -100,8 +100,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
-  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
     return taskQueue.queueTask(() -> delegate.ethGetLogs(ethFilter));
   }
 }

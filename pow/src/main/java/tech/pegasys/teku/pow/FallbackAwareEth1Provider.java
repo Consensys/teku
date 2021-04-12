@@ -116,8 +116,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
-  public SafeFuture<List<EthLog.LogResult>> ethGetLogs(EthFilter ethFilter) {
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
     return run(eth1Provider -> eth1Provider.ethGetLogs(ethFilter));
   }
 
