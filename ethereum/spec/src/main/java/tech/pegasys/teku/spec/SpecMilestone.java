@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -22,6 +24,17 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public enum SpecMilestone {
   PHASE0,
   ALTAIR;
+
+  /**
+   *
+   * @param milestone The milestone being inspected
+   * @return An ordered list of all milestones preceding the supplied milestone
+   */
+  static List<SpecMilestone> getAllPriorMilestones(SpecMilestone milestone) {
+    final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
+    final int milestoneIndex = allMilestones.indexOf(milestone);
+    return allMilestones.subList(0, milestoneIndex);
+  }
 
   static Optional<Bytes4> getForkVersion(
       final SpecConfig specConfig, final SpecMilestone milestone) {

@@ -20,12 +20,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
 
   private final SpecConfig minimalPhase0Config =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName() + "/phase0.yaml");
+      TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
   private final SpecConfigAltair minimalConfig =
       SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 

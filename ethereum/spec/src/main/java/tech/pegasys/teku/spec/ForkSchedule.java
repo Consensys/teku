@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -59,8 +59,8 @@ public class ForkSchedule {
    * @return Milestones that are supported. Includes milestones that may be eclipsed by later
    *     milestones which are activated at the same epoch.
    */
-  public Collection<SpecMilestone> getSupportedMilestones() {
-    return supportedMilestones;
+  public List<SpecMilestone> getSupportedMilestones() {
+    return ImmutableList.copyOf(supportedMilestones);
   }
 
   /**
@@ -74,12 +74,8 @@ public class ForkSchedule {
         .collect(Collectors.toList());
   }
 
-  public Optional<Fork> getFork(final SpecMilestone milestone) {
-    return Optional.ofNullable(milestoneToFork.get(milestone));
-  }
-
   public Fork getFork(final UInt64 epoch) {
-    return milestoneToFork.get(epochToMilestone.get(epoch));
+    return milestoneToFork.get(getSpecMilestoneAtEpoch(epoch));
   }
 
   public Optional<Fork> getNextFork(final UInt64 epoch) {
@@ -112,12 +108,12 @@ public class ForkSchedule {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final ForkSchedule that = (ForkSchedule) o;
-    return Objects.equals(slotToMilestone, that.slotToMilestone);
+    return Objects.equals(milestoneToFork, that.milestoneToFork);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slotToMilestone);
+    return Objects.hash(milestoneToFork);
   }
 
   public static Builder builder() {
@@ -133,6 +129,7 @@ public class ForkSchedule {
 
     // Track info on the last processed milestone
     private Optional<Bytes4> prevForkVersion = Optional.empty();
+    private Optional<SpecMilestone> prevMilestone = Optional.empty();
     private UInt64 prevMilestoneForkEpoch = UInt64.ZERO;
 
     private Builder() {}
@@ -181,6 +178,15 @@ public class ForkSchedule {
         throw new IllegalArgumentException(msg);
       }
 
+      if (prevForkVersion.isEmpty()) {
+        // Make sure to include all implicitly supported forks
+        supportedMilestones.addAll(SpecMilestone.getAllPriorMilestones(milestone));
+      } else if (prevMilestoneForkEpoch.equals(forkEpoch)) {
+        // Clear out previous milestone data that is overshadowed by this milestone
+        milestoneToFork.remove(prevMilestone.orElseThrow());
+        // Remaining mappings are naturally overwritten
+      }
+
       // Track milestone
       supportedMilestones.add(milestone);
       epochToMilestone.put(forkEpoch, milestone);
@@ -189,6 +195,7 @@ public class ForkSchedule {
       milestoneToFork.put(milestone, fork);
 
       // Remember what we just processed
+      prevMilestone = Optional.of(milestone);
       prevMilestoneForkEpoch = forkEpoch;
       prevForkVersion = Optional.of(forkVersion);
     }

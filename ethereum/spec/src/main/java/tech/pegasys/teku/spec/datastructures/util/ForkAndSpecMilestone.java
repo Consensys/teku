@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
+import java.util.Objects;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
@@ -31,5 +32,18 @@ public class ForkAndSpecMilestone {
 
   public SpecMilestone getSpecMilestone() {
     return specMilestone;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ForkAndSpecMilestone that = (ForkAndSpecMilestone) o;
+    return Objects.equals(fork, that.fork) && specMilestone == that.specMilestone;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fork, specMilestone);
   }
 }

@@ -647,7 +647,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  class AltairBuilder {
+  public class AltairBuilder {
     // Updated penalties
     private UInt64 inactivityPenaltyQuotientAltair;
     private Integer minSlashingPenaltyQuotientAltair;
