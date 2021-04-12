@@ -45,6 +45,11 @@ public class TestSpecFactory {
     return create(specConfig, specConfig.getGenesisForkVersion());
   }
 
+  public static Spec createPhase0(final String configName) {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfig(configName);
+    return createPhase0(specConfig);
+  }
+
   public static Spec createPhase0(final SpecConfig config) {
     return create(config, config.getGenesisForkVersion());
   }
