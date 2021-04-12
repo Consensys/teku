@@ -65,27 +65,30 @@ public class BeaconStateBuilderAltair
         spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
-  private BeaconStateSchemaAltair getBeaconStateSchemaAltair() {
-    return (BeaconStateSchemaAltair) getEmptyState().getSchema();
+  private BeaconStateSchemaAltair getBeaconStateSchema() {
+    return (BeaconStateSchemaAltair)
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
   }
 
   @Override
   protected void initDefaults() {
     super.initDefaults();
 
+    final BeaconStateSchemaAltair schema = getBeaconStateSchema();
+
     previousEpochParticipation =
         dataStructureUtil.randomSszList(
-            getBeaconStateSchemaAltair().getPreviousEpochParticipationSchema(),
+            schema.getPreviousEpochParticipationSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomSszByte);
     currentEpochParticipation =
         dataStructureUtil.randomSszList(
-            getBeaconStateSchemaAltair().getCurrentEpochParticipationSchema(),
+            schema.getCurrentEpochParticipationSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomSszByte);
     inactivityScores =
         dataStructureUtil.randomSszUInt64List(
-            getBeaconStateSchemaAltair().getInactivityScoresSchema(), defaultItemsInSSZLists);
+            schema.getInactivityScoresSchema(), defaultItemsInSSZLists);
     currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
   }

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
@@ -77,18 +76,6 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
   default SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> getSlashingsSchema() {
     return (SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>)
         getChildSchema(getFieldIndex(BeaconStateFields.SLASHINGS.name()));
-  }
-
-  @SuppressWarnings("unchecked")
-  default SszListSchema<PendingAttestation, ?> getPreviousEpochAttestationsSchema() {
-    return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name()));
-  }
-
-  @SuppressWarnings("unchecked")
-  default SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
-    return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name()));
   }
 
   default SszBitvectorSchema<?> getJustificationBitsSchema() {

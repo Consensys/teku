@@ -57,18 +57,25 @@ public class BeaconStateBuilderPhase0
         spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
+  private BeaconStateSchemaPhase0 getBeaconStateSchema() {
+    return (BeaconStateSchemaPhase0)
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
+  }
+
   @Override
   protected void initDefaults() {
     super.initDefaults();
 
+    final BeaconStateSchemaPhase0 schema = getBeaconStateSchema();
+
     previousEpochAttestations =
         dataStructureUtil.randomSszList(
-            dataStructureUtil.getBeaconStateSchema().getPreviousEpochAttestationsSchema(),
+            schema.getPreviousEpochAttestationsSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomPendingAttestation);
     currentEpochAttestations =
         dataStructureUtil.randomSszList(
-            dataStructureUtil.getBeaconStateSchema().getCurrentEpochAttestationsSchema(),
+            schema.getCurrentEpochAttestationsSchema(),
             defaultItemsInSSZLists,
             dataStructureUtil::randomPendingAttestation);
   }
