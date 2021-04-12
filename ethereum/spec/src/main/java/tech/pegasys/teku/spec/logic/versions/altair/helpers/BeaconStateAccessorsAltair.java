@@ -67,11 +67,11 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   }
 
   /**
-   * Return the sequence of sync committee indices (which may include uplicate indices) for a given
+   * Return the sequence of sync committee indices (which may include duplicate indices) for a given
    * state and epoch.
    *
    * @param state the state to calculate committees from
-   * @param epoch the epoch to calcualte committees for
+   * @param epoch the epoch to calculate committees for
    * @return the sequence of sync committee indices
    */
   public List<Integer> getSyncCommitteeIndices(final BeaconState state, final UInt64 epoch) {

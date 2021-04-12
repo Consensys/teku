@@ -113,19 +113,24 @@ public class BeaconRestApi {
     addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
-    // standard api endpoint inclusion
-    addV1BeaconHandlers(dataProvider);
-    addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
-    addV1NodeHandlers(dataProvider);
-    addV1ValidatorHandlers(dataProvider);
-    addV1ConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
-    addV1DebugHandlers(dataProvider);
-
-    // Endpoints from before standard API
+    addStandardApiHandlers(dataProvider, eventChannels, asyncRunner, configuration);
     addTekuSpecificHandlers(dataProvider);
   }
 
-  private void addV1ConfigHandlers(
+  private void addStandardApiHandlers(
+      final DataProvider dataProvider,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
+      final BeaconRestApiConfig configuration) {
+    addBeaconHandlers(dataProvider);
+    addEventHandler(dataProvider, eventChannels, asyncRunner, configuration);
+    addNodeHandlers(dataProvider);
+    addValidatorHandlers(dataProvider);
+    addConfigHandlers(dataProvider, configuration.getEth1DepositContractAddress());
+    addDebugHandlers(dataProvider);
+  }
+
+  private void addConfigHandlers(
       final DataProvider dataProvider, final Eth1Address depositAddress) {
     app.get(
         GetDepositContract.ROUTE,
@@ -134,7 +139,7 @@ public class BeaconRestApi {
     app.get(GetSpec.ROUTE, new GetSpec(dataProvider, jsonProvider));
   }
 
-  private void addV1DebugHandlers(final DataProvider dataProvider) {
+  private void addDebugHandlers(final DataProvider dataProvider) {
     app.get(GetChainHeads.ROUTE, new GetChainHeads(dataProvider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
@@ -270,7 +275,7 @@ public class BeaconRestApi {
     app.get(Liveness.ROUTE, new Liveness());
   }
 
-  private void addV1NodeHandlers(final DataProvider provider) {
+  private void addNodeHandlers(final DataProvider provider) {
     app.get(GetHealth.ROUTE, new GetHealth(provider));
     app.get(GetIdentity.ROUTE, new GetIdentity(provider, jsonProvider));
     app.get(
@@ -285,7 +290,7 @@ public class BeaconRestApi {
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
   }
 
-  private void addV1ValidatorHandlers(final DataProvider dataProvider) {
+  private void addValidatorHandlers(final DataProvider dataProvider) {
     app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
     app.get(
@@ -300,7 +305,7 @@ public class BeaconRestApi {
         new PostSubscribeToBeaconCommitteeSubnet(dataProvider, jsonProvider));
   }
 
-  private void addV1BeaconHandlers(final DataProvider dataProvider) {
+  private void addBeaconHandlers(final DataProvider dataProvider) {
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(dataProvider, jsonProvider));
     app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));

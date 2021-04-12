@@ -221,6 +221,7 @@ public class VoluntaryExitCommand implements Runnable {
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
+            config.validatorClient().getSpec(),
             config.validatorClient().getValidatorConfig(),
             config.validatorClient().getInteropConfig(),
             new RejectingSlashingProtector(),

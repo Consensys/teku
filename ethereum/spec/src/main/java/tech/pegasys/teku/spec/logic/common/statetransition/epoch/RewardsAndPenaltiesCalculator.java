@@ -44,16 +44,14 @@ public abstract class RewardsAndPenaltiesCalculator {
   public abstract RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
 
   protected UInt64 getFinalityDelay() {
-    return beaconStateAccessors
-        .getPreviousEpoch(state)
-        .minus(state.getFinalized_checkpoint().getEpoch());
+    return beaconStateAccessors.getFinalityDelay(state);
   }
 
   protected boolean isInactivityLeak(final UInt64 finalityDelay) {
-    return finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
+    return beaconStateAccessors.isInactivityLeak(finalityDelay);
   }
 
   protected boolean isInactivityLeak() {
-    return getFinalityDelay().isGreaterThan(specConfig.getMinEpochsToInactivityPenalty());
+    return beaconStateAccessors.isInactivityLeak(state);
   }
 }

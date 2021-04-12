@@ -15,6 +15,9 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -57,8 +60,28 @@ public class SyncCommitteeContributionSchema
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
+  public SyncCommitteeContribution create(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final UInt64 subcommitteeIndex,
+      final SszBitvector aggregationBits,
+      final BLSSignature signature) {
+    return new SyncCommitteeContribution(
+        this,
+        SszUInt64.of(slot),
+        SszBytes32.of(beaconBlockRoot),
+        SszUInt64.of(subcommitteeIndex),
+        aggregationBits,
+        new SszSignature(signature));
+  }
+
   @Override
   public SyncCommitteeContribution createFromBackingNode(final TreeNode node) {
     return new SyncCommitteeContribution(this, node);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszBitvectorSchema<SszBitvector> getAggregationBitsSchema() {
+    return (SszBitvectorSchema<SszBitvector>) getChildSchema(3);
   }
 }

@@ -24,15 +24,19 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.validator.api.InteropConfig;
 
 public class MockStartValidatorSource implements ValidatorSource {
   private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec;
   private final InteropConfig config;
   private final AsyncRunner asyncRunner;
 
-  public MockStartValidatorSource(final InteropConfig config, final AsyncRunner asyncRunner) {
+  public MockStartValidatorSource(
+      final Spec spec, final InteropConfig config, final AsyncRunner asyncRunner) {
+    this.spec = spec;
     this.config = config;
     this.asyncRunner = asyncRunner;
   }
@@ -62,7 +66,7 @@ public class MockStartValidatorSource implements ValidatorSource {
 
     @Override
     public Signer createSigner() {
-      return new LocalSigner(keyPair, asyncRunner);
+      return new LocalSigner(spec, keyPair, asyncRunner);
     }
   }
 }

@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -53,22 +54,34 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state.ssz_snappy");
     final Spec spec = testDefinition.getSpec();
-    final BeaconBlock anchorBlock =
-        TestDataUtils.loadSsz(
-            testDefinition, "anchor_block.ssz_snappy", spec::deserializeBeaconBlock);
+    final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
 
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
     recentChainData.initializeFromAnchorPoint(
-        AnchorPoint.fromInitialBlockAndState(
-            new SignedBlockAndState(
-                SignedBeaconBlock.create(spec, anchorBlock, BLSSignature.empty()), anchorState)),
+        AnchorPoint.fromInitialBlockAndState(new SignedBlockAndState(anchorBlock, anchorState)),
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
 
     final ForkChoice forkChoice =
         ForkChoice.create(spec, new InlineEventThread(), recentChainData, false);
 
     runSteps(testDefinition, spec, recentChainData, forkChoice);
+  }
+
+  /**
+   * The anchor block is currently always a Phase 0 block because of the way the specs repo are
+   * doing Altair genesis. See https://github.com/ethereum/eth2.0-specs/pull/2323
+   *
+   * @param testDefinition the test definition
+   * @return the anchor block for the test
+   */
+  private SignedBeaconBlock loadAnchorBlock(final TestDefinition testDefinition) {
+    final Spec phase0Spec = SpecFactory.create(testDefinition.getConfigName());
+    final BeaconBlock anchorBlock =
+        TestDataUtils.loadSsz(
+            testDefinition, "anchor_block.ssz_snappy", phase0Spec::deserializeBeaconBlock);
+    return SignedBeaconBlock.create(phase0Spec, anchorBlock, BLSSignature.empty());
   }
 
   private void runSteps(

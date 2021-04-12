@@ -26,6 +26,13 @@ public class SignedContributionAndProof
     super(schema, backingNode);
   }
 
+  protected SignedContributionAndProof(
+      final SignedContributionAndProofSchema schema,
+      final ContributionAndProof message,
+      final SszSignature signature) {
+    super(schema, message, signature);
+  }
+
   public ContributionAndProof getMessage() {
     return getField0();
   }
