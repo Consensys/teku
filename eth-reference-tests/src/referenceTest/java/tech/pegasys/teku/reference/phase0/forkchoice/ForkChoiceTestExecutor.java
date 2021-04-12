@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -77,11 +76,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
    * @return the anchor block for the test
    */
   private SignedBeaconBlock loadAnchorBlock(final TestDefinition testDefinition) {
-    final Spec phase0Spec = SpecFactory.create(testDefinition.getConfigName());
+    final Spec spec = testDefinition.getSpec();
     final BeaconBlock anchorBlock =
         TestDataUtils.loadSsz(
-            testDefinition, "anchor_block.ssz_snappy", phase0Spec::deserializeBeaconBlock);
-    return SignedBeaconBlock.create(phase0Spec, anchorBlock, BLSSignature.empty());
+            testDefinition, "anchor_block.ssz_snappy", spec::deserializeBeaconBlock);
+    return SignedBeaconBlock.create(spec, anchorBlock, BLSSignature.empty());
   }
 
   private void runSteps(
