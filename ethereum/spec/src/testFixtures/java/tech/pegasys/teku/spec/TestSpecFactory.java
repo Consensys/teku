@@ -13,17 +13,18 @@
 
 package tech.pegasys.teku.spec;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return create(specConfig, SpecMilestone.ALTAIR);
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
@@ -32,9 +33,8 @@ public class TestSpecFactory {
   }
 
   public static Spec createMainnetAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return create(specConfig, SpecMilestone.ALTAIR);
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetPhase0() {
@@ -53,5 +53,11 @@ public class TestSpecFactory {
 
   private static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
     return Spec.create(config, supportedMilestones);
+  }
+
+  private static SpecConfigAltair getAltairSpecConfig(final Eth2Network network) {
+    return SpecConfigAltair.required(
+        TestConfigLoader.loadConfig(
+            network.configName(), c -> c.altairBuilder(a -> a.altairForkSlot(UInt64.ZERO))));
   }
 }

@@ -74,7 +74,7 @@ public class Spec {
 
   private Spec(Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
     Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
-    Preconditions.checkArgument(forkSchedule != null && forkSchedule.size() == specVersions.size());
+    Preconditions.checkArgument(forkSchedule != null);
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
   }
