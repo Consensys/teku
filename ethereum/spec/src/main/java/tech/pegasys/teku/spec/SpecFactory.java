@@ -29,6 +29,7 @@ public interface SpecFactory {
 
   class Phase0SpecFactory implements SpecFactory {
 
+    @Override
     public Spec create(String configName) {
       final SpecConfig config = SpecConfigLoader.loadConfig(configName);
       final ForkManifest forkManifest =
