@@ -104,62 +104,72 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))) {
         return;
       }
-
-      Checkpoint oldPreviousJustifiedCheckpoint = state.getPrevious_justified_checkpoint();
-      Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrent_justified_checkpoint();
-
-      // Process justifications
-      state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
-      SszBitvector justificationBits = state.getJustification_bits().rightShift(1);
-
-      if (totalBalances
-          .getPreviousEpochTargetAttesters()
-          .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
-        UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
-        Checkpoint newCheckpoint =
-            new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
-        state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = justificationBits.withBit(1);
-      }
-
-      if (totalBalances
-          .getCurrentEpochTargetAttesters()
-          .times(3)
-          .isGreaterThanOrEqualTo(totalBalances.getCurrentEpochActiveValidators().times(2))) {
-        Checkpoint newCheckpoint =
-            new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
-        state.setCurrent_justified_checkpoint(newCheckpoint);
-        justificationBits = justificationBits.withBit(0);
-      }
-
-      state.setJustification_bits(justificationBits);
-
-      // Process finalizations
-
-      // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
-      if (beaconStateUtil.all(justificationBits, 1, 4)
-          && oldPreviousJustifiedCheckpoint.getEpoch().plus(3).equals(currentEpoch)) {
-        state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
-      }
-      // The 2nd/3rd most recent epochs are justified, the 2nd using the 3rd as source
-      if (beaconStateUtil.all(justificationBits, 1, 3)
-          && oldPreviousJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-        state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
-      }
-      // The 1st/2nd/3rd most recent epochs are justified, the 1st using the 3rd as source
-      if (beaconStateUtil.all(justificationBits, 0, 3)
-          && oldCurrentJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
-        state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
-      }
-      // The 1st/2nd most recent epochs are justified, the 1st using the 2nd as source
-      if (beaconStateUtil.all(justificationBits, 0, 2)
-          && oldCurrentJustifiedCheckpoint.getEpoch().plus(1).equals(currentEpoch)) {
-        state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
-      }
+      final UInt64 totalActiveBalance = totalBalances.getCurrentEpochActiveValidators();
+      final UInt64 previousEpochTargetBalance = totalBalances.getPreviousEpochTargetAttesters();
+      final UInt64 currentEpochTargetBalance = totalBalances.getCurrentEpochTargetAttesters();
+      weighJustificationAndFinalization(
+          state,
+          currentEpoch,
+          totalActiveBalance,
+          previousEpochTargetBalance,
+          currentEpochTargetBalance);
 
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
+    }
+  }
+
+  private void weighJustificationAndFinalization(
+      final MutableBeaconState state,
+      final UInt64 currentEpoch,
+      final UInt64 totalActiveBalance,
+      final UInt64 previousEpochTargetBalance,
+      final UInt64 currentEpochTargetBalance) {
+    Checkpoint oldPreviousJustifiedCheckpoint = state.getPrevious_justified_checkpoint();
+    Checkpoint oldCurrentJustifiedCheckpoint = state.getCurrent_justified_checkpoint();
+
+    // Process justifications
+    state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
+    SszBitvector justificationBits = state.getJustification_bits().rightShift(1);
+
+    if (previousEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
+      UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
+      Checkpoint newCheckpoint =
+          new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
+      state.setCurrent_justified_checkpoint(newCheckpoint);
+      justificationBits = justificationBits.withBit(1);
+    }
+
+    if (currentEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
+      Checkpoint newCheckpoint =
+          new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
+      state.setCurrent_justified_checkpoint(newCheckpoint);
+      justificationBits = justificationBits.withBit(0);
+    }
+
+    state.setJustification_bits(justificationBits);
+
+    // Process finalizations
+
+    // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
+    if (beaconStateUtil.all(justificationBits, 1, 4)
+        && oldPreviousJustifiedCheckpoint.getEpoch().plus(3).equals(currentEpoch)) {
+      state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
+    }
+    // The 2nd/3rd most recent epochs are justified, the 2nd using the 3rd as source
+    if (beaconStateUtil.all(justificationBits, 1, 3)
+        && oldPreviousJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
+      state.setFinalized_checkpoint(oldPreviousJustifiedCheckpoint);
+    }
+    // The 1st/2nd/3rd most recent epochs are justified, the 1st using the 3rd as source
+    if (beaconStateUtil.all(justificationBits, 0, 3)
+        && oldCurrentJustifiedCheckpoint.getEpoch().plus(2).equals(currentEpoch)) {
+      state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
+    }
+    // The 1st/2nd most recent epochs are justified, the 1st using the 2nd as source
+    if (beaconStateUtil.all(justificationBits, 0, 2)
+        && oldCurrentJustifiedCheckpoint.getEpoch().plus(1).equals(currentEpoch)) {
+      state.setFinalized_checkpoint(oldCurrentJustifiedCheckpoint);
     }
   }
 

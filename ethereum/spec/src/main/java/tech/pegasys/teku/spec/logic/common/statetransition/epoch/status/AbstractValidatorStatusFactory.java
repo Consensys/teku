@@ -112,20 +112,19 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
       }
       if (status.isCurrentEpochSourceAttester()) {
         currentEpochSourceAttesters = currentEpochSourceAttesters.plus(balance);
-
-        if (status.isCurrentEpochTargetAttester()) {
-          currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
-        }
+      }
+      if (status.isCurrentEpochTargetAttester()) {
+        currentEpochTargetAttesters = currentEpochTargetAttesters.plus(balance);
       }
 
       if (status.isPreviousEpochSourceAttester()) {
         previousEpochSourceAttesters = previousEpochSourceAttesters.plus(balance);
-        if (status.isPreviousEpochTargetAttester()) {
-          previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
-        }
-        if (status.isPreviousEpochHeadAttester()) {
-          previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
-        }
+      }
+      if (status.isPreviousEpochTargetAttester()) {
+        previousEpochTargetAttesters = previousEpochTargetAttesters.plus(balance);
+      }
+      if (status.isPreviousEpochHeadAttester()) {
+        previousEpochHeadAttesters = previousEpochHeadAttesters.plus(balance);
       }
     }
     return new TotalBalances(
