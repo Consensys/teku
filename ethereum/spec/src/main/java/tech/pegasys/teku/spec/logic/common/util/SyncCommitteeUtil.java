@@ -97,6 +97,8 @@ public class SyncCommitteeUtil {
               } else {
                 syncCommittee = altairState.getNextSyncCommittee();
               }
+              final int subcommitteeSize =
+                  specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
               final SszVector<SszPublicKey> pubkeys = syncCommittee.getPubkeys();
               final Map<UInt64, Map<Integer, Set<Integer>>> subcommitteeAssignments =
                   new HashMap<>();
@@ -111,12 +113,13 @@ public class SyncCommitteeUtil {
                                     new IllegalStateException(
                                         "Unknown validator assigned to sync committee: "
                                             + pubkey)));
-                final int subcommitteeSize =
-                    specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
                 final int subcommitteeIndex = index / subcommitteeSize;
                 final int subcommitteeParticipationIndex =
                     index - (subcommitteeIndex * subcommitteeSize);
 
+                // Note we're using plain HashMap here instead of a concurrent alternative as they
+                // are created once here and then never modified so safe to access from multiple
+                // threads.
                 subcommitteeAssignments
                     .computeIfAbsent(validatorIndex, __ -> new HashMap<>())
                     .computeIfAbsent(subcommitteeIndex, __ -> new HashSet<>())
