@@ -24,25 +24,26 @@ import java.util.Set;
  */
 public class SyncSubcommitteeAssignments {
 
-  private final Map<Integer, Set<Integer>> subcommitteeAssignments;
+  private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices;
 
-  public SyncSubcommitteeAssignments(final Map<Integer, Set<Integer>> subcommitteeAssignments) {
-    this.subcommitteeAssignments = subcommitteeAssignments;
+  public SyncSubcommitteeAssignments(
+      final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices) {
+    this.subcommitteeToParticipationIndices = subcommitteeToParticipationIndices;
   }
 
   public Set<Integer> getAssignedSubcommittees() {
-    return Collections.unmodifiableSet(subcommitteeAssignments.keySet());
+    return Collections.unmodifiableSet(subcommitteeToParticipationIndices.keySet());
   }
 
   public Set<Integer> getParticipationBitIndices(final int subcommitteeIndex) {
     return Collections.unmodifiableSet(
-        subcommitteeAssignments.getOrDefault(subcommitteeIndex, Collections.emptySet()));
+        subcommitteeToParticipationIndices.getOrDefault(subcommitteeIndex, Collections.emptySet()));
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("subcommitteeAssignments", subcommitteeAssignments)
+        .add("subcommitteeToParticipationIndices", subcommitteeToParticipationIndices)
         .toString();
   }
 }
