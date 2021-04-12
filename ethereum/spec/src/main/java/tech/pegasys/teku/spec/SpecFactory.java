@@ -19,7 +19,11 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public interface SpecFactory {
-  SpecFactory INSTANCE = new Phase0SpecFactory();
+  SpecFactory PHASE0 = new Phase0SpecFactory();
+
+  static SpecFactory getDefault() {
+    return PHASE0;
+  }
 
   Spec create(String configName);
 
