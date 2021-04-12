@@ -49,7 +49,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
     final BeaconState anchorState =
