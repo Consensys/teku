@@ -463,6 +463,10 @@ public class Spec {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
+  public int getPreviousEpochAttestationCapacity(final BeaconState state) {
+    return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
+  }
+
   // Validator Utils
   public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
     return getActiveValidatorIndices(state, epoch).size();
