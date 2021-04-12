@@ -23,13 +23,13 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class DutyMetricsTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(100_000);
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StubTimeProvider timeProvider =
       StubTimeProvider.withTimeInSeconds(GENESIS_TIME.longValue());
   private final RecentChainData recentChainData = mock(RecentChainData.class);

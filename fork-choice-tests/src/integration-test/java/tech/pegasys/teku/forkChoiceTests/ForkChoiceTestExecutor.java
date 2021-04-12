@@ -39,7 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -57,7 +57,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ForkChoiceTestExecutor {
   private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-  private static final Spec SPEC = SpecFactory.createMinimal();
+  private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
 
   public static Stream<Arguments> loadForkChoiceTests() {
     Path path = Paths.get("src/integration-test/resources/");

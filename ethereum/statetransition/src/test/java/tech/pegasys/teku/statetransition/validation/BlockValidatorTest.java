@@ -31,7 +31,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().eventBus(eventBus).specProvider(spec).build();
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 10, recentChainData);

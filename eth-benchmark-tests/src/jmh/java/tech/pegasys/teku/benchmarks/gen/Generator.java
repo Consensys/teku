@@ -35,7 +35,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -54,7 +54,7 @@ public class Generator {
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-    final Spec spec = SpecFactory.createMainnet();
+    final Spec spec = TestSpecFactory.createMainnetPhase0();
     Constants.setConstants("mainnet");
 
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;

@@ -45,7 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -83,7 +83,7 @@ class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final UInt64 EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(EPOCH);
   private final UInt64 PREVIOUS_EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
 

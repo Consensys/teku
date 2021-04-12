@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -55,7 +55,7 @@ public class ValidatorApiHandlerIntegrationTest {
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   // Other dependencies are mocked, but these can be updated as needed
   private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);

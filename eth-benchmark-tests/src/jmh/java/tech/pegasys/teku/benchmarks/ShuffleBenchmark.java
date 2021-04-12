@@ -27,8 +27,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecConfiguration;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.util.config.Constants;
@@ -42,10 +41,7 @@ public class ShuffleBenchmark {
   int indexCount;
 
   Bytes32 seed = Bytes32.ZERO;
-  private final SpecConfig specConfig = SpecConfig.builder().configName("mainnet").build();
-  private final SpecConfiguration specConfiguration =
-      SpecConfiguration.builder().config(specConfig).build();
-  private final Spec spec = Spec.create(specConfiguration);
+  private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final MiscHelpers miscHelpers = spec.atSlot(UInt64.ZERO).miscHelpers();
 
   public ShuffleBenchmark() {

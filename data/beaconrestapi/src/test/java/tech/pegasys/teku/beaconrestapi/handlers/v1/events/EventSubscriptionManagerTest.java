@@ -52,7 +52,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -62,7 +62,7 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil(spec);

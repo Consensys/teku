@@ -18,14 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBeaconBlockTest {
   @Test
   public void shouldRoundTripViaSsz() {
-    final Spec spec = SpecFactory.createMinimal();
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
     final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
     final Bytes ssz = block.sszSerialize();

@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -56,7 +56,7 @@ class LocalValidatorSourceTest {
       new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final ValidatorConfig config = mock(ValidatorConfig.class);
   private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
 
