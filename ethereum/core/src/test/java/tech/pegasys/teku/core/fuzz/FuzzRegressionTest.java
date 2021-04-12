@@ -20,7 +20,7 @@ import java.net.URL;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class FuzzRegressionTest {
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   @Test
   void shouldRejectAttesterSlashingWithInvalidValidatorIndex() throws Exception {

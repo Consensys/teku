@@ -30,7 +30,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -40,7 +40,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerStatusIntegrationTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(1);
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RecentChainData recentChainData1 =
       MemoryOnlyRecentChainData.create(spec, new EventBus());

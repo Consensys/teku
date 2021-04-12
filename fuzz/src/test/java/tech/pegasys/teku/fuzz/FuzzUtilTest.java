@@ -33,7 +33,7 @@ import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -54,7 +54,7 @@ import tech.pegasys.teku.util.config.SpecDependent;
 @ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SchemaDefinitions genesisSchemaDefinitions = spec.getGenesisSchemaDefinitions();
   private final BeaconBlockSchema beaconBlockSchema =
       genesisSchemaDefinitions.getBeaconBlockSchema();
