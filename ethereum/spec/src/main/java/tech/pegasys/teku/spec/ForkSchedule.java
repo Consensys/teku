@@ -152,12 +152,13 @@ public class ForkSchedule {
           milestoneToFork);
     }
 
-    public Builder addNextMilestone(final SpecMilestone milestone, final SpecVersion spec) {
-      processMilestone(milestone, spec);
+    public Builder addNextMilestone(final SpecVersion spec) {
+      processMilestone(spec);
       return this;
     }
 
-    private void processMilestone(final SpecMilestone milestone, final SpecVersion spec) {
+    private void processMilestone(final SpecVersion spec) {
+      final SpecMilestone milestone = spec.getMilestone();
       final Optional<UInt64> maybeForkSlot = SpecMilestone.getForkSlot(spec.getConfig(), milestone);
       final Optional<Bytes4> maybeForkVersion =
           SpecMilestone.getForkVersion(spec.getConfig(), milestone);

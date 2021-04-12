@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -23,23 +24,38 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
 
-  private final SpecConfig specConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+  private final SpecConfig minimalPhase0Config =
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName() + "/phase0.yaml");
+  private final SpecConfigAltair minimalConfig =
+      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 
   @Test
   void shouldCreatePhase0Spec() {
-    final SpecVersion expectedVersion = SpecVersion.createPhase0(specConfig);
-    final SpecVersion actualVersion = SpecVersion.create(SpecMilestone.PHASE0, specConfig);
-    assertThat(actualVersion.getSchemaDefinitions())
+    final SpecVersion expectedVersion = SpecVersion.createPhase0(minimalConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.PHASE0, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
 
   @Test
   void shouldCreateAltairSpec() {
-    final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(specConfig);
+    final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createAltair(altairSpecConfig);
-    final SpecVersion actualVersion = SpecVersion.create(SpecMilestone.ALTAIR, specConfig);
-    assertThat(actualVersion.getSchemaDefinitions())
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
+  }
+
+  @Test
+  void shouldReturnEmptyWhen_altairRequestedWithPhase0Config() {
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.ALTAIR, minimalPhase0Config);
+    assertThat(actualVersion).isEmpty();
   }
 }

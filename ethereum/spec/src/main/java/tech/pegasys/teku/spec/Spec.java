@@ -88,9 +88,12 @@ public class Spec {
         break;
       }
 
-      final SpecVersion milestoneSpec = SpecVersion.create(milestone, config);
-      forkScheduleBuilder.addNextMilestone(milestone, milestoneSpec);
-      specVersions.put(milestone, milestoneSpec);
+      SpecVersion.create(milestone, config)
+          .ifPresent(
+              milestoneSpec -> {
+                forkScheduleBuilder.addNextMilestone(milestoneSpec);
+                specVersions.put(milestone, milestoneSpec);
+              });
     }
 
     final ForkSchedule forkSchedule = ForkSchedule.builder().build();
