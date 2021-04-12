@@ -17,30 +17,29 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig =
         SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return create(specConfig, specConfig.getAltairForkVersion());
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
-    return create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
   }
 
   public static Spec createMainnetAltair() {
     final SpecConfigAltair specConfig =
         SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return create(specConfig, specConfig.getAltairForkVersion());
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName());
-    return create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
   }
 
   public static Spec createPhase0(final String configName) {
@@ -49,10 +48,10 @@ public class TestSpecFactory {
   }
 
   public static Spec createPhase0(final SpecConfig config) {
-    return create(config, config.getGenesisForkVersion());
+    return create(config, SpecMilestone.PHASE0);
   }
 
-  private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
-    return Spec.create(config, SpecMilestone.PHASE0);
+  private static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
+    return Spec.create(config, supportedMilestones);
   }
 }

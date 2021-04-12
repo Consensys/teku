@@ -79,7 +79,7 @@ public class Spec {
     this.forkSchedule = forkSchedule;
   }
 
-  public static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
+  static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
     final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
     for (SpecMilestone milestone : SpecMilestone.values()) {
