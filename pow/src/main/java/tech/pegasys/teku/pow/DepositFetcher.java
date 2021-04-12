@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositFetcher {
@@ -99,8 +100,8 @@ public class DepositFetcher {
                   err);
 
               final Throwable rootCause = Throwables.getRootCause(err);
-              if (rootCause instanceof Eth1RequestExceptionsContainer
-                  && ((Eth1RequestExceptionsContainer) rootCause)
+              if (rootCause instanceof Eth1RequestException
+                  && ((Eth1RequestException) rootCause)
                       .containsExceptionSolvableWithSmallerRange()) {
                 STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
                 fetchState.reduceBatchSize();
@@ -295,7 +296,7 @@ public class DepositFetcher {
     }
 
     @Override
-    public int compareTo(final BlockNumberAndHash o) {
+    public int compareTo(@NotNull final BlockNumberAndHash o) {
       return COMPARATOR.compare(this, o);
     }
   }

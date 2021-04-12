@@ -38,7 +38,7 @@ import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
 
 @SuppressWarnings({"FutureReturnValueIgnored", "rawtypes"})
@@ -99,9 +99,9 @@ public class FallbackAwareEth1ProviderSelectorTest {
                 .exceptionallyCompose(
                     err -> {
                       final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestExceptionsContainer.class);
+                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
                       assertThat(
-                              ((Eth1RequestExceptionsContainer) errCause)
+                              ((Eth1RequestException) errCause)
                                   .containsExceptionSolvableWithSmallerRange())
                           .isTrue();
                       return SafeFuture.COMPLETE;
@@ -127,9 +127,9 @@ public class FallbackAwareEth1ProviderSelectorTest {
                 .exceptionallyCompose(
                     err -> {
                       final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestExceptionsContainer.class);
+                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
                       assertThat(
-                              ((Eth1RequestExceptionsContainer) errCause)
+                              ((Eth1RequestException) errCause)
                                   .containsExceptionSolvableWithSmallerRange())
                           .isTrue();
                       return SafeFuture.COMPLETE;
@@ -154,9 +154,9 @@ public class FallbackAwareEth1ProviderSelectorTest {
                 .exceptionallyCompose(
                     err -> {
                       final Throwable errCause = err.getCause();
-                      assertThat(errCause).isInstanceOf(Eth1RequestExceptionsContainer.class);
+                      assertThat(errCause).isInstanceOf(Eth1RequestException.class);
                       assertThat(
-                              ((Eth1RequestExceptionsContainer) errCause)
+                              ((Eth1RequestException) errCause)
                                   .containsExceptionSolvableWithSmallerRange())
                           .isFalse();
                       return SafeFuture.COMPLETE;

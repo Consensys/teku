@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
 
 public class DepositsFetcherTest {
@@ -167,8 +167,8 @@ public class DepositsFetcherTest {
     verifyNoMoreInteractions(depositEventsAccessor);
 
     // But there are too many results
-    final Eth1RequestExceptionsContainer err = new Eth1RequestExceptionsContainer();
-    err.add(new RejectedRequestException("Nah mate"));
+    final Eth1RequestException err = new Eth1RequestException();
+    err.addSuppressed(new RejectedRequestException("Nah mate"));
     request1Response.completeExceptionally(err);
 
     // So it halves the batch size and retries

@@ -28,7 +28,7 @@ import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.exception.Eth1RequestExceptionsContainer;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.util.config.Constants;
 
 public class FallbackAwareEth1Provider implements Eth1Provider {
@@ -122,20 +122,19 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
-    return run(
-        task, eth1ProviderSelector.getProviders().iterator(), new Eth1RequestExceptionsContainer());
+    return run(task, eth1ProviderSelector.getProviders().iterator(), new Eth1RequestException());
   }
 
   private <T> SafeFuture<T> run(
       final Function<Eth1Provider, SafeFuture<T>> task,
       final Iterator<Eth1Provider> providers,
-      Eth1RequestExceptionsContainer exceptionsContainer) {
+      Eth1RequestException exceptionsContainer) {
     return SafeFuture.of(
         () ->
             task.apply(providers.next())
                 .exceptionallyCompose(
                     err -> {
-                      exceptionsContainer.add(err);
+                      exceptionsContainer.addSuppressed(err);
                       if (providers.hasNext()) {
                         LOG.warn("Retrying with next eth1 endpoint", err);
                         return run(task, providers, exceptionsContainer);

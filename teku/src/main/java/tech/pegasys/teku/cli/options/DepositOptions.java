@@ -50,13 +50,11 @@ public class DepositOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    ArrayList<String> mergedEth1Endpoints = new ArrayList<>();
+    List<String> mergedEth1Endpoints = new ArrayList<>();
     Optional.ofNullable(eth1Endpoint).ifPresent(mergedEth1Endpoints::add);
     mergedEth1Endpoints.addAll(eth1Endpoints);
 
     builder.powchain(
-        b ->
-            b.eth1Endpoints(List.copyOf(mergedEth1Endpoints))
-                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
+        b -> b.eth1Endpoints(mergedEth1Endpoints).eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
   }
 }
