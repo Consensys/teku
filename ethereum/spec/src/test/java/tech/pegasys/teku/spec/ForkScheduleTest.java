@@ -18,7 +18,6 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.ForkSchedule.Builder;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
@@ -106,7 +105,7 @@ public class ForkScheduleTest {
   @Test
   public void builder_milestonesSuppliedOutOfOrder() {
     final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG);
-    final Builder builder = ForkSchedule.builder();
+    final ForkSchedule.Builder builder = ForkSchedule.builder();
 
     assertThatThrownBy(() -> builder.addNextMilestone(altair))
         .isInstanceOf(IllegalArgumentException.class)
@@ -410,7 +409,7 @@ public class ForkScheduleTest {
   }
 
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {
-    final Builder builder = ForkSchedule.builder();
+    final ForkSchedule.Builder builder = ForkSchedule.builder();
     builder.addNextMilestone(SpecVersion.createPhase0(specConfig));
     specConfig
         .toVersionAltair()
