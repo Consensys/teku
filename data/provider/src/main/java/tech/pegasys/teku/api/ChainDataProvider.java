@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.Merkleizable;
@@ -187,7 +188,7 @@ public class ChainDataProvider {
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
-    return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
+    return combinedChainDataClient.isFinalized(signedBeaconBlock.getMessage().slot);
   }
 
   public boolean isFinalized(final UInt64 slot) {
@@ -422,5 +423,10 @@ public class ChainDataProvider {
     return maybeForkInfo
         .map(forkInfo -> List.of(new Fork(forkInfo.getFork())))
         .orElse(Collections.emptyList());
+  }
+
+  public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
+    // TODO calculate milestone
+    return SpecMilestone.PHASE0;
   }
 }

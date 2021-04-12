@@ -317,7 +317,13 @@ public class BeaconRestApi {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
 
     app.post(PostBlock.ROUTE, new PostBlock(dataProvider, jsonProvider));
+
     app.get(GetBlock.ROUTE, new GetBlock(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
+            dataProvider, jsonProvider));
+
     app.get(GetBlockRoot.ROUTE, new GetBlockRoot(dataProvider, jsonProvider));
     app.get(GetBlockAttestations.ROUTE, new GetBlockAttestations(dataProvider, jsonProvider));
 
