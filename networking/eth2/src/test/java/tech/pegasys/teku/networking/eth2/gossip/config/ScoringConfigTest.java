@@ -18,11 +18,11 @@ import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class ScoringConfigTest {
 
-  private final Spec spec = SpecFactory.createMainnet();
+  private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final ScoringConfig scoringConfig = ScoringConfig.create(spec, DEFAULT_D);
 
   @Test

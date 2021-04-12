@@ -36,14 +36,14 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class GossipScoringConfiguratorTest {
 
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
-  private final Spec spec = SpecFactory.createMainnet();
+  private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final int genesisMinActiveValidators =
       spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
 

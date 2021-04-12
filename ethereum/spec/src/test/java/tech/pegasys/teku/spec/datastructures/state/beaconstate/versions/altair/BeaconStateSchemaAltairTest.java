@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
@@ -45,7 +44,7 @@ public class BeaconStateSchemaAltairTest
 
   @Test
   public void changeSpecConfigTest_checkAltairFields() {
-    final Spec standardSpec = SpecFactory.createMinimal();
+    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig modifiedConstants =
         TestConfigLoader.loadConfig("minimal", b -> b.validatorRegistryLimit(123L));
 

@@ -24,10 +24,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 class ActiveValidatorTrackerTest {
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StableSubnetSubscriber stableSubnetSubscriber =
       mock(ValidatorBasedStableSubnetSubscriber.class);
 

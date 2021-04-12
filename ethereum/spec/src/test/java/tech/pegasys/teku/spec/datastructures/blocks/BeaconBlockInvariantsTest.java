@@ -20,12 +20,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BeaconBlockInvariantsTest {
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(SpecFactory.createMinimal());
+      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
 
   @ParameterizedTest
   @MethodSource("slotNumbers")

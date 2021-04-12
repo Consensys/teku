@@ -17,12 +17,12 @@ import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBeaconBlockTest {
 
-  final Spec spec = SpecFactory.createMinimal();
+  final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test

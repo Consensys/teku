@@ -32,7 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,7 +53,7 @@ public class SingleAttestationTopicHandlerTest {
   private final OperationProcessor<ValidateableAttestation> processor =
       mock(OperationProcessor.class);
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().specProvider(spec).eventBus(mock(EventBus.class)).build();
