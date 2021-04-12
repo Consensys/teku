@@ -37,6 +37,7 @@ public abstract class Eth2ReferenceTestCase {
   private final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
+          .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
@@ -48,7 +49,6 @@ public abstract class Eth2ReferenceTestCase {
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
           .build();
 
@@ -56,7 +56,6 @@ public abstract class Eth2ReferenceTestCase {
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
-          .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
