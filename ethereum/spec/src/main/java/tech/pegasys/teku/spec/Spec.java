@@ -96,7 +96,7 @@ public class Spec {
               });
     }
 
-    final ForkSchedule forkSchedule = ForkSchedule.builder().build();
+    final ForkSchedule forkSchedule = forkScheduleBuilder.build();
     return new Spec(specVersions, forkSchedule);
   }
 

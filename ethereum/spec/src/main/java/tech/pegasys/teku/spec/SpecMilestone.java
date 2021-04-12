@@ -26,7 +26,6 @@ public enum SpecMilestone {
   ALTAIR;
 
   /**
-   *
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone
    */
