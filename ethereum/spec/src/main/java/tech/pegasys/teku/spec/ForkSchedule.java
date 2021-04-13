@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -32,19 +30,16 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkSchedule {
-  private final List<SpecMilestone> supportedMilestones;
   private final NavigableMap<UInt64, SpecMilestone> epochToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> slotToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone;
   private final Map<SpecMilestone, Fork> milestoneToFork;
 
   private ForkSchedule(
-      final List<SpecMilestone> supportedMilestones,
       final NavigableMap<UInt64, SpecMilestone> epochToMilestone,
       final NavigableMap<UInt64, SpecMilestone> slotToMilestone,
       final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone,
       final Map<SpecMilestone, Fork> milestoneToFork) {
-    this.supportedMilestones = supportedMilestones;
     this.epochToMilestone = epochToMilestone;
     this.slotToMilestone = slotToMilestone;
     this.genesisOffsetToMilestone = genesisOffsetToMilestone;
@@ -60,7 +55,12 @@ public class ForkSchedule {
    *     milestones which are activated at the same epoch.
    */
   public List<SpecMilestone> getSupportedMilestones() {
-    return ImmutableList.copyOf(supportedMilestones);
+    return SpecMilestone.getMilestonesUpTo(getHighestSupportedMilestone());
+  }
+
+  /** @return The latest milestone that is supported */
+  public SpecMilestone getHighestSupportedMilestone() {
+    return epochToMilestone.lastEntry().getValue();
   }
 
   /**
@@ -121,7 +121,6 @@ public class ForkSchedule {
   }
 
   public static class Builder {
-    private final List<SpecMilestone> supportedMilestones = new ArrayList<>();
     private final NavigableMap<UInt64, SpecMilestone> epochToMilestone = new TreeMap<>();
     private final NavigableMap<UInt64, SpecMilestone> slotToMilestone = new TreeMap<>();
     private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone = new TreeMap<>();
@@ -137,11 +136,7 @@ public class ForkSchedule {
     public ForkSchedule build() {
       checkState(!epochToMilestone.isEmpty(), "Must configure at least one milestone");
       return new ForkSchedule(
-          supportedMilestones,
-          epochToMilestone,
-          slotToMilestone,
-          genesisOffsetToMilestone,
-          milestoneToFork);
+          epochToMilestone, slotToMilestone, genesisOffsetToMilestone, milestoneToFork);
     }
 
     public Builder addNextMilestone(final SpecVersion spec) {
@@ -178,17 +173,13 @@ public class ForkSchedule {
         throw new IllegalArgumentException(msg);
       }
 
-      if (prevForkVersion.isEmpty()) {
-        // Make sure to include all implicitly supported forks
-        supportedMilestones.addAll(SpecMilestone.getAllPriorMilestones(milestone));
-      } else if (prevMilestoneForkEpoch.equals(forkEpoch)) {
+      if (prevMilestone.isPresent() && prevMilestoneForkEpoch.equals(forkEpoch)) {
         // Clear out previous milestone data that is overshadowed by this milestone
         milestoneToFork.remove(prevMilestone.orElseThrow());
         // Remaining mappings are naturally overwritten
       }
 
       // Track milestone
-      supportedMilestones.add(milestone);
       epochToMilestone.put(forkEpoch, milestone);
       slotToMilestone.put(forkSlot, milestone);
       genesisOffsetToMilestone.put(genesisOffset, milestone);
