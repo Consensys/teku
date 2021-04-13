@@ -56,6 +56,18 @@ public class BeaconStateSchemaPhase0
     return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
   }
 
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingAttestation, ?> getPreviousEpochAttestationsSchema() {
+    return (SszListSchema<PendingAttestation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name()));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
+    return (SszListSchema<PendingAttestation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name()));
+  }
+
   @Override
   public BeaconStatePhase0 createFromBackingNode(TreeNode node) {
     return new BeaconStatePhase0Impl(this, node);

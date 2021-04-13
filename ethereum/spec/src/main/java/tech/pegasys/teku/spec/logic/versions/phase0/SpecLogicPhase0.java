@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -74,7 +75,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final Predicates predicates = new Predicates();
     final MiscHelpers miscHelpers = new MiscHelpers(config);
     final BeaconStateAccessors beaconStateAccessors =
-        new BeaconStateAccessors(config, predicates, miscHelpers);
+        new BeaconStateAccessorsPhase0(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
 
