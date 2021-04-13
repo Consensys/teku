@@ -188,6 +188,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    attestationGossipManager.subscribeToSubnetId(subnetId);
+    attestationGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 }
