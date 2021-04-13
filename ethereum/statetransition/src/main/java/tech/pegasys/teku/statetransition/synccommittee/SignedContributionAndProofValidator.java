@@ -59,6 +59,13 @@ public class SignedContributionAndProofValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
+    // [IGNORE] The sync committee contribution is the first valid contribution received for the
+    // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
+    final TekuPair<UInt64, UInt64> uniquenessKey = getUniquenessKey(proof);
+    if (seenIndices.contains(uniquenessKey)) {
+      return SafeFuture.completedFuture(IGNORE);
+    }
+
     final ContributionAndProof contributionAndProof = proof.getMessage();
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
@@ -91,13 +98,6 @@ public class SignedContributionAndProofValidator {
     if (contribution.getSubcommitteeIndex().isGreaterThanOrEqualTo(SYNC_COMMITTEE_SUBNET_COUNT)) {
       LOG.trace("Rejecting proof because subcommittee index is too big");
       return SafeFuture.completedFuture(REJECT);
-    }
-
-    // [IGNORE] The sync committee contribution is the first valid contribution received for the
-    // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
-    final TekuPair<UInt64, UInt64> uniquenessKey = getUniquenessKey(proof);
-    if (seenIndices.contains(uniquenessKey)) {
-      return SafeFuture.completedFuture(IGNORE);
     }
 
     return getState(contribution, syncCommitteeUtil)
