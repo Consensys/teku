@@ -134,6 +134,7 @@ public class WeakSubjectivityCalculatorTest {
 
     when(checkpointState.getState()).thenReturn(state);
     when(checkpointState.getCheckpoint()).thenReturn(checkpoint);
+    when(checkpointState.getEpoch()).thenReturn(finalizedEpoch);
 
     when(checkpoint.getEpoch()).thenReturn(finalizedEpoch);
 
