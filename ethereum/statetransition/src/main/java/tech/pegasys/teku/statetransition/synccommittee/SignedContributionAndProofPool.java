@@ -19,12 +19,17 @@ import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SignedContributionAndProofPool {
+  private final SignedContributionAndProofValidator validator;
+
+  public SignedContributionAndProofPool(final SignedContributionAndProofValidator validator) {
+    this.validator = validator;
+  }
 
   public void subscribeOperationAdded(
       OperationAddedSubscriber<SignedContributionAndProof> subscriber) {}
 
   public SafeFuture<InternalValidationResult> add(
       final SignedContributionAndProof signedContributionAndProof) {
-    return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+    return validator.validate(signedContributionAndProof);
   }
 }
