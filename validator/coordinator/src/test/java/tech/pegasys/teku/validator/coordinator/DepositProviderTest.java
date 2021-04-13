@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -67,7 +67,7 @@ public class DepositProviderTest {
     when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
 
     SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.maxDeposits(maxDeposits));
-    spec = SpecFactory.create(specConfig);
+    spec = TestSpecFactory.createPhase0(specConfig);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
         new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, spec);

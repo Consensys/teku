@@ -13,32 +13,51 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig =
         SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+    return create(specConfig, specConfig.getAltairForkVersion());
   }
 
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
-    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, specConfig.getGenesisForkVersion());
   }
 
   public static Spec createMainnetAltair() {
     final SpecConfigAltair specConfig =
         SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+    return create(specConfig, specConfig.getAltairForkVersion());
   }
 
   public static Spec createMainnetPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName());
-    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, specConfig.getGenesisForkVersion());
+  }
+
+  public static Spec createPhase0(final String configName) {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfig(configName);
+    return createPhase0(specConfig);
+  }
+
+  public static Spec createPhase0(final SpecConfig config) {
+    return create(config, config.getGenesisForkVersion());
+  }
+
+  private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
+    final ForkManifest forkManifest =
+        ForkManifest.create(
+            List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
+    return Spec.create(config, forkManifest);
   }
 }

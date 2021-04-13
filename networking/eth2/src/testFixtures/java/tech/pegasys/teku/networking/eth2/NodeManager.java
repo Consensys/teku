@@ -26,14 +26,14 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class NodeManager {
-  private static final Spec DEFAULT_SPEC = SpecFactory.createMinimal();
+  private static final Spec DEFAULT_SPEC = TestSpecFactory.createMinimalPhase0();
 
   private final EventBus eventBus;
   private final BlockGossipChannel blockGossipChannel;

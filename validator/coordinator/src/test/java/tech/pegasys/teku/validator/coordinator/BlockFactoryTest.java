@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -52,7 +52,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @SuppressWarnings("unchecked")
 class BlockFactoryTest {
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   public static final Eth1Data ETH1_DATA = new Eth1Data();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

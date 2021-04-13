@@ -54,7 +54,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -76,7 +76,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
 class RemoteValidatorApiHandlerTest {
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SchemaObjectsTestFixture schemaObjects = new SchemaObjectsTestFixture();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

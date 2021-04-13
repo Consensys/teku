@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 class BeaconChainMetricsTest {
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
-  private final Spec spec = SpecFactory.createMainnet();
+  private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final int slotsPerHistoricalRoot =
       spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

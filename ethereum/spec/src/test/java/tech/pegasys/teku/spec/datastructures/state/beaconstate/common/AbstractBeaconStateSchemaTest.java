@@ -26,7 +26,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -69,7 +69,7 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   public void changeSpecConfigTest() {
-    final Spec standardSpec = SpecFactory.createMinimal();
+    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig modifiedConfig =
         TestConfigLoader.loadConfig(
             "minimal",
@@ -109,9 +109,9 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(SpecFactory.createMinimal().getGenesisSpecConfig());
+        getSchema(TestSpecFactory.createMinimalPhase0().getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(SpecFactory.createMainnet().getGenesisSpecConfig());
+        getSchema(TestSpecFactory.createMainnetPhase0().getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

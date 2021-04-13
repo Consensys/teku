@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.util.config.Constants;
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class OperationPoolTest {
 
-  Spec spec = SpecFactory.createMinimal();
+  Spec spec = TestSpecFactory.createMinimalPhase0();
   DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
       slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();

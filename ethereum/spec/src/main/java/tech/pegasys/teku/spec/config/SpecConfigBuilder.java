@@ -668,6 +668,7 @@ public class SpecConfigBuilder {
 
     // Fork
     private Bytes4 altairForkVersion;
+    private UInt64 altairForkSlot;
 
     // Sync protocol
     private Integer minSyncCommitteeParticipants;
@@ -690,6 +691,7 @@ public class SpecConfigBuilder {
           domainSyncCommitteeSelectionProof,
           domainContributionAndProof,
           altairForkVersion,
+          altairForkSlot,
           minSyncCommitteeParticipants,
           maxValidLightClientUpdates,
           lightClientUpdateTimeout);
@@ -708,6 +710,7 @@ public class SpecConfigBuilder {
       validateConstant("domainSyncCommitteeSelectionProof", domainSyncCommitteeSelectionProof);
       validateConstant("domainContributionAndProof", domainContributionAndProof);
       validateConstant("altairForkVersion", altairForkVersion);
+      validateConstant("altairForkSlot", altairForkSlot);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
       validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
       validateConstant("lightClientUpdateTimeout", lightClientUpdateTimeout);
@@ -780,6 +783,12 @@ public class SpecConfigBuilder {
     public AltairBuilder altairForkVersion(final Bytes4 altairForkVersion) {
       checkNotNull(altairForkVersion);
       this.altairForkVersion = altairForkVersion;
+      return this;
+    }
+
+    public AltairBuilder altairForkSlot(final UInt64 altairForkSlot) {
+      checkNotNull(altairForkSlot);
+      this.altairForkSlot = altairForkSlot;
       return this;
     }
 

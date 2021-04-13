@@ -34,7 +34,7 @@ import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -81,11 +81,11 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder createDefault() {
-    return ChainBuilder.create(SpecFactory.createMinimal(), DEFAULT_VALIDATOR_KEYS);
+    return ChainBuilder.create(TestSpecFactory.createMinimalPhase0(), DEFAULT_VALIDATOR_KEYS);
   }
 
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
-    return create(SpecFactory.createMinimal(), validatorKeys);
+    return create(TestSpecFactory.createMinimalPhase0(), validatorKeys);
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {

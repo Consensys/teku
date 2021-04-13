@@ -138,7 +138,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BlockProposalUtil(schemaDefinitions, stateTransition);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
-            beaconStateAccessors, beaconStateUtil, config, miscHelpers, schemaDefinitions);
+            beaconStateAccessors,
+            beaconStateUtil,
+            validatorsUtil,
+            config,
+            miscHelpers,
+            schemaDefinitions);
 
     return new SpecLogicAltair(
         predicates,

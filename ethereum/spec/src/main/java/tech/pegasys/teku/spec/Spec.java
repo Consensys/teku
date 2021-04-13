@@ -80,14 +80,9 @@ public class Spec {
     this.forkManifest = forkManifest;
   }
 
-  public static Spec create(final SpecConfiguration config) {
-    return create(config, ForkManifest.create(config.config()));
-  }
-
-  public static Spec create(final SpecConfiguration config, final ForkManifest forkManifest) {
+  public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
     final SpecVersion initialSpec =
-        SpecVersion.createForFork(
-            forkManifest.getGenesisFork().getCurrent_version(), config.config());
+        SpecVersion.createForFork(forkManifest.getGenesisFork().getCurrent_version(), config);
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -466,6 +461,10 @@ public class Spec {
 
   public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
+  }
+
+  public int getPreviousEpochAttestationCapacity(final BeaconState state) {
+    return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
 
   // Validator Utils

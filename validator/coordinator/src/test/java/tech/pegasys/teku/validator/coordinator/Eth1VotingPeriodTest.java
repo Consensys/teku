@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.util.config.Constants;
@@ -38,7 +38,7 @@ class Eth1VotingPeriodTest {
                   .epochsPerEth1VotingPeriod(1)
                   .slotsPerEpoch(6)
                   .secondsPerSlot(4));
-  private final Spec spec = SpecFactory.create(specConfig);
+  private final Spec spec = TestSpecFactory.createPhase0(specConfig);
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(1000);
   private static final UInt64 START_SLOT = UInt64.valueOf(100);
   private static final UInt64 NEXT_VOTING_PERIOD_SLOT = UInt64.valueOf(102);

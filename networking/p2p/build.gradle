@@ -41,7 +41,7 @@ dependencies {
 
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
-  testFixturesImplementation project(':ethereum:spec')
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation project(':storage')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))

@@ -12,15 +12,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
-- Optimised validation of aggregate gossip messages to reduce CPU usage.
-- Upgraded to use BLS implementation BLST version 0.3.3.
-- Teku now waits for Eth1 nodes to finish syncing before requesting data from them. Thanks to Enrico Del Fante.
-- Reduced CPU usage required when processing gossip message by optimising peer scoring.
-- Added new metrics to Validators
-  - `validator_external_signer_requests` with labels `success`, `failed`, `timeout`.
-  - `validator_duties_performed` with labels `type` and `result`.
-  - `validator_event_stream_disconnections_total` which has a `reason` label. The reason will be one of (disconnect, connect, error, timeout, invalidEvent).
-  - `validator_event_stream_invalid_events_total` counts the number of invalid events found on the event stream.
-  
+
 ### Bug Fixes
-- Fixed `ProtoArray: Best node is not viable for head` error.

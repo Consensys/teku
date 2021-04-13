@@ -16,14 +16,14 @@ package tech.pegasys.teku.benchmarks.ssz;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SszBeaconBlockBodyBenchmark extends SszAbstractContainerBenchmark<BeaconBlockBody> {
 
-  private static final Spec spec = SpecFactory.createMinimal();
+  private static final Spec spec = TestSpecFactory.createMinimalPhase0();
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
   private static final BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
 
