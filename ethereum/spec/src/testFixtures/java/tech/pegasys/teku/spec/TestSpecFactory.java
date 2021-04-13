@@ -24,7 +24,7 @@ public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
@@ -34,7 +34,7 @@ public class TestSpecFactory {
 
   public static Spec createMainnetAltair() {
     final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetPhase0() {
@@ -51,8 +51,9 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.PHASE0);
   }
 
-  private static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
-    return Spec.create(config, supportedMilestones);
+  private static Spec create(
+      final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
+    return Spec.create(config, highestSupportedMilestone);
   }
 
   private static SpecConfigAltair getAltairSpecConfig(final Eth2Network network) {

@@ -35,6 +35,16 @@ public enum SpecMilestone {
     return allMilestones.subList(0, milestoneIndex);
   }
 
+  /**
+   * @param milestone The milestone being inspected
+   * @return An ordered list of all milestones up to and included the specified milestone
+   */
+  static List<SpecMilestone> getMilestonesUpTo(SpecMilestone milestone) {
+    final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
+    final int milestoneIndex = allMilestones.indexOf(milestone);
+    return allMilestones.subList(0, milestoneIndex + 1);
+  }
+
   static Optional<Bytes4> getForkVersion(
       final SpecConfig specConfig, final SpecMilestone milestone) {
     switch (milestone) {

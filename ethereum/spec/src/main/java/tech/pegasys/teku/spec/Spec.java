@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,6 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -79,15 +77,11 @@ public class Spec {
     this.forkSchedule = forkSchedule;
   }
 
-  static Spec create(final SpecConfig config, final SpecMilestone... supportedMilestones) {
+  static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
     final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      if (Arrays.stream(supportedMilestones).noneMatch(Predicate.isEqual(milestone))) {
-        // Milestones cannot be skipped, so we can break at the first unsupported milestone
-        break;
-      }
 
+    for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
       SpecVersion.create(milestone, config)
           .ifPresent(
               milestoneSpec -> {
