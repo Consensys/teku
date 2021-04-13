@@ -47,9 +47,7 @@ public class ConfigProvider {
 
   public GetForkScheduleResponse getForkSchedule() {
     final List<Fork> forkList =
-        spec.getForkManifest().getForkSchedule().stream()
-            .map(Fork::new)
-            .collect(Collectors.toList());
+        spec.getForkSchedule().getForks().stream().map(Fork::new).collect(Collectors.toList());
     return new GetForkScheduleResponse(forkList);
   }
 
