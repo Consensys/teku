@@ -133,6 +133,21 @@ public class SyncCommitteeUtil {
             });
   }
 
+  public SyncCommittee getSyncCommittee(final BeaconState state, final UInt64 epoch) {
+    final UInt64 syncCommitteePeriod = computeSyncCommitteePeriod(epoch);
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
+    final UInt64 nextSyncCommitteePeriod = currentSyncCommitteePeriod.increment();
+    checkArgument(
+        syncCommitteePeriod.equals(currentSyncCommitteePeriod)
+            || syncCommitteePeriod.equals(nextSyncCommitteePeriod),
+        "State must be in the same or previous sync committee period");
+    final BeaconStateAltair altairState = BeaconStateAltair.required(state);
+    return syncCommitteePeriod.equals(currentSyncCommitteePeriod)
+        ? altairState.getCurrentSyncCommittee()
+        : altairState.getNextSyncCommittee();
+  }
+
   public boolean isSyncCommitteeAggregator(final BLSSignature signature) {
     final int modulo =
         Math.max(
@@ -143,16 +158,10 @@ public class SyncCommitteeUtil {
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
-  public boolean isAssignedToSyncCommittee(
-      final BeaconStateAltair state, final UInt64 epoch, final UInt64 validatorIndex) {
-    return getSyncSubcommittees(state, epoch).containsKey(validatorIndex);
-  }
-
   public Set<Integer> computeSubnetsForSyncCommittee(
-      final BeaconStateAltair state, final UInt64 validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
-        getSyncSubcommittees(state, beaconStateAccessors.getCurrentEpoch(state))
-            .get(validatorIndex);
+        getSyncSubcommittees(state, epoch).get(validatorIndex);
     return assignments == null ? Collections.emptySet() : assignments.getAssignedSubcommittees();
   }
 
@@ -165,14 +174,6 @@ public class SyncCommitteeUtil {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     return beaconStateUtil.computeSigningRoot(blockRoot, domain);
-  }
-
-  public Bytes getSyncCommitteeContributionSigningRoot(
-      final BeaconState state, final SyncCommitteeContribution contribution) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(contribution.getSlot());
-    final Bytes32 domain =
-        beaconStateUtil.getDomain(state, specConfig.getDomainSyncCommittee(), epoch);
-    return beaconStateUtil.computeSigningRoot(contribution.getBeaconBlockRoot(), domain);
   }
 
   public Bytes getContributionAndProofSigningRoot(
@@ -241,6 +242,13 @@ public class SyncCommitteeUtil {
   public SignedContributionAndProof createSignedContributionAndProof(
       final ContributionAndProof message, final BLSSignature signature) {
     return schemaDefinitionsAltair.getSignedContributionAndProofSchema().create(message, signature);
+  }
+
+  public UInt64 getMinEpochForSyncCommitteeAssignments(final UInt64 requiredEpoch) {
+    // Can look-ahead one sync committee period.
+    final UInt64 requiredSyncCommitteePeriod =
+        computeSyncCommitteePeriod(requiredEpoch).minusMinZero(1);
+    return requiredSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
   private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
