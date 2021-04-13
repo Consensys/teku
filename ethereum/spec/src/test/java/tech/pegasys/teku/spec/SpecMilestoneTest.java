@@ -54,6 +54,16 @@ public class SpecMilestoneTest {
   }
 
   @Test
+  public void areMilestonesInOrder() {
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.PHASE0, SpecMilestone.ALTAIR))
+        .isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.PHASE0)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ALTAIR)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ALTAIR, SpecMilestone.PHASE0))
+        .isFalse();
+  }
+
+  @Test
   public void getForkVersion_phase0() {
     final Bytes4 expected = specConfig.getGenesisForkVersion();
     assertThat(SpecMilestone.getForkVersion(specConfig, SpecMilestone.PHASE0)).contains(expected);

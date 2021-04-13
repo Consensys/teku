@@ -103,13 +103,25 @@ public class ForkScheduleTest {
   }
 
   @Test
-  public void builder_milestonesSuppliedOutOfOrder() {
+  public void builder_milestonesSuppliedOutOfOrder_altairProcessedAtNonZeroSlot() {
     final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG);
     final ForkSchedule.Builder builder = ForkSchedule.builder();
 
     assertThatThrownBy(() -> builder.addNextMilestone(altair))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Must provide genesis milestone first");
+  }
+
+  @Test
+  public void builder_milestonesSuppliedOutOfOrder_processAltairBeforePhase0() {
+    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG);
+    final SpecVersion phase0 = SpecVersion.createPhase0(ALTAIR_CONFIG);
+    final ForkSchedule.Builder builder = ForkSchedule.builder();
+
+    builder.addNextMilestone(altair);
+    assertThatThrownBy(() -> builder.addNextMilestone(phase0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Attempt to process milestones out of order");
   }
 
   @Test

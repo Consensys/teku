@@ -45,6 +45,19 @@ public enum SpecMilestone {
     return allMilestones.subList(0, milestoneIndex + 1);
   }
 
+  static boolean areMilestonesInOrder(final SpecMilestone... milestones) {
+    final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
+    int lastMilestoneIndex = -1;
+    for (SpecMilestone milestone : milestones) {
+      final int curMilestoneIndex = allMilestones.indexOf(milestone);
+      if (curMilestoneIndex < lastMilestoneIndex) {
+        return false;
+      }
+      lastMilestoneIndex = curMilestoneIndex;
+    }
+    return true;
+  }
+
   static Optional<Bytes4> getForkVersion(
       final SpecConfig specConfig, final SpecMilestone milestone) {
     switch (milestone) {

@@ -172,6 +172,10 @@ public class ForkSchedule {
                 milestone, forkEpoch, prevMilestoneForkEpoch);
         throw new IllegalArgumentException(msg);
       }
+      if (prevMilestone.isPresent()
+          && !SpecMilestone.areMilestonesInOrder(prevMilestone.get(), milestone)) {
+        throw new IllegalArgumentException("Attempt to process milestones out of order");
+      }
 
       if (prevMilestone.isPresent() && prevMilestoneForkEpoch.equals(forkEpoch)) {
         // Clear out previous milestone data that is overshadowed by this milestone
