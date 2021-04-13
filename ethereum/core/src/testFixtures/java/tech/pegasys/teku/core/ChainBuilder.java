@@ -247,7 +247,7 @@ public class ChainBuilder {
             .createInitialBeaconState(genesisTime, initialDepositData);
 
     if (spec.getEnabledMilestones().get(0).getSpecMilestone() == SpecMilestone.ALTAIR) {
-      // Convert from a phase0 to Altair spec.
+      // Convert from a phase0 to Altair state.
       // Hopefully https://github.com/ethereum/eth2.0-specs/pull/2323 will remove this requirement
       genesisState =
           new AltairStateUpgrade(
