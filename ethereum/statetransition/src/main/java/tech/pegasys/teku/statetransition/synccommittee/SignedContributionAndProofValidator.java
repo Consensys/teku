@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -49,7 +49,7 @@ public class SignedContributionAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final Set<TekuPair<UInt64, UInt64>> seenIndices =
+  private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
 
   public SignedContributionAndProofValidator(
@@ -59,15 +59,16 @@ public class SignedContributionAndProofValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
+    final ContributionAndProof contributionAndProof = proof.getMessage();
+    final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
+
     // [IGNORE] The sync committee contribution is the first valid contribution received for the
     // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
-    final TekuPair<UInt64, UInt64> uniquenessKey = getUniquenessKey(proof);
+    final UniquenessKey uniquenessKey = getUniquenessKey(contributionAndProof, contribution);
     if (seenIndices.contains(uniquenessKey)) {
       return SafeFuture.completedFuture(IGNORE);
     }
 
-    final ContributionAndProof contributionAndProof = proof.getMessage();
-    final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
         spec.getSyncCommitteeUtil(contribution.getSlot());
     if (maybeSyncCommitteeUtil.isEmpty()) {
@@ -122,7 +123,7 @@ public class SignedContributionAndProofValidator {
       final ContributionAndProof contributionAndProof,
       final SyncCommitteeContribution contribution,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final TekuPair<UInt64, UInt64> uniquenessKey,
+      final UniquenessKey uniquenessKey,
       final BeaconStateAltair state) {
     if (state.getSlot().isGreaterThan(contribution.getSlot())) {
       LOG.trace(
@@ -284,8 +285,43 @@ public class SignedContributionAndProofValidator {
         .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
   }
 
-  private TekuPair<UInt64, UInt64> getUniquenessKey(final SignedContributionAndProof proof) {
-    return TekuPair.of(
-        proof.getMessage().getAggregatorIndex(), proof.getMessage().getContribution().getSlot());
+  private UniquenessKey getUniquenessKey(
+      final ContributionAndProof contributionAndProof, SyncCommitteeContribution contribution) {
+    return new UniquenessKey(
+        contributionAndProof.getAggregatorIndex(),
+        contribution.getSlot(),
+        contribution.getSubcommitteeIndex());
+  }
+
+  private static class UniquenessKey {
+    private final UInt64 aggregatorIndex;
+    private final UInt64 slot;
+    private final UInt64 subcommitteeIndex;
+
+    private UniquenessKey(
+        final UInt64 aggregatorIndex, final UInt64 slot, final UInt64 subcommitteeIndex) {
+      this.aggregatorIndex = aggregatorIndex;
+      this.slot = slot;
+      this.subcommitteeIndex = subcommitteeIndex;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final UniquenessKey that = (UniquenessKey) o;
+      return Objects.equals(aggregatorIndex, that.aggregatorIndex)
+          && Objects.equals(slot, that.slot)
+          && Objects.equals(subcommitteeIndex, that.subcommitteeIndex);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(aggregatorIndex, slot, subcommitteeIndex);
+    }
   }
 }
