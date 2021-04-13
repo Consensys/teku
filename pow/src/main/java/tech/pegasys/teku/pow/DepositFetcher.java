@@ -30,7 +30,6 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -296,7 +295,7 @@ public class DepositFetcher {
     }
 
     @Override
-    public int compareTo(@NotNull final BlockNumberAndHash o) {
+    public int compareTo(final BlockNumberAndHash o) {
       return COMPARATOR.compare(this, o);
     }
   }
