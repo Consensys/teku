@@ -107,124 +107,130 @@ public class SignedContributionAndProofValidator {
                 LOG.trace("Ignoring proof because state is not available or not from Altair fork");
                 return IGNORE;
               }
-              final BeaconStateAltair state = maybeState.get();
-              if (state.getSlot().isGreaterThan(contribution.getSlot())) {
-                LOG.trace(
-                    "Rejecting proof because referenced beacon block {} is after contribution slot {}",
-                    state.getSlot(),
-                    contribution.getSignature());
-                return REJECT;
-              }
-
-              final BeaconStateAccessors beaconStateAccessors =
-                  spec.atSlot(contribution.getSlot()).beaconStateAccessors();
-
-              final Optional<BLSPublicKey> aggregatorPublicKey =
-                  beaconStateAccessors.getValidatorPubKey(
-                      state, contributionAndProof.getAggregatorIndex());
-              if (aggregatorPublicKey.isEmpty()) {
-                LOG.trace(
-                    "Rejecting proof because aggregator index {} is an unknown validator",
-                    contributionAndProof.getAggregatorIndex());
-                return REJECT;
-              }
-              final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
-
-              // [REJECT] The aggregator's validator index is within the current sync subcommittee
-              // i.e. state.validators[aggregate_and_proof.aggregator_index].pubkey in
-              // state.current_sync_committee.pubkeys.
-              if (!isInSyncSubcommittee(
-                  syncCommitteeUtil,
+              return validateWithState(
+                  proof,
+                  contributionAndProof,
                   contribution,
-                  state,
-                  contributionEpoch,
-                  contributionAndProof.getAggregatorIndex())) {
-                LOG.trace(
-                    "Rejecting proof because aggregator is not in the current sync subcommittee");
-                return REJECT;
-              }
-
-              // [REJECT] contribution_and_proof.selection_proof selects the validator as an
-              // aggregator for the slot -- i.e. is_sync_committee_aggregator(state,
-              // contribution.slot, contribution_and_proof.selection_proof) returns True.
-              if (!syncCommitteeUtil.isSyncCommitteeAggregator(
-                  contributionAndProof.getSelectionProof())) {
-                LOG.trace("Rejecting proof because selection proof is not an aggregator");
-                return REJECT;
-              }
-
-              final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
-
-              // [REJECT] The contribution_and_proof.selection_proof is a valid signature of the
-              // contribution.slot by the validator with index
-              // contribution_and_proof.aggregator_index.
-              final Bytes signingRoot =
-                  syncCommitteeUtil.getSyncCommitteeSigningDataSigningRoot(
-                      syncCommitteeUtil.createSyncCommitteeSigningData(
-                          contribution.getSlot(), contribution.getSubcommitteeIndex()),
-                      state.getForkInfo());
-              if (!signatureVerifier.verify(
-                  aggregatorPublicKey.get(),
-                  signingRoot,
-                  contributionAndProof.getSelectionProof())) {
-                LOG.trace("Rejecting proof because selection proof is invalid");
-                return REJECT;
-              }
-
-              // [REJECT] The aggregator signature, signed_contribution_and_proof.signature, is
-              // valid.
-              if (!signatureVerifier.verify(
-                  aggregatorPublicKey.get(),
-                  syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
-                  proof.getSignature())) {
-                LOG.trace("Rejecting proof because aggregator signature is invalid");
-                return REJECT;
-              }
-
-              final SpecConfigAltair config =
-                  SpecConfigAltair.required(spec.getSpecConfig(contributionEpoch));
-              final SyncCommittee currentSyncCommittee =
-                  syncCommitteeUtil.getSyncCommittee(state, contributionEpoch);
-              final int subcommitteeSize =
-                  config.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
-
-              // [REJECT] The aggregate signature is valid for the message beacon_block_root and
-              // aggregate pubkey derived from the participation info in aggregation_bits for the
-              // subcommittee specified by the subcommittee_index.
-              final List<BLSPublicKey> contributorPublicKeys =
-                  contribution
-                      .getAggregationBits()
-                      .streamAllSetBits()
-                      .mapToObj(
-                          participantIndex ->
-                              getParticipantPublicKey(
-                                  currentSyncCommittee,
-                                  contribution,
-                                  subcommitteeSize,
-                                  participantIndex))
-                      .collect(Collectors.toList());
-
-              if (!signatureVerifier.verify(
-                  contributorPublicKeys,
-                  syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
-                      contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
-                  contribution.getSignature())) {
-                LOG.trace("Rejecting proof because aggregate signature is invalid");
-                return REJECT;
-              }
-
-              if (!signatureVerifier.batchVerify()) {
-                LOG.trace("Rejecting proof because batch signature check failed");
-                return REJECT;
-              }
-
-              if (!seenIndices.add(uniquenessKey)) {
-                // Got added by another thread while we were validating it
-                return IGNORE;
-              }
-
-              return ACCEPT;
+                  syncCommitteeUtil,
+                  uniquenessKey,
+                  maybeState.get());
             });
+  }
+
+  private InternalValidationResult validateWithState(
+      final SignedContributionAndProof proof,
+      final ContributionAndProof contributionAndProof,
+      final SyncCommitteeContribution contribution,
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final TekuPair<UInt64, UInt64> uniquenessKey,
+      final BeaconStateAltair state) {
+    if (state.getSlot().isGreaterThan(contribution.getSlot())) {
+      LOG.trace(
+          "Rejecting proof because referenced beacon block {} is after contribution slot {}",
+          state.getSlot(),
+          contribution.getSignature());
+      return REJECT;
+    }
+
+    final BeaconStateAccessors beaconStateAccessors =
+        spec.atSlot(contribution.getSlot()).beaconStateAccessors();
+
+    final Optional<BLSPublicKey> aggregatorPublicKey =
+        beaconStateAccessors.getValidatorPubKey(state, contributionAndProof.getAggregatorIndex());
+    if (aggregatorPublicKey.isEmpty()) {
+      LOG.trace(
+          "Rejecting proof because aggregator index {} is an unknown validator",
+          contributionAndProof.getAggregatorIndex());
+      return REJECT;
+    }
+    final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
+
+    // [REJECT] The aggregator's validator index is within the current sync subcommittee
+    // i.e. state.validators[aggregate_and_proof.aggregator_index].pubkey in
+    // state.current_sync_committee.pubkeys.
+    if (!isInSyncSubcommittee(
+        syncCommitteeUtil,
+        contribution,
+        state,
+        contributionEpoch,
+        contributionAndProof.getAggregatorIndex())) {
+      LOG.trace("Rejecting proof because aggregator is not in the current sync subcommittee");
+      return REJECT;
+    }
+
+    // [REJECT] contribution_and_proof.selection_proof selects the validator as an
+    // aggregator for the slot -- i.e. is_sync_committee_aggregator(state,
+    // contribution.slot, contribution_and_proof.selection_proof) returns True.
+    if (!syncCommitteeUtil.isSyncCommitteeAggregator(contributionAndProof.getSelectionProof())) {
+      LOG.trace("Rejecting proof because selection proof is not an aggregator");
+      return REJECT;
+    }
+
+    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+
+    // [REJECT] The contribution_and_proof.selection_proof is a valid signature of the
+    // contribution.slot by the validator with index
+    // contribution_and_proof.aggregator_index.
+    final Bytes signingRoot =
+        syncCommitteeUtil.getSyncCommitteeSigningDataSigningRoot(
+            syncCommitteeUtil.createSyncCommitteeSigningData(
+                contribution.getSlot(), contribution.getSubcommitteeIndex()),
+            state.getForkInfo());
+    if (!signatureVerifier.verify(
+        aggregatorPublicKey.get(), signingRoot, contributionAndProof.getSelectionProof())) {
+      LOG.trace("Rejecting proof because selection proof is invalid");
+      return REJECT;
+    }
+
+    // [REJECT] The aggregator signature, signed_contribution_and_proof.signature, is
+    // valid.
+    if (!signatureVerifier.verify(
+        aggregatorPublicKey.get(),
+        syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
+        proof.getSignature())) {
+      LOG.trace("Rejecting proof because aggregator signature is invalid");
+      return REJECT;
+    }
+
+    final SpecConfigAltair config =
+        SpecConfigAltair.required(spec.getSpecConfig(contributionEpoch));
+    final SyncCommittee currentSyncCommittee =
+        syncCommitteeUtil.getSyncCommittee(state, contributionEpoch);
+    final int subcommitteeSize = config.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
+
+    // [REJECT] The aggregate signature is valid for the message beacon_block_root and
+    // aggregate pubkey derived from the participation info in aggregation_bits for the
+    // subcommittee specified by the subcommittee_index.
+    final List<BLSPublicKey> contributorPublicKeys =
+        contribution
+            .getAggregationBits()
+            .streamAllSetBits()
+            .mapToObj(
+                participantIndex ->
+                    getParticipantPublicKey(
+                        currentSyncCommittee, contribution, subcommitteeSize, participantIndex))
+            .collect(Collectors.toList());
+
+    if (!signatureVerifier.verify(
+        contributorPublicKeys,
+        syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
+            contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
+        contribution.getSignature())) {
+      LOG.trace("Rejecting proof because aggregate signature is invalid");
+      return REJECT;
+    }
+
+    if (!signatureVerifier.batchVerify()) {
+      LOG.trace("Rejecting proof because batch signature check failed");
+      return REJECT;
+    }
+
+    if (!seenIndices.add(uniquenessKey)) {
+      // Got added by another thread while we were validating it
+      return IGNORE;
+    }
+
+    return ACCEPT;
   }
 
   private BLSPublicKey getParticipantPublicKey(
