@@ -122,6 +122,38 @@ class SyncCommitteeUtilTest {
     assertThat(assignments.getParticipationBitIndices(0)).containsExactlyInAnyOrder(0, 2, 3);
   }
 
+  @Test
+  void getMinSlotForSyncCommitteeAssignments_shouldReturnZeroInFirstTwoSyncCommitteePeriods() {
+    assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(UInt64.ZERO))
+        .isEqualTo(UInt64.ZERO);
+    final UInt64 epochsPerPeriod = UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod());
+    assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epochsPerPeriod))
+        .isEqualTo(UInt64.ZERO);
+    assertThat(
+            syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(
+                epochsPerPeriod.times(2).minus(1)))
+        .isEqualTo(UInt64.ZERO);
+
+    // Then has to kick over to the next sync committee period.
+    assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epochsPerPeriod.times(2)))
+        .isEqualTo(epochsPerPeriod);
+  }
+
+  @Test
+  void getMinEpochForSyncCommitteeAssignments_shouldReturnFirstEpochOfPreviousPeriod() {
+    assertMinEpochForSyncCommitteePeriod(3);
+    assertMinEpochForSyncCommitteePeriod(5);
+  }
+
+  private void assertMinEpochForSyncCommitteePeriod(final int period) {
+    final UInt64 epochsPerPeriod = UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod());
+    UInt64.range(epochsPerPeriod.times(period), epochsPerPeriod.times(period + 1))
+        .forEach(
+            epoch ->
+                assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch))
+                    .isEqualTo(epochsPerPeriod.times(period - 1)));
+  }
+
   private BeaconState createStateWithCurrentSyncCommittee(
       final List<SszPublicKey> committeePublicKeys) {
     return dataStructureUtil

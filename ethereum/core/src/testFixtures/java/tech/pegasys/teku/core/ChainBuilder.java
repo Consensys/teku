@@ -32,9 +32,13 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.synccomittee.SignedContributionAndProofTestBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -44,13 +48,19 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -232,9 +242,20 @@ public class ChainBuilder {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
             .createDeposits(validatorKeys, depositAmount);
-    final BeaconState genesisState =
+    BeaconState genesisState =
         new MockStartBeaconStateGenerator(spec)
             .createInitialBeaconState(genesisTime, initialDepositData);
+
+    if (spec.getEnabledMilestones().get(0).getSpecMilestone() == SpecMilestone.ALTAIR) {
+      // Convert from a phase0 to Altair spec.
+      // Hopefully https://github.com/ethereum/eth2.0-specs/pull/2323 will remove this requirement
+      genesisState =
+          new AltairStateUpgrade(
+                  SpecConfigAltair.required(spec.getGenesisSpecConfig()),
+                  SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions()),
+                  (BeaconStateAccessorsAltair) spec.atEpoch(UInt64.ZERO).beaconStateAccessors())
+              .upgrade(genesisState);
+    }
 
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);
@@ -404,6 +425,47 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
+    final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
+    final Bytes32 beaconBlockRoot = latestBlockAndState.getRoot();
+    final UInt64 slot = latestBlockAndState.getSlot();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final SyncCommitteeUtil syncCommitteeUtil = specVersion.getSyncCommitteeUtil().orElseThrow();
+
+    final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
+        syncCommitteeUtil.getSyncSubcommittees(latestBlockAndState.getState(), epoch);
+    for (Map.Entry<UInt64, SyncSubcommitteeAssignments> entry :
+        subcommitteeAssignments.entrySet()) {
+      final UInt64 validatorIndex = entry.getKey();
+      final Signer signer = getSigner(validatorIndex.intValue());
+      final SyncSubcommitteeAssignments assignments = entry.getValue();
+      for (int subcommitteeIndex : assignments.getAssignedSubcommittees()) {
+        final SyncCommitteeSigningData syncCommitteeSigningData =
+            syncCommitteeUtil.createSyncCommitteeSigningData(
+                slot, UInt64.valueOf(subcommitteeIndex));
+        final BLSSignature proof =
+            signer
+                .signSyncCommitteeSelectionProof(
+                    syncCommitteeSigningData, latestBlockAndState.getState().getForkInfo())
+                .join();
+        if (syncCommitteeUtil.isSyncCommitteeAggregator(proof)) {
+          return new SignedContributionAndProofTestBuilder()
+              .signerProvider(this::getSigner)
+              .syncCommitteeUtil(syncCommitteeUtil)
+              .spec(spec)
+              .state(latestBlockAndState.getState())
+              .subcommitteeIndex(subcommitteeIndex)
+              .slot(slot)
+              .selectionProof(proof)
+              .beaconBlockRoot(beaconBlockRoot)
+              .aggregator(validatorIndex, signer);
+        }
+      }
+    }
+    throw new IllegalStateException("No valid sync subcommittee aggregators found");
   }
 
   private Signer getSigner(final int proposerIndex) {

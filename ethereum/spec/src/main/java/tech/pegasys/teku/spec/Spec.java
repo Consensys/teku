@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Preconditions;
-import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -128,7 +127,7 @@ public class Spec {
     return forkManifest;
   }
 
-  public Collection<ForkAndSpecMilestone> getEnabledMilestones() {
+  public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkManifest.getForkSchedule().stream()
         .map(fork -> new ForkAndSpecMilestone(fork, getMilestoneForFork(fork)))
         .collect(toList());
