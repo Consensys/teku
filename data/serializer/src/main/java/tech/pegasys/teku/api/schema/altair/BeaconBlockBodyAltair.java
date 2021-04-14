@@ -52,20 +52,4 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
         voluntary_exits);
     this.syncAggregate = sync_aggregate;
   }
-
-  public BeaconBlockBodyAltair(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
-    super(body);
-    if (!(body
-        instanceof
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair
-            .BeaconBlockBodyAltair)) {
-      throw new IllegalArgumentException("Body passed was not an altair block body");
-    }
-    this.syncAggregate =
-        ((tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair
-                    .BeaconBlockBodyAltair)
-                body)
-            .getSyncAggregate();
-  }
 }

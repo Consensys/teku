@@ -17,23 +17,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconBlockAltair extends BeaconBlock {
-  private final BeaconBlockBodyAltair altairBody;
-
   @Override
-  public BeaconBlockBody getBody() {
-    return altairBody;
-  }
-
-  public BeaconBlockAltair(final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
-    super(message);
-    if (!(message.getBody() instanceof BeaconBlockBodyAltair)) {
-      throw new IllegalArgumentException("Beacon block body was not altair compatible");
-    }
-    this.altairBody = (BeaconBlockBodyAltair) message.getBody();
+  @JsonProperty("body")
+  public final BeaconBlockBodyAltair getBody() {
+    return (BeaconBlockBodyAltair) super.getBody();
   }
 
   @JsonCreator
@@ -44,6 +34,5 @@ public class BeaconBlockAltair extends BeaconBlock {
       @JsonProperty("state_root") final Bytes32 state_root,
       @JsonProperty("body") final BeaconBlockBodyAltair body) {
     super(slot, proposer_index, parent_root, state_root, body);
-    this.altairBody = body;
   }
 }
