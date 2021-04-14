@@ -21,8 +21,8 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateAccessorsTest {
 
-  private final Spec spec = SpecFactory.createMinimal();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final BeaconStateAccessors beaconStateAccessors = genesisSpec.beaconStateAccessors();

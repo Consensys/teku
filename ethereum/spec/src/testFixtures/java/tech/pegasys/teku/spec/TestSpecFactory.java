@@ -13,32 +13,52 @@
 
 package tech.pegasys.teku.spec;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
   public static Spec createMinimalAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
-    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
   }
 
   public static Spec createMainnetAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return SpecFactory.create(specConfig, specConfig.getAltairForkVersion());
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName());
-    return SpecFactory.create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
+  }
+
+  public static Spec createPhase0(final String configName) {
+    final SpecConfig specConfig = SpecConfigLoader.loadConfig(configName);
+    return createPhase0(specConfig);
+  }
+
+  public static Spec createPhase0(final SpecConfig config) {
+    return create(config, SpecMilestone.PHASE0);
+  }
+
+  private static Spec create(
+      final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
+    return Spec.create(config, highestSupportedMilestone);
+  }
+
+  private static SpecConfigAltair getAltairSpecConfig(final Eth2Network network) {
+    return SpecConfigAltair.required(
+        TestConfigLoader.loadConfig(
+            network.configName(), c -> c.altairBuilder(a -> a.altairForkSlot(UInt64.ZERO))));
   }
 }

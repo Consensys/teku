@@ -71,10 +71,12 @@ public class AttestationGossipManager implements GossipManager {
   }
 
   public void subscribeToSubnetId(final int subnetId) {
+    LOG.trace("Subscribing to subnet ID {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
+    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 

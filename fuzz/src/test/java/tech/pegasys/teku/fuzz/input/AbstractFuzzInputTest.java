@@ -20,14 +20,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.fuzz.FuzzUtil;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public abstract class AbstractFuzzInputTest<T extends SszData> {
 
-  protected final Spec spec = SpecFactory.createMinimal();
+  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @BeforeEach

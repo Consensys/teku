@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
@@ -22,44 +23,48 @@ import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecVersion extends DelegatingSpecLogic {
+  private final SpecMilestone milestone;
   private final SpecConfig config;
   private final SchemaDefinitions schemaDefinitions;
 
   private SpecVersion(
+      final SpecMilestone milestone,
       final SpecConfig config,
       final SchemaDefinitions schemaDefinitions,
       final SpecLogic specLogic) {
     super(specLogic);
+    this.milestone = milestone;
     this.config = config;
     this.schemaDefinitions = schemaDefinitions;
   }
 
-  public static SpecVersion createForFork(final Bytes4 fork, final SpecConfig specConfig) {
-    if (specConfig.getGenesisForkVersion().equals(fork)) {
-      return createPhase0(specConfig);
-    } else if (specConfig
-        .toVersionAltair()
-        .map(altairConfig -> altairConfig.getAltairForkVersion().equals(fork))
-        .orElse(false)) {
-      return createAltair(SpecConfigAltair.required(specConfig));
-    } else {
-      throw new IllegalArgumentException("Unsupported fork: " + fork);
+  static Optional<SpecVersion> create(final SpecMilestone milestone, final SpecConfig specConfig) {
+    switch (milestone) {
+      case PHASE0:
+        return Optional.of(createPhase0(specConfig));
+      case ALTAIR:
+        return specConfig.toVersionAltair().map(SpecVersion::createAltair);
+      default:
+        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
     }
   }
 
-  public static SpecVersion createPhase0(final SpecConfig specConfig) {
+  static SpecVersion createPhase0(final SpecConfig specConfig) {
     final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConfig);
     final SpecLogic specLogic = SpecLogicPhase0.create(specConfig, schemaDefinitions);
-    return new SpecVersion(specConfig, schemaDefinitions, specLogic);
+    return new SpecVersion(SpecMilestone.PHASE0, specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createAltair(final SpecConfigAltair specConfig) {
+  static SpecVersion createAltair(final SpecConfigAltair specConfig) {
     final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
     final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
-    return new SpecVersion(specConfig, schemaDefinitions, specLogic);
+    return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
+  }
+
+  public SpecMilestone getMilestone() {
+    return milestone;
   }
 
   public SpecConfig getConfig() {

@@ -34,7 +34,7 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -49,7 +49,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
-  protected final Spec spec = SpecFactory.createMinimal();
+  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected StorageSystem storageSystem;
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;

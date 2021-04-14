@@ -11,4 +11,5 @@ dependencies {
     testImplementation project(':ethereum:networks')
 
     testFixturesImplementation project(':ethereum:networks')
+    testFixturesImplementation testFixtures(project(':ethereum:spec'))
 }

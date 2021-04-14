@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.collections.cache.NoOpCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 /** The container class for all transition caches. */
@@ -33,6 +35,7 @@ public class TransitionCaches {
   private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
   private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
+  private static final int MAX_SYNC_COMMITTEE_CACHE = 2;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
@@ -43,6 +46,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           ValidatorIndexCache.NO_OP_INSTANCE,
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache()) {
 
@@ -72,6 +76,8 @@ public class TransitionCaches {
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
 
+  private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
+
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
 
   private TransitionCaches() {
@@ -84,6 +90,7 @@ public class TransitionCaches {
     validatorIndexCache = new ValidatorIndexCache();
     committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
+    syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
   }
 
   private TransitionCaches(
@@ -95,7 +102,8 @@ public class TransitionCaches {
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
       ValidatorIndexCache validatorIndexCache,
       Cache<Bytes32, List<Integer>> committeeShuffle,
-      Cache<UInt64, List<UInt64>> effectiveBalances) {
+      Cache<UInt64, List<UInt64>> effectiveBalances,
+      Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -105,6 +113,7 @@ public class TransitionCaches {
     this.validatorIndexCache = validatorIndexCache;
     this.committeeShuffle = committeeShuffle;
     this.effectiveBalances = effectiveBalances;
+    this.syncCommitteeCache = syncCommitteeCache;
   }
 
   public void setLatestTotalBalances(TotalBalances totalBalances) {
@@ -171,6 +180,11 @@ public class TransitionCaches {
     return effectiveBalances;
   }
 
+  /** (sync committee period) -> Map(validatorIndex?, Set(SubcommitteeIndex)) */
+  public Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> getSyncCommitteeCache() {
+    return syncCommitteeCache;
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
@@ -185,6 +199,7 @@ public class TransitionCaches {
         validatorsPubKeys,
         validatorIndexCache,
         committeeShuffle.copy(),
-        effectiveBalances.copy());
+        effectiveBalances.copy(),
+        syncCommitteeCache.copy());
   }
 }

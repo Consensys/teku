@@ -73,8 +73,10 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
+
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   protected SpecConfig specConfig = spec.getGenesisSpecConfig();
+
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =

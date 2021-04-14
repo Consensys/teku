@@ -14,12 +14,12 @@
 package tech.pegasys.teku.weaksubjectivity;
 
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityFactory {
 
-  private static final Spec SPEC = SpecFactory.createMinimal();
+  private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
   private static final WeakSubjectivityConfig wsConfig =
       WeakSubjectivityConfig.builder().specProvider(SPEC).build();
 

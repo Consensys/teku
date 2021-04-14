@@ -26,7 +26,8 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
 
     assertThat(config.powchain().isEnabled()).isTrue();
-    assertThat(config.powchain().getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
+    assertThat(config.powchain().getEth1Endpoints())
+        .containsExactly("http://example.com:1234/path/");
   }
 
   @Test
@@ -47,5 +48,40 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
+  }
+
+  @Test
+  public void multiple_eth1Endpoints_areSupported() {
+    final String[] args = {
+      "--eth1-endpoints",
+      "http://example.com:1234/path/,http://example-2.com:1234/path/",
+      "http://example-3.com:1234/path/"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().getEth1Endpoints())
+        .containsExactlyInAnyOrder(
+            "http://example.com:1234/path/",
+            "http://example-2.com:1234/path/",
+            "http://example-3.com:1234/path/");
+    assertThat(config.powchain().isEnabled()).isTrue();
+  }
+
+  @Test
+  public void multiple_eth1Endpoints_areSupported_mixedParams() {
+    final String[] args = {
+      "--eth1-endpoint",
+      "http://example-single.com:1234/path/",
+      "--eth1-endpoints",
+      "http://example.com:1234/path/,http://example-2.com:1234/path/",
+      "http://example-3.com:1234/path/"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().getEth1Endpoints())
+        .containsExactlyInAnyOrder(
+            "http://example-single.com:1234/path/",
+            "http://example.com:1234/path/",
+            "http://example-2.com:1234/path/",
+            "http://example-3.com:1234/path/");
+    assertThat(config.powchain().isEnabled()).isTrue();
   }
 }

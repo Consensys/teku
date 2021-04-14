@@ -19,9 +19,20 @@ import java.util.function.Consumer;
 
 public class TestConfigLoader {
   public static SpecConfig loadConfig(
-      final String constants, final Consumer<SpecConfigBuilder> modifier) {
+      final String configName, final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(constants, reader::read);
+    processConfig(configName, reader::read);
+    return reader.build(modifier);
+  }
+
+  public static SpecConfig loadPhase0Config(final String configName) {
+    return loadPhase0Config(configName, __ -> {});
+  }
+
+  public static SpecConfig loadPhase0Config(
+      final String configName, final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    processConfig(configName + "/phase0.yaml", reader::read);
     return reader.build(modifier);
   }
 }

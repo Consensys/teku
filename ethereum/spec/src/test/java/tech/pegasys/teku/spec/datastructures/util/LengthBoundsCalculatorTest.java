@@ -22,7 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -59,7 +59,7 @@ import tech.pegasys.teku.util.config.SpecDependent;
  * they produce the right value which is a much more valuable test than using fake classes
  */
 public class LengthBoundsCalculatorTest {
-  final Spec spec = SpecFactory.createMainnet();
+  final Spec spec = TestSpecFactory.createMainnetPhase0();
   final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
   @BeforeAll

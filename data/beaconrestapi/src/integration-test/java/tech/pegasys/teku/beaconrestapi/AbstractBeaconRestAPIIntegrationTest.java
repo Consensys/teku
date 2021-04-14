@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -65,7 +65,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
-  protected final Spec spec = SpecFactory.createMinimal();
+  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
