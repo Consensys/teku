@@ -82,7 +82,7 @@ class EpochDuties {
     pendingActions.clear();
   }
 
-  private void processPendingActions(final Optional<ScheduledDuties> scheduledDuties) {
+  private synchronized void processPendingActions(final Optional<ScheduledDuties> scheduledDuties) {
     if (pendingHeadUpdate.isPresent()
         && scheduledDuties.isPresent()
         && requiresRecalculation(scheduledDuties.get(), pendingHeadUpdate.get())) {
