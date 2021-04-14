@@ -16,3 +16,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed issue where attestation subnets were not unsubscribed from leading to unnecessary CPU load when running small numbers of validators.
+- Fixed issue where validator duties were not invalidated in response to new blocks correctly when using dependent roots.
