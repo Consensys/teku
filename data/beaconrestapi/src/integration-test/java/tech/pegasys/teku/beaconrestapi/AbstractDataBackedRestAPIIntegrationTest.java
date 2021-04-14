@@ -147,8 +147,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     this.specConfig = spec.getGenesisSpecConfig();
     this.storageSystem = storageSystem;
     recentChainData = storageSystem.recentChainData();
-    chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+    chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)

@@ -28,11 +28,19 @@ public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
-  public final Spec spec = TestSpecFactory.createMinimalPhase0();
+  public final Spec spec;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
+    spec = TestSpecFactory.createMinimalPhase0();
+  }
+
+  public ChainUpdater(
+      final RecentChainData recentChainData, final ChainBuilder chainBuilder, final Spec spec) {
+    this.recentChainData = recentChainData;
+    this.chainBuilder = chainBuilder;
+    this.spec = spec;
   }
 
   public UInt64 getHeadSlot() {
