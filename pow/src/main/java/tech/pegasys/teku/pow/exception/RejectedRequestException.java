@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.contract;
+package tech.pegasys.teku.pow.exception;
 
 public class RejectedRequestException extends RuntimeException {
 

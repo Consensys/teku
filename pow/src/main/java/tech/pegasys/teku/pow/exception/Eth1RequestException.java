@@ -13,12 +13,23 @@
 
 package tech.pegasys.teku.pow.exception;
 
+import com.google.common.base.Throwables;
+import java.net.SocketTimeoutException;
+import java.util.stream.Stream;
+
 public class Eth1RequestException extends RuntimeException {
-  public Eth1RequestException(String err) {
-    super(err);
+
+  public Eth1RequestException() {
+    super("One or more eth1 endpoints threw an Exception");
   }
 
-  public Eth1RequestException(RuntimeException e) {
-    super(e);
+  public boolean containsExceptionSolvableWithSmallerRange() {
+    return Stream.of(getSuppressed())
+        .anyMatch(
+            err -> {
+              final Throwable rootCause = Throwables.getRootCause(err);
+              return (rootCause instanceof SocketTimeoutException
+                  || rootCause instanceof RejectedRequestException);
+            });
   }
 }
