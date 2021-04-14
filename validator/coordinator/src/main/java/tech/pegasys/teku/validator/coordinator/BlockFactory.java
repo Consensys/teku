@@ -35,12 +35,14 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockFactory {
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final SyncCommitteeContributionPool contributionPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
@@ -51,6 +53,7 @@ public class BlockFactory {
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final SyncCommitteeContributionPool contributionPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
@@ -59,6 +62,7 @@ public class BlockFactory {
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
+    this.contributionPool = contributionPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
@@ -129,7 +133,11 @@ public class BlockFactory {
                     .proposerSlashings(proposerSlashings)
                     .attesterSlashings(attesterSlashings)
                     .deposits(deposits)
-                    .voluntaryExits(voluntaryExits))
+                    .voluntaryExits(voluntaryExits)
+                    .syncAggregate(
+                        () ->
+                            contributionPool.createSyncAggregateForBlock(
+                                newSlot.minusMinZero(1), parentRoot)))
         .getBlock();
   }
 }
