@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static java.util.Collections.emptyMap;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,8 +30,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class SyncCommitteeContributionPool {
+public class SyncCommitteeContributionPool implements SlotEventsChannel {
 
   private final Spec spec;
   private final SignedContributionAndProofValidator validator;
@@ -115,7 +115,16 @@ public class SyncCommitteeContributionPool {
         .createSyncAggregate(contributions);
   }
 
-  private SyncCommitteeContribution[] emptyContributions() {
-    return new SyncCommitteeContribution[SYNC_COMMITTEE_SUBNET_COUNT];
+  /**
+   * Prunes by removing all contributions more than 2 slots prior to the current slot.
+   *
+   * <p>The contributions from the previous slot are required for the block in the current slot and
+   * one more slot worth of contributions is kept to provide some clock tolerance.
+   *
+   * @param slot the node's current slot
+   */
+  @Override
+  public synchronized void onSlot(final UInt64 slot) {
+    contributionsBySlotAndBlockRoot.headMap(slot.minusMinZero(2), false).clear();
   }
 }

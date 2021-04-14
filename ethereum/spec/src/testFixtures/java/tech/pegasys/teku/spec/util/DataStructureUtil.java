@@ -848,7 +848,7 @@ public final class DataStructureUtil {
     return getAltairSchemaDefinitions(slot)
         .getSyncCommitteeContributionSchema()
         .create(
-            randomUInt64(),
+            slot,
             randomBytes32(),
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),

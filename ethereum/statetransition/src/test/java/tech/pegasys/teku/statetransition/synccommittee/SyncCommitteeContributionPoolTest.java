@@ -136,6 +136,45 @@ class SyncCommitteeContributionPoolTest {
     assertSyncAggregateFromContribution(contribution, result);
   }
 
+  @Test
+  void shouldPruneContributions() {
+    final SignedContributionAndProof proof1 = dataStructureUtil.randomSignedContributionAndProof(1);
+    final SignedContributionAndProof proof2 = dataStructureUtil.randomSignedContributionAndProof(2);
+    final SignedContributionAndProof proof3 = dataStructureUtil.randomSignedContributionAndProof(3);
+    final SignedContributionAndProof proof4 = dataStructureUtil.randomSignedContributionAndProof(4);
+    final SignedContributionAndProof proof5 = dataStructureUtil.randomSignedContributionAndProof(5);
+    addValid(proof1);
+    addValid(proof2);
+    addValid(proof3);
+    addValid(proof4);
+    addValid(proof5);
+
+    pool.onSlot(UInt64.valueOf(5));
+
+    // Proof 1 and two were pruned
+    assertThatSyncAggregate(getBlockSyncAggregateWithContribution(proof1)).isEmpty();
+    assertThatSyncAggregate(getBlockSyncAggregateWithContribution(proof2)).isEmpty();
+
+    // Proof 3 is kept to provide some clock sync tolerance
+    assertSyncAggregateFromContribution(
+        proof3.getMessage().getContribution(), getBlockSyncAggregateWithContribution(proof3));
+
+    // Proof 4 is kept as its needed for the block at slot 5
+    assertSyncAggregateFromContribution(
+        proof4.getMessage().getContribution(), getBlockSyncAggregateWithContribution(proof4));
+
+    // Proof 5 is kept as it's needed for the block at slot 6
+    assertSyncAggregateFromContribution(
+        proof5.getMessage().getContribution(), getBlockSyncAggregateWithContribution(proof5));
+  }
+
+  private SyncAggregate getBlockSyncAggregateWithContribution(
+      final SignedContributionAndProof proof) {
+    final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
+    return pool.createSyncAggregateForBlock(
+        contribution.getSlot().plus(1), contribution.getBeaconBlockRoot());
+  }
+
   private void addValid(final SignedContributionAndProof proof) {
     assertThat(pool.add(proof)).isCompletedWithValue(ACCEPT);
   }

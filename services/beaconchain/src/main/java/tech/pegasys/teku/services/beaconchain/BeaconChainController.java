@@ -538,6 +538,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     syncCommitteeContributionPool =
         new SyncCommitteeContributionPool(
             spec, new SignedContributionAndProofValidator(spec, recentChainData));
+    eventChannels.subscribe(SlotEventsChannel.class, syncCommitteeContributionPool);
   }
 
   public void initP2PNetwork() {
