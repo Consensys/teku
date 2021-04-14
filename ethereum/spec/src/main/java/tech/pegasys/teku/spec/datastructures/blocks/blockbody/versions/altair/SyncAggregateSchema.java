@@ -49,4 +49,10 @@ public class SyncAggregateSchema
     return new SyncAggregate(
         this, getSyncCommitteeBitsSchema().ofBits(), new SszSignature(BLSSignature.infinity()));
   }
+
+  public SyncAggregate create(
+      final Iterable<Integer> participantIndices, final BLSSignature signature) {
+    return new SyncAggregate(
+        this, getSyncCommitteeBitsSchema().ofBits(participantIndices), new SszSignature(signature));
+  }
 }

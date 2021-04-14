@@ -82,8 +82,8 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
-import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -163,7 +163,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  private volatile SignedContributionAndProofPool signedContributionAndProofPool;
+  private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
@@ -461,6 +461,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
+            syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
@@ -534,9 +535,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initSyncCommitteePools() {
-    signedContributionAndProofPool =
-        new SignedContributionAndProofPool(
-            new SignedContributionAndProofValidator(spec, recentChainData));
+    syncCommitteeContributionPool =
+        new SyncCommitteeContributionPool(
+            spec, new SignedContributionAndProofValidator(spec, recentChainData));
   }
 
   public void initP2PNetwork() {
@@ -578,7 +579,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
-    signedContributionAndProofPool.subscribeOperationAdded(
+    syncCommitteeContributionPool.subscribeOperationAdded(
         (item, result) -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)) {
             signedContributionAndProofGossipPublisher.publish(item);
@@ -603,7 +604,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
             .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
-            .gossipedSignedContributionAndProofProcessor(signedContributionAndProofPool::add)
+            .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(
