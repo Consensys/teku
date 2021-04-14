@@ -135,10 +135,10 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
                     err -> {
                       exceptionsContainer.addSuppressed(err);
                       if (providers.hasNext()) {
-                        LOG.warn("Retrying with next eth1 endpoint", err);
+                        LOG.debug("Retrying with next eth1 endpoint", err);
                         return run(task, providers, exceptionsContainer);
                       } else {
-                        LOG.error("All available eth1 endpoints failed", exceptionsContainer);
+                        LOG.debug("All available eth1 endpoints failed", exceptionsContainer);
                         return SafeFuture.failedFuture(exceptionsContainer);
                       }
                     }));
