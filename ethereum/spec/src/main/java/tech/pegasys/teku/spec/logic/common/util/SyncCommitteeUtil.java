@@ -274,18 +274,11 @@ public class SyncCommitteeUtil {
     final List<BLSSignature> signatures = new ArrayList<>();
     for (SyncCommitteeContribution contribution : contributions) {
       final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();
+      final int subcommitteeOffset = getSubcommitteeSize() * subcommitteeIndex;
       contribution
           .getAggregationBits()
           .streamAllSetBits()
-          .forEach(
-              index -> {
-                final int participantIndex =
-                    specConfig.getSyncCommitteeSize()
-                            / SYNC_COMMITTEE_SUBNET_COUNT
-                            * subcommitteeIndex
-                        + index;
-                participantIndices.add(participantIndex);
-              });
+          .forEach(index -> participantIndices.add(subcommitteeOffset + index));
       signatures.add(contribution.getSignature());
     }
 
