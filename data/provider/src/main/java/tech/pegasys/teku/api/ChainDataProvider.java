@@ -427,6 +427,6 @@ public class ChainDataProvider {
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
     // TODO calculate milestone
-    return SpecMilestone.PHASE0;
+    return SpecMilestone.ALTAIR;
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -28,16 +30,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 public class BeaconBlockBodyAltair extends BeaconBlockBody {
   public final SyncAggregate syncAggregate;
 
+  @JsonCreator
   public BeaconBlockBodyAltair(
-      final BLSSignature randao_reveal,
-      final Eth1Data eth1_data,
-      final Bytes32 graffiti,
-      final List<ProposerSlashing> proposer_slashings,
-      final List<AttesterSlashing> attester_slashings,
-      final List<Attestation> attestations,
-      final List<Deposit> deposits,
-      final List<SignedVoluntaryExit> voluntary_exits,
-      final SyncAggregate sync_aggregate) {
+      @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
+      @JsonProperty("eth1_data") final Eth1Data eth1_data,
+      @JsonProperty("graffiti") final Bytes32 graffiti,
+      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposer_slashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
+      @JsonProperty("attestations") final List<Attestation> attestations,
+      @JsonProperty("deposits") final List<Deposit> deposits,
+      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits,
+      @JsonProperty("sync_aggregate") final SyncAggregate sync_aggregate) {
     super(
         randao_reveal,
         eth1_data,

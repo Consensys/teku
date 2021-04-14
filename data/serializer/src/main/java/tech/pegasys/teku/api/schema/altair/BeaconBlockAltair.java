@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.BeaconBlockBody;
@@ -31,15 +33,16 @@ public class BeaconBlockAltair extends BeaconBlock {
     if (!(message.getBody() instanceof BeaconBlockBodyAltair)) {
       throw new IllegalArgumentException("Beacon block body was not altair compatible");
     }
-    this.altairBody = new BeaconBlockBodyAltair(message.getBody());
+    this.altairBody = (BeaconBlockBodyAltair) message.getBody();
   }
 
+  @JsonCreator
   public BeaconBlockAltair(
-      final UInt64 slot,
-      final UInt64 proposer_index,
-      final Bytes32 parent_root,
-      final Bytes32 state_root,
-      final BeaconBlockBodyAltair body) {
+      @JsonProperty("slot") final UInt64 slot,
+      @JsonProperty("proposer_index") final UInt64 proposer_index,
+      @JsonProperty("parent_root") final Bytes32 parent_root,
+      @JsonProperty("state_root") final Bytes32 state_root,
+      @JsonProperty("body") final BeaconBlockBodyAltair body) {
     super(slot, proposer_index, parent_root, state_root, body);
     this.altairBody = body;
   }

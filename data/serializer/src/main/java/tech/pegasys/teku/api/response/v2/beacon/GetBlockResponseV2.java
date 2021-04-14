@@ -15,29 +15,41 @@ package tech.pegasys.teku.api.response.v2.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.interfaces.VersionedSignedBeaconBlock;
+import tech.pegasys.teku.api.schema.interfaces.VersionedData;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetBlockResponseV2 {
   private final SpecMilestone version;
-  private final VersionedSignedBeaconBlock data;
+
+  @JsonTypeInfo(
+      use = JsonTypeInfo.Id.NAME,
+      include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
+      property = "version")
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "PHASE0"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "ALTAIR")
+  })
+  private final VersionedData data;
 
   public SpecMilestone getVersion() {
     return version;
   }
 
   @Schema(oneOf = {SignedBeaconBlockPhase0.class, SignedBeaconBlockAltair.class})
-  public VersionedSignedBeaconBlock getData() {
+  public VersionedData getData() {
     return data;
   }
 
   @JsonCreator
   public GetBlockResponseV2(
       @JsonProperty("version") final SpecMilestone version,
-      @JsonProperty("data") final VersionedSignedBeaconBlock data) {
+      @JsonProperty("data") final SignedBeaconBlock data) {
     this.version = version;
     this.data = data;
   }

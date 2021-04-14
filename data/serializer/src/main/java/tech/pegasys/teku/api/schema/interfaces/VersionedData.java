@@ -13,4 +13,4 @@
 
 package tech.pegasys.teku.api.schema.interfaces;
 
-public interface VersionedSignedBeaconBlock {}
+public interface VersionedData {}

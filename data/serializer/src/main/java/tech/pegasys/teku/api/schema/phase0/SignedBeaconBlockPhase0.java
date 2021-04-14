@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.api.schema.phase0;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.VersionedSignedBeaconBlock;
+import tech.pegasys.teku.api.schema.interfaces.VersionedData;
 
-public class SignedBeaconBlockPhase0 extends SignedBeaconBlock
-    implements VersionedSignedBeaconBlock {
+public class SignedBeaconBlockPhase0 extends SignedBeaconBlock implements VersionedData {
+  @JsonCreator
   public SignedBeaconBlockPhase0(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    super(internalBlock);
-  }
-
-  public SignedBeaconBlockPhase0(final BeaconBlock message, final BLSSignature signature) {
+      @JsonProperty("message") final BeaconBlock message,
+      @JsonProperty("signature") final BLSSignature signature) {
     super(message, signature);
   }
 }

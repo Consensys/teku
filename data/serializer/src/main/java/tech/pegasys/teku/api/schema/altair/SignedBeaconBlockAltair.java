@@ -13,22 +13,18 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
-import tech.pegasys.teku.api.schema.BeaconBlock;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.VersionedSignedBeaconBlock;
+import tech.pegasys.teku.api.schema.interfaces.VersionedData;
 
-public class SignedBeaconBlockAltair extends SignedBeaconBlock
-    implements VersionedSignedBeaconBlock {
-  private final BeaconBlockAltair altairMessage;
+public class SignedBeaconBlockAltair extends SignedBeaconBlock implements VersionedData {
 
-  @Override
-  public BeaconBlock getMessage() {
-    return altairMessage;
-  }
-
+  @JsonCreator
   public SignedBeaconBlockAltair(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    super(internalBlock);
-    this.altairMessage = new BeaconBlockAltair(internalBlock.getMessage());
+      @JsonProperty("message") final BeaconBlockAltair message,
+      @JsonProperty("signature") final BLSSignature signature) {
+    super(message, signature);
   }
 }
