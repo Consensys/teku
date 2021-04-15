@@ -56,9 +56,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
-  // TODO: Should this be in constants file? https://github.com/ethereum/eth2.0-specs/issues/2317
-  private static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 4;
-
   private final BeaconStateAccessors beaconStateAccessors;
   private final BeaconStateUtil beaconStateUtil;
   private final ValidatorsUtil validatorsUtil;
@@ -163,7 +160,7 @@ public class SyncCommitteeUtil {
             1,
             specConfig.getSyncCommitteeSize()
                 / SYNC_COMMITTEE_SUBNET_COUNT
-                / TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
+                / specConfig.getTargetAggregatorsPerSyncSubcommittee());
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 

@@ -46,6 +46,9 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
   private final int maxValidLightClientUpdates;
   private final int lightClientUpdateTimeout;
 
+  // Validator
+  private final int targetAggregatorsPerSyncSubcommittee;
+
   public SpecConfigAltair(
       final SpecConfig specConfig,
       final UInt64 inactivityPenaltyQuotientAltair,
@@ -62,7 +65,8 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final UInt64 altairForkSlot,
       final int minSyncCommitteeParticipants,
       final int maxValidLightClientUpdates,
-      final int lightClientUpdateTimeout) {
+      final int lightClientUpdateTimeout,
+      final int targetAggregatorsPerSyncSubcommittee) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -79,6 +83,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.maxValidLightClientUpdates = maxValidLightClientUpdates;
     this.lightClientUpdateTimeout = lightClientUpdateTimeout;
+    this.targetAggregatorsPerSyncSubcommittee = targetAggregatorsPerSyncSubcommittee;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -139,6 +144,10 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return domainContributionAndProof;
   }
 
+  public int getTargetAggregatorsPerSyncSubcommittee() {
+    return targetAggregatorsPerSyncSubcommittee;
+  }
+
   @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
@@ -164,7 +173,9 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && Objects.equals(domainSyncCommitteeSelectionProof, that.domainSyncCommitteeSelectionProof)
         && Objects.equals(domainContributionAndProof, that.domainContributionAndProof)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
-        && Objects.equals(altairForkSlot, that.altairForkSlot);
+        && Objects.equals(altairForkSlot, that.altairForkSlot)
+        && Objects.equals(
+            targetAggregatorsPerSyncSubcommittee, that.targetAggregatorsPerSyncSubcommittee);
   }
 
   @Override
@@ -185,6 +196,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         altairForkSlot,
         minSyncCommitteeParticipants,
         maxValidLightClientUpdates,
-        lightClientUpdateTimeout);
+        lightClientUpdateTimeout,
+        targetAggregatorsPerSyncSubcommittee);
   }
 }
