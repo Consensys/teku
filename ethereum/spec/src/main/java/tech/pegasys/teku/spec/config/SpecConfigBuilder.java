@@ -675,6 +675,9 @@ public class SpecConfigBuilder {
     private Integer maxValidLightClientUpdates;
     private Integer lightClientUpdateTimeout;
 
+    // Validator
+    private Integer targetAggregatorsPerSyncSubcommittee;
+
     private AltairBuilder() {}
 
     SpecConfigAltair build(final SpecConfig specConfig) {
@@ -694,7 +697,8 @@ public class SpecConfigBuilder {
           altairForkSlot,
           minSyncCommitteeParticipants,
           maxValidLightClientUpdates,
-          lightClientUpdateTimeout);
+          lightClientUpdateTimeout,
+          targetAggregatorsPerSyncSubcommittee);
     }
 
     void validate() {
@@ -714,6 +718,8 @@ public class SpecConfigBuilder {
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
       validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
       validateConstant("lightClientUpdateTimeout", lightClientUpdateTimeout);
+      validateConstant(
+          "targetAggregatorsPerSyncSubcommittee", targetAggregatorsPerSyncSubcommittee);
     }
 
     public AltairBuilder inactivityPenaltyQuotientAltair(
@@ -807,6 +813,13 @@ public class SpecConfigBuilder {
     public AltairBuilder lightClientUpdateTimeout(final Integer lightClientUpdateTimeout) {
       checkNotNull(lightClientUpdateTimeout);
       this.lightClientUpdateTimeout = lightClientUpdateTimeout;
+      return this;
+    }
+
+    public AltairBuilder targetAggregatorsPerSyncSubcommittee(
+        final Integer targetAggregatorsPerSyncSubcommittee) {
+      checkNotNull(targetAggregatorsPerSyncSubcommittee);
+      this.targetAggregatorsPerSyncSubcommittee = targetAggregatorsPerSyncSubcommittee;
       return this;
     }
   }
