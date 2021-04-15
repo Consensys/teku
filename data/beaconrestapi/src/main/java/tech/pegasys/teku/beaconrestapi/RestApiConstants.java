@@ -39,6 +39,7 @@ public class RestApiConstants {
   public static final String TAG_NODE = "Node";
   public static final String TAG_VALIDATOR = "Validator";
   public static final String TAG_BEACON = "Beacon";
+  public static final String TAG_EXPERIMENTAL = "Experimental";
   public static final String TAG_CONFIG = "Config";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";

@@ -140,10 +140,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       final StorageSystem storageSystem,
       final boolean useMockForkChoice,
       final SpecMilestone specMilestone) {
-    this.spec =
-        specMilestone == SpecMilestone.PHASE0
-            ? TestSpecFactory.createMinimalPhase0()
-            : TestSpecFactory.createMinimalAltair();
+    this.spec = TestSpecFactory.createMinimal(specMilestone);
     this.specConfig = spec.getGenesisSpecConfig();
     this.storageSystem = storageSystem;
     recentChainData = storageSystem.recentChainData();
