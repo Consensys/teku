@@ -47,6 +47,12 @@ MAX_VALID_LIGHT_CLIENT_UPDATES: 8192
 LIGHT_CLIENT_UPDATE_TIMEOUT: 8192
 
 
+# Validator
+# ---------------------------------------------------------------
+# 2**2 (= 4)
+TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE: 4
+
+
 #Phase 0
 
 # Misc
