@@ -12,7 +12,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
-- Early access: Support for automatic fail-over of eth1-endpoints.  Multiple endpoints can be specified with the new `--eth1-endpoints` CLI option. Thanks to Enrico Del Fante. 
+- Early access: Support for automatic fail-over of eth1-endpoints.  Multiple endpoints can be specified with the new `--eth1-endpoints` CLI option. Thanks to Enrico Del Fante.
+- Implement standard rest api `/eth/v2/beacon/blocks/:block_id` which supports altair blocks. Documented under 'Experimental' endpoints until more widely implemented.
 
 ### Bug Fixes
 - Fixed issue where attestation subnets were not unsubscribed from leading to unnecessary CPU load when running small numbers of validators.

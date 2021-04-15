@@ -274,14 +274,15 @@ public class TekuNode extends Node {
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
-          assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
+          assertThat(state.latest_block_header.parent_root)
+              .isEqualTo(block.getMessage().parent_root);
 
           tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
               state.asInternalBeaconState(spec);
-          UInt64 proposerIndex = block.message.proposer_index;
+          UInt64 proposerIndex = block.getMessage().proposer_index;
 
           Set<UInt64> attesterIndicesInAttestations =
-              block.message.body.attestations.stream()
+              block.getMessage().getBody().attestations.stream()
                   .map(
                       a ->
                           spec.getAttestingIndices(

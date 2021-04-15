@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -72,8 +73,10 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 @SuppressWarnings("unchecked")
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
-  protected final SpecConfig specConfig = spec.getGenesisSpecConfig();
+
+  protected Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected SpecConfig specConfig = spec.getGenesisSpecConfig();
+
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =
@@ -125,15 +128,24 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected ForkChoice forkChoice;
 
-  private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {
-    setupStorage(InMemoryStorageSystemBuilder.buildDefault(storageMode), useMockForkChoice);
+  private void setupStorage(
+      final StateStorageMode storageMode,
+      final boolean useMockForkChoice,
+      final SpecMilestone specMilestone) {
+    setupStorage(
+        InMemoryStorageSystemBuilder.buildDefault(storageMode), useMockForkChoice, specMilestone);
   }
 
-  private void setupStorage(final StorageSystem storageSystem, final boolean useMockForkChoice) {
+  private void setupStorage(
+      final StorageSystem storageSystem,
+      final boolean useMockForkChoice,
+      final SpecMilestone specMilestone) {
+    this.spec = TestSpecFactory.createMinimal(specMilestone);
+    this.specConfig = spec.getGenesisSpecConfig();
     this.storageSystem = storageSystem;
     recentChainData = storageSystem.recentChainData();
-    chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+    chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
@@ -171,34 +183,39 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startPreForkChoiceRestAPI() {
     // Initialize genesis
-    setupStorage(StateStorageMode.ARCHIVE, true);
+    setupStorage(StateStorageMode.ARCHIVE, true, SpecMilestone.PHASE0);
     chainUpdater.initializeGenesis();
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
-    setupStorage(storageSystem, true);
+    setupStorage(storageSystem, true, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPI() {
-    setupStorage(StateStorageMode.ARCHIVE, false);
+    setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
-    setupStorage(StateStorageMode.ARCHIVE, false);
+    setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI(config);
   }
 
-  protected void startRestAPIAtGenesis() {
-    startRestAPIAtGenesis(StateStorageMode.ARCHIVE);
+  protected void startRestAPIAtGenesis(final SpecMilestone specMilestone) {
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, specMilestone);
   }
 
-  protected void startRestAPIAtGenesis(final StateStorageMode storageMode) {
+  protected void startRestAPIAtGenesis() {
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0);
+  }
+
+  protected void startRestAPIAtGenesis(
+      final StateStorageMode storageMode, final SpecMilestone specMilestone) {
     // Initialize genesis
-    setupStorage(storageMode, false);
+    setupStorage(storageMode, false, specMilestone);
     chainUpdater.initializeGenesis();
     // Start API
     setupAndStartRestAPI();
