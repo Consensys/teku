@@ -22,8 +22,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockV
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 
 public class StateTransitionMerge extends StateTransition {
 
@@ -43,7 +43,7 @@ public class StateTransitionMerge extends StateTransition {
       final BlockProcessorMerge blockProcessorMerge,
       final EpochProcessor epochProcessor,
       final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessorsAltair beaconStateAccessors) {
+      final BeaconStateAccessorsMerge beaconStateAccessors) {
     final BlockValidator blockValidator =
         BlockValidator.standard(
             specConfig, beaconStateUtil, blockProcessorMerge, beaconStateAccessors);

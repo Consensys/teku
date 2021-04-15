@@ -1,11 +1,8 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes20;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
@@ -14,10 +11,11 @@ import tech.pegasys.teku.ssz.containers.ContainerSchema11;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayload
     extends Container11<
-    ExecutionPayload,
+        ExecutionPayload,
         SszBytes32,
         SszBytes32,
         SszByteVector,
@@ -32,7 +30,7 @@ public class ExecutionPayload
 
   protected ExecutionPayload(
       ContainerSchema11<
-          ExecutionPayload,
+              ExecutionPayload,
               SszBytes32,
               SszBytes32,
               SszByteVector,
@@ -50,7 +48,7 @@ public class ExecutionPayload
 
   ExecutionPayload(
       ContainerSchema11<
-          ExecutionPayload,
+              ExecutionPayload,
               SszBytes32,
               SszBytes32,
               SszByteVector,
@@ -69,7 +67,7 @@ public class ExecutionPayload
 
   ExecutionPayload(
       ContainerSchema11<
-          ExecutionPayload,
+              ExecutionPayload,
               SszBytes32,
               SszBytes32,
               SszByteVector,
@@ -153,7 +151,7 @@ public class ExecutionPayload
     return getField9().getBytes();
   }
 
-  public List<Bytes> getTransactions() {
-    return getField10().stream().map(SszByteList::getBytes).collect(Collectors.toList());
+  public SszList<SszByteList> getTransactions() {
+    return getField10();
   }
 }

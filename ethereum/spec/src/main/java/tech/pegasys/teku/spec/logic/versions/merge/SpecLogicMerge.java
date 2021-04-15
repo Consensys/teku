@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.merge;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
+import tech.pegasys.teku.spec.logic.versions.merge.statetransition.StateTransitionMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.ValidatorStatusFactoryMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
@@ -80,7 +82,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     // Helpers
     final Predicates predicates = new Predicates();
     final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config, schemaDefinitions);
-    final BeaconStateAccessors beaconStateAccessors =
+    final BeaconStateAccessorsMerge beaconStateAccessors =
         new BeaconStateAccessorsMerge(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
@@ -115,7 +117,10 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
-    final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil(schemaDefinitions);
+    final ExecutionEngineService executionEngineService =
+        ExecutionEngineService.createStub(schemaDefinitions.getExecutionPayloadSchema());
+    final ExecutionPayloadUtil executionPayloadUtil =
+        new ExecutionPayloadUtil(executionEngineService);
     final BlockProcessorMerge blockProcessor =
         new BlockProcessorMerge(
             config,
@@ -128,8 +133,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             attestationValidator,
             executionPayloadUtil);
-    final StateTransition stateTransition =
-        StateTransition.create(
+    final StateTransitionMerge stateTransition =
+        StateTransitionMerge.create(
             config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);

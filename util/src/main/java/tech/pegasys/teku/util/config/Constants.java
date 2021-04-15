@@ -134,11 +134,11 @@ public class Constants {
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
   // Merge
-  @Deprecated public static Bytes4 MERGE_FORK_VERSION;
-  @Deprecated public static UInt64 MERGE_FORK_SLOT;
-  @Deprecated public static long TRANSITION_TOTAL_DIFFICULTY;
-  @Deprecated public static int MAX_BYTES_PER_OPAQUE_TRANSACTION;
-  @Deprecated public static int MAX_APPLICATION_TRANSACTIONS;
+  @Deprecated public static Bytes4 MERGE_FORK_VERSION = Bytes4.fromHexString("0x02000001");
+  @Deprecated public static UInt64 MERGE_FORK_SLOT = UInt64.MAX_VALUE;
+  @Deprecated public static long TRANSITION_TOTAL_DIFFICULTY = Long.MAX_VALUE;
+  @Deprecated public static int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
+  @Deprecated public static int MAX_APPLICATION_TRANSACTIONS = 16384;
 
   // SSZ
   public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);

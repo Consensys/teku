@@ -5,7 +5,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes20;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
@@ -32,6 +32,8 @@ public class ExecutionPayloadSchema
         SszBytes32,
         SszByteVector,
         SszList<SszByteList>> {
+
+  private final SszByteListSchema<SszByteList> transactionSchema;
 
   public static ExecutionPayloadSchema create(final SpecConfig specConfig) {
     SpecConfigMerge specConfigMerge = SpecConfigMerge.required(specConfig);
@@ -66,6 +68,17 @@ public class ExecutionPayloadSchema
             SszListSchema.create(
                 SszByteListSchema.create(maxBytesPerOpaqueTransaction),
                 maxApplicationTransactions)));
+
+    this.transactionSchema = SszByteListSchema.create(maxBytesPerOpaqueTransaction);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszByteList, ?> getTransactionsSchema() {
+    return (SszListSchema<SszByteList, ?>) getFieldSchema10();
+  }
+
+  public SszByteListSchema<SszByteList> getTransactionSchema() {
+    return transactionSchema;
   }
 
   @Override

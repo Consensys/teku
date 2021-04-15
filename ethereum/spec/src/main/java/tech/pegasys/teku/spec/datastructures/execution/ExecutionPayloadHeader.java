@@ -5,7 +5,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bytes20;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.containers.Container11;
 import tech.pegasys.teku.ssz.containers.ContainerSchema11;

@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
@@ -118,6 +119,20 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
       checkArgument(
           isExecutionPayloadValid,
           "process_execution_payload: Verify that the payload is valid with respect to execution state transition");
+
+      state.setLatestExecutionPayloadHeader(
+          new ExecutionPayloadHeader(
+              executionPayload.getBlock_hash(),
+              executionPayload.getParent_hash(),
+              executionPayload.getCoinbase(),
+              executionPayload.getState_root(),
+              executionPayload.getNumber(),
+              executionPayload.getGas_limit(),
+              executionPayload.getGas_used(),
+              executionPayload.getTimestamp(),
+              executionPayload.getReceipt_root(),
+              executionPayload.getLogs_bloom(),
+              executionPayload.getTransactions().hashTreeRoot()));
 
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

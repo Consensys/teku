@@ -47,7 +47,7 @@ public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconState
   }
 
   // Execution
-  default void setExecutionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader) {
+  default void setLatestExecutionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name());
     set(fieldIndex, executionPayloadHeader);
