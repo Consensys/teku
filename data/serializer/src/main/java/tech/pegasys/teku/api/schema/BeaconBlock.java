@@ -37,7 +37,11 @@ public class BeaconBlock {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 state_root;
 
-  public final BeaconBlockBody body;
+  private final BeaconBlockBody body;
+
+  public BeaconBlockBody getBody() {
+    return body;
+  }
 
   public BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
