@@ -62,6 +62,12 @@ public class SpecConfigLoader {
       if (altairInput.isPresent()) {
         processor.process(altairInput.get());
       }
+      // Merge is optional
+      final Optional<InputStream> mergeInput =
+          loader.load(source + "/merge.yaml", source + "/merge.yml");
+      if (mergeInput.isPresent()) {
+        processor.process(mergeInput.get());
+      }
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load spec config", e);
     }

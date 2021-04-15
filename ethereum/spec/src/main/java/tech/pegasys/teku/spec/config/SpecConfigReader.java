@@ -90,6 +90,16 @@ public class SpecConfigReader {
               unprocessConfig.remove(constantKey);
             });
 
+    // Process merge config
+    streamConfigSetters(SpecConfigBuilder.MergeBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::mergeBuilder, constantKey, rawValue);
+              unprocessConfig.remove(constantKey);
+            });
+
     if (unprocessConfig.size() > 0) {
       final String unknownKeys = String.join(",", unprocessConfig.keySet());
       throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);

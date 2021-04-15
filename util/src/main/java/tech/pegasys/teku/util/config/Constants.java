@@ -29,7 +29,8 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
+      ImmutableList.of(
+          "mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift", "mergenet-minimal");
 
   @Deprecated public static String CONFIG_NAME;
 
@@ -131,6 +132,13 @@ public class Constants {
   @Deprecated
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
+
+  // Merge
+  @Deprecated public static Bytes4 MERGE_FORK_VERSION;
+  @Deprecated public static UInt64 MERGE_FORK_SLOT;
+  @Deprecated public static long TRANSITION_TOTAL_DIFFICULTY;
+  @Deprecated public static int MAX_BYTES_PER_OPAQUE_TRANSACTION;
+  @Deprecated public static int MAX_APPLICATION_TRANSACTIONS;
 
   // SSZ
   public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);

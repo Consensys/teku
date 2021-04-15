@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -148,5 +149,10 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return Optional.empty();
+  }
+
+  @Override
+  public ExecutionPayloadUtil getExecutionPayloadUtil() {
+    throw new UnsupportedOperationException("There is no ExecutionPayloadUtil in phase 0");
   }
 }

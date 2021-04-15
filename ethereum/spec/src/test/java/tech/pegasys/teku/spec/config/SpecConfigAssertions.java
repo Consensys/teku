@@ -30,6 +30,10 @@ public class SpecConfigAssertions {
     assertAllFieldsSet(config, SpecConfigAltair.class);
   }
 
+  static void assertAllMergeFieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigMerge.class);
+  }
+
   static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {
     for (Method method : listGetters(targetConfig)) {
       final Object value = method.invoke(config);

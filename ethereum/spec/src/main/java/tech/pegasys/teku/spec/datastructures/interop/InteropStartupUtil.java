@@ -41,7 +41,7 @@ public final class InteropStartupUtil {
       List<BLSKeyPair> validatorKeys,
       boolean signDeposits) {
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+        new MockStartDepositGenerator(new DepositGenerator(signDeposits, spec))
             .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator(spec)
         .createInitialBeaconState(UInt64.valueOf(genesisTime), initialDepositData);

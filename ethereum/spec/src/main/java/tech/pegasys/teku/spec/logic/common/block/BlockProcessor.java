@@ -115,4 +115,9 @@ public interface BlockProcessor {
 
   void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
       throws BlockProcessingException;
+
+  default void processExecutionPayload(MutableBeaconState state, BeaconBlockBody blockBody)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayload in this spec version");
+  }
 }

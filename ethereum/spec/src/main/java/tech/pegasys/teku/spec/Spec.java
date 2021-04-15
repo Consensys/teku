@@ -28,6 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -78,6 +79,15 @@ public class Spec {
     Preconditions.checkArgument(genesisSpec != null);
     this.genesisSpec = genesisSpec;
     this.forkManifest = forkManifest;
+  }
+
+  public static Spec createWithMergeAsGenesis(
+      final SpecConfigMerge config, final ForkManifest forkManifest) {
+    Preconditions.checkArgument(
+        config.getMergeForkVersion().equals(config.getGenesisForkVersion()));
+    Preconditions.checkArgument(
+        forkManifest.getGenesisFork().getCurrent_version().equals(config.getMergeForkVersion()));
+    return new Spec(SpecVersion.createMerge(config), forkManifest);
   }
 
   public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
@@ -143,6 +153,11 @@ public class Spec {
         .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
         .orElse(false)) {
       return SpecMilestone.ALTAIR;
+    } else if (specConfig
+        .toVersionMerge()
+        .map(config -> fork.getCurrent_version().equals(config.getMergeForkVersion()))
+        .orElse(false)) {
+      return SpecMilestone.MERGE;
     } else {
       throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
     }
@@ -240,6 +255,10 @@ public class Spec {
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+  }
+
+  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+    return atSlot(slot).miscHelpers().computeTimeAtSlot(state, slot);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {

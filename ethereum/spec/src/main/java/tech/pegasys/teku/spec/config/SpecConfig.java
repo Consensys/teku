@@ -25,6 +25,9 @@ public interface SpecConfig {
   UInt64 GENESIS_EPOCH = UInt64.ZERO;
   UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
 
+  // Relies on assumptions that logs bloom size never changes
+  int BYTES_PER_LOGS_BLOOM = 256;
+
   static SpecConfigBuilder builder() {
     return new SpecConfigBuilder();
   }
@@ -158,6 +161,10 @@ public interface SpecConfig {
   Bytes getDepositContractAddress();
 
   default Optional<SpecConfigAltair> toVersionAltair() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigMerge> toVersionMerge() {
     return Optional.empty();
   }
 }

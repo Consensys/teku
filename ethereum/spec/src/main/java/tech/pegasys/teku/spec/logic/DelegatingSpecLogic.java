@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -110,5 +111,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BeaconStateMutators beaconStateMutators() {
     return specLogic.beaconStateMutators();
+  }
+
+  @Override
+  public ExecutionPayloadUtil getExecutionPayloadUtil() {
+    return specLogic.getExecutionPayloadUtil();
   }
 }

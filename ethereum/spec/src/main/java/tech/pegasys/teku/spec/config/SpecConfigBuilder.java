@@ -113,6 +113,9 @@ public class SpecConfigBuilder {
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
+  // Merge
+  private Optional<MergeBuilder> mergeBuilder = Optional.empty();
+
   public SpecConfig build() {
     validate();
     final SpecConfig phase0 =
@@ -179,7 +182,8 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress);
 
-    return altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
+    SpecConfig altairOrPhase0 = altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
+    return mergeBuilder.map(b -> (SpecConfig) b.build(altairOrPhase0)).orElse(altairOrPhase0);
   }
 
   private void validate() {
@@ -246,6 +250,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
+    mergeBuilder.ifPresent(MergeBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -807,6 +812,76 @@ public class SpecConfigBuilder {
     public AltairBuilder lightClientUpdateTimeout(final Integer lightClientUpdateTimeout) {
       checkNotNull(lightClientUpdateTimeout);
       this.lightClientUpdateTimeout = lightClientUpdateTimeout;
+      return this;
+    }
+  }
+
+  // Merge
+  public SpecConfigBuilder mergeBuilder(final Consumer<MergeBuilder> consumer) {
+    if (mergeBuilder.isEmpty()) {
+      mergeBuilder = Optional.of(new MergeBuilder());
+    }
+    consumer.accept(mergeBuilder.get());
+    return this;
+  }
+
+  class MergeBuilder {
+
+    // Fork
+    private Bytes4 mergeForkVersion;
+    private UInt64 mergeForkSlot;
+
+    // Transition
+    private long transitionTotalDifficulty;
+
+    // Execution
+    private int maxBytesPerOpaqueTransaction;
+    private int maxApplicationTransactions;
+
+    private MergeBuilder() {}
+
+    SpecConfigMerge build(final SpecConfig specConfig) {
+      return new SpecConfigMerge(
+          specConfig,
+          mergeForkVersion,
+          mergeForkSlot,
+          transitionTotalDifficulty,
+          maxBytesPerOpaqueTransaction,
+          maxApplicationTransactions);
+    }
+
+    void validate() {
+      validateConstant("mergeForkVersion", mergeForkVersion);
+      validateConstant("mergeForkSlot", mergeForkSlot);
+      validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
+      validateConstant("maxBytesPerOpaqueTransaction", maxBytesPerOpaqueTransaction);
+      validateConstant("maxApplicationTransactions", maxApplicationTransactions);
+    }
+
+    public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
+      checkNotNull(mergeForkVersion);
+      this.mergeForkVersion = mergeForkVersion;
+      return this;
+    }
+
+    public MergeBuilder mergeForkSlot(UInt64 mergeForkSlot) {
+      checkNotNull(mergeForkSlot);
+      this.mergeForkSlot = mergeForkSlot;
+      return this;
+    }
+
+    public MergeBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
+      this.transitionTotalDifficulty = transitionTotalDifficulty;
+      return this;
+    }
+
+    public MergeBuilder maxBytesPerOpaqueTransaction(int maxBytesPerOpaqueTransaction) {
+      this.maxBytesPerOpaqueTransaction = maxBytesPerOpaqueTransaction;
+      return this;
+    }
+
+    public MergeBuilder maxApplicationTransactions(int maxApplicationTransactions) {
+      this.maxApplicationTransactions = maxApplicationTransactions;
       return this;
     }
   }

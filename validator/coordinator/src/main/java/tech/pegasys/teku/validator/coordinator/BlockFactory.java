@@ -22,12 +22,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -129,7 +131,18 @@ public class BlockFactory {
                     .proposerSlashings(proposerSlashings)
                     .attesterSlashings(attesterSlashings)
                     .deposits(deposits)
-                    .voluntaryExits(voluntaryExits))
+                    .voluntaryExits(voluntaryExits)
+                    .executionPayload(() -> getExecutionPayload(blockSlotState)))
         .getBlock();
+  }
+
+  private ExecutionPayload getExecutionPayload(BeaconState genericState) {
+    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
+    final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
+
+    return spec.atSlot(state.getSlot())
+        .getExecutionPayloadUtil()
+        .produceExecutionPayload(executionParentHash, timestamp);
   }
 }

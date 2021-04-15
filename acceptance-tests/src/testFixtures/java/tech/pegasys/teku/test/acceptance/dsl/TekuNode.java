@@ -78,7 +78,8 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
-    this.spec = SpecFactory.getDefault().create(config.getNetworkName());
+    this.spec =
+        SpecFactory.getByNetworkName(config.getNetworkName()).create(config.getNetworkName());
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)

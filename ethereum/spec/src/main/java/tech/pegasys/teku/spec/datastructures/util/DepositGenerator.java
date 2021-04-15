@@ -28,12 +28,14 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 
 public class DepositGenerator {
 
   private final boolean signDeposit;
+  private Spec spec;
 
   public DepositGenerator() {
     this(true);
@@ -41,6 +43,11 @@ public class DepositGenerator {
 
   public DepositGenerator(boolean signDeposit) {
     this.signDeposit = signDeposit;
+  }
+
+  public DepositGenerator(boolean signDeposit, Spec spec) {
+    this.signDeposit = signDeposit;
+    this.spec = spec;
   }
 
   public DepositData createDepositData(
@@ -53,10 +60,23 @@ public class DepositGenerator {
     final BLSSignature signature =
         signDeposit
             ? BLS.sign(
-                validatorKeyPair.getSecretKey(),
-                compute_signing_root(depositMessage, compute_domain(DOMAIN_DEPOSIT)))
+                validatorKeyPair.getSecretKey(), computeDepositMessageSigningRoot(depositMessage))
             : BLSSignature.empty();
     return new DepositData(depositMessage, signature);
+  }
+
+  private Bytes computeDepositMessageSigningRoot(DepositMessage depositMessage) {
+    if (spec != null) {
+      return spec.getGenesisSpec()
+          .getBeaconStateUtil()
+          .computeSigningRoot(
+              depositMessage,
+              spec.getGenesisSpec()
+                  .getBeaconStateUtil()
+                  .computeDomain(spec.getGenesisSpecConfig().getDomainDeposit()));
+    } else {
+      return compute_signing_root(depositMessage, compute_domain(DOMAIN_DEPOSIT));
+    }
   }
 
   private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {

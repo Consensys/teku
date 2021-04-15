@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
@@ -99,6 +100,12 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
+  public void shouldLoadMergenetMinimal() throws Exception {
+    final SpecConfig config = SpecConfigLoader.loadConfig("mergenet-minimal");
+    assertAllMergeFieldsSet(config);
+  }
+
+  @Test
   public void shouldTestAllKnownNetworks() {
     final List<String> testedNetworks =
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
@@ -118,7 +125,8 @@ public class SpecConfigLoaderTest {
         Arguments.of(Eth2Network.PRATER.configName(), SpecConfigPhase0.class),
         Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
+        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.MERGENET_MINIMAL.configName(), SpecConfigMerge.class));
   }
 
   private void writeMainnetToFile(final Path directory, final String configFile) throws Exception {

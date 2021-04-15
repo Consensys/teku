@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
@@ -33,6 +34,13 @@ public class BeaconBlockBodyBuilderPhase0 extends AbstractBeaconBlockBodyBuilder
   @Override
   public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
     // No sync aggregate in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder executionPayload(
+      Supplier<ExecutionPayload> executionPayloadSupplier) {
+    // No execution payload in phase 0
     return this;
   }
 

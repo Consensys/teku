@@ -19,12 +19,14 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 
 import com.google.common.primitives.UnsignedBytes;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 
 public class MiscHelpers {
   protected final SpecConfig specConfig;
@@ -94,5 +96,14 @@ public class MiscHelpers {
 
   public UInt64 computeActivationExitEpoch(UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
+  }
+
+  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+    UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
+    return state.getGenesis_time().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
+  }
+
+  public Optional<MiscHelpersMerge> toVersionMerge() {
+    return Optional.empty();
   }
 }

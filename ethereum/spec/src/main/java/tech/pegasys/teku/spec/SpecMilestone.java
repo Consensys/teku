@@ -15,5 +15,6 @@ package tech.pegasys.teku.spec;
 
 public enum SpecMilestone {
   PHASE0,
-  ALTAIR
+  ALTAIR,
+  MERGE
 }
