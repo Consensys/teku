@@ -32,13 +32,12 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AttestationSubnetSubscriptions implements AutoCloseable {
+public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
   private final AsyncRunner asyncRunner;
-  private final GossipNetwork gossipNetwork;
-  private final GossipEncoding gossipEncoding;
   private final RecentChainData recentChainData;
   private final OperationProcessor<ValidateableAttestation> processor;
+  private final ForkInfo forkInfo;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -47,12 +46,13 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
-      final OperationProcessor<ValidateableAttestation> processor) {
+      final OperationProcessor<ValidateableAttestation> processor,
+      final ForkInfo forkInfo) {
+    super(gossipNetwork, gossipEncoding);
     this.asyncRunner = asyncRunner;
-    this.gossipNetwork = gossipNetwork;
-    this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
     this.processor = processor;
+    this.forkInfo = forkInfo;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -65,7 +65,6 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
                         + attestation.getData().getSlot()
                         + " because the state was not available");
               }
-              final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
               final String topic =
                   TopicNames.getAttestationSubnetTopic(
                       forkInfo.getForkDigest(), subnetId.get(), gossipEncoding);
@@ -79,28 +78,11 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
         .thenApply(subnetId -> subnetId.flatMap(this::getChannelForSubnet));
   }
 
-  private synchronized Optional<TopicChannel> getChannelForSubnet(final int subnetId) {
-    return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
-  }
-
-  public synchronized void subscribeToSubnetId(final int subnetId) {
-    subnetIdToTopicChannel.computeIfAbsent(subnetId, this::createChannelForSubnetId);
-  }
-
-  public synchronized void unsubscribeFromSubnetId(final int subnetId) {
-    final TopicChannel topicChannel = subnetIdToTopicChannel.remove(subnetId);
-    if (topicChannel != null) {
-      topicChannel.close();
-    }
-  }
-
-  private TopicChannel createChannelForSubnetId(final int subnetId) {
-    final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
+  @Override
+  protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = TopicNames.getAttestationSubnetTopicName(subnetId);
-    final Eth2TopicHandler<?> topicHandler =
-        SingleAttestationTopicHandler.createHandler(
-            asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
-    return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+    return SingleAttestationTopicHandler.createHandler(
+        asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {
