@@ -38,9 +38,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -61,19 +61,19 @@ public class AttestationGossipManagerTest {
   private AttestationGossipManager attestationGossipManager;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
       new AttestationSubnetSubscriptions(
           asyncRunner,
           gossipNetwork,
           gossipEncoding,
           recentChainData,
-          gossipedAttestationProcessor);
-  private Bytes4 forkDigest;
+          gossipedAttestationProcessor,
+          forkInfo);
 
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
-    forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
   }
@@ -186,6 +186,6 @@ public class AttestationGossipManagerTest {
   }
 
   private String getSubnetTopic(final int subnetId) {
-    return TopicNames.getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
+    return TopicNames.getAttestationSubnetTopic(forkInfo.getForkDigest(), subnetId, gossipEncoding);
   }
 }
