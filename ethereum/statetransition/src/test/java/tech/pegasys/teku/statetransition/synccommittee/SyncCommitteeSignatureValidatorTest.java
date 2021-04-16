@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -66,19 +67,21 @@ class SyncCommitteeSignatureValidatorTest {
   @Test
   void shouldAcceptWhenValid() {
     final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
-    final int validSubnetId =
+    final Set<Integer> applicableSubcommittees =
         spec.getSyncCommitteeUtil(UInt64.ZERO)
             .orElseThrow()
             .getSyncSubcommittees(
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),
-                signature.getValidatorIndex())
-            .iterator()
-            .next();
-    assertThat(
-            validator.validate(
-                ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId)))
-        .isCompletedWithValue(ACCEPT);
+                signature.getValidatorIndex());
+    final int validSubnetId = applicableSubcommittees.iterator().next();
+    final ValidateableSyncCommitteeSignature validateableSignature =
+        ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
+
+    assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
+    // Should store the computed subcommittee assignments for the validator.
+    assertThat(validateableSignature.getApplicableSubcommittees())
+        .contains(applicableSubcommittees);
   }
 
   @Test
