@@ -26,10 +26,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder.ResponseSchemaSupplier;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.ForkDigestContextDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
@@ -190,24 +191,13 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   private void testDecodeBasedOnContext(final boolean usePhase0State) throws Exception {
-    final Spec spec =
-        usePhase0State
-            ? TestSpecFactory.createMinimalPhase0()
-            : TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final BeaconState state =
-        usePhase0State
-            ? dataStructureUtil.stateBuilderPhase0().build()
-            : dataStructureUtil.stateBuilderAltair().build();
+    final BeaconState state = beaconState(usePhase0State);
     final Bytes serializedState = state.sszSerialize();
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
-    final Bytes contextBytes =
-        Bytes4.fromHexStringLenient(usePhase0State ? "1" : "2").getWrappedBytes();
+    final Bytes contextBytes = TestContextEncoder.getContextBytes(usePhase0State).getWrappedBytes();
     final Bytes compressedState = COMPRESSOR.compress(serializedState);
 
-    final RpcResponseDecoder<BeaconState, ?> decoder =
-        createForkAwareDecoder(spec.getGenesisSpecConfig());
+    final RpcResponseDecoder<BeaconState, ?> decoder = createForkAwareDecoder();
 
     for (Iterable<ByteBuf> testByteBufSlice :
         testByteBufSlices(SUCCESS_CODE, contextBytes, lengthPrefix, compressedState)) {
@@ -235,25 +225,14 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     testDecodeBasedOnContextWithMismatchedPayload(false);
   }
 
-  private void testDecodeBasedOnContextWithMismatchedPayload(final boolean usePhase0State)
-      throws Exception {
-    final Spec spec =
-        usePhase0State
-            ? TestSpecFactory.createMinimalPhase0()
-            : TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final RpcResponseDecoder<BeaconState, ?> decoder =
-        createForkAwareDecoder(spec.getGenesisSpecConfig());
+  private void testDecodeBasedOnContextWithMismatchedPayload(final boolean usePhase0) {
+    final RpcResponseDecoder<BeaconState, ?> decoder = createForkAwareDecoder();
 
-    final BeaconState state =
-        usePhase0State
-            ? dataStructureUtil.stateBuilderPhase0().build()
-            : dataStructureUtil.stateBuilderAltair().build();
+    final BeaconState state = beaconState(usePhase0);
     final Bytes serializedState = state.sszSerialize();
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
     // Use wrong context for state
-    final Bytes contextBytes =
-        Bytes4.fromHexStringLenient(usePhase0State ? "2" : "1").getWrappedBytes();
+    final Bytes contextBytes = TestContextEncoder.getContextBytes(!usePhase0).getWrappedBytes();
     final Bytes compressedState = COMPRESSOR.compress(serializedState);
 
     for (List<ByteBuf> testByteBufSlice :
@@ -286,6 +265,18 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     }
   }
 
+  private BeaconState beaconState(final boolean usePhase0State) {
+    final Spec spec =
+        usePhase0State
+            ? TestSpecFactory.createMinimalPhase0()
+            : TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    return usePhase0State
+        ? dataStructureUtil.stateBuilderPhase0().build()
+        : dataStructureUtil.stateBuilderAltair().build();
+  }
+
   private void completeIgnoringUnprocessedData(RpcResponseDecoder<?, ?> decoder) {
     try {
       decoder.complete();
@@ -296,26 +287,46 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder() {
-    final Spec spec = TestSpecFactory.createMinimalPhase0();
-    return createForkAwareDecoder(spec.getGenesisSpecConfig());
+    return RpcResponseDecoder.create(ENCODING, new TestContextEncoder());
   }
 
-  private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder(final SpecConfig config) {
-    final SszSchema<BeaconState> phase0Schema =
-        SszSchema.as(BeaconState.class, BeaconStateSchemaPhase0.create(config));
-    final SszSchema<BeaconState> altairSchema =
-        SszSchema.as(BeaconState.class, BeaconStateSchemaAltair.create(config));
-    ResponseSchemaSupplier<Bytes4, BeaconState> schemaSupplier =
-        (contextBytes) -> {
-          Optional<SszSchema<BeaconState>> schema = Optional.empty();
-          if (contextBytes.equals(Bytes4.fromHexStringLenient("0x01"))) {
-            schema = Optional.of(phase0Schema);
-          } else if (contextBytes.equals(Bytes4.fromHexStringLenient("0x02"))) {
-            schema = Optional.of(altairSchema);
-          }
-          return schema;
-        };
+  private static class TestContextEncoder implements RpcContextEncoder<Bytes4, BeaconState> {
+    private static final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
+    private static final Spec altairSpec = TestSpecFactory.createMinimalAltair();
 
-    return RpcResponseDecoder.createForkAwareDecoder(ENCODING, schemaSupplier);
+    static final Bytes4 FORK_DIGEST_PHASE0 = Bytes4.fromHexStringLenient("0x01");
+    static final Bytes4 FORK_DIGEST_ALTAIR = Bytes4.fromHexStringLenient("0x02");
+
+    public static Bytes4 getContextBytes(final boolean forPhase0) {
+      return forPhase0 ? FORK_DIGEST_PHASE0 : FORK_DIGEST_ALTAIR;
+    }
+
+    @Override
+    public RpcByteBufDecoder<Bytes4> getContextDecoder() {
+      return new ForkDigestContextDecoder();
+    }
+
+    @Override
+    public Bytes4 encodeContext(final BeaconState responsePayload) {
+      // Unused for these tests
+      return Bytes4.fromHexStringLenient("0x0");
+    }
+
+    @Override
+    public Optional<SszSchema<BeaconState>> getSchemaFromContext(final Bytes4 forkDigest) {
+      final SszSchema<BeaconState> phase0Schema =
+          SszSchema.as(
+              BeaconState.class, BeaconStateSchemaPhase0.create(phase0Spec.getGenesisSpecConfig()));
+      final SszSchema<BeaconState> altairSchema =
+          SszSchema.as(
+              BeaconState.class, BeaconStateSchemaAltair.create(altairSpec.getGenesisSpecConfig()));
+      Optional<SszSchema<BeaconState>> schema = Optional.empty();
+      if (forkDigest.equals(FORK_DIGEST_PHASE0)) {
+        schema = Optional.of(phase0Schema);
+      } else if (forkDigest.equals(FORK_DIGEST_ALTAIR)) {
+        schema = Optional.of(altairSchema);
+      }
+      return schema;
+    };
   }
 }
