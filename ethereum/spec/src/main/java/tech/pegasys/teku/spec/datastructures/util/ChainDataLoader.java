@@ -24,6 +24,6 @@ public class ChainDataLoader {
     return spec.deserializeBeaconState(
         ResourceLoader.urlOrFile("application/octet-stream")
             .loadBytes(source)
-            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)));
+            .orElseThrow(() -> new FileNotFoundException("Not found")));
   }
 }
