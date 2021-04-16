@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -30,7 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -325,8 +323,8 @@ public class RespondingEth2Peer implements Eth2Peer {
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
           final RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Bytes initialPayload,
-          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler) {
+          final TRequest tRequest,
+          final RespHandler responseHandler) {
     return null;
   }
 

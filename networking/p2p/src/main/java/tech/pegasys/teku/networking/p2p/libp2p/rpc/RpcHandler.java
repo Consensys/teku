@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
@@ -53,30 +54,36 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 public class RpcHandler<
         TIncomingHandler extends RpcRequestHandler,
         TOutgoingHandler extends RpcRequestHandler,
-        TRequest>
+        TRequest,
+        TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TIncomingHandler, TOutgoingHandler>> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> rpcMethod;
+  private final RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
   private final AsyncRunner asyncRunner;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
-      RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> rpcMethod) {
+      RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
   }
 
-  public RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> getRpcMethod() {
+  public RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
     return rpcMethod;
   }
 
   @SuppressWarnings("unchecked")
   public SafeFuture<RpcStreamController<TIncomingHandler, TOutgoingHandler>> sendRequest(
-      Connection connection,
-      Bytes initialPayload,
-      RequestHandlerSupplier<TOutgoingHandler> handlerSupplier) {
+      Connection connection, TRequest request, TRespHandler responseHandler) {
+
+    final Bytes initialPayload;
+    try {
+      initialPayload = rpcMethod.encodeRequest(request);
+    } catch (Exception e) {
+      return SafeFuture.failedFuture(e);
+    }
 
     Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
@@ -102,7 +109,10 @@ public class RpcHandler<
                   .thenCombine(
                       protocolIdFuture,
                       (controller, protocolId) -> {
-                        controller.setOutgoingRequestHandler(handlerSupplier.get(protocolId));
+                        final TOutgoingHandler handler =
+                            rpcMethod.createOutgoingRequestHandler(
+                                protocolId, request, responseHandler);
+                        controller.setOutgoingRequestHandler(handler);
                         return ((RpcStreamController<TIncomingHandler, TOutgoingHandler>)
                             controller);
                       })
@@ -276,9 +286,5 @@ public class RpcHandler<
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
     }
-  }
-
-  public interface RequestHandlerSupplier<T extends RpcRequestHandler> {
-    T get(final String protocolId);
   }
 }

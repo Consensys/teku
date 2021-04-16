@@ -42,7 +42,7 @@ public class PeerManager implements ConnectionHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final List<RpcHandler<?, ?, ?>> rpcHandlers;
+  private final List<RpcHandler<?, ?, ?, ?>> rpcHandlers;
 
   private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<NodeId, SafeFuture<Peer>> pendingConnections =
@@ -57,7 +57,7 @@ public class PeerManager implements ConnectionHandler {
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
-      final List<RpcHandler<?, ?, ?>> rpcHandlers) {
+      final List<RpcHandler<?, ?, ?, ?>> rpcHandlers) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;

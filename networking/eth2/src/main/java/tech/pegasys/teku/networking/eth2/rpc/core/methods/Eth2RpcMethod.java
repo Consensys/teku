@@ -30,6 +30,8 @@ public interface Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse 
         Eth2OutgoingRequestHandler<TRequest, TResponse>,
         TRequest,
         Eth2RpcResponseHandler<TResponse, ?>> {
+
+  @Override
   Bytes encodeRequest(TRequest request);
 
   RpcRequestDecoder<TRequest> createRequestDecoder();

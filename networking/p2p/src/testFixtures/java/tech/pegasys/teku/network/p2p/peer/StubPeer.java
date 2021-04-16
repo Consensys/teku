@@ -14,11 +14,8 @@
 package tech.pegasys.teku.network.p2p.peer;
 
 import java.util.Optional;
-import javax.naming.OperationNotSupportedException;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -100,9 +97,9 @@ public class StubPeer implements Peer {
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
           final RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Bytes initialPayload,
-          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler) {
-    return SafeFuture.failedFuture(new OperationNotSupportedException());
+          final TRequest tRequest,
+          final RespHandler responseHandler) {
+    return null;
   }
 
   @Override

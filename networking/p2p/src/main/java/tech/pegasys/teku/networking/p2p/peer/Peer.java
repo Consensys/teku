@@ -15,9 +15,7 @@ package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Objects;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -46,8 +44,8 @@ public interface Peer {
   <TOutgoingHandler extends RpcRequestHandler, TRequest, RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
           RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Bytes initialPayload,
-          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler);
+          final TRequest request,
+          final RespHandler responseHandler);
 
   boolean connectionInitiatedLocally();
 

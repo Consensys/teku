@@ -13,19 +13,17 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
-import io.libp2p.core.Connection;
-import io.libp2p.core.PeerId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import io.libp2p.core.Connection;
+import io.libp2p.core.PeerId;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
@@ -42,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod<?, ?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
+  private final Map<RpcMethod<?, ?, ?, ?>, RpcHandler<?, ?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
@@ -58,7 +56,7 @@ public class LibP2PPeer implements Peer {
 
   public LibP2PPeer(
       final Connection connection,
-      final List<RpcHandler<?, ?, ?>> rpcHandlers,
+      final List<RpcHandler<?, ?, ?, ?>> rpcHandlers,
       final ReputationManager reputationManager) {
     this.connection = connection;
     this.rpcHandlers =
@@ -133,18 +131,18 @@ public class LibP2PPeer implements Peer {
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
           RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Bytes initialPayload,
-          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler) {
+          final TRequest request,
+          final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
-    RpcHandler<?, TOutgoingHandler, TRequest> rpcHandler =
-        (RpcHandler<?, TOutgoingHandler, TRequest>) rpcHandlers.get(rpcMethod);
+    RpcHandler<?, TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (RpcHandler<?, TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
     return rpcHandler
-        .sendRequest(connection, initialPayload, outgoingHandler)
+        .sendRequest(connection, request, responseHandler)
         .thenApply(ctrl -> (RpcStreamController<?, TOutgoingHandler>) ctrl);
   }
 

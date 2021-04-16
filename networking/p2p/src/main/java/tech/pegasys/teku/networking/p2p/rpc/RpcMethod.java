@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.rpc;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 
 public interface RpcMethod<
     TIncomingHandler extends RpcRequestHandler,
@@ -28,6 +29,14 @@ public interface RpcMethod<
    * @return A non-empty list of supported protocol ids
    */
   List<String> getIds();
+
+  /**
+   * Encodes a request to be sent
+   *
+   * @param request An outgoing request payload
+   * @return The serialized request
+   */
+  Bytes encodeRequest(TRequest request);
 
   /**
    * Create a request handler for the selected protocol id, which should be one of the values
