@@ -148,57 +148,53 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @Override
   public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
-    try {
-      checkArgument(
-          blockHeader.getSlot().equals(state.getSlot()),
-          "process_block_header: Verify that the slots match");
-      checkArgument(
-          blockHeader.getProposerIndex().longValue()
-              == beaconStateAccessors.getBeaconProposerIndex(state),
-          "process_block_header: Verify that proposer index is the correct index");
-      checkArgument(
-          blockHeader.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
-          "process_block_header: Verify that the parent matches");
-      checkArgument(
-          blockHeader.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
-          "process_block_header: Verify that the block is newer than latest block header");
+    safelyProcess(
+        () -> {
+          checkArgument(
+              blockHeader.getSlot().equals(state.getSlot()),
+              "process_block_header: Verify that the slots match");
+          checkArgument(
+              blockHeader.getProposerIndex().longValue()
+                  == beaconStateAccessors.getBeaconProposerIndex(state),
+              "process_block_header: Verify that proposer index is the correct index");
+          checkArgument(
+              blockHeader.getParentRoot().equals(state.getLatest_block_header().hashTreeRoot()),
+              "process_block_header: Verify that the parent matches");
+          checkArgument(
+              blockHeader.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
+              "process_block_header: Verify that the block is newer than latest block header");
 
-      // Cache the current block as the new latest block
-      state.setLatest_block_header(
-          new BeaconBlockHeader(
-              blockHeader.getSlot(),
-              blockHeader.getProposerIndex(),
-              blockHeader.getParentRoot(),
-              Bytes32.ZERO, // Overwritten in the next `process_slot` call
-              blockHeader.getBodyRoot()));
+          // Cache the current block as the new latest block
+          state.setLatest_block_header(
+              new BeaconBlockHeader(
+                  blockHeader.getSlot(),
+                  blockHeader.getProposerIndex(),
+                  blockHeader.getParentRoot(),
+                  Bytes32.ZERO, // Overwritten in the next `process_slot` call
+                  blockHeader.getBodyRoot()));
 
-      // Only if we are processing blocks (not proposing them)
-      Validator proposer =
-          state.getValidators().get(toIntExact(blockHeader.getProposerIndex().longValue()));
-      checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
-
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+          // Only if we are processing blocks (not proposing them)
+          Validator proposer =
+              state.getValidators().get(toIntExact(blockHeader.getProposerIndex().longValue()));
+          checkArgument(
+              !proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
+        });
   }
 
   @Override
   public void processRandaoNoValidation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
-    try {
-      UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    safelyProcess(
+        () -> {
+          UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
 
-      Bytes32 mix =
-          beaconStateAccessors
-              .getRandaoMix(state, epoch)
-              .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
-      state.getRandao_mixes().setElement(index, mix);
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+          Bytes32 mix =
+              beaconStateAccessors
+                  .getRandaoMix(state, epoch)
+                  .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
+          int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
+          state.getRandao_mixes().setElement(index, mix);
+        });
   }
 
   @Override
@@ -260,30 +256,27 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       BeaconBlockBody body,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    try {
+    safelyProcess(
+        () -> {
+          checkArgument(
+              body.getDeposits().size()
+                  == Math.min(
+                      specConfig.getMaxDeposits(),
+                      toIntExact(
+                          state
+                              .getEth1_data()
+                              .getDeposit_count()
+                              .minus(state.getEth1_deposit_index())
+                              .longValue())),
+              "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-      checkArgument(
-          body.getDeposits().size()
-              == Math.min(
-                  specConfig.getMaxDeposits(),
-                  toIntExact(
-                      state
-                          .getEth1_data()
-                          .getDeposit_count()
-                          .minus(state.getEth1_deposit_index())
-                          .longValue())),
-          "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
-
-      processProposerSlashingsNoValidation(state, body.getProposer_slashings());
-      processAttesterSlashings(state, body.getAttester_slashings());
-      processAttestations(state, body.getAttestations(), indexedAttestationCache, false);
-      processDeposits(state, body.getDeposits());
-      processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
-      // @process_shard_receipt_proofs
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+          processProposerSlashingsNoValidation(state, body.getProposer_slashings());
+          processAttesterSlashings(state, body.getAttester_slashings());
+          processAttestations(state, body.getAttestations(), indexedAttestationCache, false);
+          processDeposits(state, body.getDeposits());
+          processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
+          // @process_shard_receipt_proofs
+        });
   }
 
   /**
@@ -314,24 +307,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     ProposerSlashingStateTransitionValidator validator =
         new ProposerSlashingStateTransitionValidator();
 
-    try {
-      // For each proposer_slashing in block.body.proposer_slashings:
-      for (ProposerSlashing proposerSlashing : proposerSlashings) {
-        Optional<OperationInvalidReason> invalidReason =
-            validator.validate(state, proposerSlashing);
-        checkArgument(
-            invalidReason.isEmpty(),
-            "process_proposer_slashings: %s",
-            invalidReason.map(OperationInvalidReason::describe).orElse(""));
+    safelyProcess(
+        () -> {
+          // For each proposer_slashing in block.body.proposer_slashings:
+          for (ProposerSlashing proposerSlashing : proposerSlashings) {
+            Optional<OperationInvalidReason> invalidReason =
+                validator.validate(state, proposerSlashing);
+            checkArgument(
+                invalidReason.isEmpty(),
+                "process_proposer_slashings: %s",
+                invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        beaconStateMutators.slashValidator(
-            state,
-            toIntExact(proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+            beaconStateMutators.slashValidator(
+                state,
+                toIntExact(
+                    proposerSlashing.getHeader_1().getMessage().getProposerIndex().longValue()));
+          }
+        });
   }
 
   @Override
@@ -368,29 +360,28 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   public void processAttesterSlashings(
       MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
-    try {
-      final AttesterSlashingStateTransitionValidator validator =
-          new AttesterSlashingStateTransitionValidator();
+    safelyProcess(
+        () -> {
+          final AttesterSlashingStateTransitionValidator validator =
+              new AttesterSlashingStateTransitionValidator();
 
-      // For each attester_slashing in block.body.attester_slashings:
-      for (AttesterSlashing attesterSlashing : attesterSlashings) {
-        List<UInt64> indicesToSlash = new ArrayList<>();
-        final Optional<OperationInvalidReason> invalidReason =
-            validator.validate(state, attesterSlashing, indicesToSlash);
+          // For each attester_slashing in block.body.attester_slashings:
+          for (AttesterSlashing attesterSlashing : attesterSlashings) {
+            List<UInt64> indicesToSlash = new ArrayList<>();
+            final Optional<OperationInvalidReason> invalidReason =
+                validator.validate(state, attesterSlashing, indicesToSlash);
 
-        checkArgument(
-            invalidReason.isEmpty(),
-            "process_attester_slashings: %s",
-            invalidReason.map(OperationInvalidReason::describe).orElse(""));
+            checkArgument(
+                invalidReason.isEmpty(),
+                "process_attester_slashings: %s",
+                invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        indicesToSlash.forEach(
-            indexToSlash ->
-                beaconStateMutators.slashValidator(state, toIntExact(indexToSlash.longValue())));
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+            indicesToSlash.forEach(
+                indexToSlash ->
+                    beaconStateMutators.slashValidator(
+                        state, toIntExact(indexToSlash.longValue())));
+          }
+        });
   }
 
   /**
@@ -434,20 +425,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
-    try {
-      for (Attestation attestation : attestations) {
-        // Validate
-        assertAttestationValid(state, attestation);
-        processAttestation(state, attestation, indexedAttestationProvider);
-        if (verifySignatures) {
-          verifyAttestationSignatures(
-              state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
-        }
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+    safelyProcess(
+        () -> {
+          for (Attestation attestation : attestations) {
+            // Validate
+            assertAttestationValid(state, attestation);
+            processAttestation(state, attestation, indexedAttestationProvider);
+            if (verifySignatures) {
+              verifyAttestationSignatures(
+                  state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
+            }
+          }
+        });
   }
 
   private IndexedAttestationProvider createIndexedAttestationProvider(
@@ -518,14 +507,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @Override
   public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
-    try {
-      for (Deposit deposit : deposits) {
-        processDeposit(state, deposit);
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+    safelyProcess(
+        () -> {
+          for (Deposit deposit : deposits) {
+            processDeposit(state, deposit);
+          }
+        });
   }
 
   public void processDeposit(MutableBeaconState state, Deposit deposit) {
@@ -661,24 +648,21 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
-    try {
+    safelyProcess(
+        () -> {
+          // For each exit in block.body.voluntaryExits:
+          for (SignedVoluntaryExit signedExit : exits) {
+            Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
+            checkArgument(
+                invalidReason.isEmpty(),
+                "process_voluntary_exits: %s",
+                invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-      // For each exit in block.body.voluntaryExits:
-      for (SignedVoluntaryExit signedExit : exits) {
-        Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
-        checkArgument(
-            invalidReason.isEmpty(),
-            "process_voluntary_exits: %s",
-            invalidReason.map(OperationInvalidReason::describe).orElse(""));
-
-        // - Run initiate_validator_exit(state, exit.validator_index)
-        beaconStateMutators.initiateValidatorExit(
-            state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
-      }
-    } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
-      throw new BlockProcessingException(e);
-    }
+            // - Run initiate_validator_exit(state, exit.validator_index)
+            beaconStateMutators.initiateValidatorExit(
+                state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
+          }
+        });
   }
 
   @Override
@@ -697,7 +681,21 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return true;
   }
 
+  // Catch generic errors and wrap them in a BlockProcessingException
+  private void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
+    try {
+      action.run();
+    } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+      LOG.warn("Failed to process block", e);
+      throw new BlockProcessingException(e);
+    }
+  }
+
   protected interface IndexedAttestationProvider {
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
+  }
+
+  private interface BlockProcessingAction {
+    void run() throws BlockProcessingException;
   }
 }
