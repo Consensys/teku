@@ -94,6 +94,10 @@ public class Spec {
     return new Spec(specVersions, forkSchedule);
   }
 
+  public SpecVersion forMilestone(final SpecMilestone milestone) {
+    return specVersions.get(milestone);
+  }
+
   public SpecVersion atEpoch(final UInt64 epoch) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtEpoch(epoch));
   }
