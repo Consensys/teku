@@ -18,18 +18,24 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -49,9 +55,6 @@ import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
-
-  // TODO: Should this be in constants file? https://github.com/ethereum/eth2.0-specs/issues/2317
-  private static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 4;
 
   private final BeaconStateAccessors beaconStateAccessors;
   private final BeaconStateUtil beaconStateUtil;
@@ -97,8 +100,7 @@ public class SyncCommitteeUtil {
               } else {
                 syncCommittee = altairState.getNextSyncCommittee();
               }
-              final int subcommitteeSize =
-                  specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
+              final int subcommitteeSize = getSubcommitteeSize();
               final SszVector<SszPublicKey> pubkeys = syncCommittee.getPubkeys();
               final Map<UInt64, Map<Integer, Set<Integer>>> subcommitteeAssignments =
                   new HashMap<>();
@@ -133,26 +135,39 @@ public class SyncCommitteeUtil {
             });
   }
 
+  public int getSubcommitteeSize() {
+    return specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
+  }
+
+  public SyncCommittee getSyncCommittee(final BeaconState state, final UInt64 epoch) {
+    final UInt64 syncCommitteePeriod = computeSyncCommitteePeriod(epoch);
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
+    final UInt64 nextSyncCommitteePeriod = currentSyncCommitteePeriod.increment();
+    checkArgument(
+        syncCommitteePeriod.equals(currentSyncCommitteePeriod)
+            || syncCommitteePeriod.equals(nextSyncCommitteePeriod),
+        "State must be in the same or previous sync committee period");
+    final BeaconStateAltair altairState = BeaconStateAltair.required(state);
+    return syncCommitteePeriod.equals(currentSyncCommitteePeriod)
+        ? altairState.getCurrentSyncCommittee()
+        : altairState.getNextSyncCommittee();
+  }
+
   public boolean isSyncCommitteeAggregator(final BLSSignature signature) {
     final int modulo =
         Math.max(
             1,
             specConfig.getSyncCommitteeSize()
                 / SYNC_COMMITTEE_SUBNET_COUNT
-                / TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
+                / specConfig.getTargetAggregatorsPerSyncSubcommittee());
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
-  public boolean isAssignedToSyncCommittee(
-      final BeaconStateAltair state, final UInt64 epoch, final UInt64 validatorIndex) {
-    return getSyncSubcommittees(state, epoch).containsKey(validatorIndex);
-  }
-
   public Set<Integer> computeSubnetsForSyncCommittee(
-      final BeaconStateAltair state, final UInt64 validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
-        getSyncSubcommittees(state, beaconStateAccessors.getCurrentEpoch(state))
-            .get(validatorIndex);
+        getSyncSubcommittees(state, epoch).get(validatorIndex);
     return assignments == null ? Collections.emptySet() : assignments.getAssignedSubcommittees();
   }
 
@@ -165,14 +180,6 @@ public class SyncCommitteeUtil {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     return beaconStateUtil.computeSigningRoot(blockRoot, domain);
-  }
-
-  public Bytes getSyncCommitteeContributionSigningRoot(
-      final BeaconState state, final SyncCommitteeContribution contribution) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(contribution.getSlot());
-    final Bytes32 domain =
-        beaconStateUtil.getDomain(state, specConfig.getDomainSyncCommittee(), epoch);
-    return beaconStateUtil.computeSigningRoot(contribution.getBeaconBlockRoot(), domain);
   }
 
   public Bytes getContributionAndProofSigningRoot(
@@ -243,7 +250,39 @@ public class SyncCommitteeUtil {
     return schemaDefinitionsAltair.getSignedContributionAndProofSchema().create(message, signature);
   }
 
+  public UInt64 getMinEpochForSyncCommitteeAssignments(final UInt64 requiredEpoch) {
+    // Can look-ahead one sync committee period.
+    final UInt64 requiredSyncCommitteePeriod =
+        computeSyncCommitteePeriod(requiredEpoch).minusMinZero(1);
+    return requiredSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
   private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
     return epoch.dividedBy(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
+  public SyncAggregate createSyncAggregate(
+      final Iterable<SyncCommitteeContribution> contributions) {
+    final SyncAggregateSchema schema =
+        BeaconBlockBodySchemaAltair.required(schemaDefinitionsAltair.getBeaconBlockBodySchema())
+            .getSyncAggregateSchema();
+
+    final List<Integer> participantIndices = new ArrayList<>();
+    final List<BLSSignature> signatures = new ArrayList<>();
+    for (SyncCommitteeContribution contribution : contributions) {
+      final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();
+      final int subcommitteeOffset = getSubcommitteeSize() * subcommitteeIndex;
+      contribution
+          .getAggregationBits()
+          .streamAllSetBits()
+          .forEach(index -> participantIndices.add(subcommitteeOffset + index));
+      signatures.add(contribution.getSignature());
+    }
+
+    if (signatures.isEmpty()) {
+      return schema.createEmpty();
+    } else {
+      return schema.create(participantIndices, BLS.aggregate(signatures));
+    }
   }
 }

@@ -117,7 +117,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected void addGossipManagers(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            asyncRunner, discoveryNetwork, gossipEncoding, recentChainData, attestationProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            recentChainData,
+            attestationProcessor,
+            forkInfo);
 
     blockGossipManager =
         new BlockGossipManager(
@@ -188,6 +193,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    attestationGossipManager.subscribeToSubnetId(subnetId);
+    attestationGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 }

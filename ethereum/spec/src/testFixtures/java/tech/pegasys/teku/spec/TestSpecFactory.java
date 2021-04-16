@@ -27,6 +27,13 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ALTAIR);
   }
 
+  public static Spec createMinimal(final SpecMilestone specMilestone) {
+    if (specMilestone == SpecMilestone.PHASE0) {
+      return createMinimalPhase0();
+    }
+    return createMinimalAltair();
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
     return create(specConfig, SpecMilestone.PHASE0);
