@@ -33,15 +33,15 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeLi
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
-import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -68,7 +68,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final Subscribers<PeerStatusSubscriber> statusSubscribers = Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
-  private final AtomicInteger outstandingPings = new AtomicInteger();
+  private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
   private final RateTracker requestTracker;
 
@@ -186,7 +186,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final ResponseStreamListener<SignedBeaconBlock> listener)
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
       throws RpcException {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
@@ -219,7 +219,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final UInt64 startSlot,
       final UInt64 count,
       final UInt64 step,
-      final ResponseStreamListener<SignedBeaconBlock> listener) {
+      final RpcResponseListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
@@ -258,62 +258,75 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<UInt64> sendPing() {
-    outstandingPings.getAndIncrement();
+    unansweredPings.getAndIncrement();
     return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
         .thenApply(PingMessage::getSeqNumber)
-        .thenPeek(__ -> outstandingPings.set(0))
+        .thenPeek(__ -> unansweredPings.set(0))
         .thenPeek(this::updateMetadataSeqNumber);
   }
 
   @Override
-  public int getOutstandingPings() {
-    return outstandingPings.get();
+  public int getUnansweredPingCount() {
+    return unansweredPings.get();
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendMessage(
       final Eth2RpcMethod<I, O> method, final I request) {
-    final Eth2OutgoingRequestHandler<I, O> handler =
-        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
-    SafeFuture<Void> respFuture = handler.getResponseStream().expectNoResponse();
-    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+    final Eth2RpcResponseHandler<O, Void> responseHandler =
+        Eth2RpcResponseHandler.expectNoResponse();
+    final Eth2RequestHandlerSupplier<I, O> requestHandler =
+        protocolId -> method.createOutgoingRequestHandler(protocolId, request, responseHandler);
+    return sendEth2Request(method, request, requestHandler)
+        .thenCompose(__ -> responseHandler.getResult());
   }
 
   @Override
   public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request) {
-    final Eth2OutgoingRequestHandler<I, O> handler =
-        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
-    SafeFuture<O> respFuture = handler.getResponseStream().expectSingleResponse();
-    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+    final Eth2RpcResponseHandler<O, O> responseHandler =
+        Eth2RpcResponseHandler.expectSingleResponse();
+    final Eth2RequestHandlerSupplier<I, O> requestHandler =
+        protocolId -> method.createOutgoingRequestHandler(protocolId, request, responseHandler);
+    return sendEth2Request(method, request, requestHandler)
+        .thenCompose(__ -> responseHandler.getResult());
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(
       final Eth2RpcMethod<I, O> method, final I request) {
-    final Eth2OutgoingRequestHandler<I, O> handler =
-        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
-    SafeFuture<Optional<O>> respFuture = handler.getResponseStream().expectOptionalResponse();
-    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+    final Eth2RpcResponseHandler<O, Optional<O>> responseHandler =
+        Eth2RpcResponseHandler.expectOptionalResponse();
+    final Eth2RequestHandlerSupplier<I, O> handlerSupplier =
+        protocolId -> method.createOutgoingRequestHandler(protocolId, request, responseHandler);
+    return sendEth2Request(method, request, handlerSupplier)
+        .thenCompose(__ -> responseHandler.getResult());
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Void> requestStream(
-      final Eth2RpcMethod<I, O> method, final I request, final ResponseStreamListener<O> listener) {
-    final Eth2OutgoingRequestHandler<I, O> handler =
-        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
-    SafeFuture<Void> respFuture = handler.getResponseStream().expectMultipleResponses(listener);
-    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+      final Eth2RpcMethod<I, O> method, final I request, final RpcResponseListener<O> listener) {
+    final Eth2RpcResponseHandler<O, Void> responseHandler =
+        Eth2RpcResponseHandler.expectMultipleResponses(listener);
+    final Eth2RequestHandlerSupplier<I, O> requestHandler =
+        protocolId -> method.createOutgoingRequestHandler(protocolId, request, responseHandler);
+    return sendEth2Request(method, request, requestHandler)
+        .thenCompose(__ -> responseHandler.getResult());
   }
 
-  private <I extends RpcRequest, O extends SszData> SafeFuture<ResponseStream<O>> sendRequest(
-      final Eth2RpcMethod<I, O> method, final I request, Eth2OutgoingRequestHandler<I, O> handler) {
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendEth2Request(
+      final Eth2RpcMethod<I, O> method,
+      final I request,
+      Eth2RequestHandlerSupplier<I, O> requestHandler) {
+    outstandingRequests.incrementAndGet();
     Bytes payload = method.encodeRequest(request);
-    return this.sendRequest(method, payload, handler)
-        .thenAccept(handler::handleInitialPayloadSent)
-        .thenApply(
-            res -> {
-              final ResponseStreamImpl<O> stream = handler.getResponseStream();
-              outstandingRequests.incrementAndGet();
-              stream.subscribeCompleted((__) -> outstandingRequests.decrementAndGet());
-              return stream;
+
+    return this.sendRequest(method, payload, requestHandler)
+        .thenPeek(
+            ctrl ->
+                ctrl.getRequiredOutgoingRequestHandler()
+                    .handleInitialPayloadSent(ctrl.getRpcStream()))
+        .thenCompose(ctrl -> ctrl.getRequiredOutgoingRequestHandler().getCompletedFuture())
+        .whenComplete(
+            (res, err) -> {
+              outstandingRequests.decrementAndGet();
             });
   }
 
@@ -337,5 +350,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .add("id", getId())
         .add("remoteStatus", remoteStatus)
         .toString();
+  }
+
+  interface Eth2RequestHandlerSupplier<I extends RpcRequest, O extends SszData>
+      extends RequestHandlerSupplier<Eth2OutgoingRequestHandler<I, O>> {
+
+    @Override
+    Eth2OutgoingRequestHandler<I, O> get(final String protocolId);
   }
 }

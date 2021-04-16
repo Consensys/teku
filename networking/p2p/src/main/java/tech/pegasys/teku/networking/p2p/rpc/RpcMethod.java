@@ -15,10 +15,15 @@ package tech.pegasys.teku.networking.p2p.rpc;
 
 import java.util.List;
 
-public interface RpcMethod {
+public interface RpcMethod<
+    TIncomingHandler extends RpcRequestHandler,
+    TOutgoingHandler extends RpcRequestHandler,
+    TRequest,
+    RespHandler extends RpcResponseHandler<?>> {
 
   /**
-   * Return a list of supported protocol ids
+   * Return a list of supported protocol ids. Protocols are prioritized by ordering, so that the
+   * first protocol in the list is preferred over the next protocol.
    *
    * @return A non-empty list of supported protocol ids
    */
@@ -31,5 +36,8 @@ public interface RpcMethod {
    * @param protocolId The protocolId to be handled
    * @return A request handler for the given protocol id
    */
-  RpcRequestHandler createIncomingRequestHandler(final String protocolId);
+  TIncomingHandler createIncomingRequestHandler(final String protocolId);
+
+  TOutgoingHandler createOutgoingRequestHandler(
+      String protocolId, TRequest request, RespHandler responseHandler);
 }

@@ -36,45 +36,52 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 @SuppressWarnings("unchecked")
 public class RpcHandlerTest {
 
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  RpcMethod rpcMethod = mock(RpcMethod.class);
-  RpcHandler rpcHandler = new RpcHandler(asyncRunner, rpcMethod);
+  RpcMethod<RpcRequestHandler, RpcRequestHandler, Object, ?> rpcMethod = mock(RpcMethod.class);
+  RpcHandler<RpcRequestHandler, RpcRequestHandler, Object> rpcHandler =
+      new RpcHandler<>(asyncRunner, rpcMethod);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
-  StreamPromise<Controller> streamPromise =
+  StreamPromise<Controller<RpcRequestHandler, RpcRequestHandler>> streamPromise =
       new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
   CompletableFuture<Unit> closeFuture = new CompletableFuture<>();
   SafeFuture<Void> writeFuture = new SafeFuture<>();
 
   Stream stream = mock(Stream.class);
-  Controller controller = mock(Controller.class);
+  Controller<RpcRequestHandler, RpcRequestHandler> controller = mock(Controller.class);
   RpcStream rpcStream = mock(RpcStream.class);
-  RpcRequestHandler rpcRequestHandler = mock(RpcRequestHandler.class);
+  RpcRequestHandler requestHandler = mock(RpcRequestHandler.class);
+  final RequestHandlerSupplier<RpcRequestHandler> handlerSupplier = __ -> requestHandler;
 
   @BeforeEach
   void init() {
     when(connection.muxerSession()).thenReturn(session);
-    when(session.createStream((ProtocolBinding<Controller>) any())).thenReturn(streamPromise);
+    when(session.createStream(
+            (ProtocolBinding<Controller<RpcRequestHandler, RpcRequestHandler>>) any()))
+        .thenReturn(streamPromise);
     when(connection.closeFuture()).thenReturn(closeFuture);
 
     when(controller.getRpcStream()).thenReturn(rpcStream);
     when(rpcStream.writeBytes(any())).thenReturn(writeFuture);
+    when(stream.getProtocol()).thenReturn(CompletableFuture.completedFuture("test"));
   }
 
   @Test
   void sendRequest_positiveCase() {
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    final SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     assertThat(future).isNotDone();
     streamPromise.getStream().complete(stream);
@@ -87,7 +94,7 @@ public class RpcHandlerTest {
 
     verify(stream, never()).close();
     verify(controller, never()).closeAbruptly();
-    assertThat(future).isCompletedWithValue(rpcStream);
+    assertThat(future).isCompletedWithValue(controller);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
 
     // interrupting after completion shouldn't affect anything
@@ -95,14 +102,14 @@ public class RpcHandlerTest {
 
     verify(stream, never()).close();
     verify(controller, never()).closeAbruptly();
-    assertThat(future).isCompletedWithValue(rpcStream);
+    assertThat(future).isCompletedWithValue(controller);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
   }
 
   @Test
   void sendRequest_streamClosedWhenConnectionClosedBeforeController() {
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     streamPromise.getStream().complete(stream);
     closeFuture.complete(null);
@@ -118,18 +125,19 @@ public class RpcHandlerTest {
   @Test
   void sendRequest_streamClosedRightBeforeCreateStreamShouldThrowPeerDisconnectedException() {
 
-    when(session.createStream((ProtocolBinding<Controller>) any()))
+    when(session.createStream(
+            (ProtocolBinding<Controller<RpcRequestHandler, RpcRequestHandler>>) any()))
         .thenThrow(new ConnectionClosedException());
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     assertThatSafeFuture(future).isCompletedExceptionallyWith(PeerDisconnectedException.class);
   }
 
   @Test
   void sendRequest_streamClosedWhenConnectionClosedBeforeWrite() {
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     streamPromise.getStream().complete(stream);
     streamPromise.getController().complete(controller);
@@ -148,8 +156,8 @@ public class RpcHandlerTest {
   void sendRequest_noStreamCreationWhenInitiallyClosed() {
     closeFuture.complete(null);
 
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     verify(connection, never()).muxerSession();
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
@@ -158,8 +166,8 @@ public class RpcHandlerTest {
 
   @Test
   void sendRequest_streamClosedOnTimeoutBeforeController() {
-    SafeFuture<RpcStream> future =
-        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), rpcRequestHandler);
+    SafeFuture<RpcStreamController<RpcRequestHandler, RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, Bytes.fromHexString("0x11223344"), handlerSupplier);
 
     streamPromise.getStream().complete(stream);
     asyncRunner.executeQueuedActions();

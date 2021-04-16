@@ -34,11 +34,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -115,7 +115,7 @@ public class BeaconBlocksByRootIntegrationTest {
     peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
-        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
+        peer1.requestBlocksByRoot(List.of(blockHash), RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -132,7 +132,7 @@ public class BeaconBlocksByRootIntegrationTest {
     Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
-        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
+        peer1.requestBlocksByRoot(List.of(blockHash), RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -234,7 +234,7 @@ public class BeaconBlocksByRootIntegrationTest {
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    waitFor(peer1.requestBlocksByRoot(blockRoots, ResponseStreamListener.from(blocks::add)));
+    waitFor(peer1.requestBlocksByRoot(blockRoots, RpcResponseListener.from(blocks::add)));
     return blocks;
   }
 

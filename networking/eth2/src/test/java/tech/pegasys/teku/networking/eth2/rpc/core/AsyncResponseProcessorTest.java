@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.rpc.core.AsyncResponseProcessor.AsyncProcessingErrorHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 
 public class AsyncResponseProcessorTest {
 
@@ -35,19 +35,14 @@ public class AsyncResponseProcessorTest {
 
   private final AtomicReference<Consumer<String>> requestProcessor =
       new AtomicReference<>(defaultProcessor);
-  private final ResponseStreamImpl<String> responseStream = new ResponseStreamImpl<>();
+  final Eth2RpcResponseHandler<String, Void> responseHandler =
+      Eth2RpcResponseHandler.expectMultipleResponses(
+          RpcResponseListener.from(res -> requestProcessor.get().accept(res)));
+  private final ResponseStream<String> responseStream = new ResponseStream<>(responseHandler);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final AsyncResponseProcessor<String> asyncResponseProcessor =
       new AsyncResponseProcessor<>(asyncRunner, responseStream, errorConsumer);
-
-  @BeforeEach
-  public void setup() {
-    responseStream
-        .expectMultipleResponses(
-            ResponseStreamListener.from((s) -> requestProcessor.get().accept(s)))
-        .reportExceptions();
-  }
 
   @Test
   public void processMultipleResponsesSuccessfully() {

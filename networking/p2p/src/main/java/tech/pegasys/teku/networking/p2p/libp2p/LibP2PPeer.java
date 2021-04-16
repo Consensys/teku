@@ -15,14 +15,17 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
@@ -33,12 +36,13 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
-import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod, RpcHandler> rpcHandlers;
+  private final Map<RpcMethod<?, ?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
@@ -54,10 +58,11 @@ public class LibP2PPeer implements Peer {
 
   public LibP2PPeer(
       final Connection connection,
-      final Map<RpcMethod, RpcHandler> rpcHandlers,
+      final List<RpcHandler<?, ?, ?>> rpcHandlers,
       final ReputationManager reputationManager) {
     this.connection = connection;
-    this.rpcHandlers = rpcHandlers;
+    this.rpcHandlers =
+        rpcHandlers.stream().collect(Collectors.toMap(RpcHandler::getRpcMethod, h -> h));
     this.reputationManager = reputationManager;
 
     final PeerId peerId = connection.secureSession().getRemoteId();
@@ -122,14 +127,25 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  public SafeFuture<RpcStream> sendRequest(
-      RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
-    RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);
+  public <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
+          RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final Bytes initialPayload,
+          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler) {
+    @SuppressWarnings("unchecked")
+    RpcHandler<?, TOutgoingHandler, TRequest> rpcHandler =
+        (RpcHandler<?, TOutgoingHandler, TRequest>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
-    return rpcHandler.sendRequest(connection, initialPayload, handler);
+
+    return rpcHandler
+        .sendRequest(connection, initialPayload, outgoingHandler)
+        .thenApply(ctrl -> (RpcStreamController<?, TOutgoingHandler>) ctrl);
   }
 
   @Override

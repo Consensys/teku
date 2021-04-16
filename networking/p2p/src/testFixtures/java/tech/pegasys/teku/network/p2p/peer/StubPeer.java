@@ -18,6 +18,7 @@ import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.RequestHandlerSupplier;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -28,7 +29,8 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
-import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 
 public class StubPeer implements Peer {
 
@@ -92,8 +94,14 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public SafeFuture<RpcStream> sendRequest(
-      final RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
+  public <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
+          final RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final Bytes initialPayload,
+          final RequestHandlerSupplier<TOutgoingHandler> outgoingHandler) {
     return SafeFuture.failedFuture(new OperationNotSupportedException());
   }
 

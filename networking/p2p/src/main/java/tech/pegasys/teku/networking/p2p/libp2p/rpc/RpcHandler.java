@@ -46,24 +46,37 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
-public class RpcHandler implements ProtocolBinding<Controller> {
+public class RpcHandler<
+        TIncomingHandler extends RpcRequestHandler,
+        TOutgoingHandler extends RpcRequestHandler,
+        TRequest>
+    implements ProtocolBinding<Controller<TIncomingHandler, TOutgoingHandler>> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod rpcMethod;
+  private final RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> rpcMethod;
   private final AsyncRunner asyncRunner;
 
-  public RpcHandler(final AsyncRunner asyncRunner, RpcMethod rpcMethod) {
+  public RpcHandler(
+      final AsyncRunner asyncRunner,
+      RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> rpcMethod) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
   }
 
+  public RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, ?> getRpcMethod() {
+    return rpcMethod;
+  }
+
   @SuppressWarnings("unchecked")
-  public SafeFuture<RpcStream> sendRequest(
-      Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
+  public SafeFuture<RpcStreamController<TIncomingHandler, TOutgoingHandler>> sendRequest(
+      Connection connection,
+      Bytes initialPayload,
+      RequestHandlerSupplier<TOutgoingHandler> handlerSupplier) {
 
     Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
@@ -81,16 +94,24 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         .thenWaitFor(StreamPromise::getStream)
         .orInterrupt(closeInterruptor, timeoutInterruptor)
         .thenCompose(
-            streamPromise ->
-                // waiting for controller, writing initial payload or interrupt
-                SafeFuture.of(streamPromise.getController())
-                    .orInterrupt(closeInterruptor, timeoutInterruptor)
-                    .thenPeek(ctr -> ctr.setRequestHandler(handler))
-                    .thenApply(Controller::getRpcStream)
-                    .thenWaitFor(rpcStream -> rpcStream.writeBytes(initialPayload))
-                    .orInterrupt(closeInterruptor, timeoutInterruptor)
-                    // closing the stream in case of any errors or interruption
-                    .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join())))
+            streamPromise -> {
+              final SafeFuture<String> protocolIdFuture =
+                  SafeFuture.of(streamPromise.getStream().thenCompose(Stream::getProtocol));
+              // waiting for controller, writing initial payload or interrupt
+              return SafeFuture.of(streamPromise.getController())
+                  .thenCombine(
+                      protocolIdFuture,
+                      (controller, protocolId) -> {
+                        controller.setOutgoingRequestHandler(handlerSupplier.get(protocolId));
+                        return ((RpcStreamController<TIncomingHandler, TOutgoingHandler>)
+                            controller);
+                      })
+                  .orInterrupt(closeInterruptor, timeoutInterruptor)
+                  .thenWaitFor(controller -> controller.getRpcStream().writeBytes(initialPayload))
+                  .orInterrupt(closeInterruptor, timeoutInterruptor)
+                  // closing the stream in case of any errors or interruption
+                  .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join()));
+            })
         .catchAndRethrow(
             err -> {
               if (ExceptionUtil.getCause(err, ConnectionClosedException.class).isPresent()) {
@@ -111,26 +132,35 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   @NotNull
   @Override
-  public SafeFuture<Controller> initChannel(
+  public SafeFuture<Controller<TIncomingHandler, TOutgoingHandler>> initChannel(
       final P2PChannel channel, final String selectedProtocol) {
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
-    Controller controller = new Controller(nodeId, channel);
+
+    final Controller<TIncomingHandler, TOutgoingHandler> controller =
+        new Controller<>(nodeId, channel);
     if (!channel.isInitiator()) {
-      controller.setRequestHandler(rpcMethod.createIncomingRequestHandler(selectedProtocol));
+      controller.setIncomingRequestHandler(
+          rpcMethod.createIncomingRequestHandler(selectedProtocol));
     }
     channel.pushHandler(controller);
     return controller.activeFuture;
   }
 
-  static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
+  static class Controller<
+          TIncomingHandler extends RpcRequestHandler, TOutgoingHandler extends RpcRequestHandler>
+      extends SimpleChannelInboundHandler<ByteBuf>
+      implements RpcStreamController<TIncomingHandler, TOutgoingHandler> {
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
+    private Optional<TIncomingHandler> incomingRequestHandler = Optional.empty();
+    private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();
     private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
     private boolean readCompleted = false;
 
-    protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
+    protected final SafeFuture<Controller<TIncomingHandler, TOutgoingHandler>> activeFuture =
+        new SafeFuture<>();
 
     private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
@@ -143,6 +173,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       activeFuture.complete(this);
     }
 
+    @Override
     public RpcStream getRpcStream() {
       return rpcStream;
     }
@@ -152,12 +183,26 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       runHandler(h -> h.processData(nodeId, rpcStream, msg));
     }
 
-    public void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
+    public void setIncomingRequestHandler(TIncomingHandler requestHandler) {
+      setRequestHandler(requestHandler);
+      this.incomingRequestHandler = Optional.of(requestHandler);
+      setFullyActive(requestHandler);
+    }
+
+    public void setOutgoingRequestHandler(TOutgoingHandler requestHandler) {
+      setRequestHandler(requestHandler);
+      this.outgoingRequestHandler = Optional.of(requestHandler);
+      setFullyActive(requestHandler);
+    }
+
+    private void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
       if (this.rpcRequestHandler.isPresent()) {
         throw new IllegalStateException("Attempt to set an already set data handler");
       }
       this.rpcRequestHandler = Optional.of(rpcRequestHandler);
+    }
 
+    private void setFullyActive(RpcRequestHandler rpcRequestHandler) {
       activeFuture.finish(
           () -> {
             rpcRequestHandler.active(nodeId, rpcStream);
@@ -171,6 +216,16 @@ public class RpcHandler implements ProtocolBinding<Controller> {
               }
             }
           });
+    }
+
+    @Override
+    public Optional<TIncomingHandler> getIncomingRequestHandler() {
+      return incomingRequestHandler;
+    }
+
+    @Override
+    public Optional<TOutgoingHandler> getOutgoingRequestHandler() {
+      return outgoingRequestHandler;
     }
 
     @Override
@@ -221,5 +276,9 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
     }
+  }
+
+  public interface RequestHandlerSupplier<T extends RpcRequestHandler> {
+    T get(final String protocolId);
   }
 }

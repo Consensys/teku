@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -65,7 +65,7 @@ public class CommonAncestor {
         .thenApply(__ -> blockListener.getBestSlot());
   }
 
-  private static class BestBlockListener implements ResponseStreamListener<SignedBeaconBlock> {
+  private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
     private final RecentChainData storageClient;
     private UInt64 bestSlot;
 

@@ -29,8 +29,8 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
 
@@ -298,7 +298,7 @@ public class SyncSourceBatch implements Batch {
     return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 
-  private static class RequestHandler implements ResponseStreamListener<SignedBeaconBlock> {
+  private static class RequestHandler implements RpcResponseListener<SignedBeaconBlock> {
     private final List<SignedBeaconBlock> blocks = new ArrayList<>();
 
     @Override

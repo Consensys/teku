@@ -19,7 +19,6 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,13 +37,12 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
-import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class PeerManager implements ConnectionHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod, RpcHandler> rpcHandlers;
+  private final List<RpcHandler<?, ?, ?>> rpcHandlers;
 
   private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<NodeId, SafeFuture<Peer>> pendingConnections =
@@ -59,7 +57,7 @@ public class PeerManager implements ConnectionHandler {
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
-      final Map<RpcMethod, RpcHandler> rpcHandlers) {
+      final List<RpcHandler<?, ?, ?>> rpcHandlers) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;

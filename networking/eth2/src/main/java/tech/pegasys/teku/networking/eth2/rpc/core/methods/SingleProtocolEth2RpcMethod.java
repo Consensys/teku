@@ -11,75 +11,70 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core.methods;
 
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2IncomingRequestHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
-public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse extends SszData>
-    implements RpcMethod {
+public class SingleProtocolEth2RpcMethod<
+        TRequest extends RpcRequest & SszData, TResponse extends SszData>
+    extends AbstractEth2RpcMethod<TRequest, TResponse> {
 
   private final AsyncRunner asyncRunner;
 
-  private final String methodMultistreamId;
-  private final RpcEncoding encoding;
-  private final SszSchema<TRequest> requestType;
-  private final boolean expectResponseToRequest;
+  private final String protocolId;
+  private final int protocolVersion;
   private final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
 
-  private final RpcEncoder rpcEncoder;
-
-  public Eth2RpcMethod(
+  public SingleProtocolEth2RpcMethod(
       final AsyncRunner asyncRunner,
-      final String methodMultistreamId,
+      final String protocolIdPrefix,
+      final int protocolVersion,
       final RpcEncoding encoding,
       final SszSchema<TRequest> requestType,
       final boolean expectResponseToRequest,
       final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
+    super(encoding, requestType, expectResponseToRequest);
     this.asyncRunner = asyncRunner;
-    this.expectResponseToRequest = expectResponseToRequest;
     this.responseResponseDecoderFactory = responseResponseDecoderFactory;
-    this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
-    this.encoding = encoding;
-    this.requestType = requestType;
+    this.protocolId = protocolIdPrefix + "/" + protocolVersion + "/" + encoding.getName();
+    this.protocolVersion = protocolVersion;
     this.localMessageHandler = localMessageHandler;
     this.peerLookup = peerLookup;
-
-    this.rpcEncoder = new RpcEncoder(encoding);
   }
 
-  public Bytes encodeRequest(TRequest request) {
-    return rpcEncoder.encodeRequest(request);
-  }
-
-  public RpcRequestDecoder<TRequest> createRequestDecoder() {
-    return new RpcRequestDecoder<>(requestType, encoding);
-  }
-
+  @Override
   public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
     return responseResponseDecoderFactory.create(encoding);
   }
 
   @Override
   public List<String> getIds() {
-    return List.of(methodMultistreamId);
+    return List.of(protocolId);
   }
 
-  public boolean shouldReceiveResponse() {
-    return expectResponseToRequest;
+  public String getId() {
+    return protocolId;
+  }
+
+  public int getProtocolVersion() {
+    return protocolVersion;
   }
 
   @Override
@@ -94,15 +89,19 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
         localMessageHandler);
   }
 
+  @Override
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
-      final int maximumResponseChunks) {
+      String protocolId,
+      final TRequest request,
+      Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     return new Eth2OutgoingRequestHandler<>(
         asyncRunner,
         asyncRunner,
-        methodMultistreamId,
+        protocolId,
         createResponseDecoder(),
         expectResponseToRequest,
-        maximumResponseChunks);
+        request,
+        responseHandler);
   }
 
   @Override
@@ -113,18 +112,18 @@ public class Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse exte
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final Eth2RpcMethod<?, ?> rpcMethod = (Eth2RpcMethod<?, ?>) o;
-    return methodMultistreamId.equals(rpcMethod.methodMultistreamId);
+    final SingleProtocolEth2RpcMethod<?, ?> rpcMethod = (SingleProtocolEth2RpcMethod<?, ?>) o;
+    return protocolId.equals(rpcMethod.protocolId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(methodMultistreamId);
+    return Objects.hash(protocolId);
   }
 
   @Override
   public String toString() {
-    return "Eth2RpcMethod{" + "id='" + methodMultistreamId + '\'' + '}';
+    return "Eth2RpcMethod{" + "id='" + protocolId + '\'' + '}';
   }
 
   public interface ResponseDecoderFactory<T extends SszData> {

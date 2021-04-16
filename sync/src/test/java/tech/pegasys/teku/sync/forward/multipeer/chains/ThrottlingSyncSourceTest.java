@@ -27,8 +27,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 class ThrottlingSyncSourceTest {
@@ -39,8 +39,7 @@ class ThrottlingSyncSourceTest {
   private final SyncSource delegate = mock(SyncSource.class);
 
   @SuppressWarnings("unchecked")
-  private final ResponseStreamListener<SignedBeaconBlock> listener =
-      mock(ResponseStreamListener.class);
+  private final RpcResponseListener<SignedBeaconBlock> listener = mock(RpcResponseListener.class);
 
   private final ThrottlingSyncSource source =
       new ThrottlingSyncSource(asyncRunner, timeProvider, delegate, MAX_BLOCKS_PER_MINUTE);

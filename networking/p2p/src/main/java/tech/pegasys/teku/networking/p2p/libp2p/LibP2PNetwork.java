@@ -37,8 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,7 +80,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final LibP2PGossipNetwork gossipNetwork;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-  private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
   private final int listenPort;
 
   public LibP2PNetwork(
@@ -89,7 +88,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final PrivateKeyProvider privateKeyProvider,
       final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
-      final List<RpcMethod> rpcMethods,
+      final List<RpcMethod<?, ?, ?, ?>> rpcMethods,
       final List<PeerHandler> peerHandlers,
       final PreparedGossipMessageFactory defaultMessageFactory,
       final GossipTopicFilter gossipTopicFilter) {
@@ -111,7 +110,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             config.getWireLogsConfig().isLogWireGossip());
 
     // Setup rpc methods
-    rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));
+    final List<RpcHandler<?, ?, ?>> rpcHandlers =
+        rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).collect(Collectors.toList());
 
     // Setup peers
     peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers);
@@ -131,7 +131,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getNetwork().listen(listenAddr.toString());
 
               b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().addAll(rpcHandlers.values());
+              b.getProtocols().addAll(rpcHandlers);
 
               if (config.getWireLogsConfig().isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");

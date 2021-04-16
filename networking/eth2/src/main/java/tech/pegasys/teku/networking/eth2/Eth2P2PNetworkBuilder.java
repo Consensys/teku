@@ -88,7 +88,7 @@ public class Eth2P2PNetworkBuilder {
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
-  private final List<RpcMethod> rpcMethods = new ArrayList<>();
+  private final List<RpcMethod<?, ?, ?, ?>> rpcMethods = new ArrayList<>();
   private final List<PeerHandler> peerHandlers = new ArrayList<>();
   private TimeProvider timeProvider;
   private AsyncRunner asyncRunner;
@@ -133,7 +133,8 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
             spec);
-    final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
+    final Collection<RpcMethod<?, ?, ?, ?>> eth2RpcMethods =
+        eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
 
@@ -434,7 +435,7 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder rpcMethod(final RpcMethod rpcMethod) {
+  public Eth2P2PNetworkBuilder rpcMethod(final RpcMethod<?, ?, ?, ?> rpcMethod) {
     checkNotNull(rpcMethod);
     rpcMethods.add(rpcMethod);
     return this;
