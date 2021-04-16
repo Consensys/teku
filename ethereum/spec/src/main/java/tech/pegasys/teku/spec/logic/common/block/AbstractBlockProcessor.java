@@ -695,7 +695,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 
-  public interface BlockProcessingAction {
+  private interface BlockProcessingAction {
     void run() throws BlockProcessingException;
   }
 }
