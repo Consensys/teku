@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -647,6 +648,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return finalizedDao.getNonCanonicalBlocksAtSlot(slot);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
     return eth1Dao.streamDepositsFromBlocks();
@@ -784,14 +790,19 @@ public class RocksDbDatabase implements Database {
     int i = 0;
     final Iterator<SignedBeaconBlock> it = nonCanonicalBlocks.iterator();
     while (it.hasNext()) {
+      final Map<UInt64, Set<Bytes32>> nonCanonicalRootsBySlotBuffer = new HashMap<>();
       final int start = i;
       try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
         while (it.hasNext() && (i - start) < TX_BATCH_SIZE) {
           final SignedBeaconBlock block = it.next();
-          LOG.debug("Non canonical block {}", block.getRoot().toHexString());
+          LOG.debug("Non canonical block {}:{}", block.getRoot().toHexString(), block.getSlot());
           updater.addNonCanonicalBlock(block);
+          nonCanonicalRootsBySlotBuffer
+              .computeIfAbsent(block.getSlot(), __ -> new HashSet<>())
+              .add(block.getRoot());
           i++;
         }
+        nonCanonicalRootsBySlotBuffer.forEach(updater::addNonCanonicalRootAtSlot);
         updater.commit();
       }
     }

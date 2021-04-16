@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,6 +43,8 @@ public class V6SchemaFinalized implements SchemaFinalized {
   private final RocksDbColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       RocksDbColumn.create(ID_OFFSET + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+  private static final RocksDbColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
+      RocksDbColumn.create(ID_OFFSET + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
   private V6SchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
@@ -84,13 +88,19 @@ public class V6SchemaFinalized implements SchemaFinalized {
   }
 
   @Override
+  public RocksDbColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
+    return NON_CANONICAL_BLOCK_ROOTS_BY_SLOT;
+  }
+
+  @Override
   public List<RocksDbColumn<?, ?>> getAllColumns() {
     return List.of(
         SLOTS_BY_FINALIZED_ROOT,
         finalizedBlocksBySlot,
         finalizedStatesBySlot,
         SLOTS_BY_FINALIZED_STATE_ROOT,
-        nonCanonicalBlocksByRoot);
+        nonCanonicalBlocksByRoot,
+        NON_CANONICAL_BLOCK_ROOTS_BY_SLOT);
   }
 
   @Override
