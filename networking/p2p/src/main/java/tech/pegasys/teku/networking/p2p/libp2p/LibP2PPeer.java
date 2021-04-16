@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import io.libp2p.core.Connection;
+import io.libp2p.core.PeerId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import io.libp2p.core.Connection;
-import io.libp2p.core.PeerId;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;

@@ -15,10 +15,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.mockito.Mockito.mock;
 
+import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import io.netty.buffer.ByteBuf;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
