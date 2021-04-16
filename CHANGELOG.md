@@ -13,6 +13,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Early access: Support for automatic fail-over of eth1-endpoints.  Multiple endpoints can be specified with the new `--eth1-endpoints` CLI option. Thanks to Enrico Del Fante.
+- Basic authentication is now supported for `--initial-state`. Infura can now be used as the source of initial states with `--initial-state https://{projectid}:{secret}@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized`
 - Implement standard rest api `/eth/v2/beacon/blocks/:block_id` which supports altair blocks. Documented under 'Experimental' endpoints until more widely implemented.
 
 ### Bug Fixes
