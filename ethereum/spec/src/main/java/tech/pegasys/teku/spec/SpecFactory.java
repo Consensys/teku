@@ -21,19 +21,14 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public interface SpecFactory {
   SpecFactory PHASE0 = new Phase0SpecFactory();
-  SpecFactory MERGE_AS_GENESIS = new MergeAsGenesisSpecFactory();
+  SpecFactory MERGE_FROM_GENESIS = new MergeFromGenesisSpecFactory();
 
   static SpecFactory getDefault() {
     return PHASE0;
   }
 
-  static SpecFactory getByNetworkName(String configName) {
-    switch (configName) {
-      case "mergenet-minimal":
-        return MERGE_AS_GENESIS;
-      default:
-        return getDefault();
-    }
+  static SpecFactory getMergeFromGenesis() {
+    return MERGE_FROM_GENESIS;
   }
 
   default Spec create(String configName) {
@@ -42,7 +37,7 @@ public interface SpecFactory {
 
   Spec create(String configName, String eth1Endpoint);
 
-  class MergeAsGenesisSpecFactory implements SpecFactory {
+  class MergeFromGenesisSpecFactory implements SpecFactory {
 
     @Override
     public Spec create(String configName, String eth1Endpoint) {
@@ -52,10 +47,10 @@ public interface SpecFactory {
           ForkManifest.create(
               List.of(
                   new Fork(
-                      config.getMergeForkVersion(),
-                      config.getMergeForkVersion(),
+                      config.getGenesisForkVersion(),
+                      config.getGenesisForkVersion(),
                       SpecConfig.GENESIS_EPOCH)));
-      return Spec.createWithMergeAsGenesis(config, forkManifest, eth1Endpoint);
+      return Spec.createWithMergeFromGenesis(config, forkManifest, eth1Endpoint);
     }
   }
 
