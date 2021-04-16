@@ -13,16 +13,22 @@
 
 package tech.pegasys.teku.spec.executionengine.client.schema;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.executionengine.client.serializer.BytesSerializer;
+import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexSerializer;
 
 public class AssembleBlockRequest {
-  public final Bytes32 parent_hash;
+  @JsonSerialize(using = BytesSerializer.class)
+  public final Bytes32 parentHash;
+
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
   public final UInt64 timestamp;
 
-  public AssembleBlockRequest(Bytes32 parent_hash, UInt64 timestamp) {
-    this.parent_hash = parent_hash;
+  public AssembleBlockRequest(Bytes32 parentHash, UInt64 timestamp) {
+    this.parentHash = parentHash;
     this.timestamp = timestamp;
   }
 
@@ -35,17 +41,16 @@ public class AssembleBlockRequest {
       return false;
     }
     AssembleBlockRequest that = (AssembleBlockRequest) o;
-    return Objects.equals(parent_hash, that.parent_hash)
-        && Objects.equals(timestamp, that.timestamp);
+    return Objects.equals(parentHash, that.parentHash) && Objects.equals(timestamp, that.timestamp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(parent_hash, timestamp);
+    return Objects.hash(parentHash, timestamp);
   }
 
   @Override
   public String toString() {
-    return "ProduceBlockRequest{" + "parent_hash=" + parent_hash + ", timestamp=" + timestamp + '}';
+    return "ProduceBlockRequest{" + "parent_hash=" + parentHash + ", timestamp=" + timestamp + '}';
   }
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
@@ -91,6 +94,24 @@ public class GenesisGenerator {
     state.setEth1_data(
         new Eth1Data(
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
+
+    state
+        .toMutableVersionMerge()
+        .ifPresent(
+            stateMerge ->
+                stateMerge.setLatestExecutionPayloadHeader(
+                    new ExecutionPayloadHeader(
+                        eth1BlockHash,
+                        Bytes32.ZERO,
+                        Bytes20.ZERO,
+                        Bytes32.ZERO,
+                        UInt64.ZERO,
+                        UInt64.ZERO,
+                        UInt64.ZERO,
+                        UInt64.ZERO,
+                        Bytes32.ZERO,
+                        Bytes.wrap(new byte[SpecConfig.BYTES_PER_LOGS_BLOOM]),
+                        Bytes32.ZERO)));
 
     // Process deposits
     deposits.forEach(

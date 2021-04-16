@@ -110,16 +110,16 @@ public class ExecutionPayload {
     }
     tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload that =
         (tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload) o;
-    return Objects.equals(parent_hash, that.parent_hash)
-        && Objects.equals(block_hash, that.block_hash)
+    return Objects.equals(parent_hash, that.parentHash)
+        && Objects.equals(block_hash, that.blockHash)
         && Objects.equals(miner, that.miner)
-        && Objects.equals(state_root, that.state_root)
+        && Objects.equals(state_root, that.stateRoot)
         && Objects.equals(number, that.number)
-        && Objects.equals(gas_limit, that.gas_limit)
-        && Objects.equals(gas_used, that.gas_used)
+        && Objects.equals(gas_limit, that.gasLimit)
+        && Objects.equals(gas_used, that.gasUsed)
         && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(receipt_root, that.receipt_root)
-        && Objects.equals(logs_bloom, that.logs_bloom)
+        && Objects.equals(receipt_root, that.receiptsRoot)
+        && Objects.equals(logs_bloom, that.logsBloom)
         && Objects.equals(transactions, that.transactions);
   }
 

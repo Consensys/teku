@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.executionengine.client.ExecutionEngineClient;
 import tech.pegasys.teku.spec.executionengine.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 
 public class ExecutionEngineService {
@@ -105,7 +106,7 @@ public class ExecutionEngineService {
     ExecutionPayload request = new ExecutionPayload(executionPayload);
 
     try {
-      Response<Boolean> response = executionEngineClient.consensusNewBlock(request).get();
+      Response<NewBlockResponse> response = executionEngineClient.consensusNewBlock(request).get();
 
       checkArgument(
           response.getPayload() != null,
@@ -119,7 +120,7 @@ public class ExecutionEngineService {
                   "consensus_newBlock(execution_payload=%s) ~> %s", request, response.getPayload()),
               Color.CYAN));
 
-      return Boolean.TRUE.equals(response.getPayload());
+      return response.getPayload().getValid();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

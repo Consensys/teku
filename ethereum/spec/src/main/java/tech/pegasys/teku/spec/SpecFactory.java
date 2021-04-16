@@ -36,12 +36,16 @@ public interface SpecFactory {
     }
   }
 
-  Spec create(String configName);
+  default Spec create(String configName) {
+    return create(configName, null);
+  }
+
+  Spec create(String configName, String eth1Endpoint);
 
   class MergeAsGenesisSpecFactory implements SpecFactory {
 
     @Override
-    public Spec create(String configName) {
+    public Spec create(String configName, String eth1Endpoint) {
       final SpecConfigMerge config =
           SpecConfigMerge.required(SpecConfigLoader.loadConfig(configName));
       final ForkManifest forkManifest =
@@ -51,14 +55,14 @@ public interface SpecFactory {
                       config.getMergeForkVersion(),
                       config.getMergeForkVersion(),
                       SpecConfig.GENESIS_EPOCH)));
-      return Spec.createWithMergeAsGenesis(config, forkManifest);
+      return Spec.createWithMergeAsGenesis(config, forkManifest, eth1Endpoint);
     }
   }
 
   class Phase0SpecFactory implements SpecFactory {
 
     @Override
-    public Spec create(String configName) {
+    public Spec create(String configName, String eth1Endpoint) {
       final SpecConfig config = SpecConfigLoader.loadConfig(configName);
       final ForkManifest forkManifest =
           ForkManifest.create(
@@ -67,7 +71,7 @@ public interface SpecFactory {
                       config.getGenesisForkVersion(),
                       config.getGenesisForkVersion(),
                       SpecConfig.GENESIS_EPOCH)));
-      return Spec.create(config, forkManifest);
+      return Spec.create(config, forkManifest, eth1Endpoint);
     }
   }
 }

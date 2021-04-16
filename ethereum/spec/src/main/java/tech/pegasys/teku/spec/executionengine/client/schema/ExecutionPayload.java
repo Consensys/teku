@@ -39,11 +39,11 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 parent_hash;
+  public final Bytes32 parentHash;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 block_hash;
+  public final Bytes32 blockHash;
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
@@ -51,7 +51,7 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 state_root;
+  public final Bytes32 stateRoot;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -59,11 +59,11 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 gas_limit;
+  public final UInt64 gasLimit;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 gas_used;
+  public final UInt64 gasUsed;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -71,53 +71,53 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receipt_root;
+  public final Bytes32 receiptsRoot;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = BytesDeserializer.class)
-  public final Bytes logs_bloom;
+  public final Bytes logsBloom;
 
-  @JsonSerialize(contentAs = BytesSerializer.class)
-  @JsonDeserialize(contentAs = BytesDeserializer.class)
+  @JsonSerialize(contentUsing = BytesSerializer.class)
+  @JsonDeserialize(contentUsing = BytesDeserializer.class)
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
-      @JsonProperty("parent_hash") Bytes32 parent_hash,
-      @JsonProperty("block_hash") Bytes32 block_hash,
+      @JsonProperty("parentHash") Bytes32 parentHash,
+      @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("miner") Bytes20 miner,
-      @JsonProperty("state_root") Bytes32 state_root,
+      @JsonProperty("stateRoot") Bytes32 stateRoot,
       @JsonProperty("number") UInt64 number,
-      @JsonProperty("gas_limit") UInt64 gas_limit,
-      @JsonProperty("gas_used") UInt64 gas_used,
+      @JsonProperty("gasLimit") UInt64 gasLimit,
+      @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("receipt_root") Bytes32 receipt_root,
-      @JsonProperty("logs_bloom") Bytes logs_bloom,
+      @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
+      @JsonProperty("logsBloom") Bytes logsBloom,
       @JsonProperty("transactions") List<Bytes> transactions) {
-    this.parent_hash = parent_hash;
-    this.block_hash = block_hash;
+    this.parentHash = parentHash;
+    this.blockHash = blockHash;
     this.miner = miner;
-    this.state_root = state_root;
+    this.stateRoot = stateRoot;
     this.number = number;
-    this.gas_limit = gas_limit;
-    this.gas_used = gas_used;
+    this.gasLimit = gasLimit;
+    this.gasUsed = gasUsed;
     this.timestamp = timestamp;
-    this.receipt_root = receipt_root;
-    this.logs_bloom = logs_bloom;
+    this.receiptsRoot = receiptsRoot;
+    this.logsBloom = logsBloom;
     this.transactions = transactions != null ? transactions : Collections.emptyList();
   }
 
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.parent_hash = executionPayload.getParent_hash();
-    this.block_hash = executionPayload.getBlock_hash();
+    this.parentHash = executionPayload.getParent_hash();
+    this.blockHash = executionPayload.getBlock_hash();
     this.miner = executionPayload.getCoinbase();
-    this.state_root = executionPayload.getState_root();
+    this.stateRoot = executionPayload.getState_root();
     this.number = executionPayload.getNumber();
-    this.gas_limit = executionPayload.getGas_limit();
-    this.gas_used = executionPayload.getGas_used();
+    this.gasLimit = executionPayload.getGas_limit();
+    this.gasUsed = executionPayload.getGas_used();
     this.timestamp = executionPayload.getTimestamp();
-    this.receipt_root = executionPayload.getReceipt_root();
-    this.logs_bloom = executionPayload.getLogs_bloom();
+    this.receiptsRoot = executionPayload.getReceipt_root();
+    this.logsBloom = executionPayload.getLogs_bloom();
     this.transactions =
         executionPayload.getTransactions().stream()
             .map(SszByteList::getBytes)
@@ -129,16 +129,16 @@ public class ExecutionPayload {
     return schema.create(
         builder ->
             builder
-                .parentHash(parent_hash)
-                .blockHash(block_hash)
+                .parentHash(parentHash)
+                .blockHash(blockHash)
                 .coinbase(miner)
-                .stateRoot(state_root)
+                .stateRoot(stateRoot)
                 .number(number)
-                .gasLimit(gas_limit)
-                .gasUsed(gas_used)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
                 .timestamp(timestamp)
-                .receiptRoot(receipt_root)
-                .logsBloom(logs_bloom)
+                .receiptRoot(receiptsRoot)
+                .logsBloom(logsBloom)
                 .transactions(transactions));
   }
 
@@ -151,58 +151,58 @@ public class ExecutionPayload {
       return false;
     }
     ExecutionPayload that = (ExecutionPayload) o;
-    return Objects.equals(parent_hash, that.parent_hash)
-        && Objects.equals(block_hash, that.block_hash)
+    return Objects.equals(parentHash, that.parentHash)
+        && Objects.equals(blockHash, that.blockHash)
         && Objects.equals(miner, that.miner)
-        && Objects.equals(state_root, that.state_root)
+        && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(number, that.number)
-        && Objects.equals(gas_limit, that.gas_limit)
-        && Objects.equals(gas_used, that.gas_used)
+        && Objects.equals(gasLimit, that.gasLimit)
+        && Objects.equals(gasUsed, that.gasUsed)
         && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(receipt_root, that.receipt_root)
-        && Objects.equals(logs_bloom, that.logs_bloom)
+        && Objects.equals(receiptsRoot, that.receiptsRoot)
+        && Objects.equals(logsBloom, that.logsBloom)
         && Objects.equals(transactions, that.transactions);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        parent_hash,
-        block_hash,
+        parentHash,
+        blockHash,
         miner,
-        state_root,
+        stateRoot,
         number,
-        gas_limit,
-        gas_used,
+        gasLimit,
+        gasUsed,
         timestamp,
-        receipt_root,
-        logs_bloom,
+        receiptsRoot,
+        logsBloom,
         transactions);
   }
 
   @Override
   public String toString() {
     return "ExecutionPayload{"
-        + "parent_hash="
-        + LogFormatter.formatHashRoot(parent_hash)
-        + ", block_hash="
-        + LogFormatter.formatHashRoot(block_hash)
+        + "parentHash="
+        + LogFormatter.formatHashRoot(parentHash)
+        + ", blockHash="
+        + LogFormatter.formatHashRoot(blockHash)
         + ", miner="
         + miner
-        + ", state_root="
-        + LogFormatter.formatHashRoot(state_root)
+        + ", stateRoot="
+        + LogFormatter.formatHashRoot(stateRoot)
         + ", number="
         + number
-        + ", gas_limit="
-        + gas_limit
-        + ", gas_used="
-        + gas_used
+        + ", gasLimit="
+        + gasLimit
+        + ", gasUsed="
+        + gasUsed
         + ", timestamp="
         + timestamp
-        + ", receipt_root="
-        + LogFormatter.formatHashRoot(receipt_root)
-        + ", logs_bloom="
-        + logs_bloom.toHexString().substring(0, 8)
+        + ", receiptsRoot="
+        + LogFormatter.formatHashRoot(receiptsRoot)
+        + ", logsBloom="
+        + logsBloom.toHexString().substring(0, 8)
         + ", transactions=["
         + transactions.stream()
             .map(tx -> tx.toHexString().substring(0, 8))

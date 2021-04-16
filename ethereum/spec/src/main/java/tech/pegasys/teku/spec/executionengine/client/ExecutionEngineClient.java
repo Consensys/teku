@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -27,7 +28,7 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<ExecutionPayload>> consensusAssembleBlock(AssembleBlockRequest request);
 
-  SafeFuture<Response<Boolean>> consensusNewBlock(ExecutionPayload request);
+  SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
 
   ExecutionEngineClient Stub =
       new ExecutionEngineClient() {
@@ -41,7 +42,7 @@ public interface ExecutionEngineClient {
           return SafeFuture.completedFuture(
               new Response<>(
                   new ExecutionPayload(
-                      request.parent_hash,
+                      request.parentHash,
                       Bytes32.random(),
                       Bytes20.ZERO,
                       Bytes32.ZERO,
@@ -55,8 +56,8 @@ public interface ExecutionEngineClient {
         }
 
         @Override
-        public SafeFuture<Response<Boolean>> consensusNewBlock(ExecutionPayload request) {
-          return SafeFuture.completedFuture(new Response<>(true));
+        public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request) {
+          return SafeFuture.completedFuture(new Response<>(new NewBlockResponse(true)));
         }
       };
 }

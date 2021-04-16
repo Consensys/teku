@@ -82,17 +82,19 @@ public class Spec {
   }
 
   public static Spec createWithMergeAsGenesis(
-      final SpecConfigMerge config, final ForkManifest forkManifest) {
+      final SpecConfigMerge config, final ForkManifest forkManifest, String eth1Endpoint) {
     Preconditions.checkArgument(
         config.getMergeForkVersion().equals(config.getGenesisForkVersion()));
     Preconditions.checkArgument(
         forkManifest.getGenesisFork().getCurrent_version().equals(config.getMergeForkVersion()));
-    return new Spec(SpecVersion.createMerge(config), forkManifest);
+    return new Spec(SpecVersion.createMerge(config, eth1Endpoint), forkManifest);
   }
 
-  public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
+  public static Spec create(
+      final SpecConfig config, final ForkManifest forkManifest, final String eth1Endpoint) {
     final SpecVersion initialSpec =
-        SpecVersion.createForFork(forkManifest.getGenesisFork().getCurrent_version(), config);
+        SpecVersion.createForFork(
+            forkManifest.getGenesisFork().getCurrent_version(), config, eth1Endpoint);
     return new Spec(initialSpec, forkManifest);
   }
 

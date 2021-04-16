@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.MinimalEth2NetworkOptions;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -74,7 +76,8 @@ public class GenesisCommand {
       final List<BLSKeyPair> validatorKeys =
           new MockStartValidatorKeyPairFactory().generateKeyPairs(0, genesisParams.validatorCount);
       final BeaconState genesisState =
-          InteropStartupUtil.createMockedStartInitialBeaconState(spec, genesisTime, validatorKeys);
+          InteropStartupUtil.createMockedStartInitialBeaconState(
+              spec, Bytes32.fromHexString(genesisParams.eth1BlockHash), genesisTime, validatorKeys);
 
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, false);
@@ -104,5 +107,12 @@ public class GenesisCommand {
         paramLabel = "<GENESIS_TIME>",
         description = "The genesis time")
     private long genesisTime = System.currentTimeMillis() / 1000;
+
+    @Option(
+        names = {"-b", "--eth1-block-hash"},
+        paramLabel = "<ETH1_BLOCK_HASH>",
+        description = "The Eth1 block hash")
+    private String eth1BlockHash =
+        MockStartBeaconStateGenerator.INTEROP_ETH1_BLOCK_HASH.toHexString();
   }
 }

@@ -20,6 +20,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
@@ -43,7 +44,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<Boolean>> consensusNewBlock(ExecutionPayload request) {
+  public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request) {
     Request<?, NewBlockWeb3jResponse> web3jRequest =
         new Request<>(
             "consensus_newBlock",
@@ -75,5 +76,5 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class AssembleBlockWeb3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayload> {}
 
-  static class NewBlockWeb3jResponse extends org.web3j.protocol.core.Response<Boolean> {}
+  static class NewBlockWeb3jResponse extends org.web3j.protocol.core.Response<NewBlockResponse> {}
 }
