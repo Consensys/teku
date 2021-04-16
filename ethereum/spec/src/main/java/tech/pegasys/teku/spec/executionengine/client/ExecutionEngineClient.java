@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.executionengine.client;
 
-import java.util.Collections;
+import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,7 +51,7 @@ public interface ExecutionEngineClient {
                       request.timestamp,
                       Bytes32.ZERO,
                       ZERO_LOGS_BLOOM,
-                      Collections.emptyList())));
+                      Arrays.asList(Bytes.random(128), Bytes.random(256), Bytes.random(512)))));
         }
 
         @Override

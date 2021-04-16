@@ -11,6 +11,7 @@ import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadBuilder {
@@ -86,7 +87,10 @@ public class ExecutionPayloadBuilder {
   public ExecutionPayloadBuilder transactions(List<Bytes> transactions) {
     this.transactions =
         transactions.stream()
-            .map(tx -> schema.getTransactionSchema().fromBytes(tx))
+            .map(
+                tx ->
+                    ((SszByteListSchema<?>) schema.getTransactionsSchema().getElementSchema())
+                        .fromBytes(tx))
             .collect(schema.getTransactionsSchema().collector());
     return this;
   }

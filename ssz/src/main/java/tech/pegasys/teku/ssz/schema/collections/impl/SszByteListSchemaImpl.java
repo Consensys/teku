@@ -24,13 +24,12 @@ import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public class SszByteListSchemaImpl<SszListT extends SszByteList>
     extends AbstractSszListSchema<SszByte, SszListT> implements SszByteListSchema<SszListT> {
 
-  public SszByteListSchemaImpl(long vectorLength) {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, vectorLength);
+  public SszByteListSchemaImpl(long maxLength) {
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
   }
 
   @Override
@@ -42,18 +41,10 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
   @Override
   @SuppressWarnings("unchecked")
   public SszListT fromBytes(Bytes bytes) {
-    return (SszListT) new SszByteListImpl(this, bytes);
-  }
-
-  public static TreeNode fromBytesToTree(SszByteListSchema<?> schema, Bytes bytes) {
-    checkArgument(bytes.size() <= schema.getMaxLength(), "Bytes size greater than list max length");
-    return SchemaUtils.createTreeFromBytes(bytes, schema.treeDepth());
-  }
-
-  public static Bytes fromTreeToBytes(SszByteListSchema<?> schema, TreeNode tree) {
-    Bytes bytes = TreeUtil.concatenateLeavesData(tree);
-    checkArgument(bytes.size() <= schema.getMaxLength(), "Tree doesn't match list schema");
-    return bytes;
+    checkArgument(bytes.size() <= getMaxLength(), "Bytes size greater than list max length");
+    TreeNode dataTreeNode = SchemaUtils.createTreeFromBytes(bytes, treeDepth());
+    TreeNode listTreeNode = createTree(dataTreeNode, bytes.size());
+    return (SszListT) new SszByteListImpl(this, listTreeNode);
   }
 
   @Override

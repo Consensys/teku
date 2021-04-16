@@ -1,6 +1,8 @@
 package tech.pegasys.teku.ssz.collections.impl;
 
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
@@ -10,21 +12,15 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> implements SszByteList {
 
-  private final Bytes data;
-
-  public SszByteListImpl(SszByteListSchema<?> schema, Bytes bytes) {
-    super(schema, () -> SszByteListSchemaImpl.fromBytesToTree(schema, bytes));
-    this.data = bytes;
-  }
-
   public SszByteListImpl(SszByteListSchema<?> schema, TreeNode backingTree) {
     super(schema, backingTree);
-    this.data = SszByteListSchemaImpl.fromTreeToBytes(schema, backingTree);
   }
 
   @Override
   public Bytes getBytes() {
-    return data;
+    MutableBytes bytes = MutableBytes.create(size());
+    IntStream.range(0, size()).forEach(idx -> bytes.set(idx, get(idx).get()));
+    return bytes;
   }
 
   @Override
@@ -45,6 +41,6 @@ public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> impleme
 
   @Override
   public String toString() {
-    return "SszByteList{" + data + '}';
+    return "SszByteList{" + getBytes() + '}';
   }
 }

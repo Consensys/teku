@@ -33,8 +33,6 @@ public class ExecutionPayloadSchema
         SszByteVector,
         SszList<SszByteList>> {
 
-  private final SszByteListSchema<SszByteList> transactionSchema;
-
   public static ExecutionPayloadSchema create(final SpecConfig specConfig) {
     SpecConfigMerge specConfigMerge = SpecConfigMerge.required(specConfig);
     return new ExecutionPayloadSchema(
@@ -68,17 +66,11 @@ public class ExecutionPayloadSchema
             SszListSchema.create(
                 SszByteListSchema.create(maxBytesPerOpaqueTransaction),
                 maxApplicationTransactions)));
-
-    this.transactionSchema = SszByteListSchema.create(maxBytesPerOpaqueTransaction);
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<SszByteList, ?> getTransactionsSchema() {
     return (SszListSchema<SszByteList, ?>) getFieldSchema10();
-  }
-
-  public SszByteListSchema<SszByteList> getTransactionSchema() {
-    return transactionSchema;
   }
 
   @Override
