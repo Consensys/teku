@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -40,4 +42,8 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   SszListSchema<Deposit, ?> getDepositsSchema();
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
+
+  default Optional<BeaconBlockBodySchemaMerge> toVersionMerge() {
+    return Optional.empty();
+  }
 }

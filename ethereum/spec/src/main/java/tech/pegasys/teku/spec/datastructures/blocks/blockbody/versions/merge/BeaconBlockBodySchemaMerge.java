@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
@@ -171,5 +172,10 @@ public class BeaconBlockBodySchemaMerge
   @Override
   public BeaconBlockBodyMerge createFromBackingNode(TreeNode node) {
     return new BeaconBlockBodyMerge(this, node);
+  }
+
+  @Override
+  public Optional<BeaconBlockBodySchemaMerge> toVersionMerge() {
+    return Optional.of(this);
   }
 }

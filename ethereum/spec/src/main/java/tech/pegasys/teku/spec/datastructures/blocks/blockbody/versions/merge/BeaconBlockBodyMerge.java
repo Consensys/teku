@@ -15,11 +15,11 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -134,5 +134,10 @@ public class BeaconBlockBodyMerge
   @Override
   public BeaconBlockBodySchemaMerge getSchema() {
     return (BeaconBlockBodySchemaMerge) super.getSchema();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodyMerge> toVersionMerge() {
+    return Optional.of(this);
   }
 }

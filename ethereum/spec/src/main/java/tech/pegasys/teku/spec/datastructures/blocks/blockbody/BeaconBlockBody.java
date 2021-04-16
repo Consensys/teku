@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,4 +45,8 @@ public interface BeaconBlockBody extends SszContainer {
 
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
+
+  default Optional<BeaconBlockBodyMerge> toVersionMerge() {
+    return Optional.empty();
+  }
 }
