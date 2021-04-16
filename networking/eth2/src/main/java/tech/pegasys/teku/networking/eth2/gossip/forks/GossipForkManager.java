@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
@@ -144,6 +145,18 @@ public class GossipForkManager {
                 LOG.warn(
                     "Not publishing block because no gossip subscriptions are active for slot {}",
                     block.getSlot()));
+  }
+
+  public synchronized void publishSyncCommitteeSignature(
+      final ValidateableSyncCommitteeSignature signature) {
+    getSubscriptionActiveAtSlot(signature.getSlot())
+        .filter(this::isActive)
+        .ifPresentOrElse(
+            subscription -> subscription.publishSyncCommitteeSignature(signature),
+            () ->
+                LOG.warn(
+                    "Not publishing sync committee signature because no gossip subscriptions are active for slot {}",
+                    signature.getSlot()));
   }
 
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
