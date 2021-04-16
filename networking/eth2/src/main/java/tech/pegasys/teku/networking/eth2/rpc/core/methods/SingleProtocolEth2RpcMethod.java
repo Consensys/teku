@@ -60,11 +60,6 @@ public class SingleProtocolEth2RpcMethod<
   }
 
   @Override
-  public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
-    return responseResponseDecoderFactory.create(encoding);
-  }
-
-  @Override
   public List<String> getIds() {
     return List.of(protocolId);
   }
@@ -124,6 +119,10 @@ public class SingleProtocolEth2RpcMethod<
   @Override
   public String toString() {
     return "Eth2RpcMethod{" + "id='" + protocolId + '\'' + '}';
+  }
+
+  private RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
+    return responseResponseDecoderFactory.create(encoding);
   }
 
   public interface ResponseDecoderFactory<T extends SszData> {

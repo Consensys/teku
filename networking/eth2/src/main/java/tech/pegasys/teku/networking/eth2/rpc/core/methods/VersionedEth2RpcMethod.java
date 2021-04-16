@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2IncomingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
@@ -78,12 +77,6 @@ public class VersionedEth2RpcMethod<
             .collect(Collectors.toMap(SingleProtocolEth2RpcMethod::getId, m -> m));
     return new VersionedEth2RpcMethod<>(
         encoding, requestType, expectResponseToRequest, sortedProtocolIds, protocolIdToMethod);
-  }
-
-  @Override
-  public RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
-    // TODO - remove this method from the interface
-    return null;
   }
 
   @Override

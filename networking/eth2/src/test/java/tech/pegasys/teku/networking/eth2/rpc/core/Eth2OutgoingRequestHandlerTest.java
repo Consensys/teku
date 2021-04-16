@@ -77,11 +77,15 @@ public class Eth2OutgoingRequestHandlerTest
         beaconChainMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(UInt64.ZERO, UInt64.valueOf(maxChunks), UInt64.ONE);
+
+    final RpcResponseDecoder<SignedBeaconBlock, Bytes> responseDecoder =
+        RpcResponseDecoder.createContextFreeDecoder(
+            getRpcEncoding(), spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     return new Eth2OutgoingRequestHandler<>(
         asyncRequestRunner,
         timeoutRunner,
         method.getIds().get(0),
-        method.createResponseDecoder(),
+        responseDecoder,
         method.shouldReceiveResponse(),
         request,
         responseHandler);

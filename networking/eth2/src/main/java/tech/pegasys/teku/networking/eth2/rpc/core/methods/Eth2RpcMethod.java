@@ -19,7 +19,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.Eth2IncomingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
@@ -35,8 +34,6 @@ public interface Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse 
   Bytes encodeRequest(TRequest request);
 
   RpcRequestDecoder<TRequest> createRequestDecoder();
-
-  RpcResponseDecoder<TResponse, ?> createResponseDecoder();
 
   @Override
   List<String> getIds();

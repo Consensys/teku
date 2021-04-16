@@ -15,10 +15,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.mockito.Mockito.mock;
 
-import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import io.netty.buffer.ByteBuf;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -52,6 +52,11 @@ public class RpcDecoderTestBase {
   protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
   protected static final PeerLookup peerLookup = mock(PeerLookup.class);
 
+  protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
+      RESPONSE_DECODER =
+          RpcResponseDecoder.createContextFreeDecoder(
+              ENCODING, BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+
   @SuppressWarnings("unchecked")
   protected static final Eth2RpcMethod<
           BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
@@ -64,9 +69,7 @@ public class RpcDecoderTestBase {
               ENCODING,
               BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
               false,
-              encoding ->
-                  RpcResponseDecoder.createContextFreeDecoder(
-                      encoding, BeaconBlocksByRootRequestMessage.SSZ_SCHEMA),
+              encoding -> RESPONSE_DECODER,
               mock(LocalMessageHandler.class),
               peerLookup);
 

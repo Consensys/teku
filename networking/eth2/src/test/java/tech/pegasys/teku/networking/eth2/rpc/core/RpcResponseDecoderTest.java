@@ -42,8 +42,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   private static final Bytes SUCCESS_CODE = Bytes.of(RpcResponseStatus.SUCCESS_RESPONSE_CODE);
   private static final Bytes ERROR_CODE = Bytes.of(1);
 
-  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, ?> decoder =
-      METHOD.createResponseDecoder();
+  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, ?> decoder = RESPONSE_DECODER;
 
   @Test
   public void decodeNextResponse_shouldParseSingleResponse() throws Exception {
