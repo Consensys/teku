@@ -686,7 +686,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     try {
       action.run();
     } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
     }
   }
