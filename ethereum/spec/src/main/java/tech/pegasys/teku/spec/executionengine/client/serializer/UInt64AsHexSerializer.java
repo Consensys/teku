@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.spec.executionengine.client.serializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class Base64BytesDeserializer extends JsonDeserializer<Bytes> {
+public class UInt64AsHexSerializer extends JsonSerializer<UInt64> {
   @Override
-  public Bytes deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
-    return Bytes.fromBase64String(p.getValueAsString());
+  public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(Bytes.ofUnsignedLong(value.longValue()).toQuantityHexString());
   }
 }

@@ -25,14 +25,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.executionengine.client.serializer.Base64BytesDeserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.Base64BytesSerializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Deserializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes32Deserializer;
+import tech.pegasys.teku.spec.executionengine.client.serializer.BytesDeserializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.BytesSerializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64Deserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64Serializer;
+import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexDeserializer;
+import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -54,32 +53,32 @@ public class ExecutionPayload {
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 state_root;
 
-  @JsonSerialize(using = UInt64Serializer.class)
-  @JsonDeserialize(using = UInt64Deserializer.class)
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 number;
 
-  @JsonSerialize(using = UInt64Serializer.class)
-  @JsonDeserialize(using = UInt64Deserializer.class)
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 gas_limit;
 
-  @JsonSerialize(using = UInt64Serializer.class)
-  @JsonDeserialize(using = UInt64Deserializer.class)
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 gas_used;
 
-  @JsonSerialize(using = UInt64Serializer.class)
-  @JsonDeserialize(using = UInt64Deserializer.class)
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 timestamp;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 receipt_root;
 
-  @JsonSerialize(using = Base64BytesSerializer.class)
-  @JsonDeserialize(using = Base64BytesDeserializer.class)
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = BytesDeserializer.class)
   public final Bytes logs_bloom;
 
-  @JsonSerialize(contentAs = Base64BytesSerializer.class)
-  @JsonDeserialize(contentAs = Base64BytesDeserializer.class)
+  @JsonSerialize(contentAs = BytesSerializer.class)
+  @JsonDeserialize(contentAs = BytesDeserializer.class)
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
