@@ -84,6 +84,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -537,7 +538,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSyncCommitteePools() {
     syncCommitteeContributionPool =
         new SyncCommitteeContributionPool(
-            spec, new SignedContributionAndProofValidator(spec, recentChainData));
+            spec,
+            new SignedContributionAndProofValidator(
+                spec, recentChainData, new SyncCommitteeStateUtils(spec, recentChainData)));
     eventChannels.subscribe(SlotEventsChannel.class, syncCommitteeContributionPool);
   }
 
