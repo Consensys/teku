@@ -51,11 +51,15 @@ public class SignedContributionAndProofValidator {
   private final RecentChainData recentChainData;
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
+  private final SyncCommitteeStateUtils syncCommitteeStateUtils;
 
   public SignedContributionAndProofValidator(
-      final Spec spec, final RecentChainData recentChainData) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SyncCommitteeStateUtils syncCommitteeStateUtils) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.syncCommitteeStateUtils = syncCommitteeStateUtils;
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
@@ -101,7 +105,8 @@ public class SignedContributionAndProofValidator {
       return SafeFuture.completedFuture(REJECT);
     }
 
-    return getState(contribution, syncCommitteeUtil)
+    return syncCommitteeStateUtils
+        .getStateForSyncCommittee(contribution.getSlot(), contribution.getBeaconBlockRoot())
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -254,35 +259,6 @@ public class SignedContributionAndProofValidator {
     return syncCommitteeUtil
         .computeSubnetsForSyncCommittee(state, contributionEpoch, aggregatorIndex)
         .contains(contribution.getSubcommitteeIndex().intValue());
-  }
-
-  private SafeFuture<Optional<BeaconStateAltair>> getState(
-      final SyncCommitteeContribution contribution, final SyncCommitteeUtil syncCommitteeUtil) {
-    return recentChainData
-        .retrieveBlockState(contribution.getBeaconBlockRoot())
-        // If the block is from an earlier epoch we need to process slots to the current epoch
-        .<Optional<BeaconState>>thenApply(
-            maybeState -> {
-              if (maybeState.isEmpty()) {
-                return Optional.empty();
-              }
-              final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
-              final UInt64 minEpoch =
-                  syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(contributionEpoch);
-              final UInt64 stateEpoch = spec.getCurrentEpoch(maybeState.get());
-              if (stateEpoch.isLessThan(minEpoch)) {
-                LOG.warn(
-                    "Ignoring {} because it refers to a block that is too old. Block root {} from epoch {} is more than two sync committee periods before current epoch {}",
-                    SignedContributionAndProof.class.getName(),
-                    contribution.getBeaconBlockRoot(),
-                    stateEpoch,
-                    contributionEpoch);
-                return Optional.empty();
-              } else {
-                return maybeState;
-              }
-            })
-        .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
   }
 
   private UniquenessKey getUniquenessKey(

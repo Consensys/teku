@@ -29,6 +29,15 @@ public class SyncCommitteeSignature
     super(schema, backingNode);
   }
 
+  public SyncCommitteeSignature(
+      final SyncCommitteeSignatureSchema schema,
+      final SszUInt64 slot,
+      final SszBytes32 beaconBlockRoot,
+      final SszUInt64 validatorIndex,
+      final SszSignature signature) {
+    super(schema, slot, beaconBlockRoot, validatorIndex, signature);
+  }
+
   public UInt64 getSlot() {
     return getField0().get();
   }
@@ -43,5 +52,10 @@ public class SyncCommitteeSignature
 
   public BLSSignature getSignature() {
     return getField3().getSignature();
+  }
+
+  @Override
+  public SyncCommitteeSignatureSchema getSchema() {
+    return (SyncCommitteeSignatureSchema) super.getSchema();
   }
 }
