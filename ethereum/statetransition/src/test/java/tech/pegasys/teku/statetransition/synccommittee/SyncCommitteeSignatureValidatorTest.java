@@ -68,8 +68,7 @@ class SyncCommitteeSignatureValidatorTest {
   void shouldAcceptWhenValid() {
     final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
     final Set<Integer> applicableSubcommittees =
-        spec.getSyncCommitteeUtil(UInt64.ZERO)
-            .orElseThrow()
+        spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
             .getSyncSubcommittees(
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),

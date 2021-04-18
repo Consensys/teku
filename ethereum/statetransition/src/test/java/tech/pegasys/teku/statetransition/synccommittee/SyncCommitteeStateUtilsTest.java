@@ -45,7 +45,7 @@ class SyncCommitteeStateUtilsTest {
                               .epochsPerSyncCommitteePeriod(EPOCHS_PER_SYNC_COMMITTEE_PERIOD))));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SyncCommitteeUtil syncCommitteeUtil =
-      spec.getSyncCommitteeUtil(UInt64.ZERO).orElseThrow();
+      spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
 
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 

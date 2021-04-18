@@ -197,8 +197,7 @@ class SyncCommitteeContributionPoolTest {
   private SignedContributionAndProof withParticipationBits(
       final SignedContributionAndProof proof, final Integer... participationBits) {
     final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
-    final SyncCommitteeUtil syncCommitteeUtil =
-        spec.getSyncCommitteeUtil(UInt64.ZERO).orElseThrow();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
     final SyncCommitteeContribution newContribution =
         syncCommitteeUtil.createSyncCommitteeContribution(
             contribution.getSlot(),

@@ -50,7 +50,7 @@ public class SyncCommitteeStateUtils {
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtil(slot).orElseThrow();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
     final UInt64 stateEpoch = spec.getCurrentEpoch(maybeState.get());
