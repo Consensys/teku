@@ -56,6 +56,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -66,6 +67,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
@@ -170,6 +173,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
+  private volatile ExecutionEngineService executionEngineService;
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -295,6 +299,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initExecutionEngineService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -714,6 +719,58 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
+  }
+
+  // FIXME this dirty simplification is a temporal solution
+  private void initExecutionEngineService() {
+    Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
+
+    if (specLogic.isPresent()) {
+      SpecLogic specLogicMerge = specLogic.get();
+      executionEngineService =
+          beaconConfig.powchainConfig().isEnabled()
+              ? ExecutionEngineService.create(beaconConfig.powchainConfig().getEth1Endpoint())
+              : ExecutionEngineService.createStub();
+      specLogicMerge.getExecutionPayloadUtil().setExecutionEngineService(executionEngineService);
+
+      // Propagate head updates
+      eventChannels.subscribe(
+          ChainHeadChannel.class,
+          (slot,
+              stateRoot,
+              bestBlockRoot,
+              epochTransition,
+              previousDutyDependentRoot,
+              currentDutyDependentRoot,
+              optionalReorgContext) ->
+              recentChainData
+                  .retrieveBlockByRoot(bestBlockRoot)
+                  .thenAccept(
+                      maybeABlock ->
+                          maybeABlock
+                              .flatMap(block -> block.getBody().toVersionMerge())
+                              .ifPresent(
+                                  body ->
+                                      executionEngineService.setHead(
+                                          body.getExecution_payload().getBlock_hash())))
+                  .reportExceptions());
+
+      // Propagate finalized block updates
+      eventChannels.subscribe(
+          FinalizedCheckpointChannel.class,
+          (checkpoint) ->
+              recentChainData
+                  .retrieveBlockByRoot(checkpoint.getRoot())
+                  .thenAccept(
+                      maybeABlock ->
+                          maybeABlock
+                              .flatMap(block -> block.getBody().toVersionMerge())
+                              .ifPresent(
+                                  body ->
+                                      executionEngineService.finalizeBlock(
+                                          body.getExecution_payload().getBlock_hash())))
+                  .reportExceptions());
+    }
   }
 
   private void setupInitialState(final RecentChainData client) {

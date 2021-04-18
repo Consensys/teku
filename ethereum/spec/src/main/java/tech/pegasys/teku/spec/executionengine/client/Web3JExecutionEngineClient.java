@@ -15,11 +15,13 @@ package tech.pegasys.teku.spec.executionengine.client;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 
@@ -54,6 +56,28 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(web3jRequest);
   }
 
+  @Override
+  public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
+    Request<?, GenericWeb3jResponse> web3jRequest =
+        new Request<>(
+            "consensus_setHead",
+            Collections.singletonList(blockHash.toHexString()),
+            web3jService,
+            GenericWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
+  @Override
+  public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
+    Request<?, GenericWeb3jResponse> web3jRequest =
+        new Request<>(
+            "consensus_setHead",
+            Collections.singletonList(blockHash.toHexString()),
+            web3jService,
+            GenericWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
   private <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
     CompletableFuture<Response<T>> responseFuture =
@@ -77,4 +101,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       extends org.web3j.protocol.core.Response<ExecutionPayload> {}
 
   static class NewBlockWeb3jResponse extends org.web3j.protocol.core.Response<NewBlockResponse> {}
+
+  static class GenericWeb3jResponse extends org.web3j.protocol.core.Response<GenericResponse> {}
 }

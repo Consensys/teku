@@ -78,9 +78,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   }
 
   public static SpecLogicMerge create(
-      final SpecConfigMerge config,
-      final SchemaDefinitionsMerge schemaDefinitions,
-      String eth1Endpoint) {
+      final SpecConfigMerge config, final SchemaDefinitionsMerge schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
     final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config, schemaDefinitions);
@@ -119,13 +117,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
-    final ExecutionEngineService executionEngineService =
-        eth1Endpoint != null
-            ? ExecutionEngineService.create(
-                eth1Endpoint, schemaDefinitions.getExecutionPayloadSchema())
-            : ExecutionEngineService.createStub(schemaDefinitions.getExecutionPayloadSchema());
     final ExecutionPayloadUtil executionPayloadUtil =
-        new ExecutionPayloadUtil(executionEngineService);
+        new ExecutionPayloadUtil(schemaDefinitions.getExecutionPayloadSchema());
     final BlockProcessorMerge blockProcessor =
         new BlockProcessorMerge(
             config,
@@ -172,5 +165,9 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   @Override
   public ExecutionPayloadUtil getExecutionPayloadUtil() {
     return executionPayloadUtil;
+  }
+
+  public void setExecutionPayloadService(ExecutionEngineService executionEngineService) {
+    executionPayloadUtil.setExecutionEngineService(executionEngineService);
   }
 }

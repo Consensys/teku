@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -29,6 +30,10 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<ExecutionPayload>> consensusAssembleBlock(AssembleBlockRequest request);
 
   SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
+
+  SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash);
+
+  SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash);
 
   ExecutionEngineClient Stub =
       new ExecutionEngineClient() {
@@ -58,6 +63,16 @@ public interface ExecutionEngineClient {
         @Override
         public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request) {
           return SafeFuture.completedFuture(new Response<>(new NewBlockResponse(true)));
+        }
+
+        @Override
+        public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
+          return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
+        }
+
+        @Override
+        public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
+          return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
         }
       };
 }

@@ -28,7 +28,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
+import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -80,18 +80,26 @@ public class Spec {
     this.genesisSpec = genesisSpec;
     this.forkManifest = forkManifest;
   }
+  //
+  //  public static Spec createMergeSinceGenesis(
+  //      final SpecConfigMerge config, final ForkManifest forkManifest, final String eth1Endpoint)
+  // {
+  //    Preconditions.checkArgument(
+  //        forkManifest.getGenesisFork().getCurrent_version().equals(config.getMergeForkVersion()),
+  //        "GENESIS_FORK_VERSION != MERGE_FORK_VERSION");
+  //    Preconditions.checkArgument(
+  //        forkManifest
+  //            .getGenesisFork()
+  //            .getEpoch()
+  //            .equals(new MiscHelpers(config).computeEpochAtSlot(config.getMergeForkSlot())),
+  //        "GENESIS_EPOCH != MERGE_FORK_EPOCH");
+  //    SpecVersion specVersion = SpecVersion.createMerge(config);
+  //    return new Spec(specVersion, forkManifest);
+  //  }
 
-  public static Spec createWithMergeFromGenesis(
-      final SpecConfigMerge config, final ForkManifest forkManifest, final String eth1Endpoint) {
-    SpecVersion specVersion = SpecVersion.createMerge(config, eth1Endpoint);
-    return new Spec(specVersion, forkManifest);
-  }
-
-  public static Spec create(
-      final SpecConfig config, final ForkManifest forkManifest, final String eth1Endpoint) {
+  public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
     final SpecVersion initialSpec =
-        SpecVersion.createForFork(
-            forkManifest.getGenesisFork().getCurrent_version(), config, eth1Endpoint);
+        SpecVersion.createForFork(forkManifest.getGenesisFork().getCurrent_version(), config);
     return new Spec(initialSpec, forkManifest);
   }
 
@@ -143,11 +151,16 @@ public class Spec {
         .collect(toList());
   }
 
+  public Optional<SpecLogic> getSpecLogicForMilestone(SpecMilestone milestone) {
+    return getEnabledMilestones().stream()
+        .filter(m -> m.getSpecMilestone() == milestone)
+        .findFirst()
+        .map(m -> atEpoch(m.getFork().getEpoch()));
+  }
+
   private SpecMilestone getMilestoneForFork(final Fork fork) {
     final SpecConfig specConfig = getSpecConfig(fork.getEpoch());
-    if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
-      return SpecMilestone.PHASE0;
-    } else if (specConfig
+    if (specConfig
         .toVersionAltair()
         .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
         .orElse(false)) {
@@ -157,6 +170,10 @@ public class Spec {
         .map(config -> fork.getCurrent_version().equals(config.getMergeForkVersion()))
         .orElse(false)) {
       return SpecMilestone.MERGE;
+    } else if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
+      // Checking Phase 0 at the end to correctly process the case
+      // when another fork is enabled since Genesis
+      return SpecMilestone.PHASE0;
     } else {
       throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
     }

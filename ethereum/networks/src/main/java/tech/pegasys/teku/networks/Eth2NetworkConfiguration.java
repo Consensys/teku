@@ -146,13 +146,11 @@ public class Eth2NetworkConfiguration {
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
-    private Optional<String> eth1Endpoint = Optional.empty();
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
-      final Spec spec =
-          SpecFactory.getMergeFromGenesis().create(constants, eth1Endpoint.orElse(null));
+      final Spec spec = SpecFactory.getDefault().create(constants);
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
@@ -231,12 +229,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder eth1Endpoint(Optional<String> eth1Endpoint) {
-      checkNotNull(eth1Endpoint);
-      this.eth1Endpoint = eth1Endpoint.filter(s -> !s.isBlank());
-      return this;
-    }
-
     public Builder applyNetworkDefaults(final String networkName) {
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(this::applyNetworkDefaults, () -> reset().constants(networkName));
@@ -272,7 +264,6 @@ public class Eth2NetworkConfiguration {
       discoveryBootnodes = new ArrayList<>();
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
-      eth1Endpoint = Optional.empty();
 
       return this;
     }

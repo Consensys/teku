@@ -41,14 +41,7 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   public static SpecVersion createForFork(final Bytes4 fork, final SpecConfig specConfig) {
-    return createForFork(fork, specConfig, null);
-  }
-
-  public static SpecVersion createForFork(
-      final Bytes4 fork, final SpecConfig specConfig, final String eth1Endpoint) {
-    if (specConfig.getGenesisForkVersion().equals(fork)) {
-      return createPhase0(specConfig);
-    } else if (specConfig
+    if (specConfig
         .toVersionAltair()
         .map(altairConfig -> altairConfig.getAltairForkVersion().equals(fork))
         .orElse(false)) {
@@ -57,7 +50,11 @@ public class SpecVersion extends DelegatingSpecLogic {
         .toVersionMerge()
         .map(altairConfig -> altairConfig.getMergeForkVersion().equals(fork))
         .orElse(false)) {
-      return createMerge(SpecConfigMerge.required(specConfig), eth1Endpoint);
+      return createMerge(SpecConfigMerge.required(specConfig));
+    } else if (specConfig.getGenesisForkVersion().equals(fork)) {
+      // Checking Phase 0 at the end to correctly process the case
+      // when another fork is enabled since Genesis
+      return createPhase0(specConfig);
     } else {
       throw new IllegalArgumentException("Unsupported fork: " + fork);
     }
@@ -75,10 +72,9 @@ public class SpecVersion extends DelegatingSpecLogic {
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createMerge(
-      final SpecConfigMerge specConfig, final String eth1Endpoint) {
+  public static SpecVersion createMerge(final SpecConfigMerge specConfig) {
     final SchemaDefinitionsMerge schemaDefinitions = new SchemaDefinitionsMerge(specConfig);
-    final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions, eth1Endpoint);
+    final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions);
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 

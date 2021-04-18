@@ -16,48 +16,21 @@ package tech.pegasys.teku.spec;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public interface SpecFactory {
   SpecFactory PHASE0 = new Phase0SpecFactory();
-  SpecFactory MERGE_FROM_GENESIS = new MergeFromGenesisSpecFactory();
 
   static SpecFactory getDefault() {
     return PHASE0;
   }
 
-  static SpecFactory getMergeFromGenesis() {
-    return MERGE_FROM_GENESIS;
-  }
-
-  default Spec create(String configName) {
-    return create(configName, null);
-  }
-
-  Spec create(String configName, String eth1Endpoint);
-
-  class MergeFromGenesisSpecFactory implements SpecFactory {
-
-    @Override
-    public Spec create(String configName, String eth1Endpoint) {
-      final SpecConfigMerge config =
-          SpecConfigMerge.required(SpecConfigLoader.loadConfig(configName));
-      final ForkManifest forkManifest =
-          ForkManifest.create(
-              List.of(
-                  new Fork(
-                      config.getGenesisForkVersion(),
-                      config.getGenesisForkVersion(),
-                      SpecConfig.GENESIS_EPOCH)));
-      return Spec.createWithMergeFromGenesis(config, forkManifest, eth1Endpoint);
-    }
-  }
+  Spec create(String configName);
 
   class Phase0SpecFactory implements SpecFactory {
 
     @Override
-    public Spec create(String configName, String eth1Endpoint) {
+    public Spec create(String configName) {
       final SpecConfig config = SpecConfigLoader.loadConfig(configName);
       final ForkManifest forkManifest =
           ForkManifest.create(
@@ -66,7 +39,7 @@ public interface SpecFactory {
                       config.getGenesisForkVersion(),
                       config.getGenesisForkVersion(),
                       SpecConfig.GENESIS_EPOCH)));
-      return Spec.create(config, forkManifest, eth1Endpoint);
+      return Spec.create(config, forkManifest);
     }
   }
 }
