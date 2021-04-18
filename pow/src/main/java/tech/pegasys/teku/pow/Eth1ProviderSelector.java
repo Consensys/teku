@@ -14,18 +14,43 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.base.Preconditions;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public class Eth1ProviderSelector {
+  private final List<MonitorableEth1Provider> candidates;
 
-  final List<Eth1Provider> candidates;
+  public static class ValidEth1ProviderIterator {
+    private Iterator<MonitorableEth1Provider> currentIterator;
 
-  public Eth1ProviderSelector(final List<Eth1Provider> candidates) {
+    private ValidEth1ProviderIterator(Iterator<MonitorableEth1Provider> currentIterator) {
+      this.currentIterator = currentIterator;
+    }
+
+    public Optional<MonitorableEth1Provider> next() {
+
+      while (currentIterator.hasNext()) {
+        final MonitorableEth1Provider current = currentIterator.next();
+        if (current.isValid()) {
+          return Optional.of(current);
+        }
+      }
+
+      return Optional.empty();
+    }
+  }
+
+  public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
     Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
     this.candidates = candidates;
   }
 
-  public List<Eth1Provider> getProviders() {
+  public List<MonitorableEth1Provider> getProviders() {
     return candidates;
+  }
+
+  public ValidEth1ProviderIterator getValidProviderIterator() {
+    return new ValidEth1ProviderIterator(candidates.iterator());
   }
 }

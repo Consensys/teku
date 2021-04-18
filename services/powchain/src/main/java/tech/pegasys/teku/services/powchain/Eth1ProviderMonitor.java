@@ -13,28 +13,20 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.pow.Eth1Provider;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.pow.Eth1ProviderSelector;
 
-public class Eth1ChainIdValidator {
-
-  private static final Logger LOG = LogManager.getLogger();
-
-  private final Eth1Provider eth1Provider;
+public class Eth1ProviderMonitor {
+  private final Eth1ProviderSelector eth1ProviderSelector;
 
   private final AsyncRunner asyncRunner;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
-  public Eth1ChainIdValidator(Eth1Provider eth1Provider, AsyncRunner asyncRunner) {
-    this.eth1Provider = eth1Provider;
+  public Eth1ProviderMonitor(Eth1ProviderSelector eth1ProviderSelector, AsyncRunner asyncRunner) {
+    this.eth1ProviderSelector = eth1ProviderSelector;
     this.asyncRunner = asyncRunner;
   }
 
@@ -50,19 +42,14 @@ public class Eth1ChainIdValidator {
     if (stopped.get()) {
       return;
     }
+    eth1ProviderSelector
+        .getProviders()
+        .parallelStream()
+        .forEach(
+            monitorableEth1Provider -> {
+              if (monitorableEth1Provider.needsToBeValidated()) monitorableEth1Provider.validate();
+            });
 
-    eth1Provider
-        .getChainId()
-        .whenException(err -> LOG.debug("Failed to get Eth1 chain id. Will retry.", err))
-        .thenAccept(
-            chainId -> {
-              if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
-                STATUS_LOG.eth1DepositChainIdMismatch(
-                    Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact());
-              }
-            })
-        .handleComposed(
-            (__, err) -> asyncRunner.runAfterDelay(this::validate, Duration.ofMinutes(1)))
-        .reportExceptions();
+    asyncRunner.runAfterDelay(this::validate, Duration.ofSeconds(10)).reportExceptions();
   }
 }

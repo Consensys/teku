@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -58,8 +59,9 @@ public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
-  private final Eth1ChainIdValidator chainIdValidator;
+  private final Eth1ProviderMonitor eth1ProviderMonitor;
   private final List<Web3j> web3js;
+  private final Eth1ProviderSelector eth1ProviderSelector;
   private final OkHttpClient okHttpClient;
 
   public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
@@ -69,11 +71,19 @@ public class PowchainService extends Service {
 
     this.okHttpClient = createOkHttpClient();
     this.web3js = createWeb3js(powConfig);
+    this.eth1ProviderSelector =
+        new Eth1ProviderSelector(
+            IntStream.range(0, web3js.size())
+                .mapToObj(
+                    idx ->
+                        new Web3jEth1Provider(
+                            idx, web3js.get(idx), asyncRunner, serviceConfig.getTimeProvider()))
+                .collect(Collectors.toList()));
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
-                createEth1Provider(asyncRunner, this.web3js),
+                new FallbackAwareEth1Provider(eth1ProviderSelector, asyncRunner),
                 asyncRunner,
                 serviceConfig.getTimeProvider()),
             MAXIMUM_CONCURRENT_ETH1_REQUESTS,
@@ -126,16 +136,7 @@ public class PowchainService extends Service {
             new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock);
 
-    chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
-  }
-
-  private Eth1Provider createEth1Provider(final AsyncRunner asyncRunner, final List<Web3j> web3js) {
-    return new FallbackAwareEth1Provider(
-        new Eth1ProviderSelector(
-            web3js.stream()
-                .map(web3j -> new Web3jEth1Provider(web3j, asyncRunner))
-                .collect(Collectors.toList())),
-        asyncRunner);
+    eth1ProviderMonitor = new Eth1ProviderMonitor(eth1ProviderSelector, asyncRunner);
   }
 
   private List<Web3j> createWeb3js(final PowchainConfiguration config) {
@@ -166,7 +167,7 @@ public class PowchainService extends Service {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::start),
         SafeFuture.fromRunnable(eth1DepositManager::start),
-        SafeFuture.fromRunnable(chainIdValidator::start));
+        SafeFuture.fromRunnable(eth1ProviderMonitor::start));
   }
 
   @Override
@@ -174,7 +175,7 @@ public class PowchainService extends Service {
     return SafeFuture.allOfFailFast(
         Stream.concat(
                 Stream.<ExceptionThrowingRunnable>of(
-                    headTracker::stop, eth1DepositManager::stop, chainIdValidator::stop),
+                    headTracker::stop, eth1DepositManager::stop, eth1ProviderMonitor::stop),
                 web3js.stream().map(web3j -> web3j::shutdown))
             .map(SafeFuture::fromRunnable)
             .toArray(SafeFuture[]::new));

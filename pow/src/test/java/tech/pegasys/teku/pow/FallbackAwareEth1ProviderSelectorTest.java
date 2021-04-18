@@ -15,9 +15,9 @@ package tech.pegasys.teku.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,11 +43,11 @@ import tech.pegasys.teku.pow.exception.RejectedRequestException;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class FallbackAwareEth1ProviderSelectorTest {
-  StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  final Eth1Provider node1 = mock(Eth1Provider.class);
-  final Eth1Provider node2 = mock(Eth1Provider.class);
-  final Eth1Provider node3 = mock(Eth1Provider.class);
-  final List<Eth1Provider> providers = Arrays.asList(node1, node2, node3);
+  StubAsyncRunner asyncRunner;
+  final MonitorableEth1Provider node1 = mock(MonitorableEth1Provider.class);
+  final MonitorableEth1Provider node2 = mock(MonitorableEth1Provider.class);
+  final MonitorableEth1Provider node3 = mock(MonitorableEth1Provider.class);
+  final List<MonitorableEth1Provider> providers = Arrays.asList(node1, node2, node3);
   Eth1ProviderSelector providerSelector;
   FallbackAwareEth1Provider fallbackAwareEth1Provider;
   final EthFilter ethLogFilter =
@@ -61,6 +61,10 @@ public class FallbackAwareEth1ProviderSelectorTest {
     asyncRunner = new StubAsyncRunner();
     providerSelector = new Eth1ProviderSelector(providers);
     fallbackAwareEth1Provider = new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+
+    when(node1.isValid()).thenReturn(true);
+    when(node2.isValid()).thenReturn(true);
+    when(node3.isValid()).thenReturn(true);
   }
 
   @Test
@@ -190,20 +194,20 @@ public class FallbackAwareEth1ProviderSelectorTest {
   void shouldFallbackOnGetGuaranteedEth1Block_byBlockNumber()
       throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
-    when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node3.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node1.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<EthBlock.Block> blockByNumber =
-        fallbackAwareEth1Provider.getGuaranteedEth1Block((UInt64) any());
+        fallbackAwareEth1Provider.getGuaranteedEth1Block(UInt64.ZERO);
 
     // we expect a delayed action after all nodes has been contacted
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(node1, atLeastOnce()).getEth1Block((UInt64) any());
-    verify(node2, atLeastOnce()).getEth1Block((UInt64) any());
-    verify(node3, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node1, atLeastOnce()).getEth1Block(UInt64.ZERO);
+    verify(node2, atLeastOnce()).getEth1Block(UInt64.ZERO);
+    verify(node3, atLeastOnce()).getEth1Block(UInt64.ZERO);
 
     // now we set node2 to be responsive and execute queued actions
-    when(node2.getEth1Block((UInt64) any())).thenReturn(readyProviderOptionalEthBlock());
+    when(node2.getEth1Block(UInt64.ZERO)).thenReturn(readyProviderOptionalEthBlock());
     asyncRunner.executeQueuedActions();
 
     // we should have now a block
@@ -214,20 +218,20 @@ public class FallbackAwareEth1ProviderSelectorTest {
   void shouldFallbackOnGetGuaranteedEth1Block_byHash()
       throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
-    when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node3.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node1.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<EthBlock.Block> blockByHash =
-        fallbackAwareEth1Provider.getGuaranteedEth1Block((String) any());
+        fallbackAwareEth1Provider.getGuaranteedEth1Block("");
 
     // we expect a delayed action after all nodes has been contacted
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(node1, atLeastOnce()).getEth1Block((String) any());
-    verify(node2, atLeastOnce()).getEth1Block((String) any());
-    verify(node3, atLeastOnce()).getEth1Block((String) any());
+    verify(node1, atLeastOnce()).getEth1Block("");
+    verify(node2, atLeastOnce()).getEth1Block("");
+    verify(node3, atLeastOnce()).getEth1Block("");
 
     // now we set node2 to be responsive and execute queued actions
-    when(node2.getEth1Block((String) any())).thenReturn(readyProviderOptionalEthBlock());
+    when(node2.getEth1Block("")).thenReturn(readyProviderOptionalEthBlock());
     asyncRunner.executeQueuedActions();
 
     // we should have now a block
@@ -238,29 +242,29 @@ public class FallbackAwareEth1ProviderSelectorTest {
   void shouldFallbackOnGetEth1BlockWithRetry_byBlockNumber()
       throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
-    when(node1.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node3.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node1.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<Optional<EthBlock.Block>> blockByNumber =
-        fallbackAwareEth1Provider.getEth1BlockWithRetry((UInt64) any(), Duration.ofSeconds(5), 2);
+        fallbackAwareEth1Provider.getEth1BlockWithRetry(UInt64.ZERO, Duration.ofSeconds(5), 2);
 
     // we expect a delayed action after all nodes has been contacted
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(node1, atLeastOnce()).getEth1Block((UInt64) any());
-    verify(node2, atLeastOnce()).getEth1Block((UInt64) any());
-    verify(node3, atLeastOnce()).getEth1Block((UInt64) any());
+    verify(node1, atLeastOnce()).getEth1Block(UInt64.ZERO);
+    verify(node2, atLeastOnce()).getEth1Block(UInt64.ZERO);
+    verify(node3, atLeastOnce()).getEth1Block(UInt64.ZERO);
 
     // now we set node2 to be responsive and execute queued actions
-    when(node2.getEth1Block((UInt64) any())).thenReturn(readyProviderOptionalEthBlock());
+    when(node2.getEth1Block(UInt64.ZERO)).thenReturn(readyProviderOptionalEthBlock());
     asyncRunner.executeQueuedActions();
 
     // we should have now a block
     assertThat(blockByNumber.get()).isNotNull();
 
     // retries exhaustion
-    when(node2.getEth1Block((UInt64) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block(UInt64.ZERO)).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<Optional<EthBlock.Block>> blockByNumberFail =
-        fallbackAwareEth1Provider.getEth1BlockWithRetry((UInt64) any(), Duration.ofSeconds(5), 1);
+        fallbackAwareEth1Provider.getEth1BlockWithRetry(UInt64.ZERO, Duration.ofSeconds(5), 1);
     asyncRunner.executeQueuedActions();
     assertThat(blockByNumberFail).isCompletedExceptionally();
   }
@@ -269,31 +273,65 @@ public class FallbackAwareEth1ProviderSelectorTest {
   void shouldFallbackOnGetEth1BlockWithRetry_byHash()
       throws ExecutionException, InterruptedException {
     // node 1,2 and 3 are all failing
-    when(node1.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
-    when(node3.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node1.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
+    when(node3.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<Optional<EthBlock.Block>> blockByHash =
-        fallbackAwareEth1Provider.getEth1BlockWithRetry((String) any(), Duration.ofSeconds(5), 2);
+        fallbackAwareEth1Provider.getEth1BlockWithRetry("", Duration.ofSeconds(5), 2);
 
     // we expect a delayed action after all nodes has been contacted
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(node1, atLeastOnce()).getEth1Block((String) any());
-    verify(node2, atLeastOnce()).getEth1Block((String) any());
-    verify(node3, atLeastOnce()).getEth1Block((String) any());
+    verify(node1, atLeastOnce()).getEth1Block("");
+    verify(node2, atLeastOnce()).getEth1Block("");
+    verify(node3, atLeastOnce()).getEth1Block("");
 
     // now we set node2 to be responsive and execute queued actions
-    when(node2.getEth1Block((String) any())).thenReturn(readyProviderOptionalEthBlock());
+    when(node2.getEth1Block("")).thenReturn(readyProviderOptionalEthBlock());
     asyncRunner.executeQueuedActions();
 
     // we should have now a block
     assertThat(blockByHash.get()).isNotNull();
 
     // retries exhaustion
-    when(node2.getEth1Block((String) any())).thenReturn(failingProviderOptionalEthBlock());
+    when(node2.getEth1Block("")).thenReturn(failingProviderOptionalEthBlock());
     final SafeFuture<Optional<EthBlock.Block>> blockByHashFail =
-        fallbackAwareEth1Provider.getEth1BlockWithRetry((String) any(), Duration.ofSeconds(5), 1);
+        fallbackAwareEth1Provider.getEth1BlockWithRetry("", Duration.ofSeconds(5), 1);
     asyncRunner.executeQueuedActions();
     assertThat(blockByHashFail).isCompletedExceptionally();
+  }
+
+  @Test
+  void providerSelectorBehaviourOnGetGuaranteedLatestEth1Block() {
+    when(node1.isValid()).thenReturn(false);
+    when(node2.isValid()).thenReturn(true);
+    when(node3.isValid()).thenReturn(true);
+
+    when(node1.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
+    when(node2.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
+    when(node3.getLatestEth1Block()).thenReturn(readyProviderEthBlock());
+
+    final SafeFuture<EthBlock.Block> latestBlock =
+        fallbackAwareEth1Provider.getGuaranteedLatestEth1Block();
+
+    // we should have a block
+    assertThat(latestBlock).isNotNull();
+
+    verify(node1, never()).getLatestEth1Block();
+    verify(node2, times(1)).getLatestEth1Block();
+    verify(node3, never()).getLatestEth1Block();
+
+    // node1 is now available again
+    when(node1.isValid()).thenReturn(true);
+
+    final SafeFuture<EthBlock.Block> latestBlock2 =
+        fallbackAwareEth1Provider.getGuaranteedLatestEth1Block();
+
+    // we should have a block
+    assertThat(latestBlock2).isNotNull();
+
+    verify(node1, times(1)).getLatestEth1Block();
+    verify(node2, times(1)).getLatestEth1Block();
+    verify(node3, never()).getLatestEth1Block();
   }
 
   private static SafeFuture<List<EthLog.LogResult<?>>> readyProviderGetLogs() {

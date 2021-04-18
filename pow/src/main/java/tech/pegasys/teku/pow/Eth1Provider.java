@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthLog.LogResult;
@@ -49,6 +50,8 @@ public interface Eth1Provider {
   SafeFuture<Block> getGuaranteedEth1Block(UInt64 blockNumber);
 
   SafeFuture<Block> getLatestEth1Block();
+
+  SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block();
 
   SafeFuture<EthCall> ethCall(String from, String to, String data, UInt64 blockNumber);
 

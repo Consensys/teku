@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.pow;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
+import com.google.common.base.Throwables;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
@@ -34,19 +38,29 @@ import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Web3jEth1Provider implements Eth1Provider {
+public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final AtomicBoolean validating = new AtomicBoolean(false);
+
+  private final String id;
   private final Web3j web3j;
   private final AsyncRunner asyncRunner;
 
-  public Web3jEth1Provider(final Web3j web3j, final AsyncRunner asyncRunner) {
+  public Web3jEth1Provider(
+      final int index,
+      final Web3j web3j,
+      final AsyncRunner asyncRunner,
+      TimeProvider timeProvider) {
+    super(timeProvider);
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
+    this.id = String.valueOf(index + 1);
   }
 
   @Override
@@ -111,7 +125,9 @@ public class Web3jEth1Provider implements Eth1Provider {
   @SuppressWarnings("rawtypes")
   private <S, T extends Response> SafeFuture<T> sendAsync(final Request<S, T> request) {
     try {
-      return SafeFuture.of(request.sendAsync());
+      return SafeFuture.of(request.sendAsync())
+          .thenPeek(__ -> updateLastCall(Result.success))
+          .catchAndRethrow(__ -> updateLastCall(Result.failed));
     } catch (RejectedExecutionException ex) {
       LOG.debug("shutting down, ignoring error", ex);
       return new SafeFuture<>();
@@ -122,6 +138,18 @@ public class Web3jEth1Provider implements Eth1Provider {
   public SafeFuture<EthBlock.Block> getLatestEth1Block() {
     DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
     return getEth1Block(blockParameter);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return getLatestEth1Block()
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.debug("Retrying Eth1 request for latest block", err);
+              return asyncRunner
+                  .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
+                  .thenCompose(__ -> getGuaranteedLatestEth1Block());
+            });
   }
 
   @Override
@@ -161,5 +189,43 @@ public class Web3jEth1Provider implements Eth1Provider {
               }
               return (List<EthLog.LogResult<?>>) (List) logs;
             });
+  }
+
+  @Override
+  public void validate() {
+    if (validating.compareAndSet(false, true)) {
+      LOG.info("Validating endpoint [{}] ...", this.id);
+      getChainId()
+          .thenAccept(
+              chainId -> {
+                if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
+                  STATUS_LOG.eth1DepositChainIdMismatch(
+                      Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact(), this.id);
+                  throw new RuntimeException("Wrong Chainid");
+                }
+              })
+          .thenCompose(__ -> this.ethSyncing())
+          .finish(
+              syncing -> {
+                if (syncing) {
+                  LOG.warn("Endpoint [{}] is INVALID | Still syncing", this.id);
+                  updateLastValidation(Result.failed);
+                } else {
+                  LOG.info("Endpoint [{}] is VALID", this.id);
+                  updateLastValidation(Result.success);
+                }
+                validating.set(false);
+              },
+              err -> {
+                LOG.warn(
+                    "Endpoint [{}] is INVALID | {}",
+                    this.id,
+                    Throwables.getRootCause(err).getMessage());
+                updateLastValidation(Result.failed);
+                validating.set(false);
+              });
+    } else {
+      LOG.warn("Already validating");
+    }
   }
 }

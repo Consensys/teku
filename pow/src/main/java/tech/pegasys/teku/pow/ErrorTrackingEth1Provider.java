@@ -65,6 +65,11 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return logStatus(delegate.getGuaranteedLatestEth1Block());
+  }
+
+  @Override
   public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return logStatus(delegate.getGuaranteedEth1Block(blockNumber));
   }

@@ -159,6 +159,12 @@ public class Constants {
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
   public static final Duration ETH1_SYNCING_RETRY_TIMEOUT = Duration.ofSeconds(30);
   public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
+  public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(60); // usable
+  public static final Duration ETH1_FAILED_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(30); // network or API call failure
+  public static final Duration ETH1_INVALID_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(60); // syncing or wrong chainid
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
