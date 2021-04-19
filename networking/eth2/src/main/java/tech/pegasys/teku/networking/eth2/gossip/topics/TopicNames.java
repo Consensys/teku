@@ -36,4 +36,13 @@ public class TopicNames {
   public static String getAttestationSubnetTopicName(final int subnetId) {
     return "beacon_attestation_" + subnetId;
   }
+
+  public static String getSyncCommitteeSubnetTopic(
+      final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
+    return getTopic(forkDigest, getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
+  }
+
+  public static String getSyncCommitteeSubnetTopicName(final int subnetId) {
+    return "sync_committee_" + subnetId;
+  }
 }
