@@ -58,6 +58,10 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.PHASE0);
   }
 
+  public static Spec createAltair(final SpecConfig config) {
+    return create(config, SpecMilestone.ALTAIR);
+  }
+
   private static Spec create(
       final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
     return Spec.create(config, highestSupportedMilestone);

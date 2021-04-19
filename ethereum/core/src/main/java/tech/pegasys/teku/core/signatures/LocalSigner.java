@@ -114,8 +114,7 @@ public class LocalSigner implements Signer {
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
       final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
-    return SafeFuture.of(
-        () -> createSigningRoot.apply(spec.getSyncCommitteeUtil(slot).orElseThrow()));
+    return SafeFuture.of(() -> createSigningRoot.apply(spec.getSyncCommitteeUtilRequired(slot)));
   }
 
   @Override

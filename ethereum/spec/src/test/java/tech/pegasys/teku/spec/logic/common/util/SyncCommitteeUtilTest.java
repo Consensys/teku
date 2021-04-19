@@ -51,7 +51,7 @@ class SyncCommitteeUtilTest {
   private final int subcommitteeSize = config.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
 
   private final SyncCommitteeUtil syncCommitteeUtil =
-      spec.getSyncCommitteeUtil(UInt64.ZERO).orElseThrow();
+      spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
 
   @Test
   void getSyncSubCommittees_shouldCalculateSubcommitteeAssignments() {

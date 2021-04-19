@@ -3,9 +3,10 @@ executors:
   small_executor:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
-        auth:
-          username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO
+        auth: &docker-auth
+          # Don't panic, throw away account to avoid Docker rate limits when downloading.
+          username: "cddockeruser"
+          password: "fa8651f2-88be-48b7-98ce-e711bd376252"
     resource_class: small
     working_directory: ~/project
     environment:
@@ -16,8 +17,7 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO
+          <<: *docker-auth
     resource_class: medium
     working_directory: ~/project
     environment:
@@ -28,8 +28,7 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO
+          <<: *docker-auth
     resource_class: "medium+"
     working_directory: ~/project
     environment:
@@ -40,8 +39,7 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO
+          <<: *docker-auth
     resource_class: large
     working_directory: ~/project
     environment:
@@ -58,8 +56,7 @@ executors:
     docker:
       - image: circleci/node:14-buster
         auth:
-          username: $DOCKER_USER_RO
-          password: $DOCKER_PASSWORD_RO
+          <<: *docker-auth
 
 commands:
   prepare:
@@ -380,8 +377,6 @@ workflows:
   circleci:
     jobs:
       - assemble:
-          context:
-            - dockerhub-quorumengineering-ro
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
@@ -389,16 +384,12 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - referenceTestsPrep:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - referenceTests:
           requires:
             - assemble
@@ -406,47 +397,36 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - unitTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - integrationTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - acceptanceTests:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - docker:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context:
-            - dockerhub-quorumengineering-ro
       - extractAPISpec:
           requires:
             - assemble
           filters:
             tags:
               <<: *filters-release-tags
-          context: dockerhub-quorumengineering-ro
       - publish-cloudsmith:
           filters:
             branches:
@@ -464,7 +444,6 @@ workflows:
             - extractAPISpec
             - spotless
           context:
-            - dockerhub-quorumengineering-ro
             - cloudsmith-protocols
       - publishDocker:
           filters:
@@ -500,5 +479,3 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
-          context:
-            - dockerhub-quorumengineering-ro

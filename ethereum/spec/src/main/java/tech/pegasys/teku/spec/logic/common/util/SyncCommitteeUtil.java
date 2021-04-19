@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -164,11 +164,18 @@ public class SyncCommitteeUtil {
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
+  public Set<Integer> getSyncSubcommittees(
+      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
+    final SyncSubcommitteeAssignments assignments =
+        getSyncSubcommittees(state, epoch).get(validatorIndex);
+    return assignments != null ? assignments.getAssignedSubcommittees() : emptySet();
+  }
+
   public Set<Integer> computeSubnetsForSyncCommittee(
       final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
         getSyncSubcommittees(state, epoch).get(validatorIndex);
-    return assignments == null ? Collections.emptySet() : assignments.getAssignedSubcommittees();
+    return assignments == null ? emptySet() : assignments.getAssignedSubcommittees();
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
