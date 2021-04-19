@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -41,6 +42,7 @@ public interface RocksDbSerializer<T> {
       new SlotAndBlockRootSerializer();
   RocksDbSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
       new CheckpointEpochsSerializer();
+  RocksDbSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
 
   static RocksDbSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);

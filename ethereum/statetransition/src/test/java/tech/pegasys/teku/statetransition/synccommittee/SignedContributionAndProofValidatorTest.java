@@ -43,7 +43,10 @@ class SignedContributionAndProofValidatorTest {
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
 
   private final SignedContributionAndProofValidator validator =
-      new SignedContributionAndProofValidator(spec, storageSystem.recentChainData());
+      new SignedContributionAndProofValidator(
+          spec,
+          storageSystem.recentChainData(),
+          new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()));
 
   @BeforeEach
   void setUp() {

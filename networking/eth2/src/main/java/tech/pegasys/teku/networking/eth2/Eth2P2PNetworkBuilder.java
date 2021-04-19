@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -100,6 +101,9 @@ public class Eth2P2PNetworkBuilder {
   private OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
   private GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
+  private OperationProcessor<ValidateableSyncCommitteeSignature>
+      gossipedSyncCommitteeSignatureProcessor;
+  private GossipPublisher<ValidateableSyncCommitteeSignature> syncCommitteeSignatureGossipPublisher;
 
   private Eth2P2PNetworkBuilder() {}
 
@@ -207,7 +211,9 @@ public class Eth2P2PNetworkBuilder {
             gossipedVoluntaryExitConsumer,
             voluntaryExitGossipPublisher,
             gossipedSignedContributionAndProofProcessor,
-            signedContributionAndProofGossipPublisher);
+            signedContributionAndProofGossipPublisher,
+            gossipedSyncCommitteeSignatureProcessor,
+            syncCommitteeSignatureGossipPublisher);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
@@ -277,6 +283,9 @@ public class Eth2P2PNetworkBuilder {
         "signedContributionAndProofGossipPublisher", signedContributionAndProofGossipPublisher);
     assertNotNull(
         "gossipedSignedContributionAndProofProcessor", gossipedSignedContributionAndProofProcessor);
+    assertNotNull(
+        "gossipedSyncCommitteeSignatureProcessor", gossipedSyncCommitteeSignatureProcessor);
+    assertNotNull("syncCommitteeSignatureGossipPublisher", syncCommitteeSignatureGossipPublisher);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -395,6 +404,22 @@ public class Eth2P2PNetworkBuilder {
       final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher) {
     checkNotNull(signedContributionAndProofGossipPublisher);
     this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedSyncCommitteeSignatureProcessor(
+      final OperationProcessor<ValidateableSyncCommitteeSignature>
+          gossipedSyncCommitteeSignatureProcessor) {
+    checkNotNull(gossipedSyncCommitteeSignatureProcessor);
+    this.gossipedSyncCommitteeSignatureProcessor = gossipedSyncCommitteeSignatureProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder syncCommitteeSignatureGossipPublisher(
+      final GossipPublisher<ValidateableSyncCommitteeSignature>
+          syncCommitteeSignatureGossipPublisher) {
+    checkNotNull(syncCommitteeSignatureGossipPublisher);
+    this.syncCommitteeSignatureGossipPublisher = syncCommitteeSignatureGossipPublisher;
     return this;
   }
 
