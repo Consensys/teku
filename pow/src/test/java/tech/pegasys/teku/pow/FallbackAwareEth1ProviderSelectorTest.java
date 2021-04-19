@@ -60,6 +60,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
   public void setup() {
     asyncRunner = new StubAsyncRunner();
     providerSelector = new Eth1ProviderSelector(providers);
+    providerSelector.notifyValidationCompleted();
     fallbackAwareEth1Provider = new FallbackAwareEth1Provider(providerSelector, asyncRunner);
 
     when(node1.isValid()).thenReturn(true);
@@ -332,6 +333,28 @@ public class FallbackAwareEth1ProviderSelectorTest {
     verify(node1, times(1)).getLatestEth1Block();
     verify(node2, times(1)).getLatestEth1Block();
     verify(node3, never()).getLatestEth1Block();
+
+    asyncRunner.executeQueuedActions();
+  }
+
+  @Test
+  void shouldWaitUntilProviderSelectorHasBeenNotified()
+      throws ExecutionException, InterruptedException {
+    asyncRunner = new StubAsyncRunner();
+    providerSelector = new Eth1ProviderSelector(providers);
+    fallbackAwareEth1Provider = new FallbackAwareEth1Provider(providerSelector, asyncRunner);
+
+    when(node1.isValid()).thenReturn(true);
+    when(node1.ethSyncing()).thenReturn(SafeFuture.completedFuture(true));
+
+    final SafeFuture<Boolean> ethSyncing = fallbackAwareEth1Provider.ethSyncing();
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    providerSelector.notifyValidationCompleted();
+
+    asyncRunner.executeQueuedActions();
+
+    assertThat(ethSyncing.get()).isTrue();
   }
 
   private static SafeFuture<List<EthLog.LogResult<?>>> readyProviderGetLogs() {

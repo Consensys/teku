@@ -33,28 +33,28 @@ public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1
     this.timeProvider = timeProvider;
   }
 
-  protected void updateLastValidation(Result result) {
+  protected synchronized void updateLastValidation(Result result) {
     lastValidationTime = timeProvider.getTimeInSeconds();
     lastValidationResult = result;
   }
 
-  protected void updateLastCall(Result result) {
+  protected synchronized void updateLastCall(Result result) {
     lastCallTime = timeProvider.getTimeInSeconds();
     lastCallResult = result;
   }
 
   @Override
-  public UInt64 getLastCallTime() {
+  public synchronized UInt64 getLastCallTime() {
     return lastCallTime;
   }
 
   @Override
-  public boolean isValid() {
+  public synchronized boolean isValid() {
     return lastCallResult.equals(Result.success) && lastValidationResult.equals(Result.success);
   }
 
   @Override
-  public boolean needsToBeValidated() {
+  public synchronized boolean needsToBeValidated() {
     UInt64 currentTime = timeProvider.getTimeInSeconds();
     switch (lastCallResult) {
       case failed:

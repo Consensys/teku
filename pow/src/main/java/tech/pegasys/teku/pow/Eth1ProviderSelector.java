@@ -20,6 +20,13 @@ import java.util.Optional;
 
 public class Eth1ProviderSelector {
   private final List<MonitorableEth1Provider> candidates;
+  private boolean initialValidationCompleted;
+
+  public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
+    Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
+    this.candidates = candidates;
+    this.initialValidationCompleted = false;
+  }
 
   public static class ValidEth1ProviderIterator {
     private Iterator<MonitorableEth1Provider> currentIterator;
@@ -41,9 +48,12 @@ public class Eth1ProviderSelector {
     }
   }
 
-  public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
-    Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
-    this.candidates = candidates;
+  public void notifyValidationCompleted() {
+    initialValidationCompleted = true;
+  }
+
+  public boolean isInitialValidationCompleted() {
+    return initialValidationCompleted;
   }
 
   public List<MonitorableEth1Provider> getProviders() {

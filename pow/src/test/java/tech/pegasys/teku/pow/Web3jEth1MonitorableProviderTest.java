@@ -23,7 +23,8 @@ public class Web3jEth1MonitorableProviderTest {
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   final Web3j web3 = mock(Web3j.class);
-  Web3jEth1Provider provider = new Web3jEth1Provider(0, web3, asyncRunner, timeProvider);
+  Web3jEth1Provider provider =
+      new Web3jEth1Provider("0 test.host.org", web3, asyncRunner, timeProvider);
 
   // TODO
 }

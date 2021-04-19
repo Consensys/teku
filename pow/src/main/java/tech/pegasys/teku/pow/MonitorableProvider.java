@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.pow;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface MonitorableProvider {
   boolean isValid();
 
-  void validate();
+  SafeFuture<Void> validate();
 
   boolean needsToBeValidated();
 

@@ -53,14 +53,14 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private final AsyncRunner asyncRunner;
 
   public Web3jEth1Provider(
-      final int index,
+      final String id,
       final Web3j web3j,
       final AsyncRunner asyncRunner,
       TimeProvider timeProvider) {
     super(timeProvider);
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
-    this.id = String.valueOf(index + 1);
+    this.id = id;
   }
 
   @Override
@@ -192,10 +192,10 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   }
 
   @Override
-  public void validate() {
+  public SafeFuture<Void> validate() {
     if (validating.compareAndSet(false, true)) {
-      LOG.info("Validating endpoint [{}] ...", this.id);
-      getChainId()
+      LOG.info("Validating endpoint {} ...", this.id);
+      return getChainId()
           .thenAccept(
               chainId -> {
                 if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
@@ -205,27 +205,28 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
                 }
               })
           .thenCompose(__ -> this.ethSyncing())
-          .finish(
-              syncing -> {
-                if (syncing) {
-                  LOG.warn("Endpoint [{}] is INVALID | Still syncing", this.id);
+          .handleComposed(
+              (syncing, err) -> {
+                if (err != null) {
+                  LOG.warn(
+                      "Endpoint {} is INVALID | {}",
+                      this.id,
+                      Throwables.getRootCause(err).getMessage());
+                  updateLastValidation(Result.failed);
+                  validating.set(false);
+                } else if (syncing) {
+                  LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
                   updateLastValidation(Result.failed);
                 } else {
-                  LOG.info("Endpoint [{}] is VALID", this.id);
+                  LOG.info("Endpoint {} is VALID", this.id);
                   updateLastValidation(Result.success);
                 }
                 validating.set(false);
-              },
-              err -> {
-                LOG.warn(
-                    "Endpoint [{}] is INVALID | {}",
-                    this.id,
-                    Throwables.getRootCause(err).getMessage());
-                updateLastValidation(Result.failed);
-                validating.set(false);
+                return SafeFuture.COMPLETE;
               });
     } else {
-      LOG.warn("Already validating");
+      LOG.debug("Already validating");
+      return SafeFuture.COMPLETE;
     }
   }
 }

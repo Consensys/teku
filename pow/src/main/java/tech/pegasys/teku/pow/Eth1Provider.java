@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import com.google.common.base.Splitter;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
@@ -60,4 +61,16 @@ public interface Eth1Provider {
   SafeFuture<Boolean> ethSyncing();
 
   SafeFuture<List<LogResult<?>>> ethGetLogs(EthFilter ethFilter);
+
+  static String generateEth1ProviderId(final int priority, final String endpoint) {
+    String hostname;
+    try {
+      String tmp = Splitter.on("://").splitToList(endpoint).get(1);
+      hostname = Splitter.on("/").splitToList(tmp).get(0);
+    } catch (Exception e) {
+      hostname = "unknown";
+    }
+
+    return String.format("%s [%d]", hostname, priority);
+  }
 }

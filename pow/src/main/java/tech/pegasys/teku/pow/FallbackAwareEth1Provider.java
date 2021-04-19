@@ -133,7 +133,16 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> run(final Function<MonitorableEth1Provider, SafeFuture<T>> task) {
-    return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
+    if (eth1ProviderSelector.isInitialValidationCompleted()) {
+      return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
+    } else {
+      LOG.info(
+          "Eth1 endpoints have not yet been validated. Retrying in {} seconds",
+          Constants.ETH1_INITIAL_VALIDATION_WAIT.toSeconds());
+      return asyncRunner
+          .getDelayedFuture(Constants.ETH1_INITIAL_VALIDATION_WAIT)
+          .thenCompose(__ -> run(task));
+    }
   }
 
   private <T> SafeFuture<T> run(

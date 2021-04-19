@@ -157,7 +157,7 @@ public class Constants {
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
-  public static final Duration ETH1_SYNCING_RETRY_TIMEOUT = Duration.ofSeconds(30);
+  public static final Duration ETH1_INITIAL_VALIDATION_WAIT = Duration.ofSeconds(20);
   public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable

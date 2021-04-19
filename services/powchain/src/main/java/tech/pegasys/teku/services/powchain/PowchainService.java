@@ -61,7 +61,6 @@ public class PowchainService extends Service {
   private final Eth1HeadTracker headTracker;
   private final Eth1ProviderMonitor eth1ProviderMonitor;
   private final List<Web3j> web3js;
-  private final Eth1ProviderSelector eth1ProviderSelector;
   private final OkHttpClient okHttpClient;
 
   public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
@@ -71,13 +70,17 @@ public class PowchainService extends Service {
 
     this.okHttpClient = createOkHttpClient();
     this.web3js = createWeb3js(powConfig);
-    this.eth1ProviderSelector =
+    Eth1ProviderSelector eth1ProviderSelector =
         new Eth1ProviderSelector(
             IntStream.range(0, web3js.size())
                 .mapToObj(
                     idx ->
                         new Web3jEth1Provider(
-                            idx, web3js.get(idx), asyncRunner, serviceConfig.getTimeProvider()))
+                            Eth1Provider.generateEth1ProviderId(
+                                idx + 1, powConfig.getEth1Endpoints().get(idx)),
+                            web3js.get(idx),
+                            asyncRunner,
+                            serviceConfig.getTimeProvider()))
                 .collect(Collectors.toList()));
 
     final Eth1Provider eth1Provider =
