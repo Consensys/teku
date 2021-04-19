@@ -23,13 +23,16 @@ public interface SpecFactory {
     return PHASE0;
   }
 
-  Spec create(String configName);
+  default Spec create(String configName) {
+    return create(SpecConfigLoader.loadConfig(configName));
+  }
+
+  Spec create(SpecConfig config);
 
   class Phase0SpecFactory implements SpecFactory {
 
     @Override
-    public Spec create(String configName) {
-      final SpecConfig config = SpecConfigLoader.loadConfig(configName);
+    public Spec create(SpecConfig config) {
       return Spec.create(config, SpecMilestone.PHASE0);
     }
   }

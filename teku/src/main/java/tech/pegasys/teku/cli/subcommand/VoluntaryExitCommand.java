@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -180,7 +181,8 @@ public class VoluntaryExitCommand implements Runnable {
     try {
       return apiClient
           .getConfigSpec()
-          .map(response -> SpecFactory.getDefault().create(response.data.get("CONFIG_NAME")))
+          .map(response -> SpecConfigLoader.loadConfig(response.data))
+          .map(specConfig -> SpecFactory.getDefault().create(specConfig))
           .orElseThrow();
     } catch (Exception ex) {
       SUB_COMMAND_LOG.error(
