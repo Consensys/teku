@@ -36,6 +36,7 @@ public enum ValidatorApiMethod {
   GET_ATTESTATION_DUTIES("eth/v1/validator/duties/attester/:epoch"),
   GET_PROPOSER_DUTIES("eth/v1/validator/duties/proposer/:epoch"),
   GET_BLOCK_HEADER("eth/v1/beacon/headers/:block_id"),
+  GET_CONFIG_SPEC("/eth/v1/config/spec"),
   EVENTS("eth/v1/events");
 
   private final String path;
