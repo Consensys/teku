@@ -72,8 +72,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
     return maybeRoots.stream()
         .flatMap(Collection::stream)
-        .map(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root))
-        .flatMap(Optional::stream)
+        .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
         .collect(Collectors.toSet());
   }
 
