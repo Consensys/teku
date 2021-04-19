@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,14 +23,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-final class RpcEncoderTest {
-
+public class RpcRequestEncoderTest {
   private static final Bytes RECORDED_STATUS_REQUEST_BYTES =
       Bytes.fromHexString(
           "0x54ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
-  private static final Bytes RECORDED_STATUS_RESPONSE_BYTES =
-      Bytes.fromHexString(
-          "0x0054ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
   private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
       new StatusMessage(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
@@ -40,17 +36,11 @@ final class RpcEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
-  private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ_SNAPPY);
+  private final RpcRequestEncoder requestEncoder = new RpcRequestEncoder(RpcEncoding.SSZ_SNAPPY);
 
   @Test
   public void shouldEncodeStatusRequest() {
-    final Bytes actualBytes = encoder.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
+    final Bytes actualBytes = requestEncoder.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actualBytes).isEqualTo(RECORDED_STATUS_REQUEST_BYTES);
-  }
-
-  @Test
-  public void shouldEncodeSuccessfulResponse() {
-    final Bytes actual = encoder.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
-    assertThat(actual).isEqualTo(RECORDED_STATUS_RESPONSE_BYTES);
   }
 }

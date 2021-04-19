@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.spec.Spec;
@@ -45,10 +46,13 @@ abstract class ForkDigestRpcContextEncoder<TPayload extends SszData>
   }
 
   @Override
-  public Bytes4 encodeContext(TPayload responsePayload) {
+  public Bytes encodeContext(TPayload responsePayload) {
     final UInt64 slot = payloadContext.getSlotFromPayload(responsePayload);
     final SpecMilestone specMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
-    return recentChainData.getForkDigestByMilestone(specMilestone).orElseThrow();
+    return recentChainData
+        .getForkDigestByMilestone(specMilestone)
+        .map(Bytes4::getWrappedBytes)
+        .orElseThrow();
   }
 
   @Override

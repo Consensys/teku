@@ -18,6 +18,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.PingMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.ForkDigestPayloadContext;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
@@ -117,6 +117,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
+    final RpcContextEncoder<?, StatusMessage> contextEncoder =
+        RpcContextEncoder.noop(StatusMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         STATUS,
@@ -124,7 +126,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         StatusMessage.SSZ_SCHEMA,
         true,
-        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, StatusMessage.SSZ_SCHEMA),
+        contextEncoder,
         statusHandler,
         peerLookup);
   }
@@ -135,6 +137,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
+    final RpcContextEncoder<?, GoodbyeMessage> contextEncoder =
+        RpcContextEncoder.noop(GoodbyeMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         GOODBYE,
@@ -142,8 +146,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         GoodbyeMessage.SSZ_SCHEMA,
         false,
-        encoding ->
-            RpcResponseDecoder.createContextFreeDecoder(encoding, GoodbyeMessage.SSZ_SCHEMA),
+        contextEncoder,
         goodbyeHandler,
         peerLookup);
   }
@@ -164,6 +167,8 @@ public class BeaconChainMethods {
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
     final boolean expectResponseToRequest = true;
 
+    final RpcContextEncoder<Bytes, SignedBeaconBlock> noContextEncoder =
+        RpcContextEncoder.noop(phase0BlockSchema);
     final SingleProtocolEth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
         v1Method =
             new SingleProtocolEth2RpcMethod<>(
@@ -173,8 +178,7 @@ public class BeaconChainMethods {
                 rpcEncoding,
                 requestType,
                 expectResponseToRequest,
-                encoding ->
-                    RpcResponseDecoder.createContextFreeDecoder(encoding, phase0BlockSchema),
+                noContextEncoder,
                 beaconBlocksByRootHandler,
                 peerLookup);
 
@@ -192,7 +196,7 @@ public class BeaconChainMethods {
                   rpcEncoding,
                   requestType,
                   expectResponseToRequest,
-                  encoding -> RpcResponseDecoder.create(encoding, forkDigestContextEncoder),
+                  forkDigestContextEncoder,
                   beaconBlocksByRootHandler,
                   peerLookup);
 
@@ -216,7 +220,8 @@ public class BeaconChainMethods {
             combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     final SignedBeaconBlockSchema signedBlockSchema =
         spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
-
+    final RpcContextEncoder<?, SignedBeaconBlock> contextEncoder =
+        RpcContextEncoder.noop(signedBlockSchema);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_RANGE,
@@ -224,7 +229,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA,
         true,
-        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, signedBlockSchema),
+        contextEncoder,
         beaconBlocksByRangeHandler,
         peerLookup);
   }
@@ -234,7 +239,10 @@ public class BeaconChainMethods {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
-    MetadataMessageHandler messageHandler = new MetadataMessageHandler(metadataMessagesFactory);
+    final MetadataMessageHandler messageHandler =
+        new MetadataMessageHandler(metadataMessagesFactory);
+    final RpcContextEncoder<?, MetadataMessage> contextEncoder =
+        RpcContextEncoder.noop(MetadataMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         GET_METADATA,
@@ -242,8 +250,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         EmptyMessage.SSZ_SCHEMA,
         true,
-        encoding ->
-            RpcResponseDecoder.createContextFreeDecoder(encoding, MetadataMessage.SSZ_SCHEMA),
+        contextEncoder,
         messageHandler,
         peerLookup);
   }
@@ -254,6 +261,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final PingMessageHandler statusHandler = new PingMessageHandler(metadataMessagesFactory);
+    final RpcContextEncoder<?, PingMessage> contextEncoder =
+        RpcContextEncoder.noop(PingMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         PING,
@@ -261,7 +270,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         PingMessage.SSZ_SCHEMA,
         true,
-        encoding -> RpcResponseDecoder.createContextFreeDecoder(encoding, PingMessage.SSZ_SCHEMA),
+        contextEncoder,
         statusHandler,
         peerLookup);
   }
