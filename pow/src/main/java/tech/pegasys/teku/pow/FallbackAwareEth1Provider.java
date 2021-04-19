@@ -164,7 +164,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
                     });
           }
           // no (more) available endpoints
-          LOG.error(
+          LOG.debug(
               previousExceptions.length > 0
                   ? "All available eth1 endpoints failed"
                   : "No available eth1 endpoints");
