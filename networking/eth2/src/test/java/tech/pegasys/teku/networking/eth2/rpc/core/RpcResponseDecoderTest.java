@@ -307,9 +307,9 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     }
 
     @Override
-    public Bytes4 encodeContext(final BeaconState responsePayload) {
+    public Bytes encodeContext(final BeaconState responsePayload) {
       // Unused for these tests
-      return Bytes4.fromHexStringLenient("0x0");
+      return Bytes.EMPTY;
     }
 
     @Override

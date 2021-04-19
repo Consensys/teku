@@ -37,7 +37,7 @@ public interface RpcContextEncoder<TContext, TPayload extends SszData> {
 
   RpcByteBufDecoder<TContext> getContextDecoder();
 
-  TContext encodeContext(TPayload responsePayload);
+  Bytes encodeContext(TPayload responsePayload);
 
   Optional<SszSchema<TPayload>> getSchemaFromContext(final TContext context);
 }
