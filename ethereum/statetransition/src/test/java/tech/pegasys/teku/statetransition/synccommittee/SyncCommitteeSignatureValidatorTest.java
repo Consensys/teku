@@ -19,7 +19,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -34,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -67,20 +67,19 @@ class SyncCommitteeSignatureValidatorTest {
   @Test
   void shouldAcceptWhenValid() {
     final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
-    final Set<Integer> applicableSubcommittees =
+    final SyncSubcommitteeAssignments assignments =
         spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
-            .getSyncSubcommittees(
+            .getSubcommitteeAssignments(
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),
                 signature.getValidatorIndex());
-    final int validSubnetId = applicableSubcommittees.iterator().next();
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
     final ValidateableSyncCommitteeSignature validateableSignature =
         ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
 
     assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
-    assertThat(validateableSignature.getApplicableSubcommittees())
-        .contains(applicableSubcommittees);
+    assertThat(validateableSignature.getSubcommitteeAssignments()).contains(assignments);
   }
 
   @Test

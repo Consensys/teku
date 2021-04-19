@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
+import static java.util.Collections.emptyMap;
+
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.Map;
@@ -23,6 +25,9 @@ import java.util.Set;
  * form.
  */
 public class SyncSubcommitteeAssignments {
+
+  public static final SyncSubcommitteeAssignments NONE =
+      new SyncSubcommitteeAssignments(emptyMap());
 
   private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices;
 
@@ -38,6 +43,10 @@ public class SyncSubcommitteeAssignments {
   public Set<Integer> getParticipationBitIndices(final int subcommitteeIndex) {
     return Collections.unmodifiableSet(
         subcommitteeToParticipationIndices.getOrDefault(subcommitteeIndex, Collections.emptySet()));
+  }
+
+  public boolean isEmpty() {
+    return subcommitteeToParticipationIndices.isEmpty();
   }
 
   @Override

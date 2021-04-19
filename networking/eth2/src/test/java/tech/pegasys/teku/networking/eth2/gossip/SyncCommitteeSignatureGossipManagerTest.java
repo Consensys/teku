@@ -115,7 +115,6 @@ class SyncCommitteeSignatureGossipManagerTest {
       final ValidateableSyncCommitteeSignature signature, final Integer... subnetIds) {
 
     when(syncCommitteeUtil.getSyncSubcommittees(any(), any(), any())).thenReturn(Set.of(subnetIds));
-    signature.calculateApplicableSubcommittees(
-        spec, dataStructureUtil.stateBuilderAltair().build());
+    signature.calculateAssignments(spec, dataStructureUtil.stateBuilderAltair().build());
   }
 }

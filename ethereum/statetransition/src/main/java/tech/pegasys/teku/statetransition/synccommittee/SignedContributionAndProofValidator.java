@@ -257,7 +257,8 @@ public class SignedContributionAndProofValidator {
       final UInt64 contributionEpoch,
       final UInt64 aggregatorIndex) {
     return syncCommitteeUtil
-        .computeSubnetsForSyncCommittee(state, contributionEpoch, aggregatorIndex)
+        .getSubcommitteeAssignments(state, contributionEpoch, aggregatorIndex)
+        .getAssignedSubcommittees()
         .contains(contribution.getSubcommitteeIndex().intValue());
   }
 

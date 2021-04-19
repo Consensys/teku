@@ -135,6 +135,12 @@ public class SyncCommitteeUtil {
             });
   }
 
+  public SyncSubcommitteeAssignments getSubcommitteeAssignments(
+      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
+    return getSyncSubcommittees(state, epoch)
+        .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
+  }
+
   public int getSubcommitteeSize() {
     return specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
   }
@@ -169,13 +175,6 @@ public class SyncCommitteeUtil {
     final SyncSubcommitteeAssignments assignments =
         getSyncSubcommittees(state, epoch).get(validatorIndex);
     return assignments != null ? assignments.getAssignedSubcommittees() : emptySet();
-  }
-
-  public Set<Integer> computeSubnetsForSyncCommittee(
-      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
-    final SyncSubcommitteeAssignments assignments =
-        getSyncSubcommittees(state, epoch).get(validatorIndex);
-    return assignments == null ? emptySet() : assignments.getAssignedSubcommittees();
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
