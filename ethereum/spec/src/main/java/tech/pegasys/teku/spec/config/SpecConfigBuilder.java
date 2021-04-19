@@ -837,8 +837,8 @@ public class SpecConfigBuilder {
     private RayonismBuilder() {}
 
     SpecConfigRayonism build(final SpecConfig specConfig) {
-      return new SpecConfigMerge(
-          specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
+      return new SpecConfigRayonism(
+          specConfig, rayonismForkVersion, rayonismForkSlot, transitionTotalDifficulty);
     }
 
     void validate() {
