@@ -74,7 +74,6 @@ public class RpcHandler<
     return rpcMethod;
   }
 
-  @SuppressWarnings("unchecked")
   public SafeFuture<RpcStreamController<TIncomingHandler, TOutgoingHandler>> sendRequest(
       Connection connection, TRequest request, TRespHandler responseHandler) {
 

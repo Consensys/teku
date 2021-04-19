@@ -397,7 +397,7 @@ public class Spec {
 
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    return atSlot(slot).getStateTransition().processSlots(preState, slot);
+    return atSlot(preState.getSlot()).getStateTransition().processSlots(preState, slot);
   }
 
   // Block Proposal
