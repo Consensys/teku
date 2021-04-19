@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,6 +41,8 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
+  Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
+
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
   @MustBeClosed
@@ -58,6 +61,8 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
     void addFinalizedBlock(final SignedBeaconBlock block);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
+
+    void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
