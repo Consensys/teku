@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUIn
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,7 +101,7 @@ public class SyncCommitteeUtil {
               }
               final int subcommitteeSize = getSubcommitteeSize();
               final SszVector<SszPublicKey> pubkeys = syncCommittee.getPubkeys();
-              final Map<UInt64, Map<Integer, Set<Integer>>> subcommitteeAssignments =
+              final Map<UInt64, SyncSubcommitteeAssignments.Builder> subcommitteeAssignments =
                   new HashMap<>();
               for (int index = 0; index < pubkeys.size(); index++) {
                 final BLSPublicKey pubkey = pubkeys.get(index).getBLSPublicKey();
@@ -123,15 +122,11 @@ public class SyncCommitteeUtil {
                 // are created once here and then never modified so safe to access from multiple
                 // threads.
                 subcommitteeAssignments
-                    .computeIfAbsent(validatorIndex, __ -> new HashMap<>())
-                    .computeIfAbsent(subcommitteeIndex, __ -> new HashSet<>())
-                    .add(subcommitteeParticipationIndex);
+                    .computeIfAbsent(validatorIndex, __ -> SyncSubcommitteeAssignments.builder())
+                    .addAssignment(subcommitteeIndex, subcommitteeParticipationIndex);
               }
               return subcommitteeAssignments.entrySet().stream()
-                  .collect(
-                      toUnmodifiableMap(
-                          Map.Entry::getKey,
-                          entry -> new SyncSubcommitteeAssignments(entry.getValue())));
+                  .collect(toUnmodifiableMap(Map.Entry::getKey, entry -> entry.getValue().build()));
             });
   }
 
