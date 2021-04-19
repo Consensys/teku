@@ -828,8 +828,8 @@ public class SpecConfigBuilder {
   class RayonismBuilder {
 
     // Fork
-    private Bytes4 rayonismForkVersion;
-    private UInt64 rayonismForkSlot;
+    private Bytes4 mergeForkVersion;
+    private UInt64 mergeForkSlot;
 
     // Transition
     private long transitionTotalDifficulty;
@@ -838,24 +838,24 @@ public class SpecConfigBuilder {
 
     SpecConfigRayonism build(final SpecConfig specConfig) {
       return new SpecConfigRayonism(
-          specConfig, rayonismForkVersion, rayonismForkSlot, transitionTotalDifficulty);
+          specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
     }
 
     void validate() {
-      validateConstant("rayonismForkVersion", rayonismForkVersion);
-      validateConstant("rayonismForkSlot", rayonismForkSlot);
+      validateConstant("rayonismForkVersion", mergeForkVersion);
+      validateConstant("rayonismForkSlot", mergeForkSlot);
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
     }
 
-    public RayonismBuilder rayonismForkVersion(Bytes4 rayonismForkVersion) {
-      checkNotNull(rayonismForkVersion);
-      this.rayonismForkVersion = rayonismForkVersion;
+    public RayonismBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
+      checkNotNull(mergeForkVersion);
+      this.mergeForkVersion = mergeForkVersion;
       return this;
     }
 
-    public RayonismBuilder rayonismForkSlot(UInt64 rayonismForkSlot) {
-      checkNotNull(rayonismForkSlot);
-      this.rayonismForkSlot = rayonismForkSlot;
+    public RayonismBuilder mergeForkSlot(UInt64 mergeForkSlot) {
+      checkNotNull(mergeForkSlot);
+      this.mergeForkSlot = mergeForkSlot;
       return this;
     }
 

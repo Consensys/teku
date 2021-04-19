@@ -9,20 +9,20 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigRayonism extends DelegatingSpecConfig {
 
   // Fork
-  private final Bytes4 rayonismForkVersion;
-  private final UInt64 rayonismForkSlot;
+  private final Bytes4 mergeForkVersion;
+  private final UInt64 mergeForkSlot;
 
   // Transition
   private final long transitionTotalDifficulty;
 
   public SpecConfigRayonism(
       SpecConfig specConfig,
-      Bytes4 rayonismForkVersion,
-      UInt64 rayonismForkSlot,
+      Bytes4 mergeForkVersion,
+      UInt64 mergeForkSlot,
       long transitionTotalDifficulty) {
     super(specConfig);
-    this.rayonismForkVersion = rayonismForkVersion;
-    this.rayonismForkSlot = rayonismForkSlot;
+    this.mergeForkVersion = mergeForkVersion;
+    this.mergeForkSlot = mergeForkSlot;
     this.transitionTotalDifficulty = transitionTotalDifficulty;
   }
 
@@ -48,12 +48,12 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
                             + specConfig.getClass().getSimpleName())));
   }
 
-  public Bytes4 getRayonismForkVersion() {
-    return rayonismForkVersion;
+  public Bytes4 getMergeForkVersion() {
+    return mergeForkVersion;
   }
 
-  public UInt64 getRayonismForkSlot() {
-    return rayonismForkSlot;
+  public UInt64 getMergeForkSlot() {
+    return mergeForkSlot;
   }
 
   public long getTransitionTotalDifficulty() {
@@ -70,13 +70,13 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SpecConfigRayonism that = (SpecConfigRayonism) o;
-    return Objects.equals(rayonismForkVersion, that.rayonismForkVersion)
-        && Objects.equals(rayonismForkSlot, that.rayonismForkSlot)
+    return Objects.equals(mergeForkVersion, that.mergeForkVersion)
+        && Objects.equals(mergeForkSlot, that.mergeForkSlot)
         && transitionTotalDifficulty == that.transitionTotalDifficulty;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(rayonismForkVersion, rayonismForkSlot, transitionTotalDifficulty);
+    return Objects.hash(mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
   }
 }

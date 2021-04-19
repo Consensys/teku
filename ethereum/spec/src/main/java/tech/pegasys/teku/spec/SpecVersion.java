@@ -48,7 +48,7 @@ public class SpecVersion extends DelegatingSpecLogic {
       return createAltair(SpecConfigAltair.required(specConfig));
     } else if (specConfig
         .toVersionMerge()
-        .map(altairConfig -> altairConfig.getRayonismForkVersion().equals(fork))
+        .map(altairConfig -> altairConfig.getMergeForkVersion().equals(fork))
         .orElse(false)) {
       return createMerge(SpecConfigRayonism.required(specConfig));
     } else if (specConfig.getGenesisForkVersion().equals(fork)) {
