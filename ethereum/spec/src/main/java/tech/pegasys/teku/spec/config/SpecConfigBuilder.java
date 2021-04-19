@@ -266,7 +266,7 @@ public class SpecConfigBuilder {
     checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
   }
 
-  public SpecConfigBuilder rawConfig(final Map<String, Object> rawConfig) {
+  public SpecConfigBuilder rawConfig(final Map<String, ?> rawConfig) {
     checkNotNull(rawConfig);
     this.rawConfig.putAll(rawConfig);
     return this;

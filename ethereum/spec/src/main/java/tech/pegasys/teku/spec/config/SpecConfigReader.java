@@ -65,6 +65,10 @@ public class SpecConfigReader {
 
   public void read(final InputStream source) throws IOException {
     final Map<String, Object> rawValues = readValues(source);
+    loadFromMap(rawValues);
+  }
+
+  public void loadFromMap(final Map<String, ?> rawValues) {
     processSeenValues(rawValues);
     final Map<String, Object> unprocessConfig = new HashMap<>(rawValues);
 
@@ -96,7 +100,7 @@ public class SpecConfigReader {
     }
   }
 
-  private void processSeenValues(final Map<String, Object> rawValues) {
+  private void processSeenValues(final Map<String, ? extends Object> rawValues) {
     if (seenValues.isEmpty()) {
       seenValues.putAll(rawValues);
       return;

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
@@ -29,6 +30,12 @@ public class SpecConfigLoader {
   public static SpecConfig loadConfig(final String configName) {
     final SpecConfigReader reader = new SpecConfigReader();
     processConfig(configName, reader::read);
+    return reader.build();
+  }
+
+  public static SpecConfig loadConfig(final Map<String, ?> config) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    reader.loadFromMap(config);
     return reader.build();
   }
 
