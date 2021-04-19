@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -484,5 +485,9 @@ public class CombinedChainDataClient {
     return historicalChainData
         .getEarliestAvailableBlock()
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
+  }
+
+  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    return historicalChainData.getNonCanonicalBlocksBySlot(slot);
   }
 }

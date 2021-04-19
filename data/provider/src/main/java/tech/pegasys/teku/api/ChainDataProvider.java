@@ -173,6 +173,20 @@ public class ChainDataProvider {
                             state.hashTreeRoot().toUnprefixedHexString())));
   }
 
+  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocks(final String slot) {
+    if (slot.startsWith("0x")) {
+      throw new BadRequestException(
+          String.format("block roots are not currently supported: %s", slot));
+    } else {
+      return defaultBlockSelectorFactory
+          .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
+          .getBlock()
+          .thenApply(
+              blockList ->
+                  blockList.stream().map(SignedBeaconBlock::new).collect(Collectors.toSet()));
+    }
+  }
+
   public SafeFuture<Optional<StateSszResponse>> getBeaconStateSszByBlockRoot(
       final String blockRootParam) {
     return defaultStateSelectorFactory

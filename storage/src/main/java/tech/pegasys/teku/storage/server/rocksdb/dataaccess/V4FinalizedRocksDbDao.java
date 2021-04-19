@@ -14,7 +14,11 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -61,6 +65,15 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return db.getFloorEntry(schema.getColumnFinalizedBlocksBySlot(), slot)
         .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
+    Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+    return maybeRoots.stream()
+        .flatMap(Collection::stream)
+        .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
+        .collect(Collectors.toSet());
   }
 
   @Override
@@ -141,6 +154,15 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
+    }
+
+    @Override
+    public void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots) {
+      Optional<Set<Bytes32>> maybeRoots = db.get(schema.getColumnNonCanonicalRootsBySlot(), slot);
+      final Set<Bytes32> roots = maybeRoots.orElse(new HashSet<>());
+      if (roots.addAll(blockRoots)) {
+        transaction.put(schema.getColumnNonCanonicalRootsBySlot(), slot, roots);
+      }
     }
 
     @Override
