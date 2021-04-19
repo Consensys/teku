@@ -6,11 +6,11 @@ import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConfigMerge extends DelegatingSpecConfig {
+public class SpecConfigRayonism extends DelegatingSpecConfig {
 
   // Fork
-  private final Bytes4 mergeForkVersion;
-  private final UInt64 mergeForkSlot;
+  private final Bytes4 rayonismForkVersion;
+  private final UInt64 rayonismForkSlot;
 
   // Transition
   private final long transitionTotalDifficulty;
@@ -19,22 +19,22 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   private final int maxBytesPerOpaqueTransaction;
   private final int maxApplicationTransactions;
 
-  public SpecConfigMerge(
+  public SpecConfigRayonism(
       SpecConfig specConfig,
-      Bytes4 mergeForkVersion,
-      UInt64 mergeForkSlot,
+      Bytes4 rayonismForkVersion,
+      UInt64 rayonismForkSlot,
       long transitionTotalDifficulty,
       int maxBytesPerOpaqueTransaction,
       int maxApplicationTransactions) {
     super(specConfig);
-    this.mergeForkVersion = mergeForkVersion;
-    this.mergeForkSlot = mergeForkSlot;
+    this.rayonismForkVersion = rayonismForkVersion;
+    this.rayonismForkSlot = rayonismForkSlot;
     this.transitionTotalDifficulty = transitionTotalDifficulty;
     this.maxBytesPerOpaqueTransaction = maxBytesPerOpaqueTransaction;
     this.maxApplicationTransactions = maxApplicationTransactions;
   }
 
-  public static SpecConfigMerge required(final SpecConfig specConfig) {
+  public static SpecConfigRayonism required(final SpecConfig specConfig) {
     return specConfig
         .toVersionMerge()
         .orElseThrow(
@@ -45,7 +45,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   }
 
   public static <T> T required(
-      final SpecConfig specConfig, final Function<SpecConfigMerge, T> ctr) {
+      final SpecConfig specConfig, final Function<SpecConfigRayonism, T> ctr) {
     return ctr.apply(
         specConfig
             .toVersionMerge()
@@ -56,12 +56,12 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
                             + specConfig.getClass().getSimpleName())));
   }
 
-  public Bytes4 getMergeForkVersion() {
-    return mergeForkVersion;
+  public Bytes4 getRayonismForkVersion() {
+    return rayonismForkVersion;
   }
 
-  public UInt64 getMergeForkSlot() {
-    return mergeForkSlot;
+  public UInt64 getRayonismForkSlot() {
+    return rayonismForkSlot;
   }
 
   public long getTransitionTotalDifficulty() {
@@ -77,7 +77,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   }
 
   @Override
-  public Optional<SpecConfigMerge> toVersionMerge() {
+  public Optional<SpecConfigRayonism> toVersionMerge() {
     return Optional.of(this);
   }
 
@@ -85,19 +85,19 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    SpecConfigMerge that = (SpecConfigMerge) o;
+    SpecConfigRayonism that = (SpecConfigRayonism) o;
     return maxBytesPerOpaqueTransaction == that.maxBytesPerOpaqueTransaction
         && maxApplicationTransactions == that.maxApplicationTransactions
-        && Objects.equals(mergeForkVersion, that.mergeForkVersion)
-        && Objects.equals(mergeForkSlot, that.mergeForkSlot)
+        && Objects.equals(rayonismForkVersion, that.rayonismForkVersion)
+        && Objects.equals(rayonismForkSlot, that.rayonismForkSlot)
         && transitionTotalDifficulty == that.transitionTotalDifficulty;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        mergeForkVersion,
-        mergeForkSlot,
+        rayonismForkVersion,
+        rayonismForkSlot,
         transitionTotalDifficulty,
         maxBytesPerOpaqueTransaction,
         maxApplicationTransactions);

@@ -4,7 +4,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszByteList;
@@ -34,11 +34,11 @@ public class ExecutionPayloadSchema
         SszList<SszByteList>> {
 
   public static ExecutionPayloadSchema create(final SpecConfig specConfig) {
-    SpecConfigMerge specConfigMerge = SpecConfigMerge.required(specConfig);
+    SpecConfigRayonism specConfigRayonism = SpecConfigRayonism.required(specConfig);
     return new ExecutionPayloadSchema(
         BYTES_PER_LOGS_BLOOM,
-        specConfigMerge.getMaxBytesPerOpaqueTransaction(),
-        specConfigMerge.getMaxApplicationTransactions());
+        specConfigRayonism.getMaxBytesPerOpaqueTransaction(),
+        specConfigRayonism.getMaxApplicationTransactions());
   }
 
   public static ExecutionPayloadSchema create(

@@ -26,7 +26,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
+import tech.pegasys.teku.spec.logic.versions.rayonism.helpers.MiscHelpersRayonism;
 
 public class MiscHelpers {
   protected final SpecConfig specConfig;
@@ -103,7 +103,7 @@ public class MiscHelpers {
     return state.getGenesis_time().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
   }
 
-  public Optional<MiscHelpersMerge> toVersionMerge() {
+  public Optional<MiscHelpersRayonism> toVersionMerge() {
     return Optional.empty();
   }
 }

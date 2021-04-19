@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.statetransition;
+package tech.pegasys.teku.spec.logic.versions.rayonism.statetransition;
 
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -22,33 +22,33 @@ import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockV
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
+import tech.pegasys.teku.spec.logic.versions.rayonism.block.BlockProcessorRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.helpers.BeaconStateAccessorsRayonism;
 
-public class StateTransitionMerge extends StateTransition {
+public class StateTransitionRayonism extends StateTransition {
 
-  private final BlockProcessorMerge blockProcessorMerge;
+  private final BlockProcessorRayonism blockProcessorRayonism;
 
-  protected StateTransitionMerge(
+  protected StateTransitionRayonism(
       final SpecConfig specConfig,
-      final BlockProcessorMerge blockProcessorMerge,
+      final BlockProcessorRayonism blockProcessorRayonism,
       final EpochProcessor epochProcessor,
       final BlockValidator blockValidator) {
-    super(specConfig, blockProcessorMerge, epochProcessor, blockValidator);
-    this.blockProcessorMerge = blockProcessorMerge;
+    super(specConfig, blockProcessorRayonism, epochProcessor, blockValidator);
+    this.blockProcessorRayonism = blockProcessorRayonism;
   }
 
-  public static StateTransitionMerge create(
+  public static StateTransitionRayonism create(
       final SpecConfig specConfig,
-      final BlockProcessorMerge blockProcessorMerge,
+      final BlockProcessorRayonism blockProcessorRayonism,
       final EpochProcessor epochProcessor,
       final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessorsMerge beaconStateAccessors) {
+      final BeaconStateAccessorsRayonism beaconStateAccessors) {
     final BlockValidator blockValidator =
         BlockValidator.standard(
-            specConfig, beaconStateUtil, blockProcessorMerge, beaconStateAccessors);
-    return new StateTransitionMerge(
-        specConfig, blockProcessorMerge, epochProcessor, blockValidator);
+            specConfig, beaconStateUtil, blockProcessorRayonism, beaconStateAccessors);
+    return new StateTransitionRayonism(
+        specConfig, blockProcessorRayonism, epochProcessor, blockValidator);
   }
 
   @Override
@@ -58,7 +58,7 @@ public class StateTransitionMerge extends StateTransition {
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     super.processBlock(state, block, indexedAttestationCache);
-    blockProcessorMerge.processExecutionPayload(
+    blockProcessorRayonism.processExecutionPayload(
         state.toMutableVersionMerge().orElseThrow(), block.getBody());
   }
 }

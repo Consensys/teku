@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -39,9 +39,9 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class BeaconBlockBodySchemaMerge
+public class BeaconBlockBodySchemaRayonism
     extends ContainerSchema9<
-        BeaconBlockBodyMerge,
+    BeaconBlockBodyRayonism,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -51,9 +51,9 @@ public class BeaconBlockBodySchemaMerge
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         ExecutionPayload>
-    implements BeaconBlockBodySchema<BeaconBlockBodyMerge> {
+    implements BeaconBlockBodySchema<BeaconBlockBodyRayonism> {
 
-  private BeaconBlockBodySchemaMerge(
+  private BeaconBlockBodySchemaRayonism(
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -76,8 +76,8 @@ public class BeaconBlockBodySchemaMerge
         executionPayloadSchema);
   }
 
-  public static BeaconBlockBodySchemaMerge create(final SpecConfig specConfig) {
-    return SpecConfigMerge.required(
+  public static BeaconBlockBodySchemaRayonism create(final SpecConfig specConfig) {
+    return SpecConfigRayonism.required(
         specConfig,
         config ->
             create(
@@ -90,7 +90,7 @@ public class BeaconBlockBodySchemaMerge
                 config.getMaxApplicationTransactions()));
   }
 
-  private static BeaconBlockBodySchemaMerge create(
+  private static BeaconBlockBodySchemaRayonism create(
       final long maxProposerSlashings,
       final long maxAttesterSlashings,
       final long maxAttestations,
@@ -98,7 +98,7 @@ public class BeaconBlockBodySchemaMerge
       final long maxVoluntaryExits,
       final int maxBytesPerOpaqueTransaction,
       final int maxApplicationTransactions) {
-    return new BeaconBlockBodySchemaMerge(
+    return new BeaconBlockBodySchemaRayonism(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -123,16 +123,16 @@ public class BeaconBlockBodySchemaMerge
   }
 
   @Override
-  public BeaconBlockBodyMerge createBlockBody(
+  public BeaconBlockBodyRayonism createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
+    final BeaconBlockBodyBuilderRayonism builder = new BeaconBlockBodyBuilderRayonism().schema(this);
     builderConsumer.accept(builder);
     return builder.build();
   }
 
   @Override
-  public BeaconBlockBodyMerge createEmpty() {
-    return new BeaconBlockBodyMerge(this);
+  public BeaconBlockBodyRayonism createEmpty() {
+    return new BeaconBlockBodyRayonism(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -170,12 +170,12 @@ public class BeaconBlockBodySchemaMerge
   }
 
   @Override
-  public BeaconBlockBodyMerge createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBodyMerge(this, node);
+  public BeaconBlockBodyRayonism createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyRayonism(this, node);
   }
 
   @Override
-  public Optional<BeaconBlockBodySchemaMerge> toVersionMerge() {
+  public Optional<BeaconBlockBodySchemaRayonism> toVersionMerge() {
     return Optional.of(this);
   }
 }

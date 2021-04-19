@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.MutableBeaconStateRayonism;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
@@ -206,7 +206,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return Optional.empty();
   }
 
-  default Optional<MutableBeaconStateMerge> toMutableVersionMerge() {
+  default Optional<MutableBeaconStateRayonism> toMutableVersionMerge() {
     return Optional.empty();
   }
 }

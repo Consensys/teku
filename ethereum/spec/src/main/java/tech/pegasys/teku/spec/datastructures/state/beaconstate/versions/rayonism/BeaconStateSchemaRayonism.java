@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -27,20 +27,20 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class BeaconStateSchemaMerge
-    extends AbstractBeaconStateSchema<BeaconStateMerge, MutableBeaconStateMerge> {
+public class BeaconStateSchemaRayonism
+    extends AbstractBeaconStateSchema<BeaconStateRayonism, MutableBeaconStateRayonism> {
 
   private static final int PREVIOUS_EPOCH_ATTESTATIONS_FIELD_INDEX = 15;
   private static final int CURRENT_EPOCH_ATTESTATIONS_FIELD_INDEX = 16;
   private static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 21;
 
   @VisibleForTesting
-  BeaconStateSchemaMerge(final SpecConfig specConfig) {
+  BeaconStateSchemaRayonism(final SpecConfig specConfig) {
     super("BeaconStateMerge", getUniqueFields(specConfig), specConfig);
   }
 
-  public static BeaconStateSchemaMerge create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaMerge(specConfig);
+  public static BeaconStateSchemaRayonism create(final SpecConfig specConfig) {
+    return new BeaconStateSchemaRayonism(specConfig);
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
@@ -71,12 +71,12 @@ public class BeaconStateSchemaMerge
         latestExecutionPayloadHeaderField);
   }
 
-  public static BeaconStateSchemaMerge required(final BeaconStateSchema<?, ?> schema) {
+  public static BeaconStateSchemaRayonism required(final BeaconStateSchema<?, ?> schema) {
     checkArgument(
-        schema instanceof BeaconStateSchemaMerge,
+        schema instanceof BeaconStateSchemaRayonism,
         "Expected a BeaconStateSchemaMerge but was %s",
         schema.getClass());
-    return (BeaconStateSchemaMerge) schema;
+    return (BeaconStateSchemaRayonism) schema;
   }
 
   @SuppressWarnings("unchecked")
@@ -92,21 +92,21 @@ public class BeaconStateSchemaMerge
   }
 
   @Override
-  public BeaconStateMerge createFromBackingNode(TreeNode node) {
-    return new BeaconStateMergeImpl(this, node);
+  public BeaconStateRayonism createFromBackingNode(TreeNode node) {
+    return new BeaconStateRayonismImpl(this, node);
   }
 
   @Override
-  public MutableBeaconStateMerge createBuilder() {
-    return new MutableBeaconStateMergeImpl(createEmptyBeaconStateImpl(), true);
+  public MutableBeaconStateRayonism createBuilder() {
+    return new MutableBeaconStateRayonismImpl(createEmptyBeaconStateImpl(), true);
   }
 
   @Override
-  public BeaconStateMerge createEmpty() {
+  public BeaconStateRayonism createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStateMergeImpl createEmptyBeaconStateImpl() {
-    return new BeaconStateMergeImpl(this);
+  private BeaconStateRayonismImpl createEmptyBeaconStateImpl() {
+    return new BeaconStateRayonismImpl(this);
   }
 }

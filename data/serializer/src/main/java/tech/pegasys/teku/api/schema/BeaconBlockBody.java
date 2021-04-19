@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
 
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -87,7 +87,7 @@ public class BeaconBlockBody {
             .collect(Collectors.toList());
     this.execution_payload =
         body.toVersionMerge()
-            .map(BeaconBlockBodyMerge::getExecution_payload)
+            .map(BeaconBlockBodyRayonism::getExecution_payload)
             .map(ExecutionPayload::new)
             .orElse(null);
   }
