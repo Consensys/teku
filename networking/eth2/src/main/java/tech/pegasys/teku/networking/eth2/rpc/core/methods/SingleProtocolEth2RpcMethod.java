@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds.getMethodId;
+
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -57,7 +59,7 @@ public class SingleProtocolEth2RpcMethod<
     this.asyncRunner = asyncRunner;
     this.contextEncoder = contextEncoder;
     this.responseEncoder = new RpcResponseEncoder<>(encoding, contextEncoder);
-    this.protocolId = protocolIdPrefix + "/" + protocolVersion + "/" + encoding.getName();
+    this.protocolId = getMethodId(protocolIdPrefix, protocolVersion, encoding);
     this.protocolVersion = protocolVersion;
     this.localMessageHandler = localMessageHandler;
     this.peerLookup = peerLookup;

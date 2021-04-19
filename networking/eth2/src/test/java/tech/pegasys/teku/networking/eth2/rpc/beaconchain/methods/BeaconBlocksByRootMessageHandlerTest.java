@@ -30,8 +30,12 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -39,11 +43,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
+  final String protocolId = BeaconChainMethodIds.getBlocksByRootMethodId(1, RpcEncoding.SSZ_SNAPPY);
   final BeaconBlocksByRootMessageHandler handler =
-      new BeaconBlocksByRootMessageHandler(recentChainData);
+      new BeaconBlocksByRootMessageHandler(spec, recentChainData);
   final Eth2Peer peer = mock(Eth2Peer.class);
 
   @SuppressWarnings("unchecked")
@@ -61,7 +67,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final List<SignedBeaconBlock> blocks = mockChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
-    handler.onIncomingMessage(peer, message, callback);
+    handler.onIncomingMessage(protocolId, peer, message, callback);
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -77,7 +83,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     doThrow(new StreamClosedException()).when(callback).respond(any());
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
-    handler.onIncomingMessage(peer, message, callback);
+    handler.onIncomingMessage(protocolId, peer, message, callback);
 
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());

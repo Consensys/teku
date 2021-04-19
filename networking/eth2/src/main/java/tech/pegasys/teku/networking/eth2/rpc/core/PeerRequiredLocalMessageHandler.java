@@ -24,9 +24,12 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
 
   @Override
   public void onIncomingMessage(
-      final Optional<Eth2Peer> maybePeer, final I message, final ResponseCallback<O> callback) {
+      final String protocolId,
+      final Optional<Eth2Peer> maybePeer,
+      final I message,
+      final ResponseCallback<O> callback) {
     maybePeer.ifPresentOrElse(
-        peer -> onIncomingMessage(peer, message, callback),
+        peer -> onIncomingMessage(protocolId, peer, message, callback),
         () -> {
           LOG.trace(
               "Ignoring message of type {} because peer has disconnected", message.getClass());
@@ -35,5 +38,8 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
   }
 
   protected abstract void onIncomingMessage(
-      final Eth2Peer peer, final I message, final ResponseCallback<O> callback);
+      final String protocolId,
+      final Eth2Peer peer,
+      final I message,
+      final ResponseCallback<O> callback);
 }

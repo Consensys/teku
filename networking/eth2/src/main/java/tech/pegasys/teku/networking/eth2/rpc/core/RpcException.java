@@ -85,6 +85,12 @@ public class RpcException extends Exception {
     }
   }
 
+  public static class InvalidRpcMethodVersion extends RpcException {
+    public InvalidRpcMethodVersion(final String errorMessage) {
+      super(INVALID_REQUEST_CODE, errorMessage);
+    }
+  }
+
   // Custom errors
   public static class HistoricalDataUnavailableException extends RpcException {
 

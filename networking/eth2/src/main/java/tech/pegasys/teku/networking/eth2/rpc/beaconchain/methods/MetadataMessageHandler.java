@@ -29,7 +29,10 @@ public class MetadataMessageHandler
 
   @Override
   public void onIncomingMessage(
-      Eth2Peer peer, EmptyMessage message, ResponseCallback<MetadataMessage> callback) {
+      final String protocolId,
+      Eth2Peer peer,
+      EmptyMessage message,
+      ResponseCallback<MetadataMessage> callback) {
     if (!peer.wantToMakeRequest()) {
       return;
     }
