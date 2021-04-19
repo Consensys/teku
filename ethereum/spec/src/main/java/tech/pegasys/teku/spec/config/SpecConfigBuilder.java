@@ -842,8 +842,8 @@ public class SpecConfigBuilder {
     }
 
     void validate() {
-      validateConstant("rayonismForkVersion", mergeForkVersion);
-      validateConstant("rayonismForkSlot", mergeForkSlot);
+      validateConstant("mergeForkVersion", mergeForkVersion);
+      validateConstant("mergeForkSlot", mergeForkSlot);
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
     }
 
