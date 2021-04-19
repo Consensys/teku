@@ -27,14 +27,12 @@ public class SchemaDefinitionsRayonism implements SchemaDefinitions {
   private final BeaconBlockBodySchemaRayonism beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final ExecutionPayloadSchema executionPayloadSchema;
 
   public SchemaDefinitionsRayonism(final SpecConfig specConfig) {
     this.beaconStateSchema = BeaconStateSchemaRayonism.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaRayonism.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
-    this.executionPayloadSchema = ExecutionPayloadSchema.create(specConfig);
   }
 
   @Override
@@ -55,9 +53,5 @@ public class SchemaDefinitionsRayonism implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
-  }
-
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return executionPayloadSchema;
   }
 }

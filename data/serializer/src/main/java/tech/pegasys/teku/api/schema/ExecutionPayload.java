@@ -21,14 +21,13 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayload {
 
-  public final Bytes32 parent_hash;
   public final Bytes32 block_hash;
+  public final Bytes32 parent_hash;
   public final Bytes20 miner;
   public final Bytes32 state_root;
   public final UInt64 number;
@@ -40,8 +39,8 @@ public class ExecutionPayload {
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
-      @JsonProperty("parent_hash") Bytes32 parent_hash,
       @JsonProperty("block_hash") Bytes32 block_hash,
+      @JsonProperty("parent_hash") Bytes32 parent_hash,
       @JsonProperty("miner") Bytes20 miner,
       @JsonProperty("state_root") Bytes32 state_root,
       @JsonProperty("number") UInt64 number,
@@ -51,8 +50,8 @@ public class ExecutionPayload {
       @JsonProperty("receipt_root") Bytes32 receipt_root,
       @JsonProperty("logs_bloom") Bytes logs_bloom,
       @JsonProperty("transactions") List<Bytes> transactions) {
-    this.parent_hash = parent_hash;
     this.block_hash = block_hash;
+    this.parent_hash = parent_hash;
     this.miner = miner;
     this.state_root = state_root;
     this.number = number;
@@ -66,8 +65,8 @@ public class ExecutionPayload {
 
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.parent_hash = executionPayload.getParent_hash();
     this.block_hash = executionPayload.getBlock_hash();
+    this.parent_hash = executionPayload.getParent_hash();
     this.miner = executionPayload.getCoinbase();
     this.state_root = executionPayload.getState_root();
     this.number = executionPayload.getNumber();
@@ -83,21 +82,19 @@ public class ExecutionPayload {
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
-      asInternalExecutionPayload(ExecutionPayloadSchema schema) {
-    return schema.create(
-        builder ->
-            builder
-                .parentHash(parent_hash)
-                .blockHash(block_hash)
-                .coinbase(miner)
-                .stateRoot(state_root)
-                .number(number)
-                .gasLimit(gas_limit)
-                .gasUsed(gas_used)
-                .timestamp(timestamp)
-                .receiptRoot(receipt_root)
-                .logsBloom(logs_bloom)
-                .transactions(transactions));
+      asInternalExecutionPayload() {
+    return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
+        block_hash,
+        parent_hash,
+        miner,
+        state_root,
+        number,
+        gas_limit,
+        gas_used,
+        timestamp,
+        receipt_root,
+        logs_bloom,
+        transactions);
   }
 
   @Override
@@ -108,26 +105,25 @@ public class ExecutionPayload {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload that =
-        (tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload) o;
-    return Objects.equals(parent_hash, that.parentHash)
-        && Objects.equals(block_hash, that.blockHash)
+    ExecutionPayload that = (ExecutionPayload) o;
+    return Objects.equals(block_hash, that.block_hash)
+        && Objects.equals(parent_hash, that.parent_hash)
         && Objects.equals(miner, that.miner)
-        && Objects.equals(state_root, that.stateRoot)
+        && Objects.equals(state_root, that.state_root)
         && Objects.equals(number, that.number)
-        && Objects.equals(gas_limit, that.gasLimit)
-        && Objects.equals(gas_used, that.gasUsed)
+        && Objects.equals(gas_limit, that.gas_limit)
+        && Objects.equals(gas_used, that.gas_used)
         && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(receipt_root, that.receiptsRoot)
-        && Objects.equals(logs_bloom, that.logsBloom)
+        && Objects.equals(receipt_root, that.receipt_root)
+        && Objects.equals(logs_bloom, that.logs_bloom)
         && Objects.equals(transactions, that.transactions);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        parent_hash,
         block_hash,
+        parent_hash,
         miner,
         state_root,
         number,
@@ -142,10 +138,10 @@ public class ExecutionPayload {
   @Override
   public String toString() {
     return "ExecutionPayload{"
-        + "parent_hash="
-        + parent_hash
-        + ", block_hash="
+        + "block_hash="
         + block_hash
+        + ", parent_hash="
+        + parent_hash
         + ", miner="
         + miner
         + ", state_root="

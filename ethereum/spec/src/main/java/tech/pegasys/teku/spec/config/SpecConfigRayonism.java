@@ -15,23 +15,15 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
   // Transition
   private final long transitionTotalDifficulty;
 
-  // Execution
-  private final int maxBytesPerOpaqueTransaction;
-  private final int maxApplicationTransactions;
-
   public SpecConfigRayonism(
       SpecConfig specConfig,
       Bytes4 rayonismForkVersion,
       UInt64 rayonismForkSlot,
-      long transitionTotalDifficulty,
-      int maxBytesPerOpaqueTransaction,
-      int maxApplicationTransactions) {
+      long transitionTotalDifficulty) {
     super(specConfig);
     this.rayonismForkVersion = rayonismForkVersion;
     this.rayonismForkSlot = rayonismForkSlot;
     this.transitionTotalDifficulty = transitionTotalDifficulty;
-    this.maxBytesPerOpaqueTransaction = maxBytesPerOpaqueTransaction;
-    this.maxApplicationTransactions = maxApplicationTransactions;
   }
 
   public static SpecConfigRayonism required(final SpecConfig specConfig) {
@@ -68,14 +60,6 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
     return transitionTotalDifficulty;
   }
 
-  public int getMaxBytesPerOpaqueTransaction() {
-    return maxBytesPerOpaqueTransaction;
-  }
-
-  public int getMaxApplicationTransactions() {
-    return maxApplicationTransactions;
-  }
-
   @Override
   public Optional<SpecConfigRayonism> toVersionMerge() {
     return Optional.of(this);
@@ -86,20 +70,13 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SpecConfigRayonism that = (SpecConfigRayonism) o;
-    return maxBytesPerOpaqueTransaction == that.maxBytesPerOpaqueTransaction
-        && maxApplicationTransactions == that.maxApplicationTransactions
-        && Objects.equals(rayonismForkVersion, that.rayonismForkVersion)
+    return Objects.equals(rayonismForkVersion, that.rayonismForkVersion)
         && Objects.equals(rayonismForkSlot, that.rayonismForkSlot)
         && transitionTotalDifficulty == that.transitionTotalDifficulty;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        rayonismForkVersion,
-        rayonismForkSlot,
-        transitionTotalDifficulty,
-        maxBytesPerOpaqueTransaction,
-        maxApplicationTransactions);
+    return Objects.hash(rayonismForkVersion, rayonismForkSlot, transitionTotalDifficulty);
   }
 }

@@ -834,28 +834,17 @@ public class SpecConfigBuilder {
     // Transition
     private long transitionTotalDifficulty;
 
-    // Execution
-    private int maxBytesPerOpaqueTransaction;
-    private int maxApplicationTransactions;
-
     private RayonismBuilder() {}
 
     SpecConfigRayonism build(final SpecConfig specConfig) {
-      return new SpecConfigRayonism(
-          specConfig,
-          rayonismForkVersion,
-          rayonismForkSlot,
-          transitionTotalDifficulty,
-          maxBytesPerOpaqueTransaction,
-          maxApplicationTransactions);
+      return new SpecConfigMerge(
+          specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
     }
 
     void validate() {
       validateConstant("rayonismForkVersion", rayonismForkVersion);
       validateConstant("rayonismForkSlot", rayonismForkSlot);
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
-      validateConstant("maxBytesPerOpaqueTransaction", maxBytesPerOpaqueTransaction);
-      validateConstant("maxApplicationTransactions", maxApplicationTransactions);
     }
 
     public RayonismBuilder rayonismForkVersion(Bytes4 rayonismForkVersion) {
@@ -872,16 +861,6 @@ public class SpecConfigBuilder {
 
     public RayonismBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
       this.transitionTotalDifficulty = transitionTotalDifficulty;
-      return this;
-    }
-
-    public RayonismBuilder maxBytesPerOpaqueTransaction(int maxBytesPerOpaqueTransaction) {
-      this.maxBytesPerOpaqueTransaction = maxBytesPerOpaqueTransaction;
-      return this;
-    }
-
-    public RayonismBuilder maxApplicationTransactions(int maxApplicationTransactions) {
-      this.maxApplicationTransactions = maxApplicationTransactions;
       return this;
     }
   }

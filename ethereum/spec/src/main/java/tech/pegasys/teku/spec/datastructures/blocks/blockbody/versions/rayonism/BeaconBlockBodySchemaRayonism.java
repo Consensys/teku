@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -24,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -85,9 +82,7 @@ public class BeaconBlockBodySchemaRayonism
                 config.getMaxAttesterSlashings(),
                 config.getMaxAttestations(),
                 config.getMaxDeposits(),
-                config.getMaxVoluntaryExits(),
-                config.getMaxBytesPerOpaqueTransaction(),
-                config.getMaxApplicationTransactions()));
+                config.getMaxVoluntaryExits()));
   }
 
   private static BeaconBlockBodySchemaRayonism create(
@@ -95,9 +90,7 @@ public class BeaconBlockBodySchemaRayonism
       final long maxAttesterSlashings,
       final long maxAttestations,
       final long maxDeposits,
-      final long maxVoluntaryExits,
-      final int maxBytesPerOpaqueTransaction,
-      final int maxApplicationTransactions) {
+      final long maxVoluntaryExits) {
     return new BeaconBlockBodySchemaRayonism(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
@@ -116,10 +109,7 @@ public class BeaconBlockBodySchemaRayonism
         namedSchema(
             BlockBodyFields.VOLUNTARY_EXITS.name(),
             SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)),
-        namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD.name(),
-            ExecutionPayloadSchema.create(
-                BYTES_PER_LOGS_BLOOM, maxBytesPerOpaqueTransaction, maxApplicationTransactions)));
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD.name(), ExecutionPayload.SSZ_SCHEMA));
   }
 
   @Override
@@ -163,10 +153,6 @@ public class BeaconBlockBodySchemaRayonism
   @Override
   public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
     return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
-  }
-
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema) getFieldSchema8();
   }
 
   @Override

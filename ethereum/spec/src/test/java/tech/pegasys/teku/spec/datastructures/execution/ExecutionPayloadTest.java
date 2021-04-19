@@ -16,28 +16,24 @@ public class ExecutionPayloadTest {
 
   @Test
   public void shouldSszEncodeAndDecode() {
-    ExecutionPayloadSchema schema =
-        ExecutionPayloadSchema.create(SpecConfig.BYTES_PER_LOGS_BLOOM, 1 << 20, 1 << 14);
-
     ExecutionPayload executionPayload =
-        schema.create(
-            b ->
-                b.blockHash(Bytes32.random())
-                    .parentHash(Bytes32.random())
-                    .coinbase(Bytes20.random())
-                    .stateRoot(Bytes32.random())
-                    .number(randomUInt64())
-                    .gasLimit(randomUInt64())
-                    .gasUsed(randomUInt64())
-                    .timestamp(randomUInt64())
-                    .receiptRoot(Bytes32.random())
-                    .logsBloom(Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM))
-                    .transactions(
-                        Stream.of(Bytes.random(128), Bytes.random(256), Bytes.random(512))
-                            .collect(Collectors.toList())));
+        new ExecutionPayload(
+            Bytes32.random(),
+            Bytes32.random(),
+            Bytes20.random(),
+            Bytes32.random(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            Bytes32.random(),
+            Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM),
+            Stream.of(Bytes.random(128), Bytes.random(256), Bytes.random(512))
+                .collect(Collectors.toList()));
 
     Bytes sszExecutionPayload = executionPayload.sszSerialize();
-    ExecutionPayload decodedExecutionPayload = schema.sszDeserialize(sszExecutionPayload);
+    ExecutionPayload decodedExecutionPayload =
+        ExecutionPayload.SSZ_SCHEMA.sszDeserialize(sszExecutionPayload);
 
     assertEquals(executionPayload, decodedExecutionPayload);
   }

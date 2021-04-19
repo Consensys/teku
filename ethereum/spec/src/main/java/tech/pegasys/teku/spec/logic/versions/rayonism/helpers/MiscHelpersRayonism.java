@@ -15,21 +15,17 @@ package tech.pegasys.teku.spec.logic.versions.rayonism.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsRayonism;
 
 public class MiscHelpersRayonism extends MiscHelpers {
 
-  private final SchemaDefinitionsRayonism schemaDefinitions;
-
-  public MiscHelpersRayonism(
-      final SpecConfig specConfig, final SchemaDefinitionsRayonism schemaDefinitions) {
+  public MiscHelpersRayonism(final SpecConfig specConfig) {
     super(specConfig);
-    this.schemaDefinitions = schemaDefinitions;
   }
 
   public boolean isTransitionCompleted(final BeaconState genericState) {
@@ -42,8 +38,6 @@ public class MiscHelpersRayonism extends MiscHelpers {
     final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
     final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(genericBlockBody);
     return !isTransitionCompleted(state)
-        && !blockBody
-            .getExecution_payload()
-            .equals(schemaDefinitions.getExecutionPayloadSchema().createEmpty());
+        && !blockBody.getExecution_payload().equals(new ExecutionPayload());
   }
 }

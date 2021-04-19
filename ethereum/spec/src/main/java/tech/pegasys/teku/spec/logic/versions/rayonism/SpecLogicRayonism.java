@@ -81,7 +81,7 @@ public class SpecLogicRayonism extends AbstractSpecLogic {
       final SpecConfigRayonism config, final SchemaDefinitionsRayonism schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersRayonism miscHelpers = new MiscHelpersRayonism(config, schemaDefinitions);
+    final MiscHelpersRayonism miscHelpers = new MiscHelpersRayonism(config);
     final BeaconStateAccessorsRayonism beaconStateAccessors =
         new BeaconStateAccessorsRayonism(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
@@ -117,8 +117,7 @@ public class SpecLogicRayonism extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
-    final ExecutionPayloadUtil executionPayloadUtil =
-        new ExecutionPayloadUtil(schemaDefinitions.getExecutionPayloadSchema());
+    final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
     final BlockProcessorRayonism blockProcessor =
         new BlockProcessorRayonism(
             config,
@@ -165,9 +164,5 @@ public class SpecLogicRayonism extends AbstractSpecLogic {
   @Override
   public ExecutionPayloadUtil getExecutionPayloadUtil() {
     return executionPayloadUtil;
-  }
-
-  public void setExecutionPayloadService(ExecutionEngineService executionEngineService) {
-    executionPayloadUtil.setExecutionEngineService(executionEngineService);
   }
 }

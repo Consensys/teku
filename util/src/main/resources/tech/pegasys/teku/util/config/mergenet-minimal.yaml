@@ -167,9 +167,3 @@ MERGE_FORK_SLOT: 0
 # Transition
 # ---------------------------------------------------------------
 TRANSITION_TOTAL_DIFFICULTY: 0
-
-
-# Execution
-# ---------------------------------------------------------------
-MAX_BYTES_PER_OPAQUE_TRANSACTION: 1048576
-MAX_APPLICATION_TRANSACTIONS: 16384
