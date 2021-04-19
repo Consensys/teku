@@ -211,6 +211,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
     return SafeFuture.of(() -> database.getSlotForFinalizedStateRoot(stateRoot));
   }
 
+  @Override
+  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
+    return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
+  }
+
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UInt64 slot) {
     return finalizedStateCache.getFinalizedState(slot);
   }
