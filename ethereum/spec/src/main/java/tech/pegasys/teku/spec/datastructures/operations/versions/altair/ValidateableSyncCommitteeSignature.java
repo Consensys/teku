@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes32;
@@ -68,11 +67,6 @@ public class ValidateableSyncCommitteeSignature {
 
     this.subcommitteeAssignments = Optional.of(assignments);
     return assignments;
-  }
-
-  @VisibleForTesting
-  public void setSubcommitteeAssignments(final SyncSubcommitteeAssignments assignments) {
-    this.subcommitteeAssignments = Optional.of(assignments);
   }
 
   public UInt64 getSlot() {
