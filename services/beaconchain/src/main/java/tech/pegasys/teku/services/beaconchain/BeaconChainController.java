@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
@@ -84,6 +85,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignatureValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -165,6 +168,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
+  private volatile SyncCommitteeSignaturePool syncCommitteeSignaturePool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
@@ -536,11 +540,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initSyncCommitteePools() {
+    final SyncCommitteeStateUtils syncCommitteeStateUtils =
+        new SyncCommitteeStateUtils(spec, recentChainData);
     syncCommitteeContributionPool =
         new SyncCommitteeContributionPool(
             spec,
             new SignedContributionAndProofValidator(
-                spec, recentChainData, new SyncCommitteeStateUtils(spec, recentChainData)));
+                spec, recentChainData, syncCommitteeStateUtils));
+
+    syncCommitteeSignaturePool =
+        new SyncCommitteeSignaturePool(
+            new SyncCommitteeSignatureValidator(spec, recentChainData, syncCommitteeStateUtils));
     eventChannels.subscribe(SlotEventsChannel.class, syncCommitteeContributionPool);
   }
 
@@ -561,32 +571,40 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new GossipPublisher<>();
     final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher =
         new GossipPublisher<>();
+    final GossipPublisher<ValidateableSyncCommitteeSignature>
+        syncCommitteeSignatureGossipPublisher = new GossipPublisher<>();
 
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)) {
+          if (result.code() == ValidationResultCode.ACCEPT) {
             voluntaryExitGossipPublisher.publish(item);
           }
         });
     // Set up gossip for attester slashings
     attesterSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)) {
+          if (result.code() == ValidationResultCode.ACCEPT) {
             attesterSlashingGossipPublisher.publish(item);
           }
         });
     // Set up gossip for proposer slashings
     proposerSlashingPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)) {
+          if (result.code() == ValidationResultCode.ACCEPT) {
             proposerSlashingGossipPublisher.publish(item);
           }
         });
     syncCommitteeContributionPool.subscribeOperationAdded(
         (item, result) -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)) {
+          if (result.code() == ValidationResultCode.ACCEPT) {
             signedContributionAndProofGossipPublisher.publish(item);
+          }
+        });
+    syncCommitteeSignaturePool.subscribeOperationAdded(
+        (item, result) -> {
+          if (result.code() == ValidationResultCode.ACCEPT) {
+            syncCommitteeSignatureGossipPublisher.publish(item);
           }
         });
 
@@ -609,6 +627,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
             .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
+            .gossipedSyncCommitteeSignatureProcessor(syncCommitteeSignaturePool::add)
+            .syncCommitteeSignatureGossipPublisher(syncCommitteeSignatureGossipPublisher)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(

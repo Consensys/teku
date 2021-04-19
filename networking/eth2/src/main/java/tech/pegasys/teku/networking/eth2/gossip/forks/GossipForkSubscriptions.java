@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 
 public interface GossipForkSubscriptions {
 
@@ -33,4 +34,10 @@ public interface GossipForkSubscriptions {
   void subscribeToAttestationSubnetId(int subnetId);
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
+
+  void publishSyncCommitteeSignature(ValidateableSyncCommitteeSignature signature);
+
+  void subscribeToSyncCommitteeSignatureSubnet(int subnetId);
+
+  void unsubscribeFromSyncCommitteeSignatureSubnet(int subnetId);
 }
