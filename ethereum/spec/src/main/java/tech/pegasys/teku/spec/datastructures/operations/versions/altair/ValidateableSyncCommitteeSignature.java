@@ -60,8 +60,7 @@ public class ValidateableSyncCommitteeSignature {
       return currentValue.get();
     }
     final Set<Integer> applicableSubcommittees =
-        spec.getSyncCommitteeUtil(signature.getSlot())
-            .orElseThrow()
+        spec.getSyncCommitteeUtilRequired(signature.getSlot())
             .getSyncSubcommittees(
                 state, spec.computeEpochAtSlot(signature.getSlot()), signature.getValidatorIndex());
     this.applicableSubcommittees = Optional.of(applicableSubcommittees);

@@ -54,10 +54,12 @@ public class SignedContributionAndProofValidator {
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
 
   public SignedContributionAndProofValidator(
-      final Spec spec, final RecentChainData recentChainData) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SyncCommitteeStateUtils syncCommitteeStateUtils) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.syncCommitteeStateUtils = new SyncCommitteeStateUtils(spec, recentChainData);
+    this.syncCommitteeStateUtils = syncCommitteeStateUtils;
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {

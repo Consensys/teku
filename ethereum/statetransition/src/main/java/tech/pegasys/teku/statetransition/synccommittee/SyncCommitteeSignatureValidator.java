@@ -45,10 +45,13 @@ public class SyncCommitteeSignatureValidator {
   private final RecentChainData recentChainData;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
 
-  public SyncCommitteeSignatureValidator(final Spec spec, final RecentChainData recentChainData) {
+  public SyncCommitteeSignatureValidator(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SyncCommitteeStateUtils syncCommitteeStateUtils) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    syncCommitteeStateUtils = new SyncCommitteeStateUtils(spec, recentChainData);
+    this.syncCommitteeStateUtils = syncCommitteeStateUtils;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -98,7 +101,8 @@ public class SyncCommitteeSignatureValidator {
                 return IGNORE;
               }
               final BeaconStateAltair state = maybeState.get();
-              return validateWithState(validateableSignature, signature, syncCommitteeUtil, state);
+              return validateWithState(
+                  validateableSignature, signature, syncCommitteeUtil, state, uniquenessKey);
             });
   }
 
@@ -106,7 +110,8 @@ public class SyncCommitteeSignatureValidator {
       final ValidateableSyncCommitteeSignature validateableSignature,
       final SyncCommitteeSignature signature,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final BeaconStateAltair state) {
+      final BeaconStateAltair state,
+      final UniquenessKey uniquenessKey) {
     final UInt64 signatureEpoch = spec.computeEpochAtSlot(signature.getSlot());
 
     // Always calculate the applicable subcommittees to ensure they are cached and can be used to
@@ -125,11 +130,11 @@ public class SyncCommitteeSignatureValidator {
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
     // compute_subnets_for_sync_committee(state, sync_committee_signature.validator_index).
-    if (validateableSignature.getReceivedSubnetId().isPresent()) {
-      if (!assignedSubcommittees.contains(validateableSignature.getReceivedSubnetId().getAsInt())) {
-        LOG.trace("Rejecting sync committee signature because subnet id is incorrect");
-        return REJECT;
-      }
+    if (validateableSignature.getReceivedSubnetId().isPresent()
+        && !assignedSubcommittees.contains(
+            validateableSignature.getReceivedSubnetId().getAsInt())) {
+      LOG.trace("Rejecting sync committee signature because subnet id is incorrect");
+      return REJECT;
     }
 
     final Optional<BLSPublicKey> maybeValidatorPublicKey =
@@ -147,6 +152,11 @@ public class SyncCommitteeSignatureValidator {
     if (!BLS.verify(maybeValidatorPublicKey.get(), signingRoot, signature.getSignature())) {
       LOG.trace("Rejecting sync committee signature because the signature is invalid");
       return REJECT;
+    }
+
+    if (!seenIndices.add(uniquenessKey)) {
+      LOG.trace("Ignoring sync committee signature as a duplicate was processed during validation");
+      return IGNORE;
     }
     return ACCEPT;
   }

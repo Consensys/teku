@@ -126,6 +126,14 @@ public class Spec {
     return atSlot(slot).getSyncCommitteeUtil();
   }
 
+  public SyncCommitteeUtil getSyncCommitteeUtilRequired(final UInt64 slot) {
+    return getSyncCommitteeUtil(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Fork at slot " + slot + " does not support sync committees"));
+  }
+
   public SpecVersion getGenesisSpec() {
     return atEpoch(UInt64.ZERO);
   }

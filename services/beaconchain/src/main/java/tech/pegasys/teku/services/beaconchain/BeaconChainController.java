@@ -87,6 +87,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProo
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignatureValidator;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -539,12 +540,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initSyncCommitteePools() {
+    final SyncCommitteeStateUtils syncCommitteeStateUtils =
+        new SyncCommitteeStateUtils(spec, recentChainData);
     syncCommitteeContributionPool =
         new SyncCommitteeContributionPool(
-            spec, new SignedContributionAndProofValidator(spec, recentChainData));
+            spec,
+            new SignedContributionAndProofValidator(
+                spec, recentChainData, syncCommitteeStateUtils));
 
     syncCommitteeSignaturePool =
-        new SyncCommitteeSignaturePool(new SyncCommitteeSignatureValidator(spec, recentChainData));
+        new SyncCommitteeSignaturePool(
+            new SyncCommitteeSignatureValidator(spec, recentChainData, syncCommitteeStateUtils));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeSignaturePool);
