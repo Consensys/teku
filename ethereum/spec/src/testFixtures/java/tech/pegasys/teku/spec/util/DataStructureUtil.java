@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -321,6 +322,20 @@ public final class DataStructureUtil {
         randomSszVector(
             syncCommitteeSchema.getPubkeyAggregatesSchema(),
             () -> new SszPublicKey(randomPublicKey())));
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature() {
+    return randomSyncCommitteeSignature(randomUInt64());
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(final long slot) {
+    return randomSyncCommitteeSignature(UInt64.valueOf(slot));
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(final UInt64 slot) {
+    return getAltairSchemaDefinitions(UInt64.ZERO)
+        .getSyncCommitteeSignatureSchema()
+        .create(slot, randomBytes32(), randomUInt64(), randomSignature());
   }
 
   public AttestationData randomAttestationData() {

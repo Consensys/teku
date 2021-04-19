@@ -22,22 +22,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class GossipForkManagerTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x12345678446687");
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -265,111 +269,176 @@ class GossipForkManagerTest {
   }
 
   @Test
-  void shouldSubscribeToAttestationSubnetsPriorToStarting() {
-    final GossipForkSubscriptions fork = forkAtEpoch(0);
-    final GossipForkManager manager = managerForForks(fork);
+  void shouldPublishSyncCommitteeSignatureToForkForSignatureSlot() {
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(1);
+    final GossipForkSubscriptions thirdFork = forkAtEpoch(2);
 
-    manager.subscribeToAttestationSubnetId(1);
-    manager.subscribeToAttestationSubnetId(2);
-    manager.subscribeToAttestationSubnetId(5);
-
+    final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    verify(fork).subscribeToAttestationSubnetId(1);
-    verify(fork).subscribeToAttestationSubnetId(2);
-    verify(fork).subscribeToAttestationSubnetId(5);
+    final ValidateableSyncCommitteeSignature firstForkSignature =
+        ValidateableSyncCommitteeSignature.fromValidator(
+            dataStructureUtil.randomSyncCommitteeSignature(0));
+    final ValidateableSyncCommitteeSignature secondForkSignature =
+        ValidateableSyncCommitteeSignature.fromValidator(
+            dataStructureUtil.randomSyncCommitteeSignature(
+                spec.computeStartSlotAtEpoch(UInt64.ONE)));
+    final ValidateableSyncCommitteeSignature thirdForkSignature =
+        ValidateableSyncCommitteeSignature.fromValidator(
+            dataStructureUtil.randomSyncCommitteeSignature(
+                spec.computeStartSlotAtEpoch(UInt64.valueOf(2))));
+
+    manager.publishSyncCommitteeSignature(firstForkSignature);
+    verify(firstFork).publishSyncCommitteeSignature(firstForkSignature);
+    verify(secondFork, never()).publishSyncCommitteeSignature(firstForkSignature);
+    verify(thirdFork, never()).publishSyncCommitteeSignature(firstForkSignature);
+
+    manager.publishSyncCommitteeSignature(secondForkSignature);
+    verify(firstFork, never()).publishSyncCommitteeSignature(secondForkSignature);
+    verify(secondFork).publishSyncCommitteeSignature(secondForkSignature);
+    verify(thirdFork, never()).publishSyncCommitteeSignature(secondForkSignature);
+
+    manager.publishSyncCommitteeSignature(thirdForkSignature);
+    verify(firstFork, never()).publishSyncCommitteeSignature(thirdForkSignature);
+    verify(secondFork, never()).publishSyncCommitteeSignature(thirdForkSignature);
+    verify(thirdFork).publishSyncCommitteeSignature(thirdForkSignature);
   }
 
   @Test
-  void shouldSubscribeToCurrentAttestationSubnetsWhenNewForkActivates() {
+  void shouldNotPublishSyncCommitteeSignaturesToForksThatAreNotActive() {
+    final GossipForkSubscriptions firstFork = forkAtEpoch(0);
+    final GossipForkSubscriptions secondFork = forkAtEpoch(10);
+
+    final GossipForkManager manager = managerForForks(firstFork, secondFork);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    final ValidateableSyncCommitteeSignature signature =
+        ValidateableSyncCommitteeSignature.fromValidator(
+            dataStructureUtil.randomSyncCommitteeSignature(
+                spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch())));
+
+    manager.publishSyncCommitteeSignature(signature);
+
+    verify(firstFork, never()).publishSyncCommitteeSignature(signature);
+    verify(secondFork, never()).publishSyncCommitteeSignature(signature);
+  }
+
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldSubscribeToAttestationSubnetsPriorToStarting(final SubscriptionType subscriptionType) {
+    final GossipForkSubscriptions fork = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(fork);
+
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.subscribe(manager, 2);
+    subscriptionType.subscribe(manager, 5);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    subscriptionType.verifySubscribe(fork, 1);
+    subscriptionType.verifySubscribe(fork, 2);
+    subscriptionType.verifySubscribe(fork, 5);
+  }
+
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldSubscribeToCurrentAttestationSubnetsWhenNewForkActivates(
+      final SubscriptionType subscriptionType) {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    manager.subscribeToAttestationSubnetId(1);
-    manager.subscribeToAttestationSubnetId(2);
-    manager.subscribeToAttestationSubnetId(5);
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.subscribe(manager, 2);
+    subscriptionType.subscribe(manager, 5);
 
     manager.configureGossipForEpoch(UInt64.valueOf(8));
 
     verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(secondFork).subscribeToAttestationSubnetId(1);
-    verify(secondFork).subscribeToAttestationSubnetId(2);
-    verify(secondFork).subscribeToAttestationSubnetId(5);
+    subscriptionType.verifySubscribe(secondFork, 1);
+    subscriptionType.verifySubscribe(secondFork, 2);
+    subscriptionType.verifySubscribe(secondFork, 5);
   }
 
-  @Test
-  void shouldSubscribeActiveForksToAttestationSubnets() {
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldSubscribeActiveForksToAttestationSubnets(final SubscriptionType subscriptionType) {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    manager.subscribeToAttestationSubnetId(1);
-    manager.subscribeToAttestationSubnetId(2);
-    manager.subscribeToAttestationSubnetId(5);
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.subscribe(manager, 2);
+    subscriptionType.subscribe(manager, 5);
 
-    verify(firstFork).subscribeToAttestationSubnetId(1);
-    verify(firstFork).subscribeToAttestationSubnetId(2);
-    verify(firstFork).subscribeToAttestationSubnetId(5);
+    subscriptionType.verifySubscribe(firstFork, 1);
+    subscriptionType.verifySubscribe(firstFork, 2);
+    subscriptionType.verifySubscribe(firstFork, 5);
   }
 
-  @Test
-  void shouldUnsubscribeActiveForksFromAttestationSubnets() {
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldUnsubscribeActiveForksFromAttestationSubnets(final SubscriptionType subscriptionType) {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    manager.subscribeToAttestationSubnetId(1);
-    verify(firstFork).subscribeToAttestationSubnetId(1);
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.verifySubscribe(firstFork, 1);
 
-    manager.unsubscribeFromAttestationSubnetId(1);
-    verify(firstFork).unsubscribeFromAttestationSubnetId(1);
+    subscriptionType.unsubscribe(manager, 1);
+    subscriptionType.verifyUnsubscribe(firstFork, 1);
   }
 
-  @Test
-  void shouldNotSubscribeToSubnetThatWasUnsubscribedPriorToStarting() {
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldNotSubscribeToSubnetThatWasUnsubscribedPriorToStarting(
+      final SubscriptionType subscriptionType) {
     final GossipForkSubscriptions fork = forkAtEpoch(0);
     final GossipForkManager manager = managerForForks(fork);
 
-    manager.subscribeToAttestationSubnetId(1);
-    manager.subscribeToAttestationSubnetId(2);
-    manager.subscribeToAttestationSubnetId(5);
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.subscribe(manager, 2);
+    subscriptionType.subscribe(manager, 5);
 
-    manager.unsubscribeFromAttestationSubnetId(2);
+    subscriptionType.unsubscribe(manager, 2);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    verify(fork).subscribeToAttestationSubnetId(1);
-    verify(fork, never()).subscribeToAttestationSubnetId(2);
-    verify(fork).subscribeToAttestationSubnetId(5);
+    subscriptionType.verifySubscribe(fork, 1);
+    subscriptionType.verifyNotSubscribed(fork, 2);
+    subscriptionType.verifySubscribe(fork, 5);
   }
 
-  @Test
-  void shouldNotSubscribeToSubnetThatWasUnsubscribedWhenNewForkActivates() {
+  @ParameterizedTest
+  @MethodSource("subnetSubscriptionTypes")
+  void shouldNotSubscribeToSubnetThatWasUnsubscribedWhenNewForkActivates(
+      final SubscriptionType subscriptionType) {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(10);
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
 
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    manager.subscribeToAttestationSubnetId(1);
-    manager.subscribeToAttestationSubnetId(2);
-    manager.subscribeToAttestationSubnetId(5);
+    subscriptionType.subscribe(manager, 1);
+    subscriptionType.subscribe(manager, 2);
+    subscriptionType.subscribe(manager, 5);
 
-    manager.unsubscribeFromAttestationSubnetId(2);
+    subscriptionType.unsubscribe(manager, 2);
 
     manager.configureGossipForEpoch(UInt64.valueOf(8));
 
     verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(secondFork).subscribeToAttestationSubnetId(1);
-    verify(secondFork, never()).subscribeToAttestationSubnetId(2);
-    verify(secondFork).subscribeToAttestationSubnetId(5);
+    subscriptionType.verifySubscribe(secondFork, 1);
+    subscriptionType.verifyNotSubscribed(secondFork, 2);
+    subscriptionType.verifySubscribe(secondFork, 5);
   }
 
   private GossipForkSubscriptions forkAtEpoch(final long epoch) {
@@ -387,5 +456,76 @@ class GossipForkManagerTest {
 
   private GossipForkManager.Builder builder() {
     return GossipForkManager.builder().recentChainData(recentChainData).spec(spec);
+  }
+
+  static Stream<SubscriptionType> subnetSubscriptionTypes() {
+    return Stream.of(
+        new SubscriptionType(
+            "attestation",
+            GossipForkManager::subscribeToAttestationSubnetId,
+            GossipForkManager::unsubscribeFromAttestationSubnetId,
+            (manager, subnetId) -> verify(manager).subscribeToAttestationSubnetId(subnetId),
+            (manager, subnetId) ->
+                verify(manager, never()).subscribeToAttestationSubnetId(subnetId),
+            (manager, subnetId) -> verify(manager).unsubscribeFromAttestationSubnetId(subnetId)),
+        new SubscriptionType(
+            "sync committee",
+            GossipForkManager::subscribeToSyncCommitteeSubnetId,
+            GossipForkManager::unsubscribeFromSyncCommitteeSubnetId,
+            (manager, subnetId) ->
+                verify(manager).subscribeToSyncCommitteeSignatureSubnet(subnetId),
+            (manager, subnetId) ->
+                verify(manager, never()).subscribeToSyncCommitteeSignatureSubnet(subnetId),
+            (manager, subnetId) ->
+                verify(manager).unsubscribeFromSyncCommitteeSignatureSubnet(subnetId)));
+  }
+
+  private static class SubscriptionType {
+    private final String type;
+    private final BiConsumer<GossipForkManager, Integer> subscribeToSubnet;
+    private final BiConsumer<GossipForkManager, Integer> unsubscribeFromSubnet;
+    private final BiConsumer<GossipForkSubscriptions, Integer> verifySubscribeToSubnet;
+    private final BiConsumer<GossipForkSubscriptions, Integer> verifyNotSubscribedToSubnet;
+    private final BiConsumer<GossipForkSubscriptions, Integer> verifyUnsubscribeFromSubnet;
+
+    private SubscriptionType(
+        final String type,
+        final BiConsumer<GossipForkManager, Integer> subscribeToSubnet,
+        final BiConsumer<GossipForkManager, Integer> unsubscribeFromSubnet,
+        final BiConsumer<GossipForkSubscriptions, Integer> verifySubscribeToSubnet,
+        final BiConsumer<GossipForkSubscriptions, Integer> verifyNotSubscribedToSubnet,
+        final BiConsumer<GossipForkSubscriptions, Integer> verifyUnsubscribeFromSubnet) {
+      this.type = type;
+      this.subscribeToSubnet = subscribeToSubnet;
+      this.unsubscribeFromSubnet = unsubscribeFromSubnet;
+      this.verifySubscribeToSubnet = verifySubscribeToSubnet;
+      this.verifyNotSubscribedToSubnet = verifyNotSubscribedToSubnet;
+      this.verifyUnsubscribeFromSubnet = verifyUnsubscribeFromSubnet;
+    }
+
+    public void subscribe(final GossipForkManager manager, final int subnetId) {
+      subscribeToSubnet.accept(manager, subnetId);
+    }
+
+    public void unsubscribe(final GossipForkManager manager, final int subnetId) {
+      unsubscribeFromSubnet.accept(manager, subnetId);
+    }
+
+    public void verifySubscribe(final GossipForkSubscriptions fork, final int subnetId) {
+      verifySubscribeToSubnet.accept(fork, subnetId);
+    }
+
+    public void verifyNotSubscribed(final GossipForkSubscriptions fork, final int subnetId) {
+      verifyNotSubscribedToSubnet.accept(fork, subnetId);
+    }
+
+    public void verifyUnsubscribe(final GossipForkSubscriptions fork, final int subnetId) {
+      verifyUnsubscribeFromSubnet.accept(fork, subnetId);
+    }
+
+    @Override
+    public String toString() {
+      return type;
+    }
   }
 }
