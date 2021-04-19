@@ -18,7 +18,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
 
@@ -27,14 +26,12 @@ public class SchemaDefinitionsMerge implements SchemaDefinitions {
   private final BeaconBlockBodySchemaMerge beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final ExecutionPayloadSchema executionPayloadSchema;
 
   public SchemaDefinitionsMerge(final SpecConfig specConfig) {
     this.beaconStateSchema = BeaconStateSchemaMerge.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaMerge.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
-    this.executionPayloadSchema = ExecutionPayloadSchema.create(specConfig);
   }
 
   @Override
@@ -55,9 +52,5 @@ public class SchemaDefinitionsMerge implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
-  }
-
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return executionPayloadSchema;
   }
 }

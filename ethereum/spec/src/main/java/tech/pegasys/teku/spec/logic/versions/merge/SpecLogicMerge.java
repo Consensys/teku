@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.merge;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -81,7 +80,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final SpecConfigMerge config, final SchemaDefinitionsMerge schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config, schemaDefinitions);
+    final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config);
     final BeaconStateAccessorsMerge beaconStateAccessors =
         new BeaconStateAccessorsMerge(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
@@ -117,8 +116,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
-    final ExecutionPayloadUtil executionPayloadUtil =
-        new ExecutionPayloadUtil(schemaDefinitions.getExecutionPayloadSchema());
+    final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
     final BlockProcessorMerge blockProcessor =
         new BlockProcessorMerge(
             config,
@@ -165,9 +163,5 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   @Override
   public ExecutionPayloadUtil getExecutionPayloadUtil() {
     return executionPayloadUtil;
-  }
-
-  public void setExecutionPayloadService(ExecutionEngineService executionEngineService) {
-    executionPayloadUtil.setExecutionEngineService(executionEngineService);
   }
 }

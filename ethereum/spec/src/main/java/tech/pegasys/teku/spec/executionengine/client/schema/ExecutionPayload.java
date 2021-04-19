@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Deserializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes32Deserializer;
@@ -39,11 +38,11 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 parentHash;
+  public final Bytes32 blockHash;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 blockHash;
+  public final Bytes32 parentHash;
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
@@ -82,8 +81,8 @@ public class ExecutionPayload {
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
-      @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("blockHash") Bytes32 blockHash,
+      @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("miner") Bytes20 miner,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
       @JsonProperty("number") UInt64 number,
@@ -93,8 +92,8 @@ public class ExecutionPayload {
       @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
       @JsonProperty("transactions") List<Bytes> transactions) {
-    this.parentHash = parentHash;
     this.blockHash = blockHash;
+    this.parentHash = parentHash;
     this.miner = miner;
     this.stateRoot = stateRoot;
     this.number = number;
@@ -108,8 +107,8 @@ public class ExecutionPayload {
 
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.parentHash = executionPayload.getParent_hash();
     this.blockHash = executionPayload.getBlock_hash();
+    this.parentHash = executionPayload.getParent_hash();
     this.miner = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
     this.number = executionPayload.getNumber();
@@ -125,21 +124,19 @@ public class ExecutionPayload {
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
-      asInternalExecutionPayload(ExecutionPayloadSchema schema) {
-    return schema.create(
-        builder ->
-            builder
-                .parentHash(parentHash)
-                .blockHash(blockHash)
-                .coinbase(miner)
-                .stateRoot(stateRoot)
-                .number(number)
-                .gasLimit(gasLimit)
-                .gasUsed(gasUsed)
-                .timestamp(timestamp)
-                .receiptRoot(receiptsRoot)
-                .logsBloom(logsBloom)
-                .transactions(transactions));
+      asInternalExecutionPayload() {
+    return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
+        blockHash,
+        parentHash,
+        miner,
+        stateRoot,
+        number,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        receiptsRoot,
+        logsBloom,
+        transactions);
   }
 
   @Override
@@ -151,8 +148,8 @@ public class ExecutionPayload {
       return false;
     }
     ExecutionPayload that = (ExecutionPayload) o;
-    return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(blockHash, that.blockHash)
+    return Objects.equals(blockHash, that.blockHash)
+        && Objects.equals(parentHash, that.parentHash)
         && Objects.equals(miner, that.miner)
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(number, that.number)
@@ -167,8 +164,8 @@ public class ExecutionPayload {
   @Override
   public int hashCode() {
     return Objects.hash(
-        parentHash,
         blockHash,
+        parentHash,
         miner,
         stateRoot,
         number,
@@ -183,10 +180,10 @@ public class ExecutionPayload {
   @Override
   public String toString() {
     return "ExecutionPayload{"
-        + "parentHash="
-        + LogFormatter.formatHashRoot(parentHash)
-        + ", blockHash="
+        + "blockHash="
         + LogFormatter.formatHashRoot(blockHash)
+        + ", parentHash="
+        + LogFormatter.formatHashRoot(parentHash)
         + ", miner="
         + miner
         + ", stateRoot="

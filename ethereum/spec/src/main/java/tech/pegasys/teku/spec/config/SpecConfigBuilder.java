@@ -834,28 +834,17 @@ public class SpecConfigBuilder {
     // Transition
     private long transitionTotalDifficulty;
 
-    // Execution
-    private int maxBytesPerOpaqueTransaction;
-    private int maxApplicationTransactions;
-
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfig specConfig) {
       return new SpecConfigMerge(
-          specConfig,
-          mergeForkVersion,
-          mergeForkSlot,
-          transitionTotalDifficulty,
-          maxBytesPerOpaqueTransaction,
-          maxApplicationTransactions);
+          specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkSlot", mergeForkSlot);
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
-      validateConstant("maxBytesPerOpaqueTransaction", maxBytesPerOpaqueTransaction);
-      validateConstant("maxApplicationTransactions", maxApplicationTransactions);
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
@@ -872,16 +861,6 @@ public class SpecConfigBuilder {
 
     public MergeBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
       this.transitionTotalDifficulty = transitionTotalDifficulty;
-      return this;
-    }
-
-    public MergeBuilder maxBytesPerOpaqueTransaction(int maxBytesPerOpaqueTransaction) {
-      this.maxBytesPerOpaqueTransaction = maxBytesPerOpaqueTransaction;
-      return this;
-    }
-
-    public MergeBuilder maxApplicationTransactions(int maxApplicationTransactions) {
-      this.maxApplicationTransactions = maxApplicationTransactions;
       return this;
     }
   }

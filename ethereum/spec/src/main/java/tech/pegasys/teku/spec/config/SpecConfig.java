@@ -25,8 +25,10 @@ public interface SpecConfig {
   UInt64 GENESIS_EPOCH = UInt64.ZERO;
   UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
 
-  // Relies on assumptions that logs bloom size never changes
+  // Execution
   int BYTES_PER_LOGS_BLOOM = 256;
+  int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
+  int MAX_APPLICATION_TRANSACTIONS = 16384;
 
   static SpecConfigBuilder builder() {
     return new SpecConfigBuilder();

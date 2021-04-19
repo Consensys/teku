@@ -1,8 +1,10 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
@@ -10,6 +12,10 @@ import tech.pegasys.teku.ssz.containers.Container11;
 import tech.pegasys.teku.ssz.containers.ContainerSchema11;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -28,22 +34,56 @@ public class ExecutionPayload
         SszByteVector,
         SszList<SszByteList>> {
 
-  protected ExecutionPayload(
-      ContainerSchema11<
-              ExecutionPayload,
-              SszBytes32,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszBytes32,
-              SszByteVector,
-              SszList<SszByteList>>
-          type) {
-    super(type);
+  public static class ExecutionPayloadSchema
+      extends ContainerSchema11<
+          ExecutionPayload,
+          SszBytes32,
+          SszBytes32,
+          SszByteVector,
+          SszBytes32,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64,
+          SszUInt64,
+          SszBytes32,
+          SszByteVector,
+          SszList<SszByteList>> {
+
+    public ExecutionPayloadSchema() {
+      super(
+          "ExecutionPayload",
+          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("coinbase", SszByteVectorSchema.create(Bytes20.SIZE)),
+          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("number", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("receipt_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("logs_bloom", SszByteVectorSchema.create(SpecConfig.BYTES_PER_LOGS_BLOOM)),
+          namedSchema(
+              "transactions",
+              SszListSchema.create(
+                  SszByteListSchema.create(SpecConfig.MAX_BYTES_PER_OPAQUE_TRANSACTION),
+                  SpecConfig.MAX_APPLICATION_TRANSACTIONS)));
+    }
+
+    @SuppressWarnings("unchecked")
+    public SszListSchema<SszByteList, ?> getTransactionsSchema() {
+      return (SszListSchema<SszByteList, ?>) getFieldSchema10();
+    }
+
+    @Override
+    public ExecutionPayload createFromBackingNode(TreeNode node) {
+      return new ExecutionPayload(this, node);
+    }
+  }
+
+  public static final ExecutionPayloadSchema SSZ_SCHEMA = new ExecutionPayloadSchema();
+
+  public ExecutionPayload() {
+    super(SSZ_SCHEMA);
   }
 
   ExecutionPayload(
@@ -65,50 +105,41 @@ public class ExecutionPayload
     super(type, backingNode);
   }
 
-  ExecutionPayload(
-      ContainerSchema11<
-              ExecutionPayload,
-              SszBytes32,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszBytes32,
-              SszByteVector,
-              SszList<SszByteList>>
-          schema,
-      SszBytes32 block_ash,
-      SszBytes32 parent_hash,
-      SszByteVector coinbase,
-      SszBytes32 state_root,
-      SszUInt64 number,
-      SszUInt64 gas_limit,
-      SszUInt64 gas_used,
-      SszUInt64 timestamp,
-      SszBytes32 receipt_root,
-      SszByteVector logs_bloom,
-      SszList<SszByteList> transactions) {
+  public ExecutionPayload(
+      Bytes32 block_hash,
+      Bytes32 parent_hash,
+      Bytes20 coinbase,
+      Bytes32 state_root,
+      UInt64 number,
+      UInt64 gas_limit,
+      UInt64 gas_used,
+      UInt64 timestamp,
+      Bytes32 receipt_root,
+      Bytes logs_bloom,
+      List<Bytes> transactions) {
     super(
-        schema,
-        block_ash,
-        parent_hash,
-        coinbase,
-        state_root,
-        number,
-        gas_limit,
-        gas_used,
-        timestamp,
-        receipt_root,
-        logs_bloom,
-        transactions);
+        SSZ_SCHEMA,
+        SszBytes32.of(block_hash),
+        SszBytes32.of(parent_hash),
+        SszByteVector.fromBytes(coinbase.getWrappedBytes()),
+        SszBytes32.of(state_root),
+        SszUInt64.of(number),
+        SszUInt64.of(gas_limit),
+        SszUInt64.of(gas_used),
+        SszUInt64.of(timestamp),
+        SszBytes32.of(receipt_root),
+        SszByteVector.fromBytes(logs_bloom),
+        transactions.stream()
+            .map(
+                tx ->
+                    ((SszByteListSchema<?>) SSZ_SCHEMA.getTransactionsSchema().getElementSchema())
+                        .fromBytes(tx))
+            .collect(SSZ_SCHEMA.getTransactionsSchema().collector()));
   }
 
   @Override
   public ExecutionPayloadSchema getSchema() {
-    return (ExecutionPayloadSchema) super.getSchema();
+    return SSZ_SCHEMA;
   }
 
   public Bytes32 getBlock_hash() {

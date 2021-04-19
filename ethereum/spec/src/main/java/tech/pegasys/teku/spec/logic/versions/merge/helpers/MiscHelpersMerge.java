@@ -16,20 +16,16 @@ package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class MiscHelpersMerge extends MiscHelpers {
 
-  private final SchemaDefinitionsMerge schemaDefinitions;
-
-  public MiscHelpersMerge(
-      final SpecConfig specConfig, final SchemaDefinitionsMerge schemaDefinitions) {
+  public MiscHelpersMerge(final SpecConfig specConfig) {
     super(specConfig);
-    this.schemaDefinitions = schemaDefinitions;
   }
 
   public boolean isTransitionCompleted(final BeaconState genericState) {
@@ -42,8 +38,6 @@ public class MiscHelpersMerge extends MiscHelpers {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(genericBlockBody);
     return !isTransitionCompleted(state)
-        && !blockBody
-            .getExecution_payload()
-            .equals(schemaDefinitions.getExecutionPayloadSchema().createEmpty());
+        && !blockBody.getExecution_payload().equals(new ExecutionPayload());
   }
 }

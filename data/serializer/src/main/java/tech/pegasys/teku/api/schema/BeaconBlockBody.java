@@ -128,10 +128,7 @@ public class BeaconBlockBody {
                 .toVersionMerge()
                 .ifPresent(
                     schemaMerge ->
-                        builder.executionPayload(
-                            () ->
-                                execution_payload.asInternalExecutionPayload(
-                                    schemaMerge.getExecutionPayloadSchema())));
+                        builder.executionPayload(execution_payload::asInternalExecutionPayload));
           }
         });
   }
