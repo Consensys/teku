@@ -27,7 +27,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -55,6 +57,8 @@ class StatusMessageHandlerTest {
   private final StatusMessageFactory statusMessageFactory = mock(StatusMessageFactory.class);
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
+  private final String protocolId =
+      BeaconChainMethodIds.getStatusMethodId(1, RpcEncoding.SSZ_SNAPPY);
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach
@@ -66,7 +70,7 @@ class StatusMessageHandlerTest {
   @Test
   public void shouldReturnLocalStatus() {
     when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
-    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
+    handler.onIncomingMessage(protocolId, peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
     verify(callback).respondAndCompleteSuccessfully(LOCAL_STATUS);
@@ -76,7 +80,7 @@ class StatusMessageHandlerTest {
   @Test
   public void shouldRespondWithErrorIfStatusUnavailable() {
     when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.empty());
-    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
+    handler.onIncomingMessage(protocolId, peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
     verify(callback).completeWithErrorResponse(NODE_NOT_READY);

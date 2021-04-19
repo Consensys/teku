@@ -98,7 +98,13 @@ public class Eth2IncomingRequestHandler<
       Optional<Eth2Peer> peer, TRequest request, ResponseCallback<TResponse> callback) {
     try {
       requestHandled.set(true);
-      localMessageHandler.onIncomingMessage(peer, request, callback);
+      final Optional<RpcException> requestValidationError =
+          localMessageHandler.validateRequest(protocolId, request);
+      if (requestValidationError.isPresent()) {
+        callback.completeWithErrorResponse(requestValidationError.get());
+        return;
+      }
+      localMessageHandler.onIncomingMessage(protocolId, peer, request, callback);
     } catch (final StreamClosedException e) {
       LOG.trace("Stream closed before response sent for request {}", protocolId, e);
       callback.completeWithUnexpectedError(e);

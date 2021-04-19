@@ -90,6 +90,10 @@ public class ForkSchedule {
         .collect(Collectors.toList());
   }
 
+  public Optional<UInt64> getMilestoneActivationEpoch(final SpecMilestone milestone) {
+    return Optional.ofNullable(milestoneToFork.get(milestone)).map(Fork::getEpoch);
+  }
+
   public SpecMilestone getSpecMilestoneAtEpoch(final UInt64 epoch) {
     return epochToMilestone.floorEntry(epoch).getValue();
   }

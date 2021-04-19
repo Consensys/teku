@@ -13,10 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlocksByRangeRequestMessageTest {
@@ -31,5 +36,26 @@ class BeaconBlocksByRangeRequestMessageTest {
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
 
     assertThatSszData(result).isEqualByAllMeansTo(request);
+  }
+
+  @ParameterizedTest(name = "startSlot={0}, count={1}, step={2}")
+  @MethodSource("getMaxSlotParams")
+  public void getMaxSlot(
+      final long startSlot, final long count, final long step, final long expected) {
+    final BeaconBlocksByRangeRequestMessage request =
+        new BeaconBlocksByRangeRequestMessage(
+            UInt64.valueOf(startSlot), UInt64.valueOf(count), UInt64.valueOf(step));
+
+    assertThat(request.getMaxSlot()).isEqualTo(UInt64.valueOf(expected));
+  }
+
+  public static Stream<Arguments> getMaxSlotParams() {
+    return Stream.of(
+        Arguments.of(0, 1, 1, 0),
+        Arguments.of(111, 1, 1, 111),
+        Arguments.of(0, 2, 2, 2),
+        Arguments.of(10, 2, 2, 12),
+        Arguments.of(0, 5, 2, 8),
+        Arguments.of(10, 5, 2, 18));
   }
 }

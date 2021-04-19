@@ -39,8 +39,12 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -60,6 +64,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
           .flatMap(Optional::stream)
           .collect(Collectors.toList());
 
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   @SuppressWarnings("unchecked")
@@ -68,8 +73,10 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
+  private final String protocolId =
+      BeaconChainMethodIds.getBlocksByRangeMethodId(1, RpcEncoding.SSZ_SNAPPY);
   private final BeaconBlocksByRangeMessageHandler handler =
-      new BeaconBlocksByRangeMessageHandler(combinedChainDataClient, MAX_REQUEST_SIZE);
+      new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, MAX_REQUEST_SIZE);
 
   @BeforeEach
   public void setup() {
@@ -216,6 +223,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withAncestorRoots(startBlock, MAX_REQUEST_SIZE.intValue(), skip, hotBlocks());
 
     handler.onIncomingMessage(
+        protocolId,
         peer,
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
@@ -235,6 +243,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withCanonicalHeadBlock(BLOCKS_W_STATE.get(5));
 
     handler.onIncomingMessage(
+        protocolId,
         peer,
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
@@ -258,6 +267,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
         startBlock, MAX_REQUEST_SIZE.intValue(), skip, hotBlocks(1, 2, 3, 6, 7, 8, 9));
 
     handler.onIncomingMessage(
+        protocolId,
         peer,
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
@@ -297,6 +307,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private void requestBlocks(final int startBlock, final long count, final int skip) {
 
     handler.onIncomingMessage(
+        protocolId,
         peer,
         new BeaconBlocksByRangeRequestMessage(
             UInt64.valueOf(startBlock), UInt64.valueOf(count), UInt64.valueOf(skip)),
