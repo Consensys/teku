@@ -15,10 +15,10 @@ package tech.pegasys.teku.api.blockselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -70,10 +70,7 @@ public class BlockSelectorFactory {
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
-    return () ->
-        client
-            .getNonCanonicalBlocksAtSlot(slot)
-            .thenApply(result -> result.stream().collect(Collectors.toList()));
+    return () -> client.GetAllBlocksAtSlot(slot).thenApply(ArrayList::new);
   }
 
   public BlockSelector finalizedSelector() {
