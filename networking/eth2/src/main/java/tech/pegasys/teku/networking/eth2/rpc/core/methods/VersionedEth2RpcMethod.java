@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2IncomingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
@@ -63,6 +64,7 @@ public class VersionedEth2RpcMethod<
           final SszSchema<TRequest> requestType,
           final boolean expectResponseToRequest,
           final List<SingleProtocolEth2RpcMethod<TRequest, TResponse>> methodVersions) {
+    validateMethods(methodVersions);
     // Prioritize methods by version, preferring later versions over earlier versions
     final List<String> sortedProtocolIds =
         methodVersions.stream()
@@ -77,6 +79,17 @@ public class VersionedEth2RpcMethod<
             .collect(Collectors.toMap(SingleProtocolEth2RpcMethod::getId, m -> m));
     return new VersionedEth2RpcMethod<>(
         encoding, requestType, expectResponseToRequest, sortedProtocolIds, protocolIdToMethod);
+  }
+
+  private static <TRequest extends RpcRequest & SszData, TResponse extends SszData>
+      void validateMethods(
+          final List<SingleProtocolEth2RpcMethod<TRequest, TResponse>> methodVersions) {
+    // ProtocolIds should be distinct
+    Set<String> protocolIds =
+        methodVersions.stream().map(SingleProtocolEth2RpcMethod::getId).collect(Collectors.toSet());
+    checkArgument(
+        protocolIds.size() == methodVersions.size(),
+        "Versioned rpc methods must have distinct protocol ids");
   }
 
   @Override
