@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import io.libp2p.pubsub.gossip.Gossip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -46,6 +48,8 @@ public class PeerManager implements ConnectionHandler {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
+  private final Gossip gossip;
+
   private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<NodeId, SafeFuture<Peer>> pendingConnections =
       new ConcurrentHashMap<>();
@@ -59,17 +63,19 @@ public class PeerManager implements ConnectionHandler {
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
-      final Map<RpcMethod, RpcHandler> rpcHandlers) {
+      final Map<RpcMethod, RpcHandler> rpcHandlers,
+      Gossip gossip) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
+    this.gossip= gossip;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager);
+    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, gossip);
     onConnectedPeer(peer);
   }
 
@@ -98,7 +104,7 @@ public class PeerManager implements ConnectionHandler {
                 if (connection.closeFuture().isDone()) {
                   // Connection has been immediately closed and the peer already removed
                   // Since the connection is closed anyway, we can create a new peer to wrap it.
-                  return new LibP2PPeer(connection, rpcHandlers, reputationManager);
+                  return new LibP2PPeer(connection, rpcHandlers, reputationManager, gossip);
                 } else {
                   // Theoretically this should never happen because removing from the map is done
                   // by the close future completing, but make a loud noise just in case.

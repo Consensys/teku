@@ -41,6 +41,11 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
+  public Double getGossipScore() {
+    return peer.getGossipScore();
+  }
+
+  @Override
   public boolean isConnected() {
     return peer.isConnected();
   }

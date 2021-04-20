@@ -18,6 +18,8 @@ import io.libp2p.core.PeerId;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.libp2p.pubsub.gossip.Gossip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -40,6 +42,7 @@ public class LibP2PPeer implements Peer {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final ReputationManager reputationManager;
+  private final Gossip gossip;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
@@ -55,10 +58,12 @@ public class LibP2PPeer implements Peer {
   public LibP2PPeer(
       final Connection connection,
       final Map<RpcMethod, RpcHandler> rpcHandlers,
-      final ReputationManager reputationManager) {
+      final ReputationManager reputationManager,
+      final Gossip gossip) {
     this.connection = connection;
     this.rpcHandlers = rpcHandlers;
     this.reputationManager = reputationManager;
+    this.gossip = gossip;
 
     final PeerId peerId = connection.secureSession().getRemoteId();
     final NodeId nodeId = new LibP2PNodeId(peerId);
@@ -74,6 +79,11 @@ public class LibP2PPeer implements Peer {
   @Override
   public PeerAddress getAddress() {
     return peerAddress;
+  }
+
+  @Override
+  public Double getGossipScore() {
+    return gossip.getGossipScore(connection.secureSession().getRemoteId());
   }
 
   @Override

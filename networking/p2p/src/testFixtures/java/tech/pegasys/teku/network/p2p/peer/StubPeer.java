@@ -56,6 +56,11 @@ public class StubPeer implements Peer {
   }
 
   @Override
+  public Double getGossipScore() {
+    return 0d;
+  }
+
+  @Override
   public boolean isConnected() {
     return connected;
   }

@@ -114,7 +114,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));
 
     // Setup peers
-    peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers);
+    peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers, gossipNetwork.getGossip());
 
     final Multiaddr listenAddr =
         MultiaddrUtil.fromInetSocketAddress(

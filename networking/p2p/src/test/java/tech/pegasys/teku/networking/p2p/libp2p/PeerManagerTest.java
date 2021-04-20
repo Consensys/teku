@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import io.libp2p.pubsub.gossip.Gossip;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 public class PeerManagerTest {
 
   private final ReputationManager reputationManager = mock(ReputationManager.class);
+  private final Gossip gossip = mock(Gossip.class);
   private final Network network = mock(Network.class);
 
   private final PeerManager peerManager =
@@ -47,7 +50,8 @@ public class PeerManagerTest {
           new NoOpMetricsSystem(),
           reputationManager,
           Collections.emptyList(),
-          Collections.emptyMap());
+          Collections.emptyMap(),
+          gossip);
 
   @Test
   public void subscribeConnect_singleListener() {
