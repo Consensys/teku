@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -117,6 +118,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  @CheckReturnValue
   public BlockValidationResult verifySignatures(
       final BeaconState preState,
       final SignedBeaconBlock block,
@@ -151,24 +153,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  @CheckReturnValue
   private BlockValidationResult verifyBlockSignature(
       final BeaconState state,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException {
+      final BLSSignatureVerifier signatureVerifier) {
     final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
-    final BLSPublicKey proposerPublicKey =
-        beaconStateAccessors
-            .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Public key not found for validator " + proposerIndex));
+    final Optional<BLSPublicKey> proposerPublicKey =
+        beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(proposerIndex));
+    if (proposerPublicKey.isEmpty()) {
+      return BlockValidationResult.failedExceptionally(
+          new BlockProcessingException("Public key not found for validator " + proposerIndex));
+    }
     final Bytes signing_root =
         beaconStateUtil.computeSigningRoot(
             block.getMessage(),
             beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
-    if (!signatureVerifier.verify(proposerPublicKey, signing_root, block.getSignature())) {
+    if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
       return BlockValidationResult.FAILED;
     }
     return BlockValidationResult.SUCCESSFUL;
