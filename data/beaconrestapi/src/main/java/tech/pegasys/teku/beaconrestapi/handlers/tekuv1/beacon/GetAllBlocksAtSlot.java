@@ -37,22 +37,24 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.teku.GetNonCanonicalBlocksResponse;
+import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 
-public class GetNonCanonicalBlocks implements Handler {
+public class GetAllBlocksAtSlot implements Handler {
   public static final String ROUTE = "/teku/v1/beacon/blocks/:slot";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
-  public GetNonCanonicalBlocks(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetAllBlocksAtSlot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this(dataProvider.getChainDataProvider(), jsonProvider);
   }
 
-  public GetNonCanonicalBlocks(
+  public GetAllBlocksAtSlot(
       final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.chainDataProvider = chainDataProvider;
@@ -61,16 +63,14 @@ public class GetNonCanonicalBlocks implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get Non-canonical blocks",
+      summary = "Get blocks at slot",
       tags = {TAG_EXPERIMENTAL},
-      description = "Get non canonical blocks by slot.",
-      pathParams = {
-        @OpenApiParam(name = SLOT, description = "slot of the non-canonical blocks to retrieve.")
-      },
+      description = "Get all blocks (canonical and non-canonical) by slot.",
+      pathParams = {@OpenApiParam(name = SLOT, description = "slot of the blocks to retrieve.")},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetNonCanonicalBlocksResponse.class)),
+            content = @OpenApiContent(from = GetAllBlocksAtSlotResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
@@ -82,7 +82,7 @@ public class GetNonCanonicalBlocks implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     SafeFuture<Set<SignedBeaconBlock>> future =
-        chainDataProvider.getNonCanonicalBlocks(pathParamMap.get(SLOT));
+        chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
     ctx.result(
         future.thenApplyChecked(
             result -> {
@@ -91,8 +91,9 @@ public class GetNonCanonicalBlocks implements Handler {
                 return BadRequest.serialize(
                     jsonProvider, SC_NOT_FOUND, "Blocks not found: " + pathParamMap.get(SLOT));
               }
-
-              return jsonProvider.objectToJSON(new GetNonCanonicalBlocksResponse(result));
+              final SpecMilestone milestone =
+                  chainDataProvider.getMilestoneAtSlot(UInt64.valueOf(pathParamMap.get(SLOT)));
+              return jsonProvider.objectToJSON(new GetAllBlocksAtSlotResponse(milestone, result));
             }));
   }
 }

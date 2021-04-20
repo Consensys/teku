@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -158,6 +159,10 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
         .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
         .add(Arguments.of(GetBlock.ROUTE, GetBlock.class))
+        .add(
+            Arguments.of(
+                tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
+                tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.class))
         .add(Arguments.of(GetBlockRoot.ROUTE, GetBlockRoot.class))
         .add(Arguments.of(GetBlockAttestations.ROUTE, GetBlockAttestations.class))
         .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
@@ -205,6 +210,7 @@ public class BeaconRestApiV1Test {
     builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
     builder.add(Arguments.of(GetStateByBlockRoot.ROUTE, GetStateByBlockRoot.class));
     builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
+    builder.add(Arguments.of(GetAllBlocksAtSlot.ROUTE, GetAllBlocksAtSlot.class));
 
     return builder.build();
   }
