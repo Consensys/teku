@@ -22,9 +22,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
 public class StateTransitionAltair extends StateTransition {
 
@@ -42,12 +40,8 @@ public class StateTransitionAltair extends StateTransition {
   public static StateTransitionAltair create(
       final SpecConfig specConfig,
       final BlockProcessorAltair blockProcessorAltair,
-      final EpochProcessor epochProcessor,
-      final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessorsAltair beaconStateAccessors) {
-    final BlockValidator blockValidator =
-        BlockValidator.standard(
-            specConfig, beaconStateUtil, blockProcessorAltair, beaconStateAccessors);
+      final EpochProcessor epochProcessor) {
+    final BlockValidator blockValidator = new BlockValidator(blockProcessorAltair);
     return new StateTransitionAltair(
         specConfig, blockProcessorAltair, epochProcessor, blockValidator);
   }

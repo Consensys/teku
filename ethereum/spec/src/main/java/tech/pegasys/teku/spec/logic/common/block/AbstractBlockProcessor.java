@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -66,7 +68,9 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashin
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -111,6 +115,80 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationValidator = attestationValidator;
+  }
+
+  @Override
+  @CheckReturnValue
+  public BlockValidationResult verifySignatures(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier) {
+    try {
+      // Verify signature
+      final BlockValidationResult blockSignatureResult =
+          verifyBlockSignature(preState, block, signatureVerifier);
+      if (!blockSignatureResult.isValid()) {
+        return blockSignatureResult;
+      }
+
+      // Verify body
+      BeaconBlock blockMessage = block.getMessage();
+      BeaconBlockBody blockBody = blockMessage.getBody();
+      verifyAttestationSignatures(
+          preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
+      verifyRandao(preState, blockMessage, signatureVerifier);
+
+      if (!verifyProposerSlashings(
+          preState, blockBody.getProposer_slashings(), signatureVerifier)) {
+        return BlockValidationResult.FAILED;
+      }
+
+      if (!verifyVoluntaryExits(preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
+        return BlockValidationResult.FAILED;
+      }
+      return BlockValidationResult.SUCCESSFUL;
+    } catch (BlockProcessingException | InvalidSignatureException e) {
+      return BlockValidationResult.failedExceptionally(e);
+    }
+  }
+
+  @CheckReturnValue
+  private BlockValidationResult verifyBlockSignature(
+      final BeaconState state,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier) {
+    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
+    final Optional<BLSPublicKey> proposerPublicKey =
+        beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(proposerIndex));
+    if (proposerPublicKey.isEmpty()) {
+      return BlockValidationResult.failedExceptionally(
+          new BlockProcessingException("Public key not found for validator " + proposerIndex));
+    }
+    final Bytes signing_root =
+        beaconStateUtil.computeSigningRoot(
+            block.getMessage(),
+            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
+    if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
+      return BlockValidationResult.FAILED;
+    }
+    return BlockValidationResult.SUCCESSFUL;
+  }
+
+  @Override
+  public BlockValidationResult validatePostState(
+      final BeaconState postState, final SignedBeaconBlock block) {
+    if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
+      return BlockValidationResult.failedExceptionally(
+          new StateTransitionException(
+              "Block state root does NOT match the calculated state root!\n"
+                  + "Block state root: "
+                  + block.getMessage().getStateRoot().toHexString()
+                  + "New state root: "
+                  + postState.hashTreeRoot().toHexString()));
+    } else {
+      return BlockValidationResult.SUCCESSFUL;
+    }
   }
 
   @Override
