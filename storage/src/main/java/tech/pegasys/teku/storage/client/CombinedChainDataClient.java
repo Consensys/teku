@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Verify.verifyNotNull;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -487,7 +488,23 @@ public class CombinedChainDataClient {
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getNonCanonicalBlocksAtSlot(final UInt64 slot) {
-    return historicalChainData.getNonCanonicalBlocksBySlot(slot);
+  public SafeFuture<Set<SignedBeaconBlock>> GetAllBlocksAtSlot(final UInt64 slot) {
+    if (isFinalized(slot)) {
+      return historicalChainData
+          .getNonCanonicalBlocksBySlot(slot)
+          .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
+    }
+    // TODO need to fetch recent blocks from proto array
+    return SafeFuture.completedFuture(Set.of());
+  }
+
+  Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(
+      final Set<SignedBeaconBlock> signedBeaconBlocks,
+      final Optional<SignedBeaconBlock> canonicalBlock) {
+    verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
+    if (canonicalBlock.isPresent()) {
+      signedBeaconBlocks.add(canonicalBlock.get());
+    }
+    return signedBeaconBlocks;
   }
 }
