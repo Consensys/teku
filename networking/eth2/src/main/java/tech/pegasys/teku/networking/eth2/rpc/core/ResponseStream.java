@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -40,10 +39,10 @@ class ResponseStream<O> {
   }
 
   public void completeSuccessfully() {
-    responseHandler.onCompleted(Optional.empty());
+    responseHandler.onCompleted();
   }
 
   public void completeWithError(final Throwable error) {
-    responseHandler.onCompleted(Optional.of(error));
+    responseHandler.onCompleted(error);
   }
 }
