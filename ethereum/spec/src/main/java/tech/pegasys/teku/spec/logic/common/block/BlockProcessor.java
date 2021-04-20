@@ -42,10 +42,6 @@ public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
-  void verifyBlockSignature(
-      BeaconState state, SignedBeaconBlock block, BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException;
-
   BlockValidationResult verifySignatures(
       BeaconState preState,
       SignedBeaconBlock block,

@@ -41,7 +41,7 @@ public class StateTransitionAltair extends StateTransition {
       final SpecConfig specConfig,
       final BlockProcessorAltair blockProcessorAltair,
       final EpochProcessor epochProcessor) {
-    final BlockValidator blockValidator = BlockValidator.standard(blockProcessorAltair);
+    final BlockValidator blockValidator = new BlockValidator(blockProcessorAltair);
     return new StateTransitionAltair(
         specConfig, blockProcessorAltair, epochProcessor, blockValidator);
   }

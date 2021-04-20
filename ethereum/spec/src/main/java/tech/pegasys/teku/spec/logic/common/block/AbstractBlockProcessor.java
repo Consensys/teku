@@ -117,29 +117,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void verifyBlockSignature(
-      final BeaconState state,
-      final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException {
-    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
-    final BLSPublicKey proposerPublicKey =
-        beaconStateAccessors
-            .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Public key not found for validator " + proposerIndex));
-    final Bytes signing_root =
-        beaconStateUtil.computeSigningRoot(
-            block.getMessage(),
-            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
-    if (!signatureVerifier.verify(proposerPublicKey, signing_root, block.getSignature())) {
-      throw new BlockProcessingException("Invalid block signature: " + block);
-    }
-  }
-
-  @Override
   public BlockValidationResult verifySignatures(
       final BeaconState preState,
       final SignedBeaconBlock block,
@@ -147,7 +124,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier) {
     try {
       // Verify signature
-      verifyBlockSignature(preState, block, signatureVerifier);
+      final BlockValidationResult blockSignatureResult =
+          verifyBlockSignature(preState, block, signatureVerifier);
+      if (!blockSignatureResult.isValid()) {
+        return blockSignatureResult;
+      }
 
       // Verify body
       BeaconBlock blockMessage = block.getMessage();
@@ -168,6 +149,29 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } catch (BlockProcessingException | InvalidSignatureException e) {
       return BlockValidationResult.failedExceptionally(e);
     }
+  }
+
+  private BlockValidationResult verifyBlockSignature(
+      final BeaconState state,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
+    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
+    final BLSPublicKey proposerPublicKey =
+        beaconStateAccessors
+            .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "Public key not found for validator " + proposerIndex));
+    final Bytes signing_root =
+        beaconStateUtil.computeSigningRoot(
+            block.getMessage(),
+            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
+    if (!signatureVerifier.verify(proposerPublicKey, signing_root, block.getSignature())) {
+      return BlockValidationResult.FAILED;
+    }
+    return BlockValidationResult.SUCCESSFUL;
   }
 
   @Override

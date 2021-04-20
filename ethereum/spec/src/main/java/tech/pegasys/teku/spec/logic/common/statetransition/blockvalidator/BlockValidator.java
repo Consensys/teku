@@ -27,12 +27,8 @@ public class BlockValidator {
 
   private final BlockProcessor blockProcessor;
 
-  BlockValidator(final BlockProcessor blockProcessor) {
+  public BlockValidator(final BlockProcessor blockProcessor) {
     this.blockProcessor = blockProcessor;
-  }
-
-  public static BlockValidator standard(final BlockProcessor blockProcessor) {
-    return new BlockValidator(blockProcessor);
   }
 
   public BlockValidationResult validatePreState(

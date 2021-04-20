@@ -60,7 +60,7 @@ public class StateTransition {
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
       final EpochProcessor epochProcessor) {
-    final BlockValidator blockValidator = BlockValidator.standard(blockProcessor);
+    final BlockValidator blockValidator = new BlockValidator(blockProcessor);
     return new StateTransition(specConfig, blockProcessor, epochProcessor, blockValidator);
   }
 
