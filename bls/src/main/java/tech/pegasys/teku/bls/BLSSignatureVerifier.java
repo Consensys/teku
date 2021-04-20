@@ -74,14 +74,4 @@ public interface BLSSignatureVerifier {
       throws InvalidSignatureException {
     verifyAndThrow(publicKey, message, signature, () -> errMessage);
   }
-
-  /**
-   * Convenient shortcut to throw exception when signature verification fails
-   *
-   * @throws InvalidSignatureException when signature is invalid
-   */
-  default void verifyAndThrow(BLSPublicKey publicKey, Bytes message, BLSSignature signature)
-      throws InvalidSignatureException {
-    verifyAndThrow(publicKey, message, signature, () -> "Invalid signature");
-  }
 }

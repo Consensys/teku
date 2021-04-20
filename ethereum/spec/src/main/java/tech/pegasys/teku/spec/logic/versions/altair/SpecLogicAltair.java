@@ -130,8 +130,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             validatorsUtil,
             attestationValidator);
     final StateTransitionAltair stateTransition =
-        StateTransitionAltair.create(
-            config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
+        StateTransitionAltair.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
