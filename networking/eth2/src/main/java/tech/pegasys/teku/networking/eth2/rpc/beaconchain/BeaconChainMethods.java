@@ -32,7 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFa
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.ForkDigestPayloadContext;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod;
@@ -110,8 +110,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
-    final RpcContextEncoder<?, StatusMessage> contextEncoder =
-        RpcContextEncoder.noop(StatusMessage.SSZ_SCHEMA);
+    final RpcContextCodec<?, StatusMessage> contextCodec =
+        RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BeaconChainMethodIds.STATUS,
@@ -119,7 +119,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         StatusMessage.SSZ_SCHEMA,
         true,
-        contextEncoder,
+        contextCodec,
         statusHandler,
         peerLookup);
   }
@@ -130,8 +130,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
-    final RpcContextEncoder<?, GoodbyeMessage> contextEncoder =
-        RpcContextEncoder.noop(GoodbyeMessage.SSZ_SCHEMA);
+    final RpcContextCodec<?, GoodbyeMessage> contextCodec =
+        RpcContextCodec.noop(GoodbyeMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BeaconChainMethodIds.GOODBYE,
@@ -139,7 +139,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         GoodbyeMessage.SSZ_SCHEMA,
         false,
-        contextEncoder,
+        contextCodec,
         goodbyeHandler,
         peerLookup);
   }
@@ -160,8 +160,8 @@ public class BeaconChainMethods {
 
     final SignedBeaconBlockSchema phase0BlockSchema =
         spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getSignedBeaconBlockSchema();
-    final RpcContextEncoder<Bytes, SignedBeaconBlock> noContextEncoder =
-        RpcContextEncoder.noop(phase0BlockSchema);
+    final RpcContextCodec<Bytes, SignedBeaconBlock> noContextCodec =
+        RpcContextCodec.noop(phase0BlockSchema);
 
     final SingleProtocolEth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
         v1Method =
@@ -172,13 +172,13 @@ public class BeaconChainMethods {
                 rpcEncoding,
                 requestType,
                 expectResponseToRequest,
-                noContextEncoder,
+                noContextCodec,
                 beaconBlocksByRootHandler,
                 peerLookup);
 
     if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
-      final RpcContextEncoder<Bytes4, SignedBeaconBlock> forkDigestContextEncoder =
-          RpcContextEncoder.forkDigest(
+      final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
+          RpcContextCodec.forkDigest(
               spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACONBLOCK);
 
       final SingleProtocolEth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
@@ -190,7 +190,7 @@ public class BeaconChainMethods {
                   rpcEncoding,
                   requestType,
                   expectResponseToRequest,
-                  forkDigestContextEncoder,
+                  forkDigestContextCodec,
                   beaconBlocksByRootHandler,
                   peerLookup);
 
@@ -215,8 +215,8 @@ public class BeaconChainMethods {
             spec, combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     final SignedBeaconBlockSchema signedBlockSchema =
         spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
-    final RpcContextEncoder<?, SignedBeaconBlock> noContextEncoder =
-        RpcContextEncoder.noop(signedBlockSchema);
+    final RpcContextCodec<?, SignedBeaconBlock> noContextCodec =
+        RpcContextCodec.noop(signedBlockSchema);
 
     final BeaconBlocksByRangeRequestMessageSchema requestType =
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA;
@@ -231,13 +231,13 @@ public class BeaconChainMethods {
                 rpcEncoding,
                 requestType,
                 expectResponseToRequest,
-                noContextEncoder,
+                noContextCodec,
                 beaconBlocksByRangeHandler,
                 peerLookup);
 
     if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
-      final RpcContextEncoder<Bytes4, SignedBeaconBlock> forkDigestContextEncoder =
-          RpcContextEncoder.forkDigest(
+      final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
+          RpcContextCodec.forkDigest(
               spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACONBLOCK);
 
       final SingleProtocolEth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
@@ -249,7 +249,7 @@ public class BeaconChainMethods {
                   rpcEncoding,
                   requestType,
                   expectResponseToRequest,
-                  forkDigestContextEncoder,
+                  forkDigestContextCodec,
                   beaconBlocksByRangeHandler,
                   peerLookup);
 
@@ -267,8 +267,8 @@ public class BeaconChainMethods {
       final RpcEncoding rpcEncoding) {
     final MetadataMessageHandler messageHandler =
         new MetadataMessageHandler(metadataMessagesFactory);
-    final RpcContextEncoder<?, MetadataMessage> contextEncoder =
-        RpcContextEncoder.noop(MetadataMessage.SSZ_SCHEMA);
+    final RpcContextCodec<?, MetadataMessage> contextCodec =
+        RpcContextCodec.noop(MetadataMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BeaconChainMethodIds.GET_METADATA,
@@ -276,7 +276,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         EmptyMessage.SSZ_SCHEMA,
         true,
-        contextEncoder,
+        contextCodec,
         messageHandler,
         peerLookup);
   }
@@ -287,8 +287,8 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final PingMessageHandler statusHandler = new PingMessageHandler(metadataMessagesFactory);
-    final RpcContextEncoder<?, PingMessage> contextEncoder =
-        RpcContextEncoder.noop(PingMessage.SSZ_SCHEMA);
+    final RpcContextCodec<?, PingMessage> contextCodec =
+        RpcContextCodec.noop(PingMessage.SSZ_SCHEMA);
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BeaconChainMethodIds.PING,
@@ -296,7 +296,7 @@ public class BeaconChainMethods {
         rpcEncoding,
         PingMessage.SSZ_SCHEMA,
         true,
-        contextEncoder,
+        contextCodec,
         statusHandler,
         peerLookup);
   }

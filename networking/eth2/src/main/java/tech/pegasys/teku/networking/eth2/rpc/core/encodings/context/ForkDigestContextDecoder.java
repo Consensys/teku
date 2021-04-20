@@ -19,10 +19,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.FixedSizeByteBufDeco
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class ForkDigestContextDecoder extends FixedSizeByteBufDecoder<Bytes4, RpcException>
+class ForkDigestContextDecoder extends FixedSizeByteBufDecoder<Bytes4, RpcException>
     implements RpcByteBufDecoder<Bytes4> {
 
-  public ForkDigestContextDecoder() {
+  ForkDigestContextDecoder() {
     super(4);
   }
 

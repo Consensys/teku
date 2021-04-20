@@ -25,13 +25,13 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-abstract class ForkDigestRpcContextEncoder<TPayload extends SszData>
-    implements RpcContextEncoder<Bytes4, TPayload> {
+class ForkDigestRpcContextCodec<TPayload extends SszData>
+    implements RpcContextCodec<Bytes4, TPayload> {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final ForkDigestPayloadContext<TPayload> payloadContext;
 
-  protected ForkDigestRpcContextEncoder(
+  ForkDigestRpcContextCodec(
       final Spec spec,
       final RecentChainData recentChainData,
       final ForkDigestPayloadContext<TPayload> payloadContext) {

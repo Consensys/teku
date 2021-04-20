@@ -27,8 +27,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBounds
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.ForkDigestContextDecoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.TestForkDigestContextDecoder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -194,7 +194,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     final BeaconState state = beaconState(usePhase0State);
     final Bytes serializedState = state.sszSerialize();
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
-    final Bytes contextBytes = TestContextEncoder.getContextBytes(usePhase0State).getWrappedBytes();
+    final Bytes contextBytes = TestContextCodec.getContextBytes(usePhase0State).getWrappedBytes();
     final Bytes compressedState = COMPRESSOR.compress(serializedState);
 
     final RpcResponseDecoder<BeaconState, ?> decoder = createForkAwareDecoder();
@@ -232,7 +232,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     final Bytes serializedState = state.sszSerialize();
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
     // Use wrong context for state
-    final Bytes contextBytes = TestContextEncoder.getContextBytes(!usePhase0).getWrappedBytes();
+    final Bytes contextBytes = TestContextCodec.getContextBytes(!usePhase0).getWrappedBytes();
     final Bytes compressedState = COMPRESSOR.compress(serializedState);
 
     for (List<ByteBuf> testByteBufSlice :
@@ -287,10 +287,10 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder() {
-    return RpcResponseDecoder.create(ENCODING, new TestContextEncoder());
+    return RpcResponseDecoder.create(ENCODING, new TestContextCodec());
   }
 
-  private static class TestContextEncoder implements RpcContextEncoder<Bytes4, BeaconState> {
+  private static class TestContextCodec implements RpcContextCodec<Bytes4, BeaconState> {
     private static final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
     private static final Spec altairSpec = TestSpecFactory.createMinimalAltair();
 
@@ -303,7 +303,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
 
     @Override
     public RpcByteBufDecoder<Bytes4> getContextDecoder() {
-      return new ForkDigestContextDecoder();
+      return new TestForkDigestContextDecoder();
     }
 
     @Override

@@ -22,17 +22,17 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public interface RpcContextEncoder<TContext, TPayload extends SszData> {
+public interface RpcContextCodec<TContext, TPayload extends SszData> {
 
-  static <T extends SszData> RpcContextEncoder<Bytes, T> noop(final SszSchema<T> schema) {
-    return new NoopRpcContextEncoder<T>(schema);
+  static <T extends SszData> RpcContextCodec<Bytes, T> noop(final SszSchema<T> schema) {
+    return new NoopRpcContextCodec<T>(schema);
   }
 
-  static <T extends SszData> RpcContextEncoder<Bytes4, T> forkDigest(
+  static <T extends SszData> RpcContextCodec<Bytes4, T> forkDigest(
       final Spec spec,
       final RecentChainData recentChainData,
       ForkDigestPayloadContext<T> payloadContext) {
-    return new ForkDigestRpcContextEncoder<T>(spec, recentChainData, payloadContext) {};
+    return new ForkDigestRpcContextCodec<T>(spec, recentChainData, payloadContext);
   }
 
   RpcByteBufDecoder<TContext> getContextDecoder();

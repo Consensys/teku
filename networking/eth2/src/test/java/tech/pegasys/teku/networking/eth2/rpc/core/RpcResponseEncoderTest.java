@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -38,10 +38,10 @@ final class RpcResponseEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
-  private final RpcContextEncoder<?, StatusMessage> contextEncoder =
-      RpcContextEncoder.noop(StatusMessage.SSZ_SCHEMA);
+  private final RpcContextCodec<?, StatusMessage> contextCodec =
+      RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
   private final RpcResponseEncoder<StatusMessage, ?> responseEncoder =
-      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextEncoder);
+      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextCodec);
 
   @Test
   public void shouldEncodeSuccessfulResponse() {
