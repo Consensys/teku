@@ -26,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubsc
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 
 public class SyncCommitteeSignatureGossipManager implements GossipManager {
@@ -68,9 +69,10 @@ public class SyncCommitteeSignatureGossipManager implements GossipManager {
       publish(signature.getSignature(), signature.getReceivedSubnetId().getAsInt());
     } else {
       // Publish locally produced signatures to all applicable subnets
-      final Optional<Set<Integer>> applicableSubcommittees = signature.getApplicableSubcommittees();
-      if (applicableSubcommittees.isPresent()) {
-        publish(signature, applicableSubcommittees.get());
+      final Optional<SyncSubcommitteeAssignments> subcommitteeAssignments =
+          signature.getSubcommitteeAssignments();
+      if (subcommitteeAssignments.isPresent()) {
+        publish(signature, subcommitteeAssignments.get().getAssignedSubcommittees());
       } else {
         syncCommitteeStateUtils
             .getStateForSyncCommittee(signature.getSlot(), signature.getBeaconBlockRoot())
@@ -79,7 +81,10 @@ public class SyncCommitteeSignatureGossipManager implements GossipManager {
                     maybeState.ifPresentOrElse(
                         state ->
                             publish(
-                                signature, signature.calculateApplicableSubcommittees(spec, state)),
+                                signature,
+                                signature
+                                    .calculateAssignments(spec, state)
+                                    .getAssignedSubcommittees()),
                         () ->
                             LOG.error(
                                 "Failed to publish sync committee signature for slot {} because the applicable subnets could not be calculated",
