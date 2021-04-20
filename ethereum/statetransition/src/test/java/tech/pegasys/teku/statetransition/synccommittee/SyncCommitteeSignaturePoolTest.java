@@ -116,7 +116,7 @@ class SyncCommitteeSignaturePoolTest {
             .addAssignment(subcommitteeIndex, 3)
             .build());
 
-    pool.add(signature);
+    addValid(signature);
 
     final SyncCommitteeContribution contribution =
         pool.createContribution(
@@ -136,7 +136,7 @@ class SyncCommitteeSignaturePoolTest {
             .addAssignment(1, 1)
             .addAssignment(subcommitteeIndex, 3)
             .build());
-    pool.add(signature1);
+    addValid(signature1);
     final ValidateableSyncCommitteeSignature signature2 =
         ValidateableSyncCommitteeSignature.fromValidator(
             dataStructureUtil.randomSyncCommitteeSignature(
@@ -146,7 +146,7 @@ class SyncCommitteeSignaturePoolTest {
             .addAssignment(subcommitteeIndex, 2)
             .addAssignment(5, 1)
             .build());
-    pool.add(signature2);
+    addValid(signature2);
 
     final SyncCommitteeContribution contribution =
         pool.createContribution(
@@ -168,7 +168,7 @@ class SyncCommitteeSignaturePoolTest {
             .addAssignment(5, 3)
             .build());
 
-    pool.add(signature);
+    addValid(signature);
 
     final UInt64 slot = signature.getSlot();
     final Bytes32 blockRoot = signature.getBeaconBlockRoot();
@@ -191,7 +191,7 @@ class SyncCommitteeSignaturePoolTest {
     signature.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    pool.add(signature);
+    addValid(signature);
 
     final SyncCommitteeContribution contribution =
         pool.createContribution(UInt64.ZERO, signature.getBeaconBlockRoot(), subcommitteeIndex);
@@ -209,7 +209,7 @@ class SyncCommitteeSignaturePoolTest {
     signature.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    pool.add(signature);
+    addValid(signature);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final SyncCommitteeContribution contribution =
@@ -227,7 +227,7 @@ class SyncCommitteeSignaturePoolTest {
     signature.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    pool.add(signature);
+    addValid(signature);
 
     final SyncCommitteeContribution contribution =
         pool.createContribution(signature.getSlot(), signature.getBeaconBlockRoot(), 1);
@@ -246,9 +246,9 @@ class SyncCommitteeSignaturePoolTest {
     final ValidateableSyncCommitteeSignature signature2 =
         createSignatureInSlot(blockRoot, subcommitteeIndex, 2);
 
-    pool.add(signature0);
-    pool.add(signature1);
-    pool.add(signature2);
+    addValid(signature0);
+    addValid(signature1);
+    addValid(signature2);
 
     pool.onSlot(UInt64.ZERO);
     assertSignaturesPresentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
@@ -261,6 +261,10 @@ class SyncCommitteeSignaturePoolTest {
     // Should be able to remove all signatures
     pool.onSlot(UInt64.valueOf(4));
     assertSignaturesAbsentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
+  }
+
+  private void addValid(final ValidateableSyncCommitteeSignature signature0) {
+    assertThat(pool.add(signature0)).isCompletedWithValue(ACCEPT);
   }
 
   private void assertSignaturesPresentForSlots(
