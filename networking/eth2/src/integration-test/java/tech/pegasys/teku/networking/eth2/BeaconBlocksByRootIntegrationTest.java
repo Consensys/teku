@@ -29,16 +29,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -170,6 +176,76 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final Optional<SignedBeaconBlock> result =
         waitFor(peer.requestBlockByRoot(Bytes32.fromHexStringLenient("0x123456789")));
     assertThat(result).isEmpty();
+  }
+
+  @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")
+  @MethodSource("altairVersioningOptions")
+  public void requestBlockByRoot_withDisparateVersionsEnabled_requestPhase0Blocks(
+      final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
+    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+
+    // Setup chain
+    final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
+    final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
+    peerStorage.chainUpdater().updateBestBlock(block2);
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyPhase0.class);
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyPhase0.class);
+
+    final List<SignedBeaconBlock> response =
+        requestBlocks(peer, List.of(block1.getRoot(), block2.getRoot()));
+    assertThat(response).containsExactly(block1.getBlock(), block2.getBlock());
+  }
+
+  @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")
+  @MethodSource("altairVersioningOptions")
+  public void requestBlockBySlot_withDisparateVersionsEnabled_requestAltairBlocks(
+      final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
+    setupPeerStorage(true);
+    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+
+    // Setup chain
+    peerStorage.chainUpdater().advanceChain(altairSlot.minus(1));
+    // Create altair blocks
+    final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
+    final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
+    peerStorage.chainUpdater().updateBestBlock(block2);
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyAltair.class);
+    assertThat(block2.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyAltair.class);
+
+    peerStorage.chainUpdater().updateBestBlock(block2);
+
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    final SafeFuture<Void> res =
+        peer.requestBlocksByRoot(
+            List.of(block1.getRoot(), block2.getRoot()), RpcResponseListener.from(blocks::add));
+
+    waitFor(() -> assertThat(res).isDone());
+
+    if (enableAltairLocally && enableAltairRemotely) {
+      // We should receive a successful response
+      assertThat(res).isCompleted();
+      assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
+    } else if (!enableAltairLocally && enableAltairRemotely) {
+      // The peer should refuse to return any results because we're asking for altair blocks using
+      // a v1 request
+      assertThat(res).isCompletedExceptionally();
+      assertThatThrownBy(res::get)
+          .hasCauseInstanceOf(RpcException.class)
+          .hasMessageContaining("[Code 1] Must request altair blocks using v2 protocol");
+    } else {
+      // Remote only supports v1, we should get a v1 response back and error out trying to
+      // decode these blocks with a phase0 decoder
+      assertThat(res).isCompletedExceptionally();
+      assertThatThrownBy(res::get).hasCauseInstanceOf(DeserializationFailedException.class);
+    }
+  }
+
+  private static Stream<Arguments> altairVersioningOptions() {
+    return Stream.of(
+        Arguments.of(true, true),
+        Arguments.of(false, true),
+        Arguments.of(true, false),
+        Arguments.of(false, false));
   }
 
   private SignedBeaconBlock addBlock() {

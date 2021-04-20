@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
@@ -210,9 +209,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
       // Remote only supports v1, we should get a v1 response back and error out trying to
       // decode these blocks with a phase0 decoder
       assertThat(res).isCompletedExceptionally();
-      assertThatThrownBy(res::get)
-          .hasCauseInstanceOf(DeserializationFailedException.class)
-          .hasMessageContaining("[Code " + ((int) RpcResponseStatus.INVALID_REQUEST_CODE) + "]");
+      assertThatThrownBy(res::get).hasCauseInstanceOf(DeserializationFailedException.class);
     }
   }
 
