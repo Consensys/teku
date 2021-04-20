@@ -19,4 +19,12 @@ public interface RpcResponseHandler<T> extends RpcResponseListener<T> {
 
   /** This method is invoked when all responses have been received. */
   void onCompleted(Optional<? extends Throwable> error);
+
+  default void onCompleted() {
+    onCompleted(Optional.empty());
+  }
+
+  default void onCompleted(Throwable t) {
+    onCompleted(Optional.of(t));
+  }
 }

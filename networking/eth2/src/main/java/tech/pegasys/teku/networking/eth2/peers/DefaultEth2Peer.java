@@ -178,7 +178,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public SafeFuture<Void> sendGoodbye(final UInt64 reason) {
     final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
-    return sendMessage(goodByeMethod, new GoodbyeMessage(reason));
+    return requestOptionalItem(goodByeMethod, new GoodbyeMessage(reason)).toVoid();
   }
 
   @Override
@@ -265,14 +265,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public int getUnansweredPingCount() {
     return unansweredPings.get();
-  }
-
-  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendMessage(
-      final Eth2RpcMethod<I, O> method, final I request) {
-    final Eth2RpcResponseHandler<O, Void> responseHandler =
-        Eth2RpcResponseHandler.expectNoResponse();
-    return sendEth2Request(method, request, responseHandler)
-        .thenCompose(__ -> responseHandler.getResult());
   }
 
   @Override

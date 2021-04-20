@@ -40,49 +40,63 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
     return new Eth2RpcResponseHandler<>(listener, completed, completed);
   }
 
-  public static <TResponse> Eth2RpcResponseHandler<TResponse, Void> expectNoResponse() {
-    return expectMultipleResponses(
-        response -> {
-          throw new InvalidRpcResponseException("Received response when none expected");
-        });
-  }
-
   public static <T> Eth2RpcResponseHandler<T, Optional<T>> expectOptionalResponse() {
     final AtomicReference<T> firstResponse = new AtomicReference<>();
-    final RpcResponseListener<T> listener = createSingleResponseListener(firstResponse);
+    final AtomicReference<InvalidRpcResponseException> errorCapture = new AtomicReference<>();
+    final RpcResponseListener<T> listener =
+        createSingleResponseListener(firstResponse, errorCapture);
 
     final SafeFuture<Void> completed = new SafeFuture<>();
     final SafeFuture<Optional<T>> resultFuture =
-        completed.thenApply(__ -> Optional.ofNullable(firstResponse.get()));
+        applyError(completed, errorCapture)
+            .thenApply(__ -> Optional.ofNullable(firstResponse.get()));
 
     return new Eth2RpcResponseHandler<>(listener, completed, resultFuture);
   }
 
   public static <T> Eth2RpcResponseHandler<T, T> expectSingleResponse() {
     final AtomicReference<T> firstResponse = new AtomicReference<>();
-    final RpcResponseListener<T> responseHandler = createSingleResponseListener(firstResponse);
+    final AtomicReference<InvalidRpcResponseException> errorCapture = new AtomicReference<>();
+    final RpcResponseListener<T> responseHandler =
+        createSingleResponseListener(firstResponse, errorCapture);
 
     final SafeFuture<Void> completed = new SafeFuture<>();
     final SafeFuture<T> resultFuture =
-        completed.thenApply(
-            __ -> {
-              final T result = firstResponse.get();
-              if (result == null) {
-                throw new InvalidRpcResponseException(
-                    "No response received when single response expected");
-              }
-              return result;
-            });
+        applyError(completed, errorCapture)
+            .thenApply(
+                __ -> {
+                  final T result = firstResponse.get();
+                  if (result == null) {
+                    throw new InvalidRpcResponseException(
+                        "No response received when single response expected");
+                  }
+                  return result;
+                });
 
     return new Eth2RpcResponseHandler<>(responseHandler, completed, resultFuture);
   }
 
+  private static SafeFuture<Void> applyError(
+      SafeFuture<Void> future, AtomicReference<InvalidRpcResponseException> errorCapture) {
+    return future.thenApply(
+        res -> {
+          InvalidRpcResponseException error = errorCapture.get();
+          if (error != null) {
+            throw error;
+          }
+          return res;
+        });
+  }
+
   private static <T> RpcResponseListener<T> createSingleResponseListener(
-      AtomicReference<T> firstResponse) {
+      AtomicReference<T> firstResponse, AtomicReference<InvalidRpcResponseException> errorCapture) {
     return response -> {
       if (!firstResponse.compareAndSet(null, response)) {
-        throw new InvalidRpcResponseException(
-            "Received multiple responses when single response expected");
+        final InvalidRpcResponseException error =
+            new InvalidRpcResponseException(
+                "Received multiple responses when single response expected");
+        errorCapture.set(error);
+        throw error;
       }
       return SafeFuture.COMPLETE;
     };
@@ -103,7 +117,7 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
 
   @Override
   public SafeFuture<?> onResponse(final TResponse response) {
-    return listener.onResponse(response);
+    return SafeFuture.of(() -> listener.onResponse(response));
   }
 
   public static class InvalidRpcResponseException extends RuntimeException {
