@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface MonitorableProvider {
   boolean isValid();
 
-  SafeFuture<Void> validate();
+  SafeFuture<Boolean> validate();
 
   boolean needsToBeValidated();
 

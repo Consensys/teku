@@ -349,10 +349,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
 
     final SafeFuture<Boolean> ethSyncing = fallbackAwareEth1Provider.ethSyncing();
 
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
     providerSelector.notifyValidationCompleted();
-
-    asyncRunner.executeQueuedActions();
 
     assertThat(ethSyncing.get()).isTrue();
   }

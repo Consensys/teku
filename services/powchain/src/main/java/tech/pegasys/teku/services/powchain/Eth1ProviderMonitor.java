@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.Eth1ProviderSelector;
@@ -45,13 +46,24 @@ public class Eth1ProviderMonitor {
       return;
     }
 
-    SafeFuture.allOf(
-            eth1ProviderSelector.getProviders().stream()
-                .filter(MonitorableProvider::needsToBeValidated)
-                .map(MonitorableProvider::validate)
-                .toArray(SafeFuture[]::new))
-        .always(eth1ProviderSelector::notifyValidationCompleted);
+    Stream<SafeFuture<Boolean>> validationStream =
+        eth1ProviderSelector
+            .getProviders()
+            .parallelStream()
+            .filter(MonitorableProvider::needsToBeValidated)
+            .map(MonitorableProvider::validate);
 
+    if (eth1ProviderSelector.isInitialValidationCompleted()) {
+      validationStream.forEach(booleanSafeFuture -> booleanSafeFuture.always(() -> {}));
+    } else {
+      validationStream.forEach(
+          booleanSafeFuture ->
+              booleanSafeFuture.finish(
+                  (aBoolean) -> {
+                    if (aBoolean) eth1ProviderSelector.notifyValidationCompleted();
+                  },
+                  throwable -> {}));
+    }
     asyncRunner.runAfterDelay(this::validate, Duration.ofSeconds(10)).reportExceptions();
   }
 }

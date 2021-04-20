@@ -133,16 +133,7 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> run(final Function<MonitorableEth1Provider, SafeFuture<T>> task) {
-    if (eth1ProviderSelector.isInitialValidationCompleted()) {
-      return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
-    } else {
-      LOG.info(
-          "Eth1 endpoints have not yet been validated. Retrying in {} seconds",
-          Constants.ETH1_INITIAL_VALIDATION_WAIT.toSeconds());
-      return asyncRunner
-          .getDelayedFuture(Constants.ETH1_INITIAL_VALIDATION_WAIT)
-          .thenCompose(__ -> run(task));
-    }
+    return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
   }
 
   private <T> SafeFuture<T> run(
@@ -150,25 +141,25 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
       final Eth1ProviderSelector.ValidEth1ProviderIterator providers,
       Eth1RequestException exceptionsContainer) {
 
-    return SafeFuture.of(
-        () -> {
-          Throwable[] previousExceptions = exceptionsContainer.getSuppressed();
-          Optional<MonitorableEth1Provider> nextAvailableProvider = providers.next();
-          if (nextAvailableProvider.isPresent()) {
-            return task.apply(nextAvailableProvider.get())
-                .exceptionallyCompose(
-                    err -> {
-                      LOG.warn("Retrying with next eth1 endpoint", err);
-                      exceptionsContainer.addSuppressed(err);
-                      return run(task, providers, exceptionsContainer);
-                    });
-          }
-          // no (more) available endpoints
-          LOG.debug(
-              previousExceptions.length > 0
-                  ? "All available eth1 endpoints failed"
-                  : "No available eth1 endpoints");
-          return SafeFuture.failedFuture(exceptionsContainer);
-        });
+    Throwable[] previousExceptions = exceptionsContainer.getSuppressed();
+    return providers
+        .next()
+        .handleComposed(
+            (nextAvailableProvider, err) -> {
+              if (err != null) {
+                LOG.debug(
+                    previousExceptions.length > 0
+                        ? "All available eth1 endpoints failed"
+                        : "No available eth1 endpoints");
+                throw exceptionsContainer;
+              }
+              return task.apply(nextAvailableProvider)
+                  .exceptionallyCompose(
+                      taskErr -> {
+                        LOG.warn("Retrying with next eth1 endpoint", taskErr);
+                        exceptionsContainer.addSuppressed(taskErr);
+                        return run(task, providers, exceptionsContainer);
+                      });
+            });
   }
 }

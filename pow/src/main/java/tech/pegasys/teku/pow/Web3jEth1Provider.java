@@ -192,7 +192,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   }
 
   @Override
-  public SafeFuture<Void> validate() {
+  public SafeFuture<Boolean> validate() {
     if (validating.compareAndSet(false, true)) {
       LOG.info("Validating endpoint {} ...", this.id);
       return getChainId()
@@ -207,26 +207,31 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
           .thenCompose(__ -> this.ethSyncing())
           .handleComposed(
               (syncing, err) -> {
+                SafeFuture<Boolean> futureReturn = new SafeFuture<>();
                 if (err != null) {
                   LOG.warn(
                       "Endpoint {} is INVALID | {}",
                       this.id,
                       Throwables.getRootCause(err).getMessage());
                   updateLastValidation(Result.failed);
-                  validating.set(false);
+                  futureReturn.complete(Boolean.FALSE);
                 } else if (syncing) {
                   LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
                   updateLastValidation(Result.failed);
+                  futureReturn.complete(Boolean.FALSE);
                 } else {
                   LOG.info("Endpoint {} is VALID", this.id);
                   updateLastValidation(Result.success);
+                  futureReturn.complete(Boolean.TRUE);
                 }
                 validating.set(false);
-                return SafeFuture.COMPLETE;
+                return futureReturn;
               });
     } else {
       LOG.debug("Already validating");
-      return SafeFuture.COMPLETE;
+      SafeFuture<Boolean> futureReturn = new SafeFuture<>();
+      futureReturn.complete(Boolean.TRUE);
+      return futureReturn;
     }
   }
 }

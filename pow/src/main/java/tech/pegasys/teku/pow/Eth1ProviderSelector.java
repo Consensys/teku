@@ -16,44 +16,45 @@ package tech.pegasys.teku.pow;
 import com.google.common.base.Preconditions;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class Eth1ProviderSelector {
   private final List<MonitorableEth1Provider> candidates;
-  private boolean initialValidationCompleted;
+  private final SafeFuture<Void> initialValidationCompleted;
 
   public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
     Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
     this.candidates = candidates;
-    this.initialValidationCompleted = false;
+    this.initialValidationCompleted = new SafeFuture<>();
   }
 
-  public static class ValidEth1ProviderIterator {
+  public class ValidEth1ProviderIterator {
     private Iterator<MonitorableEth1Provider> currentIterator;
 
-    private ValidEth1ProviderIterator(Iterator<MonitorableEth1Provider> currentIterator) {
-      this.currentIterator = currentIterator;
+    private ValidEth1ProviderIterator() {
+      this.currentIterator = candidates.iterator();
     }
 
-    public Optional<MonitorableEth1Provider> next() {
-
-      while (currentIterator.hasNext()) {
-        final MonitorableEth1Provider current = currentIterator.next();
-        if (current.isValid()) {
-          return Optional.of(current);
-        }
-      }
-
-      return Optional.empty();
+    public SafeFuture<MonitorableEth1Provider> next() {
+      return initialValidationCompleted.thenApply(
+          (__) -> {
+            while (currentIterator.hasNext()) {
+              final MonitorableEth1Provider current = currentIterator.next();
+              if (current.isValid()) {
+                return current;
+              }
+            }
+            throw new RuntimeException("no available endpoints");
+          });
     }
   }
 
   public void notifyValidationCompleted() {
-    initialValidationCompleted = true;
+    initialValidationCompleted.complete(null);
   }
 
   public boolean isInitialValidationCompleted() {
-    return initialValidationCompleted;
+    return initialValidationCompleted.isDone();
   }
 
   public List<MonitorableEth1Provider> getProviders() {
@@ -61,6 +62,6 @@ public class Eth1ProviderSelector {
   }
 
   public ValidEth1ProviderIterator getValidProviderIterator() {
-    return new ValidEth1ProviderIterator(candidates.iterator());
+    return new ValidEth1ProviderIterator();
   }
 }
