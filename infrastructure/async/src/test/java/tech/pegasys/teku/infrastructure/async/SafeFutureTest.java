@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -651,6 +652,54 @@ public class SafeFutureTest {
 
     future2.complete(null);
     assertThat(result).isCompleted();
+  }
+
+  @Test
+  void collectAll_completeWithEmptyListWhenNoFuturesSupplied() {
+    assertThat(SafeFuture.collectAll()).isCompletedWithValue(Collections.emptyList());
+  }
+
+  @Test
+  void collectAll_completeWithAllResultsWhenAllFuturesComplete() {
+    final SafeFuture<String> future1 = new SafeFuture<>();
+    final SafeFuture<String> future2 = new SafeFuture<>();
+    final SafeFuture<List<String>> result = SafeFuture.collectAll(future1, future2);
+    assertThat(result).isNotDone();
+
+    future1.complete("result1");
+    assertThat(result).isNotDone();
+
+    future2.complete("result2");
+    assertThat(result).isCompletedWithValue(List.of("result1", "result2"));
+  }
+
+  @Test
+  void collectAll_completeWithAllResultsWhenAllFuturesCompleteOutOfOrder() {
+    final SafeFuture<String> future1 = new SafeFuture<>();
+    final SafeFuture<String> future2 = new SafeFuture<>();
+    final SafeFuture<List<String>> result = SafeFuture.collectAll(future1, future2);
+    assertThat(result).isNotDone();
+
+    future2.complete("result2");
+    assertThat(result).isNotDone();
+
+    future1.complete("result1");
+    assertThat(result).isCompletedWithValue(List.of("result1", "result2"));
+  }
+
+  @Test
+  void collectAll_shouldFailWhenAnyFutureFails() {
+    final SafeFuture<String> future1 = new SafeFuture<>();
+    final SafeFuture<String> future2 = new SafeFuture<>();
+    final SafeFuture<List<String>> result = SafeFuture.collectAll(future1, future2);
+    assertThat(result).isNotDone();
+
+    final Exception exception = new Exception("Oopsie!");
+    future2.completeExceptionally(exception);
+    assertThat(result).isNotDone();
+
+    future1.complete("result1");
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
   private static boolean hasDependents(CompletableFuture<?> fut) {
