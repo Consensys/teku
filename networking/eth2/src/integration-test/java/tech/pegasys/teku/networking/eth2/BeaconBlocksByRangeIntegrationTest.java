@@ -213,7 +213,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     }
   }
 
-  private static Stream<Arguments> altairVersioningOptions() {
+  public static Stream<Arguments> altairVersioningOptions() {
     return Stream.of(
         Arguments.of(true, true),
         Arguments.of(false, true),
