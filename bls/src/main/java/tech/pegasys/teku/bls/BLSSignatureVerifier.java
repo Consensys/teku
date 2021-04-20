@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -34,6 +33,8 @@ public interface BLSSignatureVerifier {
   /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
   BLSSignatureVerifier SIMPLE = BLS::fastAggregateVerify;
 
+  BLSSignatureVerifier NOOP = (publicKeys, message, signature) -> true;
+
   /**
    * Verifies an aggregate BLS signature against a message using the list of public keys. In case of
    * non-aggregate signature [publicKeys] list should contain just a single entry
@@ -49,29 +50,5 @@ public interface BLSSignatureVerifier {
   /** Shortcut to {@link #verify(List, Bytes, BLSSignature)} for non-aggregate case */
   default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
-  }
-
-  /**
-   * Convenient shortcut to throw exception when signature verification fails
-   *
-   * @throws InvalidSignatureException when signature is invalid
-   */
-  default void verifyAndThrow(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature, Supplier<String> errMessage)
-      throws InvalidSignatureException {
-    if (!verify(publicKey, message, signature)) {
-      throw new InvalidSignatureException(errMessage.get());
-    }
-  }
-
-  /**
-   * Convenient shortcut to throw exception when signature verification fails
-   *
-   * @throws InvalidSignatureException when signature is invalid
-   */
-  default void verifyAndThrow(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature, String errMessage)
-      throws InvalidSignatureException {
-    verifyAndThrow(publicKey, message, signature, () -> errMessage);
   }
 }

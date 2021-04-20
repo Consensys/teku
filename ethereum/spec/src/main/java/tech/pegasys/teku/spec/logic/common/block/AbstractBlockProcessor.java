@@ -33,7 +33,6 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -43,27 +42,23 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.attestation.AttestationProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
@@ -94,7 +89,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
-  private final AttestationDataStateTransitionValidator attestationValidator;
+  protected final AttestationProcessor attestationProcessor;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
@@ -105,7 +100,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final AttestationProcessor attestationProcessor) {
     this.specConfig = specConfig;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
@@ -114,7 +109,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.attestationValidator = attestationValidator;
+    this.attestationProcessor = attestationProcessor;
   }
 
   @Override
@@ -135,9 +130,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Verify body
       BeaconBlock blockMessage = block.getMessage();
       BeaconBlockBody blockBody = blockMessage.getBody();
-      verifyAttestationSignatures(
+      attestationProcessor.verifyAttestationSignatures(
           preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
-      verifyRandao(preState, blockMessage, signatureVerifier);
+      if (!verifyRandao(preState, blockMessage, signatureVerifier)) {
+        return BlockValidationResult.FAILED;
+      }
 
       if (!verifyProposerSlashings(
           preState, blockBody.getProposer_slashings(), signatureVerifier)) {
@@ -148,7 +145,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         return BlockValidationResult.FAILED;
       }
       return BlockValidationResult.SUCCESSFUL;
-    } catch (BlockProcessingException | InvalidSignatureException e) {
+    } catch (BlockProcessingException e) {
       return BlockValidationResult.failedExceptionally(e);
     }
   }
@@ -189,29 +186,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } else {
       return BlockValidationResult.SUCCESSFUL;
     }
-  }
-
-  @Override
-  public Optional<OperationInvalidReason> validateAttestation(
-      final BeaconState state, final AttestationData data) {
-    return attestationValidator.validate(state, data);
-  }
-
-  protected void assertAttestationValid(
-      final MutableBeaconState state, final Attestation attestation) {
-    final AttestationData data = attestation.getData();
-
-    final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
-    checkArgument(
-        invalidReason.isEmpty(),
-        "process_attestations: %s",
-        invalidReason.map(OperationInvalidReason::describe).orElse(""));
-
-    List<Integer> committee =
-        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
-    checkArgument(
-        attestation.getAggregation_bits().size() == committee.size(),
-        "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
   /**
@@ -275,20 +249,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  @Override
-  public void verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
-      throws InvalidSignatureException {
+  protected boolean verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls) {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
-    bls.verifyAndThrow(
-        proposerPublicKey,
-        signing_root,
-        block.getBody().getRandao_reveal(),
-        "process_randao: Verify that the provided randao value is valid");
+    return bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal());
   }
 
   /**
@@ -350,7 +318,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
           processProposerSlashingsNoValidation(state, body.getProposer_slashings());
           processAttesterSlashings(state, body.getAttester_slashings());
-          processAttestations(state, body.getAttestations(), indexedAttestationCache, false);
+          attestationProcessor.processAttestations(
+              state, body.getAttestations(), indexedAttestationCache, BLSSignatureVerifier.NOOP);
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
           // @process_shard_receipt_proofs
@@ -404,8 +373,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  @Override
-  public boolean verifyProposerSlashings(
+  protected boolean verifyProposerSlashings(
       BeaconState state,
       SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
@@ -460,117 +428,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                         state, toIntExact(indexToSlash.longValue())));
           }
         });
-  }
-
-  /**
-   * Processes attestations
-   *
-   * @param state
-   * @param attestations
-   * @throws BlockProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
-   */
-  @Override
-  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException {
-    processAttestations(state, attestations, IndexedAttestationCache.NOOP);
-  }
-
-  /**
-   * Processes attestations
-   *
-   * @param state
-   * @param attestations
-   * @throws BlockProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
-   */
-  @Override
-  public void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    processAttestations(state, attestations, indexedAttestationCache, true);
-  }
-
-  protected void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache,
-      final boolean verifySignatures)
-      throws BlockProcessingException {
-    final IndexedAttestationProvider indexedAttestationProvider =
-        createIndexedAttestationProvider(state, indexedAttestationCache);
-    safelyProcess(
-        () -> {
-          for (Attestation attestation : attestations) {
-            // Validate
-            assertAttestationValid(state, attestation);
-            processAttestation(state, attestation, indexedAttestationProvider);
-            if (verifySignatures) {
-              verifyAttestationSignatures(
-                  state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
-            }
-          }
-        });
-  }
-
-  private IndexedAttestationProvider createIndexedAttestationProvider(
-      BeaconState state, IndexedAttestationCache indexedAttestationCache) {
-    return (attestation) ->
-        indexedAttestationCache.computeIfAbsent(
-            attestation, () -> attestationUtil.getIndexedAttestation(state, attestation));
-  }
-
-  /**
-   * Corresponds to fork-specific logic from "process_attestation" spec method. Common validation
-   * and signature verification logic can be found in {@link #processAttestations}.
-   *
-   * @param genericState The state corresponding to the block being processed
-   * @param attestation An attestation in the body of the block being processed
-   * @param indexedAttestationProvider
-   */
-  protected abstract void processAttestation(
-      final MutableBeaconState genericState,
-      final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider);
-
-  @Override
-  public void verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    verifyAttestationSignatures(
-        state,
-        attestations,
-        signatureVerifier,
-        createIndexedAttestationProvider(state, indexedAttestationCache));
-  }
-
-  protected void verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationProvider indexedAttestationProvider)
-      throws BlockProcessingException {
-
-    Optional<AttestationProcessingResult> processResult =
-        attestations.stream()
-            .map(indexedAttestationProvider::getIndexedAttestation)
-            .map(
-                attestation ->
-                    attestationUtil.isValidIndexedAttestation(
-                        state, attestation, signatureVerifier))
-            .filter(result -> !result.isSuccessful())
-            .findAny();
-    if (processResult.isPresent()) {
-      throw new BlockProcessingException(
-          "Invalid attestation: " + processResult.get().getInvalidReason());
-    }
   }
 
   /**
@@ -767,10 +624,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
     }
-  }
-
-  protected interface IndexedAttestationProvider {
-    IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 
   private interface BlockProcessingAction {

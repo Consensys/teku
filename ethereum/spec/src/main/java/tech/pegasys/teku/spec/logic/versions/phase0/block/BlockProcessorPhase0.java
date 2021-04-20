@@ -13,24 +13,19 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.attestation.AttestationProcessorPhase0;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
@@ -43,7 +38,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final AttestationProcessorPhase0 attestationProcessor) {
     super(
         specConfig,
         predicates,
@@ -53,29 +48,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
-        attestationValidator);
-  }
-
-  @Override
-  protected void processAttestation(
-      final MutableBeaconState genericState,
-      final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider) {
-    final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
-    final AttestationData data = attestation.getData();
-
-    PendingAttestation pendingAttestation =
-        new PendingAttestation(
-            attestation.getAggregation_bits(),
-            data,
-            state.getSlot().minus(data.getSlot()),
-            UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
-
-    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
-      state.getCurrent_epoch_attestations().append(pendingAttestation);
-    } else {
-      state.getPrevious_epoch_attestations().append(pendingAttestation);
-    }
+        attestationProcessor);
   }
 
   @Override

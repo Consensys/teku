@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -414,7 +413,7 @@ public class Spec {
 
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return atState(state).getBlockProcessor().validateAttestation(state, data);
+    return atState(state).getAttestationProcessor().validateAttestation(state, data);
   }
 
   public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -436,12 +435,9 @@ public class Spec {
 
   public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttestations(state, attestations);
-  }
-
-  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processSyncCommittee(state, syncAggregate);
+    atState(state)
+        .getAttestationProcessor()
+        .processAttestations(state, attestations, IndexedAttestationCache.NOOP);
   }
 
   public void processAttestations(
@@ -450,7 +446,7 @@ public class Spec {
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     atState(state)
-        .getBlockProcessor()
+        .getAttestationProcessor()
         .processAttestations(state, attestations, indexedAttestationCache);
   }
 

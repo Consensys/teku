@@ -14,33 +14,25 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import java.util.Map;
-import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
-  Optional<OperationInvalidReason> validateAttestation(
-      final BeaconState state, final AttestationData data);
 
   BlockValidationResult verifySignatures(
       BeaconState preState,
@@ -55,9 +47,6 @@ public interface BlockProcessor {
 
   void processRandaoNoValidation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException;
-
-  void verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
-      throws InvalidSignatureException;
 
   void processEth1Data(MutableBeaconState state, BeaconBlockBody body);
 
@@ -79,29 +68,8 @@ public interface BlockProcessor {
       MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException;
 
-  boolean verifyProposerSlashings(
-      BeaconState state,
-      SszList<ProposerSlashing> proposerSlashings,
-      BLSSignatureVerifier signatureVerifier);
-
   void processAttesterSlashings(
       MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
-      throws BlockProcessingException;
-
-  void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException;
-
-  void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException;
-
-  void verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
   void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)

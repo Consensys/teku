@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.attestation.AttestationProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -49,6 +50,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorStatusFactoryPhase0 validatorStatusFactory,
       final EpochProcessorPhase0 epochProcessor,
       final BlockProcessorPhase0 blockProcessor,
+      final AttestationProcessorPhase0 attestationProcessor,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -64,6 +66,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
+        attestationProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
@@ -109,6 +112,9 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
+    final AttestationProcessorPhase0 attestationProcessor =
+        new AttestationProcessorPhase0(
+            beaconStateAccessors, beaconStateUtil, attestationUtil, attestationValidator);
     final BlockProcessorPhase0 blockProcessor =
         new BlockProcessorPhase0(
             config,
@@ -119,7 +125,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator);
+            attestationProcessor);
     final StateTransition stateTransition =
         StateTransition.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
@@ -139,6 +145,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
+        attestationProcessor,
         stateTransition,
         forkChoiceUtil,
         blockProposalUtil);

@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.attestation.AttestationProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -43,6 +44,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
   protected final BlockProcessor blockProcessor;
+  protected final AttestationProcessor attestationProcessor;
   protected final StateTransition stateTransition;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
@@ -59,6 +61,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
+      final AttestationProcessor attestationProcessor,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
@@ -73,6 +76,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.validatorStatusFactory = validatorStatusFactory;
     this.epochProcessor = epochProcessor;
     this.blockProcessor = blockProcessor;
+    this.attestationProcessor = attestationProcessor;
     this.stateTransition = stateTransition;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
@@ -106,6 +110,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BlockProcessor getBlockProcessor() {
     return blockProcessor;
+  }
+
+  @Override
+  public AttestationProcessor getAttestationProcessor() {
+    return attestationProcessor;
   }
 
   @Override
