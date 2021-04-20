@@ -134,7 +134,7 @@ public class PingIntegrationTest {
                 m ->
                     Stream.of(m)
                         .filter(t -> t.getIds().stream().noneMatch(id -> id.contains("/ping")))
-                        .map(n -> ((RpcMethod<?, ?, ?, ?>) n)))
+                        .map(n -> ((RpcMethod<?, ?, ?>) n)))
             .startNetwork();
     network2 =
         networkFactory

@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod<?, ?, ?, ?>, RpcHandler<?, ?, ?, ?>> rpcHandlers;
+  private final Map<RpcMethod<?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
@@ -56,7 +56,7 @@ public class LibP2PPeer implements Peer {
 
   public LibP2PPeer(
       final Connection connection,
-      final List<RpcHandler<?, ?, ?, ?>> rpcHandlers,
+      final List<RpcHandler<?, ?, ?>> rpcHandlers,
       final ReputationManager reputationManager) {
     this.connection = connection;
     this.rpcHandlers =
@@ -129,21 +129,19 @@ public class LibP2PPeer implements Peer {
           TOutgoingHandler extends RpcRequestHandler,
           TRequest,
           RespHandler extends RpcResponseHandler<?>>
-      SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
-          RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
-    RpcHandler<?, TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (RpcHandler<?, TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
-    return rpcHandler
-        .sendRequest(connection, request, responseHandler)
-        .thenApply(ctrl -> (RpcStreamController<?, TOutgoingHandler>) ctrl);
+    return rpcHandler.sendRequest(connection, request, responseHandler);
   }
 
   @Override

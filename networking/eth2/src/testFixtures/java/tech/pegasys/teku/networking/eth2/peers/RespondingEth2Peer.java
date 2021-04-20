@@ -321,8 +321,8 @@ public class RespondingEth2Peer implements Eth2Peer {
           TOutgoingHandler extends RpcRequestHandler,
           TRequest,
           RespHandler extends RpcResponseHandler<?>>
-      SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
-          final RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest tRequest,
           final RespHandler responseHandler) {
     return null;
