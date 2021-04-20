@@ -60,7 +60,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
   public void setup() {
     asyncRunner = new StubAsyncRunner();
     providerSelector = new Eth1ProviderSelector(providers);
-    providerSelector.notifyValidationCompleted();
+    providerSelector.notifyValidationCompletion();
     fallbackAwareEth1Provider = new FallbackAwareEth1Provider(providerSelector, asyncRunner);
 
     when(node1.isValid()).thenReturn(true);
@@ -349,7 +349,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
 
     final SafeFuture<Boolean> ethSyncing = fallbackAwareEth1Provider.ethSyncing();
 
-    providerSelector.notifyValidationCompleted();
+    providerSelector.notifyValidationCompletion();
 
     assertThat(ethSyncing.get()).isTrue();
   }

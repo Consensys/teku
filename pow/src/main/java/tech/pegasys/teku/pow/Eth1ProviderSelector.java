@@ -29,7 +29,7 @@ public class Eth1ProviderSelector {
   }
 
   public class ValidEth1ProviderIterator {
-    private Iterator<MonitorableEth1Provider> currentIterator;
+    private final Iterator<MonitorableEth1Provider> currentIterator;
 
     private ValidEth1ProviderIterator() {
       this.currentIterator = candidates.iterator();
@@ -49,7 +49,7 @@ public class Eth1ProviderSelector {
     }
   }
 
-  public void notifyValidationCompleted() {
+  public void notifyValidationCompletion() {
     initialValidationCompleted.complete(null);
   }
 

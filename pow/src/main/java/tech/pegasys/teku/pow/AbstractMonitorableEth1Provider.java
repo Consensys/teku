@@ -49,6 +49,11 @@ public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1
   }
 
   @Override
+  public synchronized UInt64 getLastValidationTime() {
+    return lastValidationTime;
+  }
+
+  @Override
   public synchronized boolean isValid() {
     return lastCallResult.equals(Result.success) && lastValidationResult.equals(Result.success);
   }

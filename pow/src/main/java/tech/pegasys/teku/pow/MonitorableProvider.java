@@ -24,4 +24,6 @@ public interface MonitorableProvider {
   boolean needsToBeValidated();
 
   UInt64 getLastCallTime();
+
+  UInt64 getLastValidationTime();
 }

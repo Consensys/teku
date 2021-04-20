@@ -46,6 +46,7 @@ public class Eth1ProviderMonitor {
       return;
     }
 
+    // let's prepare a parallel validation stream
     Stream<SafeFuture<Boolean>> validationStream =
         eth1ProviderSelector
             .getProviders()
@@ -54,15 +55,24 @@ public class Eth1ProviderMonitor {
             .map(MonitorableProvider::validate);
 
     if (eth1ProviderSelector.isInitialValidationCompleted()) {
-      validationStream.forEach(booleanSafeFuture -> booleanSafeFuture.always(() -> {}));
+      // if we already notified a completion, just execute all validations.
+      validationStream.forEach(isValidFuture -> isValidFuture.always(() -> {}));
     } else {
-      validationStream.forEach(
-          booleanSafeFuture ->
-              booleanSafeFuture.finish(
-                  (aBoolean) -> {
-                    if (aBoolean) eth1ProviderSelector.notifyValidationCompleted();
-                  },
-                  throwable -> {}));
+      // otherwise let's notify a validation completion as soon as we have a valid endpoint or in
+      // any case at the end of all validations.
+      SafeFuture.allOf(
+              validationStream
+                  .map(
+                      isValidFuture ->
+                          isValidFuture.thenApply(
+                              (isValid) -> {
+                                if (isValid) {
+                                  eth1ProviderSelector.notifyValidationCompletion();
+                                }
+                                return null;
+                              }))
+                  .toArray(SafeFuture[]::new))
+          .always(eth1ProviderSelector::notifyValidationCompletion);
     }
     asyncRunner.runAfterDelay(this::validate, Duration.ofSeconds(10)).reportExceptions();
   }
