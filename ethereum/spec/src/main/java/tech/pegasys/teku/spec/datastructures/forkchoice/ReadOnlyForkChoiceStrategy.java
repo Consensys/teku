@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -25,6 +26,8 @@ public interface ReadOnlyForkChoiceStrategy {
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
+
+  Set<Bytes32> getBlockRootsAtSlot(UInt64 slot);
 
   /** @return A map from blockRoot to blockSlot for current chain heads */
   Map<Bytes32, UInt64> getChainHeads();
