@@ -229,9 +229,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
               });
     } else {
       LOG.debug("Already validating");
-      SafeFuture<Boolean> futureReturn = new SafeFuture<>();
-      futureReturn.complete(Boolean.TRUE);
-      return futureReturn;
+      return SafeFuture.completedFuture(Boolean.TRUE);
     }
   }
 }
