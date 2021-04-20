@@ -38,7 +38,7 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
  *
  * @param <T>
  */
-public class RpcResponseDecoder<T extends SszData, TContext> {
+public final class RpcResponseDecoder<T extends SszData, TContext> {
   private final RpcEncoding encoding;
   private final RpcContextCodec<TContext, T> contextCodec;
 

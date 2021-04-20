@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.ssz.SszData;
 
-public class RpcRequestEncoder {
+public final class RpcRequestEncoder {
   private final RpcEncoding encoding;
 
   public RpcRequestEncoder(final RpcEncoding encoding) {
