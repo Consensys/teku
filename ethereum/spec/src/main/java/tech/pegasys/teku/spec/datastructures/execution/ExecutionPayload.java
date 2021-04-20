@@ -66,7 +66,7 @@ public class ExecutionPayload
               "transactions",
               SszListSchema.create(
                   SszByteListSchema.create(SpecConfig.MAX_BYTES_PER_OPAQUE_TRANSACTION),
-                  SpecConfig.MAX_APPLICATION_TRANSACTIONS)));
+                  SpecConfig.MAX_EXECUTION_TRANSACTIONS)));
     }
 
     @SuppressWarnings("unchecked")
