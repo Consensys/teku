@@ -163,6 +163,20 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         .catchAndRethrow(completionException -> addSuppressedErrors(completionException, futures));
   }
 
+  /**
+   * Waits for all the supplied futures to complete then returns a single future that combines all
+   * the results.
+   *
+   * <p>If all the futures complete successfully the returned future completes with a {@link List}
+   * of each result in the same order as the futures were given.
+   *
+   * <p>If any future completes exceptionally, the returned future completes exceptionally once all
+   * the futures have completed.
+   *
+   * @param futures the futures to collect results from
+   * @param <T> the result type to collect
+   * @return a new future that completes when all the supplied futures complete
+   */
   @SafeVarargs
   public static <T> SafeFuture<List<T>> collectAll(final SafeFuture<T>... futures) {
     return allOf(futures)
