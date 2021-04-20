@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.block;
+package tech.pegasys.teku.spec.logic.versions.rayonism.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.MutableBeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -39,19 +39,19 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
+import tech.pegasys.teku.spec.logic.versions.rayonism.helpers.MiscHelpersRayonism;
 
-public class BlockProcessorMerge extends AbstractBlockProcessor {
+public class BlockProcessorRayonism extends AbstractBlockProcessor {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final MiscHelpersMerge miscHelpersMerge;
+  private final MiscHelpersRayonism miscHelpersRayonism;
   private final ExecutionPayloadUtil executionPayloadUtil;
 
-  public BlockProcessorMerge(
-      final SpecConfigMerge specConfig,
+  public BlockProcessorRayonism(
+      final SpecConfigRayonism specConfig,
       final Predicates predicates,
-      final MiscHelpersMerge miscHelpers,
+      final MiscHelpersRayonism miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final BeaconStateUtil beaconStateUtil,
@@ -70,7 +70,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
         validatorsUtil,
         attestationValidator);
 
-    this.miscHelpersMerge = miscHelpers;
+    this.miscHelpersRayonism = miscHelpers;
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
@@ -84,17 +84,17 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
   public void processExecutionPayload(MutableBeaconState genericState, BeaconBlockBody genericBody)
       throws BlockProcessingException {
     try {
-      final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
-      final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(genericBody);
+      final MutableBeaconStateRayonism state = MutableBeaconStateRayonism.required(genericState);
+      final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(genericBody);
       final ExecutionPayload executionPayload = blockBody.getExecution_payload();
 
       // Pre-merge, skip processing
-      if (!miscHelpersMerge.isTransitionCompleted(state)
-          && !miscHelpersMerge.isTransitionBlock(state, blockBody)) {
+      if (!miscHelpersRayonism.isTransitionCompleted(state)
+          && !miscHelpersRayonism.isTransitionBlock(state, blockBody)) {
         return;
       }
 
-      if (miscHelpersMerge.isTransitionCompleted(state)) {
+      if (miscHelpersRayonism.isTransitionCompleted(state)) {
         checkArgument(
             executionPayload
                 .getParent_hash()
@@ -110,7 +110,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
       checkArgument(
           executionPayload
               .getTimestamp()
-              .equals(miscHelpersMerge.computeTimeAtSlot(state, state.getSlot())),
+              .equals(miscHelpersRayonism.computeTimeAtSlot(state, state.getSlot())),
           "process_execution_payload: Verify that the timestamp is correct");
 
       boolean isExecutionPayloadValid =
@@ -145,7 +145,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
       MutableBeaconState genericState,
       Attestation attestation,
       IndexedAttestationProvider indexedAttestationProvider) {
-    final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
+    final MutableBeaconStateRayonism state = MutableBeaconStateRayonism.required(genericState);
     final AttestationData data = attestation.getData();
 
     PendingAttestation pendingAttestation =

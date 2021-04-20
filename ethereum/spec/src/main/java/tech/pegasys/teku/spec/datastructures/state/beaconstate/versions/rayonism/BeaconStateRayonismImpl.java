@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -25,14 +25,14 @@ import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
-    implements BeaconStateMerge, BeaconStateCache, ValidatorStatsMerge {
+class BeaconStateRayonismImpl extends AbstractBeaconState<MutableBeaconStateRayonism>
+    implements BeaconStateRayonism, BeaconStateCache, ValidatorStatsRayonism {
 
-  BeaconStateMergeImpl(final BeaconStateSchema<BeaconStateMerge, MutableBeaconStateMerge> schema) {
+  BeaconStateRayonismImpl(final BeaconStateSchema<BeaconStateRayonism, MutableBeaconStateRayonism> schema) {
     super(schema);
   }
 
-  BeaconStateMergeImpl(
+  BeaconStateRayonismImpl(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -40,23 +40,23 @@ class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
     super(type, backingNode, cache, transitionCaches);
   }
 
-  BeaconStateMergeImpl(
+  BeaconStateRayonismImpl(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
+  BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
           throws E1, E2, E3 {
-    MutableBeaconStateMerge writableCopy = createWritableCopyPriv();
+    MutableBeaconStateRayonism writableCopy = createWritableCopyPriv();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
 
   @Override
-  protected MutableBeaconStateMerge createWritableCopyPriv() {
-    return new MutableBeaconStateMergeImpl(this);
+  protected MutableBeaconStateRayonism createWritableCopyPriv() {
+    return new MutableBeaconStateRayonismImpl(this);
   }
 
   @Override
@@ -64,7 +64,7 @@ class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
     describeCustomFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateMerge state) {
+  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateRayonism state) {
     stringBuilder.add("execution_payload_header", state.getLatest_execution_payload_header());
   }
 }

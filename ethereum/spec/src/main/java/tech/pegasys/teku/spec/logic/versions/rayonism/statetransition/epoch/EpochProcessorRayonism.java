@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.rayonism.statetransition.epoch;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.MutableBeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -28,9 +28,9 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.RewardsAndPenaltiesCalculatorPhase0;
 
-public class EpochProcessorMerge extends AbstractEpochProcessor {
+public class EpochProcessorRayonism extends AbstractEpochProcessor {
 
-  public EpochProcessorMerge(
+  public EpochProcessorRayonism(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
@@ -61,7 +61,7 @@ public class EpochProcessorMerge extends AbstractEpochProcessor {
   @Override
   public void processParticipationUpdates(MutableBeaconState genericState) {
     // Rotate current/previous epoch attestations
-    final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
+    final MutableBeaconStateRayonism state = MutableBeaconStateRayonism.required(genericState);
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
     state.getCurrent_epoch_attestations().clear();
   }

@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.helpers;
+package tech.pegasys.teku.spec.logic.versions.rayonism.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 
-public class BeaconStateAccessorsMerge extends BeaconStateAccessors {
-  public BeaconStateAccessorsMerge(
+public class BeaconStateAccessorsRayonism extends BeaconStateAccessors {
+  public BeaconStateAccessorsRayonism(
       final SpecConfig config, final Predicates predicates, final MiscHelpers miscHelpers) {
     super(config, predicates, miscHelpers);
   }
@@ -29,7 +29,7 @@ public class BeaconStateAccessorsMerge extends BeaconStateAccessors {
   // Custom accessors
   @Override
   public int getPreviousEpochAttestationCapacity(final BeaconState genericState) {
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
     final int absoluteMax =
         Math.toIntExact(
             state.getBeaconStateSchema().getPreviousEpochAttestationsSchema().getMaxLength());

@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder.RayonismBuilder;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigReader {
@@ -91,12 +92,12 @@ public class SpecConfigReader {
             });
 
     // Process merge config
-    streamConfigSetters(SpecConfigBuilder.MergeBuilder.class)
+    streamConfigSetters(RayonismBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::mergeBuilder, constantKey, rawValue);
+              invokeSetter(setter, configBuilder::rayonismBuilder, constantKey, rawValue);
               unprocessConfig.remove(constantKey);
             });
 

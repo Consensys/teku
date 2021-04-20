@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -33,9 +33,9 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-public class BeaconBlockBodyMerge
+public class BeaconBlockBodyRayonism
     extends Container9<
-        BeaconBlockBodyMerge,
+    BeaconBlockBodyRayonism,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -47,16 +47,16 @@ public class BeaconBlockBodyMerge
         ExecutionPayload>
     implements BeaconBlockBody {
 
-  BeaconBlockBodyMerge(BeaconBlockBodySchemaMerge type) {
+  BeaconBlockBodyRayonism(BeaconBlockBodySchemaRayonism type) {
     super(type);
   }
 
-  BeaconBlockBodyMerge(BeaconBlockBodySchemaMerge type, TreeNode backingNode) {
+  BeaconBlockBodyRayonism(BeaconBlockBodySchemaRayonism type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  BeaconBlockBodyMerge(
-      BeaconBlockBodySchemaMerge type,
+  BeaconBlockBodyRayonism(
+      BeaconBlockBodySchemaRayonism type,
       SszSignature randao_reveal,
       Eth1Data eth1_data,
       SszBytes32 graffiti,
@@ -79,12 +79,12 @@ public class BeaconBlockBodyMerge
         execution_payload);
   }
 
-  public static BeaconBlockBodyMerge required(final BeaconBlockBody body) {
+  public static BeaconBlockBodyRayonism required(final BeaconBlockBody body) {
     checkArgument(
-        body instanceof BeaconBlockBodyMerge,
+        body instanceof BeaconBlockBodyRayonism,
         "Expected merge block body but got %s",
         body.getClass());
-    return (BeaconBlockBodyMerge) body;
+    return (BeaconBlockBodyRayonism) body;
   }
 
   @Override
@@ -132,12 +132,12 @@ public class BeaconBlockBodyMerge
   }
 
   @Override
-  public BeaconBlockBodySchemaMerge getSchema() {
-    return (BeaconBlockBodySchemaMerge) super.getSchema();
+  public BeaconBlockBodySchemaRayonism getSchema() {
+    return (BeaconBlockBodySchemaRayonism) super.getSchema();
   }
 
   @Override
-  public Optional<BeaconBlockBodyMerge> toVersionMerge() {
+  public Optional<BeaconBlockBodyRayonism> toVersionMerge() {
     return Optional.of(this);
   }
 }

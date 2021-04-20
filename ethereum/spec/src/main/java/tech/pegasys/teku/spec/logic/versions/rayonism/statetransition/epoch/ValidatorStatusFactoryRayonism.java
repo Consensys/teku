@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch;
+package tech.pegasys.teku.spec.logic.versions.rayonism.statetransition.epoch;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.AbstractValidatorStatusFactory;
@@ -30,9 +30,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
-public class ValidatorStatusFactoryMerge extends AbstractValidatorStatusFactory {
+public class ValidatorStatusFactoryRayonism extends AbstractValidatorStatusFactory {
 
-  public ValidatorStatusFactoryMerge(
+  public ValidatorStatusFactoryRayonism(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -48,7 +48,7 @@ public class ValidatorStatusFactoryMerge extends AbstractValidatorStatusFactory 
       final UInt64 previousEpoch,
       final UInt64 currentEpoch) {
 
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
 
     Stream.concat(
             state.getPrevious_epoch_attestations().stream(),

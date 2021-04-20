@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,11 +23,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
-  private BeaconBlockBodySchemaMerge schema;
+public class BeaconBlockBodyBuilderRayonism extends AbstractBeaconBlockBodyBuilder {
+  private BeaconBlockBodySchemaRayonism schema;
   private ExecutionPayload executionPayload;
 
-  public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMerge schema) {
+  public BeaconBlockBodyBuilderRayonism schema(final BeaconBlockBodySchemaRayonism schema) {
     this.schema = schema;
     return this;
   }
@@ -52,9 +52,9 @@ public class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder 
     checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
-  public BeaconBlockBodyMerge build() {
+  public BeaconBlockBodyRayonism build() {
     validate();
-    return new BeaconBlockBodyMerge(
+    return new BeaconBlockBodyRayonism(
         schema,
         new SszSignature(randaoReveal),
         eth1Data,

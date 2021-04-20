@@ -17,19 +17,19 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodySchemaRayonism;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateSchemaRayonism;
 
-public class SchemaDefinitionsMerge implements SchemaDefinitions {
+public class SchemaDefinitionsRayonism implements SchemaDefinitions {
   private final BeaconStateSchema<?, ?> beaconStateSchema;
-  private final BeaconBlockBodySchemaMerge beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaRayonism beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
-  public SchemaDefinitionsMerge(final SpecConfig specConfig) {
-    this.beaconStateSchema = BeaconStateSchemaMerge.create(specConfig);
-    this.beaconBlockBodySchema = BeaconBlockBodySchemaMerge.create(specConfig);
+  public SchemaDefinitionsRayonism(final SpecConfig specConfig) {
+    this.beaconStateSchema = BeaconStateSchemaRayonism.create(specConfig);
+    this.beaconBlockBodySchema = BeaconBlockBodySchemaRayonism.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
   }

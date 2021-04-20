@@ -11,10 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge;
+package tech.pegasys.teku.spec.logic.versions.rayonism;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -29,30 +30,30 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.statetransition.StateTransitionMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.ValidatorStatusFactoryMerge;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.logic.versions.rayonism.block.BlockProcessorRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.helpers.BeaconStateAccessorsRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.helpers.MiscHelpersRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.statetransition.StateTransitionRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.statetransition.epoch.EpochProcessorRayonism;
+import tech.pegasys.teku.spec.logic.versions.rayonism.statetransition.epoch.ValidatorStatusFactoryRayonism;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsRayonism;
 
-public class SpecLogicMerge extends AbstractSpecLogic {
+public class SpecLogicRayonism extends AbstractSpecLogic {
 
   private final ExecutionPayloadUtil executionPayloadUtil;
 
-  private SpecLogicMerge(
+  private SpecLogicRayonism(
       final Predicates predicates,
-      final MiscHelpersMerge miscHelpers,
+      final MiscHelpersRayonism miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final ValidatorStatusFactoryMerge validatorStatusFactory,
-      final EpochProcessorMerge epochProcessor,
-      final BlockProcessorMerge blockProcessor,
+      final ValidatorStatusFactoryRayonism validatorStatusFactory,
+      final EpochProcessorRayonism epochProcessor,
+      final BlockProcessorRayonism blockProcessor,
       final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -76,13 +77,13 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
-  public static SpecLogicMerge create(
-      final SpecConfigMerge config, final SchemaDefinitionsMerge schemaDefinitions) {
+  public static SpecLogicRayonism create(
+      final SpecConfigRayonism config, final SchemaDefinitionsRayonism schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config);
-    final BeaconStateAccessorsMerge beaconStateAccessors =
-        new BeaconStateAccessorsMerge(config, predicates, miscHelpers);
+    final MiscHelpersRayonism miscHelpers = new MiscHelpersRayonism(config);
+    final BeaconStateAccessorsRayonism beaconStateAccessors =
+        new BeaconStateAccessorsRayonism(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
 
@@ -104,11 +105,11 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
-    final ValidatorStatusFactoryMerge validatorStatusFactory =
-        new ValidatorStatusFactoryMerge(
+    final ValidatorStatusFactoryRayonism validatorStatusFactory =
+        new ValidatorStatusFactoryRayonism(
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
-    final EpochProcessorMerge epochProcessor =
-        new EpochProcessorMerge(
+    final EpochProcessorRayonism epochProcessor =
+        new EpochProcessorRayonism(
             config,
             miscHelpers,
             beaconStateAccessors,
@@ -117,8 +118,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             beaconStateUtil,
             validatorStatusFactory);
     final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
-    final BlockProcessorMerge blockProcessor =
-        new BlockProcessorMerge(
+    final BlockProcessorRayonism blockProcessor =
+        new BlockProcessorRayonism(
             config,
             predicates,
             miscHelpers,
@@ -129,15 +130,15 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             attestationValidator,
             executionPayloadUtil);
-    final StateTransitionMerge stateTransition =
-        StateTransitionMerge.create(
+    final StateTransitionRayonism stateTransition =
+        StateTransitionRayonism.create(
             config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, stateTransition);
 
-    return new SpecLogicMerge(
+    return new SpecLogicRayonism(
         predicates,
         miscHelpers,
         beaconStateAccessors,

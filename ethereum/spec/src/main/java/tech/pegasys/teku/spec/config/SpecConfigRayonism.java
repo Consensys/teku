@@ -6,7 +6,7 @@ import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConfigMerge extends DelegatingSpecConfig {
+public class SpecConfigRayonism extends DelegatingSpecConfig {
 
   // Fork
   private final Bytes4 mergeForkVersion;
@@ -15,7 +15,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   // Transition
   private final long transitionTotalDifficulty;
 
-  public SpecConfigMerge(
+  public SpecConfigRayonism(
       SpecConfig specConfig,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkSlot,
@@ -26,7 +26,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
     this.transitionTotalDifficulty = transitionTotalDifficulty;
   }
 
-  public static SpecConfigMerge required(final SpecConfig specConfig) {
+  public static SpecConfigRayonism required(final SpecConfig specConfig) {
     return specConfig
         .toVersionMerge()
         .orElseThrow(
@@ -37,7 +37,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   }
 
   public static <T> T required(
-      final SpecConfig specConfig, final Function<SpecConfigMerge, T> ctr) {
+      final SpecConfig specConfig, final Function<SpecConfigRayonism, T> ctr) {
     return ctr.apply(
         specConfig
             .toVersionMerge()
@@ -61,7 +61,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   }
 
   @Override
-  public Optional<SpecConfigMerge> toVersionMerge() {
+  public Optional<SpecConfigRayonism> toVersionMerge() {
     return Optional.of(this);
   }
 
@@ -69,7 +69,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    SpecConfigMerge that = (SpecConfigMerge) o;
+    SpecConfigRayonism that = (SpecConfigRayonism) o;
     return Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkSlot, that.mergeForkSlot)
         && transitionTotalDifficulty == that.transitionTotalDifficulty;

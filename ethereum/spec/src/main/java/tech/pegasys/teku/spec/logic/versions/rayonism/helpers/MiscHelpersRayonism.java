@@ -11,32 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.merge.helpers;
+package tech.pegasys.teku.spec.logic.versions.rayonism.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
-public class MiscHelpersMerge extends MiscHelpers {
+public class MiscHelpersRayonism extends MiscHelpers {
 
-  public MiscHelpersMerge(final SpecConfig specConfig) {
+  public MiscHelpersRayonism(final SpecConfig specConfig) {
     super(specConfig);
   }
 
   public boolean isTransitionCompleted(final BeaconState genericState) {
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
     return !state.getLatest_execution_payload_header().equals(new ExecutionPayloadHeader());
   }
 
   public boolean isTransitionBlock(
       final BeaconState genericState, final BeaconBlockBody genericBlockBody) {
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
-    final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(genericBlockBody);
+    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
+    final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(genericBlockBody);
     return !isTransitionCompleted(state)
         && !blockBody.getExecution_payload().equals(new ExecutionPayload());
   }

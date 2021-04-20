@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 
-interface ValidatorStatsMerge extends BeaconStateMerge {
+interface ValidatorStatsRayonism extends BeaconStateRayonism {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
     return getValidatorStats(getPrevious_epoch_attestations(), correctTargetRoot);

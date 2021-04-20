@@ -15,15 +15,15 @@ package tech.pegasys.teku.spec;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
-import tech.pegasys.teku.spec.logic.versions.merge.SpecLogicMerge;
+import tech.pegasys.teku.spec.logic.versions.rayonism.SpecLogicRayonism;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsRayonism;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -50,7 +50,7 @@ public class SpecVersion extends DelegatingSpecLogic {
         .toVersionMerge()
         .map(altairConfig -> altairConfig.getMergeForkVersion().equals(fork))
         .orElse(false)) {
-      return createMerge(SpecConfigMerge.required(specConfig));
+      return createMerge(SpecConfigRayonism.required(specConfig));
     } else if (specConfig.getGenesisForkVersion().equals(fork)) {
       // Checking Phase 0 at the end to correctly process the case
       // when another fork is enabled since Genesis
@@ -72,9 +72,9 @@ public class SpecVersion extends DelegatingSpecLogic {
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createMerge(final SpecConfigMerge specConfig) {
-    final SchemaDefinitionsMerge schemaDefinitions = new SchemaDefinitionsMerge(specConfig);
-    final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions);
+  public static SpecVersion createMerge(final SpecConfigRayonism specConfig) {
+    final SchemaDefinitionsRayonism schemaDefinitions = new SchemaDefinitionsRayonism(specConfig);
+    final SpecLogic specLogic = SpecLogicRayonism.create(specConfig, schemaDefinitions);
     return new SpecVersion(specConfig, schemaDefinitions, specLogic);
   }
 

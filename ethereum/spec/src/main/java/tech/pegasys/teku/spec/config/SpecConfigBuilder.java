@@ -114,7 +114,7 @@ public class SpecConfigBuilder {
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
   // Merge
-  private Optional<MergeBuilder> mergeBuilder = Optional.empty();
+  private Optional<RayonismBuilder> rayonismBuilder = Optional.empty();
 
   public SpecConfig build() {
     validate();
@@ -183,7 +183,7 @@ public class SpecConfigBuilder {
             depositContractAddress);
 
     SpecConfig altairOrPhase0 = altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
-    return mergeBuilder.map(b -> (SpecConfig) b.build(altairOrPhase0)).orElse(altairOrPhase0);
+    return rayonismBuilder.map(b -> (SpecConfig) b.build(altairOrPhase0)).orElse(altairOrPhase0);
   }
 
   private void validate() {
@@ -250,7 +250,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    mergeBuilder.ifPresent(MergeBuilder::validate);
+    rayonismBuilder.ifPresent(RayonismBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -817,15 +817,15 @@ public class SpecConfigBuilder {
   }
 
   // Merge
-  public SpecConfigBuilder mergeBuilder(final Consumer<MergeBuilder> consumer) {
-    if (mergeBuilder.isEmpty()) {
-      mergeBuilder = Optional.of(new MergeBuilder());
+  public SpecConfigBuilder rayonismBuilder(final Consumer<RayonismBuilder> consumer) {
+    if (rayonismBuilder.isEmpty()) {
+      rayonismBuilder = Optional.of(new RayonismBuilder());
     }
-    consumer.accept(mergeBuilder.get());
+    consumer.accept(rayonismBuilder.get());
     return this;
   }
 
-  class MergeBuilder {
+  class RayonismBuilder {
 
     // Fork
     private Bytes4 mergeForkVersion;
@@ -834,10 +834,10 @@ public class SpecConfigBuilder {
     // Transition
     private long transitionTotalDifficulty;
 
-    private MergeBuilder() {}
+    private RayonismBuilder() {}
 
-    SpecConfigMerge build(final SpecConfig specConfig) {
-      return new SpecConfigMerge(
+    SpecConfigRayonism build(final SpecConfig specConfig) {
+      return new SpecConfigRayonism(
           specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
     }
 
@@ -847,19 +847,19 @@ public class SpecConfigBuilder {
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
     }
 
-    public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
+    public RayonismBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
       checkNotNull(mergeForkVersion);
       this.mergeForkVersion = mergeForkVersion;
       return this;
     }
 
-    public MergeBuilder mergeForkSlot(UInt64 mergeForkSlot) {
+    public RayonismBuilder mergeForkSlot(UInt64 mergeForkSlot) {
       checkNotNull(mergeForkSlot);
       this.mergeForkSlot = mergeForkSlot;
       return this;
     }
 
-    public MergeBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
+    public RayonismBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
       this.transitionTotalDifficulty = transitionTotalDifficulty;
       return this;
     }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -20,9 +20,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszMutableList;
 
-public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconStateMerge {
+public interface MutableBeaconStateRayonism extends MutableBeaconState, BeaconStateRayonism {
 
-  static MutableBeaconStateMerge required(final MutableBeaconState state) {
+  static MutableBeaconStateRayonism required(final MutableBeaconState state) {
     return state
         .toMutableVersionMerge()
         .orElseThrow(
@@ -54,10 +54,10 @@ public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconState
   }
 
   @Override
-  BeaconStateMerge commitChanges();
+  BeaconStateRayonism commitChanges();
 
   @Override
-  default Optional<MutableBeaconStateMerge> toMutableVersionMerge() {
+  default Optional<MutableBeaconStateRayonism> toMutableVersionMerge() {
     return Optional.of(this);
   }
 }
