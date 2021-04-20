@@ -14,12 +14,9 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 /**
  * Dedicated class which performs block validation (apart from {@link BlockProcessor} The validation
@@ -31,13 +28,8 @@ public interface BlockValidator {
   /** Block validator which just returns OK result without any validations */
   BlockValidator NOOP = new NoOpBlockValidator();
 
-  static BlockValidator standard(
-      final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
-      final BlockProcessor blockProcessor,
-      final BeaconStateAccessors beaconStateAccessors) {
-    return new BatchBlockValidator(
-        specConfig, beaconStateUtil, blockProcessor, beaconStateAccessors);
+  static BlockValidator standard(final BlockProcessor blockProcessor) {
+    return new BatchBlockValidator(blockProcessor);
   }
 
   /**

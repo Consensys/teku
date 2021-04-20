@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 public class StateTransition {
 
@@ -61,11 +59,8 @@ public class StateTransition {
   public static StateTransition create(
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
-      final EpochProcessor epochProcessor,
-      final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessors beaconStateAccessors) {
-    final BlockValidator blockValidator =
-        BlockValidator.standard(specConfig, beaconStateUtil, blockProcessor, beaconStateAccessors);
+      final EpochProcessor epochProcessor) {
+    final BlockValidator blockValidator = BlockValidator.standard(blockProcessor);
     return new StateTransition(specConfig, blockProcessor, epochProcessor, blockValidator);
   }
 
