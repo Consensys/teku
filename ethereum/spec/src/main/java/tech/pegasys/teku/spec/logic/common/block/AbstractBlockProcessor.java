@@ -173,6 +173,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  @CheckReturnValue
   public BlockValidationResult validatePostState(
       final BeaconState postState, final SignedBeaconBlock block) {
     if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
@@ -249,6 +250,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
+  @CheckReturnValue
   protected boolean verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls) {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(block.getSlot());
     // Verify RANDAO reveal

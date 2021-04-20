@@ -37,6 +37,7 @@ public class AttestationProcessorPhase0 extends AttestationProcessor {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
+  @Override
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,

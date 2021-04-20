@@ -62,6 +62,7 @@ public class AttestationProcessorAltair extends AttestationProcessor {
     this.beaconStateMutators = beaconStateMutators;
   }
 
+  @Override
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
