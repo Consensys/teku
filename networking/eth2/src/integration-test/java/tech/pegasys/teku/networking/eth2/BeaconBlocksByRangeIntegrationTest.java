@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,32 +32,15 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-public class BeaconBlocksByRangeIntegrationTest {
-
-  private final UInt64 altairSlot = UInt64.valueOf(16); // Epoch 2 for minimal
-  private final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-  private final Spec altairEnabledSpec = TestSpecFactory.createMinimalWithAltairFork(altairSlot);
-
-  private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private StorageSystem peerStorage;
-
-  @AfterEach
-  public void tearDown() throws Exception {
-    networkFactory.stopAll();
-  }
+public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
@@ -250,65 +232,5 @@ public class BeaconBlocksByRangeIntegrationTest {
         peer.requestBlocksByRange(
             UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add)));
     return blocks;
-  }
-
-  private Eth2Peer createNetworks() {
-    return createNetworks(false, false);
-  }
-
-  private void setupPeerStorage(final boolean enableAltair) {
-    final Spec remoteSpec = enableAltair ? altairEnabledSpec : phase0Spec;
-    peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
-    peerStorage.chainUpdater().initializeGenesis();
-  }
-
-  /**
-   * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
-   * can send requests.
-   *
-   * @param enableAltairLocally Whether the "local" node supports altair
-   * @param enableAltairRemotely Whether the remote peer receiving requests supports altair
-   * @return An Eth2Peer to which we can send requests
-   */
-  private Eth2Peer createNetworks(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) {
-    // Set up remote peer storage
-    final Spec remoteSpec = enableAltairRemotely ? altairEnabledSpec : phase0Spec;
-    if (peerStorage == null) {
-      peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
-      peerStorage.chainUpdater().initializeGenesis();
-    }
-
-    // Set up local storage
-    final Spec localSpec = enableAltairLocally ? altairEnabledSpec : phase0Spec;
-    final StorageSystem localStorage =
-        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
-    localStorage.chainUpdater().initializeGenesis();
-
-    try {
-      final Eth2P2PNetwork remotePeerNetwork =
-          networkFactory
-              .builder()
-              .rpcEncoding(RpcEncoding.SSZ_SNAPPY)
-              .eventBus(peerStorage.eventBus())
-              .recentChainData(peerStorage.recentChainData())
-              .historicalChainData(peerStorage.chainStorage())
-              .spec(remoteSpec)
-              .startNetwork();
-
-      final Eth2P2PNetwork localNetwork =
-          networkFactory
-              .builder()
-              .rpcEncoding(RpcEncoding.SSZ_SNAPPY)
-              .peer(remotePeerNetwork)
-              .recentChainData(localStorage.recentChainData())
-              .historicalChainData(localStorage.chainStorage())
-              .spec(localSpec)
-              .startNetwork();
-
-      return localNetwork.getPeer(remotePeerNetwork.getNodeId()).orElseThrow();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 }
