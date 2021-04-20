@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 
 public class ValidateableSyncCommitteeSignature {
   private final SyncCommitteeSignature signature;
   private final OptionalInt receivedSubnetId;
-  private volatile Optional<Set<Integer>> applicableSubcommittees = Optional.empty();
+  private volatile Optional<SyncSubcommitteeAssignments> subcommitteeAssignments = Optional.empty();
 
   private ValidateableSyncCommitteeSignature(
       final SyncCommitteeSignature signature, final OptionalInt receivedSubnetId) {
@@ -50,21 +51,28 @@ public class ValidateableSyncCommitteeSignature {
     return receivedSubnetId;
   }
 
-  public Optional<Set<Integer>> getApplicableSubcommittees() {
-    return applicableSubcommittees;
+  public Optional<SyncSubcommitteeAssignments> getSubcommitteeAssignments() {
+    return subcommitteeAssignments;
   }
 
-  public Set<Integer> calculateApplicableSubcommittees(final Spec spec, final BeaconState state) {
-    final Optional<Set<Integer>> currentValue = this.applicableSubcommittees;
+  public SyncSubcommitteeAssignments calculateAssignments(
+      final Spec spec, final BeaconState state) {
+    final Optional<SyncSubcommitteeAssignments> currentValue = this.subcommitteeAssignments;
     if (currentValue.isPresent()) {
       return currentValue.get();
     }
-    final Set<Integer> applicableSubcommittees =
+    final SyncSubcommitteeAssignments assignments =
         spec.getSyncCommitteeUtilRequired(signature.getSlot())
-            .getSyncSubcommittees(
+            .getSubcommitteeAssignments(
                 state, spec.computeEpochAtSlot(signature.getSlot()), signature.getValidatorIndex());
-    this.applicableSubcommittees = Optional.of(applicableSubcommittees);
-    return applicableSubcommittees;
+
+    this.subcommitteeAssignments = Optional.of(assignments);
+    return assignments;
+  }
+
+  @VisibleForTesting
+  public void setSubcommitteeAssignments(final SyncSubcommitteeAssignments assignments) {
+    this.subcommitteeAssignments = Optional.of(assignments);
   }
 
   public UInt64 getSlot() {
