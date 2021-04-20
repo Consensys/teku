@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -111,6 +112,29 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationValidator = attestationValidator;
+  }
+
+  @Override
+  public void verifyBlockSignature(
+      final BeaconState state,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
+    final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
+    final BLSPublicKey proposerPublicKey =
+        beaconStateAccessors
+            .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
+            .orElseThrow(
+                () ->
+                    new BlockProcessingException(
+                        "Public key not found for validator " + proposerIndex));
+    final Bytes signing_root =
+        beaconStateUtil.computeSigningRoot(
+            block.getMessage(),
+            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
+    if (!signatureVerifier.verify(proposerPublicKey, signing_root, block.getSignature())) {
+      throw new BlockProcessingException("Invalid block signature: " + block);
+    }
   }
 
   @Override

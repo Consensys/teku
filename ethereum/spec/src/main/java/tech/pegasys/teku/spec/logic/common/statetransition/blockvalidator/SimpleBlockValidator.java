@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -77,7 +74,7 @@ class SimpleBlockValidator implements BlockValidator {
       IndexedAttestationCache indexedAttestationCache) {
     try {
       // Verify signature
-      verifyBlockSignature(preState, block);
+      blockProcessor.verifyBlockSignature(preState, block, signatureVerifier);
 
       // Verify body
       BeaconBlock blockMessage = block.getMessage();
@@ -113,29 +110,6 @@ class SimpleBlockValidator implements BlockValidator {
                   + postState.hashTreeRoot().toHexString()));
     } else {
       return BlockValidationResult.SUCCESSFUL;
-    }
-  }
-
-  private void verifyBlockSignature(final BeaconState state, SignedBeaconBlock signed_block)
-      throws BlockProcessingException {
-    final int proposerIndex =
-        beaconStateAccessors.getBeaconProposerIndex(state, signed_block.getSlot());
-    final BLSPublicKey proposerPublicKey =
-        beaconStateAccessors
-            .getValidatorPubKey(state, UInt64.valueOf(proposerIndex))
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "Public key not found for validator " + proposerIndex));
-    final Bytes signing_root =
-        beaconStateUtil.computeSigningRoot(
-            signed_block.getMessage(),
-            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
-    try {
-      signatureVerifier.verifyAndThrow(
-          proposerPublicKey, signing_root, signed_block.getSignature());
-    } catch (InvalidSignatureException e) {
-      throw new BlockProcessingException("Invalid block signature: " + signed_block);
     }
   }
 }

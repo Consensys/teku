@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -39,6 +40,10 @@ import tech.pegasys.teku.ssz.SszList;
 public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
+
+  void verifyBlockSignature(
+      final BeaconState state, SignedBeaconBlock block, BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
