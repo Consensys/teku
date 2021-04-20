@@ -29,9 +29,13 @@ import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
@@ -56,6 +60,7 @@ public class RpcHandlerTest {
   StreamPromise<Controller<RpcRequestHandler>> streamPromise =
       new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
   CompletableFuture<Unit> closeFuture = new CompletableFuture<>();
+  CompletableFuture<String> protocolIdFuture = new CompletableFuture<>();
   SafeFuture<Void> writeFuture = new SafeFuture<>();
 
   Stream stream = mock(Stream.class);
@@ -73,7 +78,7 @@ public class RpcHandlerTest {
 
     when(controller.getRpcStream()).thenReturn(rpcStream);
     when(rpcStream.writeBytes(any())).thenReturn(writeFuture);
-    when(stream.getProtocol()).thenReturn(CompletableFuture.completedFuture("test"));
+    when(stream.getProtocol()).thenReturn(protocolIdFuture);
   }
 
   @Test
@@ -86,6 +91,9 @@ public class RpcHandlerTest {
 
     assertThat(future).isNotDone();
     streamPromise.getController().complete(controller);
+
+    assertThat(future).isNotDone();
+    stream.getProtocol().complete("test");
 
     assertThat(future).isNotDone();
     writeFuture.complete(null);
@@ -105,22 +113,6 @@ public class RpcHandlerTest {
   }
 
   @Test
-  void sendRequest_streamClosedWhenConnectionClosedBeforeController() {
-    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
-        rpcHandler.sendRequest(connection, request, responseHandler);
-
-    streamPromise.getStream().complete(stream);
-    closeFuture.complete(null);
-
-    verify(connection).muxerSession();
-    verify(controller, never()).getRpcStream();
-    verify(stream).close();
-
-    assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
-    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
-  }
-
-  @Test
   void sendRequest_streamClosedRightBeforeCreateStreamShouldThrowPeerDisconnectedException() {
 
     when(session.createStream((ProtocolBinding<Controller<RpcRequestHandler>>) any()))
@@ -129,24 +121,6 @@ public class RpcHandlerTest {
         rpcHandler.sendRequest(connection, request, responseHandler);
 
     assertThatSafeFuture(future).isCompletedExceptionallyWith(PeerDisconnectedException.class);
-  }
-
-  @Test
-  void sendRequest_streamClosedWhenConnectionClosedBeforeWrite() {
-    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
-        rpcHandler.sendRequest(connection, request, responseHandler);
-
-    streamPromise.getStream().complete(stream);
-    streamPromise.getController().complete(controller);
-    closeFuture.complete(null);
-
-    verify(connection).muxerSession();
-    verify(controller).getRpcStream();
-    verify(rpcStream).writeBytes(any());
-    verify(stream).close();
-
-    assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
-    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
   }
 
   @Test
@@ -161,19 +135,136 @@ public class RpcHandlerTest {
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
   }
 
-  @Test
-  void sendRequest_streamClosedOnTimeoutBeforeController() {
+  @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
+  @MethodSource("getInterruptParams")
+  void sendRequest_interruptBeforeStreamResolves(
+      final boolean closeStream, final boolean exceedTimeout) {
     SafeFuture<RpcStreamController<RpcRequestHandler>> future =
         rpcHandler.sendRequest(connection, request, responseHandler);
 
-    streamPromise.getStream().complete(stream);
-    asyncRunner.executeQueuedActions();
+    assertThat(future).isNotDone();
+
+    final Class<? extends Exception> expectedException =
+        executeInterrupts(closeStream, exceedTimeout);
+    assertThat(future).isCompletedExceptionally();
 
     verify(connection).muxerSession();
     verify(controller, never()).getRpcStream();
 
-    assertThatThrownBy(future::get).hasRootCauseInstanceOf(StreamTimeoutException.class);
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+  }
+
+  @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
+  @MethodSource("getInterruptParams")
+  void sendRequest_interruptBeforeControllerResolves(
+      final boolean closeStream, final boolean exceedTimeout) {
+    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    streamPromise.getStream().complete(stream);
+    assertThat(future).isNotDone();
+
+    final Class<? extends Exception> expectedException =
+        executeInterrupts(closeStream, exceedTimeout);
+    assertThat(future).isCompletedExceptionally();
+
+    verify(connection).muxerSession();
+    verify(controller, never()).getRpcStream();
+
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+  }
+
+  @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
+  @MethodSource("getInterruptParams")
+  void sendRequest_interruptBeforeProtocolIdResolves(
+      final boolean closeStream, final boolean exceedTimeout) {
+    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    streamPromise.getStream().complete(stream);
+    streamPromise.getController().complete(controller);
+    assertThat(future).isNotDone();
+
+    final Class<? extends Exception> expectedException =
+        executeInterrupts(closeStream, exceedTimeout);
+    assertThat(future).isCompletedExceptionally();
+
+    verify(connection).muxerSession();
+    verify(controller, never()).getRpcStream();
+
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+    verify(stream).close();
+  }
+
+  @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
+  @MethodSource("getInterruptParams")
+  void sendRequest_interruptBeforeControllerResolvesButAfterProtocolIdResolves(
+      final boolean closeStream, final boolean exceedTimeout) {
+    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    streamPromise.getStream().complete(stream);
+    stream.getProtocol().complete("test");
+    assertThat(future).isNotDone();
+
+    final Class<? extends Exception> expectedException =
+        executeInterrupts(closeStream, exceedTimeout);
+    assertThat(future).isCompletedExceptionally();
+
+    verify(connection).muxerSession();
+    verify(controller, never()).getRpcStream();
+
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+    verify(stream).close();
+  }
+
+  @ParameterizedTest(name = "closeStream={0}, exceedTimeout={1}")
+  @MethodSource("getInterruptParams")
+  void sendRequest_interruptBeforeInitialPayloadWritten(
+      final boolean closeStream, final boolean exceedTimeout) {
+    SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    streamPromise.getStream().complete(stream);
+    streamPromise.getController().complete(controller);
+    stream.getProtocol().complete("test");
+    assertThat(future).isNotDone();
+
+    final Class<? extends Exception> expectedException =
+        executeInterrupts(closeStream, exceedTimeout);
+    assertThat(future).isCompletedExceptionally();
+
+    verify(connection).muxerSession();
+    verify(controller).getRpcStream();
+
+    assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+    verify(stream).close();
+  }
+
+  private Class<? extends Exception> executeInterrupts(
+      final boolean closeStream, final boolean exceedTimeout) {
+    final AtomicReference<Class<? extends Exception>> expectedException =
+        new AtomicReference<>(null);
+    if (closeStream) {
+      closeFuture.complete(null);
+      expectedException.set(PeerDisconnectedException.class);
+    }
+    if (exceedTimeout) {
+      asyncRunner.executeQueuedActions();
+      expectedException.compareAndSet(null, StreamTimeoutException.class);
+    }
+
+    return expectedException.get();
+  }
+
+  public static java.util.stream.Stream<Arguments> getInterruptParams() {
+    return java.util.stream.Stream.of(
+        Arguments.of(true, false), Arguments.of(false, true), Arguments.of(true, true));
   }
 }
