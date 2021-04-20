@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -40,7 +40,7 @@ public class SingleProtocolEth2RpcMethod<
   private final String protocolId;
   private final int protocolVersion;
   private final RpcResponseEncoder<TResponse, ?> responseEncoder;
-  private final RpcContextEncoder<?, TResponse> contextEncoder;
+  private final RpcContextCodec<?, TResponse> contextCodec;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
@@ -52,13 +52,13 @@ public class SingleProtocolEth2RpcMethod<
       final RpcEncoding encoding,
       final SszSchema<TRequest> requestType,
       final boolean expectResponseToRequest,
-      final RpcContextEncoder<?, TResponse> contextEncoder,
+      final RpcContextCodec<?, TResponse> contextCodec,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
     super(encoding, requestType, expectResponseToRequest);
     this.asyncRunner = asyncRunner;
-    this.contextEncoder = contextEncoder;
-    this.responseEncoder = new RpcResponseEncoder<>(encoding, contextEncoder);
+    this.contextCodec = contextCodec;
+    this.responseEncoder = new RpcResponseEncoder<>(encoding, contextCodec);
     this.protocolId = getMethodId(protocolIdPrefix, protocolVersion, encoding);
     this.protocolVersion = protocolVersion;
     this.localMessageHandler = localMessageHandler;
@@ -128,6 +128,6 @@ public class SingleProtocolEth2RpcMethod<
   }
 
   private RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
-    return RpcResponseDecoder.create(encoding, contextEncoder);
+    return RpcResponseDecoder.create(encoding, contextCodec);
   }
 }

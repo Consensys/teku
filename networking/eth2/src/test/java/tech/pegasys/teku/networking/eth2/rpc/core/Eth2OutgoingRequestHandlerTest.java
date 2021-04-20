@@ -38,7 +38,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.Sta
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -77,9 +77,9 @@ public class Eth2OutgoingRequestHandlerTest
             .forMilestone(SpecMilestone.PHASE0)
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema();
-    final RpcContextEncoder<Bytes, SignedBeaconBlock> contextEncoder =
-        RpcContextEncoder.noop(signedBlockSchema);
-    responseEncoder = new RpcResponseEncoder<>(getRpcEncoding(), contextEncoder);
+    final RpcContextCodec<Bytes, SignedBeaconBlock> contextCodec =
+        RpcContextCodec.noop(signedBlockSchema);
+    responseEncoder = new RpcResponseEncoder<>(getRpcEncoding(), contextCodec);
     chunks = IntStream.range(0, maxChunks).mapToObj(this::chunkBytes).collect(Collectors.toList());
   }
 

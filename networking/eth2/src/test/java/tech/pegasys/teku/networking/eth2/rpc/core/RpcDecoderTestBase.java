@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -53,8 +53,8 @@ public class RpcDecoderTestBase {
   protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
   protected static final PeerLookup peerLookup = mock(PeerLookup.class);
 
-  protected static RpcContextEncoder<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
-      RpcContextEncoder.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+  protected static RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
+      RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
   protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
       RESPONSE_DECODER = RpcResponseDecoder.create(ENCODING, CONTEXT_ENCODER);
 

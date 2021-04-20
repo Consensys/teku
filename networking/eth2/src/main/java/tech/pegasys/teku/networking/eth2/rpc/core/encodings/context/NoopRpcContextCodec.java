@@ -21,12 +21,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
-class NoopRpcContextEncoder<TPayload extends SszData>
-    implements RpcContextEncoder<Bytes, TPayload> {
+class NoopRpcContextCodec<TPayload extends SszData> implements RpcContextCodec<Bytes, TPayload> {
   private static final RpcByteBufDecoder<Bytes> DECODER = new EmptyContextDecoder();
   private final SszSchema<TPayload> schema;
 
-  public NoopRpcContextEncoder(final SszSchema<TPayload> schema) {
+  NoopRpcContextCodec(final SszSchema<TPayload> schema) {
     this.schema = schema;
   }
 

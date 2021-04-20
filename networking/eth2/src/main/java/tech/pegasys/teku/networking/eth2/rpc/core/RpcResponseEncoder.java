@@ -17,21 +17,21 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCE
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.ssz.SszData;
 
 public final class RpcResponseEncoder<TPayload extends SszData, TContext> {
   private final RpcEncoding encoding;
-  private final RpcContextEncoder<TContext, TPayload> contextEncoder;
+  private final RpcContextCodec<TContext, TPayload> contextCodec;
 
   public RpcResponseEncoder(
-      final RpcEncoding encoding, final RpcContextEncoder<TContext, TPayload> contextEncoder) {
+      final RpcEncoding encoding, final RpcContextCodec<TContext, TPayload> contextCodec) {
     this.encoding = encoding;
-    this.contextEncoder = contextEncoder;
+    this.contextCodec = contextCodec;
   }
 
   public Bytes encodeSuccessfulResponse(TPayload response) {
-    final Bytes context = contextEncoder.encodeContext(response);
+    final Bytes context = contextCodec.encodeContext(response);
     return Bytes.concatenate(
         Bytes.of(SUCCESS_RESPONSE_CODE), context, encoding.encodePayload(response));
   }

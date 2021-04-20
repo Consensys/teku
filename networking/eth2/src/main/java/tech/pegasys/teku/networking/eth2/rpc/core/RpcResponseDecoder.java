@@ -28,7 +28,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.UnrecognizedConte
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -40,7 +40,7 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
  */
 public class RpcResponseDecoder<T extends SszData, TContext> {
   private final RpcEncoding encoding;
-  private final RpcContextEncoder<TContext, T> contextEncoder;
+  private final RpcContextCodec<TContext, T> contextCodec;
 
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<TContext>> contextDecoder = Optional.empty();
@@ -49,19 +49,19 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
 
   private RpcResponseDecoder(
-      final RpcEncoding encoding, final RpcContextEncoder<TContext, T> contextEncoder) {
+      final RpcEncoding encoding, final RpcContextCodec<TContext, T> contextCodec) {
     this.encoding = encoding;
-    this.contextEncoder = contextEncoder;
+    this.contextCodec = contextCodec;
   }
 
   public static <T extends SszData> RpcResponseDecoder<T, Bytes> createContextFreeDecoder(
       final RpcEncoding encoding, final SszSchema<T> schema) {
-    return new RpcResponseDecoder<>(encoding, RpcContextEncoder.noop(schema));
+    return new RpcResponseDecoder<>(encoding, RpcContextCodec.noop(schema));
   }
 
   public static <TPayload extends SszData, TContext> RpcResponseDecoder<TPayload, TContext> create(
-      final RpcEncoding encoding, final RpcContextEncoder<TContext, TPayload> contextEncoder) {
-    return new RpcResponseDecoder<>(encoding, contextEncoder);
+      final RpcEncoding encoding, final RpcContextCodec<TContext, TPayload> contextCodec) {
+    return new RpcResponseDecoder<>(encoding, contextCodec);
   }
 
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
@@ -91,7 +91,7 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
     if (respCode == SUCCESS_RESPONSE_CODE) {
       // Process context
       if (contextDecoder.isEmpty()) {
-        contextDecoder = Optional.of(contextEncoder.getContextDecoder());
+        contextDecoder = Optional.of(contextCodec.getContextDecoder());
       }
       if (context.isEmpty()) {
         context = contextDecoder.get().decodeOneMessage(data);
@@ -104,7 +104,7 @@ public class RpcResponseDecoder<T extends SszData, TContext> {
       // Process payload
       if (payloadDecoder.isEmpty()) {
         final SszSchema<T> schema =
-            contextEncoder
+            contextCodec
                 .getSchemaFromContext(context.get())
                 .orElseThrow(() -> new UnrecognizedContextBytesException(context.get().toString()));
         payloadDecoder = Optional.of(encoding.createDecoder(schema));
