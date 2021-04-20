@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 public class StateTransition {
 
@@ -61,11 +59,8 @@ public class StateTransition {
   public static StateTransition create(
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
-      final EpochProcessor epochProcessor,
-      final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessors beaconStateAccessors) {
-    final BlockValidator blockValidator =
-        BlockValidator.standard(specConfig, beaconStateUtil, blockProcessor, beaconStateAccessors);
+      final EpochProcessor epochProcessor) {
+    final BlockValidator blockValidator = new BlockValidator(blockProcessor);
     return new StateTransition(specConfig, blockProcessor, epochProcessor, blockValidator);
   }
 
@@ -118,18 +113,19 @@ public class StateTransition {
       final boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
-    BlockValidator blockValidator =
-        validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
     try {
       // Process_block
       BeaconState postState =
           processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
 
-      BlockValidationResult blockValidationResult =
-          blockValidator.validate(blockSlotState, signedBlock, postState, indexedAttestationCache);
+      if (validateStateRootAndSignatures) {
+        BlockValidationResult blockValidationResult =
+            blockValidator.validate(
+                blockSlotState, signedBlock, postState, indexedAttestationCache);
 
-      if (!blockValidationResult.isValid()) {
-        throw new BlockProcessingException(blockValidationResult.getReason());
+        if (!blockValidationResult.isValid()) {
+          throw new BlockProcessingException(blockValidationResult.getReason());
+        }
       }
 
       return postState;
