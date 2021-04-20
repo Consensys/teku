@@ -494,8 +494,7 @@ public class CombinedChainDataClient {
           .getNonCanonicalBlocksBySlot(slot)
           .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
     }
-    // TODO need to fetch recent blocks from proto array
-    return SafeFuture.completedFuture(Set.of());
+    return recentChainData.getAllBlocksAtSlot(slot);
   }
 
   Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(

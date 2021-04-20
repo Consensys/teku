@@ -18,8 +18,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -506,5 +508,34 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
+  }
+
+  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final UInt64 slot) {
+    final Set<Bytes32> blockRoots =
+        getForkChoiceStrategy()
+            .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
+            .orElse(Collections.emptySet());
+
+    return SafeFuture.of(() -> getBlocksByBlockRoots(blockRoots));
+  }
+
+  private Set<SignedBeaconBlock> getBlocksByBlockRoots(final Set<Bytes32> blockRoots) {
+    if (blockRoots.isEmpty()) {
+      return Collections.emptySet();
+    }
+    return blockRoots.stream()
+        .map(this::retrieveSignedBlockByRoot)
+        .map(
+            future -> {
+              try {
+                return future.get();
+              } catch (Exception e) {
+                LOG.debug("Failed to get block", e);
+                final Optional<SignedBeaconBlock> res = Optional.empty();
+                return res;
+              }
+            })
+        .flatMap(Optional::stream)
+        .collect(Collectors.toSet());
   }
 }
