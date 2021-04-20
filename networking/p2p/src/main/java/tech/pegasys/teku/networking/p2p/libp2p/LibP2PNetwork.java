@@ -88,7 +88,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final PrivateKeyProvider privateKeyProvider,
       final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
-      final List<RpcMethod<?, ?, ?, ?>> rpcMethods,
+      final List<RpcMethod<?, ?, ?>> rpcMethods,
       final List<PeerHandler> peerHandlers,
       final PreparedGossipMessageFactory defaultMessageFactory,
       final GossipTopicFilter gossipTopicFilter) {
@@ -110,7 +110,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             config.getWireLogsConfig().isLogWireGossip());
 
     // Setup rpc methods
-    final List<RpcHandler<?, ?, ?, ?>> rpcHandlers =
+    final List<RpcHandler<?, ?, ?>> rpcHandlers =
         rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).collect(Collectors.toList());
 
     // Setup peers

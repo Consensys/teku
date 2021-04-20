@@ -15,11 +15,8 @@ package tech.pegasys.teku.networking.p2p.rpc;
 
 import java.util.Optional;
 
-public interface RpcStreamController<
-    TIncomingHandler extends RpcRequestHandler, TOutgoingHandler extends RpcRequestHandler> {
+public interface RpcStreamController<TOutgoingHandler extends RpcRequestHandler> {
   RpcStream getRpcStream();
-
-  Optional<TIncomingHandler> getIncomingRequestHandler();
 
   Optional<TOutgoingHandler> getOutgoingRequestHandler();
 

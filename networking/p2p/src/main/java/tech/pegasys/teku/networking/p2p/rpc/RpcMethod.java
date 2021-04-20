@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface RpcMethod<
-    TIncomingHandler extends RpcRequestHandler,
     TOutgoingHandler extends RpcRequestHandler,
     TRequest,
     RespHandler extends RpcResponseHandler<?>> {
@@ -45,7 +44,7 @@ public interface RpcMethod<
    * @param protocolId The protocolId to be handled
    * @return A request handler for the given protocol id
    */
-  TIncomingHandler createIncomingRequestHandler(final String protocolId);
+  RpcRequestHandler createIncomingRequestHandler(final String protocolId);
 
   TOutgoingHandler createOutgoingRequestHandler(
       String protocolId, TRequest request, RespHandler responseHandler);

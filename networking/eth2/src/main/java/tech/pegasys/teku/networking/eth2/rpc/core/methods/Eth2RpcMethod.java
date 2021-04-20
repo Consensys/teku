@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.SszData;
 
 public interface Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse extends SszData>
     extends RpcMethod<
-        Eth2IncomingRequestHandler<TRequest, TResponse>,
         Eth2OutgoingRequestHandler<TRequest, TResponse>,
         TRequest,
         Eth2RpcResponseHandler<TResponse, ?>> {

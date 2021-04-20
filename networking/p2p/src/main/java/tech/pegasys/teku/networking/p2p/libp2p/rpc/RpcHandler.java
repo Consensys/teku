@@ -52,29 +52,28 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 public class RpcHandler<
-        TIncomingHandler extends RpcRequestHandler,
         TOutgoingHandler extends RpcRequestHandler,
         TRequest,
         TRespHandler extends RpcResponseHandler<?>>
-    implements ProtocolBinding<Controller<TIncomingHandler, TOutgoingHandler>> {
+    implements ProtocolBinding<Controller<TOutgoingHandler>> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
   private final AsyncRunner asyncRunner;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
-      RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
+      RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
   }
 
-  public RpcMethod<TIncomingHandler, TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
+  public RpcMethod<TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
     return rpcMethod;
   }
 
-  public SafeFuture<RpcStreamController<TIncomingHandler, TOutgoingHandler>> sendRequest(
+  public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       Connection connection, TRequest request, TRespHandler responseHandler) {
 
     final Bytes initialPayload;
@@ -112,8 +111,7 @@ public class RpcHandler<
                             rpcMethod.createOutgoingRequestHandler(
                                 protocolId, request, responseHandler);
                         controller.setOutgoingRequestHandler(handler);
-                        return ((RpcStreamController<TIncomingHandler, TOutgoingHandler>)
-                            controller);
+                        return ((RpcStreamController<TOutgoingHandler>) controller);
                       })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
                   .thenWaitFor(controller -> controller.getRpcStream().writeBytes(initialPayload))
@@ -141,13 +139,12 @@ public class RpcHandler<
 
   @NotNull
   @Override
-  public SafeFuture<Controller<TIncomingHandler, TOutgoingHandler>> initChannel(
+  public SafeFuture<Controller<TOutgoingHandler>> initChannel(
       final P2PChannel channel, final String selectedProtocol) {
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
 
-    final Controller<TIncomingHandler, TOutgoingHandler> controller =
-        new Controller<>(nodeId, channel);
+    final Controller<TOutgoingHandler> controller = new Controller<>(nodeId, channel);
     if (!channel.isInitiator()) {
       controller.setIncomingRequestHandler(
           rpcMethod.createIncomingRequestHandler(selectedProtocol));
@@ -156,20 +153,17 @@ public class RpcHandler<
     return controller.activeFuture;
   }
 
-  static class Controller<
-          TIncomingHandler extends RpcRequestHandler, TOutgoingHandler extends RpcRequestHandler>
+  static class Controller<TOutgoingHandler extends RpcRequestHandler>
       extends SimpleChannelInboundHandler<ByteBuf>
-      implements RpcStreamController<TIncomingHandler, TOutgoingHandler> {
+      implements RpcStreamController<TOutgoingHandler> {
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
-    private Optional<TIncomingHandler> incomingRequestHandler = Optional.empty();
     private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();
     private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
     private boolean readCompleted = false;
 
-    protected final SafeFuture<Controller<TIncomingHandler, TOutgoingHandler>> activeFuture =
-        new SafeFuture<>();
+    protected final SafeFuture<Controller<TOutgoingHandler>> activeFuture = new SafeFuture<>();
 
     private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
@@ -192,13 +186,12 @@ public class RpcHandler<
       runHandler(h -> h.processData(nodeId, rpcStream, msg));
     }
 
-    public void setIncomingRequestHandler(TIncomingHandler requestHandler) {
+    public void setIncomingRequestHandler(final RpcRequestHandler requestHandler) {
       setRequestHandler(requestHandler);
-      this.incomingRequestHandler = Optional.of(requestHandler);
       setFullyActive(requestHandler);
     }
 
-    public void setOutgoingRequestHandler(TOutgoingHandler requestHandler) {
+    public void setOutgoingRequestHandler(final TOutgoingHandler requestHandler) {
       setRequestHandler(requestHandler);
       this.outgoingRequestHandler = Optional.of(requestHandler);
       setFullyActive(requestHandler);
@@ -225,11 +218,6 @@ public class RpcHandler<
               }
             }
           });
-    }
-
-    @Override
-    public Optional<TIncomingHandler> getIncomingRequestHandler() {
-      return incomingRequestHandler;
     }
 
     @Override

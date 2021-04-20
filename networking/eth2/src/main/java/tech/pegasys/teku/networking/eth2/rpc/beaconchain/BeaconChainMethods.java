@@ -301,7 +301,7 @@ public class BeaconChainMethods {
         peerLookup);
   }
 
-  public Collection<RpcMethod<?, ?, ?, ?>> all() {
+  public Collection<RpcMethod<?, ?, ?>> all() {
     return Collections.unmodifiableCollection(allMethods);
   }
 

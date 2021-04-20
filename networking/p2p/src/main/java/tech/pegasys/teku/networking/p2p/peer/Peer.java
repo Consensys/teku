@@ -42,8 +42,8 @@ public interface Peer {
   void subscribeDisconnect(PeerDisconnectedSubscriber subscriber);
 
   <TOutgoingHandler extends RpcRequestHandler, TRequest, RespHandler extends RpcResponseHandler<?>>
-      SafeFuture<RpcStreamController<?, TOutgoingHandler>> sendRequest(
-          RpcMethod<?, TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler);
 
