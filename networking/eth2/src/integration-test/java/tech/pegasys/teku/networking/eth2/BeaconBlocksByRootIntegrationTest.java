@@ -267,6 +267,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
           java.util.concurrent.TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer.requestBlocksByRoot(blockRoots, RpcResponseListener.from(blocks::add)));
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blocks;
   }
 }
