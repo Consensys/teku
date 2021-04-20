@@ -193,6 +193,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
             block1.getSlot(), UInt64.valueOf(2), UInt64.ONE, RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
 
     if (enableAltairLocally && enableAltairRemotely) {
       // We should receive a successful response
@@ -228,6 +229,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
     waitFor(
         peer.requestBlocksByRange(
             UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add)));
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blocks;
   }
 }
