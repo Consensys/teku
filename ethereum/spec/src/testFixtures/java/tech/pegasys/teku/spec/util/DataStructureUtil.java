@@ -333,9 +333,14 @@ public final class DataStructureUtil {
   }
 
   public SyncCommitteeSignature randomSyncCommitteeSignature(final UInt64 slot) {
+    return randomSyncCommitteeSignature(slot, randomBytes32());
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(UInt64.ZERO)
         .getSyncCommitteeSignatureSchema()
-        .create(slot, randomBytes32(), randomUInt64(), randomSignature());
+        .create(slot, beaconBlockRoot, randomUInt64(), randomSignature());
   }
 
   public AttestationData randomAttestationData() {

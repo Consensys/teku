@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.IntStream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
@@ -100,22 +101,29 @@ class SyncCommitteeSignatureGossipManagerTest {
     when(syncCommitteeStateUtils.getStateForSyncCommittee(
             signature.getSlot(), signature.getBeaconBlockRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    when(syncCommitteeUtil.getSyncSubcommittees(any(), any(), any())).thenReturn(Set.of(1, 3, 5));
+    when(syncCommitteeUtil.getSubcommitteeAssignments(any(), any(), any()))
+        .thenReturn(
+            SyncSubcommitteeAssignments.builder()
+                .addAssignment(1, 1)
+                .addAssignment(3, 1)
+                .addAssignment(5, 1)
+                .build());
 
     gossipManager.publish(signature);
 
     verify(syncCommitteeUtil)
-        .getSyncSubcommittees(state, UInt64.ZERO, signature.getSignature().getValidatorIndex());
+        .getSubcommitteeAssignments(
+            state, UInt64.ZERO, signature.getSignature().getValidatorIndex());
     verify(subnetSubscriptions).gossip(signature.getSignature(), 1);
     verify(subnetSubscriptions).gossip(signature.getSignature(), 3);
     verify(subnetSubscriptions).gossip(signature.getSignature(), 5);
   }
 
   private void withApplicableSubnets(
-      final ValidateableSyncCommitteeSignature signature, final Integer... subnetIds) {
-
-    when(syncCommitteeUtil.getSyncSubcommittees(any(), any(), any())).thenReturn(Set.of(subnetIds));
-    signature.calculateApplicableSubcommittees(
-        spec, dataStructureUtil.stateBuilderAltair().build());
+      final ValidateableSyncCommitteeSignature signature, final int... subnetIds) {
+    final SyncSubcommitteeAssignments.Builder assignmentBuilder =
+        SyncSubcommitteeAssignments.builder();
+    IntStream.of(subnetIds).forEach(subnetId -> assignmentBuilder.addAssignment(subnetId, 1));
+    signature.setSubcommitteeAssignments(assignmentBuilder.build());
   }
 }
