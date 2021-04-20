@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -81,7 +82,8 @@ public class BeaconBlocksByRootMessageHandler
     }
   }
 
-  private Optional<RpcException> validateResponse(
+  @VisibleForTesting
+  Optional<RpcException> validateResponse(
       final String protocolId, final SignedBeaconBlock response) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRootVersion(protocolId);
     final Optional<UInt64> altairActivationEpoch =
