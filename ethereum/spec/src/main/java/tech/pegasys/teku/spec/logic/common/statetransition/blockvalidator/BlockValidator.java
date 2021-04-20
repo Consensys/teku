@@ -13,55 +13,54 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 
 /**
- * Dedicated class which performs block validation (apart from {@link BlockProcessor} The validation
- * may be performed either synchronously (then the methods return completed futures) or
- * asynchronously.
+ * Advanced block validator which uses {@link BatchSignatureVerifier} to verify all the BLS
+ * signatures inside a block in an optimized batched way.
  */
-public interface BlockValidator {
+public class BlockValidator {
 
-  /** Block validator which just returns OK result without any validations */
-  BlockValidator NOOP = new NoOpBlockValidator();
+  private final BlockProcessor blockProcessor;
 
-  static BlockValidator standard(final BlockProcessor blockProcessor) {
-    return new BatchBlockValidator(blockProcessor);
+  BlockValidator(final BlockProcessor blockProcessor) {
+    this.blockProcessor = blockProcessor;
   }
 
-  /**
-   * Validates the block against the state prior to block processing
-   *
-   * <p>This normally includes validating all signatures, checking validity of attestations,
-   * slashings, etc.
-   *
-   * @param preState Normally the state with the slot equal to the block's slot However
-   *     implementations may allow to pass earlier or later state which has the necessary
-   *     information (randao history) to recover committees for the block slot, attestations slots,
-   *     etc
-   * @param block Block to be validated
-   * @param indexedAttestationCache
-   * @return Result promise
-   */
-  BlockValidationResult validatePreState(
+  public static BlockValidator standard(final BlockProcessor blockProcessor) {
+    return new BlockValidator(blockProcessor);
+  }
+
+  public BlockValidationResult validatePreState(
       BeaconState preState,
       SignedBeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache);
+      IndexedAttestationCache indexedAttestationCache) {
+    BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    BlockValidationResult noBLSValidationResult =
+        blockProcessor.verifySignatures(
+            preState, block, indexedAttestationCache, signatureVerifier);
+    // during the above validatePreState() call BatchSignatureVerifier just collected
+    // a bunch of signatures to be verified in optimized batched way on the following step
+    if (!noBLSValidationResult.isValid()) {
+      // something went wrong aside of signatures verification
+      return noBLSValidationResult;
+    } else {
+      if (!signatureVerifier.batchVerify()) {
+        // validate again naively to get exact invalid signature
+        return blockProcessor.verifySignatures(
+            preState, block, indexedAttestationCache, BLSSignatureVerifier.SIMPLE);
+      }
+      return BlockValidationResult.SUCCESSFUL;
+    }
+  }
 
-  /**
-   * Validates the block against the state after block processing
-   *
-   * <p>This is normally calculating the state hash root and comparing it to the state root
-   * specified in the block
-   *
-   * @param postState beacon state right after applying block transition
-   * @param block Block to be validated
-   * @return Result promise
-   */
-  BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
+  public BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
+    return blockProcessor.validatePostState(postState, block);
+  }
 
   /**
    * Combines {@link #validatePreState(BeaconState, SignedBeaconBlock, IndexedAttestationCache)} and
@@ -69,7 +68,7 @@ public interface BlockValidator {
    *
    * @return
    */
-  default BlockValidationResult validate(
+  public BlockValidationResult validate(
       BeaconState preState,
       SignedBeaconBlock block,
       BeaconState postState,

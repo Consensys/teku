@@ -67,7 +67,9 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashin
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -134,6 +136,53 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
     if (!signatureVerifier.verify(proposerPublicKey, signing_root, block.getSignature())) {
       throw new BlockProcessingException("Invalid block signature: " + block);
+    }
+  }
+
+  @Override
+  public BlockValidationResult verifySignatures(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier) {
+    try {
+      // Verify signature
+      verifyBlockSignature(preState, block, signatureVerifier);
+
+      // Verify body
+      BeaconBlock blockMessage = block.getMessage();
+      BeaconBlockBody blockBody = blockMessage.getBody();
+      verifyAttestationSignatures(
+          preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
+      verifyRandao(preState, blockMessage, signatureVerifier);
+
+      if (!verifyProposerSlashings(
+          preState, blockBody.getProposer_slashings(), signatureVerifier)) {
+        return BlockValidationResult.FAILED;
+      }
+
+      if (!verifyVoluntaryExits(preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
+        return BlockValidationResult.FAILED;
+      }
+      return BlockValidationResult.SUCCESSFUL;
+    } catch (BlockProcessingException | InvalidSignatureException e) {
+      return BlockValidationResult.failedExceptionally(e);
+    }
+  }
+
+  @Override
+  public BlockValidationResult validatePostState(
+      final BeaconState postState, final SignedBeaconBlock block) {
+    if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
+      return BlockValidationResult.failedExceptionally(
+          new StateTransitionException(
+              "Block state root does NOT match the calculated state root!\n"
+                  + "Block state root: "
+                  + block.getMessage().getStateRoot().toHexString()
+                  + "New state root: "
+                  + postState.hashTreeRoot().toHexString()));
+    } else {
+      return BlockValidationResult.SUCCESSFUL;
     }
   }
 

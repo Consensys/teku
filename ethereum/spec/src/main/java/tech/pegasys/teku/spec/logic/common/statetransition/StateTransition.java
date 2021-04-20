@@ -113,18 +113,19 @@ public class StateTransition {
       final boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
-    BlockValidator blockValidator =
-        validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
     try {
       // Process_block
       BeaconState postState =
           processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
 
-      BlockValidationResult blockValidationResult =
-          blockValidator.validate(blockSlotState, signedBlock, postState, indexedAttestationCache);
+      if (validateStateRootAndSignatures) {
+        BlockValidationResult blockValidationResult =
+            blockValidator.validate(
+                blockSlotState, signedBlock, postState, indexedAttestationCache);
 
-      if (!blockValidationResult.isValid()) {
-        throw new BlockProcessingException(blockValidationResult.getReason());
+        if (!blockValidationResult.isValid()) {
+          throw new BlockProcessingException(blockValidationResult.getReason());
+        }
       }
 
       return postState;

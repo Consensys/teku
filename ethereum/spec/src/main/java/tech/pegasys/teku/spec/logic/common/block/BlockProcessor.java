@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
@@ -47,47 +46,13 @@ public interface BlockProcessor {
       BeaconState state, SignedBeaconBlock block, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  default BlockValidationResult verifySignatures(
-      BeaconState preState, SignedBeaconBlock block, final IndexedAttestationCache indexedAttestationCache, BLSSignatureVerifier signatureVerifier) {
-    try {
-      // Verify signature
-      verifyBlockSignature(preState, block, signatureVerifier);
+  BlockValidationResult verifySignatures(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier);
 
-      // Verify body
-      BeaconBlock blockMessage = block.getMessage();
-      BeaconBlockBody blockBody = blockMessage.getBody();
-      verifyAttestationSignatures(
-          preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache);
-      verifyRandao(preState, blockMessage, signatureVerifier);
-
-      if (!verifyProposerSlashings(
-          preState, blockBody.getProposer_slashings(), signatureVerifier)) {
-        return BlockValidationResult.FAILED;
-      }
-
-      if (!verifyVoluntaryExits(
-          preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
-        return BlockValidationResult.FAILED;
-      }
-      return BlockValidationResult.SUCCESSFUL;
-    } catch (BlockProcessingException | InvalidSignatureException e) {
-      return BlockValidationResult.failedExceptionally(e);
-    }
-  }
-
-  default BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block) {
-    if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
-      return BlockValidationResult.failedExceptionally(
-          new StateTransitionException(
-              "Block state root does NOT match the calculated state root!\n"
-                  + "Block state root: "
-                  + block.getMessage().getStateRoot().toHexString()
-                  + "New state root: "
-                  + postState.hashTreeRoot().toHexString()));
-    } else {
-      return BlockValidationResult.SUCCESSFUL;
-    }
-  }
+  BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
