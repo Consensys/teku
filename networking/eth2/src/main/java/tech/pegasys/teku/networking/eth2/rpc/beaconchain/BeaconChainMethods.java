@@ -194,7 +194,7 @@ public class BeaconChainMethods {
               new SingleProtocolEth2RpcMethod<>(
                   asyncRunner,
                   BEACON_BLOCKS_BY_ROOT,
-                  1,
+                  2,
                   rpcEncoding,
                   requestType,
                   expectResponseToRequest,
