@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
+import static java.util.Collections.emptyMap;
+
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,11 +28,18 @@ import java.util.Set;
  */
 public class SyncSubcommitteeAssignments {
 
+  public static final SyncSubcommitteeAssignments NONE =
+      new SyncSubcommitteeAssignments(emptyMap());
+
   private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices;
 
-  public SyncSubcommitteeAssignments(
+  private SyncSubcommitteeAssignments(
       final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices) {
     this.subcommitteeToParticipationIndices = subcommitteeToParticipationIndices;
+  }
+
+  public static SyncSubcommitteeAssignments.Builder builder() {
+    return new SyncSubcommitteeAssignments.Builder();
   }
 
   public Set<Integer> getAssignedSubcommittees() {
@@ -40,10 +51,30 @@ public class SyncSubcommitteeAssignments {
         subcommitteeToParticipationIndices.getOrDefault(subcommitteeIndex, Collections.emptySet()));
   }
 
+  public boolean isEmpty() {
+    return subcommitteeToParticipationIndices.isEmpty();
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("subcommitteeToParticipationIndices", subcommitteeToParticipationIndices)
         .toString();
+  }
+
+  public static class Builder {
+    private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices = new HashMap<>();
+
+    public Builder addAssignment(
+        final int subcommitteeIndex, final int subcommitteeParticipationIndex) {
+      subcommitteeToParticipationIndices
+          .computeIfAbsent(subcommitteeIndex, __ -> new HashSet<>())
+          .add(subcommitteeParticipationIndex);
+      return this;
+    }
+
+    public SyncSubcommitteeAssignments build() {
+      return new SyncSubcommitteeAssignments(subcommitteeToParticipationIndices);
+    }
   }
 }
