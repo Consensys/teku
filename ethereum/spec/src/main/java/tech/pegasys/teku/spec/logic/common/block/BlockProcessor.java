@@ -50,6 +50,30 @@ public interface BlockProcessor {
 
   BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
 
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes block
+   *
+   * @throws BlockProcessingException
+   */
+  default BeaconState processBlock(BeaconState preState, BeaconBlock block)
+      throws BlockProcessingException {
+    return processBlock(preState, block, IndexedAttestationCache.NOOP);
+  }
+
+  default BeaconState processBlock(
+      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
+  }
+
+  void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException;
+
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
 

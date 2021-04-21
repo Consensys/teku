@@ -214,6 +214,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
+  @Override
+  public void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    processBlockHeader(state, block);
+    processRandaoNoValidation(state, block.getBody());
+    processEth1Data(state, block.getBody());
+    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
+  }
+
   /**
    * Processes block header
    *

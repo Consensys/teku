@@ -125,7 +125,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, stateTransition);
+        new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
     return new SpecLogicPhase0(
         predicates,

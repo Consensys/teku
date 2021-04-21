@@ -21,11 +21,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
@@ -116,7 +114,8 @@ public class StateTransition {
     try {
       // Process_block
       BeaconState postState =
-          processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
+          blockProcessor.processBlock(
+              blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
 
       if (validateStateRootAndSignatures) {
         BlockValidationResult blockValidationResult =
@@ -133,35 +132,6 @@ public class StateTransition {
       LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }
-  }
-
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Processes block
-   *
-   * @throws BlockProcessingException
-   */
-  public BeaconState processBlock(BeaconState preState, BeaconBlock block)
-      throws BlockProcessingException {
-    return processBlock(preState, block, IndexedAttestationCache.NOOP);
-  }
-
-  protected BeaconState processBlock(
-      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
-  }
-
-  protected void processBlock(
-      final MutableBeaconState state,
-      final BeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    blockProcessor.processBlockHeader(state, block);
-    blockProcessor.processRandaoNoValidation(state, block.getBody());
-    blockProcessor.processEth1Data(state, block.getBody());
-    blockProcessor.processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
   }
 
   /**

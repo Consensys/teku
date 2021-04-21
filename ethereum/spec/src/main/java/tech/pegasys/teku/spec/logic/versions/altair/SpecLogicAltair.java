@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.StateTransitionAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -51,7 +51,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
       final BlockProcessorAltair blockProcessor,
-      final StateTransitionAltair stateTransition,
+      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil) {
@@ -129,12 +129,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             attestationValidator);
-    final StateTransitionAltair stateTransition =
-        StateTransitionAltair.create(config, blockProcessor, epochProcessor);
+    final StateTransition stateTransition =
+        StateTransition.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, stateTransition);
+        new BlockProposalUtil(schemaDefinitions, blockProcessor);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors,
