@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -525,5 +526,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
+  }
+
+  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+    return getForkChoiceStrategy()
+        .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .orElse(Collections.emptySet());
   }
 }
