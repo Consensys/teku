@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -510,22 +509,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(Collections.emptyMap());
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final UInt64 slot) {
-    final Set<Bytes32> blockRoots =
-        getForkChoiceStrategy()
-            .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
-            .orElse(Collections.emptySet());
-
-    return getBlocksByRoots(blockRoots);
-  }
-
-  @SuppressWarnings("unchecked")
-  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
-    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
-        blockRoots.stream().map(this::retrieveSignedBlockByRoot).toArray(SafeFuture[]::new);
-    return SafeFuture.collectAll(futures)
-        .thenApply(
-            optionalBlocks ->
-                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
+  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+    return getForkChoiceStrategy()
+        .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .orElse(Collections.emptySet());
   }
 }
