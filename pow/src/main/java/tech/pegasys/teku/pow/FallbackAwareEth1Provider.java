@@ -15,13 +15,13 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthLog;
@@ -65,6 +65,18 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
                   .thenCompose(__ -> getGuaranteedEth1Block(blockHash));
+            });
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return run(Eth1Provider::getLatestEth1Block)
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.debug("Retrying Eth1 request for latest block", err);
+              return asyncRunner
+                  .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
+                  .thenCompose(__ -> getGuaranteedLatestEth1Block());
             });
   }
 
@@ -120,27 +132,34 @@ public class FallbackAwareEth1Provider implements Eth1Provider {
     return run(eth1Provider -> eth1Provider.ethGetLogs(ethFilter));
   }
 
-  private <T> SafeFuture<T> run(final Function<Eth1Provider, SafeFuture<T>> task) {
-    return run(task, eth1ProviderSelector.getProviders().iterator(), new Eth1RequestException());
+  private <T> SafeFuture<T> run(final Function<MonitorableEth1Provider, SafeFuture<T>> task) {
+    return run(task, eth1ProviderSelector.getValidProviderIterator(), new Eth1RequestException());
   }
 
   private <T> SafeFuture<T> run(
-      final Function<Eth1Provider, SafeFuture<T>> task,
-      final Iterator<Eth1Provider> providers,
+      final Function<MonitorableEth1Provider, SafeFuture<T>> task,
+      final Eth1ProviderSelector.ValidEth1ProviderIterator providers,
       Eth1RequestException exceptionsContainer) {
-    return SafeFuture.of(
-        () ->
-            task.apply(providers.next())
-                .exceptionallyCompose(
-                    err -> {
-                      exceptionsContainer.addSuppressed(err);
-                      if (providers.hasNext()) {
-                        LOG.debug("Retrying with next eth1 endpoint", err);
+
+    Throwable[] previousExceptions = exceptionsContainer.getSuppressed();
+    return providers
+        .next()
+        .handleComposed(
+            (nextAvailableProvider, err) -> {
+              if (err != null) {
+                LOG.debug(
+                    previousExceptions.length > 0
+                        ? "All available eth1 endpoints failed"
+                        : "No available eth1 endpoints");
+                throw exceptionsContainer;
+              }
+              return task.apply(nextAvailableProvider)
+                  .exceptionallyCompose(
+                      taskErr -> {
+                        LOG.warn("Retrying with next eth1 endpoint", taskErr);
+                        exceptionsContainer.addSuppressed(taskErr);
                         return run(task, providers, exceptionsContainer);
-                      } else {
-                        LOG.debug("All available eth1 endpoints failed", exceptionsContainer);
-                        return SafeFuture.failedFuture(exceptionsContainer);
-                      }
-                    }));
+                      });
+            });
   }
 }

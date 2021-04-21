@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class Eth1RequestException extends RuntimeException {
 
   public Eth1RequestException() {
-    super("One or more eth1 endpoints threw an Exception");
+    super("Some eth1 endpoints threw an Exception or no eth1 endpoints available");
   }
 
   public boolean containsExceptionSolvableWithSmallerRange() {
