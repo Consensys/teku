@@ -31,7 +31,7 @@ public class SyncAggregateAssert extends AbstractAssert<SyncAggregateAssert, Syn
   }
 
   public SyncAggregateAssert isEmpty() {
-    return hasSyncCommitteeBits().hasInfinteSignature();
+    return hasSyncCommitteeBits().hasInfiniteSignature();
   }
 
   public SyncAggregateAssert hasSyncCommitteeBits(final Iterable<Integer> bits) {
@@ -49,7 +49,7 @@ public class SyncAggregateAssert extends AbstractAssert<SyncAggregateAssert, Syn
     return this;
   }
 
-  public SyncAggregateAssert hasInfinteSignature() {
+  public SyncAggregateAssert hasInfiniteSignature() {
     if (!actual.getSyncCommitteeSignature().getSignature().isInfinity()) {
       throwAssertionError(
           new BasicErrorMessageFactory(

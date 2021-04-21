@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -116,8 +117,8 @@ public class SyncCommitteeSignatureValidator {
 
     // Always calculate the applicable subcommittees to ensure they are cached and can be used to
     // send the gossip.
-    final Set<Integer> assignedSubcommittees =
-        validateableSignature.calculateApplicableSubcommittees(spec, state);
+    final SyncSubcommitteeAssignments assignedSubcommittees =
+        validateableSignature.calculateAssignments(spec, state);
 
     // [REJECT] The validator producing this sync_committee_signature is in the current sync
     // committee, i.e. state.validators[sync_committee_signature.validator_index].pubkey in
@@ -131,8 +132,9 @@ public class SyncCommitteeSignatureValidator {
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
     // compute_subnets_for_sync_committee(state, sync_committee_signature.validator_index).
     if (validateableSignature.getReceivedSubnetId().isPresent()
-        && !assignedSubcommittees.contains(
-            validateableSignature.getReceivedSubnetId().getAsInt())) {
+        && !assignedSubcommittees
+            .getAssignedSubcommittees()
+            .contains(validateableSignature.getReceivedSubnetId().getAsInt())) {
       LOG.trace("Rejecting sync committee signature because subnet id is incorrect");
       return REJECT;
     }

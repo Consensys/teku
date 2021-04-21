@@ -515,27 +515,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         getForkChoiceStrategy()
             .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
             .orElse(Collections.emptySet());
-
-    return SafeFuture.of(() -> getBlocksByBlockRoots(blockRoots));
+    return getBlocksByRoots(blockRoots);
   }
 
-  private Set<SignedBeaconBlock> getBlocksByBlockRoots(final Set<Bytes32> blockRoots) {
-    if (blockRoots.isEmpty()) {
-      return Collections.emptySet();
-    }
-    return blockRoots.stream()
-        .map(this::retrieveSignedBlockByRoot)
-        .map(
-            future -> {
-              try {
-                return future.get();
-              } catch (Exception e) {
-                LOG.debug("Failed to get block", e);
-                final Optional<SignedBeaconBlock> res = Optional.empty();
-                return res;
-              }
-            })
-        .flatMap(Optional::stream)
-        .collect(Collectors.toSet());
+  @SuppressWarnings("unchecked")
+  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
+    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
+        blockRoots.stream().map(this::retrieveSignedBlockByRoot).toArray(SafeFuture[]::new);
+    return SafeFuture.collectAll(futures)
+        .thenApply(
+            optionalBlocks ->
+                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
   }
 }
