@@ -125,7 +125,8 @@ public class Eth2P2PNetworkFactory {
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
-    protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
+    protected Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier =
+        Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
@@ -190,7 +191,7 @@ public class Eth2P2PNetworkFactory {
                 50,
                 spec);
 
-        List<RpcMethod> rpcMethods =
+        List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
                 .flatMap(rpcMethodsModifier)
                 .collect(toList());
@@ -505,7 +506,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder rpcMethodsModifier(
-        Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier) {
+        Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
       checkNotNull(rpcMethodsModifier);
       this.rpcMethodsModifier = rpcMethodsModifier;
       return this;

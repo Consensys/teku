@@ -27,10 +27,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -107,7 +107,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, ResponseStreamListener.from(blocks::add));
+            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -126,7 +126,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, ResponseStreamListener.from(blocks::add));
+            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -177,7 +177,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer.requestBlocksByRange(
-            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, ResponseStreamListener.from(blocks::add)));
+            UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, RpcResponseListener.from(blocks::add)));
     return blocks;
   }
 
