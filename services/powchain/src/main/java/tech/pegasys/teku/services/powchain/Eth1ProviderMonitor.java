@@ -13,28 +13,24 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.pow.Eth1Provider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.pow.Eth1ProviderSelector;
+import tech.pegasys.teku.pow.MonitorableProvider;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Eth1ChainIdValidator {
-
+public class Eth1ProviderMonitor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Eth1Provider eth1Provider;
-
+  private final Eth1ProviderSelector eth1ProviderSelector;
   private final AsyncRunner asyncRunner;
-
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
-  public Eth1ChainIdValidator(Eth1Provider eth1Provider, AsyncRunner asyncRunner) {
-    this.eth1Provider = eth1Provider;
+  public Eth1ProviderMonitor(Eth1ProviderSelector eth1ProviderSelector, AsyncRunner asyncRunner) {
+    this.eth1ProviderSelector = eth1ProviderSelector;
     this.asyncRunner = asyncRunner;
   }
 
@@ -51,18 +47,24 @@ public class Eth1ChainIdValidator {
       return;
     }
 
-    eth1Provider
-        .getChainId()
-        .whenException(err -> LOG.debug("Failed to get Eth1 chain id. Will retry.", err))
-        .thenAccept(
-            chainId -> {
-              if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
-                STATUS_LOG.eth1DepositChainIdMismatch(
-                    Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact());
-              }
-            })
-        .handleComposed(
-            (__, err) -> asyncRunner.runAfterDelay(this::validate, Duration.ofMinutes(1)))
+    SafeFuture.allOf(
+            eth1ProviderSelector.getProviders().stream()
+                .filter(MonitorableProvider::needsToBeValidated)
+                .map(MonitorableProvider::validate)
+                .map(
+                    isValidFuture ->
+                        isValidFuture.thenPeek(
+                            isValid -> {
+                              if (isValid) {
+                                eth1ProviderSelector.notifyValidationCompletion();
+                              }
+                            }))
+                .toArray(SafeFuture[]::new))
+        .alwaysRun(eth1ProviderSelector::notifyValidationCompletion)
+        .finish(error -> LOG.error("Unexpected error while validating eth1 endpoints", error));
+
+    asyncRunner
+        .runAfterDelay(this::validate, Constants.ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL)
         .reportExceptions();
   }
 }

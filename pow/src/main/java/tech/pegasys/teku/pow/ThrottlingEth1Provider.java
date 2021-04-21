@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthLog;
@@ -64,6 +65,11 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return taskQueue.queueTask(() -> delegate.getGuaranteedEth1Block(blockNumber));
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return taskQueue.queueTask(delegate::getGuaranteedLatestEth1Block);
   }
 
   @Override
