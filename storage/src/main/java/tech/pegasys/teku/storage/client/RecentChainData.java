@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -521,8 +520,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @SuppressWarnings("unchecked")
-  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(
-      final Set<Bytes32> blockRoots) {
+  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
     final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
         blockRoots.stream().map(this::retrieveSignedBlockByRoot).toArray(SafeFuture[]::new);
     return SafeFuture.collectAll(futures)
