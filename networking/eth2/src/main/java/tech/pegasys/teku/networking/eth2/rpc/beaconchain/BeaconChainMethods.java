@@ -158,6 +158,7 @@ public class BeaconChainMethods {
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
     final boolean expectResponseToRequest = true;
 
+    // V1 request only deal with Phase0 blocks
     final SignedBeaconBlockSchema phase0BlockSchema =
         spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getSignedBeaconBlockSchema();
     final RpcContextCodec<Bytes, SignedBeaconBlock> noContextCodec =
@@ -213,10 +214,11 @@ public class BeaconChainMethods {
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(
             spec, combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
-    final SignedBeaconBlockSchema signedBlockSchema =
-        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
+    // V1 request only deal with Phase0 blocks
+    final SignedBeaconBlockSchema phase0BlockSchema =
+        spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getSignedBeaconBlockSchema();
     final RpcContextCodec<?, SignedBeaconBlock> noContextCodec =
-        RpcContextCodec.noop(signedBlockSchema);
+        RpcContextCodec.noop(phase0BlockSchema);
 
     final BeaconBlocksByRangeRequestMessageSchema requestType =
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA;
