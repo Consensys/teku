@@ -33,7 +33,7 @@ public class VersionedEth2RpcMethod<
   private final List<String> protocolIds;
   private final Map<String, SingleProtocolEth2RpcMethod<TRequest, TResponse>> protocolToMethod;
 
-  public VersionedEth2RpcMethod(
+  private VersionedEth2RpcMethod(
       final RpcEncoding encoding,
       final SszSchema<TRequest> requestType,
       final boolean expectResponseToRequest,
@@ -67,8 +67,8 @@ public class VersionedEth2RpcMethod<
     final List<String> sortedProtocolIds =
         methodVersions.stream()
             .sorted(
-                Comparator.comparingInt(
-                        m -> ((SingleProtocolEth2RpcMethod<?, ?>) m).getProtocolVersion())
+                Comparator.<SingleProtocolEth2RpcMethod<?, ?>>comparingInt(
+                        SingleProtocolEth2RpcMethod::getProtocolVersion)
                     .reversed())
             .map(SingleProtocolEth2RpcMethod::getId)
             .collect(Collectors.toList());

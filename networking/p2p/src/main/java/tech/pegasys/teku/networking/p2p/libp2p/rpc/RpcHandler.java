@@ -104,14 +104,14 @@ public class RpcHandler<
                   SafeFuture.of(streamPromise.getStream().thenCompose(Stream::getProtocol));
               // waiting for controller, writing initial payload or interrupt
               return SafeFuture.of(streamPromise.getController())
-                  .thenCombine(
+                  .<String, RpcStreamController<TOutgoingHandler>>thenCombine(
                       protocolIdFuture,
                       (controller, protocolId) -> {
                         final TOutgoingHandler handler =
                             rpcMethod.createOutgoingRequestHandler(
                                 protocolId, request, responseHandler);
                         controller.setOutgoingRequestHandler(handler);
-                        return ((RpcStreamController<TOutgoingHandler>) controller);
+                        return controller;
                       })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
                   .thenWaitFor(controller -> controller.getRpcStream().writeBytes(initialPayload))

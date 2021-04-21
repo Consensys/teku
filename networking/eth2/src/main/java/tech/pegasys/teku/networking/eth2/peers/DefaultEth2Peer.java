@@ -304,10 +304,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 ctrl.getRequiredOutgoingRequestHandler()
                     .handleInitialPayloadSent(ctrl.getRpcStream()))
         .thenCompose(ctrl -> ctrl.getRequiredOutgoingRequestHandler().getCompletedFuture())
-        .whenComplete(
-            (res, err) -> {
-              outstandingRequests.decrementAndGet();
-            });
+        .alwaysRun(outstandingRequests::decrementAndGet);
   }
 
   @Override

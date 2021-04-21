@@ -185,7 +185,7 @@ public class BeaconChainMethods {
                 beaconBlocksByRootHandler,
                 peerLookup);
 
-    if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
+    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final ResponseSchemaSupplier<Bytes4, SignedBeaconBlock> v2SchemaSupplier =
           createForkAwareSchemaSupplier(
               spec, recentChainData, SchemaDefinitions::getSignedBeaconBlockSchema);

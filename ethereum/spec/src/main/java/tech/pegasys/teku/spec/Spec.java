@@ -162,6 +162,16 @@ public class Spec {
     return forkSchedule.getActiveMilestones();
   }
 
+  /**
+   * Returns true if the given milestone is at or prior to our highest supported milestone
+   *
+   * @param milestone The milestone to be checked
+   * @return True if the milestone is supported
+   */
+  public boolean isMilestoneSupported(final SpecMilestone milestone) {
+    return forkSchedule.getSupportedMilestones().contains(milestone);
+  }
+
   public Fork fork(final UInt64 epoch) {
     return forkSchedule.getFork(epoch);
   }
