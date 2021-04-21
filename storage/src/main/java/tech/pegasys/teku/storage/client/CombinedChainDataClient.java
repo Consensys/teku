@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -494,7 +495,17 @@ public class CombinedChainDataClient {
           .getNonCanonicalBlocksBySlot(slot)
           .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
     }
-    return recentChainData.getAllBlocksAtSlot(slot);
+    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
+  }
+
+  @SuppressWarnings("unchecked")
+  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
+    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
+        blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
+    return SafeFuture.collectAll(futures)
+        .thenApply(
+            optionalBlocks ->
+                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
   }
 
   Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(
