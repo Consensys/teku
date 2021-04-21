@@ -14,18 +14,54 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.base.Preconditions;
+import java.util.Iterator;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class Eth1ProviderSelector {
+  private final List<MonitorableEth1Provider> candidates;
+  private final SafeFuture<Void> initialValidationCompleted;
 
-  final List<Eth1Provider> candidates;
-
-  public Eth1ProviderSelector(final List<Eth1Provider> candidates) {
+  public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
     Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
     this.candidates = candidates;
+    this.initialValidationCompleted = new SafeFuture<>();
   }
 
-  public List<Eth1Provider> getProviders() {
+  public void notifyValidationCompletion() {
+    initialValidationCompleted.complete(null);
+  }
+
+  public boolean isInitialValidationCompleted() {
+    return initialValidationCompleted.isDone();
+  }
+
+  public List<MonitorableEth1Provider> getProviders() {
     return candidates;
+  }
+
+  public ValidEth1ProviderIterator getValidProviderIterator() {
+    return new ValidEth1ProviderIterator();
+  }
+
+  public class ValidEth1ProviderIterator {
+    private final Iterator<MonitorableEth1Provider> currentIterator;
+
+    private ValidEth1ProviderIterator() {
+      this.currentIterator = candidates.iterator();
+    }
+
+    public SafeFuture<MonitorableEth1Provider> next() {
+      return initialValidationCompleted.thenApply(
+          (__) -> {
+            while (currentIterator.hasNext()) {
+              final MonitorableEth1Provider current = currentIterator.next();
+              if (current.isValid()) {
+                return current;
+              }
+            }
+            throw new RuntimeException("no available endpoints");
+          });
+    }
   }
 }

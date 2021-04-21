@@ -47,7 +47,7 @@ public class PeerManagerTest {
           new NoOpMetricsSystem(),
           reputationManager,
           Collections.emptyList(),
-          Collections.emptyMap());
+          Collections.emptyList());
 
   @Test
   public void subscribeConnect_singleListener() {

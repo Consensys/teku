@@ -22,9 +22,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
@@ -49,7 +49,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final UInt64 step,
-      final ResponseStreamListener<SignedBeaconBlock> listener) {
+      final RpcResponseListener<SignedBeaconBlock> listener) {
     if (rateTracker.wantToRequestObjects(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, step, listener);

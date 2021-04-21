@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.util;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -55,6 +57,17 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
       return Optional.empty();
     }
     return getBlock(slot).map(SignedBeaconBlock::getRoot);
+  }
+
+  @Override
+  public Set<Bytes32> getBlockRootsAtSlot(final UInt64 slot) {
+    final Optional<Bytes32> maybeRoot = getBlock(slot).map(SignedBeaconBlock::getRoot);
+    if (maybeRoot.isEmpty()) {
+      return Collections.emptySet();
+    }
+    final Set<Bytes32> output = new HashSet<>();
+    output.add(maybeRoot.get());
+    return output;
   }
 
   @Override

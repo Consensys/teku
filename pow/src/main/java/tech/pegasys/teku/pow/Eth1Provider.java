@@ -14,10 +14,13 @@
 package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthLog.LogResult;
@@ -50,6 +53,8 @@ public interface Eth1Provider {
 
   SafeFuture<Block> getLatestEth1Block();
 
+  SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block();
+
   SafeFuture<EthCall> ethCall(String from, String to, String data, UInt64 blockNumber);
 
   SafeFuture<BigInteger> getChainId();
@@ -57,4 +62,20 @@ public interface Eth1Provider {
   SafeFuture<Boolean> ethSyncing();
 
   SafeFuture<List<LogResult<?>>> ethGetLogs(EthFilter ethFilter);
+
+  static String generateEth1ProviderId(final int priority, final String endpoint) {
+    String hostname;
+    try {
+      final URI uri = new URI(endpoint);
+      if (uri.getPort() != -1) {
+        hostname = uri.getHost() + ":" + uri.getPort();
+      } else {
+        hostname = uri.getHost();
+      }
+    } catch (URISyntaxException e) {
+      hostname = "unknown";
+    }
+
+    return String.format("%s [%d]", hostname, priority);
+  }
 }

@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,8 +45,8 @@ public abstract class AbstractSyncTest {
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @SuppressWarnings("unchecked")
-  protected final ArgumentCaptor<ResponseStreamListener<SignedBeaconBlock>>
-      responseListenerArgumentCaptor = ArgumentCaptor.forClass(ResponseStreamListener.class);
+  protected final ArgumentCaptor<RpcResponseListener<SignedBeaconBlock>>
+      responseListenerArgumentCaptor = ArgumentCaptor.forClass(RpcResponseListener.class);
 
   protected void completeRequestWithBlockAtSlot(
       final SafeFuture<Void> requestFuture1, final int lastBlockSlot) {
@@ -58,7 +58,7 @@ public abstract class AbstractSyncTest {
     // Capture latest response listener
     verify(peer, atLeastOnce())
         .requestBlocksByRange(any(), any(), any(), responseListenerArgumentCaptor.capture());
-    final ResponseStreamListener<SignedBeaconBlock> responseListener =
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
     List<SignedBeaconBlock> blocks = respondWithBlocksAtSlots(responseListener, lastBlockSlot);
@@ -70,7 +70,7 @@ public abstract class AbstractSyncTest {
   }
 
   protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
-      final ResponseStreamListener<SignedBeaconBlock> responseListener, UInt64... slots) {
+      final RpcResponseListener<SignedBeaconBlock> responseListener, UInt64... slots) {
     List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (UInt64 slot : slots) {
       final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
