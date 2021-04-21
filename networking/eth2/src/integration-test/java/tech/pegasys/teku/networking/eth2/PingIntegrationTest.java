@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
+import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
@@ -129,7 +130,11 @@ public class PingIntegrationTest {
             .eth2RpcPingInterval(pingPeriod)
             .eth2RpcOutstandingPingThreshold(2)
             // remove PING method
-            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
+            .rpcMethodsModifier(
+                m ->
+                    Stream.of(m)
+                        .filter(t -> t.getIds().stream().noneMatch(id -> id.contains("/ping")))
+                        .map(n -> ((RpcMethod<?, ?, ?>) n)))
             .startNetwork();
     network2 =
         networkFactory

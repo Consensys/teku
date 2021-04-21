@@ -23,19 +23,19 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class StubSyncSource implements SyncSource {
 
   private final List<Request> requests = new ArrayList<>();
   private Optional<SafeFuture<Void>> currentRequest = Optional.empty();
-  private Optional<ResponseStreamListener<SignedBeaconBlock>> currentListener = Optional.empty();
+  private Optional<RpcResponseListener<SignedBeaconBlock>> currentListener = Optional.empty();
 
   public void receiveBlocks(final SignedBeaconBlock... blocks) {
-    final ResponseStreamListener<SignedBeaconBlock> listener = currentListener.orElseThrow();
+    final RpcResponseListener<SignedBeaconBlock> listener = currentListener.orElseThrow();
     Stream.of(blocks).forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
     currentRequest.orElseThrow().complete(null);
   }
@@ -49,7 +49,7 @@ public class StubSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final UInt64 step,
-      final ResponseStreamListener<SignedBeaconBlock> listener) {
+      final RpcResponseListener<SignedBeaconBlock> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
     checkArgument(step.isGreaterThan(UInt64.ZERO), "Step must be greater than zero");
     requests.add(new Request(startSlot, count));
