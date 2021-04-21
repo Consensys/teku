@@ -46,7 +46,12 @@ public class Web3jEth1MonitorableProviderTest {
   void setup() {
     asyncRunner = new StubAsyncRunner();
     timeProvider = StubTimeProvider.withTimeInSeconds(1000);
-    provider = new Web3jEth1Provider("0 test.host.org", web3, asyncRunner, timeProvider);
+    provider =
+        new Web3jEth1Provider(
+            Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
+            web3,
+            asyncRunner,
+            timeProvider);
   }
 
   @Test
@@ -72,72 +77,64 @@ public class Web3jEth1MonitorableProviderTest {
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    try {
-      provider.validate().get();
-    } catch (Exception ignored) {
-    }
+    assertThat(provider.validate()).isCompleted();
 
     assertThat(provider.getLastCallTime()).isEqualTo(UInt64.valueOf(1000));
     assertThat(provider.getLastValidationTime()).isEqualTo(UInt64.valueOf(1000));
   }
 
   @Test
-  void validationShouldFailIfCorrectChainIdStillSyncing()
-      throws ExecutionException, InterruptedException {
+  void validationShouldFailIfCorrectChainIdStillSyncing() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_CORRECT);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, true);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(false);
     assertThat(provider.isValid()).isFalse();
   }
 
   @Test
-  void validationShouldFailIfWrongChainIdStillSyncing()
-      throws ExecutionException, InterruptedException {
+  void validationShouldFailIfWrongChainIdStillSyncing() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_WRONG);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, true);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(false);
     assertThat(provider.isValid()).isFalse();
   }
 
   @Test
-  void validationShouldFailIfCorrectChainIdNotSyncing()
-      throws ExecutionException, InterruptedException {
+  void validationShouldFailIfCorrectChainIdNotSyncing() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_WRONG);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(false);
     assertThat(provider.isValid()).isFalse();
   }
 
   @Test
-  void validationShouldSucceedIfCorrectChainIdNotSyncing()
-      throws ExecutionException, InterruptedException {
+  void validationShouldSucceedIfCorrectChainIdNotSyncing() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_CORRECT);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isTrue();
+    assertThat(provider.validate()).isCompletedWithValue(true);
     assertThat(provider.isValid()).isTrue();
   }
 
   @Test
-  void validationShouldFailIfCorrectChainIdFailSyncingCall()
-      throws ExecutionException, InterruptedException {
+  void validationShouldFailIfCorrectChainIdFailSyncingCall() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_CORRECT);
     when(web3.ethChainId()).thenReturn(request1);
     prepareFailingRequest(request2);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(false);
     assertThat(provider.isValid()).isFalse();
   }
 
@@ -208,23 +205,23 @@ public class Web3jEth1MonitorableProviderTest {
     when(request.sendAsync()).thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
   }
 
-  private void failAValidation() throws ExecutionException, InterruptedException {
+  private void failAValidation() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_WRONG);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isFalse();
+    assertThat(provider.validate()).isCompletedWithValue(false);
     assertThat(provider.isValid()).isFalse();
   }
 
-  private void succeedAValidation() throws ExecutionException, InterruptedException {
+  private void succeedAValidation() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_CORRECT);
     when(web3.ethChainId()).thenReturn(request1);
     prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
-    assertThat(provider.validate().get()).isTrue();
+    assertThat(provider.validate()).isCompletedWithValue(true);
     assertThat(provider.isValid()).isTrue();
   }
 
@@ -235,10 +232,10 @@ public class Web3jEth1MonitorableProviderTest {
     assertThat(provider.ethSyncing()).isCompletedExceptionally();
   }
 
-  private void succeedACall() throws ExecutionException, InterruptedException {
+  private void succeedACall() {
     prepareRequestWithSyncingResponse(request1, true);
     when(web3.ethSyncing()).thenReturn(request1);
 
-    assertThat(provider.ethSyncing().get()).isTrue();
+    assertThat(provider.ethSyncing()).isCompletedWithValue(true);
   }
 }

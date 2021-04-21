@@ -28,6 +28,22 @@ public class Eth1ProviderSelector {
     this.initialValidationCompleted = new SafeFuture<>();
   }
 
+  public void notifyValidationCompletion() {
+    initialValidationCompleted.complete(null);
+  }
+
+  public boolean isInitialValidationCompleted() {
+    return initialValidationCompleted.isDone();
+  }
+
+  public List<MonitorableEth1Provider> getProviders() {
+    return candidates;
+  }
+
+  public ValidEth1ProviderIterator getValidProviderIterator() {
+    return new ValidEth1ProviderIterator();
+  }
+
   public class ValidEth1ProviderIterator {
     private final Iterator<MonitorableEth1Provider> currentIterator;
 
@@ -47,21 +63,5 @@ public class Eth1ProviderSelector {
             throw new RuntimeException("no available endpoints");
           });
     }
-  }
-
-  public void notifyValidationCompletion() {
-    initialValidationCompleted.complete(null);
-  }
-
-  public boolean isInitialValidationCompleted() {
-    return initialValidationCompleted.isDone();
-  }
-
-  public List<MonitorableEth1Provider> getProviders() {
-    return candidates;
-  }
-
-  public ValidEth1ProviderIterator getValidProviderIterator() {
-    return new ValidEth1ProviderIterator();
   }
 }

@@ -126,8 +126,8 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private <S, T extends Response> SafeFuture<T> sendAsync(final Request<S, T> request) {
     try {
       return SafeFuture.of(request.sendAsync())
-          .thenPeek(__ -> updateLastCall(Result.success))
-          .catchAndRethrow(__ -> updateLastCall(Result.failed));
+          .thenPeek(__ -> updateLastCall(Result.SUCCESS))
+          .catchAndRethrow(__ -> updateLastCall(Result.FAILED));
     } catch (RejectedExecutionException ex) {
       LOG.debug("shutting down, ignoring error", ex);
       return new SafeFuture<>();
@@ -194,42 +194,63 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   @Override
   public SafeFuture<Boolean> validate() {
     if (validating.compareAndSet(false, true)) {
-      LOG.info("Validating endpoint {} ...", this.id);
-      return getChainId()
-          .thenAccept(
-              chainId -> {
-                if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
-                  STATUS_LOG.eth1DepositChainIdMismatch(
-                      Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact(), this.id);
-                  throw new RuntimeException("Wrong Chainid");
+      LOG.debug("Validating endpoint {} ...", this.id);
+      return validateChainId()
+          .thenCompose(
+              result -> {
+                if (result == Result.FAILED) {
+                  return SafeFuture.completedFuture(result);
+                } else {
+                  return validateSyncing();
                 }
               })
-          .thenCompose(__ -> this.ethSyncing())
-          .handleComposed(
-              (syncing, err) -> {
-                SafeFuture<Boolean> futureReturn = new SafeFuture<>();
-                if (err != null) {
-                  LOG.warn(
-                      "Endpoint {} is INVALID | {}",
-                      this.id,
-                      Throwables.getRootCause(err).getMessage());
-                  updateLastValidation(Result.failed);
-                  futureReturn.complete(Boolean.FALSE);
-                } else if (syncing) {
-                  LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
-                  updateLastValidation(Result.failed);
-                  futureReturn.complete(Boolean.FALSE);
-                } else {
-                  LOG.info("Endpoint {} is VALID", this.id);
-                  updateLastValidation(Result.success);
-                  futureReturn.complete(Boolean.TRUE);
-                }
-                validating.set(false);
-                return futureReturn;
-              });
+          .thenApply(
+              result -> {
+                updateLastValidation(result);
+                return result == Result.SUCCESS;
+              })
+          .exceptionally(
+              error -> {
+                LOG.warn(
+                    "Endpoint {} is INVALID | {}",
+                    this.id,
+                    Throwables.getRootCause(error).getMessage());
+                updateLastValidation(Result.FAILED);
+                return false;
+              })
+          .alwaysRun(() -> validating.set(false));
     } else {
       LOG.debug("Already validating");
-      return SafeFuture.completedFuture(Boolean.TRUE);
+      return SafeFuture.completedFuture(isValid());
     }
+  }
+
+  private SafeFuture<Result> validateChainId() {
+    return getChainId()
+        .thenApply(
+            chainId -> {
+              if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
+                STATUS_LOG.eth1DepositChainIdMismatch(
+                    Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact(), this.id);
+                return Result.FAILED;
+              }
+              return Result.SUCCESS;
+            });
+  }
+
+  private SafeFuture<Result> validateSyncing() {
+    return ethSyncing()
+        .thenApply(
+            syncing -> {
+              if (syncing) {
+                LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
+                updateLastValidation(Result.FAILED);
+                return Result.FAILED;
+              } else {
+                LOG.debug("Endpoint {} is VALID", this.id);
+                updateLastValidation(Result.SUCCESS);
+                return Result.SUCCESS;
+              }
+            });
   }
 }

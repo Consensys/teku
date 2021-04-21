@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.Eth1ProviderSelector;
 import tech.pegasys.teku.pow.MonitorableProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1ProviderMonitor {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Eth1ProviderSelector eth1ProviderSelector;
-
   private final AsyncRunner asyncRunner;
-
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
   public Eth1ProviderMonitor(Eth1ProviderSelector eth1ProviderSelector, AsyncRunner asyncRunner) {
@@ -46,34 +47,24 @@ public class Eth1ProviderMonitor {
       return;
     }
 
-    // let's prepare a parallel validation stream
-    Stream<SafeFuture<Boolean>> validationStream =
-        eth1ProviderSelector
-            .getProviders()
-            .parallelStream()
-            .filter(MonitorableProvider::needsToBeValidated)
-            .map(MonitorableProvider::validate);
+    SafeFuture.allOf(
+            eth1ProviderSelector.getProviders().stream()
+                .filter(MonitorableProvider::needsToBeValidated)
+                .map(MonitorableProvider::validate)
+                .map(
+                    isValidFuture ->
+                        isValidFuture.thenPeek(
+                            isValid -> {
+                              if (isValid) {
+                                eth1ProviderSelector.notifyValidationCompletion();
+                              }
+                            }))
+                .toArray(SafeFuture[]::new))
+        .alwaysRun(eth1ProviderSelector::notifyValidationCompletion)
+        .finish(error -> LOG.error("Unexpected error while validating eth1 endpoints", error));
 
-    if (eth1ProviderSelector.isInitialValidationCompleted()) {
-      // if we already notified a completion, just execute all validations.
-      validationStream.forEach(isValidFuture -> isValidFuture.always(() -> {}));
-    } else {
-      // otherwise let's notify a validation completion as soon as we have a valid endpoint or in
-      // any case at the end of all validations.
-      SafeFuture.allOf(
-              validationStream
-                  .map(
-                      isValidFuture ->
-                          isValidFuture.thenApply(
-                              (isValid) -> {
-                                if (isValid) {
-                                  eth1ProviderSelector.notifyValidationCompletion();
-                                }
-                                return null;
-                              }))
-                  .toArray(SafeFuture[]::new))
-          .always(eth1ProviderSelector::notifyValidationCompletion);
-    }
-    asyncRunner.runAfterDelay(this::validate, Duration.ofSeconds(10)).reportExceptions();
+    asyncRunner
+        .runAfterDelay(this::validate, Constants.ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL)
+        .reportExceptions();
   }
 }

@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.base.Splitter;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -65,9 +66,13 @@ public interface Eth1Provider {
   static String generateEth1ProviderId(final int priority, final String endpoint) {
     String hostname;
     try {
-      String tmp = Splitter.on("://").splitToList(endpoint).get(1);
-      hostname = Splitter.on("/").splitToList(tmp).get(0);
-    } catch (Exception e) {
+      final URI uri = new URI(endpoint);
+      if (uri.getPort() != -1) {
+        hostname = uri.getHost() + ":" + uri.getPort();
+      } else {
+        hostname = uri.getHost();
+      }
+    } catch (URISyntaxException e) {
       hostname = "unknown";
     }
 

@@ -19,15 +19,15 @@ import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1Provider {
   protected enum Result {
-    success,
-    failed
+    SUCCESS,
+    FAILED
   }
 
   private final TimeProvider timeProvider;
   protected UInt64 lastCallTime = UInt64.ZERO;
   protected UInt64 lastValidationTime = UInt64.ZERO;
-  protected Result lastCallResult = Result.failed;
-  protected Result lastValidationResult = Result.failed;
+  protected Result lastCallResult = Result.FAILED;
+  protected Result lastValidationResult = Result.FAILED;
 
   protected AbstractMonitorableEth1Provider(TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
@@ -55,28 +55,30 @@ public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1
 
   @Override
   public synchronized boolean isValid() {
-    return lastCallResult.equals(Result.success) && lastValidationResult.equals(Result.success);
+    return lastCallResult.equals(Result.SUCCESS) && lastValidationResult.equals(Result.SUCCESS);
   }
 
   @Override
   public synchronized boolean needsToBeValidated() {
     UInt64 currentTime = timeProvider.getTimeInSeconds();
     switch (lastCallResult) {
-      case failed:
+      case FAILED:
         return currentTime.isGreaterThanOrEqualTo(
             lastValidationTime.plus(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds()));
-      case success:
+      case SUCCESS:
         switch (lastValidationResult) {
-          case failed:
+          case FAILED:
             return currentTime.isGreaterThanOrEqualTo(
                 lastValidationTime.plus(
                     Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
-          case success:
+          case SUCCESS:
             return currentTime.isGreaterThanOrEqualTo(
                 lastValidationTime.plus(Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
+          default:
+            throw new IllegalStateException("Unknown result type: " + lastValidationResult);
         }
+      default:
+        throw new IllegalStateException("Unknown result type: " + lastCallResult);
     }
-    // should never occur
-    return true;
   }
 }
