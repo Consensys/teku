@@ -94,6 +94,10 @@ public class Spec {
     return new Spec(specVersions, forkSchedule);
   }
 
+  public SpecVersion forMilestone(final SpecMilestone milestone) {
+    return specVersions.get(milestone);
+  }
+
   public SpecVersion atEpoch(final UInt64 epoch) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtEpoch(epoch));
   }
@@ -156,6 +160,16 @@ public class Spec {
 
   public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkSchedule.getActiveMilestones();
+  }
+
+  /**
+   * Returns true if the given milestone is at or prior to our highest supported milestone
+   *
+   * @param milestone The milestone to be checked
+   * @return True if the milestone is supported
+   */
+  public boolean isMilestoneSupported(final SpecMilestone milestone) {
+    return forkSchedule.getSupportedMilestones().contains(milestone);
   }
 
   public Fork fork(final UInt64 epoch) {

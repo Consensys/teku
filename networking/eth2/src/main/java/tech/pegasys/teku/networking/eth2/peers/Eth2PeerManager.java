@@ -235,7 +235,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   @VisibleForTesting
   void sendPeriodicPing(Eth2Peer peer) {
-    if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
+    if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
       peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).reportExceptions();
     } else {

@@ -35,28 +35,29 @@ public class Eth2IncomingRequestHandler<
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Eth2RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final RpcEncoder rpcEncoder;
 
   private final RpcRequestDecoder<TRequest> requestDecoder;
 
+  private final String protocolId;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean requestHandled = new AtomicBoolean(false);
 
   public Eth2IncomingRequestHandler(
+      final String protocolId,
+      final RpcEncoder rpcEncoder,
+      final RpcRequestDecoder<TRequest> requestDecoder,
       final AsyncRunner asyncRunner,
-      final Eth2RpcMethod<TRequest, TResponse> method,
       final PeerLookup peerLookup,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
+    this.protocolId = protocolId;
     this.asyncRunner = asyncRunner;
-    this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
-    this.rpcEncoder = new RpcEncoder(method.getEncoding());
-
-    requestDecoder = method.createRequestDecoder();
+    this.rpcEncoder = rpcEncoder;
+    this.requestDecoder = requestDecoder;
   }
 
   @Override
@@ -103,10 +104,10 @@ public class Eth2IncomingRequestHandler<
       requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final StreamClosedException e) {
-      LOG.trace("Stream closed before response sent for request {}", method.getMultistreamId(), e);
+      LOG.trace("Stream closed before response sent for request {}", protocolId, e);
       callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
-      LOG.error("Unhandled error while processing request {}", method.getMultistreamId(), t);
+      LOG.error("Unhandled error while processing request {}", protocolId, t);
       callback.completeWithUnexpectedError(t);
     }
   }
@@ -119,9 +120,9 @@ public class Eth2IncomingRequestHandler<
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
-                    "Failed to receive incoming request data within {} sec for method {}. Close stream.",
+                    "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
                     timeout.getSeconds(),
-                    method);
+                    protocolId);
                 stream.closeAbruptly().reportExceptions();
               }
             })
@@ -135,6 +136,6 @@ public class Eth2IncomingRequestHandler<
 
   @Override
   public String toString() {
-    return "Eth2IncomingRequestHandler{" + "method=" + method + '}';
+    return "Eth2IncomingRequestHandler{" + "protocol=" + protocolId + '}';
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.p2p.rpc;
 
-import java.util.function.Consumer;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import java.util.Optional;
 
-@FunctionalInterface
-public interface ResponseStreamListener<O> {
-  static <T> ResponseStreamListener<T> from(Consumer<T> listener) {
-    return (T response) -> SafeFuture.fromRunnable(() -> listener.accept(response));
+public interface RpcResponseHandler<T> extends RpcResponseListener<T> {
+
+  /** This method is invoked when all responses have been received. */
+  void onCompleted(Optional<? extends Throwable> error);
+
+  default void onCompleted() {
+    onCompleted(Optional.empty());
   }
 
-  SafeFuture<?> onResponse(O response);
+  default void onCompleted(Throwable t) {
+    onCompleted(Optional.of(t));
+  }
 }

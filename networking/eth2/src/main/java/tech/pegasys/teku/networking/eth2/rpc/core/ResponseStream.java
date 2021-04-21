@@ -13,23 +13,36 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public interface ResponseStream<O> {
-  default SafeFuture<O> expectSingleResponse() {
-    return expectOptionalResponse()
-        .thenApply(
-            maybeResult ->
-                maybeResult.orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "No response received when single response expected")));
+import java.util.concurrent.atomic.AtomicInteger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+
+class ResponseStream<O> {
+
+  private final RpcResponseHandler<O> responseHandler;
+  private final AtomicInteger receivedResponseCount = new AtomicInteger(0);
+
+  public ResponseStream(final RpcResponseHandler<O> responseHandler) {
+    checkNotNull(responseHandler);
+    this.responseHandler = responseHandler;
   }
 
-  SafeFuture<Optional<O>> expectOptionalResponse();
+  public SafeFuture<?> respond(final O data) {
+    receivedResponseCount.incrementAndGet();
+    return responseHandler.onResponse(data);
+  }
 
-  SafeFuture<Void> expectNoResponse();
+  public int getResponseChunkCount() {
+    return receivedResponseCount.get();
+  }
 
-  SafeFuture<Void> expectMultipleResponses(ResponseStreamListener<O> listener);
+  public void completeSuccessfully() {
+    responseHandler.onCompleted();
+  }
+
+  public void completeWithError(final Throwable error) {
+    responseHandler.onCompleted(error);
+  }
 }

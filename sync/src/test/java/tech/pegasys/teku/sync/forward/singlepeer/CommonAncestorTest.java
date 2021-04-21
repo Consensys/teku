@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class CommonAncestorTest extends AbstractSyncTest {
@@ -106,7 +106,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
             responseListenerArgumentCaptor.capture());
 
     assertThat(futureSlot.isDone()).isFalse();
-    final ResponseStreamListener<SignedBeaconBlock> responseListener =
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
     respondWithBlocksAtSlots(
         responseListener, currentLocalHead.minus(2850), currentLocalHead.minus(2250));
