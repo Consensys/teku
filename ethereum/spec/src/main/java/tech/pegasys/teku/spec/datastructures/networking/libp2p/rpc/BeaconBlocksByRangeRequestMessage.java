@@ -66,6 +66,10 @@ public final class BeaconBlocksByRangeRequestMessage
     return getField2().get();
   }
 
+  public UInt64 getMaxSlot() {
+    return getStartSlot().plus(getCount().minus(1).times(getStep()));
+  }
+
   @Override
   public int getMaximumRequestChunks() {
     return Math.toIntExact(getCount().longValue());

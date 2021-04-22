@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
+package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,7 +27,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
@@ -51,7 +52,6 @@ public class BeaconChainMethodsTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
@@ -87,7 +87,47 @@ public class BeaconChainMethodsTest {
     assertThat(decodedRequest).contains(RECORDED_STATUS_MESSAGE_DATA);
   }
 
+  @Test
+  public void shouldCreateVersionedBlocksByRangeMethodWithAltairEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalAltair());
+
+    assertThat(methods.beaconBlocksByRange().getIds())
+        .containsExactly(
+            "/eth2/beacon_chain/req/beacon_blocks_by_range/2/ssz_snappy",
+            "/eth2/beacon_chain/req/beacon_blocks_by_range/1/ssz_snappy");
+  }
+
+  @Test
+  public void shouldCreateUnversionedBlocksByRangeMethodWithAltairDisabled() {
+    final BeaconChainMethods methods = getMethods();
+
+    assertThat(methods.beaconBlocksByRange().getIds())
+        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_range/1/ssz_snappy");
+  }
+
+  @Test
+  public void shouldCreateVersionedBlocksByRootMethodWithAltairEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalAltair());
+
+    assertThat(methods.beaconBlocksByRoot().getIds())
+        .containsExactly(
+            "/eth2/beacon_chain/req/beacon_blocks_by_root/2/ssz_snappy",
+            "/eth2/beacon_chain/req/beacon_blocks_by_root/1/ssz_snappy");
+  }
+
+  @Test
+  public void shouldCreateUnversionedBlocksByRootMethodWithAltairDisabled() {
+    final BeaconChainMethods methods = getMethods();
+
+    assertThat(methods.beaconBlocksByRoot().getIds())
+        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_root/1/ssz_snappy");
+  }
+
   private BeaconChainMethods getMethods() {
+    return getMethods(TestSpecFactory.createMinimalPhase0());
+  }
+
+  private BeaconChainMethods getMethods(final Spec spec) {
     return BeaconChainMethods.create(
         spec,
         asyncRunner,
