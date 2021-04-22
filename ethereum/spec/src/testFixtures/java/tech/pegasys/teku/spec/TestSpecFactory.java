@@ -22,6 +22,10 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
+  public static Spec createDefault() {
+    return createMinimalPhase0();
+  }
+
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.ALTAIR);

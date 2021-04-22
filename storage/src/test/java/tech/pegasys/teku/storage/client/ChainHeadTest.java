@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,6 +32,13 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 public class ChainHeadTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  private SignedBlockAndState genesis;
+
+  @BeforeEach
+  public void setup() {
+    genesis = chainBuilder.generateGenesis();
+  }
 
   @Test
   public void equals_shouldBeEqualToCopy() {
@@ -67,8 +75,6 @@ public class ChainHeadTest {
 
   @Test
   void findCommonAncestor_atGenesisBlock() {
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10), spec);
     final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12), spec);
@@ -78,8 +84,6 @@ public class ChainHeadTest {
 
   @Test
   void findCommonAncestor_headBlockEmptyVsFull() {
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
-    chainBuilder.generateGenesis();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2), spec);
@@ -90,8 +94,6 @@ public class ChainHeadTest {
 
   @Test
   void findCommonAncestor_differingChains() {
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
-    chainBuilder.generateGenesis();
     chainBuilder.generateBlockAtSlot(2);
     final ChainBuilder fork = chainBuilder.fork();
     chainBuilder.generateBlocksUpToSlot(4);
@@ -110,8 +112,6 @@ public class ChainHeadTest {
 
   @Test
   void findCommonAncestor_differingBeyondHistoricRoots() {
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
-    chainBuilder.generateGenesis();
     final ChainBuilder fork = chainBuilder.fork();
 
     final SignedBlockAndState chainHead =

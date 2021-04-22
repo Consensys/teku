@@ -45,7 +45,7 @@ class StateAtSlotTaskTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StateAtSlotTask.AsyncStateProvider stateProvider =
       mock(StateAtSlotTask.AsyncStateProvider.class);
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   @BeforeEach
   void setUp() {

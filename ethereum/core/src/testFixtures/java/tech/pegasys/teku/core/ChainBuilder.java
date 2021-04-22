@@ -93,11 +93,6 @@ public class ChainBuilder {
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
   }
 
-  @Deprecated // Should supply a Spec value
-  public static ChainBuilder createDefault() {
-    return ChainBuilder.create(TestSpecFactory.createMinimalPhase0(), DEFAULT_VALIDATOR_KEYS);
-  }
-
   public static ChainBuilder create(final Spec spec) {
     return ChainBuilder.create(spec, DEFAULT_VALIDATOR_KEYS);
   }

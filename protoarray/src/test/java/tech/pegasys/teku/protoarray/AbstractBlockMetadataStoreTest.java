@@ -29,6 +29,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -37,7 +39,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 abstract class AbstractBlockMetadataStoreTest {
 
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =
       new Checkpoint(UInt64.valueOf(GENESIS_EPOCH), genesis.getRoot());
