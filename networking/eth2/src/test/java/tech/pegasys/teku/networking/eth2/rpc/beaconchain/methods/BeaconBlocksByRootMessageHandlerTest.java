@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -43,7 +41,10 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
@@ -52,8 +53,10 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRootMethodId(2, RpcEncoding.SSZ_SNAPPY);
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  private final UInt64 altairForkSlot = UInt64.valueOf(8);
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairForkSlot);
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final String protocolId = BeaconChainMethodIds.getBlocksByRootMethodId(1, RpcEncoding.SSZ_SNAPPY);
@@ -66,15 +69,19 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @BeforeEach
   public void setup() {
-    chainBuilder.generateGenesis();
+    chainUpdater.initializeGenesis();
     when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     when(recentChainData.getStore()).thenReturn(store);
+    // Forward block requests from the mock to the actual store
+    when(store.retrieveSignedBlock(any()))
+        .thenAnswer(
+            i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
   }
 
   @Test
   public void onIncomingMessage_respondsWithAllBlocks() {
-    final List<SignedBeaconBlock> blocks = mockChain(5);
+    final List<SignedBeaconBlock> blocks = buildChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(protocolId, peer, message, callback);
@@ -87,7 +94,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @Test
   public void onIncomingMessage_interruptedByClosedStream() {
-    final List<SignedBeaconBlock> blocks = mockChain(5);
+    final List<SignedBeaconBlock> blocks = buildChain(5);
 
     // Mock callback to appear to be closed
     doThrow(new StreamClosedException()).when(callback).respond(any());
@@ -106,18 +113,16 @@ public class BeaconBlocksByRootMessageHandlerTest {
     return new BeaconBlocksByRootRequestMessage(blockHashes);
   }
 
-  private List<SignedBeaconBlock> mockChain(final int chainSize) {
+  private List<SignedBeaconBlock> buildChain(final int chainSize) {
     // Create some blocks to request
+    final UInt64 latestSlot = storageSystem.chainBuilder().getLatestSlot();
+    chainUpdater.advanceChainUntil(chainSize);
     final List<SignedBeaconBlock> blocks =
-        chainBuilder.generateBlocksUpToSlot(chainSize).stream()
+        storageSystem
+            .chainBuilder()
+            .streamBlocksAndStates(latestSlot.plus(1))
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
-
-    // Setup store to return blocks
-    for (SignedBeaconBlock block : blocks) {
-      when(store.retrieveSignedBlock(block.getRoot()))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    }
 
     return blocks;
   }
@@ -125,7 +130,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @Test
   public void validateResponse_phase0Spec_v1Request() {
     final Optional<RpcException> result =
-        handler.validateResponse(V1_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(5).getBlock());
+        handler.validateResponse(V1_PROTOCOL_ID, chainUpdater.advanceChain(5).getBlock());
 
     assertThat(result).isEmpty();
   }
@@ -133,7 +138,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @Test
   public void validateResponse_phase0Spec_v2Request() {
     final Optional<RpcException> result =
-        handler.validateResponse(V2_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(5).getBlock());
+        handler.validateResponse(V2_PROTOCOL_ID, chainUpdater.advanceChain(5).getBlock());
 
     assertThat(result).isEmpty();
   }
@@ -145,19 +150,16 @@ public class BeaconBlocksByRootMessageHandlerTest {
         new BeaconBlocksByRootMessageHandler(spec, recentChainData);
 
     final Optional<RpcException> result =
-        handler.validateResponse(V1_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(5).getBlock());
+        handler.validateResponse(V1_PROTOCOL_ID, chainUpdater.advanceChain(5).getBlock());
 
     assertThat(result).isEmpty();
   }
 
   @Test
   public void validateResponse_altairSpec_v1RequestForAltairBlock() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
-    final BeaconBlocksByRootMessageHandler handler =
-        new BeaconBlocksByRootMessageHandler(spec, recentChainData);
-
     final Optional<RpcException> result =
-        handler.validateResponse(V1_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(32).getBlock());
+        handler.validateResponse(
+            V1_PROTOCOL_ID, chainUpdater.advanceChain(altairForkSlot).getBlock());
 
     assertThat(result)
         .contains(new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
@@ -165,24 +167,17 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @Test
   public void validateResponse_altairSpec_v2RequestForPhase0Block() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
-    final BeaconBlocksByRootMessageHandler handler =
-        new BeaconBlocksByRootMessageHandler(spec, recentChainData);
-
     final Optional<RpcException> result =
-        handler.validateResponse(V2_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(5).getBlock());
+        handler.validateResponse(V2_PROTOCOL_ID, chainUpdater.advanceChain(5).getBlock());
 
     assertThat(result).isEmpty();
   }
 
   @Test
   public void validateResponse_altairSpec_v2RequestForAltairBlock() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
-    final BeaconBlocksByRootMessageHandler handler =
-        new BeaconBlocksByRootMessageHandler(spec, recentChainData);
-
     final Optional<RpcException> result =
-        handler.validateResponse(V2_PROTOCOL_ID, chainBuilder.generateBlockAtSlot(33).getBlock());
+        handler.validateResponse(
+            V2_PROTOCOL_ID, chainUpdater.advanceChain(altairForkSlot.plus(1)).getBlock());
 
     assertThat(result).isEmpty();
   }
