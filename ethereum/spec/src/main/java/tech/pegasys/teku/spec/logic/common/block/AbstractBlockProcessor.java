@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashin
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -117,9 +118,44 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.attestationValidator = attestationValidator;
   }
 
-  @Override
   @CheckReturnValue
-  public BlockValidationResult verifySignatures(
+  public BlockValidationResult validateBlock(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      BeaconState postState,
+      IndexedAttestationCache indexedAttestationCache) {
+    BlockValidationResult preResult =
+        validateBlockSignatures(preState, block, indexedAttestationCache);
+    if (!preResult.isValid()) {
+      return preResult;
+    }
+
+    return validatePostState(postState, block);
+  }
+
+  private BlockValidationResult validateBlockSignatures(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache) {
+    BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    BlockValidationResult noBLSValidationResult =
+        verifyBlockSignatures(preState, block, indexedAttestationCache, signatureVerifier);
+    // during the above validatePreState() call BatchSignatureVerifier just collected
+    // a bunch of signatures to be verified in optimized batched way on the following step
+    if (!noBLSValidationResult.isValid()) {
+      // something went wrong aside of signatures verification
+      return noBLSValidationResult;
+    } else {
+      if (!signatureVerifier.batchVerify()) {
+        // validate again naively to get exact invalid signature
+        return verifyBlockSignatures(
+            preState, block, indexedAttestationCache, BLSSignatureVerifier.SIMPLE);
+      }
+      return BlockValidationResult.SUCCESSFUL;
+    }
+  }
+
+  private BlockValidationResult verifyBlockSignatures(
       final BeaconState preState,
       final SignedBeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
@@ -175,8 +211,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  @Override
-  public BlockValidationResult validatePostState(
+  private BlockValidationResult validatePostState(
       final BeaconState postState, final SignedBeaconBlock block) {
     if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
       return BlockValidationResult.failedExceptionally(

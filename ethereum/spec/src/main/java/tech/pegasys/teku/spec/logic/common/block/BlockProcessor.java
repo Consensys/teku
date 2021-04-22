@@ -42,13 +42,21 @@ public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
-  BlockValidationResult verifySignatures(
+  /**
+   * Validate the given block. Checks signatures in the block and verifies stateRoot matches
+   * postState
+   *
+   * @param preState The preState to which the block is applied
+   * @param block The block being validated
+   * @param postState The post state resulting from processing the block on top of the preState
+   * @param indexedAttestationCache A cache for calculating indexed attestations
+   * @return A block validation result
+   */
+  BlockValidationResult validateBlock(
       BeaconState preState,
       SignedBeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier);
-
-  BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
+      BeaconState postState,
+      IndexedAttestationCache indexedAttestationCache);
 
   /**
    * v0.7.1

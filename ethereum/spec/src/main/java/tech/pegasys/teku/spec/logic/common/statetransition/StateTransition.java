@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -41,25 +40,20 @@ public class StateTransition {
   private final BlockProcessor blockProcessor;
   private final EpochProcessor epochProcessor;
 
-  private final BlockValidator blockValidator;
-
   protected StateTransition(
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
-      final EpochProcessor epochProcessor,
-      final BlockValidator blockValidator) {
+      final EpochProcessor epochProcessor) {
     this.specConfig = specConfig;
     this.blockProcessor = blockProcessor;
     this.epochProcessor = epochProcessor;
-    this.blockValidator = blockValidator;
   }
 
   public static StateTransition create(
       final SpecConfig specConfig,
       final BlockProcessor blockProcessor,
       final EpochProcessor epochProcessor) {
-    final BlockValidator blockValidator = new BlockValidator(blockProcessor);
-    return new StateTransition(specConfig, blockProcessor, epochProcessor, blockValidator);
+    return new StateTransition(specConfig, blockProcessor, epochProcessor);
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
@@ -119,7 +113,7 @@ public class StateTransition {
 
       if (validateStateRootAndSignatures) {
         BlockValidationResult blockValidationResult =
-            blockValidator.validate(
+            blockProcessor.validateBlock(
                 blockSlotState, signedBlock, postState, indexedAttestationCache);
 
         if (!blockValidationResult.isValid()) {
