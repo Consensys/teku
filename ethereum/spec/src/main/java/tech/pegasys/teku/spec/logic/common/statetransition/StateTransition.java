@@ -99,6 +99,17 @@ public class StateTransition {
     }
   }
 
+  /**
+   * Processes the given block on top of {@code blockSlotState} and optionally validates the block
+   *
+   * @param signedBlock The block to be processed
+   * @param blockSlotState The preState on which this block should be procssed, this preState must
+   *     already be advanced to the block's slot
+   * @param validateStateRootAndSignatures Whether to run signature and state root validations
+   * @param indexedAttestationCache A cache of indexed attestations
+   * @return The post state after processing the block on top of {@code blockSlotState}
+   * @throws StateTransitionException If the block is invalid or cannot be processed
+   */
   public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
