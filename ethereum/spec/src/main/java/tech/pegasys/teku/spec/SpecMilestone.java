@@ -26,6 +26,16 @@ public enum SpecMilestone {
   ALTAIR;
 
   /**
+   * Returns true if this milestone is at or after the supplied milestone ({@code other})
+   *
+   * @param other The milestone we're comparing against
+   * @return True if this milestone is ordered at or after the given milestone
+   */
+  public boolean isGreaterThanOrEqualTo(final SpecMilestone other) {
+    return compareTo(other) >= 0;
+  }
+
+  /**
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone
    */
