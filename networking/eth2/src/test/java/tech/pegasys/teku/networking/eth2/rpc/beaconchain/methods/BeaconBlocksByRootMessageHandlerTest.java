@@ -216,7 +216,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     assertThat(result).isEmpty();
   }
 
-  private static Stream<Arguments> protocolIdParams() {
+  public static Stream<Arguments> protocolIdParams() {
     return Stream.of(Arguments.of(V1_PROTOCOL_ID), Arguments.of(V2_PROTOCOL_ID));
   }
 
