@@ -90,6 +90,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile UpdatableStore store;
   private volatile Optional<GenesisData> genesisData;
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
+  private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
@@ -176,6 +177,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(forkDigestToMilestone.get(forkDigest));
   }
 
+  public Optional<Bytes4> getForkDigestByMilestone(final SpecMilestone milestone) {
+    return Optional.ofNullable(milestoneToForkDigest.get(milestone));
+  }
+
   public boolean isPreGenesis() {
     return this.store == null;
   }
@@ -204,8 +209,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             forkAndMilestone -> {
               final Fork fork = forkAndMilestone.getFork();
               final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-              this.forkDigestToMilestone.put(
-                  forkInfo.getForkDigest(), forkAndMilestone.getSpecMilestone());
+              final Bytes4 forkDigest = forkInfo.getForkDigest();
+              this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
+              this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
 
     storeInitializedFuture.complete(null);

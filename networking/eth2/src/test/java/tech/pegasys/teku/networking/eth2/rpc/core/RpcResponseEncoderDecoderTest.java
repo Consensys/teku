@@ -20,19 +20,22 @@ import io.netty.buffer.ByteBuf;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcErrorMessage;
 
-public class EncoderDecoderTest extends RpcDecoderTestBase {
+public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
-  private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ_SNAPPY);
-  private final RpcResponseDecoder<RpcErrorMessage, ?> decoder =
-      RpcResponseDecoder.createContextFreeDecoder(
-          RpcEncoding.SSZ_SNAPPY, RpcErrorMessage.SSZ_SCHEMA);
+  private final RpcContextCodec<?, RpcErrorMessage> contextCodec =
+      RpcContextCodec.noop(RpcErrorMessage.SSZ_SCHEMA);
+  private final RpcResponseEncoder<RpcErrorMessage, ?> responseEncoder =
+      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextCodec);
+  private final RpcResponseDecoder<RpcErrorMessage, ?> responseDecoder =
+      RpcResponseDecoder.create(RpcEncoding.SSZ_SNAPPY, contextCodec);
 
   @Test
   public void shouldEncodeErrorResponse() {
     final RpcException ex = new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE);
-    final Bytes actual = encoder.encodeErrorResponse(ex);
+    final Bytes actual = responseEncoder.encodeErrorResponse(ex);
 
     // sanity check that the encoded string is what we expect
     assertThat(actual.toHexString().toLowerCase())
@@ -43,10 +46,10 @@ public class EncoderDecoderTest extends RpcDecoderTestBase {
             () -> {
               for (Iterable<ByteBuf> testByteBufSlice : testByteBufSlices(actual)) {
                 for (ByteBuf byteBuf : testByteBufSlice) {
-                  decoder.decodeNextResponses(byteBuf);
+                  responseDecoder.decodeNextResponses(byteBuf);
                   byteBuf.release();
                 }
-                decoder.complete();
+                responseDecoder.complete();
               }
             })
         .isEqualTo(ex);

@@ -29,10 +29,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.InvalidRpcMethodVersion;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -42,17 +46,39 @@ public class BeaconBlocksByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
 
   public BeaconBlocksByRangeMessageHandler(
-      final CombinedChainDataClient combinedChainDataClient, final UInt64 maxRequestSize) {
+      final Spec spec,
+      final CombinedChainDataClient combinedChainDataClient,
+      final UInt64 maxRequestSize) {
+    this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BeaconBlocksByRangeRequestMessage request) {
+    final int version = BeaconChainMethodIds.extractBeaconBlocksByRangeVersion(protocolId);
+    final SpecMilestone latestMilestoneRequested =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    final boolean isAltairActive =
+        latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
+
+    if (version == 1 && isAltairActive) {
+      return Optional.of(
+          new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
+      final String protocolId,
       final Eth2Peer peer,
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {

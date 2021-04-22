@@ -34,7 +34,8 @@ public interface RpcEncoding {
   <T extends SszData> Bytes encodePayload(T payload);
 
   /**
-   * Creates a brand new disposable {@link RpcByteBufDecoder} instance
+   * Creates a brand new disposable {@link RpcByteBufDecoder} instance for decoding a payload with
+   * it's encoding-dependent header
    *
    * @param <T> The type of payload to decode
    * @param payloadType The type of payload to decode

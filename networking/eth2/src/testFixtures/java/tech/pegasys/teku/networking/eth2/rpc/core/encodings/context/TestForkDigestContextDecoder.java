@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 
-import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-
-public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(
-      final String protocolId, Optional<Eth2Peer> peer, I message, ResponseCallback<O> callback);
-
-  default Optional<RpcException> validateRequest(String protocolId, I request) {
-    return Optional.empty();
+// Make class visible for testing
+public class TestForkDigestContextDecoder extends ForkDigestContextDecoder {
+  public TestForkDigestContextDecoder() {
+    super();
   }
 }

@@ -22,6 +22,10 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
+  public static Spec createDefault() {
+    return createMinimalPhase0();
+  }
+
   public static Spec createMinimalAltair() {
     final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.ALTAIR);
@@ -32,6 +36,17 @@ public class TestSpecFactory {
       return createMinimalPhase0();
     }
     return createMinimalAltair();
+  }
+
+  /**
+   * Create a spec that forks to altair at the provided slot
+   *
+   * @param altairForkSlot The altair fork slot, must be on an epoch boundary
+   * @return A spec with phase0 and altair enabled, forking to altair at the given slot
+   */
+  public static Spec createMinimalWithAltairFork(final UInt64 altairForkSlot) {
+    final SpecConfigAltair config = getAltairSpecConfig(Eth2Network.MINIMAL, altairForkSlot);
+    return create(config, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
@@ -68,8 +83,13 @@ public class TestSpecFactory {
   }
 
   private static SpecConfigAltair getAltairSpecConfig(final Eth2Network network) {
+    return getAltairSpecConfig(network, UInt64.ZERO);
+  }
+
+  private static SpecConfigAltair getAltairSpecConfig(
+      final Eth2Network network, final UInt64 altairForkSlot) {
     return SpecConfigAltair.required(
         TestConfigLoader.loadConfig(
-            network.configName(), c -> c.altairBuilder(a -> a.altairForkSlot(UInt64.ZERO))));
+            network.configName(), c -> c.altairBuilder(a -> a.altairForkSlot(altairForkSlot))));
   }
 }

@@ -19,12 +19,15 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class FinalizedChainDataTest {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =
       chainBuilder.getCurrentCheckpointForEpoch(GENESIS_EPOCH);
