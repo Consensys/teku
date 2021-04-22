@@ -18,16 +18,23 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -59,7 +66,6 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
-  final String protocolId = BeaconChainMethodIds.getBlocksByRootMethodId(1, RpcEncoding.SSZ_SNAPPY);
   final BeaconBlocksByRootMessageHandler handler =
       new BeaconBlocksByRootMessageHandler(spec, recentChainData);
   final Eth2Peer peer = mock(Eth2Peer.class);
@@ -79,8 +85,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
             i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
   }
 
-  @Test
-  public void onIncomingMessage_respondsWithAllBlocks() {
+  @ParameterizedTest(name = "protocol={0}")
+  @MethodSource("protocolIdParams")
+  public void onIncomingMessage_respondsWithAllBlocks(final String protocolId) {
     final List<SignedBeaconBlock> blocks = buildChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
@@ -92,8 +99,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
     }
   }
 
-  @Test
-  public void onIncomingMessage_interruptedByClosedStream() {
+  @ParameterizedTest(name = "protocol={0}")
+  @MethodSource("protocolIdParams")
+  public void onIncomingMessage_interruptedByClosedStream(final String protocolId) {
     final List<SignedBeaconBlock> blocks = buildChain(5);
 
     // Mock callback to appear to be closed
@@ -107,24 +115,50 @@ public class BeaconBlocksByRootMessageHandlerTest {
     verify(callback, times(1)).respond(any());
   }
 
-  private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {
-    final List<Bytes32> blockHashes =
-        forBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
-    return new BeaconBlocksByRootRequestMessage(blockHashes);
+  @Test
+  public void onIncomingMessage_requestBlocksAcrossAltairFork_v2() {
+    // Set up request that spans the altair fork
+    chainUpdater.advanceChain(altairForkSlot.minus(3));
+    final List<SignedBeaconBlock> blocks = buildChain(5);
+    assertThat(blocks.get(0).getSlot().isLessThan(altairForkSlot)).isTrue();
+    assertThat(blocks.get(4).getSlot().isGreaterThan(altairForkSlot)).isTrue();
+    final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
+
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    for (SignedBeaconBlock block : blocks) {
+      verify(store).retrieveSignedBlock(block.getRoot());
+      verify(callback).respond(block);
+    }
   }
 
-  private List<SignedBeaconBlock> buildChain(final int chainSize) {
-    // Create some blocks to request
-    final UInt64 latestSlot = storageSystem.chainBuilder().getLatestSlot();
-    chainUpdater.advanceChainUntil(chainSize);
-    final List<SignedBeaconBlock> blocks =
-        storageSystem
-            .chainBuilder()
-            .streamBlocksAndStates(latestSlot.plus(1))
-            .map(SignedBlockAndState::getBlock)
-            .collect(Collectors.toList());
+  @Test
+  public void onIncomingMessage_requestBlocksAcrossAltairFork_v1() {
+    // Set up blocks that span altair fork transition
+    chainUpdater.advanceChain(altairForkSlot.minus(3));
+    final List<SignedBeaconBlock> phase0Blocks = buildChain(2);
+    final List<SignedBeaconBlock> altairBlocks = buildChain(3);
+    final List<SignedBeaconBlock> allBlocks = new ArrayList<>(phase0Blocks);
+    allBlocks.addAll(altairBlocks);
+    // Set up request that spans the altair fork
+    final BeaconBlocksByRootRequestMessage message = createRequest(allBlocks);
 
-    return blocks;
+    handler.onIncomingMessage(V1_PROTOCOL_ID, peer, message, callback);
+
+    for (SignedBeaconBlock block : phase0Blocks) {
+      verify(store).retrieveSignedBlock(block.getRoot());
+      verify(callback).respond(block);
+    }
+    // We should request the first altair block
+    verify(store).retrieveSignedBlock(altairBlocks.get(0).getRoot());
+    verify(store, times(3)).retrieveSignedBlock(any());
+    // And error out at this point
+    final ArgumentCaptor<RpcException> errorCaptor = ArgumentCaptor.forClass(RpcException.class);
+    verify(callback).completeWithErrorResponse(errorCaptor.capture());
+    assertThat(errorCaptor.getValue())
+        .hasMessageContaining("Must request altair blocks using v2 protocol");
+    verify(callback, never()).completeWithUnexpectedError(any());
+    verify(callback, never()).completeSuccessfully();
   }
 
   @Test
@@ -180,5 +214,29 @@ public class BeaconBlocksByRootMessageHandlerTest {
             V2_PROTOCOL_ID, chainUpdater.advanceChain(altairForkSlot.plus(1)).getBlock());
 
     assertThat(result).isEmpty();
+  }
+
+  private static Stream<Arguments> protocolIdParams() {
+    return Stream.of(Arguments.of(V1_PROTOCOL_ID), Arguments.of(V2_PROTOCOL_ID));
+  }
+
+  private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {
+    final List<Bytes32> blockHashes =
+        forBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
+    return new BeaconBlocksByRootRequestMessage(blockHashes);
+  }
+
+  private List<SignedBeaconBlock> buildChain(final int chainSize) {
+    // Create some blocks to request
+    final UInt64 latestSlot = storageSystem.chainBuilder().getLatestSlot();
+    chainUpdater.advanceChainUntil(latestSlot.plus(chainSize));
+    final List<SignedBeaconBlock> blocks =
+        storageSystem
+            .chainBuilder()
+            .streamBlocksAndStates(latestSlot.plus(1))
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    return blocks;
   }
 }
