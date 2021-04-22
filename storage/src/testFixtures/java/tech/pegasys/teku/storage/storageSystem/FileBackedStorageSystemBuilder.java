@@ -81,7 +81,7 @@ public class FileBackedStorageSystemBuilder {
         storageMode,
         storeConfig,
         spec,
-        ChainBuilder.createDefault());
+        ChainBuilder.create(spec));
   }
 
   private FileBackedStorageSystemBuilder copy() {

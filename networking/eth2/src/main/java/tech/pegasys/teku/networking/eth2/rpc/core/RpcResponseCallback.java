@@ -26,17 +26,18 @@ import tech.pegasys.teku.ssz.SszData;
 
 class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
-  private final RpcEncoder rpcEncoder;
+  private final RpcResponseEncoder<TResponse, ?> responseEncoder;
   private final RpcStream rpcStream;
 
-  public RpcResponseCallback(final RpcStream rpcStream, final RpcEncoder rpcEncoder) {
+  public RpcResponseCallback(
+      final RpcStream rpcStream, final RpcResponseEncoder<TResponse, ?> responseEncoder) {
     this.rpcStream = rpcStream;
-    this.rpcEncoder = rpcEncoder;
+    this.responseEncoder = responseEncoder;
   }
 
   @Override
   public SafeFuture<Void> respond(final TResponse data) {
-    return rpcStream.writeBytes(rpcEncoder.encodeSuccessfulResponse(data));
+    return rpcStream.writeBytes(responseEncoder.encodeSuccessfulResponse(data));
   }
 
   @Override
@@ -60,7 +61,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessageString());
     try {
-      rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
+      rpcStream.writeBytes(responseEncoder.encodeErrorResponse(error)).reportExceptions();
     } catch (StreamClosedException e) {
       LOG.debug(
           "Unable to send error message ({}) to peer, rpc stream already closed: {}",

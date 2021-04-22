@@ -63,6 +63,10 @@ public class InMemoryStorageSystemBuilder {
     return create().storageMode(storageMode).build();
   }
 
+  public static StorageSystem buildDefault(final Spec spec) {
+    return create().specProvider(spec).build();
+  }
+
   public StorageSystem build() {
     final Database database;
     switch (version) {
