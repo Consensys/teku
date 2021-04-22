@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
@@ -86,16 +85,11 @@ public class BeaconBlocksByRootMessageHandler
   Optional<RpcException> validateResponse(
       final String protocolId, final SignedBeaconBlock response) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRootVersion(protocolId);
-    final Optional<UInt64> altairActivationEpoch =
-        spec.getForkSchedule().getMilestoneActivationEpoch(SpecMilestone.ALTAIR);
-    if (altairActivationEpoch.isEmpty()) {
-      return Optional.empty();
-    }
+    final SpecMilestone milestoneAtResponse =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(response.getSlot());
+    final boolean isAltairActive = milestoneAtResponse.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
 
-    final UInt64 altairActivationSlot = spec.computeStartSlotAtEpoch(altairActivationEpoch.get());
-    final UInt64 responseSlot = response.getSlot();
-
-    if (version == 1 && responseSlot.isGreaterThanOrEqualTo(altairActivationSlot)) {
+    if (version == 1 && isAltairActive) {
       return Optional.of(
           new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
     }

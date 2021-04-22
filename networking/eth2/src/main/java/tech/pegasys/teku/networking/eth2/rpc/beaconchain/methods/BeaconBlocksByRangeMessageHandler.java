@@ -63,16 +63,11 @@ public class BeaconBlocksByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BeaconBlocksByRangeRequestMessage request) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRangeVersion(protocolId);
-    final Optional<UInt64> altairActivationEpoch =
-        spec.getForkSchedule().getMilestoneActivationEpoch(SpecMilestone.ALTAIR);
-    if (altairActivationEpoch.isEmpty()) {
-      return Optional.empty();
-    }
+    final SpecMilestone milestoneAtResponse =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    final boolean isAltairActive = milestoneAtResponse.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
 
-    final UInt64 altairActivationSlot = spec.computeStartSlotAtEpoch(altairActivationEpoch.get());
-    final UInt64 maxRequestedSlot = request.getMaxSlot();
-
-    if (version == 1 && maxRequestedSlot.isGreaterThanOrEqualTo(altairActivationSlot)) {
+    if (version == 1 && isAltairActive) {
       return Optional.of(
           new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
     }
