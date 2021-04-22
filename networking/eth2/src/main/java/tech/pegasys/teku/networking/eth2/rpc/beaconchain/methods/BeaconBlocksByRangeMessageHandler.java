@@ -63,9 +63,10 @@ public class BeaconBlocksByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BeaconBlocksByRangeRequestMessage request) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRangeVersion(protocolId);
-    final SpecMilestone milestoneAtResponse =
+    final SpecMilestone latestMilestoneRequested =
         spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
-    final boolean isAltairActive = milestoneAtResponse.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
+    final boolean isAltairActive =
+        latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
 
     if (version == 1 && isAltairActive) {
       return Optional.of(
