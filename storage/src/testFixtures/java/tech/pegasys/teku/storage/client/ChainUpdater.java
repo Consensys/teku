@@ -116,7 +116,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChainUntil(final long slot) {
-    return advanceChain(UInt64.valueOf(slot));
+    return advanceChainUntil(UInt64.valueOf(slot));
   }
 
   public SignedBlockAndState advanceChainUntil(final UInt64 slot) {
