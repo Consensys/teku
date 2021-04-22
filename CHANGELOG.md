@@ -16,6 +16,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Basic authentication is now supported for `--initial-state`. Infura can now be used as the source of initial states with `--initial-state https://{projectid}:{secret}@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized`
 - Implement standard rest api `/eth/v2/beacon/blocks/:block_id` which supports altair blocks. Documented under 'Experimental' endpoints until more widely implemented.
 - Implement teku rest api to retrieve all blocks at a slot `/teku/v1/beacon/blocks/:slot`, which will return both canonical and non-canonical blocks at a given slot.
+- Newly created databases will now use LevelDB for storage instead of RocksDB. This uses less memory and has proven to be more stable. Existing databases are unaffected and will continue to use RocksDB.
 
 ### Bug Fixes
 - Fixed issue where attestation subnets were not unsubscribed from leading to unnecessary CPU load when running small numbers of validators.

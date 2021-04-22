@@ -66,9 +66,11 @@ public class InMemoryStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB2: // Leveldb only varies by db type which doesn't apply to in-memory
       case V6:
         database = createV6Database();
         break;
+      case LEVELDB1: // Leveldb only varies by db type which doesn't apply to in-memory
       case V5:
         database = createV5Database();
         break;
