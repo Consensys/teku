@@ -41,14 +41,14 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.BlockProductionScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private BlockDutyScheduler dutyScheduler;
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  final BlockProductionScheduledDuties scheduledDuties = mock(BlockProductionScheduledDuties.class);
 
   final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
 
@@ -338,11 +338,13 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader(
+            new RetryingDutyLoader<>(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
-                    dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot, metricsSystem),
+                    dependentRoot ->
+                        new BlockProductionScheduledDuties(
+                            dutyFactory, dependentRoot, metricsSystem),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
@@ -354,7 +356,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader(
+            new RetryingDutyLoader<>(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,

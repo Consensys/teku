@@ -24,15 +24,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public abstract class AbstractDutyLoader<D> implements DutyLoader {
+public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implements DutyLoader<S> {
 
   private static final Logger LOG = LogManager.getLogger();
-  protected final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory;
+  protected final Function<Bytes32, S> scheduledDutiesFactory;
   protected final OwnedValidators validators;
   private final ValidatorIndexProvider validatorIndexProvider;
 
   protected AbstractDutyLoader(
-      final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
+      final Function<Bytes32, S> scheduledDutiesFactory,
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider) {
     this.scheduledDutiesFactory = scheduledDutiesFactory;
@@ -41,7 +41,7 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<Optional<ScheduledDuties>> loadDutiesForEpoch(final UInt64 epoch) {
+  public SafeFuture<Optional<S>> loadDutiesForEpoch(final UInt64 epoch) {
     LOG.trace("Requesting attestation duties for epoch {}", epoch);
     return validatorIndexProvider
         .getValidatorIndices(validators.getPublicKeys())
@@ -65,5 +65,5 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   protected abstract SafeFuture<Optional<D>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
-  protected abstract SafeFuture<ScheduledDuties> scheduleAllDuties(final D duties);
+  protected abstract SafeFuture<S> scheduleAllDuties(final D duties);
 }

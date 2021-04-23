@@ -22,24 +22,33 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.client.duties.AttestationScheduledDuties;
 
-public class AttestationDutyScheduler extends AbstractDutyScheduler {
+public class AttestationDutyScheduler extends AbstractDutyScheduler<AttestationEpochDuties> {
+
+  private final DutyLoader<AttestationScheduledDuties> dutyLoader;
   private UInt64 lastAttestationCreationSlot;
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader epochDutiesScheduler,
+      final DutyLoader<AttestationScheduledDuties> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    this.dutyLoader = dutyLoader;
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
+  }
+
+  @Override
+  protected AttestationEpochDuties createEpochDuties(final UInt64 epoch) {
+    return AttestationEpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Override
@@ -62,7 +71,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     }
 
     lastAttestationCreationSlot = slot;
-    notifyEpochDuties(EpochDuties::onAttestationCreationDue, slot);
+    notifyEpochDuties(AttestationEpochDuties::onAttestationCreationDue, slot);
   }
 
   @Override
@@ -75,7 +84,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyEpochDuties(EpochDuties::onAttestationAggregationDue, slot);
+    notifyEpochDuties(AttestationEpochDuties::onAttestationAggregationDue, slot);
   }
 
   @Override

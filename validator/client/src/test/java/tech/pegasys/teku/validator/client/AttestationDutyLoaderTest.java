@@ -39,20 +39,21 @@ import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.duties.AttestationScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class AttestationDutyLoaderTest {
 
   private static final List<Integer> VALIDATOR_INDICES = List.of(1);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
-  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final AttestationScheduledDuties scheduledDuties = mock(AttestationScheduledDuties.class);
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
   private final Signer signer = mock(Signer.class);
@@ -60,7 +61,6 @@ class AttestationDutyLoaderTest {
       new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   private final AttestationDutyLoader dutyLoader =
       new AttestationDutyLoader(
@@ -106,7 +106,8 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<AttestationScheduledDuties>> result =
+        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions)
@@ -143,7 +144,8 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<AttestationScheduledDuties>> result =
+        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions)
@@ -159,7 +161,8 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
-    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<Optional<AttestationScheduledDuties>> result =
+        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
     verify(beaconCommitteeSubscriptions).sendRequests();

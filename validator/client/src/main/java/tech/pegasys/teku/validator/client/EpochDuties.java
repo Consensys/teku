@@ -26,36 +26,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class EpochDuties {
+abstract class EpochDuties<S extends ScheduledDuties> {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
-  private final DutyLoader dutyLoader;
+  private final List<Consumer<S>> pendingActions = new ArrayList<>();
+  private final DutyLoader<S> dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<Optional<ScheduledDuties>> duties = new SafeFuture<>();
+  private SafeFuture<Optional<S>> duties = new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
 
-  private EpochDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
+  protected EpochDuties(final DutyLoader<S> dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
-  }
-
-  public static EpochDuties calculateDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
-    final EpochDuties duties = new EpochDuties(dutyLoader, epoch);
-    duties.recalculate();
-    return duties;
-  }
-
-  public void onBlockProductionDue(final UInt64 slot) {
-    execute(duties -> duties.produceBlock(slot));
-  }
-
-  public void onAttestationCreationDue(final UInt64 slot) {
-    execute(duties -> duties.produceAttestations(slot));
-  }
-
-  public void onAttestationAggregationDue(final UInt64 slot) {
-    execute(duties -> duties.performAggregation(slot));
   }
 
   public int countDuties() {
@@ -82,7 +64,7 @@ class EpochDuties {
     pendingActions.clear();
   }
 
-  private synchronized void processPendingActions(final Optional<ScheduledDuties> scheduledDuties) {
+  private synchronized void processPendingActions(final Optional<S> scheduledDuties) {
     if (pendingHeadUpdate.isPresent()
         && scheduledDuties.isPresent()
         && requiresRecalculation(scheduledDuties.get(), pendingHeadUpdate.get())) {
@@ -95,11 +77,11 @@ class EpochDuties {
     pendingActions.clear();
   }
 
-  private synchronized void execute(final Consumer<ScheduledDuties> action) {
+  protected synchronized void execute(final Consumer<S> action) {
     getCurrentDuties().ifPresentOrElse(action, () -> pendingActions.add(action));
   }
 
-  private synchronized Optional<ScheduledDuties> getCurrentDuties() {
+  private synchronized Optional<S> getCurrentDuties() {
     if (!duties.isCompletedNormally()) {
       return Optional.empty();
     }

@@ -24,30 +24,25 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
+public abstract class AbstractDutyScheduler<D extends EpochDuties>
+    implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final boolean useDependentRoots;
-  private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
-  protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
+  protected final NavigableMap<UInt64, D> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
-      final DutyLoader epochDutiesScheduler,
-      final int lookAheadEpochs,
-      final boolean useDependentRoots,
-      final Spec spec) {
-    this.epochDutiesScheduler = epochDutiesScheduler;
+      final int lookAheadEpochs, final boolean useDependentRoots, final Spec spec) {
     this.lookAheadEpochs = lookAheadEpochs;
     this.useDependentRoots = useDependentRoots;
     this.spec = spec;
   }
 
-  protected void notifyEpochDuties(
-      final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
-    final EpochDuties epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
+  protected void notifyEpochDuties(final BiConsumer<D, UInt64> action, final UInt64 slot) {
+    final D epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
     if (epochDuties != null) {
       action.accept(epochDuties, slot);
     }
@@ -121,17 +116,15 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
   }
 
-  private EpochDuties createEpochDuties(final UInt64 epochNumber) {
-    return EpochDuties.calculateDuties(epochDutiesScheduler, epochNumber);
-  }
+  protected abstract D createEpochDuties(final UInt64 epoch);
 
   private void removePriorEpochs(final UInt64 epochNumber) {
-    final NavigableMap<UInt64, EpochDuties> toRemove = dutiesByEpoch.headMap(epochNumber, false);
+    final NavigableMap<UInt64, D> toRemove = dutiesByEpoch.headMap(epochNumber, false);
     toRemove.values().forEach(EpochDuties::cancel);
     toRemove.clear();
   }
 
-  private void invalidateEpochs(final NavigableMap<UInt64, EpochDuties> toInvalidate) {
+  private void invalidateEpochs(final NavigableMap<UInt64, D> toInvalidate) {
     toInvalidate.values().forEach(EpochDuties::recalculate);
   }
 

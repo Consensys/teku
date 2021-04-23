@@ -22,23 +22,31 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.client.duties.BlockProductionScheduledDuties;
 
-public class BlockDutyScheduler extends AbstractDutyScheduler {
+public class BlockDutyScheduler extends AbstractDutyScheduler<BlockEpochDuties> {
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 0;
+  private final DutyLoader<BlockProductionScheduledDuties> dutyLoader;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader epochDutiesScheduler,
+      final DutyLoader<BlockProductionScheduledDuties> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    this.dutyLoader = dutyLoader;
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_block_duties_current",
         "Current number of pending block duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
+  }
+
+  @Override
+  protected BlockEpochDuties createEpochDuties(final UInt64 epoch) {
+    return BlockEpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Override
@@ -51,7 +59,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
+    notifyEpochDuties(BlockEpochDuties::onBlockProductionDue, slot);
   }
 
   @Override

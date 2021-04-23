@@ -16,26 +16,16 @@ package tech.pegasys.teku.validator.client.duties;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.validator.client.Validator;
 
-public class ScheduledDuties {
-  private final NavigableMap<UInt64, BlockProductionDuty> blockProductionDuties = new TreeMap<>();
-  private final NavigableMap<UInt64, AttestationProductionDuty> attestationProductionDuties =
-      new TreeMap<>();
-  private final NavigableMap<UInt64, AggregationDuty> aggregationDuties = new TreeMap<>();
+public abstract class ScheduledDuties {
 
-  private final ValidatorDutyFactory dutyFactory;
+  protected final ValidatorDutyFactory dutyFactory;
   private final Bytes32 dependentRoot;
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
@@ -58,57 +48,7 @@ public class ScheduledDuties {
     return dependentRoot;
   }
 
-  public synchronized void scheduleBlockProduction(final UInt64 slot, final Validator validator) {
-    blockProductionDuties.put(slot, dutyFactory.createBlockProductionDuty(slot, validator));
-  }
-
-  public synchronized SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
-      final UInt64 slot,
-      final Validator validator,
-      final int attestationCommitteeIndex,
-      final int attestationCommitteePosition,
-      final int attestationCommitteeSize,
-      final int validatorIndex) {
-    return attestationProductionDuties
-        .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(
-            validator,
-            attestationCommitteeIndex,
-            attestationCommitteePosition,
-            validatorIndex,
-            attestationCommitteeSize);
-  }
-
-  public synchronized void scheduleAggregationDuties(
-      final UInt64 slot,
-      final Validator validator,
-      final int validatorIndex,
-      final BLSSignature slotSignature,
-      final int attestationCommitteeIndex,
-      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
-    aggregationDuties
-        .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
-        .addValidator(
-            validator,
-            validatorIndex,
-            slotSignature,
-            attestationCommitteeIndex,
-            unsignedAttestationFuture);
-  }
-
-  public synchronized void produceBlock(final UInt64 slot) {
-    performDutyForSlot(blockProductionDuties, slot);
-  }
-
-  public synchronized void produceAttestations(final UInt64 slot) {
-    performDutyForSlot(attestationProductionDuties, slot);
-  }
-
-  public synchronized void performAggregation(final UInt64 slot) {
-    performDutyForSlot(aggregationDuties, slot);
-  }
-
-  private void performDutyForSlot(
+  protected void performDutyForSlot(
       final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
     discardDutiesBeforeSlot(duties, slot);
 
@@ -137,9 +77,5 @@ public class ScheduledDuties {
     duties.subMap(UInt64.ZERO, true, slot, false).clear();
   }
 
-  public int countDuties() {
-    return blockProductionDuties.size()
-        + attestationProductionDuties.size()
-        + aggregationDuties.size();
-  }
+  public abstract int countDuties();
 }

@@ -45,15 +45,15 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
 
-  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final AttestationScheduledDuties scheduledDuties = mock(AttestationScheduledDuties.class);
   private final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -802,7 +802,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         new AttestationDutyLoader(
             validatorApiChannel,
             forkProvider,
-            dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot, metricsSystem),
+            dependentRoot ->
+                new AttestationScheduledDuties(dutyFactory, dependentRoot, metricsSystem),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
@@ -810,7 +811,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader),
             useDependentRoots,
             spec);
   }
@@ -828,7 +829,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader),
             false,
             spec);
   }

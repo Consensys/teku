@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
 
-class ScheduledDutiesTest {
+class AttestationScheduledDutiesTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
@@ -43,33 +43,8 @@ class ScheduledDutiesTest {
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final ScheduledDuties duties =
-      new ScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
-
-  @Test
-  public void shouldDiscardMissedBlockProductionDuties() {
-    final BlockProductionDuty duty0 = mockDuty(BlockProductionDuty.class);
-    final BlockProductionDuty duty1 = mockDuty(BlockProductionDuty.class);
-    final BlockProductionDuty duty2 = mockDuty(BlockProductionDuty.class);
-    when(dutyFactory.createBlockProductionDuty(ZERO, validator)).thenReturn(duty0);
-    when(dutyFactory.createBlockProductionDuty(ONE, validator)).thenReturn(duty1);
-    when(dutyFactory.createBlockProductionDuty(TWO, validator)).thenReturn(duty2);
-    duties.scheduleBlockProduction(ZERO, validator);
-    duties.scheduleBlockProduction(ONE, validator);
-    duties.scheduleBlockProduction(TWO, validator);
-
-    duties.produceBlock(ONE);
-    verify(duty1).performDuty();
-
-    // Duty from slot zero was dropped
-    duties.produceBlock(ZERO);
-    verify(duty0, never()).performDuty();
-
-    // But the duty for slot 2 is still performed as scheduled
-    duties.produceBlock(TWO);
-    verify(duty2).performDuty();
-    validateMetrics("block", 2, 0);
-  }
+  private final AttestationScheduledDuties duties =
+      new AttestationScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
   public void shouldDiscardMissedAttestationProductionDuties() {
@@ -129,9 +104,7 @@ class ScheduledDutiesTest {
 
   private <T extends Duty> T mockDuty(final Class<T> dutyType) {
     final T mockDuty = mock(dutyType);
-    if (dutyType.equals(BlockProductionDuty.class)) {
-      when(mockDuty.getProducedType()).thenReturn("block");
-    } else if (dutyType.equals(AttestationProductionDuty.class)) {
+    if (dutyType.equals(AttestationProductionDuty.class)) {
       when(mockDuty.getProducedType()).thenReturn("attestation");
     } else if (dutyType.equals(AggregationDuty.class)) {
       when(mockDuty.getProducedType()).thenReturn("aggregate");
