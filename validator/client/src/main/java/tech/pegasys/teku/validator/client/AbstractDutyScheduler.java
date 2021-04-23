@@ -28,18 +28,18 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final boolean useDependentRoots;
-  private final DutyLoader dutyLoader;
+  private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
-      final DutyLoader dutyLoader,
+      final DutyLoader epochDutiesScheduler,
       final int lookAheadEpochs,
       final boolean useDependentRoots,
       final Spec spec) {
-    this.dutyLoader = dutyLoader;
+    this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
     this.useDependentRoots = useDependentRoots;
     this.spec = spec;
@@ -122,7 +122,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   private EpochDuties createEpochDuties(final UInt64 epoch) {
-    return EpochDuties.calculateDuties(dutyLoader, epoch);
+    return EpochDuties.calculateDuties(epochDutiesScheduler, epoch);
   }
 
   private void removePriorEpochs(final UInt64 epochNumber) {
