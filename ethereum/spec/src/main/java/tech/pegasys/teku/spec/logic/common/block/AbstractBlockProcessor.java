@@ -118,6 +118,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.attestationValidator = attestationValidator;
   }
 
+  @Override
   public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
