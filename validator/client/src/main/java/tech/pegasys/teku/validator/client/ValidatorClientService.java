@@ -32,11 +32,13 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.Duty;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -141,8 +143,10 @@ public class ValidatorClientService extends Service {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
-    final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel, spec, metricsSystem);
+    final BlockDutyFactory blockDutyFactory =
+        new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
+    final AttestationDutyFactory attestationDutyFactory =
+        new AttestationDutyFactory(forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader<AttestationProductionDuty, AggregationDuty> attestationDutyLoader =
@@ -151,7 +155,8 @@ public class ValidatorClientService extends Service {
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
-                validatorDutyFactory.forAttestations(),
+                dependentRoot ->
+                    new ScheduledDuties<>(attestationDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -161,7 +166,8 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                validatorDutyFactory.forBlocks(),
+                dependentRoot ->
+                    new ScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider));
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();

@@ -40,24 +40,20 @@ class AttestationScheduledDutiesTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
-  private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
+  private final AttestationDutyFactory dutyFactory = mock(AttestationDutyFactory.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ScheduledDuties<AttestationProductionDuty, AggregationDuty> duties =
-      new ScheduledDuties<>(
-          (slot, validator) -> dutyFactory.createAttestationProductionDuty(slot),
-          (slot, validator) -> dutyFactory.createAggregationDuty(slot),
-          Bytes32.fromHexString("0x838382"),
-          metricsSystem);
+      new ScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
   public void shouldDiscardMissedAttestationProductionDuties() {
     final AttestationProductionDuty duty0 = mockDuty(AttestationProductionDuty.class);
     final AttestationProductionDuty duty1 = mockDuty(AttestationProductionDuty.class);
     final AttestationProductionDuty duty2 = mockDuty(AttestationProductionDuty.class);
-    when(dutyFactory.createAttestationProductionDuty(ZERO)).thenReturn(duty0);
-    when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
-    when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
+    when(dutyFactory.createProductionDuty(ZERO, validator)).thenReturn(duty0);
+    when(dutyFactory.createProductionDuty(ONE, validator)).thenReturn(duty1);
+    when(dutyFactory.createProductionDuty(TWO, validator)).thenReturn(duty2);
 
     ignoreFuture(
         duties.scheduleProduction(
@@ -87,9 +83,9 @@ class AttestationScheduledDutiesTest {
     final AggregationDuty duty0 = mockDuty(AggregationDuty.class);
     final AggregationDuty duty1 = mockDuty(AggregationDuty.class);
     final AggregationDuty duty2 = mockDuty(AggregationDuty.class);
-    when(dutyFactory.createAggregationDuty(ZERO)).thenReturn(duty0);
-    when(dutyFactory.createAggregationDuty(ONE)).thenReturn(duty1);
-    when(dutyFactory.createAggregationDuty(TWO)).thenReturn(duty2);
+    when(dutyFactory.createAggregationDuty(ZERO, validator)).thenReturn(duty0);
+    when(dutyFactory.createAggregationDuty(ONE, validator)).thenReturn(duty1);
+    when(dutyFactory.createAggregationDuty(TWO, validator)).thenReturn(duty2);
 
     duties.scheduleAggregation(
         ZERO,

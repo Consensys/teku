@@ -32,18 +32,15 @@ public class ScheduledDuties<P extends Duty, A extends Duty> {
   protected final NavigableMap<UInt64, P> productionDuties = new TreeMap<>();
   protected final NavigableMap<UInt64, A> aggregationDuties = new TreeMap<>();
 
-  private final DutyFactory<P> productionDutyFactory;
-  private final DutyFactory<A> aggregationDutyFactory;
+  private final DutyFactory<P, A> dutyFactory;
   private final Bytes32 dependentRoot;
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
   public ScheduledDuties(
-      final DutyFactory<P> productionDutyFactory,
-      final DutyFactory<A> aggregationDutyFactory,
+      final DutyFactory<P, A> dutyFactory,
       final Bytes32 dependentRoot,
       final MetricsSystem metricsSystem) {
-    this.productionDutyFactory = productionDutyFactory;
-    this.aggregationDutyFactory = aggregationDutyFactory;
+    this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
     dutiesPerformedCounter =
         metricsSystem.createLabelledCounter(
@@ -66,7 +63,7 @@ public class ScheduledDuties<P extends Duty, A extends Duty> {
       final UInt64 slot, final Validator validator, final Function<P, T> addToDuty) {
     final P existingDuty =
         productionDuties.computeIfAbsent(
-            slot, __ -> productionDutyFactory.createDuty(slot, validator));
+            slot, __ -> dutyFactory.createProductionDuty(slot, validator));
     return addToDuty.apply(existingDuty);
   }
 
@@ -74,7 +71,7 @@ public class ScheduledDuties<P extends Duty, A extends Duty> {
       final UInt64 slot, final Validator validator, final Consumer<A> addToDuty) {
     final A existingDuty =
         aggregationDuties.computeIfAbsent(
-            slot, __ -> aggregationDutyFactory.createDuty(slot, validator));
+            slot, __ -> dutyFactory.createAggregationDuty(slot, validator));
     addToDuty.accept(existingDuty);
   }
 
@@ -117,9 +114,5 @@ public class ScheduledDuties<P extends Duty, A extends Duty> {
 
   public synchronized int countDuties() {
     return productionDuties.size() + aggregationDuties.size();
-  }
-
-  public interface DutyFactory<D extends Duty> {
-    D createDuty(UInt64 slot, Validator validator);
   }
 }

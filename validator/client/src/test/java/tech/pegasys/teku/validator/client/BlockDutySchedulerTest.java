@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
+import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -49,6 +50,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private BlockDutyScheduler dutyScheduler;
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+
+  private final BlockDutyFactory blockDutyFactory = mock(BlockDutyFactory.class);
 
   @SuppressWarnings("unchecked")
   final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties = mock(ScheduledDuties.class);
@@ -87,7 +90,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
+    when(blockDutyFactory.createProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties
@@ -117,7 +120,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
+    when(blockDutyFactory.createProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties
@@ -346,14 +349,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot ->
-                        new ScheduledDuties<>(
-                            dutyFactory::createBlockProductionDuty,
-                            (slot, validator) -> {
-                              throw new UnsupportedOperationException(
-                                  "No block aggregations supported");
-                            },
-                            dependentRoot,
-                            metricsSystem),
+                        new ScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),

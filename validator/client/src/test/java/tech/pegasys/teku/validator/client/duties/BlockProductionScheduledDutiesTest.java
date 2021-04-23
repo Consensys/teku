@@ -38,26 +38,20 @@ class BlockProductionScheduledDutiesTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
-  private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
+  private final BlockDutyFactory dutyFactory = mock(BlockDutyFactory.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ScheduledDuties<BlockProductionDuty, Duty> duties =
-      new ScheduledDuties<>(
-          dutyFactory::createBlockProductionDuty,
-          (slot, validator) -> {
-            throw new UnsupportedOperationException("No aggregation allowed");
-          },
-          Bytes32.fromHexString("0x838382"),
-          metricsSystem);
+      new ScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
   public void shouldDiscardMissedBlockProductionDuties() {
     final BlockProductionDuty duty0 = mockDuty();
     final BlockProductionDuty duty1 = mockDuty();
     final BlockProductionDuty duty2 = mockDuty();
-    when(dutyFactory.createBlockProductionDuty(ZERO, validator)).thenReturn(duty0);
-    when(dutyFactory.createBlockProductionDuty(ONE, validator)).thenReturn(duty1);
-    when(dutyFactory.createBlockProductionDuty(TWO, validator)).thenReturn(duty2);
+    when(dutyFactory.createProductionDuty(ZERO, validator)).thenReturn(duty0);
+    when(dutyFactory.createProductionDuty(ONE, validator)).thenReturn(duty1);
+    when(dutyFactory.createProductionDuty(TWO, validator)).thenReturn(duty2);
     duties.scheduleProduction(ZERO, validator);
     duties.scheduleProduction(ONE, validator);
     duties.scheduleProduction(TWO, validator);
