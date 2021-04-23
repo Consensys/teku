@@ -121,8 +121,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
   }
 
-  private EpochDuties createEpochDuties(final UInt64 epoch) {
-    return EpochDuties.calculateDuties(epochDutiesScheduler, epoch);
+  private EpochDuties createEpochDuties(final UInt64 epochNumber) {
+    return EpochDuties.calculateDuties(epochDutiesScheduler, epochNumber);
   }
 
   private void removePriorEpochs(final UInt64 epochNumber) {

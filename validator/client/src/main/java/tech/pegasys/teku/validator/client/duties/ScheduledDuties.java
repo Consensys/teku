@@ -61,18 +61,18 @@ public class ScheduledDuties<P extends Duty, A extends Duty> {
 
   public synchronized <T> T scheduleProduction(
       final UInt64 slot, final Validator validator, final Function<P, T> addToDuty) {
-    final P existingDuty =
+    final P duty =
         productionDuties.computeIfAbsent(
             slot, __ -> dutyFactory.createProductionDuty(slot, validator));
-    return addToDuty.apply(existingDuty);
+    return addToDuty.apply(duty);
   }
 
   public synchronized void scheduleAggregation(
       final UInt64 slot, final Validator validator, final Consumer<A> addToDuty) {
-    final A existingDuty =
+    final A duty =
         aggregationDuties.computeIfAbsent(
             slot, __ -> dutyFactory.createAggregationDuty(slot, validator));
-    addToDuty.accept(existingDuty);
+    addToDuty.accept(duty);
   }
 
   public synchronized void performProductionDuty(final UInt64 slot) {
