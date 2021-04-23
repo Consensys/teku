@@ -25,9 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -91,49 +89,9 @@ public class StateTransition {
       //   the new block will be processed when adding to the store.
       BeaconState postSlotState = processSlots(preState, signedBlock.getMessage().getSlot());
 
-      return processAndValidateBlock(
+      return blockProcessor.processAndValidateBlock(
           signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationCache);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.warn("State Transition error", e);
-      throw new StateTransitionException(e);
-    }
-  }
-
-  /**
-   * Processes the given block on top of {@code blockSlotState} and optionally validates the block
-   *
-   * @param signedBlock The block to be processed
-   * @param blockSlotState The preState on which this block should be procssed, this preState must
-   *     already be advanced to the block's slot
-   * @param validateStateRootAndSignatures Whether to run signature and state root validations
-   * @param indexedAttestationCache A cache of indexed attestations
-   * @return The post state after processing the block on top of {@code blockSlotState}
-   * @throws StateTransitionException If the block is invalid or cannot be processed
-   */
-  public BeaconState processAndValidateBlock(
-      final SignedBeaconBlock signedBlock,
-      final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures,
-      final IndexedAttestationCache indexedAttestationCache)
-      throws StateTransitionException {
-    try {
-      // Process_block
-      BeaconState postState =
-          blockProcessor.processBlock(
-              blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
-
-      if (validateStateRootAndSignatures) {
-        BlockValidationResult blockValidationResult =
-            blockProcessor.validateBlock(
-                blockSlotState, signedBlock, postState, indexedAttestationCache);
-
-        if (!blockValidationResult.isValid()) {
-          throw new BlockProcessingException(blockValidationResult.getReason());
-        }
-      }
-
-      return postState;
-    } catch (final IllegalArgumentException | BlockProcessingException e) {
       LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }

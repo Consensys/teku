@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
@@ -43,20 +43,22 @@ public interface BlockProcessor {
       final BeaconState state, final AttestationData data);
 
   /**
-   * Validate the given block. Checks signatures in the block and verifies stateRoot matches
-   * postState
+   * Processes the given block on top of {@code blockSlotState} and optionally validates the block
    *
-   * @param preState The preState to which the block is applied
-   * @param block The block being validated
-   * @param postState The post state resulting from processing the block on top of the preState
-   * @param indexedAttestationCache A cache for calculating indexed attestations
-   * @return A block validation result
+   * @param signedBlock The block to be processed
+   * @param blockSlotState The preState on which this block should be procssed, this preState must
+   *     already be advanced to the block's slot
+   * @param validateStateRootAndSignatures Whether to run signature and state root validations
+   * @param indexedAttestationCache A cache of indexed attestations
+   * @return The post state after processing the block on top of {@code blockSlotState}
+   * @throws StateTransitionException If the block is invalid or cannot be processed
    */
-  BlockValidationResult validateBlock(
-      BeaconState preState,
-      SignedBeaconBlock block,
-      BeaconState postState,
-      IndexedAttestationCache indexedAttestationCache);
+  BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException;
 
   /**
    * v0.7.1

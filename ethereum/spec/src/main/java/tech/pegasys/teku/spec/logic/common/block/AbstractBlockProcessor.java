@@ -118,8 +118,45 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.attestationValidator = attestationValidator;
   }
 
+  public BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException {
+    try {
+      // Process_block
+      BeaconState postState =
+          processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
+
+      if (validateStateRootAndSignatures) {
+        BlockValidationResult blockValidationResult =
+            validateBlock(blockSlotState, signedBlock, postState, indexedAttestationCache);
+
+        if (!blockValidationResult.isValid()) {
+          throw new BlockProcessingException(blockValidationResult.getReason());
+        }
+      }
+
+      return postState;
+    } catch (final IllegalArgumentException | BlockProcessingException e) {
+      LOG.warn("State Transition error", e);
+      throw new StateTransitionException(e);
+    }
+  }
+
+  /**
+   * Validate the given block. Checks signatures in the block and verifies stateRoot matches
+   * postState
+   *
+   * @param preState The preState to which the block is applied
+   * @param block The block being validated
+   * @param postState The post state resulting from processing the block on top of the preState
+   * @param indexedAttestationCache A cache for calculating indexed attestations
+   * @return A block validation result
+   */
   @CheckReturnValue
-  public BlockValidationResult validateBlock(
+  private BlockValidationResult validateBlock(
       BeaconState preState,
       SignedBeaconBlock block,
       BeaconState postState,
