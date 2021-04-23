@@ -19,7 +19,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -43,7 +42,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
   protected final BlockProcessor blockProcessor;
-  protected final StateTransition stateTransition;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
 
@@ -59,7 +57,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
     this.predicates = predicates;
@@ -73,7 +70,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.validatorStatusFactory = validatorStatusFactory;
     this.epochProcessor = epochProcessor;
     this.blockProcessor = blockProcessor;
-    this.stateTransition = stateTransition;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
   }
@@ -106,11 +102,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BlockProcessor getBlockProcessor() {
     return blockProcessor;
-  }
-
-  @Override
-  public StateTransition getStateTransition() {
-    return stateTransition;
   }
 
   @Override

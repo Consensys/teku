@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -49,7 +48,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorStatusFactoryPhase0 validatorStatusFactory,
       final EpochProcessorPhase0 epochProcessor,
       final BlockProcessorPhase0 blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
     super(
@@ -64,7 +62,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
   }
@@ -120,8 +117,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             attestationValidator);
-    final StateTransition stateTransition =
-        StateTransition.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -139,7 +134,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
   }

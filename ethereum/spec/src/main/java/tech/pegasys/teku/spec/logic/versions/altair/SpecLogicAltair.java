@@ -19,7 +19,6 @@ import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -51,7 +50,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
       final BlockProcessorAltair blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil) {
@@ -67,7 +65,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
@@ -129,8 +126,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             attestationValidator);
-    final StateTransition stateTransition =
-        StateTransition.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -156,7 +151,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
         syncCommitteeUtil);
