@@ -25,12 +25,11 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.security.SecureChannel.Session;
 import io.libp2p.crypto.keys.EcdsaKt;
+import io.libp2p.pubsub.gossip.Gossip;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import io.libp2p.pubsub.gossip.Gossip;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

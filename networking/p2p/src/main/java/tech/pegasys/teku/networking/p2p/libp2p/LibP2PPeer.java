@@ -15,11 +15,10 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.pubsub.gossip.Gossip;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.libp2p.pubsub.gossip.Gossip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
