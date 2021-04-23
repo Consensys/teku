@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.Spec;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
-  private final DutyLoader dutyLoader;
   private UInt64 lastAttestationCreationSlot;
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
@@ -35,19 +34,13 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
-    this.dutyLoader = dutyLoader;
+    super(dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
-  }
-
-  @Override
-  protected EpochDuties createEpochDuties(final UInt64 epoch) {
-    return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Override
