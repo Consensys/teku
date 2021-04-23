@@ -16,8 +16,9 @@ package tech.pegasys.teku.validator.client;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-public interface DutyLoader<S extends ScheduledDuties> {
-  SafeFuture<Optional<S>> loadDutiesForEpoch(final UInt64 epoch);
+public interface DutyLoader<P extends Duty, A extends Duty> {
+  SafeFuture<Optional<ScheduledDuties<P, A>>> loadDutiesForEpoch(final UInt64 epoch);
 }

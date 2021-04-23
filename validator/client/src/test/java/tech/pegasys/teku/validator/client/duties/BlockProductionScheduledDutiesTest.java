@@ -41,9 +41,14 @@ class BlockProductionScheduledDutiesTest {
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final BlockProductionScheduledDuties duties =
-      new BlockProductionScheduledDuties(
-          dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+  private final ScheduledDuties<BlockProductionDuty, Duty> duties =
+      new ScheduledDuties<>(
+          dutyFactory::createBlockProductionDuty,
+          (slot, validator) -> {
+            throw new UnsupportedOperationException("No aggregation allowed");
+          },
+          Bytes32.fromHexString("0x838382"),
+          metricsSystem);
 
   @Test
   public void shouldDiscardMissedBlockProductionDuties() {
@@ -53,19 +58,19 @@ class BlockProductionScheduledDutiesTest {
     when(dutyFactory.createBlockProductionDuty(ZERO, validator)).thenReturn(duty0);
     when(dutyFactory.createBlockProductionDuty(ONE, validator)).thenReturn(duty1);
     when(dutyFactory.createBlockProductionDuty(TWO, validator)).thenReturn(duty2);
-    duties.scheduleBlockProduction(ZERO, validator);
-    duties.scheduleBlockProduction(ONE, validator);
-    duties.scheduleBlockProduction(TWO, validator);
+    duties.scheduleProduction(ZERO, validator);
+    duties.scheduleProduction(ONE, validator);
+    duties.scheduleProduction(TWO, validator);
 
-    duties.produceBlock(ONE);
+    duties.performProductionDuty(ONE);
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.produceBlock(ZERO);
+    duties.performProductionDuty(ZERO);
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.produceBlock(TWO);
+    duties.performProductionDuty(TWO);
     verify(duty2).performDuty();
     validateMetrics(2, 0);
   }

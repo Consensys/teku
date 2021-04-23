@@ -22,18 +22,20 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.client.duties.AttestationScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 
-public class AttestationDutyScheduler extends AbstractDutyScheduler<AttestationEpochDuties> {
+public class AttestationDutyScheduler
+    extends AbstractDutyScheduler<AttestationProductionDuty, AggregationDuty> {
 
-  private final DutyLoader<AttestationScheduledDuties> dutyLoader;
+  private final DutyLoader<AttestationProductionDuty, AggregationDuty> dutyLoader;
   private UInt64 lastAttestationCreationSlot;
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader<AttestationScheduledDuties> dutyLoader,
+      final DutyLoader<AttestationProductionDuty, AggregationDuty> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
@@ -47,8 +49,9 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler<AttestationE
   }
 
   @Override
-  protected AttestationEpochDuties createEpochDuties(final UInt64 epoch) {
-    return AttestationEpochDuties.calculateDuties(dutyLoader, epoch);
+  protected EpochDuties<AttestationProductionDuty, AggregationDuty> createEpochDuties(
+      final UInt64 epoch) {
+    return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Override
@@ -71,7 +74,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler<AttestationE
     }
 
     lastAttestationCreationSlot = slot;
-    notifyEpochDuties(AttestationEpochDuties::onAttestationCreationDue, slot);
+    notifyEpochDuties(EpochDuties::onProductionDue, slot);
   }
 
   @Override
@@ -84,7 +87,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler<AttestationE
       return;
     }
 
-    notifyEpochDuties(AttestationEpochDuties::onAttestationAggregationDue, slot);
+    notifyEpochDuties(EpochDuties::onAggregationDue, slot);
   }
 
   @Override

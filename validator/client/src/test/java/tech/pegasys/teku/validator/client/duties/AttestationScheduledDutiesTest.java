@@ -43,8 +43,12 @@ class AttestationScheduledDutiesTest {
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final AttestationScheduledDuties duties =
-      new AttestationScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+  private final ScheduledDuties<AttestationProductionDuty, AggregationDuty> duties =
+      new ScheduledDuties<>(
+          (slot, validator) -> dutyFactory.createAttestationProductionDuty(slot),
+          (slot, validator) -> dutyFactory.createAggregationDuty(slot),
+          Bytes32.fromHexString("0x838382"),
+          metricsSystem);
 
   @Test
   public void shouldDiscardMissedAttestationProductionDuties() {
@@ -55,19 +59,25 @@ class AttestationScheduledDutiesTest {
     when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
     when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
 
-    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10, 5));
+    ignoreFuture(
+        duties.scheduleProduction(
+            ZERO, validator, duty -> duty.addValidator(validator, 0, 0, 5, 10)));
+    ignoreFuture(
+        duties.scheduleProduction(
+            ONE, validator, duty -> duty.addValidator(validator, 0, 0, 5, 10)));
+    ignoreFuture(
+        duties.scheduleProduction(
+            TWO, validator, duty -> duty.addValidator(validator, 0, 0, 5, 10)));
 
-    duties.produceAttestations(ONE);
+    duties.performProductionDuty(ONE);
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.produceAttestations(ZERO);
+    duties.performProductionDuty(ZERO);
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.produceAttestations(TWO);
+    duties.performProductionDuty(TWO);
     verify(duty2).performDuty();
     validateMetrics("attestation", 2, 0);
   }
@@ -81,22 +91,28 @@ class AttestationScheduledDutiesTest {
     when(dutyFactory.createAggregationDuty(ONE)).thenReturn(duty1);
     when(dutyFactory.createAggregationDuty(TWO)).thenReturn(duty2);
 
-    duties.scheduleAggregationDuties(
-        ZERO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
-    duties.scheduleAggregationDuties(
-        ONE, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
-    duties.scheduleAggregationDuties(
-        TWO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+    duties.scheduleAggregation(
+        ZERO,
+        validator,
+        duty -> duty.addValidator(validator, 0, BLSSignature.empty(), 0, new SafeFuture<>()));
+    duties.scheduleAggregation(
+        ONE,
+        validator,
+        duty -> duty.addValidator(validator, 0, BLSSignature.empty(), 0, new SafeFuture<>()));
+    duties.scheduleAggregation(
+        TWO,
+        validator,
+        duty -> duty.addValidator(validator, 0, BLSSignature.empty(), 0, new SafeFuture<>()));
 
-    duties.performAggregation(ONE);
+    duties.performAggregationDuty(ONE);
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.performAggregation(ZERO);
+    duties.performAggregationDuty(ZERO);
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.performAggregation(TWO);
+    duties.performAggregationDuty(TWO);
     verify(duty2).performDuty();
 
     validateMetrics("aggregate", 2, 0);

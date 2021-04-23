@@ -22,17 +22,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.duties.BlockProductionScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.teku.validator.client.duties.Duty;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockProductionDutyLoader
-    extends AbstractDutyLoader<ProposerDuties, BlockProductionScheduledDuties> {
+    extends AbstractDutyLoader<ProposerDuties, BlockProductionDuty, Duty> {
 
   private final ValidatorApiChannel validatorApiChannel;
 
   protected BlockProductionDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
-      final Function<Bytes32, BlockProductionScheduledDuties> scheduledDutiesFactory,
+      final Function<Bytes32, ScheduledDuties<BlockProductionDuty, Duty>> scheduledDutiesFactory,
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider) {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
@@ -46,18 +48,18 @@ public class BlockProductionDutyLoader
   }
 
   @Override
-  protected SafeFuture<BlockProductionScheduledDuties> scheduleAllDuties(
+  protected SafeFuture<ScheduledDuties<BlockProductionDuty, Duty>> scheduleAllDuties(
       final ProposerDuties duties) {
-    final BlockProductionScheduledDuties scheduledDuties =
+    final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     duties.getDuties().forEach(duty -> scheduleDuty(scheduledDuties, duty));
     return SafeFuture.completedFuture(scheduledDuties);
   }
 
   private void scheduleDuty(
-      final BlockProductionScheduledDuties scheduledDuties, final ProposerDuty duty) {
+      final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties, final ProposerDuty duty) {
     validators
         .getValidator(duty.getPublicKey())
-        .ifPresent(validator -> scheduledDuties.scheduleBlockProduction(duty.getSlot(), validator));
+        .ifPresent(validator -> scheduledDuties.scheduleProduction(duty.getSlot(), validator));
   }
 }

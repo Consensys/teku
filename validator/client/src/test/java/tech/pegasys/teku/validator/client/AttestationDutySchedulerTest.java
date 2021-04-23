@@ -45,15 +45,18 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
-import tech.pegasys.teku.validator.client.duties.AttestationScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
 
-  private final AttestationScheduledDuties scheduledDuties = mock(AttestationScheduledDuties.class);
+  @SuppressWarnings("unchecked")
+  private final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
+      mock(ScheduledDuties.class);
+
   private final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -357,14 +360,14 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotProcessAggregationIfEpochIsUnknown() {
     createDutySchedulerWithMockDuties();
     dutyScheduler.onAttestationAggregationDue(ONE);
-    verify(scheduledDuties, never()).performAggregation(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
   }
 
   @Test
   public void shouldNotProcessAttestationIfEpochIsUnknown() {
     createDutySchedulerWithMockDuties();
     dutyScheduler.onAttestationCreationDue(ONE);
-    verify(scheduledDuties, never()).produceAttestations(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
   }
 
   @Test
@@ -374,7 +377,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
-    verify(scheduledDuties, never()).performAggregation(slot);
+    verify(scheduledDuties, never()).performAggregationDuty(slot);
   }
 
   @Test
@@ -384,7 +387,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
-    verify(scheduledDuties, never()).produceAttestations(slot);
+    verify(scheduledDuties, never()).performProductionDuty(slot);
   }
 
   @Test
@@ -395,7 +398,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
-    verify(scheduledDuties).performAggregation(slot);
+    verify(scheduledDuties).performAggregationDuty(slot);
   }
 
   @Test
@@ -406,7 +409,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
-    verify(scheduledDuties).produceAttestations(slot);
+    verify(scheduledDuties).performProductionDuty(slot);
   }
 
   @Test
@@ -425,13 +428,13 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onAttestationCreationDue(ZERO);
     dutyScheduler.onAttestationAggregationDue(ZERO);
     // Duties haven't been loaded yet.
-    verify(scheduledDuties, never()).produceAttestations(ZERO);
-    verify(scheduledDuties, never()).performAggregation(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
+    verify(scheduledDuties, never()).performAggregationDuty(ZERO);
 
     epoch0Duties.complete(
         Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList())));
-    verify(scheduledDuties).produceAttestations(ZERO);
-    verify(scheduledDuties).performAggregation(ZERO);
+    verify(scheduledDuties).performProductionDuty(ZERO);
+    verify(scheduledDuties).performAggregationDuty(ZERO);
   }
 
   @Test
@@ -803,7 +806,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validatorApiChannel,
             forkProvider,
             dependentRoot ->
-                new AttestationScheduledDuties(dutyFactory, dependentRoot, metricsSystem),
+                new ScheduledDuties<>(
+                    (slot, validator) -> dutyFactory.createAttestationProductionDuty(slot),
+                    (slot, validator) -> dutyFactory.createAggregationDuty(slot),
+                    dependentRoot,
+                    metricsSystem),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,

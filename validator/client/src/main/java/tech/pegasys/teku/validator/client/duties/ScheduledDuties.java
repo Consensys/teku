@@ -16,24 +16,34 @@ package tech.pegasys.teku.validator.client.duties;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.client.Validator;
 
-public abstract class ScheduledDuties {
+public class ScheduledDuties<P extends Duty, A extends Duty> {
 
-  protected final ValidatorDutyFactory dutyFactory;
+  protected final NavigableMap<UInt64, P> productionDuties = new TreeMap<>();
+  protected final NavigableMap<UInt64, A> aggregationDuties = new TreeMap<>();
+
+  private final DutyFactory<P> productionDutyFactory;
+  private final DutyFactory<A> aggregationDutyFactory;
   private final Bytes32 dependentRoot;
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
   public ScheduledDuties(
-      final ValidatorDutyFactory dutyFactory,
+      final DutyFactory<P> productionDutyFactory,
+      final DutyFactory<A> aggregationDutyFactory,
       final Bytes32 dependentRoot,
       final MetricsSystem metricsSystem) {
-    this.dutyFactory = dutyFactory;
+    this.productionDutyFactory = productionDutyFactory;
+    this.aggregationDutyFactory = aggregationDutyFactory;
     this.dependentRoot = dependentRoot;
     dutiesPerformedCounter =
         metricsSystem.createLabelledCounter(
@@ -48,7 +58,35 @@ public abstract class ScheduledDuties {
     return dependentRoot;
   }
 
-  protected void performDutyForSlot(
+  public synchronized void scheduleProduction(final UInt64 slot, final Validator validator) {
+    scheduleProduction(slot, validator, duty -> null);
+  }
+
+  public synchronized <T> T scheduleProduction(
+      final UInt64 slot, final Validator validator, final Function<P, T> addToDuty) {
+    final P existingDuty =
+        productionDuties.computeIfAbsent(
+            slot, __ -> productionDutyFactory.createDuty(slot, validator));
+    return addToDuty.apply(existingDuty);
+  }
+
+  public synchronized void scheduleAggregation(
+      final UInt64 slot, final Validator validator, final Consumer<A> addToDuty) {
+    final A existingDuty =
+        aggregationDuties.computeIfAbsent(
+            slot, __ -> aggregationDutyFactory.createDuty(slot, validator));
+    addToDuty.accept(existingDuty);
+  }
+
+  public synchronized void performProductionDuty(final UInt64 slot) {
+    performDutyForSlot(productionDuties, slot);
+  }
+
+  public synchronized void performAggregationDuty(final UInt64 slot) {
+    performDutyForSlot(aggregationDuties, slot);
+  }
+
+  private void performDutyForSlot(
       final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
     discardDutiesBeforeSlot(duties, slot);
 
@@ -77,5 +115,11 @@ public abstract class ScheduledDuties {
     duties.subMap(UInt64.ZERO, true, slot, false).clear();
   }
 
-  public abstract int countDuties();
+  public synchronized int countDuties() {
+    return productionDuties.size() + aggregationDuties.size();
+  }
+
+  public interface DutyFactory<D extends Duty> {
+    D createDuty(UInt64 slot, Validator validator);
+  }
 }

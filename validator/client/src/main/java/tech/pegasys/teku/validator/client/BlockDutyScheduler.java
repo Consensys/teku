@@ -22,16 +22,17 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.client.duties.BlockProductionScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.teku.validator.client.duties.Duty;
 
-public class BlockDutyScheduler extends AbstractDutyScheduler<BlockEpochDuties> {
+public class BlockDutyScheduler extends AbstractDutyScheduler<BlockProductionDuty, Duty> {
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 0;
-  private final DutyLoader<BlockProductionScheduledDuties> dutyLoader;
+  private final DutyLoader<BlockProductionDuty, Duty> dutyLoader;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader<BlockProductionScheduledDuties> dutyLoader,
+      final DutyLoader<BlockProductionDuty, Duty> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
@@ -45,8 +46,8 @@ public class BlockDutyScheduler extends AbstractDutyScheduler<BlockEpochDuties> 
   }
 
   @Override
-  protected BlockEpochDuties createEpochDuties(final UInt64 epoch) {
-    return BlockEpochDuties.calculateDuties(dutyLoader, epoch);
+  protected EpochDuties<BlockProductionDuty, Duty> createEpochDuties(final UInt64 epoch) {
+    return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Override
@@ -59,7 +60,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler<BlockEpochDuties> 
       return;
     }
 
-    notifyEpochDuties(BlockEpochDuties::onBlockProductionDue, slot);
+    notifyEpochDuties(EpochDuties::onProductionDue, slot);
   }
 
   @Override
