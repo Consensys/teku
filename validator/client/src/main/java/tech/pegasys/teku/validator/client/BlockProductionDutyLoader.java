@@ -27,18 +27,20 @@ import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class BlockProductionDutyLoader
-    extends AbstractDutyLoader<ProposerDuties, BlockProductionDuty, Duty> {
+public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties> {
 
   private final ValidatorApiChannel validatorApiChannel;
+  private final Function<Bytes32, ScheduledDuties<BlockProductionDuty, Duty>>
+      scheduledDutiesFactory;
 
   protected BlockProductionDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final Function<Bytes32, ScheduledDuties<BlockProductionDuty, Duty>> scheduledDutiesFactory,
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider) {
-    super(scheduledDutiesFactory, validators, validatorIndexProvider);
+    super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
+    this.scheduledDutiesFactory = scheduledDutiesFactory;
   }
 
   @Override
@@ -48,7 +50,7 @@ public class BlockProductionDutyLoader
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties<BlockProductionDuty, Duty>> scheduleAllDuties(
+  protected SafeFuture<ScheduledDuties<? extends Duty, ? extends Duty>> scheduleAllDuties(
       final ProposerDuties duties) {
     final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());

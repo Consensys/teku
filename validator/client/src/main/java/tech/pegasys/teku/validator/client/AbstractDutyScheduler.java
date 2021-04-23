@@ -23,16 +23,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.duties.Duty;
 
-public abstract class AbstractDutyScheduler<P extends Duty, A extends Duty>
-    implements ValidatorTimingChannel {
+public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final boolean useDependentRoots;
   private final int lookAheadEpochs;
 
-  protected final NavigableMap<UInt64, EpochDuties<P, A>> dutiesByEpoch = new TreeMap<>();
+  protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
@@ -43,8 +41,8 @@ public abstract class AbstractDutyScheduler<P extends Duty, A extends Duty>
   }
 
   protected void notifyEpochDuties(
-      final BiConsumer<EpochDuties<P, A>, UInt64> action, final UInt64 slot) {
-    final EpochDuties<P, A> epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
+      final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
+    final EpochDuties epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
     if (epochDuties != null) {
       action.accept(epochDuties, slot);
     }
@@ -118,16 +116,15 @@ public abstract class AbstractDutyScheduler<P extends Duty, A extends Duty>
     }
   }
 
-  protected abstract EpochDuties<P, A> createEpochDuties(final UInt64 epoch);
+  protected abstract EpochDuties createEpochDuties(final UInt64 epoch);
 
   private void removePriorEpochs(final UInt64 epochNumber) {
-    final NavigableMap<UInt64, EpochDuties<P, A>> toRemove =
-        dutiesByEpoch.headMap(epochNumber, false);
+    final NavigableMap<UInt64, EpochDuties> toRemove = dutiesByEpoch.headMap(epochNumber, false);
     toRemove.values().forEach(EpochDuties::cancel);
     toRemove.clear();
   }
 
-  private void invalidateEpochs(final NavigableMap<UInt64, EpochDuties<P, A>> toInvalidate) {
+  private void invalidateEpochs(final NavigableMap<UInt64, EpochDuties> toInvalidate) {
     toInvalidate.values().forEach(EpochDuties::recalculate);
   }
 

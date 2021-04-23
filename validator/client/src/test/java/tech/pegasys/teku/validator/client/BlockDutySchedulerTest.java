@@ -344,7 +344,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader<>(
+            new RetryingDutyLoader(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
@@ -361,7 +361,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader<>(
+            new RetryingDutyLoader(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,

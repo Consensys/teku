@@ -37,20 +37,16 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 class EpochDutiesTest {
 
   protected static final UInt64 EPOCH = UInt64.valueOf(10);
-  protected final SafeFuture<Optional<ScheduledDuties<ProductionDuty, AggregationDuty>>>
+  protected final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>>
       scheduledDutiesFuture = new SafeFuture<>();
 
-  @SuppressWarnings("unchecked")
-  protected final DutyLoader<ProductionDuty, AggregationDuty> dutyLoader = mock(DutyLoader.class);
+  protected final DutyLoader dutyLoader = mock(DutyLoader.class);
+  protected final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
 
-  @SuppressWarnings("unchecked")
-  protected final ScheduledDuties<ProductionDuty, AggregationDuty> scheduledDuties =
-      mock(ScheduledDuties.class);
-
-  protected final Optional<ScheduledDuties<ProductionDuty, AggregationDuty>>
+  protected final Optional<ScheduledDuties<? extends Duty, ? extends Duty>>
       scheduledDutiesOptional = Optional.of(scheduledDuties);
 
-  protected EpochDuties<ProductionDuty, AggregationDuty> duties;
+  protected EpochDuties duties;
 
   @BeforeEach
   void setUp() {
@@ -59,8 +55,7 @@ class EpochDutiesTest {
     verify(dutyLoader).loadDutiesForEpoch(EPOCH);
   }
 
-  private EpochDuties<ProductionDuty, AggregationDuty> calculateDuties(
-      final DutyLoader<ProductionDuty, AggregationDuty> dutyLoader, final UInt64 epoch) {
+  private EpochDuties calculateDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
     return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
@@ -163,10 +158,9 @@ class EpochDutiesTest {
   @Test
   void shouldRecalculateDuties() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    @SuppressWarnings("unchecked")
-    final ScheduledDuties<ProductionDuty, AggregationDuty> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<ProductionDuty, AggregationDuty>>>
-        recalculatedDuties = new SafeFuture<>();
+    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>> recalculatedDuties =
+        new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
@@ -182,10 +176,9 @@ class EpochDutiesTest {
 
   @Test
   void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
-    @SuppressWarnings("unchecked")
-    final ScheduledDuties<ProductionDuty, AggregationDuty> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<ProductionDuty, AggregationDuty>>>
-        recalculatedDuties = new SafeFuture<>();
+    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>> recalculatedDuties =
+        new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
@@ -215,8 +208,4 @@ class EpochDutiesTest {
     // Should have discarded this one even though no replacement was available.
     verifyNoInteractions(scheduledDuties);
   }
-
-  private interface ProductionDuty extends Duty {}
-
-  private interface AggregationDuty extends Duty {}
 }

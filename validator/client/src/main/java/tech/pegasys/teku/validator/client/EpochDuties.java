@@ -24,26 +24,24 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class EpochDuties<P extends Duty, A extends Duty> {
+class EpochDuties {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final List<Consumer<ScheduledDuties<P, A>>> pendingActions = new ArrayList<>();
-  private final DutyLoader<P, A> dutyLoader;
+  private final List<Consumer<ScheduledDuties<?, ?>>> pendingActions = new ArrayList<>();
+  private final DutyLoader dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<Optional<ScheduledDuties<P, A>>> duties = new SafeFuture<>();
+  private SafeFuture<Optional<ScheduledDuties<?, ?>>> duties = new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
 
-  private EpochDuties(final DutyLoader<P, A> dutyLoader, final UInt64 epoch) {
+  private EpochDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
   }
 
-  public static <P extends Duty, A extends Duty> EpochDuties<P, A> calculateDuties(
-      final DutyLoader<P, A> dutyLoader, final UInt64 epoch) {
-    final EpochDuties<P, A> duties = new EpochDuties<>(dutyLoader, epoch);
+  public static EpochDuties calculateDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
+    final EpochDuties duties = new EpochDuties(dutyLoader, epoch);
     duties.recalculate();
     return duties;
   }
@@ -81,7 +79,7 @@ class EpochDuties<P extends Duty, A extends Duty> {
   }
 
   private synchronized void processPendingActions(
-      final Optional<ScheduledDuties<P, A>> scheduledDuties) {
+      final Optional<ScheduledDuties<?, ?>> scheduledDuties) {
     if (pendingHeadUpdate.isPresent()
         && scheduledDuties.isPresent()
         && requiresRecalculation(scheduledDuties.get(), pendingHeadUpdate.get())) {
@@ -94,11 +92,11 @@ class EpochDuties<P extends Duty, A extends Duty> {
     pendingActions.clear();
   }
 
-  protected synchronized void execute(final Consumer<ScheduledDuties<P, A>> action) {
+  protected synchronized void execute(final Consumer<ScheduledDuties<?, ?>> action) {
     getCurrentDuties().ifPresentOrElse(action, () -> pendingActions.add(action));
   }
 
-  private synchronized Optional<ScheduledDuties<P, A>> getCurrentDuties() {
+  private synchronized Optional<ScheduledDuties<?, ?>> getCurrentDuties() {
     if (!duties.isCompletedNormally()) {
       return Optional.empty();
     }
@@ -117,7 +115,7 @@ class EpochDuties<P extends Duty, A extends Duty> {
   }
 
   private boolean requiresRecalculation(
-      final ScheduledDuties<P, A> duties, final Bytes32 newHeadDependentRoot) {
+      final ScheduledDuties<?, ?> duties, final Bytes32 newHeadDependentRoot) {
     return !duties.getDependentRoot().equals(newHeadDependentRoot);
   }
 }

@@ -32,15 +32,17 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class AttestationDutyLoader
-    extends AbstractDutyLoader<AttesterDuties, AttestationProductionDuty, AggregationDuty> {
+public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
+  private final Function<Bytes32, ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+      scheduledDutiesFactory;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
   private final Spec spec;
 
@@ -53,9 +55,10 @@ public class AttestationDutyLoader
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
       final Spec spec) {
-    super(scheduledDutiesFactory, validators, validatorIndexProvider);
+    super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
+    this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
     this.spec = spec;
   }
@@ -67,15 +70,15 @@ public class AttestationDutyLoader
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
-      scheduleAllDuties(final AttesterDuties duties) {
+  protected SafeFuture<ScheduledDuties<? extends Duty, ? extends Duty>> scheduleAllDuties(
+      final AttesterDuties duties) {
     final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     return SafeFuture.allOf(
             duties.getDuties().stream()
                 .map(duty -> scheduleDuties(scheduledDuties, duty))
                 .toArray(SafeFuture[]::new))
-        .thenApply(__ -> scheduledDuties)
+        .<ScheduledDuties<? extends Duty, ? extends Duty>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 

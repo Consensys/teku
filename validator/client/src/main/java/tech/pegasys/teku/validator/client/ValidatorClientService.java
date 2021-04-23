@@ -31,13 +31,9 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
-import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
-import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
@@ -149,8 +145,8 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
-    final DutyLoader<AttestationProductionDuty, AggregationDuty> attestationDutyLoader =
-        new RetryingDutyLoader<>(
+    final DutyLoader attestationDutyLoader =
+        new RetryingDutyLoader(
             asyncRunner,
             new AttestationDutyLoader(
                 validatorApiChannel,
@@ -161,8 +157,8 @@ public class ValidatorClientService extends Service {
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
                 spec));
-    final DutyLoader<BlockProductionDuty, Duty> blockDutyLoader =
-        new RetryingDutyLoader<>(
+    final DutyLoader blockDutyLoader =
+        new RetryingDutyLoader(
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,

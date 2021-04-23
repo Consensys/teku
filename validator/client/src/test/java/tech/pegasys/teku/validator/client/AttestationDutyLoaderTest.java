@@ -109,7 +109,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties<AttestationProductionDuty, AggregationDuty>>> result =
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
@@ -145,7 +145,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties<AttestationProductionDuty, AggregationDuty>>> result =
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
@@ -162,7 +162,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
-    final SafeFuture<Optional<ScheduledDuties<AttestationProductionDuty, AggregationDuty>>> result =
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();

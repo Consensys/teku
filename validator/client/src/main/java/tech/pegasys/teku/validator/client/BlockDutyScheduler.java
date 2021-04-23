@@ -22,17 +22,15 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
-import tech.pegasys.teku.validator.client.duties.Duty;
 
-public class BlockDutyScheduler extends AbstractDutyScheduler<BlockProductionDuty, Duty> {
+public class BlockDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 0;
-  private final DutyLoader<BlockProductionDuty, Duty> dutyLoader;
+  private final DutyLoader dutyLoader;
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader<BlockProductionDuty, Duty> dutyLoader,
+      final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super(LOOKAHEAD_EPOCHS, useDependentRoots, spec);
@@ -46,7 +44,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler<BlockProductionDut
   }
 
   @Override
-  protected EpochDuties<BlockProductionDuty, Duty> createEpochDuties(final UInt64 epoch) {
+  protected EpochDuties createEpochDuties(final UInt64 epoch) {
     return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 

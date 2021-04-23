@@ -22,29 +22,28 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-public class RetryingDutyLoader<P extends Duty, A extends Duty> implements DutyLoader<P, A> {
+public class RetryingDutyLoader implements DutyLoader {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final DutyLoader<P, A> delegate;
+  private final DutyLoader delegate;
   private final AsyncRunner asyncRunner;
 
-  public RetryingDutyLoader(final AsyncRunner asyncRunner, final DutyLoader<P, A> delegate) {
+  public RetryingDutyLoader(final AsyncRunner asyncRunner, final DutyLoader delegate) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
   }
 
   @Override
-  public SafeFuture<Optional<ScheduledDuties<P, A>>> loadDutiesForEpoch(final UInt64 epoch) {
-    final SafeFuture<Optional<ScheduledDuties<P, A>>> duties = new SafeFuture<>();
+  public SafeFuture<Optional<ScheduledDuties<?, ?>>> loadDutiesForEpoch(final UInt64 epoch) {
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> duties = new SafeFuture<>();
     requestDuties(epoch, duties).propagateTo(duties);
     return duties;
   }
 
-  private SafeFuture<Optional<ScheduledDuties<P, A>>> requestDuties(
-      final UInt64 epoch, final SafeFuture<Optional<ScheduledDuties<P, A>>> cancellable) {
+  private SafeFuture<Optional<ScheduledDuties<?, ?>>> requestDuties(
+      final UInt64 epoch, final SafeFuture<Optional<ScheduledDuties<?, ?>>> cancellable) {
     LOG.trace("Request duties for epoch {}", epoch);
     return delegate
         .loadDutiesForEpoch(epoch)
