@@ -65,9 +65,9 @@ public class AggregationDuty implements Duty {
    * @param validatorIndex the validator's index
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
-   * @param unsignedAttestationFuture the future returned by {@link #addValidator(Validator, int,
-   *     BLSSignature, int, SafeFuture)} which completes with the unsigned attestation for this
-   *     committee and slot.
+   * @param unsignedAttestationFuture the future returned by {@link
+   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int)} which completes with
+   *     the unsigned attestation for this committee and slot.
    */
   public void addValidator(
       final Validator validator,
