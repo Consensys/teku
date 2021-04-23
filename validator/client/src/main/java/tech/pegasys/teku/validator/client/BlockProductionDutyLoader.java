@@ -50,8 +50,7 @@ public class BlockProductionDutyLoader extends AbstractDutyLoader<ProposerDuties
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties<? extends Duty, ? extends Duty>> scheduleAllDuties(
-      final ProposerDuties duties) {
+  protected SafeFuture<ScheduledDuties<?, ?>> scheduleAllDuties(final ProposerDuties duties) {
     final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     duties.getDuties().forEach(duty -> scheduleDuty(scheduledDuties, duty));

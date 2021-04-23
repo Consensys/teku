@@ -31,20 +31,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class EpochDutiesTest {
 
   protected static final UInt64 EPOCH = UInt64.valueOf(10);
-  protected final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>>
-      scheduledDutiesFuture = new SafeFuture<>();
+  protected final SafeFuture<Optional<ScheduledDuties<?, ?>>> scheduledDutiesFuture =
+      new SafeFuture<>();
 
   protected final DutyLoader dutyLoader = mock(DutyLoader.class);
   protected final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
 
-  protected final Optional<ScheduledDuties<? extends Duty, ? extends Duty>>
-      scheduledDutiesOptional = Optional.of(scheduledDuties);
+  protected final Optional<ScheduledDuties<?, ?>> scheduledDutiesOptional =
+      Optional.of(scheduledDuties);
 
   protected EpochDuties duties;
 
@@ -159,8 +158,7 @@ class EpochDutiesTest {
   void shouldRecalculateDuties() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
     final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>> recalculatedDuties =
-        new SafeFuture<>();
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
@@ -177,8 +175,7 @@ class EpochDutiesTest {
   @Test
   void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
     final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>> recalculatedDuties =
-        new SafeFuture<>();
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();

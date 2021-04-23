@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -36,8 +35,7 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<Optional<ScheduledDuties<? extends Duty, ? extends Duty>>> loadDutiesForEpoch(
-      final UInt64 epoch) {
+  public SafeFuture<Optional<ScheduledDuties<?, ?>>> loadDutiesForEpoch(final UInt64 epoch) {
     LOG.trace("Requesting attestation duties for epoch {}", epoch);
     return validatorIndexProvider
         .getValidatorIndices(validators.getPublicKeys())
@@ -61,6 +59,5 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
   protected abstract SafeFuture<Optional<D>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
-  protected abstract SafeFuture<ScheduledDuties<? extends Duty, ? extends Duty>> scheduleAllDuties(
-      final D duties);
+  protected abstract SafeFuture<ScheduledDuties<?, ?>> scheduleAllDuties(final D duties);
 }

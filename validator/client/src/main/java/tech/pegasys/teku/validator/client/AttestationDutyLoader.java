@@ -32,7 +32,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
-import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -70,15 +69,14 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties<? extends Duty, ? extends Duty>> scheduleAllDuties(
-      final AttesterDuties duties) {
+  protected SafeFuture<ScheduledDuties<?, ?>> scheduleAllDuties(final AttesterDuties duties) {
     final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     return SafeFuture.allOf(
             duties.getDuties().stream()
                 .map(duty -> scheduleDuties(scheduledDuties, duty))
                 .toArray(SafeFuture[]::new))
-        .<ScheduledDuties<? extends Duty, ? extends Duty>>thenApply(__ -> scheduledDuties)
+        .<ScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 
