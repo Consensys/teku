@@ -45,6 +45,7 @@ public class LibP2PPeer implements Peer {
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
+  private final PeerId peerId;
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -63,8 +64,8 @@ public class LibP2PPeer implements Peer {
     this.rpcHandlers = rpcHandlers;
     this.reputationManager = reputationManager;
     this.gossip = gossip;
+    this.peerId = connection.secureSession().getRemoteId();
 
-    final PeerId peerId = connection.secureSession().getRemoteId();
     final NodeId nodeId = new LibP2PNodeId(peerId);
     peerAddress = new MultiaddrPeerAddress(nodeId, connection.remoteAddress());
     SafeFuture.of(connection.closeFuture())
@@ -82,7 +83,7 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public Double getGossipScore() {
-    return gossip.getGossipScore(connection.secureSession().getRemoteId());
+    return gossip.getGossipScore(peerId);
   }
 
   @Override
