@@ -25,7 +25,6 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.security.SecureChannel.Session;
 import io.libp2p.crypto.keys.EcdsaKt;
-import io.libp2p.pubsub.gossip.Gossip;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
