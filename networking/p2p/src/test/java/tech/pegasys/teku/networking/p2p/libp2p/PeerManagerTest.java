@@ -41,7 +41,6 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 public class PeerManagerTest {
 
   private final ReputationManager reputationManager = mock(ReputationManager.class);
-  private final Gossip gossip = mock(Gossip.class);
   private final Network network = mock(Network.class);
 
   private final PeerManager peerManager =
@@ -50,7 +49,7 @@ public class PeerManagerTest {
           reputationManager,
           Collections.emptyList(),
           Collections.emptyMap(),
-          gossip);
+          peerId -> 0.0);
 
   @Test
   public void subscribeConnect_singleListener() {

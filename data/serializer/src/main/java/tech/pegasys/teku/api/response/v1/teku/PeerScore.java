@@ -32,7 +32,11 @@ public class PeerScore {
   public final String peerId;
 
   @JsonProperty("gossip_score")
-  @Schema(type = "number", description = "Gossip score for the associated peer.", example = "1.0")
+  @Schema(
+      type = "string",
+      format = "number",
+      description = "Gossip score for the associated peer.",
+      example = "1.0")
   public final Double gossipScore;
 
   @JsonCreator

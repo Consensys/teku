@@ -15,10 +15,10 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
-import io.libp2p.pubsub.gossip.Gossip;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,7 +41,7 @@ public class LibP2PPeer implements Peer {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final ReputationManager reputationManager;
-  private final Gossip gossip;
+  private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
@@ -59,11 +59,11 @@ public class LibP2PPeer implements Peer {
       final Connection connection,
       final Map<RpcMethod, RpcHandler> rpcHandlers,
       final ReputationManager reputationManager,
-      final Gossip gossip) {
+      final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;
     this.rpcHandlers = rpcHandlers;
     this.reputationManager = reputationManager;
-    this.gossip = gossip;
+    this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
 
     final NodeId nodeId = new LibP2PNodeId(peerId);
@@ -83,7 +83,7 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public Double getGossipScore() {
-    return gossip.getGossipScore(peerId);
+    return peerScoreFunction.apply(peerId);
   }
 
   @Override

@@ -44,6 +44,11 @@ public class GetPeersScore implements Handler {
     this.network = provider.getNetworkDataProvider();
   }
 
+  GetPeersScore(final NetworkDataProvider network, final JsonProvider jsonProvider) {
+    this.network = network;
+    this.jsonProvider = jsonProvider;
+  }
+
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,

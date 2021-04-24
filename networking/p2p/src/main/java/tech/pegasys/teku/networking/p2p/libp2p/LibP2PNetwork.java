@@ -116,7 +116,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // Setup peers
     peerManager =
         new PeerManager(
-            metricsSystem, reputationManager, peerHandlers, rpcHandlers, gossipNetwork.getGossip());
+            metricsSystem,
+            reputationManager,
+            peerHandlers,
+            rpcHandlers,
+            (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
 
     final Multiaddr listenAddr =
         MultiaddrUtil.fromInetSocketAddress(
