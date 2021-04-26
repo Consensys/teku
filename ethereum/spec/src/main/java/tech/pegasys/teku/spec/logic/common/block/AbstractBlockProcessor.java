@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashin
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -118,8 +119,81 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  public BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException {
+    try {
+      // Process_block
+      BeaconState postState =
+          processBlock(blockSlotState, signedBlock.getMessage(), indexedAttestationCache);
+
+      if (validateStateRootAndSignatures) {
+        BlockValidationResult blockValidationResult =
+            validateBlock(blockSlotState, signedBlock, postState, indexedAttestationCache);
+
+        if (!blockValidationResult.isValid()) {
+          throw new BlockProcessingException(blockValidationResult.getReason());
+        }
+      }
+
+      return postState;
+    } catch (final IllegalArgumentException | BlockProcessingException e) {
+      LOG.warn("State Transition error", e);
+      throw new StateTransitionException(e);
+    }
+  }
+
+  /**
+   * Validate the given block. Checks signatures in the block and verifies stateRoot matches
+   * postState
+   *
+   * @param preState The preState to which the block is applied
+   * @param block The block being validated
+   * @param postState The post state resulting from processing the block on top of the preState
+   * @param indexedAttestationCache A cache for calculating indexed attestations
+   * @return A block validation result
+   */
   @CheckReturnValue
-  public BlockValidationResult verifySignatures(
+  private BlockValidationResult validateBlock(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      BeaconState postState,
+      IndexedAttestationCache indexedAttestationCache) {
+    BlockValidationResult preResult =
+        validateBlockSignatures(preState, block, indexedAttestationCache);
+    if (!preResult.isValid()) {
+      return preResult;
+    }
+
+    return validatePostState(postState, block);
+  }
+
+  private BlockValidationResult validateBlockSignatures(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache) {
+    BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    BlockValidationResult noBLSValidationResult =
+        verifyBlockSignatures(preState, block, indexedAttestationCache, signatureVerifier);
+    // during the above validatePreState() call BatchSignatureVerifier just collected
+    // a bunch of signatures to be verified in optimized batched way on the following step
+    if (!noBLSValidationResult.isValid()) {
+      // something went wrong aside of signatures verification
+      return noBLSValidationResult;
+    } else {
+      if (!signatureVerifier.batchVerify()) {
+        // validate again naively to get exact invalid signature
+        return verifyBlockSignatures(
+            preState, block, indexedAttestationCache, BLSSignatureVerifier.SIMPLE);
+      }
+      return BlockValidationResult.SUCCESSFUL;
+    }
+  }
+
+  private BlockValidationResult verifyBlockSignatures(
       final BeaconState preState,
       final SignedBeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
@@ -175,8 +249,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  @Override
-  public BlockValidationResult validatePostState(
+  private BlockValidationResult validatePostState(
       final BeaconState postState, final SignedBeaconBlock block) {
     if (!block.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
       return BlockValidationResult.failedExceptionally(
@@ -212,6 +285,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     checkArgument(
         attestation.getAggregation_bits().size() == committee.size(),
         "process_attestations: Attestation aggregation bits and committee don't have the same length");
+  }
+
+  @Override
+  public void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    processBlockHeader(state, block);
+    processRandaoNoValidation(state, block.getBody());
+    processEth1Data(state, block.getBody());
+    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
   }
 
   /**
