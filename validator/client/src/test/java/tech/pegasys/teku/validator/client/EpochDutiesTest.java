@@ -50,12 +50,8 @@ class EpochDutiesTest {
   @BeforeEach
   void setUp() {
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(scheduledDutiesFuture);
-    duties = calculateDuties(dutyLoader, EPOCH);
+    duties = EpochDuties.calculateDuties(dutyLoader, EPOCH);
     verify(dutyLoader).loadDutiesForEpoch(EPOCH);
-  }
-
-  private EpochDuties calculateDuties(final DutyLoader dutyLoader, final UInt64 epoch) {
-    return EpochDuties.calculateDuties(dutyLoader, epoch);
   }
 
   @Test
