@@ -25,8 +25,11 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -81,6 +84,19 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
+  }
+
+  @Override
+  public void processBlock(
+      final MutableBeaconState genericState,
+      final BeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+    final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
+
+    super.processBlock(state, block, indexedAttestationCache);
+    processSyncCommittee(state, blockBody.getSyncAggregate());
   }
 
   @Override
