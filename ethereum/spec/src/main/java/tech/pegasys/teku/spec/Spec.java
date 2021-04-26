@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
+import tech.pegasys.teku.spec.logic.StateTransition.StateUpgradeProvider;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
@@ -92,8 +93,7 @@ public class Spec {
                   .ifPresent(upgrade -> slotToStateUpgrade.put(slot, upgrade));
             });
     this.stateTransition =
-        StateTransition.create(
-            this::atSlot, slot -> Optional.ofNullable(slotToStateUpgrade.get(slot)));
+        StateTransition.create(this::atSlot, StateUpgradeProvider.fromMap(slotToStateUpgrade));
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {

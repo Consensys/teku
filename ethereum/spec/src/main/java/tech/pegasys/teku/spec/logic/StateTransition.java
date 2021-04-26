@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -172,6 +173,10 @@ public class StateTransition {
   }
 
   public interface StateUpgradeProvider {
+    static StateUpgradeProvider fromMap(final Map<UInt64, StateUpgrade<?>> slotToUpgrade) {
+      return (slot) -> Optional.ofNullable(slotToUpgrade.get(slot));
+    }
+
     Optional<StateUpgrade<?>> getStateUpgrade(final UInt64 slot);
   }
 }
