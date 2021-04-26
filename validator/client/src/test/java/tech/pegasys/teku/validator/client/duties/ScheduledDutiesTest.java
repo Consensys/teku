@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,13 +18,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -40,61 +40,45 @@ class ScheduledDutiesTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
-  private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
+
+  @SuppressWarnings("unchecked")
+  private final Function<ProductionDuty, String> productionDutyAdder = mock(Function.class);
+
+  @SuppressWarnings("unchecked")
+  private final Consumer<AggregationDuty> aggregateDutyAdder = mock(Consumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final DutyFactory<ProductionDuty, AggregationDuty> dutyFactory = mock(DutyFactory.class);
+
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final ScheduledDuties duties =
-      new ScheduledDuties(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+  private final ScheduledDuties<ProductionDuty, AggregationDuty> duties =
+      new ScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
-  public void shouldDiscardMissedBlockProductionDuties() {
-    final BlockProductionDuty duty0 = mockDuty(BlockProductionDuty.class);
-    final BlockProductionDuty duty1 = mockDuty(BlockProductionDuty.class);
-    final BlockProductionDuty duty2 = mockDuty(BlockProductionDuty.class);
-    when(dutyFactory.createBlockProductionDuty(ZERO, validator)).thenReturn(duty0);
-    when(dutyFactory.createBlockProductionDuty(ONE, validator)).thenReturn(duty1);
-    when(dutyFactory.createBlockProductionDuty(TWO, validator)).thenReturn(duty2);
-    duties.scheduleBlockProduction(ZERO, validator);
-    duties.scheduleBlockProduction(ONE, validator);
-    duties.scheduleBlockProduction(TWO, validator);
+  public void shouldDiscardMissedProductionDuties() {
+    final ProductionDuty duty0 = mockDuty(ProductionDuty.class);
+    final ProductionDuty duty1 = mockDuty(ProductionDuty.class);
+    final ProductionDuty duty2 = mockDuty(ProductionDuty.class);
+    when(dutyFactory.createProductionDuty(ZERO, validator)).thenReturn(duty0);
+    when(dutyFactory.createProductionDuty(ONE, validator)).thenReturn(duty1);
+    when(dutyFactory.createProductionDuty(TWO, validator)).thenReturn(duty2);
 
-    duties.produceBlock(ONE);
+    duties.scheduleProduction(ZERO, validator, productionDutyAdder);
+    duties.scheduleProduction(ONE, validator, productionDutyAdder);
+    duties.scheduleProduction(TWO, validator, productionDutyAdder);
+
+    duties.performProductionDuty(ONE);
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.produceBlock(ZERO);
+    duties.performProductionDuty(ZERO);
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.produceBlock(TWO);
+    duties.performProductionDuty(TWO);
     verify(duty2).performDuty();
-    validateMetrics("block", 2, 0);
-  }
-
-  @Test
-  public void shouldDiscardMissedAttestationProductionDuties() {
-    final AttestationProductionDuty duty0 = mockDuty(AttestationProductionDuty.class);
-    final AttestationProductionDuty duty1 = mockDuty(AttestationProductionDuty.class);
-    final AttestationProductionDuty duty2 = mockDuty(AttestationProductionDuty.class);
-    when(dutyFactory.createAttestationProductionDuty(ZERO)).thenReturn(duty0);
-    when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
-    when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
-
-    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10, 5));
-
-    duties.produceAttestations(ONE);
-    verify(duty1).performDuty();
-
-    // Duty from slot zero was dropped
-    duties.produceAttestations(ZERO);
-    verify(duty0, never()).performDuty();
-
-    // But the duty for slot 2 is still performed as scheduled
-    duties.produceAttestations(TWO);
-    verify(duty2).performDuty();
-    validateMetrics("attestation", 2, 0);
+    validateMetrics(duty0.getProducedType(), 2, 0);
   }
 
   @Test
@@ -102,40 +86,31 @@ class ScheduledDutiesTest {
     final AggregationDuty duty0 = mockDuty(AggregationDuty.class);
     final AggregationDuty duty1 = mockDuty(AggregationDuty.class);
     final AggregationDuty duty2 = mockDuty(AggregationDuty.class);
-    when(dutyFactory.createAggregationDuty(ZERO)).thenReturn(duty0);
-    when(dutyFactory.createAggregationDuty(ONE)).thenReturn(duty1);
-    when(dutyFactory.createAggregationDuty(TWO)).thenReturn(duty2);
+    when(dutyFactory.createAggregationDuty(ZERO, validator)).thenReturn(duty0);
+    when(dutyFactory.createAggregationDuty(ONE, validator)).thenReturn(duty1);
+    when(dutyFactory.createAggregationDuty(TWO, validator)).thenReturn(duty2);
 
-    duties.scheduleAggregationDuties(
-        ZERO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
-    duties.scheduleAggregationDuties(
-        ONE, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
-    duties.scheduleAggregationDuties(
-        TWO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+    duties.scheduleAggregation(ZERO, validator, aggregateDutyAdder);
+    duties.scheduleAggregation(ONE, validator, aggregateDutyAdder);
+    duties.scheduleAggregation(TWO, validator, aggregateDutyAdder);
 
-    duties.performAggregation(ONE);
+    duties.performAggregationDuty(ONE);
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.performAggregation(ZERO);
+    duties.performAggregationDuty(ZERO);
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.performAggregation(TWO);
+    duties.performAggregationDuty(TWO);
     verify(duty2).performDuty();
 
-    validateMetrics("aggregate", 2, 0);
+    validateMetrics(duty0.getProducedType(), 2, 0);
   }
 
   private <T extends Duty> T mockDuty(final Class<T> dutyType) {
     final T mockDuty = mock(dutyType);
-    if (dutyType.equals(BlockProductionDuty.class)) {
-      when(mockDuty.getProducedType()).thenReturn("block");
-    } else if (dutyType.equals(AttestationProductionDuty.class)) {
-      when(mockDuty.getProducedType()).thenReturn("attestation");
-    } else if (dutyType.equals(AggregationDuty.class)) {
-      when(mockDuty.getProducedType()).thenReturn("aggregate");
-    }
+    when(mockDuty.getProducedType()).thenReturn(dutyType.getSimpleName());
     when(mockDuty.performDuty())
         .thenReturn(
             SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
@@ -148,4 +123,8 @@ class ScheduledDutiesTest {
     assertThat(labelledCounter.getValue(duty, "success")).isEqualTo(successCount);
     assertThat(labelledCounter.getValue(duty, "failed")).isEqualTo(failCount);
   }
+
+  private interface ProductionDuty extends Duty {}
+
+  private interface AggregationDuty extends Duty {}
 }

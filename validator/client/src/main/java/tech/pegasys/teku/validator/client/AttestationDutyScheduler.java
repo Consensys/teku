@@ -24,16 +24,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
+
   private UInt64 lastAttestationCreationSlot;
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader epochDutiesScheduler,
+      final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super(dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -62,7 +63,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
     }
 
     lastAttestationCreationSlot = slot;
-    notifyEpochDuties(EpochDuties::onAttestationCreationDue, slot);
+    notifyEpochDuties(EpochDuties::onProductionDue, slot);
   }
 
   @Override
@@ -75,7 +76,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyEpochDuties(EpochDuties::onAttestationAggregationDue, slot);
+    notifyEpochDuties(EpochDuties::onAggregationDue, slot);
   }
 
   @Override
