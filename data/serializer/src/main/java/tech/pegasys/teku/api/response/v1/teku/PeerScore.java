@@ -36,7 +36,7 @@ public class PeerScore {
       type = "string",
       format = "number",
       description = "Gossip score for the associated peer.",
-      example = "1.0")
+      example = "1.2")
   public final Double gossipScore;
 
   @JsonCreator
