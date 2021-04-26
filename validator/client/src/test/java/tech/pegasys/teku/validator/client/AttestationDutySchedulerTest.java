@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -53,7 +54,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
 
-  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final AttestationDutyFactory attestationDutyFactory = mock(AttestationDutyFactory.class);
+
+  @SuppressWarnings("unchecked")
+  private final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
+      mock(ScheduledDuties.class);
+
   private final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
@@ -357,14 +363,14 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   public void shouldNotProcessAggregationIfEpochIsUnknown() {
     createDutySchedulerWithMockDuties();
     dutyScheduler.onAttestationAggregationDue(ONE);
-    verify(scheduledDuties, never()).performAggregation(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
   }
 
   @Test
   public void shouldNotProcessAttestationIfEpochIsUnknown() {
     createDutySchedulerWithMockDuties();
     dutyScheduler.onAttestationCreationDue(ONE);
-    verify(scheduledDuties, never()).produceAttestations(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
   }
 
   @Test
@@ -374,7 +380,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
-    verify(scheduledDuties, never()).performAggregation(slot);
+    verify(scheduledDuties, never()).performAggregationDuty(slot);
   }
 
   @Test
@@ -384,7 +390,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
-    verify(scheduledDuties, never()).produceAttestations(slot);
+    verify(scheduledDuties, never()).performProductionDuty(slot);
   }
 
   @Test
@@ -395,7 +401,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationAggregationDue(slot);
-    verify(scheduledDuties).performAggregation(slot);
+    verify(scheduledDuties).performAggregationDuty(slot);
   }
 
   @Test
@@ -406,7 +412,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
     dutyScheduler.onAttestationCreationDue(slot);
-    verify(scheduledDuties).produceAttestations(slot);
+    verify(scheduledDuties).performProductionDuty(slot);
   }
 
   @Test
@@ -425,13 +431,13 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onAttestationCreationDue(ZERO);
     dutyScheduler.onAttestationAggregationDue(ZERO);
     // Duties haven't been loaded yet.
-    verify(scheduledDuties, never()).produceAttestations(ZERO);
-    verify(scheduledDuties, never()).performAggregation(ZERO);
+    verify(scheduledDuties, never()).performProductionDuty(ZERO);
+    verify(scheduledDuties, never()).performAggregationDuty(ZERO);
 
     epoch0Duties.complete(
         Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList())));
-    verify(scheduledDuties).produceAttestations(ZERO);
-    verify(scheduledDuties).performAggregation(ZERO);
+    verify(scheduledDuties).performProductionDuty(ZERO);
+    verify(scheduledDuties).performAggregationDuty(ZERO);
   }
 
   @Test
@@ -450,7 +456,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createAttestationProductionDuty(attestationProductionSlot))
+    when(attestationDutyFactory.createProductionDuty(attestationProductionSlot, validator1))
         .thenReturn(attestationDuty);
 
     // Load duties
@@ -508,7 +514,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
+    when(attestationDutyFactory.createProductionDuty(attestationSlot, validator1))
+        .thenReturn(attestationDuty);
 
     // Load duties
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
@@ -575,7 +582,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
+    when(attestationDutyFactory.createProductionDuty(attestationSlot, validator1))
+        .thenReturn(attestationDuty);
 
     // Load duties
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
@@ -642,7 +650,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
+    when(attestationDutyFactory.createProductionDuty(attestationSlot, validator1))
+        .thenReturn(attestationDuty);
 
     // Load duties
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
@@ -720,8 +729,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture = new SafeFuture<>();
     final AggregationDuty aggregationDuty = mock(AggregationDuty.class);
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
-    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
-    when(dutyFactory.createAggregationDuty(attestationSlot)).thenReturn(aggregationDuty);
+    when(attestationDutyFactory.createProductionDuty(attestationSlot, validator1))
+        .thenReturn(attestationDuty);
+    when(attestationDutyFactory.createAggregationDuty(attestationSlot, validator1))
+        .thenReturn(aggregationDuty);
     when(aggregationDuty.performDuty()).thenReturn(new SafeFuture<>());
     when(attestationDuty.addValidator(
             validator1,
@@ -736,7 +747,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onSlot(epochStartSlot);
 
     // Only validator1 should have had an aggregation duty created for it
-    verify(dutyFactory).createAggregationDuty(attestationSlot);
+    verify(attestationDutyFactory).createAggregationDuty(attestationSlot, validator1);
     // And should have added validator1 to each duty
     verify(aggregationDuty)
         .addValidator(
@@ -802,7 +813,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         new AttestationDutyLoader(
             validatorApiChannel,
             forkProvider,
-            dependentRoot -> new ScheduledDuties(dutyFactory, dependentRoot, metricsSystem),
+            dependentRoot ->
+                new ScheduledDuties<>(attestationDutyFactory, dependentRoot, metricsSystem),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,

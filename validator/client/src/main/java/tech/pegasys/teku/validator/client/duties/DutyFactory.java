@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.duties;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.Validator;
 
-public interface DutyLoader {
-  SafeFuture<Optional<ScheduledDuties<?, ?>>> loadDutiesForEpoch(final UInt64 epoch);
+public interface DutyFactory<P extends Duty, A extends Duty> {
+
+  P createProductionDuty(UInt64 slot, Validator validator);
+
+  A createAggregationDuty(UInt64 slot, Validator validator);
 }

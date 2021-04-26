@@ -29,10 +29,10 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader epochDutiesScheduler,
+      final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(epochDutiesScheduler, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super(dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -51,7 +51,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       return;
     }
 
-    notifyEpochDuties(EpochDuties::onBlockProductionDue, slot);
+    notifyEpochDuties(EpochDuties::onProductionDue, slot);
   }
 
   @Override

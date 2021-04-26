@@ -35,13 +35,17 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class EpochDutiesTest {
 
-  private static final UInt64 EPOCH = UInt64.valueOf(10);
-  private final SafeFuture<Optional<ScheduledDuties>> scheduledDutiesFuture = new SafeFuture<>();
-  private final DutyLoader dutyLoader = mock(DutyLoader.class);
-  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
-  private final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
+  protected static final UInt64 EPOCH = UInt64.valueOf(10);
+  protected final SafeFuture<Optional<ScheduledDuties<?, ?>>> scheduledDutiesFuture =
+      new SafeFuture<>();
 
-  private EpochDuties duties;
+  protected final DutyLoader dutyLoader = mock(DutyLoader.class);
+  protected final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
+
+  protected final Optional<ScheduledDuties<?, ?>> scheduledDutiesOptional =
+      Optional.of(scheduledDuties);
+
+  protected EpochDuties duties;
 
   @BeforeEach
   void setUp() {
@@ -51,135 +55,59 @@ class EpochDutiesTest {
   }
 
   @Test
-  void cancel_shouldCancelFuture() {
-    duties.cancel();
-    assertThat(scheduledDutiesFuture).isCancelled();
-  }
-
-  @Test
-  void onBlockProductionDue_shouldActImmediatelyIfDutiesLoaded() {
+  void onProductionDue_shouldActImmediatelyIfDutiesLoaded() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    duties.onBlockProductionDue(ONE);
+    duties.onProductionDue(ONE);
 
-    verify(scheduledDuties).produceBlock(ONE);
+    verify(scheduledDuties).performProductionDuty(ONE);
   }
 
   @Test
-  void onBlockProductionDue_shouldDeferUntilDutiesLoaded() {
-    duties.onBlockProductionDue(ONE);
+  void onProductionDue_shouldDeferUntilDutiesLoaded() {
+    duties.onProductionDue(ONE);
     verifyNoInteractions(scheduledDuties);
 
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    verify(scheduledDuties).produceBlock(ONE);
+    verify(scheduledDuties).performProductionDuty(ONE);
   }
 
   @Test
-  void onAttestationProductionDue_shouldActImmediatelyIfDutiesLoaded() {
+  void onAggregationDue_shouldActImmediatelyIfDutiesLoaded() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    duties.onAttestationCreationDue(ONE);
+    duties.onAggregationDue(ONE);
 
-    verify(scheduledDuties).produceAttestations(ONE);
+    verify(scheduledDuties).performAggregationDuty(ONE);
   }
 
   @Test
-  void onAttestationProductionDue_shouldDeferUntilDutiesLoaded() {
-    duties.onAttestationCreationDue(ONE);
+  void onAggregationDue_shouldDeferUntilDutiesLoaded() {
+    duties.onAggregationDue(ONE);
     verifyNoInteractions(scheduledDuties);
 
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    verify(scheduledDuties).produceAttestations(ONE);
-  }
-
-  @Test
-  void onAttestationAggregationDue_shouldActImmediatelyIfDutiesLoaded() {
-    scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    duties.onAttestationAggregationDue(ONE);
-
-    verify(scheduledDuties).performAggregation(ONE);
-  }
-
-  @Test
-  void onAttestationAggregationDue_shouldDeferUntilDutiesLoaded() {
-    duties.onAttestationAggregationDue(ONE);
-    verifyNoInteractions(scheduledDuties);
-
-    scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    verify(scheduledDuties).performAggregation(ONE);
+    verify(scheduledDuties).performAggregationDuty(ONE);
   }
 
   @Test
   void shouldPerformDelayedDutiesInOrder() {
-    duties.onBlockProductionDue(ZERO);
-    duties.onAttestationCreationDue(ZERO);
-    duties.onAttestationAggregationDue(ZERO);
-    duties.onBlockProductionDue(ONE);
-    duties.onAttestationCreationDue(ONE);
-    duties.onAttestationAggregationDue(ONE);
+    duties.onProductionDue(ZERO);
+    duties.onAggregationDue(ZERO);
+    duties.onProductionDue(ONE);
+    duties.onAggregationDue(ONE);
 
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
     final InOrder inOrder = inOrder(scheduledDuties);
-    inOrder.verify(scheduledDuties).produceBlock(ZERO);
-    inOrder.verify(scheduledDuties).produceAttestations(ZERO);
-    inOrder.verify(scheduledDuties).performAggregation(ZERO);
-    inOrder.verify(scheduledDuties).produceBlock(ONE);
-    inOrder.verify(scheduledDuties).produceAttestations(ONE);
-    inOrder.verify(scheduledDuties).performAggregation(ONE);
+    inOrder.verify(scheduledDuties).performProductionDuty(ZERO);
+    inOrder.verify(scheduledDuties).performAggregationDuty(ZERO);
+    inOrder.verify(scheduledDuties).performProductionDuty(ONE);
+    inOrder.verify(scheduledDuties).performAggregationDuty(ONE);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
-  void shouldRecalculateDuties() {
-    scheduledDutiesFuture.complete(scheduledDutiesOptional);
-
-    final ScheduledDuties newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties>> recalculatedDuties = new SafeFuture<>();
-    when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
-
-    duties.recalculate();
-    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
-
-    // Should use new duties to perform actions
-    duties.onBlockProductionDue(ZERO);
-    verifyNoInteractions(scheduledDuties);
-
-    recalculatedDuties.complete(Optional.of(newDuties));
-    verify(newDuties).produceBlock(ZERO);
-  }
-
-  @Test
-  void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
-    final ScheduledDuties newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties>> recalculatedDuties = new SafeFuture<>();
-    when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
-
-    duties.recalculate();
+  void cancel_shouldCancelFuture() {
+    duties.cancel();
     assertThat(scheduledDutiesFuture).isCancelled();
-    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
-
-    duties.onBlockProductionDue(ZERO);
-
-    // Old request completes and should be ignored.
-    scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    verifyNoInteractions(scheduledDuties);
-
-    // Duties are performed when recalculation completes
-    recalculatedDuties.complete(Optional.of(newDuties));
-    verify(newDuties).produceBlock(ZERO);
-  }
-
-  @Test
-  void shouldNotPerformActionsIfLoadedDutiesAreEmpty() {
-    when(dutyLoader.loadDutiesForEpoch(EPOCH))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    duties.recalculate();
-
-    duties.onBlockProductionDue(ONE);
-    duties.onAttestationCreationDue(ONE);
-    duties.onAttestationAggregationDue(ONE);
-
-    // Should have discarded this one even though no replacement was available.
-    verifyNoInteractions(scheduledDuties);
   }
 
   @Test
@@ -220,5 +148,57 @@ class EpochDutiesTest {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
 
     verify(dutyLoader, times(1)).loadDutiesForEpoch(EPOCH);
+  }
+
+  @Test
+  void shouldRecalculateDuties() {
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
+
+    duties.recalculate();
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
+
+    // Should use new duties to perform actions
+    duties.onProductionDue(ZERO);
+    verifyNoInteractions(scheduledDuties);
+
+    recalculatedDuties.complete(Optional.of(newDuties));
+    verify(newDuties).performProductionDuty(ZERO);
+  }
+
+  @Test
+  void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
+    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
+
+    duties.recalculate();
+    assertThat(scheduledDutiesFuture).isCancelled();
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
+
+    duties.onProductionDue(ZERO);
+
+    // Old request completes and should be ignored.
+    scheduledDutiesFuture.complete(scheduledDutiesOptional);
+    verifyNoInteractions(scheduledDuties);
+
+    // Duties are performed when recalculation completes
+    recalculatedDuties.complete(Optional.of(newDuties));
+    verify(newDuties).performProductionDuty(ZERO);
+  }
+
+  @Test
+  void shouldNotPerformActionsIfLoadedDutiesAreEmpty() {
+    when(dutyLoader.loadDutiesForEpoch(EPOCH))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    duties.recalculate();
+
+    duties.onProductionDue(ONE);
+
+    // Should have discarded this one even though no replacement was available.
+    verifyNoInteractions(scheduledDuties);
   }
 }
