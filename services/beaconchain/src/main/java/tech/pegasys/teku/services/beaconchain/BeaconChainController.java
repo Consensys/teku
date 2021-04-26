@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -750,9 +751,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                           maybeABlock
                               .flatMap(block -> block.getBody().toVersionMerge())
                               .ifPresent(
-                                  body ->
+                                  body -> {
+                                    // Check if there is a payload
+                                    if (!body.getExecution_payload()
+                                        .equals(new ExecutionPayload())) {
                                       executionEngineService.setHead(
-                                          body.getExecution_payload().getBlock_hash())))
+                                          body.getExecution_payload().getBlock_hash());
+                                    }
+                                  }))
                   .reportExceptions());
 
       // Propagate finalized block updates
