@@ -114,12 +114,12 @@ public class BlockProposalTestUtil {
 
   private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
     final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
-    UInt64 epochs_per_period = UInt64.valueOf(specConfig.getEpochsPerEth1VotingPeriod());
-    UInt64 voting_period = current_epoch.dividedBy(epochs_per_period);
+    final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
+    UInt64 votingPeriod = current_epoch.dividedBy(epochsPerPeriod);
     return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        Hash.sha2_256(SSZ.encodeUInt64(epochsPerPeriod)),
         state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
