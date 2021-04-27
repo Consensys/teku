@@ -176,8 +176,9 @@ public class SyncCommitteeUtil {
   public Set<Integer> getCommitteeIndices(
       final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
-        getSyncSubcommittees(state, epoch).get(validatorIndex);
-    return assignments != null ? assignments.getCommitteeIndices() : emptySet();
+        getSyncSubcommittees(state, epoch)
+            .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
+    return assignments.getCommitteeIndices();
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(

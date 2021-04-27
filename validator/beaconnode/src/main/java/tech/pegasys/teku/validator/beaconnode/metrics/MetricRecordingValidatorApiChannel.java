@@ -204,9 +204,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final List<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return countRequest(
-        delegate.getSyncCommitteeDuties(epoch, validatorIndexes),
+        delegate.getSyncCommitteeDuties(epoch, validatorIndices),
         syncCommitteeDutiesRequestCounter);
   }
 

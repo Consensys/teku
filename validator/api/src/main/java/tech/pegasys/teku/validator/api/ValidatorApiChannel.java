@@ -48,10 +48,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
       final Collection<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes);
+      final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final List<Integer> validatorIndexes);
+      final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 

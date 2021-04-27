@@ -23,6 +23,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
@@ -138,11 +139,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
         GET_ATTESTATION_DUTIES,
         Map.of("epoch", epoch.toString()),
-        validatorIndexes.toArray(),
+        validatorIndices.toArray(),
         createHandler(PostAttesterDutiesResponse.class));
   }
 
@@ -251,8 +252,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
-      final UInt64 epoch, final List<Integer> validatorIndexes) {
-    return Optional.empty();
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return post(
+        GET_SYNC_COMMITTEE_DUTIES,
+        Map.of("epoch", epoch.toString()),
+        validatorIndices.toArray(),
+        createHandler(PostSyncDutiesResponse.class));
   }
 
   private ResponseHandler<Void> createHandler() {

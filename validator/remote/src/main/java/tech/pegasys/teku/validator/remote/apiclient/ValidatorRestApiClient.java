@@ -71,5 +71,5 @@ public interface ValidatorRestApiClient {
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
-      UInt64 epoch, List<Integer> validatorIndexes);
+      UInt64 epoch, Collection<Integer> validatorIndices);
 }

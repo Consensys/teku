@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -49,29 +48,24 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class PostSyncDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/validator/duties/sync/:epoch";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-  private final ChainDataProvider chainDataProvider;
 
   public PostSyncDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
-    this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
   PostSyncDuties(
-      final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
       final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -107,13 +101,6 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final List<Integer> indexes =
           Arrays.asList(jsonProvider.jsonToObject(ctx.body(), Integer[].class));
-
-      if (chainDataProvider.getMilestoneAtEpoch(epoch).equals(SpecMilestone.PHASE0)) {
-        ctx.status(SC_BAD_REQUEST);
-        final String message = "Sync committee duties are not present in phase 0 epoch " + epoch;
-        ctx.result(BadRequest.badRequest(jsonProvider, message));
-        return;
-      }
 
       SafeFuture<Optional<PostSyncDutiesResponse>> future =
           validatorDataProvider.getSyncDuties(epoch, indexes);

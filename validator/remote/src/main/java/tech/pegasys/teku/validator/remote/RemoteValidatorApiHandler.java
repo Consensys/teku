@@ -171,11 +171,11 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
-      final UInt64 epoch, final List<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return sendRequest(
         () ->
             apiClient
-                .getSyncCommitteeDuties(epoch, validatorIndexes)
+                .getSyncCommitteeDuties(epoch, validatorIndices)
                 .map(
                     response ->
                         new SyncCommitteeDuties(
