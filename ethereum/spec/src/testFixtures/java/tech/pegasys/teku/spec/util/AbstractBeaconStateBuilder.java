@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -42,7 +42,7 @@ abstract class AbstractBeaconStateBuilder<
   protected final DataStructureUtil dataStructureUtil;
   protected final int defaultValidatorCount;
   protected final int defaultItemsInSSZLists;
-  protected final Spec spec;
+  protected final SpecVersion spec;
 
   private UInt64 genesisTime;
   private Bytes32 genesisValidatorsRoot;
@@ -65,7 +65,7 @@ abstract class AbstractBeaconStateBuilder<
   private Checkpoint finalizedCheckpoint;
 
   protected AbstractBeaconStateBuilder(
-      final Spec spec,
+      final SpecVersion spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {

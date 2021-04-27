@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
@@ -35,7 +37,7 @@ public class BeaconStateBuilderAltair
   private SyncCommittee nextSyncCommittee;
 
   private BeaconStateBuilderAltair(
-      final Spec spec,
+      final SpecVersion spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
@@ -44,7 +46,7 @@ public class BeaconStateBuilderAltair
 
   @Override
   protected BeaconStateAltair getEmptyState() {
-    return BeaconStateSchemaAltair.create(spec.getGenesisSpecConfig()).createEmpty();
+    return BeaconStateSchemaAltair.create(spec.getConfig()).createEmpty();
   }
 
   @Override
@@ -62,12 +64,14 @@ public class BeaconStateBuilderAltair
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderAltair(
-        spec, dataStructureUtil, defaultValidatorCount, defaultItemsInSSZLists);
+        spec.forMilestone(SpecMilestone.ALTAIR),
+        dataStructureUtil,
+        defaultValidatorCount,
+        defaultItemsInSSZLists);
   }
 
   private BeaconStateSchemaAltair getBeaconStateSchema() {
-    return (BeaconStateSchemaAltair)
-        spec.getGenesisSpec().getSchemaDefinitions().getBeaconStateSchema();
+    return (BeaconStateSchemaAltair) spec.getSchemaDefinitions().getBeaconStateSchema();
   }
 
   @Override
