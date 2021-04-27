@@ -43,6 +43,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -72,6 +75,8 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
@@ -186,6 +191,30 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             optionalState ->
                 optionalState.map(
                     state -> getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+      final UInt64 epoch, final List<Integer> validatorIndexes) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    final SpecVersion specVersion = spec.atEpoch(epoch);
+    final UInt64 slot =
+        specVersion.getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+    if (specVersion.getMilestone().equals(SpecMilestone.PHASE0)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final SyncCommitteeUtil syncCommitteeUtil = specVersion.getSyncCommitteeUtil().orElseThrow();
+    LOG.trace("Retrieving sync committee duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            optionalState ->
+                optionalState.map(
+                    state ->
+                        getSyncCommitteeDutiesFromIndexesAndState(
+                            state, syncCommitteeUtil, epoch, validatorIndexes)));
   }
 
   @Override
@@ -499,6 +528,37 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               committeeAssignment.getCommittee().indexOf(validatorIndex),
               committeeAssignment.getSlot());
         });
+  }
+
+  private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(
+      final BeaconState state,
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final UInt64 epoch,
+      final List<Integer> validatorIndices) {
+    return new SyncCommitteeDuties(
+        validatorIndices.stream()
+            .map(
+                validatorIndex ->
+                    getSyncCommitteeDuty(state, syncCommitteeUtil, epoch, validatorIndex))
+            .flatMap(Optional::stream)
+            .collect(toList()));
+  }
+
+  private Optional<SyncCommitteeDuty> getSyncCommitteeDuty(
+      final BeaconState state,
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final UInt64 epoch,
+      final Integer validatorIndex) {
+
+    final Set<Integer> duties =
+        syncCommitteeUtil.getCommitteeIndices(state, epoch, UInt64.valueOf(validatorIndex));
+
+    if (duties.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SyncCommitteeDuty(
+            state.getValidators().get(validatorIndex).getPublicKey(), validatorIndex, duties));
   }
 
   private static <A, B, R> Optional<R> combine(

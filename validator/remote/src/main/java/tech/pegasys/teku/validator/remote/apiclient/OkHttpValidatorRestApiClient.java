@@ -65,6 +65,7 @@ import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -246,6 +247,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
+  }
+
+  @Override
+  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
+      final UInt64 epoch, final List<Integer> validatorIndexes) {
+    return Optional.empty();
   }
 
   private ResponseHandler<Void> createHandler() {

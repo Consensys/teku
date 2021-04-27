@@ -54,6 +54,8 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -164,6 +166,28 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                             response.dependentRoot,
                             response.data.stream()
                                 .map(this::mapToApiAttesterDuties)
+                                .collect(Collectors.toList()))));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+      final UInt64 epoch, final List<Integer> validatorIndexes) {
+    return sendRequest(
+        () ->
+            apiClient
+                .getSyncCommitteeDuties(epoch, validatorIndexes)
+                .map(
+                    response ->
+                        new SyncCommitteeDuties(
+                            response.data.stream()
+                                .map(
+                                    i ->
+                                        new SyncCommitteeDuty(
+                                            i.pubkey.asBLSPublicKey(),
+                                            i.validatorIndex.intValue(),
+                                            i.committeeIndices.stream()
+                                                .map(UInt64::intValue)
+                                                .collect(Collectors.toSet())))
                                 .collect(Collectors.toList()))));
   }
 

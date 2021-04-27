@@ -123,7 +123,8 @@ public class SyncCommitteeUtil {
                 // threads.
                 subcommitteeAssignments
                     .computeIfAbsent(validatorIndex, __ -> SyncSubcommitteeAssignments.builder())
-                    .addAssignment(subcommitteeIndex, subcommitteeParticipationIndex);
+                    .addAssignment(subcommitteeIndex, subcommitteeParticipationIndex)
+                    .addCommitteeIndex(index);
               }
               return subcommitteeAssignments.entrySet().stream()
                   .collect(toUnmodifiableMap(Map.Entry::getKey, entry -> entry.getValue().build()));
@@ -170,6 +171,13 @@ public class SyncCommitteeUtil {
     final SyncSubcommitteeAssignments assignments =
         getSyncSubcommittees(state, epoch).get(validatorIndex);
     return assignments != null ? assignments.getAssignedSubcommittees() : emptySet();
+  }
+
+  public Set<Integer> getCommitteeIndices(
+      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
+    final SyncSubcommitteeAssignments assignments =
+        getSyncSubcommittees(state, epoch).get(validatorIndex);
+    return assignments != null ? assignments.getCommitteeIndices() : emptySet();
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
