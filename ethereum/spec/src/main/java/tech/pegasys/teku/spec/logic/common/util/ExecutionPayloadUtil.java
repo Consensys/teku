@@ -15,7 +15,9 @@ public class ExecutionPayloadUtil {
     this.executionEngineService = executionEngineService;
   }
 
-  public ExecutionPayloadUtil() {}
+  public ExecutionPayloadUtil() {
+    this(ExecutionEngineService.createStub());
+  }
 
   public boolean verifyExecutionStateTransition(ExecutionPayload executionPayload) {
     checkNotNull(executionEngineService);
