@@ -26,19 +26,24 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final String dutyType;
   private final Spec spec;
   private final boolean useDependentRoots;
   private final DutyLoader epochDutiesScheduler;
   private final int lookAheadEpochs;
 
+  private UInt64 lastProductionSlot;
+
   protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
+      final String dutyType,
       final DutyLoader epochDutiesScheduler,
       final int lookAheadEpochs,
       final boolean useDependentRoots,
       final Spec spec) {
+    this.dutyType = dutyType;
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
     this.useDependentRoots = useDependentRoots;
@@ -154,6 +159,41 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   @Override
   public void onAttestationCreationDue(final UInt64 slot) {}
 
+  protected void onProductionDue(final UInt64 slot) {
+    // Check slot being null for the edge case of genesis slot (i.e. slot 0)
+    if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) <= 0) {
+      LOG.debug(
+          "Not performing {} duties for slot {} because last production slot {} is beyond that.",
+          dutyType,
+          slot,
+          lastProductionSlot);
+      return;
+    }
+
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info(
+          "Not performing {} duties for slot {} because it is too far ahead of the current slot {}",
+          dutyType,
+          slot,
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
+      return;
+    }
+
+    lastProductionSlot = slot;
+    notifyEpochDuties(EpochDuties::onProductionDue, slot);
+  }
+
   @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info(
+          "Not performing {} aggregation duties for slot {} because it is too far ahead of the current slot {}",
+          dutyType,
+          slot,
+          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
+      return;
+    }
+
+    notifyEpochDuties(EpochDuties::onAggregationDue, slot);
+  }
 }
