@@ -53,9 +53,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
-import tech.pegasys.teku.spec.logic.StateTransition.StateUpgradeProvider;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -81,19 +79,7 @@ public class Spec {
     this.forkSchedule = forkSchedule;
 
     // Setup state transition
-    final Map<UInt64, StateUpgrade<?>> slotToStateUpgrade = new HashMap<>();
-    forkSchedule
-        .streamMilestoneBoundarySlots()
-        .forEach(
-            milestoneAndSlot -> {
-              final SpecMilestone milestone = milestoneAndSlot.getLeft();
-              final UInt64 slot = milestoneAndSlot.getRight();
-              final SpecVersion specVersion = specVersions.get(milestone);
-              StateUpgrade.create(specVersion)
-                  .ifPresent(upgrade -> slotToStateUpgrade.put(slot, upgrade));
-            });
-    this.stateTransition =
-        StateTransition.create(this::atSlot, StateUpgradeProvider.fromMap(slotToStateUpgrade));
+    this.stateTransition = StateTransition.create(this::atSlot);
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {

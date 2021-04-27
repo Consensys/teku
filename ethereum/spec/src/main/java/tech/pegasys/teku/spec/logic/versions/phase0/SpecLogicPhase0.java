@@ -63,7 +63,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         epochProcessor,
         blockProcessor,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        Optional.empty());
   }
 
   public static SpecLogicPhase0 create(

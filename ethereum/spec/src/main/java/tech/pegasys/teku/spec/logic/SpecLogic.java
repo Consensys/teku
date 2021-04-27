@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -30,6 +31,8 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public interface SpecLogic {
+  Optional<StateUpgrade<?>> getStateUpgrade();
+
   CommitteeUtil getCommitteeUtil();
 
   ValidatorsUtil getValidatorsUtil();

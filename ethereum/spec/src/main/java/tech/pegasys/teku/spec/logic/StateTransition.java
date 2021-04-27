@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Map;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -37,17 +34,13 @@ public class StateTransition {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecProvider specProvider;
-  private final StateUpgradeProvider stateUpgradeProvider;
 
-  public StateTransition(
-      final SpecProvider specProvider, final StateUpgradeProvider stateUpgradeProvider) {
+  public StateTransition(final SpecProvider specProvider) {
     this.specProvider = specProvider;
-    this.stateUpgradeProvider = stateUpgradeProvider;
   }
 
-  public static StateTransition create(
-      final SpecProvider specProvider, final StateUpgradeProvider stateUpgradeProvider) {
-    return new StateTransition(specProvider, stateUpgradeProvider);
+  public static StateTransition create(final SpecProvider specProvider) {
+    return new StateTransition(specProvider);
   }
 
   public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
@@ -112,21 +105,36 @@ public class StateTransition {
           preState.getSlot(),
           slot);
       BeaconState state = preState;
-      while (state.getSlot().compareTo(slot) < 0) {
-        final UInt64 currentSlot = state.getSlot();
-        final SpecVersion spec = specProvider.getSpec(currentSlot);
-        state = processSlot(spec, state);
-        // Process epoch on the start slot of the next epoch
-        if (state.getSlot().plus(UInt64.ONE).mod(spec.getSlotsPerEpoch()).equals(UInt64.ZERO)) {
-          state = spec.getEpochProcessor().processEpoch(state);
-        }
-        state = state.updated(s -> s.setSlot(s.getSlot().plus(UInt64.ONE)));
 
-        // Upgrade state if necessary
-        final Optional<StateUpgrade<?>> stateUpgrade =
-            stateUpgradeProvider.getStateUpgrade(state.getSlot());
-        if (stateUpgrade.isPresent()) {
-          state = stateUpgrade.get().upgrade(state);
+      SpecVersion currentSpec = specProvider.getSpec(state.getSlot());
+      while (state.getSlot().compareTo(slot) < 0) {
+        // Transition from current to new slot (advance by 1)
+        final UInt64 currentSlot = state.getSlot();
+        final UInt64 newSlot = currentSlot.plus(1);
+        final boolean isEpochTransition =
+            newSlot.mod(currentSpec.getSlotsPerEpoch()).equals(UInt64.ZERO);
+
+        state = processSlot(currentSpec, state);
+        // Process epoch on the start slot of the next epoch
+        if (isEpochTransition) {
+          state = currentSpec.getEpochProcessor().processEpoch(state);
+        }
+        state = state.updated(s -> s.setSlot(newSlot));
+
+        // Update spec, perform state upgrades on epoch boundaries
+        if (isEpochTransition) {
+          final SpecVersion newSpec = specProvider.getSpec(newSlot);
+          if (!newSpec.getMilestone().equals(currentSpec.getMilestone())) {
+            // We've just transition to a new milestone - upgrade the state if necessary
+            final BeaconState prevMilestoneState = state;
+            state =
+                newSpec
+                    .getStateUpgrade()
+                    .map(u -> (BeaconState) u.upgrade(prevMilestoneState))
+                    .orElse(prevMilestoneState);
+            // Update spec
+            currentSpec = newSpec;
+          }
         }
       }
       return state;
@@ -170,13 +178,5 @@ public class StateTransition {
 
   public interface SpecProvider {
     SpecVersion getSpec(final UInt64 slot);
-  }
-
-  public interface StateUpgradeProvider {
-    static StateUpgradeProvider fromMap(final Map<UInt64, StateUpgrade<?>> slotToUpgrade) {
-      return (slot) -> Optional.ofNullable(slotToUpgrade.get(slot));
-    }
-
-    Optional<StateUpgrade<?>> getStateUpgrade(final UInt64 slot);
   }
 }

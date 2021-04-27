@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.common;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -44,6 +46,8 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final BlockProcessor blockProcessor;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+  // State upgrade
+  protected final Optional<StateUpgrade<?>> stateUpgrade;
 
   protected AbstractSpecLogic(
       final Predicates predicates,
@@ -58,7 +62,8 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final Optional<StateUpgrade<?>> stateUpgrade) {
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -72,6 +77,12 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.blockProcessor = blockProcessor;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.stateUpgrade = stateUpgrade;
+  }
+
+  @Override
+  public Optional<StateUpgrade<?>> getStateUpgrade() {
+    return stateUpgrade;
   }
 
   @Override
