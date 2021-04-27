@@ -71,6 +71,14 @@ public class SpecVersion extends DelegatingSpecLogic {
     return config;
   }
 
+  public int getSlotsPerEpoch() {
+    return config.getSlotsPerEpoch();
+  }
+
+  public int getSlotsPerHistoricalRoot() {
+    return config.getSlotsPerHistoricalRoot();
+  }
+
   public SchemaDefinitions getSchemaDefinitions() {
     return schemaDefinitions;
   }
