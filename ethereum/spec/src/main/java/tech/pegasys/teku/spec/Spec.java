@@ -393,21 +393,9 @@ public class Spec {
         .initiate(preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
   }
 
-  public BeaconState processAndValidateBlock(
-      final SignedBeaconBlock signedBlock,
-      final IndexedAttestationCache indexedAttestationCache,
-      final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .processAndValidateBlock(
-            signedBlock, blockSlotState, validateStateRootAndSignatures, indexedAttestationCache);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    return atSlot(slot).getStateTransition().processSlots(preState, slot);
+    return atSlot(preState.getSlot()).getStateTransition().processSlots(preState, slot);
   }
 
   // Block Proposal

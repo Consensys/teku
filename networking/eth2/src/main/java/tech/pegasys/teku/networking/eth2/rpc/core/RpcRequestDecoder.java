@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
  *
  * @param <T> The type of request to expect
  */
-public class RpcRequestDecoder<T extends RpcRequest & SszData> {
+public final class RpcRequestDecoder<T extends RpcRequest & SszData> {
   private final RpcByteBufDecoder<T> decoder;
   private boolean complete;
 

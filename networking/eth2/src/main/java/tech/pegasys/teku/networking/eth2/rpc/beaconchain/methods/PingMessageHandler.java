@@ -30,6 +30,7 @@ public class PingMessageHandler extends PeerRequiredLocalMessageHandler<PingMess
 
   @Override
   public void onIncomingMessage(
+      final String protocolId,
       final Eth2Peer peer,
       final PingMessage message,
       final ResponseCallback<PingMessage> callback) {

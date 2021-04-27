@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-class BeaconBlockBodyPhase0
+public class BeaconBlockBodyPhase0
     extends Container8<
         BeaconBlockBodyPhase0,
         SszSignature,

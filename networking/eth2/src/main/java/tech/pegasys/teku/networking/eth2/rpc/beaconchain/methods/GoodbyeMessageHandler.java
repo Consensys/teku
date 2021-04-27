@@ -39,6 +39,7 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
 
   @Override
   public void onIncomingMessage(
+      final String protocolId,
       final Optional<Eth2Peer> peer,
       final GoodbyeMessage message,
       final ResponseCallback<GoodbyeMessage> callback) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds.getMethodId;
+
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -22,7 +24,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -35,7 +39,8 @@ public class SingleProtocolEth2RpcMethod<
 
   private final String protocolId;
   private final int protocolVersion;
-  private final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory;
+  private final RpcResponseEncoder<TResponse, ?> responseEncoder;
+  private final RpcContextCodec<?, TResponse> contextCodec;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
@@ -47,13 +52,14 @@ public class SingleProtocolEth2RpcMethod<
       final RpcEncoding encoding,
       final SszSchema<TRequest> requestType,
       final boolean expectResponseToRequest,
-      final ResponseDecoderFactory<TResponse> responseResponseDecoderFactory,
+      final RpcContextCodec<?, TResponse> contextCodec,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
     super(encoding, requestType, expectResponseToRequest);
     this.asyncRunner = asyncRunner;
-    this.responseResponseDecoderFactory = responseResponseDecoderFactory;
-    this.protocolId = protocolIdPrefix + "/" + protocolVersion + "/" + encoding.getName();
+    this.contextCodec = contextCodec;
+    this.responseEncoder = new RpcResponseEncoder<>(encoding, contextCodec);
+    this.protocolId = getMethodId(protocolIdPrefix, protocolVersion, encoding);
     this.protocolVersion = protocolVersion;
     this.localMessageHandler = localMessageHandler;
     this.peerLookup = peerLookup;
@@ -77,7 +83,7 @@ public class SingleProtocolEth2RpcMethod<
       final String protocolId) {
     return new Eth2IncomingRequestHandler<>(
         protocolId,
-        rpcEncoder,
+        responseEncoder,
         createRequestDecoder(),
         asyncRunner,
         peerLookup,
@@ -122,10 +128,6 @@ public class SingleProtocolEth2RpcMethod<
   }
 
   private RpcResponseDecoder<TResponse, ?> createResponseDecoder() {
-    return responseResponseDecoderFactory.create(encoding);
-  }
-
-  public interface ResponseDecoderFactory<T extends SszData> {
-    RpcResponseDecoder<T, ?> create(RpcEncoding encoding);
+    return RpcResponseDecoder.create(encoding, contextCodec);
   }
 }

@@ -44,7 +44,7 @@ class StateGenerationTaskTest {
 
   private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 0;
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private TrackingBlockProvider blockProvider;
 
   @BeforeEach

@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ProtoArrayStorageChannel storageChannel = mock(ProtoArrayStorageChannel.class);
 
   @BeforeEach
@@ -312,7 +311,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
     final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
-    final UInt64 block3Epoch = compute_epoch_at_slot(block3.getSlot());
+    final UInt64 block3Epoch = spec.computeEpochAtSlot(block3.getSlot());
 
     strategy.applyUpdate(
         emptyList(),
@@ -345,7 +344,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   private StorageSystem initStorageSystem() {
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
     return storageSystem;
   }

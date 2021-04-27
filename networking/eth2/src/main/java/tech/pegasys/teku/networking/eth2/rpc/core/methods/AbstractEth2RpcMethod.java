@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.methods;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.ssz.SszData;
@@ -27,7 +27,7 @@ public abstract class AbstractEth2RpcMethod<
   protected final RpcEncoding encoding;
   protected final SszSchema<TRequest> requestType;
   protected final boolean expectResponseToRequest;
-  protected final RpcEncoder rpcEncoder;
+  protected final RpcRequestEncoder requestEncoder;
 
   protected AbstractEth2RpcMethod(
       final RpcEncoding encoding,
@@ -36,12 +36,12 @@ public abstract class AbstractEth2RpcMethod<
     this.encoding = encoding;
     this.requestType = requestType;
     this.expectResponseToRequest = expectResponseToRequest;
-    this.rpcEncoder = new RpcEncoder(encoding);
+    this.requestEncoder = new RpcRequestEncoder(encoding);
   }
 
   @Override
   public Bytes encodeRequest(TRequest request) {
-    return rpcEncoder.encodeRequest(request);
+    return requestEncoder.encodeRequest(request);
   }
 
   @Override

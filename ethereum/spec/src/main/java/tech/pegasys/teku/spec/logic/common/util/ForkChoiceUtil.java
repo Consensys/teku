@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -44,19 +44,19 @@ public class ForkChoiceUtil {
   private final SpecConfig specConfig;
   private final BeaconStateUtil beaconStateUtil;
   private final AttestationUtil attestationUtil;
-  private final StateTransition stateTransition;
+  private final BlockProcessor blockProcessor;
   private final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
-      final StateTransition stateTransition,
+      final BlockProcessor blockProcessor,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
-    this.stateTransition = stateTransition;
+    this.blockProcessor = blockProcessor;
     this.miscHelpers = miscHelpers;
   }
 
@@ -322,7 +322,7 @@ public class ForkChoiceUtil {
     // Check the block is valid and compute the post-state
     try {
       state =
-          stateTransition.processAndValidateBlock(
+          blockProcessor.processAndValidateBlock(
               signedBlock, blockSlotState, true, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
