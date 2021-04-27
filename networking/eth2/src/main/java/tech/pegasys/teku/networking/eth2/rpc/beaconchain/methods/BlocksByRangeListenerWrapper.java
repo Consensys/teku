@@ -22,14 +22,14 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class BlocksByRangeListenerWrapper implements ResponseStreamListener<SignedBeaconBlock> {
+public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedBeaconBlock> {
 
   private final Peer peer;
-  private final ResponseStreamListener<SignedBeaconBlock> blockResponseListener;
+  private final RpcResponseListener<SignedBeaconBlock> blockResponseListener;
   private final UInt64 startSlot;
   private final UInt64 endSlot;
   private final UInt64 step;
@@ -39,7 +39,7 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
 
   public BlocksByRangeListenerWrapper(
       Peer peer,
-      ResponseStreamListener<SignedBeaconBlock> blockResponseListener,
+      RpcResponseListener<SignedBeaconBlock> blockResponseListener,
       UInt64 startSlot,
       UInt64 count,
       UInt64 step) {

@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts.RpcTimeoutException;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -56,16 +57,18 @@ public class Eth2OutgoingRequestHandler<
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Eth2RpcMethod<TRequest, TResponse> method;
   private final int maximumResponseChunks;
-  private final ResponseStreamImpl<TResponse> responseStream = new ResponseStreamImpl<>();
+  private final Eth2RpcResponseHandler<TResponse, ?> responseHandler;
+  private final ResponseStream<TResponse> responseStream;
 
   private final AsyncRunner timeoutRunner;
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicReference<State> state = new AtomicReference<>(INITIAL);
 
+  private final String protocolId;
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
+  private final boolean shouldReceiveResponse;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
 
   private volatile RpcStream rpcStream;
@@ -73,20 +76,25 @@ public class Eth2OutgoingRequestHandler<
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
       final AsyncRunner timeoutRunner,
-      final Eth2RpcMethod<TRequest, TResponse> method,
-      final int maximumResponseChunks) {
+      final String protocolId,
+      final RpcResponseDecoder<TResponse, ?> responseDecoder,
+      final boolean shouldReceiveResponse,
+      final TRequest request,
+      Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     this.timeoutRunner = timeoutRunner;
-    this.method = method;
-    this.maximumResponseChunks = maximumResponseChunks;
+    this.maximumResponseChunks = request.getMaximumRequestChunks();
 
+    this.responseHandler = responseHandler;
+    responseStream = new ResponseStream<>(responseHandler);
     responseProcessor =
         new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onAsyncProcessorError);
-    responseDecoder = method.createResponseDecoder();
+    this.responseDecoder = responseDecoder;
+    this.shouldReceiveResponse = shouldReceiveResponse;
+    this.protocolId = protocolId;
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
-    if (!transferToState(
-        method.shouldReceiveResponse() ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
+    if (!transferToState(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
       abortRequest(stream, new IllegalStateException("Unexpected state: " + state));
       return;
     }
@@ -96,7 +104,7 @@ public class Eth2OutgoingRequestHandler<
     // Close the write side of the stream
     stream.closeWriteStream().reportExceptions();
 
-    if (method.shouldReceiveResponse()) {
+    if (shouldReceiveResponse) {
       // Start timer for first bytes
       ensureFirstBytesArriveWithinTimeLimit(stream);
     } else {
@@ -182,6 +190,10 @@ public class Eth2OutgoingRequestHandler<
     if (!transferToState(CLOSED, List.of(READ_COMPLETE))) {
       abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
     }
+  }
+
+  public SafeFuture<Void> getCompletedFuture() {
+    return responseHandler.getCompletedFuture();
   }
 
   private boolean transferToState(State toState, Collection<State> fromStates) {
@@ -295,10 +307,6 @@ public class Eth2OutgoingRequestHandler<
         .reportExceptions();
   }
 
-  public ResponseStreamImpl<TResponse> getResponseStream() {
-    return responseStream;
-  }
-
   @VisibleForTesting
   State getState() {
     return state.get();
@@ -306,6 +314,6 @@ public class Eth2OutgoingRequestHandler<
 
   @Override
   public String toString() {
-    return "Eth2OutgoingRequestHandler{" + "method=" + method + '}';
+    return "Eth2OutgoingRequestHandler{" + protocolId + '}';
   }
 }

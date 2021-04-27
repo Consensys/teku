@@ -32,49 +32,76 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 
 public class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
+  private final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner(timeProvider);
   private final StubAsyncRunner timeoutRunner = new StubAsyncRunner(timeProvider);
 
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
-  private final AtomicReference<ResponseStreamListener<SignedBeaconBlock>> responseListener =
-      new AtomicReference<>(ResponseStreamListener.from(blocks::add));
+  private final AtomicReference<RpcResponseListener<SignedBeaconBlock>> responseListener =
+      new AtomicReference<>(RpcResponseListener.from(blocks::add));
+  private final Eth2RpcResponseHandler<SignedBeaconBlock, Void> responseHandler =
+      Eth2RpcResponseHandler.expectMultipleResponses(res -> responseListener.get().onResponse(res));
   private final int maxChunks = 3;
+  private final SafeFuture<Void> finishedProcessingFuture = responseHandler.getCompletedFuture();
 
-  private RpcEncoder rpcEncoder;
+  private RpcResponseEncoder<SignedBeaconBlock, ?> responseEncoder;
   private List<Bytes> chunks;
-  private SafeFuture<Void> finishedProcessingFuture;
 
   @BeforeEach
   @Override
   public void setup() {
     super.setup();
-    rpcEncoder = beaconChainMethods.beaconBlocksByRange().getRpcEncoder();
+    final SignedBeaconBlockSchema signedBlockSchema =
+        phase0Spec
+            .forMilestone(SpecMilestone.PHASE0)
+            .getSchemaDefinitions()
+            .getSignedBeaconBlockSchema();
+    final RpcContextCodec<Bytes, SignedBeaconBlock> contextCodec =
+        RpcContextCodec.noop(signedBlockSchema);
+    responseEncoder = new RpcResponseEncoder<>(getRpcEncoding(), contextCodec);
     chunks = IntStream.range(0, maxChunks).mapToObj(this::chunkBytes).collect(Collectors.toList());
-
-    finishedProcessingFuture =
-        reqHandler
-            .getResponseStream()
-            .expectMultipleResponses(b -> responseListener.get().onResponse(b));
   }
 
   @Override
   protected Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createRequestHandler(final BeaconChainMethods beaconChainMethods) {
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> method =
+        beaconChainMethods.beaconBlocksByRange();
+    final BeaconBlocksByRangeRequestMessage request =
+        new BeaconBlocksByRangeRequestMessage(UInt64.ZERO, UInt64.valueOf(maxChunks), UInt64.ONE);
+
+    final RpcResponseDecoder<SignedBeaconBlock, Bytes> responseDecoder =
+        RpcResponseDecoder.createContextFreeDecoder(
+            getRpcEncoding(), spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     return new Eth2OutgoingRequestHandler<>(
-        asyncRequestRunner, timeoutRunner, beaconChainMethods.beaconBlocksByRange(), maxChunks);
+        asyncRequestRunner,
+        timeoutRunner,
+        method.getIds().get(0),
+        responseDecoder,
+        method.shouldReceiveResponse(),
+        request,
+        responseHandler);
   }
 
   @Override
@@ -372,11 +399,11 @@ public class Eth2OutgoingRequestHandlerTest
 
   private Bytes chunkBytes(final int chunk) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(chunk);
-    return rpcEncoder.encodeSuccessfulResponse(block);
+    return responseEncoder.encodeSuccessfulResponse(block);
   }
 
   private void deliverError() {
-    final Bytes errorChunk = rpcEncoder.encodeErrorResponse(new ServerErrorException());
+    final Bytes errorChunk = responseEncoder.encodeErrorResponse(new ServerErrorException());
     deliverBytes(errorChunk);
   }
 

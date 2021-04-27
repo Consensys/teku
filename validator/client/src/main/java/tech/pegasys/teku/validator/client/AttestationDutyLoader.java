@@ -29,6 +29,8 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.duties.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -38,20 +40,24 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
+  private final Function<Bytes32, ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+      scheduledDutiesFactory;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
   private final Spec spec;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
-      final Function<Bytes32, ScheduledDuties> scheduledDutiesFactory,
+      final Function<Bytes32, ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+          scheduledDutiesFactory,
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
       final Spec spec) {
-    super(scheduledDutiesFactory, validators, validatorIndexProvider);
+    super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
+    this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
     this.spec = spec;
   }
@@ -63,18 +69,20 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties> scheduleAllDuties(final AttesterDuties duties) {
-    final ScheduledDuties scheduledDuties = scheduledDutiesFactory.apply(duties.getDependentRoot());
+  protected SafeFuture<ScheduledDuties<?, ?>> scheduleAllDuties(final AttesterDuties duties) {
+    final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
+        scheduledDutiesFactory.apply(duties.getDependentRoot());
     return SafeFuture.allOf(
             duties.getDuties().stream()
                 .map(duty -> scheduleDuties(scheduledDuties, duty))
                 .toArray(SafeFuture[]::new))
-        .thenApply(__ -> scheduledDuties)
+        .<ScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 
   private SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties scheduledDuties, final AttesterDuty duty) {
+      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
+      final AttesterDuty duty) {
     final Optional<Validator> maybeValidator = validators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
       return SafeFuture.COMPLETE;
@@ -107,24 +115,27 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   private SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
-      final ScheduledDuties scheduledDuties,
+      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot) {
-    return scheduledDuties.scheduleAttestationProduction(
+    return scheduledDuties.scheduleProduction(
         slot,
         validator,
-        attestationCommitteeIndex,
-        attestationCommitteePosition,
-        attestationCommitteeSize,
-        validatorIndex);
+        duty ->
+            duty.addValidator(
+                validator,
+                attestationCommitteeIndex,
+                attestationCommitteePosition,
+                validatorIndex,
+                attestationCommitteeSize));
   }
 
   private SafeFuture<Void> scheduleAggregation(
-      final ScheduledDuties scheduledDuties,
+      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final int attestationCommitteeIndex,
       final int committeesAtSlot,
       final int validatorIndex,
@@ -146,13 +157,16 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
                       slot,
                       isAggregator));
               if (isAggregator) {
-                scheduledDuties.scheduleAggregationDuties(
+                scheduledDuties.scheduleAggregation(
                     slot,
                     validator,
-                    validatorIndex,
-                    slotSignature,
-                    attestationCommitteeIndex,
-                    unsignedAttestationFuture);
+                    duty ->
+                        duty.addValidator(
+                            validator,
+                            validatorIndex,
+                            slotSignature,
+                            attestationCommitteeIndex,
+                            unsignedAttestationFuture));
               }
             })
         .exceptionally(

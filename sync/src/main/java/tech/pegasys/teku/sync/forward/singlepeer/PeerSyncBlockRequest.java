@@ -16,20 +16,20 @@ package tech.pegasys.teku.sync.forward.singlepeer;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeaconBlock> {
+public class PeerSyncBlockRequest implements RpcResponseListener<SignedBeaconBlock> {
 
   private final SafeFuture<Void> readyForNextRequest;
   private final UInt64 lastRequestedSlot;
-  private final ResponseStreamListener<SignedBeaconBlock> blockResponseListener;
+  private final RpcResponseListener<SignedBeaconBlock> blockResponseListener;
   private Optional<UInt64> slotOfLastBlock = Optional.empty();
 
   public PeerSyncBlockRequest(
       final SafeFuture<Void> readyForNextRequest,
       final UInt64 lastRequestedSlot,
-      final ResponseStreamListener<SignedBeaconBlock> blockResponseListener) {
+      final RpcResponseListener<SignedBeaconBlock> blockResponseListener) {
     this.readyForNextRequest = readyForNextRequest;
     this.lastRequestedSlot = lastRequestedSlot;
     this.blockResponseListener = blockResponseListener;

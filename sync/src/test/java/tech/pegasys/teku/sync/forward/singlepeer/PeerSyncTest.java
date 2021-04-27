@@ -39,9 +39,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -136,7 +136,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             any(), any(), eq(UInt64.ONE), responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStreamListener<SignedBeaconBlock> responseListener =
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
@@ -178,7 +178,7 @@ public class PeerSyncTest extends AbstractSyncTest {
         .requestBlocksByRange(any(), any(), eq(step), responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStreamListener<SignedBeaconBlock> responseListener =
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
     // Stop the sync, no further blocks should be imported
@@ -218,7 +218,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             any(), any(), eq(UInt64.ONE), responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStreamListener<SignedBeaconBlock> responseListener =
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
     final List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener, UInt64.ONE, PEER_HEAD_SLOT);

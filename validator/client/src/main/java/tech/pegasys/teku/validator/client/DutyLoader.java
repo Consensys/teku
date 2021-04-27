@@ -19,5 +19,5 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public interface DutyLoader {
-  SafeFuture<Optional<ScheduledDuties>> loadDutiesForEpoch(final UInt64 epoch);
+  SafeFuture<Optional<ScheduledDuties<?, ?>>> loadDutiesForEpoch(final UInt64 epoch);
 }

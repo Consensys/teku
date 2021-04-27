@@ -47,7 +47,7 @@ public class PeerManagerTest {
           new NoOpMetricsSystem(),
           reputationManager,
           Collections.emptyList(),
-          Collections.emptyMap(),
+          Collections.emptyList(),
           peerId -> 0.0);
 
   @Test

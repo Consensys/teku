@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.validator.client.duties;
 
-import java.util.function.Consumer;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.client.Validator;
 
-@FunctionalInterface
-public interface ResponseStreamListener<O> {
-  static <T> ResponseStreamListener<T> from(Consumer<T> listener) {
-    return (T response) -> SafeFuture.fromRunnable(() -> listener.accept(response));
-  }
+public interface DutyFactory<P extends Duty, A extends Duty> {
 
-  SafeFuture<?> onResponse(O response);
+  P createProductionDuty(UInt64 slot, Validator validator);
+
+  A createAggregationDuty(UInt64 slot, Validator validator);
 }

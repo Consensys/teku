@@ -36,14 +36,14 @@ public class RetryingDutyLoader implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<Optional<ScheduledDuties>> loadDutiesForEpoch(final UInt64 epoch) {
-    final SafeFuture<Optional<ScheduledDuties>> duties = new SafeFuture<>();
+  public SafeFuture<Optional<ScheduledDuties<?, ?>>> loadDutiesForEpoch(final UInt64 epoch) {
+    final SafeFuture<Optional<ScheduledDuties<?, ?>>> duties = new SafeFuture<>();
     requestDuties(epoch, duties).propagateTo(duties);
     return duties;
   }
 
-  private SafeFuture<Optional<ScheduledDuties>> requestDuties(
-      final UInt64 epoch, final SafeFuture<Optional<ScheduledDuties>> cancellable) {
+  private SafeFuture<Optional<ScheduledDuties<?, ?>>> requestDuties(
+      final UInt64 epoch, final SafeFuture<Optional<ScheduledDuties<?, ?>>> cancellable) {
     LOG.trace("Request duties for epoch {}", epoch);
     return delegate
         .loadDutiesForEpoch(epoch)

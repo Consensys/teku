@@ -31,6 +31,14 @@ public class SpecMilestoneTest {
       TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
 
   @Test
+  public void isGreaterThanOrEqualTo() {
+    assertThat(SpecMilestone.ALTAIR.isGreaterThanOrEqualTo(SpecMilestone.PHASE0)).isTrue();
+    assertThat(SpecMilestone.ALTAIR.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)).isTrue();
+    assertThat(SpecMilestone.PHASE0.isGreaterThanOrEqualTo(SpecMilestone.PHASE0)).isTrue();
+    assertThat(SpecMilestone.PHASE0.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)).isFalse();
+  }
+
+  @Test
   public void getAllPriorMilestones_phase0() {
     assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.PHASE0)).isEmpty();
   }

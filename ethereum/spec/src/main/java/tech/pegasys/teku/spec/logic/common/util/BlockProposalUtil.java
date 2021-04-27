@@ -23,20 +23,20 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BlockProposalUtil {
 
-  private final StateTransition stateTransition;
+  private final BlockProcessor blockProcessor;
   private final SchemaDefinitions schemaDefinitions;
 
   public BlockProposalUtil(
-      final SchemaDefinitions schemaDefinitions, final StateTransition stateTransition) {
+      final SchemaDefinitions schemaDefinitions, final BlockProcessor blockProcessor) {
     this.schemaDefinitions = schemaDefinitions;
-    this.stateTransition = stateTransition;
+    this.blockProcessor = blockProcessor;
   }
 
   public BeaconBlockAndState createNewUnsignedBlock(
@@ -70,7 +70,7 @@ public class BlockProposalUtil {
 
     // Run state transition and set state root
     try {
-      final BeaconState newState = stateTransition.processBlock(blockSlotState, newBlock);
+      final BeaconState newState = blockProcessor.processBlock(blockSlotState, newBlock);
 
       Bytes32 stateRoot = newState.hashTreeRoot();
       BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);

@@ -18,7 +18,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
@@ -84,6 +88,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final boolean updateHeadForEmptySlots;
 
   private volatile UpdatableStore store;
+  private volatile Optional<GenesisData> genesisData;
+  private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
+  private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
@@ -151,7 +158,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       throw new IllegalStateException(
           "Failed to initialize from state: store has already been initialized");
     }
-
     eventBus.post(anchorPoint);
 
     // Set the head to the anchor point
@@ -164,12 +170,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<GenesisData> getGenesisData() {
-    if (isPreGenesis() || isPreForkChoice()) {
-      return Optional.empty();
-    }
+    return genesisData;
+  }
 
-    return getBestState()
-        .map(state -> new GenesisData(state.getGenesis_time(), state.getGenesis_validators_root()));
+  public Optional<SpecMilestone> getMilestoneByForkDigest(final Bytes4 forkDigest) {
+    return Optional.ofNullable(forkDigestToMilestone.get(forkDigest));
+  }
+
+  public Optional<Bytes4> getForkDigestByMilestone(final SpecMilestone milestone) {
+    return Optional.ofNullable(milestoneToForkDigest.get(milestone));
   }
 
   public boolean isPreGenesis() {
@@ -187,7 +196,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
     this.store = store;
     this.store.startMetrics();
+
+    // Set data that depends on the genesis state
     this.genesisTime = this.store.getGenesisTime();
+    final BeaconState anchorState = store.getLatestFinalized().getState();
+    final Bytes32 genesisValidatorsRoot = anchorState.getGenesis_validators_root();
+    this.genesisData =
+        Optional.of(new GenesisData(anchorState.getGenesis_time(), genesisValidatorsRoot));
+    spec.getForkSchedule()
+        .getActiveMilestones()
+        .forEach(
+            forkAndMilestone -> {
+              final Fork fork = forkAndMilestone.getFork();
+              final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
+              final Bytes4 forkDigest = forkInfo.getForkDigest();
+              this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
+              this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
+            });
+
     storeInitializedFuture.complete(null);
     return true;
   }
@@ -506,5 +532,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
+  }
+
+  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+    return getForkChoiceStrategy()
+        .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .orElse(Collections.emptySet());
   }
 }

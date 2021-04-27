@@ -15,26 +15,17 @@ package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class DepositOptions {
 
   @Option(
-      names = {"--eth1-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "URL for Eth1 node.",
-      arity = "1")
-  private String eth1Endpoint = null;
-
-  @Option(
-      names = {"--eth1-endpoints"},
+      names = {"--eth1-endpoints", "--eth1-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URLs for Eth1 nodes.",
       split = ",",
-      arity = "1..*",
-      hidden = true)
+      arity = "1..*")
   private List<String> eth1Endpoints = new ArrayList<>();
 
   @Option(
@@ -45,16 +36,8 @@ public class DepositOptions {
       arity = "1")
   private int eth1LogsMaxBlockRange = 10_000;
 
-  public int getEth1LogsMaxBlockRange() {
-    return eth1LogsMaxBlockRange;
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
-    List<String> mergedEth1Endpoints = new ArrayList<>();
-    Optional.ofNullable(eth1Endpoint).ifPresent(mergedEth1Endpoints::add);
-    mergedEth1Endpoints.addAll(eth1Endpoints);
-
     builder.powchain(
-        b -> b.eth1Endpoints(mergedEth1Endpoints).eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
+        b -> b.eth1Endpoints(eth1Endpoints).eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
   }
 }

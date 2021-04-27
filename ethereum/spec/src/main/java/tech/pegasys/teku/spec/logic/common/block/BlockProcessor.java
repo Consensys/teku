@@ -34,21 +34,55 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
-  BlockValidationResult verifySignatures(
-      BeaconState preState,
-      SignedBeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier);
+  /**
+   * Processes the given block on top of {@code blockSlotState} and optionally validates the block
+   *
+   * @param signedBlock The block to be processed
+   * @param blockSlotState The preState on which this block should be procssed, this preState must
+   *     already be advanced to the block's slot
+   * @param validateStateRootAndSignatures Whether to run signature and state root validations
+   * @param indexedAttestationCache A cache of indexed attestations
+   * @return The post state after processing the block on top of {@code blockSlotState}
+   * @throws StateTransitionException If the block is invalid or cannot be processed
+   */
+  BeaconState processAndValidateBlock(
+      final SignedBeaconBlock signedBlock,
+      final BeaconState blockSlotState,
+      final boolean validateStateRootAndSignatures,
+      final IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException;
 
-  BlockValidationResult validatePostState(BeaconState postState, SignedBeaconBlock block);
+  /**
+   * v0.7.1
+   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
+   * Processes block
+   *
+   * @throws BlockProcessingException
+   */
+  default BeaconState processBlock(BeaconState preState, BeaconBlock block)
+      throws BlockProcessingException {
+    return processBlock(preState, block, IndexedAttestationCache.NOOP);
+  }
+
+  default BeaconState processBlock(
+      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
+  }
+
+  void processBlock(
+      final MutableBeaconState state,
+      final BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;

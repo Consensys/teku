@@ -33,13 +33,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 
 public class HistoricalBatchFetcherTest {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private ChainBuilder forkBuilder;
 
   @SuppressWarnings("unchecked")
@@ -124,7 +127,7 @@ public class HistoricalBatchFetcherTest {
 
   @Test
   public void run_requestBatchWithSkippedSlots() {
-    final ChainBuilder chain = ChainBuilder.createDefault();
+    final ChainBuilder chain = ChainBuilder.create(spec);
     final int batchSize = 20;
     final SignedBlockAndState genesis = chain.generateGenesis();
     chain.generateBlockAtSlot(5);

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class MockStoreHelper {
@@ -47,5 +48,6 @@ public class MockStoreHelper {
     when(store.getJustifiedCheckpoint()).thenReturn(genesisCheckpoint);
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
     when(store.getBestJustifiedCheckpoint()).thenReturn(genesisCheckpoint);
+    when(store.getLatestFinalized()).thenReturn(AnchorPoint.create(genesisCheckpoint, genesis));
   }
 }
