@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
+import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -69,12 +70,16 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class Spec {
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
+  private final StateTransition stateTransition;
 
   private Spec(Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
     Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
     Preconditions.checkArgument(forkSchedule != null);
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
+
+    // Setup state transition
+    this.stateTransition = StateTransition.create(this::atSlot);
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
@@ -91,6 +96,7 @@ public class Spec {
     }
 
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
+
     return new Spec(specVersions, forkSchedule);
   }
 
@@ -371,15 +377,13 @@ public class Spec {
   // State Transition Utils
   public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
       throws StateTransitionException {
-    return atBlock(signedBlock).getStateTransition().initiate(preState, signedBlock);
+    return stateTransition.initiate(preState, signedBlock);
   }
 
   public BeaconState initiateStateTransition(
       BeaconState preState, SignedBeaconBlock signedBlock, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .initiate(preState, signedBlock, validateStateRootAndSignatures);
+    return stateTransition.initiate(preState, signedBlock, validateStateRootAndSignatures);
   }
 
   public BeaconState initiateStateTransition(
@@ -388,14 +392,13 @@ public class Spec {
       boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .initiate(preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
+    return stateTransition.initiate(
+        preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
   }
 
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    return atSlot(preState.getSlot()).getStateTransition().processSlots(preState, slot);
+    return stateTransition.processSlots(preState, slot);
   }
 
   // Block Proposal

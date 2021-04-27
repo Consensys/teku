@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -314,7 +315,10 @@ public final class DataStructureUtil {
 
   public SyncCommittee randomSyncCommittee() {
     final SyncCommitteeSchema syncCommitteeSchema =
-        ((BeaconStateSchemaAltair) spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+        ((BeaconStateSchemaAltair)
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema())
             .getCurrentSyncCommitteeSchema();
     return syncCommitteeSchema.create(
         randomSszVector(

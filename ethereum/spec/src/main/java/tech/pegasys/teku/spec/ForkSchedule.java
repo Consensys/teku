@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -48,6 +50,10 @@ public class ForkSchedule {
 
   public int size() {
     return epochToMilestone.size();
+  }
+
+  public Stream<TekuPair<SpecMilestone, UInt64>> streamMilestoneBoundarySlots() {
+    return slotToMilestone.entrySet().stream().map(e -> TekuPair.of(e.getValue(), e.getKey()));
   }
 
   /**
