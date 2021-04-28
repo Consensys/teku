@@ -47,8 +47,8 @@ public interface ExecutionEngineClient {
           return SafeFuture.completedFuture(
               new Response<>(
                   new ExecutionPayload(
-                      request.parentHash,
                       Bytes32.random(),
+                      request.parentHash,
                       Bytes20.ZERO,
                       Bytes32.ZERO,
                       number,

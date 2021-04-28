@@ -30,11 +30,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -83,7 +85,8 @@ public class BlockProposalTestUtil {
                     .proposerSlashings(slashings)
                     .attesterSlashings(blockBodyLists.createAttesterSlashings())
                     .deposits(deposits)
-                    .voluntaryExits(exits));
+                    .voluntaryExits(exits)
+                    .executionPayload(() -> createExecutionPayload(spec, blockSlotState)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -123,6 +126,16 @@ public class BlockProposalTestUtil {
         Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
         state.getEth1_deposit_index(),
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
+  }
+
+  private static ExecutionPayload createExecutionPayload(Spec spec, BeaconState genericState) {
+    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
+    final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
+    final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
+
+    return spec.atSlot(state.getSlot())
+        .getExecutionPayloadUtil()
+        .produceExecutionPayload(executionParentHash, timestamp);
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
