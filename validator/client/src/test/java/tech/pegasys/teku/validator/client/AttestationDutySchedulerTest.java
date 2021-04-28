@@ -823,7 +823,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader),
             useDependentRoots,
             spec);
   }
@@ -841,7 +841,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader(asyncRunner, attestationDutyLoader),
+            new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader),
             false,
             spec);
   }
