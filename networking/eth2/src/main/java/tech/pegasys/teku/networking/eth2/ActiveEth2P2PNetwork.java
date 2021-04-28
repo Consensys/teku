@@ -105,7 +105,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
               + " is fully initialized.");
     }
     // Set the current fork info prior to discovery starting up.
-    final ForkInfo currentForkInfo = recentChainData.getHeadForkInfo().orElseThrow();
+    final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
     return super.start().thenAccept(r -> startup());
   }
