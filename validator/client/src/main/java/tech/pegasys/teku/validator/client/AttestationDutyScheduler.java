@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -24,9 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
-
-  private UInt64 lastAttestationCreationSlot;
-  private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
   public AttestationDutyScheduler(
@@ -34,7 +29,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super("attestation", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -45,38 +40,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public void onAttestationCreationDue(final UInt64 slot) {
-    // Check slot being null for the edge case of genesis slot (i.e. slot 0)
-    if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
-      LOG.debug(
-          "Not performing attestation duties for slot {} because lastAttestationCreationSlot {} is beyond that.",
-          slot,
-          lastAttestationCreationSlot);
-      return;
-    }
-
-    if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info(
-          "Not performing attestation duties for slot {} because it is too far ahead of the current slot {}",
-          slot,
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
-      return;
-    }
-
-    lastAttestationCreationSlot = slot;
-    notifyEpochDuties(EpochDuties::onProductionDue, slot);
-  }
-
-  @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {
-    if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info(
-          "Not performing aggregation duties for slot {} because it is too far ahead of the current slot {}",
-          slot,
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
-      return;
-    }
-
-    notifyEpochDuties(EpochDuties::onAggregationDue, slot);
+    onProductionDue(slot);
   }
 
   @Override

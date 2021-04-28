@@ -19,7 +19,6 @@ import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
@@ -51,10 +51,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
       final BlockProcessorAltair blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
-      final SyncCommitteeUtil syncCommitteeUtil) {
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final AltairStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -67,9 +67,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
   }
 
@@ -129,8 +129,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             attestationValidator);
-    final StateTransition stateTransition =
-        StateTransition.create(config, blockProcessor, epochProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -144,6 +142,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             miscHelpers,
             schemaDefinitions);
 
+    // State upgrade
+    final AltairStateUpgrade stateUpgrade =
+        new AltairStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+
     return new SpecLogicAltair(
         predicates,
         miscHelpers,
@@ -156,10 +158,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil,
-        syncCommitteeUtil);
+        syncCommitteeUtil,
+        stateUpgrade);
   }
 
   @Override

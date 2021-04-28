@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -24,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
-  private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 0;
 
   public BlockDutyScheduler(
@@ -32,7 +29,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       final DutyLoader dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super(dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super("block", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
@@ -43,15 +40,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {
-    if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info(
-          "Not performing block duties for slot {} because it is too far ahead of the current slot {}",
-          slot,
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
-      return;
-    }
-
-    notifyEpochDuties(EpochDuties::onProductionDue, slot);
+    onProductionDue(slot);
   }
 
   @Override

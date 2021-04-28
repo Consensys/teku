@@ -249,7 +249,7 @@ public class ChainBuilder {
         new MockStartBeaconStateGenerator(spec)
             .createInitialBeaconState(genesisTime, initialDepositData);
 
-    if (spec.getEnabledMilestones().get(0).getSpecMilestone() == SpecMilestone.ALTAIR) {
+    if (spec.atSlot(UInt64.ZERO).getMilestone() == SpecMilestone.ALTAIR) {
       // Convert from a phase0 to Altair state.
       // Hopefully https://github.com/ethereum/eth2.0-specs/pull/2323 will remove this requirement
       genesisState =
