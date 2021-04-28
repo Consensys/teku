@@ -10,6 +10,7 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+- Add experimental endpoint for retrieving peer gossip scores at `/teku/v1/nodes/peer_scores`.
 
 ### Additions and Improvements
 - Newly created databases will now use LevelDB for storage instead of RocksDB. This uses less memory and has proven to be more stable. Existing databases are unaffected and will continue to use RocksDB.

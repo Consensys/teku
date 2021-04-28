@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.provider;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
 
-public interface ScheduledDuties {
+public class DoubleDeserializer extends JsonDeserializer<Double> {
 
-  boolean requiresRecalculation(Bytes32 newHeadDependentRoot);
-
-  void performProductionDuty(UInt64 slot);
-
-  void performAggregationDuty(UInt64 slot);
-
-  int countDuties();
+  @Override
+  public Double deserialize(JsonParser p, DeserializationContext ctxt)
+      throws IOException, JsonProcessingException {
+    return Double.valueOf(p.getValueAsString());
+  }
 }

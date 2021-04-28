@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,9 +43,11 @@ public class LibP2PPeer implements Peer {
 
   private final Map<RpcMethod<?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
+  private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
+  private final PeerId peerId;
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -57,13 +60,15 @@ public class LibP2PPeer implements Peer {
   public LibP2PPeer(
       final Connection connection,
       final List<RpcHandler<?, ?, ?>> rpcHandlers,
-      final ReputationManager reputationManager) {
+      final ReputationManager reputationManager,
+      final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;
     this.rpcHandlers =
         rpcHandlers.stream().collect(Collectors.toMap(RpcHandler::getRpcMethod, h -> h));
     this.reputationManager = reputationManager;
+    this.peerScoreFunction = peerScoreFunction;
+    this.peerId = connection.secureSession().getRemoteId();
 
-    final PeerId peerId = connection.secureSession().getRemoteId();
     final NodeId nodeId = new LibP2PNodeId(peerId);
     peerAddress = new MultiaddrPeerAddress(nodeId, connection.remoteAddress());
     SafeFuture.of(connection.closeFuture())
@@ -77,6 +82,11 @@ public class LibP2PPeer implements Peer {
   @Override
   public PeerAddress getAddress() {
     return peerAddress;
+  }
+
+  @Override
+  public Double getGossipScore() {
+    return peerScoreFunction.apply(peerId);
   }
 
   @Override

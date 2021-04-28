@@ -265,7 +265,7 @@ public class BlockImporterTest {
             invalidAncestryUnsignedBlock,
             signer
                 .signBlock(
-                    invalidAncestryUnsignedBlock, otherStorage.getHeadForkInfo().orElseThrow())
+                    invalidAncestryUnsignedBlock, otherStorage.getCurrentForkInfo().orElseThrow())
                 .join());
 
     final BlockImportResult result = blockImporter.importBlock(invalidAncestryBlock).get();

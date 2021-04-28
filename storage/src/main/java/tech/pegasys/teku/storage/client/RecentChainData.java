@@ -378,38 +378,35 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
-  public Optional<ForkInfo> getHeadForkInfo() {
-    return getBestState().map(BeaconState::getForkInfo);
+  public Optional<Fork> getNextFork(final Fork fork) {
+    return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  public Optional<Fork> getNextFork() {
-    return getCurrentEpoch().flatMap(spec.getForkSchedule()::getNextFork);
+  private Optional<Fork> getCurrentFork() {
+    return getCurrentEpoch().map(spec.getForkSchedule()::getFork);
+  }
+
+  private Fork getFork(final UInt64 epoch) {
+    return spec.getForkSchedule().getFork(epoch);
   }
 
   /**
-   * Returns the fork info that applies based on the node's current slot, regardless of where the
-   * sync progress is up to.
-   *
-   * <p>NOTE: Works on the basis that there is only one future forked scheduled as that's all we can
-   * currently support.
+   * Returns the fork info that applies based on the current slot as calculated from the current
+   * time, regardless of where the sync progress is up to.
    *
    * @return fork info based on the current time, not head block
    */
-  public Optional<ForkInfo> getForkInfoAtCurrentTime() {
-    return getHeadForkInfo()
-        .map(
-            headForkInfo ->
-                getNextFork()
-                    .filter(this::isForkActive)
-                    .map(
-                        nextFork -> new ForkInfo(nextFork, headForkInfo.getGenesisValidatorsRoot()))
-                    .orElse(headForkInfo));
+  public Optional<ForkInfo> getCurrentForkInfo() {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .flatMap(
+            validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
   }
 
-  private boolean isForkActive(final Fork fork) {
-    return getCurrentSlot()
-        .map(currentSlot -> spec.computeEpochAtSlot(currentSlot).compareTo(fork.getEpoch()) >= 0)
-        .orElse(false);
+  public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
   }
 
   /**
