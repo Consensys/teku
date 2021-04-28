@@ -32,25 +32,26 @@ import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
-class EpochDutiesTest {
+class PendingDutiesTest {
 
   protected static final UInt64 EPOCH = UInt64.valueOf(10);
-  protected final SafeFuture<Optional<ScheduledDuties<?, ?>>> scheduledDutiesFuture =
-      new SafeFuture<>();
+  protected final SafeFuture<Optional<ScheduledDuties>> scheduledDutiesFuture = new SafeFuture<>();
 
-  protected final DutyLoader dutyLoader = mock(DutyLoader.class);
-  protected final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
+  @SuppressWarnings("unchecked")
+  protected final DutyLoader<ScheduledDuties> dutyLoader = mock(DutyLoader.class);
 
-  protected final Optional<ScheduledDuties<?, ?>> scheduledDutiesOptional =
-      Optional.of(scheduledDuties);
+  protected final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
 
-  protected EpochDuties duties;
+  protected final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
+
+  protected PendingDuties duties;
 
   @BeforeEach
   void setUp() {
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(scheduledDutiesFuture);
-    duties = EpochDuties.calculateDuties(dutyLoader, EPOCH);
+    duties = PendingDuties.calculateDuties(dutyLoader, EPOCH);
     verify(dutyLoader).loadDutiesForEpoch(EPOCH);
   }
 
@@ -112,17 +113,18 @@ class EpochDutiesTest {
 
   @Test
   void shouldRecalculateDutiesIfNewDependentRootDoesNotMatch() {
-    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    final Bytes32 newHeadDependentRoot = Bytes32.fromHexString("0x1234");
+    when(scheduledDuties.requiresRecalculation(newHeadDependentRoot)).thenReturn(true);
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
 
-    duties.onHeadUpdate(Bytes32.fromHexString("0x1234"));
+    duties.onHeadUpdate(newHeadDependentRoot);
 
     verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
   }
 
   @Test
   void shouldNotRecalculateDutiesIfNewDependentRootMatches() {
-    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    when(scheduledDuties.requiresRecalculation(Bytes32.ZERO)).thenReturn(false);
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
 
     duties.onHeadUpdate(Bytes32.ZERO);
@@ -132,9 +134,10 @@ class EpochDutiesTest {
 
   @Test
   void shouldRecalculateDutiesIfNonMatchingHeadUpdateReceivedWhileLoadingDuties() {
-    duties.onHeadUpdate(Bytes32.fromHexString("0x1234"));
+    final Bytes32 newHeadDependentRoot = Bytes32.fromHexString("0x1234");
+    duties.onHeadUpdate(newHeadDependentRoot);
 
-    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    when(scheduledDuties.requiresRecalculation(newHeadDependentRoot)).thenReturn(true);
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
 
     verify(dutyLoader, times(2)).loadDutiesForEpoch(EPOCH);
@@ -144,7 +147,7 @@ class EpochDutiesTest {
   void shouldNotRecalculateDutiesIfMatchingHeadUpdateReceivedWhileLoadingDuties() {
     duties.onHeadUpdate(Bytes32.ZERO);
 
-    when(scheduledDuties.getDependentRoot()).thenReturn(Bytes32.ZERO);
+    when(scheduledDuties.requiresRecalculation(Bytes32.ZERO)).thenReturn(false);
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
 
     verify(dutyLoader, times(1)).loadDutiesForEpoch(EPOCH);
@@ -153,8 +156,8 @@ class EpochDutiesTest {
   @Test
   void shouldRecalculateDuties() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    final ScheduledDuties newDuties = mock(SlotBasedScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties>> recalculatedDuties = new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
@@ -170,8 +173,8 @@ class EpochDutiesTest {
 
   @Test
   void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
-    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    final ScheduledDuties newDuties = mock(SlotBasedScheduledDuties.class);
+    final SafeFuture<Optional<ScheduledDuties>> recalculatedDuties = new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();

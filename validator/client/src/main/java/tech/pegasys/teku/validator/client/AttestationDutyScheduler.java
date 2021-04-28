@@ -26,7 +26,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader dutyLoader,
+      final DutyLoader<?> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super("attestation", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
@@ -35,7 +35,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
-        () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
+        () -> dutiesByEpoch.values().stream().mapToInt(PendingDuties::countDuties).sum());
   }
 
   @Override

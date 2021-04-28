@@ -43,7 +43,7 @@ import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.Duty;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
@@ -54,7 +54,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BlockDutyFactory blockDutyFactory = mock(BlockDutyFactory.class);
 
   @SuppressWarnings("unchecked")
-  final ScheduledDuties<BlockProductionDuty, Duty> scheduledDuties = mock(ScheduledDuties.class);
+  final SlotBasedScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
+      mock(SlotBasedScheduledDuties.class);
 
   final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
 
@@ -344,12 +345,13 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader(
+            new RetryingDutyLoader<>(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot ->
-                        new ScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
+                        new SlotBasedScheduledDuties<>(
+                            blockDutyFactory, dependentRoot, metricsSystem),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
@@ -361,7 +363,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader(
+            new RetryingDutyLoader<>(
                 asyncRunner,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
