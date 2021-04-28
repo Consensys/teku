@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
@@ -49,7 +50,7 @@ class Eth2GossipTopicFilterTest {
   @BeforeEach
   void setUp() {
     when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(forkInfo));
-    when(recentChainData.getNextFork()).thenReturn(Optional.of(nextFork));
+    when(recentChainData.getNextFork(forkInfo.getFork())).thenReturn(Optional.of(nextFork));
   }
 
   @Test
@@ -59,7 +60,7 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldNotRequireNextForkToBePresent() {
-    when(recentChainData.getNextFork()).thenReturn(Optional.empty());
+    when(recentChainData.getNextFork(any())).thenReturn(Optional.empty());
     assertThat(filter.isRelevantTopic(getTopicName(BlockGossipManager.TOPIC_NAME))).isTrue();
   }
 

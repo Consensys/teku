@@ -378,8 +378,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
-  public Optional<Fork> getNextFork() {
-    return getCurrentEpoch().flatMap(spec.getForkSchedule()::getNextFork);
+  public Optional<Fork> getNextFork(final Fork fork) {
+    return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
   public Optional<Fork> getCurrentFork() {

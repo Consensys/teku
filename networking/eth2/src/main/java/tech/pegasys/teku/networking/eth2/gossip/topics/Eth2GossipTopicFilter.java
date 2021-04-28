@@ -63,7 +63,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
     final Set<String> topics = new HashSet<>();
     addTopicsForForkDigest(gossipEncoding, forkDigest, topics);
     recentChainData
-        .getNextFork()
+        .getNextFork(forkInfo.getFork())
         .map(
             nextFork ->
                 spec.atEpoch(nextFork.getEpoch())
