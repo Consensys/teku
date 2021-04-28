@@ -378,12 +378,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
-  public Optional<Fork> getNextFork() {
-    return getCurrentEpoch().flatMap(spec.getForkSchedule()::getNextFork);
+  public Optional<Fork> getNextFork(final Fork fork) {
+    return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  public Optional<Fork> getCurrentFork() {
+  private Optional<Fork> getCurrentFork() {
     return getCurrentEpoch().map(spec.getForkSchedule()::getFork);
+  }
+
+  private Fork getFork(final UInt64 epoch) {
+    return spec.getForkSchedule().getFork(epoch);
   }
 
   /**
@@ -397,6 +401,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .map(GenesisData::getGenesisValidatorsRoot)
         .flatMap(
             validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
+  }
+
+  public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
   }
 
   /**
