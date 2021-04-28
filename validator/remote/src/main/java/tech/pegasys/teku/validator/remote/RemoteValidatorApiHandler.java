@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -176,19 +177,21 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         () ->
             apiClient
                 .getSyncCommitteeDuties(epoch, validatorIndices)
-                .map(
-                    response ->
-                        new SyncCommitteeDuties(
-                            response.data.stream()
-                                .map(
-                                    i ->
-                                        new SyncCommitteeDuty(
-                                            i.pubkey.asBLSPublicKey(),
-                                            i.validatorIndex.intValue(),
-                                            i.committeeIndices.stream()
-                                                .map(UInt64::intValue)
-                                                .collect(Collectors.toSet())))
-                                .collect(Collectors.toList()))));
+                .map(this::responseToSyncCommitteeDuties));
+  }
+
+  private SyncCommitteeDuties responseToSyncCommitteeDuties(final PostSyncDutiesResponse response) {
+    return new SyncCommitteeDuties(
+        response.data.stream()
+            .map(
+                duty ->
+                    new SyncCommitteeDuty(
+                        duty.pubkey.asBLSPublicKey(),
+                        duty.validatorIndex.intValue(),
+                        duty.committeeIndices.stream()
+                            .map(UInt64::intValue)
+                            .collect(Collectors.toSet())))
+            .collect(Collectors.toList()));
   }
 
   @Override
