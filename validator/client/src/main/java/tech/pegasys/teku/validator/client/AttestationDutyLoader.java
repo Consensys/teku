@@ -32,15 +32,17 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
+public class AttestationDutyLoader
+    extends AbstractDutyLoader<AttesterDuties, SlotBasedScheduledDuties<?, ?>> {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
-  private final Function<Bytes32, ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+  private final Function<
+          Bytes32, SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>>
       scheduledDutiesFactory;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
   private final Spec spec;
@@ -48,7 +50,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
-      final Function<Bytes32, ScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+      final Function<Bytes32, SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>>
           scheduledDutiesFactory,
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
@@ -69,19 +71,20 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   @Override
-  protected SafeFuture<ScheduledDuties<?, ?>> scheduleAllDuties(final AttesterDuties duties) {
-    final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
+  protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
+      final AttesterDuties duties) {
+    final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     return SafeFuture.allOf(
             duties.getDuties().stream()
                 .map(duty -> scheduleDuties(scheduledDuties, duty))
                 .toArray(SafeFuture[]::new))
-        .<ScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
+        .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
 
   private SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
+      final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final AttesterDuty duty) {
     final Optional<Validator> maybeValidator = validators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
@@ -115,7 +118,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   private SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
-      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
+      final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
@@ -135,7 +138,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   private SafeFuture<Void> scheduleAggregation(
-      final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
+      final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final int attestationCommitteeIndex,
       final int committeesAtSlot,
       final int validatorIndex,

@@ -26,7 +26,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader dutyLoader,
+      final DutyLoader<?> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super("attestation", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);

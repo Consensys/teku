@@ -26,7 +26,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader dutyLoader,
+      final DutyLoader<?> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super("block", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);

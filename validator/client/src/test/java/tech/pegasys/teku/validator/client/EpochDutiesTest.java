@@ -31,18 +31,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
 class EpochDutiesTest {
 
   protected static final UInt64 EPOCH = UInt64.valueOf(10);
-  protected final SafeFuture<Optional<ScheduledDuties<?, ?>>> scheduledDutiesFuture =
+  protected final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> scheduledDutiesFuture =
       new SafeFuture<>();
 
   protected final DutyLoader dutyLoader = mock(DutyLoader.class);
-  protected final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
+  protected final SlotBasedScheduledDuties<?, ?> scheduledDuties =
+      mock(SlotBasedScheduledDuties.class);
 
-  protected final Optional<ScheduledDuties<?, ?>> scheduledDutiesOptional =
+  protected final Optional<SlotBasedScheduledDuties<?, ?>> scheduledDutiesOptional =
       Optional.of(scheduledDuties);
 
   protected EpochDuties duties;
@@ -153,8 +154,9 @@ class EpochDutiesTest {
   @Test
   void shouldRecalculateDuties() {
     scheduledDutiesFuture.complete(scheduledDutiesOptional);
-    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    final SlotBasedScheduledDuties<?, ?> newDuties = mock(SlotBasedScheduledDuties.class);
+    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> recalculatedDuties =
+        new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();
@@ -170,8 +172,9 @@ class EpochDutiesTest {
 
   @Test
   void shouldNotUsePreviouslyRequestedDutiesReceivedAfterRecalculationStarted() {
-    final ScheduledDuties<?, ?> newDuties = mock(ScheduledDuties.class);
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> recalculatedDuties = new SafeFuture<>();
+    final SlotBasedScheduledDuties<?, ?> newDuties = mock(SlotBasedScheduledDuties.class);
+    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> recalculatedDuties =
+        new SafeFuture<>();
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(recalculatedDuties);
 
     duties.recalculate();

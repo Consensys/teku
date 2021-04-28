@@ -29,7 +29,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final String dutyType;
   private final Spec spec;
   private final boolean useDependentRoots;
-  private final DutyLoader epochDutiesScheduler;
+  private final DutyLoader<?> epochDutiesScheduler;
   private final int lookAheadEpochs;
 
   private UInt64 lastProductionSlot;
@@ -39,7 +39,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   protected AbstractDutyScheduler(
       final String dutyType,
-      final DutyLoader epochDutiesScheduler,
+      final DutyLoader<?> epochDutiesScheduler,
       final int lookAheadEpochs,
       final boolean useDependentRoots,
       final Spec spec) {
