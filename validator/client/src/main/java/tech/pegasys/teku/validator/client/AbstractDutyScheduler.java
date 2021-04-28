@@ -34,7 +34,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   private UInt64 lastProductionSlot;
 
-  protected final NavigableMap<UInt64, EpochDuties> dutiesByEpoch = new TreeMap<>();
+  protected final NavigableMap<UInt64, PendingDuties> dutiesByEpoch = new TreeMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
@@ -51,10 +51,10 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   protected void notifyEpochDuties(
-      final BiConsumer<EpochDuties, UInt64> action, final UInt64 slot) {
-    final EpochDuties epochDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
-    if (epochDuties != null) {
-      action.accept(epochDuties, slot);
+      final BiConsumer<PendingDuties, UInt64> action, final UInt64 slot) {
+    final PendingDuties pendingDuties = dutiesByEpoch.get(spec.computeEpochAtSlot(slot));
+    if (pendingDuties != null) {
+      action.accept(pendingDuties, slot);
     }
   }
 
@@ -126,18 +126,18 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
   }
 
-  private EpochDuties createEpochDuties(final UInt64 epochNumber) {
-    return EpochDuties.calculateDuties(epochDutiesScheduler, epochNumber);
+  private PendingDuties createEpochDuties(final UInt64 epochNumber) {
+    return PendingDuties.calculateDuties(epochDutiesScheduler, epochNumber);
   }
 
   private void removePriorEpochs(final UInt64 epochNumber) {
-    final NavigableMap<UInt64, EpochDuties> toRemove = dutiesByEpoch.headMap(epochNumber, false);
-    toRemove.values().forEach(EpochDuties::cancel);
+    final NavigableMap<UInt64, PendingDuties> toRemove = dutiesByEpoch.headMap(epochNumber, false);
+    toRemove.values().forEach(PendingDuties::cancel);
     toRemove.clear();
   }
 
-  private void invalidateEpochs(final NavigableMap<UInt64, EpochDuties> toInvalidate) {
-    toInvalidate.values().forEach(EpochDuties::recalculate);
+  private void invalidateEpochs(final NavigableMap<UInt64, PendingDuties> toInvalidate) {
+    toInvalidate.values().forEach(PendingDuties::recalculate);
   }
 
   protected Optional<UInt64> getCurrentEpoch() {
@@ -180,7 +180,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     }
 
     lastProductionSlot = slot;
-    notifyEpochDuties(EpochDuties::onProductionDue, slot);
+    notifyEpochDuties(PendingDuties::onProductionDue, slot);
   }
 
   @Override
@@ -194,6 +194,6 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       return;
     }
 
-    notifyEpochDuties(EpochDuties::onAggregationDue, slot);
+    notifyEpochDuties(PendingDuties::onAggregationDue, slot);
   }
 }

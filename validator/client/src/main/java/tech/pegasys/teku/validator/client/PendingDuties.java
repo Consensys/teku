@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class EpochDuties {
+class PendingDuties {
   private static final Logger LOG = LogManager.getLogger();
 
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
@@ -35,13 +35,13 @@ class EpochDuties {
   private SafeFuture<? extends Optional<? extends ScheduledDuties>> duties = new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
 
-  private EpochDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+  private PendingDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
   }
 
-  public static EpochDuties calculateDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
-    final EpochDuties duties = new EpochDuties(dutyLoader, epoch);
+  public static PendingDuties calculateDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+    final PendingDuties duties = new PendingDuties(dutyLoader, epoch);
     duties.recalculate();
     return duties;
   }

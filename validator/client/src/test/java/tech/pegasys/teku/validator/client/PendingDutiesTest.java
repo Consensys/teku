@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
-class EpochDutiesTest {
+class PendingDutiesTest {
 
   protected static final UInt64 EPOCH = UInt64.valueOf(10);
   protected final SafeFuture<Optional<ScheduledDuties>> scheduledDutiesFuture = new SafeFuture<>();
@@ -46,12 +46,12 @@ class EpochDutiesTest {
 
   protected final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
 
-  protected EpochDuties duties;
+  protected PendingDuties duties;
 
   @BeforeEach
   void setUp() {
     when(dutyLoader.loadDutiesForEpoch(EPOCH)).thenReturn(scheduledDutiesFuture);
-    duties = EpochDuties.calculateDuties(dutyLoader, EPOCH);
+    duties = PendingDuties.calculateDuties(dutyLoader, EPOCH);
     verify(dutyLoader).loadDutiesForEpoch(EPOCH);
   }
 
