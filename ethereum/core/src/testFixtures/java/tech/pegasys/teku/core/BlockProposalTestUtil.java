@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -25,10 +21,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -40,13 +33,9 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalTestUtil {
@@ -70,15 +59,15 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
-    final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState = processSlots(state, newSlot);
+    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(blockSlotState, newSlot),
+            spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
             parentBlockSigningRoot,
             builder ->
@@ -110,7 +99,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
-    final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
@@ -123,55 +112,23 @@ public class BlockProposalTestUtil {
         exits.orElse(blockBodyLists.createVoluntaryExits()));
   }
 
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
-    UInt64 epochs_per_period = UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
-    UInt64 voting_period = current_epoch.dividedBy(epochs_per_period);
+  private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
+    final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
+    final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
+    UInt64 votingPeriod = current_epoch.dividedBy(epochsPerPeriod);
     return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        Hash.sha2_256(SSZ.encodeUInt64(epochsPerPeriod)),
         state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = processSlots(preState, slot);
+      state = spec.processSlots(preState, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }
-    return BeaconStateUtil.get_beacon_proposer_index(state);
-  }
-
-  private BeaconState processSlots(final BeaconState preState, final UInt64 slot)
-      throws EpochProcessingException, SlotProcessingException {
-    // TODO(#3873) Cut this custom logic once the state transition is fully integrated into the spec
-    // Replace this method with: spec.processSlots(preState, slot);
-    final Optional<UInt64> altairTransitionSlot =
-        Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR))
-            .map(SpecVersion::getConfig)
-            .flatMap(SpecConfig::toVersionAltair)
-            .map(SpecConfigAltair::getAltairForkSlot);
-
-    BeaconState state = preState;
-    UInt64 nextSlot = preState.getSlot().plus(1);
-    while (nextSlot.isLessThanOrEqualTo(slot)) {
-      state = spec.processSlots(state, nextSlot);
-
-      // Run altair irregular upgrade
-      final UInt64 currentSlot = nextSlot;
-      if (altairTransitionSlot.map(s -> s.equals(currentSlot)).orElse(false)) {
-        final SpecVersion altairSpec = spec.atSlot(nextSlot);
-        final AltairStateUpgrade upgrader =
-            new AltairStateUpgrade(
-                (SpecConfigAltair) altairSpec.getConfig(),
-                (SchemaDefinitionsAltair) altairSpec.getSchemaDefinitions(),
-                (BeaconStateAccessorsAltair) altairSpec.beaconStateAccessors());
-        state = upgrader.upgrade(state);
-      }
-
-      nextSlot = nextSlot.increment();
-    }
-
-    return state;
+    return spec.getBeaconProposerIndex(state, state.getSlot());
   }
 }
