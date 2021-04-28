@@ -26,9 +26,6 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -50,10 +47,8 @@ class SlotBasedScheduledDutiesTest {
   @SuppressWarnings("unchecked")
   private final DutyFactory<ProductionDuty, AggregationDuty> dutyFactory = mock(DutyFactory.class);
 
-  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-
   private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
-      new SlotBasedScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+      new SlotBasedScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"));
 
   @Test
   public void shouldDiscardMissedProductionDuties() {
@@ -68,17 +63,16 @@ class SlotBasedScheduledDutiesTest {
     duties.scheduleProduction(ONE, validator, productionDutyAdder);
     duties.scheduleProduction(TWO, validator, productionDutyAdder);
 
-    duties.performProductionDuty(ONE);
+    assertThat(duties.performProductionDuty(ONE)).isCompleted();
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.performProductionDuty(ZERO);
+    assertThat(duties.performProductionDuty(ZERO)).isCompleted();
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.performProductionDuty(TWO);
+    assertThat(duties.performProductionDuty(TWO)).isCompleted();
     verify(duty2).performDuty();
-    validateMetrics(duty0.getProducedType(), 2, 0);
   }
 
   @Test
@@ -94,34 +88,26 @@ class SlotBasedScheduledDutiesTest {
     duties.scheduleAggregation(ONE, validator, aggregateDutyAdder);
     duties.scheduleAggregation(TWO, validator, aggregateDutyAdder);
 
-    duties.performAggregationDuty(ONE);
+    assertThat(duties.performAggregationDuty(ONE)).isCompleted();
     verify(duty1).performDuty();
 
     // Duty from slot zero was dropped
-    duties.performAggregationDuty(ZERO);
+    assertThat(duties.performAggregationDuty(ZERO)).isCompleted();
     verify(duty0, never()).performDuty();
 
     // But the duty for slot 2 is still performed as scheduled
-    duties.performAggregationDuty(TWO);
+    assertThat(duties.performAggregationDuty(TWO)).isCompleted();
     verify(duty2).performDuty();
-
-    validateMetrics(duty0.getProducedType(), 2, 0);
   }
 
   private <T extends Duty> T mockDuty(final Class<T> dutyType) {
     final T mockDuty = mock(dutyType);
-    when(mockDuty.getProducedType()).thenReturn(dutyType.getSimpleName());
     when(mockDuty.performDuty())
         .thenReturn(
-            SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
+            SafeFuture.completedFuture(
+                DutyResult.success(
+                    dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32())));
     return mockDuty;
-  }
-
-  private void validateMetrics(final String duty, final long successCount, final long failCount) {
-    final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "duties_performed");
-    assertThat(labelledCounter.getValue(duty, "success")).isEqualTo(successCount);
-    assertThat(labelledCounter.getValue(duty, "failed")).isEqualTo(failCount);
   }
 
   private interface ProductionDuty extends Duty {}

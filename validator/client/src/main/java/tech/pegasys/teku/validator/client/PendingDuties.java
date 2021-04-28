@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +24,13 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class PendingDuties {
@@ -34,24 +41,59 @@ class PendingDuties {
   private final UInt64 epoch;
   private SafeFuture<? extends Optional<? extends ScheduledDuties>> duties = new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
+  private final LabelledMetric<Counter> dutiesPerformedCounter;
 
-  private PendingDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+  private PendingDuties(
+      final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
+    dutiesPerformedCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.VALIDATOR,
+            "duties_performed",
+            "Count of the failed duties, by duty type",
+            "type",
+            "result");
   }
 
-  public static PendingDuties calculateDuties(final DutyLoader<?> dutyLoader, final UInt64 epoch) {
-    final PendingDuties duties = new PendingDuties(dutyLoader, epoch);
+  public static PendingDuties calculateDuties(
+      final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+    final PendingDuties duties = new PendingDuties(metricsSystem, dutyLoader, epoch);
     duties.recalculate();
     return duties;
   }
 
   public void onProductionDue(final UInt64 slot) {
-    execute(duties -> duties.performProductionDuty(slot));
+    execute(
+        duties ->
+            duties
+                .performProductionDuty(slot)
+                .finish(
+                    result -> reportDutySuccess(result, duties.getProductionType(), slot),
+                    error -> reportDutyFailure(error, duties.getProductionType(), slot)));
   }
 
   public void onAggregationDue(final UInt64 slot) {
-    execute(duties -> duties.performAggregationDuty(slot));
+    execute(
+        duties ->
+            duties
+                .performAggregationDuty(slot)
+                .finish(
+                    result -> reportDutySuccess(result, duties.getAggregationType(), slot),
+                    error -> reportDutyFailure(error, duties.getAggregationType(), slot)));
+  }
+
+  private void reportDutyFailure(
+      final Throwable error, final String producedType, final UInt64 slot) {
+    dutiesPerformedCounter.labels(producedType, "failed").inc();
+    VALIDATOR_LOGGER.dutyFailed(producedType, slot, Optional.empty(), error);
+  }
+
+  private void reportDutySuccess(
+      final DutyResult result, final String producedType, final UInt64 slot) {
+    dutiesPerformedCounter.labels(producedType, "success").inc(result.getSuccessCount());
+    dutiesPerformedCounter.labels(producedType, "failed").inc(result.getFailureCount());
+    result.report(producedType, slot, VALIDATOR_LOGGER);
   }
 
   public int countDuties() {

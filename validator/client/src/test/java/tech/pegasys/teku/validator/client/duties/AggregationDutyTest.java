@@ -47,8 +47,8 @@ import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
 class AggregationDutyTest {
-
-  public static final UInt64 SLOT = UInt64.valueOf(2832);
+  private static final String TYPE = "aggregate";
+  private static final UInt64 SLOT = UInt64.valueOf(2832);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -67,11 +67,6 @@ class AggregationDutyTest {
   @BeforeEach
   public void setUp() {
     when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
-  }
-
-  @Test
-  public void shouldReturnCorrectProducedType() {
-    assertThat(duty.getProducedType()).isEqualTo("aggregate");
   }
 
   @Test
@@ -207,8 +202,7 @@ class AggregationDutyTest {
     // Only one proof should be sent.
     verify(validatorApiChannel, times(1)).sendAggregateAndProof(any());
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 1, Set.of(aggregate.getData().getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(aggregate.getData().getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -220,11 +214,7 @@ class AggregationDutyTest {
     performAndReportDuty();
 
     verify(validatorLogger)
-        .dutyFailed(
-            eq(duty.getProducedType()),
-            eq(SLOT),
-            eq(duty.getValidatorIdString()),
-            any(IllegalStateException.class));
+        .dutyFailed(eq(TYPE), eq(SLOT), eq(Optional.empty()), any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -236,8 +226,7 @@ class AggregationDutyTest {
 
     performAndReportDuty();
 
-    verify(validatorLogger)
-        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -274,16 +263,13 @@ class AggregationDutyTest {
 
     performAndReportDuty();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
-    verify(validatorLogger)
-        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), exception);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result
-        .join()
-        .report(duty.getProducedType(), SLOT, duty.getValidatorIdString(), validatorLogger);
+    result.join().report(TYPE, SLOT, validatorLogger);
   }
 }

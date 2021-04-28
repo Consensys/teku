@@ -13,17 +13,12 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -34,21 +29,11 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
 
   private final DutyFactory<P, A> dutyFactory;
   private final Bytes32 dependentRoot;
-  private final LabelledMetric<Counter> dutiesPerformedCounter;
 
   public SlotBasedScheduledDuties(
-      final DutyFactory<P, A> dutyFactory,
-      final Bytes32 dependentRoot,
-      final MetricsSystem metricsSystem) {
+      final DutyFactory<P, A> dutyFactory, final Bytes32 dependentRoot) {
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
-    dutiesPerformedCounter =
-        metricsSystem.createLabelledCounter(
-            TekuMetricCategory.VALIDATOR,
-            "duties_performed",
-            "Count of the failed duties, by duty type",
-            "type",
-            "result");
   }
 
   public Bytes32 getDependentRoot() {
@@ -76,37 +61,34 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   }
 
   @Override
-  public synchronized void performProductionDuty(final UInt64 slot) {
-    performDutyForSlot(productionDuties, slot);
+  public synchronized SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
+    return performDutyForSlot(productionDuties, slot);
   }
 
   @Override
-  public synchronized void performAggregationDuty(final UInt64 slot) {
-    performDutyForSlot(aggregationDuties, slot);
+  public String getProductionType() {
+    return dutyFactory.getProductionType();
   }
 
-  private void performDutyForSlot(
+  @Override
+  public synchronized SafeFuture<DutyResult> performAggregationDuty(final UInt64 slot) {
+    return performDutyForSlot(aggregationDuties, slot);
+  }
+
+  @Override
+  public String getAggregationType() {
+    return dutyFactory.getAggregationType();
+  }
+
+  private SafeFuture<DutyResult> performDutyForSlot(
       final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
     discardDutiesBeforeSlot(duties, slot);
 
     final Duty duty = duties.remove(slot);
     if (duty == null) {
-      return;
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    duty.performDuty()
-        .finish(
-            result -> reportDutySuccess(result, duty, slot),
-            error -> reportDutyFailure(error, duty, slot));
-  }
-
-  private void reportDutyFailure(final Throwable error, final Duty duty, final UInt64 slot) {
-    dutiesPerformedCounter.labels(duty.getProducedType(), "failed").inc();
-    VALIDATOR_LOGGER.dutyFailed(duty.getProducedType(), slot, duty.getValidatorIdString(), error);
-  }
-
-  private void reportDutySuccess(final DutyResult result, final Duty duty, final UInt64 slot) {
-    dutiesPerformedCounter.labels(duty.getProducedType(), "success").inc();
-    result.report(duty.getProducedType(), slot, duty.getValidatorIdString(), VALIDATOR_LOGGER);
+    return duty.performDuty();
   }
 
   private void discardDutiesBeforeSlot(

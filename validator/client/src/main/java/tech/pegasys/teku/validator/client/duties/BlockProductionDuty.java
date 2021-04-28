@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -57,22 +56,12 @@ public class BlockProductionDuty implements Duty {
     return forkProvider.getForkInfo().thenCompose(this::produceBlock);
   }
 
-  @Override
-  public String getProducedType() {
-    return "block";
-  }
-
-  @Override
-  public Optional<BLSPublicKey> getValidatorIdentifier() {
-    return Optional.of(validator.getPublicKey());
-  }
-
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
         .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
         .thenCompose(this::sendBlock)
-        .exceptionally(DutyResult::forError);
+        .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
   private SafeFuture<DutyResult> sendBlock(final SignedBeaconBlock signedBlock) {
@@ -81,9 +70,10 @@ public class BlockProductionDuty implements Duty {
         .thenApply(
             result -> {
               if (result.isPublished()) {
-                return DutyResult.success(signedBlock.getRoot());
+                return DutyResult.success(validator.getPublicKey(), signedBlock.getRoot());
               }
               return DutyResult.forError(
+                  validator.getPublicKey(),
                   new IllegalArgumentException(
                       "Block was rejected by the beacon node: "
                           + result.getRejectionReason().orElse("<reason unknown>")));
