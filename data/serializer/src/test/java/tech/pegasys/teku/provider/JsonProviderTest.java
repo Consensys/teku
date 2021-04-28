@@ -81,6 +81,22 @@ class JsonProviderTest {
   }
 
   @Test
+  public void doubleShouldSerializeAndDeserialize() throws JsonProcessingException {
+    Double fewDecimals = 1.4;
+    final String serializedFewDecimals = jsonProvider.objectToJSON(fewDecimals);
+    final Double deserializedFewDecimals =
+        jsonProvider.jsonToObject(serializedFewDecimals, Double.class);
+    assertThat(fewDecimals).isEqualTo(deserializedFewDecimals);
+
+    Double multipleDecimals = 1.41234;
+    Double truncatedMultipleDecimals = 1.4123;
+    final String serializedMultipleDecimals = jsonProvider.objectToJSON(multipleDecimals);
+    final Double deserializedMultipleDecimals =
+        jsonProvider.jsonToObject(serializedMultipleDecimals, Double.class);
+    assertThat(truncatedMultipleDecimals).isEqualTo(deserializedMultipleDecimals);
+  }
+
+  @Test
   public void stringShouldSerializeToJson() throws JsonProcessingException {
     String data = "test";
     assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
