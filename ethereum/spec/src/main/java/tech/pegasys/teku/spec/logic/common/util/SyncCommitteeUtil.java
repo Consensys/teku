@@ -77,15 +77,24 @@ public class SyncCommitteeUtil {
     this.schemaDefinitionsAltair = schemaDefinitionsAltair;
   }
 
-  public Map<UInt64, SyncSubcommitteeAssignments> getSyncSubcommittees(
+  public boolean isStateUsableForCommitteeCalculationAtEpoch(
       final BeaconState state, final UInt64 epoch) {
     final UInt64 syncCommitteePeriod = computeSyncCommitteePeriod(epoch);
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
     final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
     final UInt64 nextSyncCommitteePeriod = currentSyncCommitteePeriod.increment();
+
+    return syncCommitteePeriod.equals(currentSyncCommitteePeriod)
+        || syncCommitteePeriod.equals(nextSyncCommitteePeriod);
+  }
+
+  public Map<UInt64, SyncSubcommitteeAssignments> getSyncSubcommittees(
+      final BeaconState state, final UInt64 epoch) {
+    final UInt64 syncCommitteePeriod = computeSyncCommitteePeriod(epoch);
+    final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
     checkArgument(
-        syncCommitteePeriod.equals(currentSyncCommitteePeriod)
-            || syncCommitteePeriod.equals(nextSyncCommitteePeriod),
+        isStateUsableForCommitteeCalculationAtEpoch(state, epoch),
         "State must be in the same or previous sync committee period");
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
     return BeaconStateCache.getTransitionCaches(altairState)

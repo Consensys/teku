@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -59,5 +60,20 @@ public class SyncCommitteeDuty {
     this.validatorIndex = validatorIndex;
     this.committeeIndices =
         committeeIndices.stream().map(UInt64::valueOf).collect(Collectors.toSet());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final SyncCommitteeDuty that = (SyncCommitteeDuty) o;
+    return Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(validatorIndex, that.validatorIndex)
+        && Objects.equals(committeeIndices, that.committeeIndices);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkey, validatorIndex, committeeIndices);
   }
 }

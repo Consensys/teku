@@ -200,20 +200,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
     final SpecVersion specVersion = spec.atEpoch(epoch);
-    final UInt64 stateSlot =
-        combinedChainDataClient.getCurrentEpoch().isLessThanOrEqualTo(epoch)
-            ? combinedChainDataClient.getCurrentSlot()
-            : specVersion.getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
 
-    LOG.trace(
-        "Retrieving sync committee duties from epoch {} using state at slot {}", epoch, stateSlot);
-    return combinedChainDataClient
-        .getStateAtSlotExact(stateSlot)
+    return getStateForCommitteeDuties(specVersion, epoch)
         .thenApply(
-            optionalState ->
-                optionalState.map(
-                    state ->
-                        getSyncCommitteeDutiesFromIndexesAndState(state, epoch, validatorIndices)));
+            maybeState ->
+                Optional.of(
+                    getSyncCommitteeDutiesFromIndexesAndState(
+                        maybeState, epoch, validatorIndices)));
   }
 
   @Override
@@ -529,8 +522,29 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         });
   }
 
+  private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(
+      final SpecVersion specVersion, final UInt64 epoch) {
+    final Optional<BeaconState> bestState = combinedChainDataClient.getBestState();
+    final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil = specVersion.getSyncCommitteeUtil();
+    if (bestState.isPresent()
+        && maybeSyncCommitteeUtil.isPresent()
+        && maybeSyncCommitteeUtil
+            .get()
+            .isStateUsableForCommitteeCalculationAtEpoch(bestState.get(), epoch)) {
+      return SafeFuture.completedFuture(bestState);
+    }
+
+    return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch));
+  }
+
   private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(
-      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndices) {
+      final Optional<BeaconState> maybeState,
+      final UInt64 epoch,
+      final Collection<Integer> validatorIndices) {
+    if (maybeState.isEmpty()) {
+      return new SyncCommitteeDuties(List.of());
+    }
+    final BeaconState state = maybeState.get();
     return new SyncCommitteeDuties(
         validatorIndices.stream()
             .flatMap(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex).stream())
@@ -545,6 +559,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         syncCommitteeUtil
             .map(util -> util.getCommitteeIndices(state, epoch, UInt64.valueOf(validatorIndex)))
             .orElse(Collections.emptySet());
+
+    if (duties.isEmpty()) {
+      return Optional.empty();
+    }
 
     return Optional.of(
         new SyncCommitteeDuty(
