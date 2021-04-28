@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
 
-class ScheduledDutiesTest {
+class SlotBasedScheduledDutiesTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
@@ -52,8 +52,8 @@ class ScheduledDutiesTest {
 
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final ScheduledDuties<ProductionDuty, AggregationDuty> duties =
-      new ScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+  private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
+      new SlotBasedScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {

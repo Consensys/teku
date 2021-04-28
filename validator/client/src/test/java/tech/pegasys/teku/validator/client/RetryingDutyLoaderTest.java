@@ -30,12 +30,15 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 class RetryingDutyLoaderTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final DutyLoader delegate = mock(DutyLoader.class);
-  private final ScheduledDuties<?, ?> scheduledDuties = mock(ScheduledDuties.class);
-  private final Optional<ScheduledDuties<?, ?>> scheduledDutiesOptional =
-      Optional.of(scheduledDuties);
 
-  private final RetryingDutyLoader dutyLoader = new RetryingDutyLoader(asyncRunner, delegate);
+  @SuppressWarnings("unchecked")
+  private final DutyLoader<ScheduledDuties> delegate = mock(DutyLoader.class);
+
+  private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+  private final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
+
+  private final RetryingDutyLoader<ScheduledDuties> dutyLoader =
+      new RetryingDutyLoader<>(asyncRunner, delegate);
 
   @Test
   public void shouldReturnDutiesWhenLoadedSuccessfully() {
@@ -51,7 +54,7 @@ class RetryingDutyLoaderTest {
         .thenReturn(NodeSyncingException.failedFuture())
         .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
@@ -65,7 +68,7 @@ class RetryingDutyLoaderTest {
         .thenReturn(SafeFuture.failedFuture(new NodeDataUnavailableException("Sorry")))
         .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
@@ -79,7 +82,7 @@ class RetryingDutyLoaderTest {
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("No way")))
         .thenReturn(SafeFuture.completedFuture(scheduledDutiesOptional));
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
@@ -90,10 +93,10 @@ class RetryingDutyLoaderTest {
   @Test
   public void shouldStopRetryingWhenFutureIsCancelled() {
     final RuntimeException error = new RuntimeException("No way");
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> delegateResponse = new SafeFuture<>();
+    final SafeFuture<Optional<ScheduledDuties>> delegateResponse = new SafeFuture<>();
     when(delegate.loadDutiesForEpoch(ONE)).thenReturn(delegateResponse);
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result = dutyLoader.loadDutiesForEpoch(ONE);
+    final SafeFuture<Optional<ScheduledDuties>> result = dutyLoader.loadDutiesForEpoch(ONE);
     verify(delegate).loadDutiesForEpoch(ONE);
     assertThat(result).isNotDone();
 
