@@ -378,38 +378,25 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
-  public Optional<ForkInfo> getHeadForkInfo() {
-    return getBestState().map(BeaconState::getForkInfo);
-  }
-
   public Optional<Fork> getNextFork() {
     return getCurrentEpoch().flatMap(spec.getForkSchedule()::getNextFork);
   }
 
+  public Optional<Fork> getCurrentFork() {
+    return getCurrentEpoch().map(spec.getForkSchedule()::getFork);
+  }
+
   /**
-   * Returns the fork info that applies based on the node's current slot, regardless of where the
-   * sync progress is up to.
-   *
-   * <p>NOTE: Works on the basis that there is only one future forked scheduled as that's all we can
-   * currently support.
+   * Returns the fork info that applies based on the current slot as calculated from the current
+   * time, regardless of where the sync progress is up to.
    *
    * @return fork info based on the current time, not head block
    */
-  public Optional<ForkInfo> getForkInfoAtCurrentTime() {
-    return getHeadForkInfo()
-        .map(
-            headForkInfo ->
-                getNextFork()
-                    .filter(this::isForkActive)
-                    .map(
-                        nextFork -> new ForkInfo(nextFork, headForkInfo.getGenesisValidatorsRoot()))
-                    .orElse(headForkInfo));
-  }
-
-  private boolean isForkActive(final Fork fork) {
-    return getCurrentSlot()
-        .map(currentSlot -> spec.computeEpochAtSlot(currentSlot).compareTo(fork.getEpoch()) >= 0)
-        .orElse(false);
+  public Optional<ForkInfo> getCurrentForkInfo() {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .flatMap(
+            validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
   }
 
   /**

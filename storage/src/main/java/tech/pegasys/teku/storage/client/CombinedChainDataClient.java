@@ -388,8 +388,8 @@ public class CombinedChainDataClient {
     return spec.computeEpochAtSlot(headSlot);
   }
 
-  public Optional<ForkInfo> getHeadForkInfo() {
-    return recentChainData.getHeadForkInfo();
+  public Optional<ForkInfo> getCurrentForkInfo() {
+    return recentChainData.getCurrentForkInfo();
   }
 
   /** @return The current slot according to clock time */
