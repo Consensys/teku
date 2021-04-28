@@ -33,6 +33,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptySet(), emptyList());
+  private static final int SUMMARY_VALIDATOR_LIMIT = 20;
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<BLSPublicKey> validatorKeys;
@@ -123,18 +124,20 @@ public class DutyResult {
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);
     }
-    errors.forEach(error -> logger.dutyFailed(producedType, slot, summarizeKeys(), error));
+    errors.forEach(
+        error -> logger.dutyFailed(producedType, slot, Optional.of(summarizeKeys()), error));
   }
 
-  private Optional<String> summarizeKeys() {
-    if (validatorKeys.size() > 10) {
-      return Optional.empty();
-    } else {
-      return Optional.of(
-          validatorKeys.stream()
-              .map(BLSPublicKey::toAbbreviatedString)
-              .collect(Collectors.joining(", ")));
-    }
+  private String summarizeKeys() {
+    final String suffix =
+        validatorKeys.size() > SUMMARY_VALIDATOR_LIMIT
+            ? "… (" + validatorKeys.size() + " total)"
+            : "";
+    return validatorKeys.stream()
+            .limit(SUMMARY_VALIDATOR_LIMIT)
+            .map(BLSPublicKey::toAbbreviatedString)
+            .collect(Collectors.joining(", "))
+        + suffix;
   }
 
   @Override
