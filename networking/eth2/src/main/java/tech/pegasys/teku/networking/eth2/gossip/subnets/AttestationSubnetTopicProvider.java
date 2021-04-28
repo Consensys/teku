@@ -30,7 +30,7 @@ public class AttestationSubnetTopicProvider {
   }
 
   public String getTopicForSubnet(final int subnetId) {
-    final Bytes4 forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
+    final Bytes4 forkDigest = recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest();
     return getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
   }
 }

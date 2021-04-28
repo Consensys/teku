@@ -477,15 +477,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getForkSchedule() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThat(provider.getForkSchedule())
-        .containsExactly(
-            new Fork(recentChainData.getForkInfoAtCurrentTime().orElseThrow().getFork()));
-  }
-
-  @Test
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);

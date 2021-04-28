@@ -48,7 +48,7 @@ class Eth2GossipTopicFilterTest {
 
   @BeforeEach
   void setUp() {
-    when(recentChainData.getHeadForkInfo()).thenReturn(Optional.of(forkInfo));
+    when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(forkInfo));
     when(recentChainData.getNextFork()).thenReturn(Optional.of(nextFork));
   }
 
