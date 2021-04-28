@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -68,6 +69,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private long discoveryNetworkAttestationSubnetsSubscription;
 
   private volatile Cancellable gossipUpdateTask;
+  private ForkInfo currentForkInfo;
 
   public ActiveEth2P2PNetwork(
       final Spec spec,
@@ -106,7 +108,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     }
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-    discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
+    updateForkInfo(currentForkInfo);
     return super.start().thenAccept(r -> startup());
   }
 
@@ -246,6 +248,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (gossipStarted.get()) {
       gossipForkManager.configureGossipForEpoch(epoch);
     }
+
+    recentChainData.getForkInfo(epoch).ifPresent(this::updateForkInfo);
   }
 
   @Override
@@ -271,5 +275,16 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @VisibleForTesting
   Eth2PeerManager getPeerManager() {
     return peerManager;
+  }
+
+  private synchronized void updateForkInfo(final ForkInfo forkInfo) {
+    if (currentForkInfo != null
+        && (currentForkInfo.equals(forkInfo) || forkInfo.isPriorTo(currentForkInfo))) {
+      return;
+    }
+
+    currentForkInfo = forkInfo;
+    final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
+    discoveryNetwork.setForkInfo(forkInfo, nextFork);
   }
 }

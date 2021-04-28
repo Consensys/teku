@@ -41,6 +41,16 @@ public class ForkInfo {
     return compute_fork_digest(fork.getCurrent_version(), genesisValidatorsRoot);
   }
 
+  /**
+   * True if this fork info represents a fork at an earlier epoch than the supplied fork info
+   *
+   * @param otherForkInfo The forkInfo to compare against
+   * @return True if this forkInfo is scheduled before the given forkInfo
+   */
+  public boolean isPriorTo(final ForkInfo otherForkInfo) {
+    return fork.getEpoch().isLessThan(otherForkInfo.getFork().getEpoch());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
