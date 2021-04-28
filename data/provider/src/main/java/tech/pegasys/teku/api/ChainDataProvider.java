@@ -23,7 +23,6 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValid
 import com.google.common.annotations.VisibleForTesting;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -56,7 +55,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -429,14 +427,6 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return SafeFuture.completedFuture(Optional.of(result));
-  }
-
-  public List<Fork> getForkSchedule() {
-    final Optional<ForkInfo> maybeForkInfo = recentChainData.getForkInfoAtCurrentTime();
-
-    return maybeForkInfo
-        .map(forkInfo -> List.of(new Fork(forkInfo.getFork())))
-        .orElse(Collections.emptyList());
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

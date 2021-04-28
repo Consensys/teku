@@ -35,7 +35,7 @@ public class StatusMessageFactory {
     }
 
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-    final ForkInfo forkInfo = recentChainData.getForkInfoAtCurrentTime().orElseThrow();
+    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Checkpoint finalizedCheckpoint = chainHead.getState().getFinalized_checkpoint();
 
     return Optional.of(
