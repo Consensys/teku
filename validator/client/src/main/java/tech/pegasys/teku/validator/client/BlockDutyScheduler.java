@@ -26,7 +26,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem,
-      final DutyLoader dutyLoader,
+      final DutyLoader<?> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
     super("block", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
@@ -35,7 +35,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         TekuMetricCategory.VALIDATOR,
         "scheduled_block_duties_current",
         "Current number of pending block duties that have been scheduled",
-        () -> dutiesByEpoch.values().stream().mapToInt(EpochDuties::countDuties).sum());
+        () -> dutiesByEpoch.values().stream().mapToInt(PendingDuties::countDuties).sum());
   }
 
   @Override

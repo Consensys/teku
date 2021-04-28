@@ -41,7 +41,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class AttestationDutyLoaderTest {
@@ -56,8 +56,8 @@ class AttestationDutyLoaderTest {
       mock(BeaconCommitteeSubscriptions.class);
 
   @SuppressWarnings("unchecked")
-  private final ScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
-      mock(ScheduledDuties.class);
+  private final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>
+      scheduledDuties = mock(SlotBasedScheduledDuties.class);
 
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
@@ -109,7 +109,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
+    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
@@ -145,7 +145,7 @@ class AttestationDutyLoaderTest {
     when(signer.signAggregationSlot(slot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
+    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
@@ -162,7 +162,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
-    final SafeFuture<Optional<ScheduledDuties<?, ?>>> result =
+    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 
     assertThat(result).isCompleted();
