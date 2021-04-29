@@ -29,7 +29,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
       final DutyLoader<?> dutyLoader,
       final boolean useDependentRoots,
       final Spec spec) {
-    super("block", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
+    super(metricsSystem, "block", dutyLoader, LOOKAHEAD_EPOCHS, useDependentRoots, spec);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,

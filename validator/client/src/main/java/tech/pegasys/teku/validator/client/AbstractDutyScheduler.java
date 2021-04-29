@@ -20,12 +20,14 @@ import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private final MetricsSystem metricsSystem;
   private final String dutyType;
   private final Spec spec;
   private final boolean useDependentRoots;
@@ -38,11 +40,13 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
+      final MetricsSystem metricsSystem,
       final String dutyType,
       final DutyLoader<?> epochDutiesScheduler,
       final int lookAheadEpochs,
       final boolean useDependentRoots,
       final Spec spec) {
+    this.metricsSystem = metricsSystem;
     this.dutyType = dutyType;
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.lookAheadEpochs = lookAheadEpochs;
@@ -127,7 +131,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   private PendingDuties createEpochDuties(final UInt64 epochNumber) {
-    return PendingDuties.calculateDuties(epochDutiesScheduler, epochNumber);
+    return PendingDuties.calculateDuties(metricsSystem, epochDutiesScheduler, epochNumber);
   }
 
   private void removePriorEpochs(final UInt64 epochNumber) {

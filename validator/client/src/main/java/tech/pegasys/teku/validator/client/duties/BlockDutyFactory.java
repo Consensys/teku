@@ -44,4 +44,15 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
   public Duty createAggregationDuty(final UInt64 slot, final Validator validator) {
     throw new UnsupportedOperationException("Aggregation not supported for blocks");
   }
+
+  @Override
+  public String getProductionType() {
+    return "block";
+  }
+
+  @Override
+  public String getAggregationType() {
+    // Aggregation is never used but getters should be safe to call so return a placeholder
+    return "";
+  }
 }
