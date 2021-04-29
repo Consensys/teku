@@ -73,15 +73,14 @@ public class SyncCommitteeSignature {
     return Objects.hash(slot, beaconBlockRoot, validatorIndex, signature);
   }
 
-  public static tech.pegasys.teku.spec.datastructures.operations.versions.altair
-          .SyncCommitteeSignature
-      asInternalCommitteeSignature(final SyncCommitteeSignature syncCommitteeSignature) {
+  public tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature
+      asInternalCommitteeSignature() {
     return new tech.pegasys.teku.spec.datastructures.operations.versions.altair
         .SyncCommitteeSignature(
         SyncCommitteeSignatureSchema.INSTANCE,
-        SszUInt64.of(syncCommitteeSignature.slot),
-        SszBytes32.of(syncCommitteeSignature.beaconBlockRoot),
-        SszUInt64.of(syncCommitteeSignature.validatorIndex),
-        new SszSignature(syncCommitteeSignature.signature.asInternalBLSSignature()));
+        SszUInt64.of(slot),
+        SszBytes32.of(beaconBlockRoot),
+        SszUInt64.of(validatorIndex),
+        new SszSignature(signature.asInternalBLSSignature()));
   }
 }
