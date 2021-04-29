@@ -14,15 +14,20 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ScheduledDuties {
 
   boolean requiresRecalculation(Bytes32 newHeadDependentRoot);
 
-  void performProductionDuty(UInt64 slot);
+  SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
 
-  void performAggregationDuty(UInt64 slot);
+  String getProductionType();
+
+  SafeFuture<DutyResult> performAggregationDuty(UInt64 slot);
+
+  String getAggregationType();
 
   int countDuties();
 }

@@ -43,6 +43,7 @@ import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.Duty;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -285,6 +286,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     // last slot of epoch 0
     final UInt64 slot =
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
+    when(scheduledDuties.performProductionDuty(slot))
+        .thenReturn(SafeFuture.completedFuture(DutyResult.success(Bytes32.ZERO)));
 
     when(validatorApiChannel.getProposerDuties(ZERO))
         .thenReturn(
@@ -350,8 +353,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot ->
-                        new SlotBasedScheduledDuties<>(
-                            blockDutyFactory, dependentRoot, metricsSystem),
+                        new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),

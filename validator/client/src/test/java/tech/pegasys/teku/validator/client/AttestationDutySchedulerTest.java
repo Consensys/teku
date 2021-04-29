@@ -47,6 +47,7 @@ import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -71,6 +72,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(
             completedFuture(
                 Optional.of(new AttesterDuties(dataStructureUtil.randomBytes32(), emptyList()))));
+    when(scheduledDuties.performProductionDuty(any()))
+        .thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
+    when(scheduledDuties.performAggregationDuty(any()))
+        .thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
   }
 
   @Test
@@ -813,9 +818,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         new AttestationDutyLoader(
             validatorApiChannel,
             forkProvider,
-            dependentRoot ->
-                new SlotBasedScheduledDuties<>(
-                    attestationDutyFactory, dependentRoot, metricsSystem),
+            dependentRoot -> new SlotBasedScheduledDuties<>(attestationDutyFactory, dependentRoot),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,

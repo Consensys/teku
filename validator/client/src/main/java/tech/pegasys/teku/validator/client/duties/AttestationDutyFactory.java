@@ -42,4 +42,14 @@ public class AttestationDutyFactory
   public AggregationDuty createAggregationDuty(final UInt64 slot, final Validator validator) {
     return new AggregationDuty(slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER);
   }
+
+  @Override
+  public String getProductionType() {
+    return "attestation";
+  }
+
+  @Override
+  public String getAggregationType() {
+    return "aggregate";
+  }
 }
