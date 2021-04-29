@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
@@ -40,13 +39,17 @@ public class DutyResult {
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
-  private final Map<FailureCause, Set<BLSPublicKey>> failures;
+  /**
+   * We combine failures based on the exception type to avoid logging thousands of the same type of
+   * exception if a lot of validators fail at the same time.
+   */
+  private final Map<Class<?>, FailureRecord> failures;
 
   private DutyResult(
       final int successCount,
       final int nodeSyncingCount,
       final Set<Bytes32> roots,
-      final Map<FailureCause, Set<BLSPublicKey>> failures) {
+      final Map<Class<?>, FailureRecord> failures) {
     this.successCount = successCount;
     this.nodeSyncingCount = nodeSyncingCount;
     this.roots = roots;
@@ -74,7 +77,8 @@ public class DutyResult {
     if (cause instanceof NodeSyncingException) {
       return new DutyResult(0, 1, emptySet(), emptyMap());
     } else {
-      return new DutyResult(0, 0, emptySet(), Map.of(new FailureCause(cause), validatorKeys));
+      return new DutyResult(
+          0, 0, emptySet(), Map.of(cause.getClass(), new FailureRecord(cause, validatorKeys)));
     }
   }
 
@@ -95,9 +99,9 @@ public class DutyResult {
     final Set<Bytes32> combinedRoots = new HashSet<>(this.roots);
     combinedRoots.addAll(other.roots);
 
-    final Map<FailureCause, Set<BLSPublicKey>> combinedErrors = new HashMap<>(this.failures);
+    final Map<Class<?>, FailureRecord> combinedErrors = new HashMap<>(this.failures);
     other.failures.forEach(
-        (cause, validators) -> combinedErrors.merge(cause, validators, Sets::union));
+        (cause, validators) -> combinedErrors.merge(cause, validators, FailureRecord::merge));
 
     return new DutyResult(
         combinedSuccessCount, combinedSyncingCount, combinedRoots, combinedErrors);
@@ -118,9 +122,12 @@ public class DutyResult {
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);
     }
-    failures.forEach(
-        (cause, validators) ->
-            logger.dutyFailed(producedType, slot, summarizeKeys(validators), cause.error));
+    failures
+        .values()
+        .forEach(
+            failure ->
+                logger.dutyFailed(
+                    producedType, slot, summarizeKeys(failure.validatorKeys), failure.error));
   }
 
   private Optional<String> summarizeKeys(final Set<BLSPublicKey> validatorKeys) {
@@ -153,31 +160,17 @@ public class DutyResult {
         + '}';
   }
 
-  /**
-   * Wrapper for exception that groups errors by the exception type to avoid reporting very similar
-   * exceptions for each validator.
-   */
-  private static class FailureCause {
+  private static class FailureRecord {
     private final Throwable error;
+    private final Set<BLSPublicKey> validatorKeys;
 
-    private FailureCause(final Throwable error) {
+    private FailureRecord(final Throwable error, final Set<BLSPublicKey> validatorKeys) {
       this.error = error;
+      this.validatorKeys = validatorKeys;
     }
 
-    @Override
-    public boolean equals(final Object other) {
-      if (this == other) {
-        return true;
-      }
-      if (!(other instanceof FailureCause)) {
-        return false;
-      }
-      return error.getClass().equals(((FailureCause) other).error.getClass());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(error.getClass());
+    public static FailureRecord merge(final FailureRecord a, final FailureRecord b) {
+      return new FailureRecord(a.error, Sets.union(a.validatorKeys, b.validatorKeys));
     }
   }
 }
