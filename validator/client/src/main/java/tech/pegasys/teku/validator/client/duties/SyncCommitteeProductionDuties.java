@@ -33,7 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
-public class SyncCommitteeProductionDuties {
+public class SyncCommitteeProductionDuties implements ScheduledDuties {
 
   private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
@@ -109,6 +109,36 @@ public class SyncCommitteeProductionDuties {
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
         .getSyncCommitteeSignatureSchema()
         .create(slot, blockRoot, UInt64.valueOf(assignment.validatorIndex), signature);
+  }
+
+  @Override
+  public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
+    return false;
+  }
+
+  @Override
+  public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
+    return produceSignatures(slot);
+  }
+
+  @Override
+  public String getProductionType() {
+    return "sync_committee_signature";
+  }
+
+  @Override
+  public SafeFuture<DutyResult> performAggregationDuty(final UInt64 slot) {
+    return SafeFuture.completedFuture(DutyResult.NO_OP);
+  }
+
+  @Override
+  public String getAggregationType() {
+    return "sync_committee_contribution";
+  }
+
+  @Override
+  public int countDuties() {
+    return 0;
   }
 
   private static class ValidatorAndCommitteeIndices {
