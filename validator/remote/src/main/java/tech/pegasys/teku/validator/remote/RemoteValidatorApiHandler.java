@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -54,6 +55,8 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -165,6 +168,30 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                             response.data.stream()
                                 .map(this::mapToApiAttesterDuties)
                                 .collect(Collectors.toList()))));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return sendRequest(
+        () ->
+            apiClient
+                .getSyncCommitteeDuties(epoch, validatorIndices)
+                .map(this::responseToSyncCommitteeDuties));
+  }
+
+  private SyncCommitteeDuties responseToSyncCommitteeDuties(final PostSyncDutiesResponse response) {
+    return new SyncCommitteeDuties(
+        response.data.stream()
+            .map(
+                duty ->
+                    new SyncCommitteeDuty(
+                        duty.pubkey.asBLSPublicKey(),
+                        duty.validatorIndex.intValue(),
+                        duty.committeeIndices.stream()
+                            .map(UInt64::intValue)
+                            .collect(Collectors.toSet())))
+            .collect(Collectors.toList()));
   }
 
   @Override
