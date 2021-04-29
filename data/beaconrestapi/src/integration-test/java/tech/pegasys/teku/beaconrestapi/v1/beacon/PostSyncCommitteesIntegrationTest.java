@@ -29,7 +29,6 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -37,12 +36,12 @@ import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 
 public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
-  DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final String errorString = "The Error Description";
 
   @Test
   void shouldSubmitSyncCommitteesAndGetResponse() throws IOException {
+    spec = TestSpecFactory.createMinimalAltair();
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final List<SyncCommitteeSignature> requestBody =
         List.of(
