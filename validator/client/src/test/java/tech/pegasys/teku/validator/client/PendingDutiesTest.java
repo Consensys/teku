@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -66,11 +65,9 @@ class PendingDutiesTest {
     when(scheduledDuties.getAggregationType()).thenReturn(AGGREGATION_TYPE);
 
     when(scheduledDuties.performProductionDuty(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(DutyResult.success(BLSPublicKey.empty(), Bytes32.ZERO)));
+        .thenReturn(SafeFuture.completedFuture(DutyResult.success(Bytes32.ZERO)));
     when(scheduledDuties.performAggregationDuty(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(DutyResult.success(BLSPublicKey.empty(), Bytes32.ZERO)));
+        .thenReturn(SafeFuture.completedFuture(DutyResult.success(Bytes32.ZERO)));
   }
 
   @Test
@@ -233,8 +230,8 @@ class PendingDutiesTest {
 
   @Test
   void shouldReportTotalNumberOfSuccessesAndFailuresToMetrics() {
-    final DutyResult result1 = DutyResult.success(BLSPublicKey.empty(), Bytes32.ZERO);
-    final DutyResult result2 = DutyResult.success(BLSPublicKey.empty(), Bytes32.ZERO);
+    final DutyResult result1 = DutyResult.success(Bytes32.ZERO);
+    final DutyResult result2 = DutyResult.success(Bytes32.ZERO);
     final DutyResult result3 = DutyResult.forError(new Throwable("Oh no!"));
     final DutyResult dutyResult = result1.combine(result2.combine(result3));
     when(scheduledDuties.performProductionDuty(ZERO))

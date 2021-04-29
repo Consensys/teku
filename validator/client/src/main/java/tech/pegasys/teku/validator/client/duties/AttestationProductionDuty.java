@@ -150,10 +150,7 @@ public class AttestationProductionDuty implements Duty {
             signedAttestation ->
                 validatorApiChannel.sendSignedAttestation(
                     signedAttestation, Optional.of(validator.getValidatorIndex())))
-        .thenApply(
-            __ ->
-                DutyResult.success(
-                    validator.validator.getPublicKey(), attestationData.getBeacon_block_root()));
+        .thenApply(__ -> DutyResult.success(attestationData.getBeacon_block_root()));
   }
 
   private Attestation createSignedAttestation(

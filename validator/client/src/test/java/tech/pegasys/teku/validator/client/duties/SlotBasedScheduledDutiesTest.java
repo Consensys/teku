@@ -104,9 +104,7 @@ class SlotBasedScheduledDutiesTest {
     final T mockDuty = mock(dutyType);
     when(mockDuty.performDuty())
         .thenReturn(
-            SafeFuture.completedFuture(
-                DutyResult.success(
-                    dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32())));
+            SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
     return mockDuty;
   }
 

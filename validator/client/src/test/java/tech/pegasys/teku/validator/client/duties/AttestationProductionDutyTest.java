@@ -36,6 +36,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -51,7 +52,8 @@ class AttestationProductionDutyTest {
   private static final String TYPE = "attesation";
   private static final UInt64 SLOT = UInt64.valueOf(1488);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -84,7 +86,11 @@ class AttestationProductionDutyTest {
 
     assertThat(attestationFuture).isCompletedWithValue(Optional.empty());
     verify(validatorLogger)
-        .dutyFailed(eq(TYPE), eq(SLOT), eq(Optional.empty()), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -124,7 +130,11 @@ class AttestationProductionDutyTest {
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
-        .dutyFailed(eq(TYPE), eq(SLOT), eq(Optional.empty()), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Optional.of(validator1.getPublicKey().toAbbreviatedString())),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -166,7 +176,9 @@ class AttestationProductionDutyTest {
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), failure);
+    verify(validatorLogger)
+        .dutyFailed(
+            TYPE, SLOT, Optional.of(validator1.getPublicKey().toAbbreviatedString()), failure);
     verifyNoMoreInteractions(validatorLogger);
   }
 

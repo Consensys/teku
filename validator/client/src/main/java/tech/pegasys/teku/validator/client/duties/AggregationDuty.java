@@ -130,7 +130,6 @@ public class AggregationDuty implements Duty {
               validatorApiChannel.sendAggregateAndProof(
                   new SignedAggregateAndProof(aggregateAndProof, signature));
               return DutyResult.success(
-                  aggregator.validator.getPublicKey(),
                   aggregateAndProof.getAggregate().getData().getBeacon_block_root());
             });
   }

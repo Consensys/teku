@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
-import java.util.ArrayList;
+import com.google.common.collect.Sets;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
@@ -32,29 +35,26 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
-  public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptySet(), emptyList());
+  public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap());
   private static final int SUMMARY_VALIDATOR_LIMIT = 20;
   private final int successCount;
   private final int nodeSyncingCount;
-  private final Set<BLSPublicKey> validatorKeys;
   private final Set<Bytes32> roots;
-  private final List<Throwable> errors;
+  private final Map<FailureCause, Set<BLSPublicKey>> failures;
 
   private DutyResult(
       final int successCount,
       final int nodeSyncingCount,
-      final Set<BLSPublicKey> validatorKeys,
       final Set<Bytes32> roots,
-      final List<Throwable> errors) {
+      final Map<FailureCause, Set<BLSPublicKey>> failures) {
     this.successCount = successCount;
     this.nodeSyncingCount = nodeSyncingCount;
-    this.validatorKeys = validatorKeys;
     this.roots = roots;
-    this.errors = errors;
+    this.failures = failures;
   }
 
-  public static DutyResult success(final BLSPublicKey validatorKey, final Bytes32 result) {
-    return new DutyResult(1, 0, singleton(validatorKey), singleton(result), emptyList());
+  public static DutyResult success(final Bytes32 result) {
+    return new DutyResult(1, 0, singleton(result), emptyMap());
   }
 
   public static DutyResult forError(final Throwable error) {
@@ -72,9 +72,9 @@ public class DutyResult {
       cause = cause.getCause();
     }
     if (cause instanceof NodeSyncingException) {
-      return new DutyResult(0, 1, validatorKeys, emptySet(), emptyList());
+      return new DutyResult(0, 1, emptySet(), emptyMap());
     } else {
-      return new DutyResult(0, 0, validatorKeys, emptySet(), List.of(cause));
+      return new DutyResult(0, 0, emptySet(), Map.of(new FailureCause(cause), validatorKeys));
     }
   }
 
@@ -92,21 +92,15 @@ public class DutyResult {
     final int combinedSuccessCount = this.successCount + other.successCount;
     final int combinedSyncingCount = this.nodeSyncingCount + other.nodeSyncingCount;
 
-    final Set<BLSPublicKey> combinedValidatorKeys = new HashSet<>(this.validatorKeys);
-    combinedValidatorKeys.addAll(other.validatorKeys);
-
     final Set<Bytes32> combinedRoots = new HashSet<>(this.roots);
     combinedRoots.addAll(other.roots);
 
-    final List<Throwable> combinedErrors = new ArrayList<>(this.errors);
-    combinedErrors.addAll(other.errors);
+    final Map<FailureCause, Set<BLSPublicKey>> combinedErrors = new HashMap<>(this.failures);
+    other.failures.forEach(
+        (cause, validators) -> combinedErrors.merge(cause, validators, Sets::union));
 
     return new DutyResult(
-        combinedSuccessCount,
-        combinedSyncingCount,
-        combinedValidatorKeys,
-        combinedRoots,
-        combinedErrors);
+        combinedSuccessCount, combinedSyncingCount, combinedRoots, combinedErrors);
   }
 
   public int getSuccessCount() {
@@ -114,7 +108,7 @@ public class DutyResult {
   }
 
   public int getFailureCount() {
-    return errors.size() + nodeSyncingCount;
+    return failures.size() + nodeSyncingCount;
   }
 
   public void report(final String producedType, final UInt64 slot, final ValidatorLogger logger) {
@@ -124,20 +118,25 @@ public class DutyResult {
     if (nodeSyncingCount > 0) {
       logger.dutySkippedWhileSyncing(producedType, slot, nodeSyncingCount);
     }
-    errors.forEach(
-        error -> logger.dutyFailed(producedType, slot, Optional.of(summarizeKeys()), error));
+    failures.forEach(
+        (cause, validators) ->
+            logger.dutyFailed(producedType, slot, summarizeKeys(validators), cause.error));
   }
 
-  private String summarizeKeys() {
+  private Optional<String> summarizeKeys(final Set<BLSPublicKey> validatorKeys) {
+    if (validatorKeys.isEmpty()) {
+      return Optional.empty();
+    }
     final String suffix =
         validatorKeys.size() > SUMMARY_VALIDATOR_LIMIT
             ? "… (" + validatorKeys.size() + " total)"
             : "";
-    return validatorKeys.stream()
-            .limit(SUMMARY_VALIDATOR_LIMIT)
-            .map(BLSPublicKey::toAbbreviatedString)
-            .collect(Collectors.joining(", "))
-        + suffix;
+    return Optional.of(
+        validatorKeys.stream()
+                .limit(SUMMARY_VALIDATOR_LIMIT)
+                .map(BLSPublicKey::toAbbreviatedString)
+                .collect(Collectors.joining(", "))
+            + suffix);
   }
 
   @Override
@@ -150,7 +149,35 @@ public class DutyResult {
         + ", roots="
         + roots
         + ", errors="
-        + errors
+        + failures
         + '}';
+  }
+
+  /**
+   * Wrapper for exception that groups errors by the exception type to avoid reporting very similar
+   * exceptions for each validator.
+   */
+  private static class FailureCause {
+    private final Throwable error;
+
+    private FailureCause(final Throwable error) {
+      this.error = error;
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof FailureCause)) {
+        return false;
+      }
+      return error.getClass().equals(((FailureCause) other).error.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(error.getClass());
+    }
   }
 }

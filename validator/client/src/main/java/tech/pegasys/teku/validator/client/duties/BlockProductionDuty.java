@@ -70,7 +70,7 @@ public class BlockProductionDuty implements Duty {
         .thenApply(
             result -> {
               if (result.isPublished()) {
-                return DutyResult.success(validator.getPublicKey(), signedBlock.getRoot());
+                return DutyResult.success(signedBlock.getRoot());
               }
               return DutyResult.forError(
                   validator.getPublicKey(),

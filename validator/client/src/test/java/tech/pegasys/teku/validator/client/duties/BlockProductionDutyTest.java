@@ -124,7 +124,11 @@ class BlockProductionDutyTest {
     performAndReportDuty();
 
     verify(validatorLogger)
-        .dutyFailed(eq(TYPE), eq(SLOT), eq(Optional.empty()), any(IllegalStateException.class));
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -144,7 +148,8 @@ class BlockProductionDutyTest {
 
   public void assertDutyFails(final RuntimeException error) {
     performAndReportDuty();
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), error);
+    verify(validatorLogger)
+        .dutyFailed(TYPE, SLOT, Optional.of(validator.getPublicKey().toAbbreviatedString()), error);
     verifyNoMoreInteractions(validatorLogger);
   }
 
