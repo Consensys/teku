@@ -34,6 +34,7 @@ public enum ValidatorApiMethod {
   SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET("eth/v1/validator/beacon_committee_subscriptions"),
   SUBSCRIBE_TO_PERSISTENT_SUBNETS("validator/persistent_subnets_subscription"),
   GET_ATTESTATION_DUTIES("eth/v1/validator/duties/attester/:epoch"),
+  GET_SYNC_COMMITTEE_DUTIES("eth/v1/validator/duties/sync/:epoch"),
   GET_PROPOSER_DUTIES("eth/v1/validator/duties/proposer/:epoch"),
   GET_BLOCK_HEADER("eth/v1/beacon/headers/:block_id"),
   GET_CONFIG_SPEC("/eth/v1/config/spec"),

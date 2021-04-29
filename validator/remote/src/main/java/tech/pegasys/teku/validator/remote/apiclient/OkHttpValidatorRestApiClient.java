@@ -23,6 +23,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -139,11 +141,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
         GET_ATTESTATION_DUTIES,
         Map.of("epoch", epoch.toString()),
-        validatorIndexes.toArray(),
+        validatorIndices.toArray(),
         createHandler(PostAttesterDutiesResponse.class));
   }
 
@@ -255,6 +257,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final List<SyncCommitteeSignature> syncCommitteeSignatures) {
     // FIXME
     return Optional.empty();
+  }
+    @Override
+  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return post(
+        GET_SYNC_COMMITTEE_DUTIES,
+        Map.of("epoch", epoch.toString()),
+        validatorIndices.toArray(),
+        createHandler(PostSyncDutiesResponse.class));
   }
 
   private ResponseHandler<Void> createHandler() {

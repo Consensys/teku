@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
@@ -227,5 +229,27 @@ public class ValidatorDataProvider {
         UInt64.valueOf(duties.getCommitteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
+  }
+
+  public SafeFuture<Optional<PostSyncDutiesResponse>> getSyncDuties(
+      final UInt64 epoch, final List<Integer> indexes) {
+    return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indexes))
+        .thenApply(
+            res ->
+                res.map(
+                    duties ->
+                        new PostSyncDutiesResponse(
+                            duties.getDuties().stream()
+                                .filter(duty -> duty.getPublicKey() != null)
+                                .map(this::mapToSyncCommitteeDuty)
+                                .collect(toList()))));
+  }
+
+  private tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty mapToSyncCommitteeDuty(
+      final SyncCommitteeDuty duty) {
+    return new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
+        new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
+        UInt64.valueOf(duty.getValidatorIndex()),
+        duty.getSyncCommitteeIndices());
   }
 }

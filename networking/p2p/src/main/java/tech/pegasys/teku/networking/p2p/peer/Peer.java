@@ -31,6 +31,8 @@ public interface Peer {
 
   PeerAddress getAddress();
 
+  Double getGossipScore();
+
   boolean isConnected();
 
   void disconnectImmediately(Optional<DisconnectReason> reason, boolean locallyInitiated);

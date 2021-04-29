@@ -41,6 +41,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -78,6 +79,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -276,6 +278,7 @@ public class BeaconRestApi {
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     app.get(Liveness.ROUTE, new Liveness());
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
+    app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
@@ -306,6 +309,7 @@ public class BeaconRestApi {
     app.post(
         PostSubscribeToBeaconCommitteeSubnet.ROUTE,
         new PostSubscribeToBeaconCommitteeSubnet(dataProvider, jsonProvider));
+    app.post(PostSyncDuties.ROUTE, new PostSyncDuties(dataProvider, jsonProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider) {

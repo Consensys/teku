@@ -34,7 +34,7 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -145,25 +145,26 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
-    final DutyLoader attestationDutyLoader =
-        new RetryingDutyLoader(
+    final DutyLoader<?> attestationDutyLoader =
+        new RetryingDutyLoader<>(
             asyncRunner,
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
                 dependentRoot ->
-                    new ScheduledDuties<>(attestationDutyFactory, dependentRoot, metricsSystem),
+                    new SlotBasedScheduledDuties<>(
+                        attestationDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
                 spec));
-    final DutyLoader blockDutyLoader =
-        new RetryingDutyLoader(
+    final DutyLoader<?> blockDutyLoader =
+        new RetryingDutyLoader<>(
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
                 dependentRoot ->
-                    new ScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
+                    new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider));
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
