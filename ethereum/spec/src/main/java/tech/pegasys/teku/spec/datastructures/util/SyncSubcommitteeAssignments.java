@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
@@ -29,13 +30,16 @@ import java.util.Set;
 public class SyncSubcommitteeAssignments {
 
   public static final SyncSubcommitteeAssignments NONE =
-      new SyncSubcommitteeAssignments(emptyMap());
+      new SyncSubcommitteeAssignments(emptyMap(), emptySet());
 
   private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices;
+  private final Set<Integer> committeeIndices;
 
   private SyncSubcommitteeAssignments(
-      final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices) {
+      final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices,
+      final Set<Integer> committeeIndices) {
     this.subcommitteeToParticipationIndices = subcommitteeToParticipationIndices;
+    this.committeeIndices = committeeIndices;
   }
 
   public static SyncSubcommitteeAssignments.Builder builder() {
@@ -44,6 +48,10 @@ public class SyncSubcommitteeAssignments {
 
   public Set<Integer> getAssignedSubcommittees() {
     return Collections.unmodifiableSet(subcommitteeToParticipationIndices.keySet());
+  }
+
+  public Set<Integer> getCommitteeIndices() {
+    return committeeIndices;
   }
 
   public Set<Integer> getParticipationBitIndices(final int subcommitteeIndex) {
@@ -64,6 +72,7 @@ public class SyncSubcommitteeAssignments {
 
   public static class Builder {
     private final Map<Integer, Set<Integer>> subcommitteeToParticipationIndices = new HashMap<>();
+    private final Set<Integer> committeeIndices = new HashSet<>();
 
     public Builder addAssignment(
         final int subcommitteeIndex, final int subcommitteeParticipationIndex) {
@@ -73,8 +82,13 @@ public class SyncSubcommitteeAssignments {
       return this;
     }
 
+    public Builder addCommitteeIndex(final Integer index) {
+      committeeIndices.add(index);
+      return this;
+    }
+
     public SyncSubcommitteeAssignments build() {
-      return new SyncSubcommitteeAssignments(subcommitteeToParticipationIndices);
+      return new SyncSubcommitteeAssignments(subcommitteeToParticipationIndices, committeeIndices);
     }
   }
 }

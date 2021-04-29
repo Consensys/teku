@@ -432,4 +432,8 @@ public class ChainDataProvider {
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
     return spec.atSlot(slot).getMilestone();
   }
+
+  public SpecMilestone getMilestoneAtEpoch(final UInt64 epoch) {
+    return spec.atEpoch(epoch).getMilestone();
+  }
 }
