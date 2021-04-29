@@ -258,7 +258,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     // FIXME
     return Optional.empty();
   }
-    @Override
+
+  @Override
   public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
