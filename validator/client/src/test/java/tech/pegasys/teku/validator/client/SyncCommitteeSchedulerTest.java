@@ -24,11 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -54,7 +54,7 @@ class SyncCommitteeSchedulerTest {
 
   private final SyncCommitteeScheduler scheduler =
       new SyncCommitteeScheduler(
-          new NoOpMetricsSystem(), spec, dutyLoader, earlySubscribeRandomSource);
+          new StubMetricsSystem(), spec, dutyLoader, earlySubscribeRandomSource);
 
   @BeforeEach
   void setUp() {
