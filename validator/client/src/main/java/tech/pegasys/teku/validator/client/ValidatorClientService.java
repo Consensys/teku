@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -48,8 +50,7 @@ public class ValidatorClientService extends Service {
   private final ForkProvider forkProvider;
   private final Spec spec;
 
-  private ValidatorTimingChannel attestationTimingChannel;
-  private ValidatorTimingChannel blockProductionTimingChannel;
+  private List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
@@ -166,10 +167,11 @@ public class ValidatorClientService extends Service {
                 validators,
                 validatorIndexProvider));
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
-    this.attestationTimingChannel =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, useDependentRoots, spec);
-    this.blockProductionTimingChannel =
-        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots, spec);
+    validatorTimingChannels.add(
+        new BlockDutyScheduler(metricsSystem, blockDutyLoader, useDependentRoots, spec));
+    validatorTimingChannels.add(
+        new AttestationDutyScheduler(
+            metricsSystem, attestationDutyLoader, useDependentRoots, spec));
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
         new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);
@@ -200,8 +202,7 @@ public class ValidatorClientService extends Service {
               new ValidatorTimingActions(
                   validatorStatusLogger,
                   validatorIndexProvider,
-                  blockProductionTimingChannel,
-                  attestationTimingChannel,
+                  validatorTimingChannels,
                   spec,
                   metricsSystem));
           validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
