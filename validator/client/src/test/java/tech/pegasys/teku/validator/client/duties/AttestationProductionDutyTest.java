@@ -214,7 +214,12 @@ class AttestationProductionDutyTest {
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), signingFailure);
+    verify(validatorLogger)
+        .dutyFailed(
+            TYPE,
+            SLOT,
+            Optional.of(validator1.getPublicKey().toAbbreviatedString()),
+            signingFailure);
     verifyNoMoreInteractions(validatorLogger);
   }
 

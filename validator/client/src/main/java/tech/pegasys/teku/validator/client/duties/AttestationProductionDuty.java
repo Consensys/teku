@@ -117,7 +117,13 @@ public class AttestationProductionDuty implements Duty {
                                         + " with committee "
                                         + committeeIndex
                                         + " because chain data was unavailable"))))
-        .exceptionally(error -> convertErrorToDutyResult(committee, error));
+        .exceptionally(
+            error ->
+                DutyResult.forError(
+                    committee.validators.stream()
+                        .map(ValidatorWithCommitteePositionAndIndex::getPublicKey)
+                        .collect(toSet()),
+                    error));
   }
 
   private SafeFuture<DutyResult> signAttestationsForCommittee(
@@ -126,15 +132,7 @@ public class AttestationProductionDuty implements Duty {
         validators.forEach(
             validator ->
                 signAttestationForValidator(forkInfo, attestationData, validator)
-                    .exceptionally(error -> convertErrorToDutyResult(validators, error))));
-  }
-
-  private DutyResult convertErrorToDutyResult(final Committee committee, final Throwable error) {
-    return DutyResult.forError(
-        committee.validators.stream()
-            .map(ValidatorWithCommitteePositionAndIndex::getPublicKey)
-            .collect(toSet()),
-        error);
+                    .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error))));
   }
 
   private SafeFuture<DutyResult> signAttestationForValidator(
