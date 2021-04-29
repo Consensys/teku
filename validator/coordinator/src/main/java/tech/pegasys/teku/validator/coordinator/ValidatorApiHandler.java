@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -72,6 +73,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
@@ -452,6 +454,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               }
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+    // TODO 3906 implement send sync committee signatures
+    throw new UnsupportedOperationException("sendSyncCommitteeSignatures not implemented yet.");
   }
 
   @VisibleForTesting

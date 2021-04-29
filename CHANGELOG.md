@@ -14,5 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Newly created databases will now use LevelDB for storage instead of RocksDB. This uses less memory and has proven to be more stable. Existing databases are unaffected and will continue to use RocksDB.
 - Support for automatic fail-over of eth1-endpoints.  Multiple endpoints can be specified with the new `--eth1-endpoints` CLI option. Thanks to Enrico Del Fante.
+- implement `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
 
 ### Bug Fixes

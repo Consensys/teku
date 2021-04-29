@@ -62,6 +62,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
@@ -343,6 +344,7 @@ public class BeaconRestApi {
     app.post(PostProposerSlashing.ROUTE, new PostProposerSlashing(dataProvider, jsonProvider));
     app.get(GetVoluntaryExits.ROUTE, new GetVoluntaryExits(dataProvider, jsonProvider));
     app.post(PostVoluntaryExit.ROUTE, new PostVoluntaryExit(dataProvider, jsonProvider));
+    app.post(PostSyncCommittees.ROUTE, new PostSyncCommittees(dataProvider, jsonProvider));
   }
 
   private void addEventHandler(

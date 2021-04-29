@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -68,4 +70,7 @@ public interface ValidatorRestApiClient {
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
+
+  Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeSignatures(
+      List<SyncCommitteeSignature> syncCommitteeSignatures);
 }

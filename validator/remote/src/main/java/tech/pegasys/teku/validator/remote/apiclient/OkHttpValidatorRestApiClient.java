@@ -58,6 +58,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
@@ -74,6 +75,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -246,6 +248,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
+  }
+
+  @Override
+  public Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+    // FIXME
+    return Optional.empty();
   }
 
   private ResponseHandler<Void> createHandler() {
