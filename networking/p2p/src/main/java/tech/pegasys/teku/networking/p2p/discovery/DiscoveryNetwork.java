@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Optional;
@@ -50,6 +51,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
   public static final String ETH2_ENR_FIELD = "eth2";
 
   private final Spec spec;
@@ -157,6 +159,12 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds).sszSerialize());
+  }
+
+  public void setSyncCommitteeSubnetSubscriptions(Iterable<Integer> subnetIds) {
+    discoveryService.updateCustomENRField(
+        SYNC_COMMITTEE_SUBNET_ENR_FIELD,
+        SszBitvectorSchema.create(SYNC_COMMITTEE_SUBNET_COUNT).ofBits(subnetIds).sszSerialize());
   }
 
   public void setPreGenesisForkInfo() {
