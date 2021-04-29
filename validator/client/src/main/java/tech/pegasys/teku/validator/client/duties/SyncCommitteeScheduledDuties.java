@@ -33,7 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
-public class SyncCommitteeProductionDuties implements ScheduledDuties {
+public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
@@ -41,7 +41,7 @@ public class SyncCommitteeProductionDuties implements ScheduledDuties {
   private final Spec spec;
   private final ValidatorApiChannel validatorApiChannel;
 
-  private SyncCommitteeProductionDuties(
+  private SyncCommitteeScheduledDuties(
       final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
@@ -52,7 +52,7 @@ public class SyncCommitteeProductionDuties implements ScheduledDuties {
     this.assignments = assignments;
   }
 
-  public static SyncCommitteeProductionDuties.Builder builder() {
+  public static SyncCommitteeScheduledDuties.Builder builder() {
     return new Builder();
   }
 
@@ -154,6 +154,10 @@ public class SyncCommitteeProductionDuties implements ScheduledDuties {
     public void addCommitteeIndex(final int subcommitteeIndex) {
       committeeIndices.add(subcommitteeIndex);
     }
+
+    public void addCommitteeIndices(final Collection<Integer> subcommitteeIndex) {
+      committeeIndices.addAll(subcommitteeIndex);
+    }
   }
 
   public static class Builder {
@@ -186,11 +190,22 @@ public class SyncCommitteeProductionDuties implements ScheduledDuties {
       return this;
     }
 
-    public SyncCommitteeProductionDuties build() {
+    public Builder committeeAssignments(
+        final Validator validator,
+        final int validatorIndex,
+        final Collection<Integer> committeeIndices) {
+      assignments
+          .computeIfAbsent(
+              validatorIndex, __ -> new ValidatorAndCommitteeIndices(validator, validatorIndex))
+          .addCommitteeIndices(committeeIndices);
+      return this;
+    }
+
+    public SyncCommitteeScheduledDuties build() {
       checkNotNull(spec, "Must provide a spec");
       checkNotNull(validatorApiChannel, "Must provide a validatorApiChannel");
       checkNotNull(forkProvider, "Must provide a forkProvider");
-      return new SyncCommitteeProductionDuties(
+      return new SyncCommitteeScheduledDuties(
           spec, validatorApiChannel, forkProvider, assignments.values());
     }
   }

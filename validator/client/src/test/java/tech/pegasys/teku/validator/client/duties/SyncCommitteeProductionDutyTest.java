@@ -60,13 +60,13 @@ class SyncCommitteeProductionDutyTest {
 
   @Test
   void shouldReturnNoOpWhenNoValidatorsAssigned() {
-    final SyncCommitteeProductionDuties duties = dutyBuilder().build();
+    final SyncCommitteeScheduledDuties duties = dutyBuilder().build();
     assertThat(duties.produceSignatures(UInt64.ONE)).isCompletedWithValue(DutyResult.NO_OP);
   }
 
   @Test
   void shouldFailToProduceSignaturesWhenNodeHasNoBlock() {
-    final SyncCommitteeProductionDuties duties =
+    final SyncCommitteeScheduledDuties duties =
         dutyBuilder().committeeAssignment(validator, 55, 1).build();
     final UInt64 slot = UInt64.valueOf(25);
     when(validatorApiChannel.getBlockRootInEffectAtSlot(slot))
@@ -83,7 +83,7 @@ class SyncCommitteeProductionDutyTest {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int validatorIndex = 23;
     final BLSSignature signature = dataStructureUtil.randomSignature();
-    final SyncCommitteeProductionDuties duties =
+    final SyncCommitteeScheduledDuties duties =
         dutyBuilder().committeeAssignment(validator, validatorIndex, 1).build();
     when(validatorApiChannel.getBlockRootInEffectAtSlot(slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
@@ -108,7 +108,7 @@ class SyncCommitteeProductionDutyTest {
     final Validator validator2 = createValidator();
     final BLSSignature signature1 = dataStructureUtil.randomSignature();
     final BLSSignature signature2 = dataStructureUtil.randomSignature();
-    final SyncCommitteeProductionDuties duties =
+    final SyncCommitteeScheduledDuties duties =
         dutyBuilder()
             .committeeAssignment(validator, validatorIndex1, 1)
             .committeeAssignment(validator, validatorIndex1, 2)
@@ -153,14 +153,14 @@ class SyncCommitteeProductionDutyTest {
   }
 
   private void produceSignaturesAndReport(
-      final SyncCommitteeProductionDuties duties, final UInt64 slot) {
+      final SyncCommitteeScheduledDuties duties, final UInt64 slot) {
     final SafeFuture<DutyResult> result = duties.produceSignatures(slot);
     assertThat(result).isCompleted();
     result.join().report(SIGNATURE_TYPE, slot, validatorLogger);
   }
 
-  private SyncCommitteeProductionDuties.Builder dutyBuilder() {
-    return SyncCommitteeProductionDuties.builder()
+  private SyncCommitteeScheduledDuties.Builder dutyBuilder() {
+    return SyncCommitteeScheduledDuties.builder()
         .validatorApiChannel(validatorApiChannel)
         .spec(spec)
         .forkProvider(forkProvider);
