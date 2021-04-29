@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -120,6 +121,15 @@ class SyncCommitteeUtilTest {
     final SyncSubcommitteeAssignments assignments = syncSubcommittees.get(UInt64.ZERO);
     assertThat(assignments.getAssignedSubcommittees()).containsExactly(0);
     assertThat(assignments.getParticipationBitIndices(0)).containsExactlyInAnyOrder(0, 2, 3);
+  }
+
+  @Test
+  void getCommitteeIndices() {
+    final BeaconState state = createStateWithCurrentSyncCommittee(validatorPublicKeys);
+    final Set<Integer> indices =
+        syncCommitteeUtil.getCommitteeIndices(
+            state, spec.computeEpochAtSlot(state.getSlot()), UInt64.valueOf(12));
+    assertThat(indices).containsExactly(12);
   }
 
   @Test
