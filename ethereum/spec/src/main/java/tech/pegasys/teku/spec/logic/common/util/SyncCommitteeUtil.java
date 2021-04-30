@@ -277,8 +277,8 @@ public class SyncCommitteeUtil {
   }
 
   public UInt64 computeFirstEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {
-    final UInt64 nextSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
-    return nextSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+    final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
+    return currentSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
   public UInt64 computeFirstEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
