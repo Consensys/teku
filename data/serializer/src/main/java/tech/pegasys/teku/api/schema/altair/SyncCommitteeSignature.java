@@ -21,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,8 +28,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SyncCommitteeSignature {
-  private static final Logger LOG = LogManager.getLogger();
-
   @Schema(type = "string", format = "uint64")
   @JsonProperty("slot")
   public final UInt64 slot;
@@ -82,10 +78,11 @@ public class SyncCommitteeSignature {
     final Optional<SchemaDefinitionsAltair> maybeSchema =
         spec.atSlot(slot).getSchemaDefinitions().toVersionAltair();
     if (maybeSchema.isEmpty()) {
-      LOG.trace(
-          "could not get schema definition for sync committee at slot {} for validator {}",
-          slot,
-          validatorIndex);
+      final String message =
+          String.format(
+              "Could not create sync committee signature at phase0 slot %s for validator %s",
+              slot, validatorIndex);
+      throw new IllegalArgumentException(message);
     }
     return maybeSchema.map(
         schema ->

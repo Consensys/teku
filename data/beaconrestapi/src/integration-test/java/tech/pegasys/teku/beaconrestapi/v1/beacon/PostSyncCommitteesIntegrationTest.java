@@ -68,4 +68,22 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
 
     assertThat(responseBody.failures.get(0).message).isEqualTo(errorString);
   }
+
+  @Test
+  void phase0SlotCausesBadRequest() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.PHASE0);
+    spec = TestSpecFactory.createMinimalPhase0();
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<SyncCommitteeSignature> requestBody =
+        List.of(
+            new SyncCommitteeSignature(
+                UInt64.ONE,
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
+                new BLSSignature(dataStructureUtil.randomSignature())));
+    Response response = post(PostSyncCommittees.ROUTE, jsonProvider.objectToJSON(requestBody));
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string())
+        .contains("Could not create sync committee signature at phase0 slot 1");
+  }
 }
