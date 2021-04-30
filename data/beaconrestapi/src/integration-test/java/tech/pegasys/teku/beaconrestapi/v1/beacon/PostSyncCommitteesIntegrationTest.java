@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
@@ -56,7 +57,8 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
                 new SubmitCommitteeSignaturesResult(
                     List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, errorString)))));
     when(validatorApiChannel.sendSyncCommitteeSignatures(
-            List.of(requestBody.get(0).asInternalCommitteeSignature())))
+            requestBody.get(0).asInternalCommitteeSignature(spec).stream()
+                .collect(Collectors.toList())))
         .thenReturn(future);
     Response response = post(PostSyncCommittees.ROUTE, jsonProvider.objectToJSON(requestBody));
 

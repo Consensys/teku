@@ -153,7 +153,7 @@ public class ValidatorDataProvider {
       final List<SyncCommitteeSignature> signatures) {
     return validatorApiChannel.sendSyncCommitteeSignatures(
         signatures.stream()
-            .map(signature -> signature.asInternalCommitteeSignature())
+            .flatMap(signature -> signature.asInternalCommitteeSignature(spec).stream())
             .collect(Collectors.toList()));
   }
 
