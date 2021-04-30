@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -229,7 +230,15 @@ class SyncCommitteeSchedulerTest {
   }
 
   @Test
-  void shouldResubscribeToSubnetsWhenBeaconNodeRestarts() {}
+  void shouldRecalculateDutiesWhenBeaconNodeRestarts() {
+    scheduler.onSlot(UInt64.ZERO);
+    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
+
+    // Reconnecting the event stream may mean the node restarted so recalculate duties to ensure
+    // subscriptions are refreshed
+    scheduler.onPossibleMissedEvents();
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(UInt64.ZERO);
+  }
 
   private SyncCommitteeScheduledDuties createScheduledDuties() {
     final SyncCommitteeScheduledDuties duties = mock(SyncCommitteeScheduledDuties.class);

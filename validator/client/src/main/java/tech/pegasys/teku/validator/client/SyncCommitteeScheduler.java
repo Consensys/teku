@@ -25,6 +25,16 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
 
+/**
+ * Scheduled duties for sync committees.
+ *
+ * <p>Note that because the sync committee period is so long (256 epochs) and we get a full
+ * committee period look ahead, there is no concern that duties will be invalidated by re-orgs as
+ * they'd have to be at least 256 epochs long to change the duty allocations.
+ *
+ * <p>Having to reconnect to the beacon chain does cause duties to recalculate though so that any
+ * subnet subscriptions are renewed if the reconnection was because the beacon chain restarted.
+ */
 public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   private final MetricsSystem metricsSystem;
@@ -128,7 +138,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {}
 
   @Override
-  public void onPossibleMissedEvents() {}
+  public void onPossibleMissedEvents() {
+    currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
+    nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
+  }
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
@@ -158,6 +171,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
               () ->
                   Optional.of(
                       PendingDuties.calculateDuties(metricsSystem, dutyLoader, periodStartEpoch)));
+    }
+
+    public void recalculate() {
+      duties.ifPresent(PendingDuties::recalculate);
     }
   }
 }
