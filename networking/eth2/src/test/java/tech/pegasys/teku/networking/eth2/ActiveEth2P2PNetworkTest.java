@@ -17,14 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -59,12 +62,12 @@ public class ActiveEth2P2PNetworkTest {
   private final Eth2PeerManager peerManager = mock(Eth2PeerManager.class);
   private final GossipForkManager gossipForkManager = mock(GossipForkManager.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final SubnetSubscriptionService attestationSubnetService =
-      mock(SubnetSubscriptionService.class);
-  private final SubnetSubscriptionService syncCommitteeSubnetService =
-      mock(SubnetSubscriptionService.class);
 
   // Real dependencies
+  private final SubnetSubscriptionService attestationSubnetService =
+      new SubnetSubscriptionService();
+  private final SubnetSubscriptionService syncCommitteeSubnetService =
+      new SubnetSubscriptionService();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final GossipConfigurator gossipConfigurator = GossipConfigurator.NOOP;
@@ -128,6 +131,62 @@ public class ActiveEth2P2PNetworkTest {
     // Reprocessing prior epoch should not update fork info
     network.onEpoch(UInt64.ONE);
     verifyNoMoreInteractions(discoveryNetwork);
+  }
+
+  @Test
+  public void subscribeToSyncCommitteeSubnetId_shouldUpdateDiscoveryENR_oneUpdate() {
+    final ArgumentCaptor<Iterable<Integer>> subnetsCaptor = subnetIdCaptor();
+
+    assertThat(network.start()).isCompleted();
+    network.subscribeToSyncCommitteeSubnetId(1);
+
+    verify(discoveryNetwork).setSyncCommitteeSubnetSubscriptions(subnetsCaptor.capture());
+
+    assertThat(subnetsCaptor.getAllValues().size()).isEqualTo(1);
+    assertThat(subnetsCaptor.getValue()).containsExactly(1);
+  }
+
+  @Test
+  public void subscribeToSyncCommitteeSubnetId_shouldUpdateDiscoveryENR_multipleUpdates() {
+    final ArgumentCaptor<Iterable<Integer>> subnetsCaptor = subnetIdCaptor();
+
+    assertThat(network.start()).isCompleted();
+    network.subscribeToSyncCommitteeSubnetId(1);
+    network.subscribeToSyncCommitteeSubnetId(2);
+    network.subscribeToSyncCommitteeSubnetId(3);
+
+    verify(discoveryNetwork, times(3)).setSyncCommitteeSubnetSubscriptions(subnetsCaptor.capture());
+
+    final List<Iterable<Integer>> capturedValues = subnetsCaptor.getAllValues();
+    assertThat(capturedValues.size()).isEqualTo(3);
+    assertThat(capturedValues.get(0)).containsExactly(1);
+    assertThat(capturedValues.get(1)).containsExactlyInAnyOrder(1, 2);
+    assertThat(capturedValues.get(2)).containsExactlyInAnyOrder(1, 2, 3);
+  }
+
+  @Test
+  public void unsubscribeFromSyncCommitteeSubnetId_shouldUpdateDiscoveryENR() {
+    final ArgumentCaptor<Iterable<Integer>> subnetsCaptor = subnetIdCaptor();
+
+    assertThat(network.start()).isCompleted();
+    network.subscribeToSyncCommitteeSubnetId(1);
+    network.subscribeToSyncCommitteeSubnetId(2);
+    network.subscribeToSyncCommitteeSubnetId(3);
+    network.unsubscribeFromSyncCommitteeSubnetId(2);
+
+    verify(discoveryNetwork, times(4)).setSyncCommitteeSubnetSubscriptions(subnetsCaptor.capture());
+
+    final List<Iterable<Integer>> capturedValues = subnetsCaptor.getAllValues();
+    assertThat(capturedValues.size()).isEqualTo(4);
+    assertThat(capturedValues.get(0)).containsExactly(1);
+    assertThat(capturedValues.get(1)).containsExactlyInAnyOrder(1, 2);
+    assertThat(capturedValues.get(2)).containsExactlyInAnyOrder(1, 2, 3);
+    assertThat(capturedValues.get(3)).containsExactlyInAnyOrder(1, 3);
+  }
+
+  @SuppressWarnings("unchecked")
+  private ArgumentCaptor<Iterable<Integer>> subnetIdCaptor() {
+    return ArgumentCaptor.forClass(Iterable.class);
   }
 
   private void setupForkInfo() {
