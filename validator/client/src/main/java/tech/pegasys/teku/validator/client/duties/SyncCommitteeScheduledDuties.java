@@ -28,6 +28,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused", "UnusedVariable"})
 public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   private final ForkProvider forkProvider;
@@ -78,7 +79,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public int countDuties() {
-    return 0;
+    return assignments.size();
   }
 
   private static class ValidatorAndCommitteeIndices {
