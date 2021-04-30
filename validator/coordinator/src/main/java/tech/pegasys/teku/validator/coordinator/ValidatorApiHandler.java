@@ -77,6 +77,7 @@ import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
@@ -393,6 +394,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
           }
         });
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+    // FIXME 3907 need to implement
   }
 
   @Override

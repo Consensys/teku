@@ -76,6 +76,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -259,6 +260,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         validatorIndices.toArray(),
         createHandler(PostSyncDutiesResponse.class));
   }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {}
 
   private ResponseHandler<Void> createHandler() {
     return createHandler(null);

@@ -40,6 +40,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
@@ -73,6 +74,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String PUBLISHED_AGGREGATE_COUNTER_NAME =
       "beacon_node_published_aggregate_total";
   public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
+  public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME =
+      "beacon_node_subscribe_sync_committee_subnet";
   private final ValidatorApiChannel delegate;
   private final BeaconChainRequestCounter forkInfoRequestCounter;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
@@ -86,6 +89,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
+  private final Counter subscribeSyncCommitteeRequestCounter;
   private final Counter sendAttestationRequestCounter;
   private final Counter sendAggregateRequestCounter;
   private final Counter sendBlockRequestCounter;
@@ -170,6 +174,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             PUBLISHED_BLOCK_COUNTER_NAME,
             "Counter recording the number of signed blocks sent to the beacon node");
+    subscribeSyncCommitteeRequestCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
+            "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
   }
 
   @Override
@@ -248,6 +257,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     subscribeAggregationRequestCounter.inc();
     delegate.subscribeToBeaconCommittee(requests);
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+    subscribeSyncCommitteeRequestCounter.inc();
+    delegate.subscribeToSyncCommitteeSubnets(subscriptions);
   }
 
   @Override

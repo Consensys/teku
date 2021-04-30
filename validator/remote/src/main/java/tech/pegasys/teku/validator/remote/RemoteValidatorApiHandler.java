@@ -57,6 +57,7 @@ import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -310,6 +311,18 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+    sendRequest(
+            () ->
+                apiClient.subscribeToSyncCommitteeSubnets(
+                    subscriptions.stream()
+                        .map(SyncCommitteeSubnetSubscription::asSchemaObject)
+                        .collect(Collectors.toList())))
+        .finish(error -> LOG.error("Failed to subscribe to sync committee subnets", error));
   }
 
   @Override

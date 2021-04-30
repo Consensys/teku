@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -170,6 +171,14 @@ public class ValidatorDataProvider {
                         request.committees_at_slot,
                         request.slot,
                         request.is_aggregator))
+            .collect(toList()));
+  }
+
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+    validatorApiChannel.subscribeToSyncCommitteeSubnets(
+        subscriptions.stream()
+            .map(tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription::create)
             .collect(toList()));
   }
 
