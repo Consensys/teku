@@ -183,6 +183,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         .thenApply(__ -> Stream.of(futures).map(SafeFuture::join).collect(toList()));
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> SafeFuture<List<T>> collectAll(final Stream<SafeFuture<T>> futures) {
+    return collectAll(futures.toArray(SafeFuture[]::new));
+  }
+
   /**
    * Adds the {@link Throwable} from each future as a suppressed exception to completionException
    * unless it is already set as the cause.
