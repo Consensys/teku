@@ -21,14 +21,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -56,61 +51,6 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     return new Builder();
   }
 
-  public SafeFuture<DutyResult> produceSignatures(final UInt64 slot) {
-    if (assignments.isEmpty()) {
-      return SafeFuture.completedFuture(DutyResult.NO_OP);
-    }
-    return forkProvider
-        .getForkInfo()
-        .thenCompose(
-            forkInfo ->
-                validatorApiChannel
-                    .getBlockRootInEffectAtSlot(slot)
-                    .thenCompose(
-                        maybeBlockRoot ->
-                            maybeBlockRoot
-                                .map(blockRoot -> produceSignatures(forkInfo, slot, blockRoot))
-                                .orElseGet(
-                                    () ->
-                                        SafeFuture.completedFuture(
-                                            DutyResult.forError(new NodeSyncingException())))));
-  }
-
-  private SafeFuture<DutyResult> produceSignatures(
-      final ForkInfo forkInfo, final UInt64 slot, final Bytes32 blockRoot) {
-    return SafeFuture.collectAll(
-            assignments.stream()
-                .map(assignment -> produceSignature(forkInfo, slot, blockRoot, assignment)))
-        .thenApply(
-            signatures -> {
-              validatorApiChannel.sendSyncCommitteeSignatures(signatures);
-              return DutyResult.success(blockRoot, assignments.size());
-            });
-  }
-
-  private SafeFuture<SyncCommitteeSignature> produceSignature(
-      final ForkInfo forkInfo,
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final ValidatorAndCommitteeIndices assignment) {
-    return assignment
-        .validator
-        .getSigner()
-        .signSyncCommitteeSignature(slot, blockRoot, forkInfo)
-        .thenApply(
-            signature -> createSyncCommitteeSignature(slot, blockRoot, assignment, signature));
-  }
-
-  private SyncCommitteeSignature createSyncCommitteeSignature(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final ValidatorAndCommitteeIndices assignment,
-      final BLSSignature signature) {
-    return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSyncCommitteeSignatureSchema()
-        .create(slot, blockRoot, UInt64.valueOf(assignment.validatorIndex), signature);
-  }
-
   @Override
   public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
     return false;
@@ -118,7 +58,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
-    return produceSignatures(slot);
+    return SafeFuture.completedFuture(DutyResult.NO_OP);
   }
 
   @Override

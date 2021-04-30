@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
@@ -65,10 +64,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
-  default SafeFuture<Optional<Bytes32>> getBlockRootInEffectAtSlot(UInt64 slot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not implemented yet"));
-  }
-
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
@@ -80,8 +75,4 @@ public interface ValidatorApiChannel extends ChannelInterface {
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
-
-  default void sendSyncCommitteeSignatures(Collection<SyncCommitteeSignature> signatures) {
-    throw new UnsupportedOperationException("Not implemented yet");
-  }
 }
