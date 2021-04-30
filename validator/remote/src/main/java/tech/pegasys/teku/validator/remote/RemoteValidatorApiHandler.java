@@ -297,13 +297,13 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                 .sendSyncCommitteeSignatures(
                     syncCommitteeSignatures.stream()
                         .map(
-                            i ->
+                            signature ->
                                 new tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature(
-                                    i.getSlot(),
-                                    i.getBeaconBlockRoot(),
-                                    i.getValidatorIndex(),
+                                    signature.getSlot(),
+                                    signature.getBeaconBlockRoot(),
+                                    signature.getValidatorIndex(),
                                     new tech.pegasys.teku.api.schema.BLSSignature(
-                                        i.getSignature())))
+                                        signature.getSignature())))
                         .collect(Collectors.toList()))
                 .map(this::responseToSyncCommitteeSignatures));
   }

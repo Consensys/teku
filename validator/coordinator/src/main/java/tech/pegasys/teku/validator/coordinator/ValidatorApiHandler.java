@@ -500,14 +500,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private Optional<SubmitCommitteeSignaturesResult> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
-    final List<SubmitCommitteeSignatureError> errorList =
-        internalValidationResults.stream()
-            .flatMap(
-                validationResult ->
-                    this.fromInternalValidationResult(
-                        validationResult, internalValidationResults.indexOf(validationResult))
-                        .stream())
-            .collect(toList());
+    final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
+    for (int index = 0; index < internalValidationResults.size(); index++) {
+      final Optional<SubmitCommitteeSignatureError> maybeError =
+          fromInternalValidationResult(internalValidationResults.get(index), index);
+      maybeError.ifPresent(errorList::add);
+    }
+
     if (errorList.isEmpty()) {
       return Optional.empty();
     }

@@ -31,6 +31,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_SIGNATURES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
@@ -255,8 +256,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeSignatures(
       final List<SyncCommitteeSignature> syncCommitteeSignatures) {
-    // FIXME
-    return Optional.empty();
+    return post(
+        SEND_SYNC_COMMITTEE_SIGNATURES,
+        syncCommitteeSignatures,
+        createHandler(PostSyncCommitteeFailureResponse.class));
   }
 
   @Override

@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -68,6 +70,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -78,13 +82,15 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final UInt64 EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(EPOCH);
   private final UInt64 PREVIOUS_EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
 
@@ -625,6 +631,48 @@ class ValidatorApiHandlerTest {
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))
         .isCompletedWithValue(Map.of(validator0, 0));
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldAllowEmptyRequest() {
+    final List<SyncCommitteeSignature> signatures = List.of();
+    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldAddSignaturesToPool()
+      throws ExecutionException, InterruptedException {
+    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
+    final List<SyncCommitteeSignature> signatures = List.of(signature);
+    when(syncCommitteeSignaturePool.add(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.ACCEPT, "")));
+    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result).isCompleted();
+    assertThat(result.get()).isEmpty();
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldRaiseErrors()
+      throws ExecutionException, InterruptedException {
+    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
+    final List<SyncCommitteeSignature> signatures = List.of(signature);
+    when(syncCommitteeSignaturePool.add(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
+    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result).isCompleted();
+    final SubmitCommitteeSignaturesResult unwrappedResult = result.get().orElseThrow();
+    assertThat(unwrappedResult)
+        .isEqualTo(
+            new SubmitCommitteeSignaturesResult(
+                List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected"))));
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
