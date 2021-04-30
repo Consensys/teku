@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -56,8 +57,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getSpecConfig(currentEpoch));
     if (currentSyncCommitteePeriod.isEmpty()) {
       final SyncCommitteePeriod committeePeriod =
-          new SyncCommitteePeriod(
-              syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(currentEpoch), 0);
+          createSyncCommitteePeriod(
+              syncCommitteeUtil,
+              syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(currentEpoch),
+              0);
       committeePeriod.calculateDuties();
       currentSyncCommitteePeriod = Optional.of(committeePeriod);
     }
@@ -69,8 +72,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
           earlySubscribeRandomSource.nextInt(specConfig.getEpochsPerSyncCommitteePeriod());
       nextSyncCommitteePeriod =
           Optional.of(
-              new SyncCommitteePeriod(
-                  firstEpochOfNextSyncCommitteePeriod, subscribeEpochsPriorToNextSyncPeriod));
+              createSyncCommitteePeriod(
+                  syncCommitteeUtil,
+                  firstEpochOfNextSyncCommitteePeriod,
+                  subscribeEpochsPriorToNextSyncPeriod));
     }
 
     final SyncCommitteePeriod nextSyncCommitteePeriod = this.nextSyncCommitteePeriod.get();
@@ -83,20 +88,33 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     }
   }
 
+  private SyncCommitteePeriod createSyncCommitteePeriod(
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final UInt64 periodStartEpoch,
+      final int subscribeEpochsPriorToNextSyncPeriod) {
+    return new SyncCommitteePeriod(
+        periodStartEpoch,
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(periodStartEpoch),
+        subscribeEpochsPriorToNextSyncPeriod);
+  }
+
   @Override
   public void onAttestationCreationDue(final UInt64 slot) {
-    // TODO: Probably should check we are still in the right sync committee period
-    currentSyncCommitteePeriod
-        .flatMap(period -> period.duties)
-        .ifPresent(duties -> duties.onProductionDue(slot));
+    getDutiesForSlot(slot).ifPresent(duties -> duties.onProductionDue(slot));
   }
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
-    // TODO: Probably should check we are still in the right sync committee period
-    currentSyncCommitteePeriod
-        .flatMap(period -> period.duties)
-        .ifPresent(duties -> duties.onAggregationDue(slot));
+    getDutiesForSlot(slot).ifPresent(duties -> duties.onAggregationDue(slot));
+  }
+
+  private Optional<PendingDuties> getDutiesForSlot(final UInt64 slot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    return Stream.of(currentSyncCommitteePeriod, nextSyncCommitteePeriod)
+        .flatMap(Optional::stream)
+        .filter(period -> period.isCurrentPeriodForEpoch(epoch))
+        .findAny()
+        .flatMap(period -> period.duties);
   }
 
   @Override
@@ -118,12 +136,20 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   private class SyncCommitteePeriod {
     private Optional<PendingDuties> duties = Optional.empty();
     private final UInt64 periodStartEpoch;
+    private final UInt64 nextPeriodStartEpoch;
     private final UInt64 subscribeEpoch;
 
     private SyncCommitteePeriod(
-        final UInt64 periodStartEpoch, final int numberOfEpochsPriorToStartToSubscribe) {
+        final UInt64 periodStartEpoch,
+        final UInt64 nextPeriodStartEpoch,
+        final int numberOfEpochsPriorToStartToSubscribe) {
       this.periodStartEpoch = periodStartEpoch;
+      this.nextPeriodStartEpoch = nextPeriodStartEpoch;
       this.subscribeEpoch = periodStartEpoch.minusMinZero(numberOfEpochsPriorToStartToSubscribe);
+    }
+
+    public boolean isCurrentPeriodForEpoch(final UInt64 epoch) {
+      return periodStartEpoch.isLessThanOrEqualTo(epoch) && epoch.isLessThan(nextPeriodStartEpoch);
     }
 
     public void calculateDuties() {

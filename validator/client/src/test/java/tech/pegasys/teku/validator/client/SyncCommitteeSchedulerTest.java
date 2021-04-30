@@ -186,6 +186,48 @@ class SyncCommitteeSchedulerTest {
     verify(duties, never()).performProductionDuty(nextSyncCommitteePeriodStartSlot);
   }
 
+  /**
+   * Weird corner case where clocks are out of sync between validator client and beacon chain. We
+   * get a block imported notice for the next slot prior to getting onSlot from local clock
+   */
+  @Test
+  void shouldUseNextPeriodForDutiesWhenOnSlotNotYetCalled() {
+    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(5);
+    final UInt64 nextSyncCommitteePeriodStartEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
+    final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(5);
+    final UInt64 subscribeSlot = spec.computeStartSlotAtEpoch(subscribeEpoch);
+    final UInt64 nextSyncCommitteePeriodStartSlot =
+        spec.computeStartSlotAtEpoch(nextSyncCommitteePeriodStartEpoch);
+    final SyncCommitteeScheduledDuties nextDuties = createScheduledDuties();
+
+    // Trigger calculation of duties for both current and next periods
+    scheduler.onSlot(subscribeSlot);
+    requestedDutiesByEpoch.get(UInt64.ZERO).complete(Optional.of(duties));
+    requestedDutiesByEpoch.get(nextSyncCommitteePeriodStartEpoch).complete(Optional.of(nextDuties));
+
+    // Unexpectedly jump ahead to the next committee period without getting a slot event first
+    scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot);
+    scheduler.onAttestationAggregationDue(nextSyncCommitteePeriodStartSlot);
+
+    // Should use duties from the next period
+    verify(nextDuties).performProductionDuty(nextSyncCommitteePeriodStartSlot);
+    verify(nextDuties).performAggregationDuty(nextSyncCommitteePeriodStartSlot);
+
+    // Should not perform duties if the epoch is past the end of the next sync committee period
+    final UInt64 tooFarInFutureEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(
+            nextSyncCommitteePeriodStartEpoch);
+    final UInt64 tooFarInFutureSlot = spec.computeStartSlotAtEpoch(tooFarInFutureEpoch);
+    scheduler.onAttestationCreationDue(tooFarInFutureSlot);
+    scheduler.onAttestationAggregationDue(tooFarInFutureSlot);
+
+    verify(duties, never()).performProductionDuty(tooFarInFutureSlot);
+    verify(duties, never()).performAggregationDuty(tooFarInFutureSlot);
+    verify(nextDuties, never()).performProductionDuty(tooFarInFutureSlot);
+    verify(nextDuties, never()).performAggregationDuty(tooFarInFutureSlot);
+  }
+
   @Test
   void shouldResubscribeToSubnetsWhenBeaconNodeRestarts() {}
 
