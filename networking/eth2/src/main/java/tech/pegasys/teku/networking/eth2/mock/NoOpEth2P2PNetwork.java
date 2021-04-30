@@ -34,6 +34,15 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {}
 
   @Override
+  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {}
+
+  @Override
+  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {}
+
+  @Override
+  public void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIndices) {}
+
+  @Override
   public MetadataMessage getMetadata() {
     return MetadataMessage.DEFAULT;
   }

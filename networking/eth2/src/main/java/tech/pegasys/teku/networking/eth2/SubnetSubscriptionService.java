@@ -20,18 +20,18 @@ import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
  * Service tracks long term attestation subnet subscriptions and notifies subscribers on their
  * changes
  */
-public class AttestationSubnetService {
-  ObservableValue<Iterable<Integer>> attSubnetSubscriptions = new ObservableValue<>(true);
+public class SubnetSubscriptionService {
+  ObservableValue<Iterable<Integer>> subnetSubscriptions = new ObservableValue<>(true);
 
   public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
-    attSubnetSubscriptions.set(subnetIndices);
+    subnetSubscriptions.set(subnetIndices);
   }
 
   public synchronized long subscribeToUpdates(ValueObserver<Iterable<Integer>> observer) {
-    return attSubnetSubscriptions.subscribe(observer);
+    return subnetSubscriptions.subscribe(observer);
   }
 
   public void unsubscribe(long subscriptionId) {
-    attSubnetSubscriptions.unsubscribe(subscriptionId);
+    subnetSubscriptions.unsubscribe(subscriptionId);
   }
 }

@@ -60,13 +60,15 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
   private final GossipConfigurator gossipConfigurator;
-  private final AttestationSubnetService attestationSubnetService;
+  private final SubnetSubscriptionService attestationSubnetService;
+  private final SubnetSubscriptionService syncCommitteeSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
 
   private final GossipForkManager gossipForkManager;
 
   private long discoveryNetworkAttestationSubnetsSubscription;
+  private long discoveryNetworkSyncCommitteeSubnetsSubscription;
 
   private volatile Cancellable gossipUpdateTask;
   private ForkInfo currentForkInfo;
@@ -79,7 +81,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipForkManager gossipForkManager,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
-      final AttestationSubnetService attestationSubnetService,
+      final SubnetSubscriptionService attestationSubnetService,
+      final SubnetSubscriptionService syncCommitteeSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
@@ -94,6 +97,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.gossipEncoding = gossipEncoding;
     this.gossipConfigurator = gossipConfigurator;
     this.attestationSubnetService = attestationSubnetService;
+    this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
@@ -144,6 +148,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
+    discoveryNetworkSyncCommitteeSubnetsSubscription =
+        syncCommitteeSubnetService.subscribeToUpdates(
+            discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
     processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
@@ -202,6 +209,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       gossipUpdateTask.cancel();
       gossipForkManager.stopGossip();
       attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+      syncCommitteeSubnetService.unsubscribe(discoveryNetworkSyncCommitteeSubnetsSubscription);
     }
 
     return peerManager
@@ -265,6 +273,21 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
     attestationSubnetService.updateSubscriptions(subnetIndices);
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
+    gossipForkManager.subscribeToSyncCommitteeSubnetId(subnetId);
+  }
+
+  @Override
+  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
+    gossipForkManager.unsubscribeFromSyncCommitteeSubnetId(subnetId);
+  }
+
+  @Override
+  public void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
+    syncCommitteeSubnetService.updateSubscriptions(subnetIndices);
   }
 
   @Override

@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
+import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -102,7 +102,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
-      final AttestationSubnetService attestationSubnetService,
+      final SubnetSubscriptionService attestationSubnetService,
       final RpcEncoding rpcEncoding,
       final Optional<Checkpoint> requiredCheckpoint,
       final Duration eth2RpcPingInterval,

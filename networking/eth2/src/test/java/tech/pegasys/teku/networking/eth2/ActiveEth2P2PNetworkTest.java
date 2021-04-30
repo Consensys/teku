@@ -59,8 +59,10 @@ public class ActiveEth2P2PNetworkTest {
   private final Eth2PeerManager peerManager = mock(Eth2PeerManager.class);
   private final GossipForkManager gossipForkManager = mock(GossipForkManager.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
-  private final AttestationSubnetService attestationSubnetService =
-      mock(AttestationSubnetService.class);
+  private final SubnetSubscriptionService attestationSubnetService =
+      mock(SubnetSubscriptionService.class);
+  private final SubnetSubscriptionService syncCommitteeSubnetService =
+      mock(SubnetSubscriptionService.class);
 
   // Real dependencies
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -150,6 +152,7 @@ public class ActiveEth2P2PNetworkTest {
         eventChannels,
         recentChainData,
         attestationSubnetService,
+        syncCommitteeSubnetService,
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider);
