@@ -272,22 +272,19 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
-    attestationSubnetService.updateSubscriptions(subnetIndices);
+    attestationSubnetService.setSubscriptions(subnetIndices);
   }
 
   @Override
   public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
     gossipForkManager.subscribeToSyncCommitteeSubnetId(subnetId);
+    syncCommitteeSubnetService.addSubscription(subnetId);
   }
 
   @Override
   public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
     gossipForkManager.unsubscribeFromSyncCommitteeSubnetId(subnetId);
-  }
-
-  @Override
-  public void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
-    syncCommitteeSubnetService.updateSubscriptions(subnetIndices);
+    syncCommitteeSubnetService.removeSubscription(subnetId);
   }
 
   @Override

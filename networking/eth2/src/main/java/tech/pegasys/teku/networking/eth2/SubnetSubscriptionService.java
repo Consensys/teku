@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 
@@ -23,8 +26,20 @@ import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 public class SubnetSubscriptionService {
   ObservableValue<Iterable<Integer>> subnetSubscriptions = new ObservableValue<>(true);
 
-  public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
+  public synchronized void setSubscriptions(final Iterable<Integer> subnetIndices) {
     subnetSubscriptions.set(subnetIndices);
+  }
+
+  public synchronized void addSubscription(final int subnet) {
+    final Set<Integer> values = getSubnets();
+    values.add(subnet);
+    subnetSubscriptions.set(values);
+  }
+
+  public synchronized void removeSubscription(final int subnet) {
+    final Set<Integer> values = getSubnets();
+    values.remove(subnet);
+    subnetSubscriptions.set(values);
   }
 
   public synchronized long subscribeToUpdates(ValueObserver<Iterable<Integer>> observer) {
@@ -33,5 +48,9 @@ public class SubnetSubscriptionService {
 
   public void unsubscribe(long subscriptionId) {
     subnetSubscriptions.unsubscribe(subscriptionId);
+  }
+
+  private Set<Integer> getSubnets() {
+    return subnetSubscriptions.get().map(Sets::newHashSet).orElseGet(HashSet::new);
   }
 }

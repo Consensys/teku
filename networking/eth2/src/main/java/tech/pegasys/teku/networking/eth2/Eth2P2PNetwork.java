@@ -32,7 +32,5 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
   void unsubscribeFromSyncCommitteeSubnetId(final int subnetId);
 
-  void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIndices);
-
   MetadataMessage getMetadata();
 }
