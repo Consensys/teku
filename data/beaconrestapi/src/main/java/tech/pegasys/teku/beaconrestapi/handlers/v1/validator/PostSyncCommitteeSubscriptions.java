@@ -17,8 +17,6 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
