@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
@@ -48,5 +49,10 @@ public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsAltair> toVersionAltair() {
+    return Optional.empty();
   }
 }
