@@ -276,6 +276,16 @@ public class SyncCommitteeUtil {
     return requiredSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
+  public UInt64 computeFirstEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {
+    final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
+    return currentSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
+  public UInt64 computeFirstEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
+    final UInt64 nextSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch).plus(1);
+    return nextSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
   private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
     return epoch.dividedBy(specConfig.getEpochsPerSyncCommitteePeriod());
   }

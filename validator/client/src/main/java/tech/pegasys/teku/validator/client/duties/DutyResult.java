@@ -57,7 +57,11 @@ public class DutyResult {
   }
 
   public static DutyResult success(final Bytes32 result) {
-    return new DutyResult(1, 0, singleton(result), emptyMap());
+    return success(result, 1);
+  }
+
+  public static DutyResult success(final Bytes32 result, final int count) {
+    return new DutyResult(count, 0, singleton(result), emptyMap());
   }
 
   public static DutyResult forError(final Throwable error) {

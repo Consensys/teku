@@ -163,6 +163,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         .catchAndRethrow(completionException -> addSuppressedErrors(completionException, futures));
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> SafeFuture<List<T>> collectAll(final Stream<SafeFuture<T>> futures) {
+    return collectAll(futures.toArray(SafeFuture[]::new));
+  }
+
   /**
    * Waits for all the supplied futures to complete then returns a single future that combines all
    * the results.
