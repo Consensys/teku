@@ -173,7 +173,9 @@ public class Eth2P2PNetworkFactory {
     protected Eth2P2PNetwork buildNetwork(final P2PConfig config) {
       {
         // Setup eth2 handlers
-        final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
+        final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
+        final SubnetSubscriptionService syncCommitteeSubnetService =
+            new SubnetSubscriptionService();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
@@ -274,6 +276,7 @@ public class Eth2P2PNetworkFactory {
             eventChannels,
             recentChainData,
             attestationSubnetService,
+            syncCommitteeSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider);

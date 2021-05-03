@@ -26,9 +26,11 @@ class HostAllowlistUtilsTest {
 
   @Test
   public void getAndValidateHostHeader_should() {
-    assertThat(getAndValidateHostHeader("localhost").get()).isEqualTo("localhost");
-    assertThat(getAndValidateHostHeader("localhost:5051").get()).isEqualTo("localhost");
+    assertThat(getAndValidateHostHeader("localhost")).contains("localhost");
+    assertThat(getAndValidateHostHeader("localhost:5051")).contains("localhost");
 
+    assertThat(getAndValidateHostHeader("")).isEmpty();
+    assertThat(getAndValidateHostHeader(null)).isEmpty();
     assertThat(getAndValidateHostHeader(BAD_HOST)).isEmpty();
   }
 
@@ -44,6 +46,9 @@ class HostAllowlistUtilsTest {
     assertThat(hostIsInAllowlist(List.of("A", "B"), "C")).isFalse();
     assertThat(hostIsInAllowlist(List.of("A", "B"), "AA")).isFalse();
     assertThat(hostIsInAllowlist(List.of("A.B.C", "B"), "A")).isFalse();
+    // Empty values
+    assertThat(hostIsInAllowlist(List.of("A", "B"), "")).isFalse();
+    assertThat(hostIsInAllowlist(List.of("A", "B"), null)).isFalse();
   }
 
   @Test
@@ -57,6 +62,9 @@ class HostAllowlistUtilsTest {
     assertThat(isHostAuthorized(List.of("A", "B"), "C")).isFalse();
     assertThat(isHostAuthorized(List.of("A", "B"), "AA")).isFalse();
     assertThat(isHostAuthorized(List.of("A.B.C", "B"), "A")).isFalse();
+    // Empty values
+    assertThat(isHostAuthorized(List.of("A", "B"), "")).isFalse();
+    assertThat(isHostAuthorized(List.of("A", "B"), null)).isFalse();
   }
 
   @Test
@@ -65,6 +73,9 @@ class HostAllowlistUtilsTest {
     assertThat(isHostAuthorized(List.of("*"), "my.host.name")).isTrue();
     assertThat(isHostAuthorized(List.of("*", "B"), "A")).isTrue();
     assertThat(isHostAuthorized(List.of("*"), BAD_HOST)).isTrue();
+    // Test empty values
+    assertThat(isHostAuthorized(List.of("*"), "")).isTrue();
+    assertThat(isHostAuthorized(List.of("*"), null)).isTrue();
   }
 
   @Test
