@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import com.google.common.base.Preconditions;
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
@@ -74,6 +75,11 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 
   public SyncCommitteeContributionSchema getSyncCommitteeContributionSchema() {
