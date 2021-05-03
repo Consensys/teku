@@ -164,6 +164,47 @@ class SyncCommitteeUtilTest {
                     .isEqualTo(epochsPerPeriod.times(period - 1)));
   }
 
+  @Test
+  void shouldComputeFirstEpochOfCurrentSyncCommitteePeriod() {
+    final UInt64 period1Start = UInt64.ZERO;
+    final UInt64 period2Start = period1Start.plus(config.getEpochsPerSyncCommitteePeriod());
+
+    assertThat(syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(period1Start))
+        .isEqualTo(period1Start);
+    assertThat(
+            syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(period1Start.plus(1)))
+        .isEqualTo(period1Start);
+    assertThat(
+            syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(period1Start.plus(7)))
+        .isEqualTo(period1Start);
+
+    assertThat(syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(period2Start))
+        .isEqualTo(period2Start);
+    assertThat(
+            syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(period2Start.plus(1)))
+        .isEqualTo(period2Start);
+  }
+
+  @Test
+  void shouldComputeFirstEpochOfNextSyncCommitteePeriod() {
+    final int epocsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+    final UInt64 period1Start = UInt64.ZERO;
+    final UInt64 period2Start = period1Start.plus(epocsPerPeriod);
+    final UInt64 period3Start = period2Start.plus(epocsPerPeriod);
+
+    assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period1Start))
+        .isEqualTo(period2Start);
+    assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period1Start.plus(1)))
+        .isEqualTo(period2Start);
+    assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period1Start.plus(7)))
+        .isEqualTo(period2Start);
+
+    assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2Start))
+        .isEqualTo(period3Start);
+    assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2Start.plus(1)))
+        .isEqualTo(period3Start);
+  }
+
   private BeaconState createStateWithCurrentSyncCommittee(
       final List<SszPublicKey> committeePublicKeys) {
     return dataStructureUtil
