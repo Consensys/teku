@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -172,6 +175,16 @@ public class ValidatorClientService extends Service {
     validatorTimingChannels.add(
         new AttestationDutyScheduler(
             metricsSystem, attestationDutyLoader, useDependentRoots, spec));
+
+    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
+      final DutyLoader<SyncCommitteeScheduledDuties> syncCommitteeDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              new SyncCommitteeDutyLoader(
+                  validators, validatorIndexProvider, spec, validatorApiChannel, forkProvider));
+      validatorTimingChannels.add(
+          new SyncCommitteeScheduler(metricsSystem, spec, syncCommitteeDutyLoader, new Random()));
+    }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
         new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);

@@ -115,7 +115,8 @@ public class Eth2P2PNetworkBuilder {
     validate();
 
     // Setup eth2 handlers
-    final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
+    final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
+    final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
@@ -153,6 +154,7 @@ public class Eth2P2PNetworkBuilder {
         eventChannels,
         recentChainData,
         attestationSubnetService,
+        syncCommitteeSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider);
