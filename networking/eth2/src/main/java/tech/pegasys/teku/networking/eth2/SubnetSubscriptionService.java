@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 
@@ -20,18 +23,34 @@ import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
  * Service tracks long term attestation subnet subscriptions and notifies subscribers on their
  * changes
  */
-public class AttestationSubnetService {
-  ObservableValue<Iterable<Integer>> attSubnetSubscriptions = new ObservableValue<>(true);
+public class SubnetSubscriptionService {
+  ObservableValue<Iterable<Integer>> subnetSubscriptions = new ObservableValue<>(true);
 
-  public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
-    attSubnetSubscriptions.set(subnetIndices);
+  public synchronized void setSubscriptions(final Iterable<Integer> subnetIndices) {
+    subnetSubscriptions.set(subnetIndices);
+  }
+
+  public synchronized void addSubscription(final int subnet) {
+    final Set<Integer> values = getSubnets();
+    values.add(subnet);
+    subnetSubscriptions.set(values);
+  }
+
+  public synchronized void removeSubscription(final int subnet) {
+    final Set<Integer> values = getSubnets();
+    values.remove(subnet);
+    subnetSubscriptions.set(values);
   }
 
   public synchronized long subscribeToUpdates(ValueObserver<Iterable<Integer>> observer) {
-    return attSubnetSubscriptions.subscribe(observer);
+    return subnetSubscriptions.subscribe(observer);
   }
 
   public void unsubscribe(long subscriptionId) {
-    attSubnetSubscriptions.unsubscribe(subscriptionId);
+    subnetSubscriptions.unsubscribe(subscriptionId);
+  }
+
+  private Set<Integer> getSubnets() {
+    return subnetSubscriptions.get().map(Sets::newHashSet).orElseGet(HashSet::new);
   }
 }
