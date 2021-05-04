@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -72,10 +71,11 @@ public class SyncCommitteeProductionDuty {
                         maybeBlockRoot ->
                             maybeBlockRoot
                                 .map(blockRoot -> produceSignatures(forkInfo, slot, blockRoot))
-                                .orElseGet(
+                                .orElseThrow(
                                     () ->
-                                        SafeFuture.completedFuture(
-                                            DutyResult.forError(new NodeSyncingException())))))
+                                        new IllegalStateException(
+                                            "Chain head is not available or has advanced beyond slot "
+                                                + slot))))
         .exceptionally(
             error ->
                 DutyResult.forError(
