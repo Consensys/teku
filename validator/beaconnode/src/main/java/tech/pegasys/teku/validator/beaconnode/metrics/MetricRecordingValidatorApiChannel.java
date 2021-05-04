@@ -40,7 +40,7 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -292,7 +292,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
       final List<SyncCommitteeSignature> syncCommitteeSignatures) {
     subscribeSyncCommitteesRequestCounter.inc();
     return delegate.sendSyncCommitteeSignatures(syncCommitteeSignatures);

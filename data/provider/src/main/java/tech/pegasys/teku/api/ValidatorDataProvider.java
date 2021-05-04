@@ -151,10 +151,16 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> submitCommitteeSignatures(
       final List<SyncCommitteeSignature> signatures) {
-    return validatorApiChannel.sendSyncCommitteeSignatures(
-        signatures.stream()
-            .flatMap(signature -> signature.asInternalCommitteeSignature(spec).stream())
-            .collect(Collectors.toList()));
+    return validatorApiChannel
+        .sendSyncCommitteeSignatures(
+            signatures.stream()
+                .flatMap(signature -> signature.asInternalCommitteeSignature(spec).stream())
+                .collect(Collectors.toList()))
+        .thenApply(
+            errors ->
+                errors.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(new SubmitCommitteeSignaturesResult(errors)));
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(
