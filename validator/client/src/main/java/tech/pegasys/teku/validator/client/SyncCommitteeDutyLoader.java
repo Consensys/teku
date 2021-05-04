@@ -18,14 +18,14 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class SyncCommitteeDutyLoader
-    extends AbstractDutyLoader<
-        tech.pegasys.teku.validator.api.SyncCommitteeDuties, SyncCommitteeScheduledDuties> {
+    extends AbstractDutyLoader<SyncCommitteeDuties, SyncCommitteeScheduledDuties> {
 
   private final Spec spec;
   private final ValidatorApiChannel validatorApiChannel;
@@ -47,22 +47,28 @@ public class SyncCommitteeDutyLoader
   }
 
   @Override
-  protected SafeFuture<Optional<tech.pegasys.teku.validator.api.SyncCommitteeDuties>> requestDuties(
+  protected SafeFuture<Optional<SyncCommitteeDuties>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices);
   }
 
   @Override
   protected SafeFuture<SyncCommitteeScheduledDuties> scheduleAllDuties(
-      final tech.pegasys.teku.validator.api.SyncCommitteeDuties duties) {
+      final UInt64 epoch, final SyncCommitteeDuties duties) {
     final SyncCommitteeScheduledDuties.Builder dutyBuilder =
         SyncCommitteeScheduledDuties.builder()
             .forkProvider(forkProvider)
             .validatorApiChannel(validatorApiChannel)
             .chainHeadTracker(chainHeadTracker)
-            .spec(spec);
+            .spec(spec)
+            .lastEpochInCommitteePeriod(
+                spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
+                    .computeFirstEpochOfNextSyncCommitteePeriod(epoch)
+                    .minusMinZero(1));
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
-    return SafeFuture.completedFuture(dutyBuilder.build());
+    final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
+    scheduledDuties.subscribeToSubnets();
+    return SafeFuture.completedFuture(scheduledDuties);
   }
 
   private void scheduleDuty(

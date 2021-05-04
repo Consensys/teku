@@ -18,10 +18,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -31,14 +33,20 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   private final Collection<ValidatorAndCommitteeIndices> assignments;
+  private final UInt64 lastEpochInCommitteePeriod;
 
+  private final ValidatorApiChannel validatorApiChannel;
   private final SyncCommitteeProductionDuty productionDuty;
 
   private SyncCommitteeScheduledDuties(
       final SyncCommitteeProductionDuty productionDuty,
-      final Collection<ValidatorAndCommitteeIndices> assignments) {
+      final ValidatorApiChannel validatorApiChannel,
+      final Collection<ValidatorAndCommitteeIndices> assignments,
+      final UInt64 lastEpochInCommitteePeriod) {
+    this.validatorApiChannel = validatorApiChannel;
     this.productionDuty = productionDuty;
     this.assignments = assignments;
+    this.lastEpochInCommitteePeriod = lastEpochInCommitteePeriod;
   }
 
   public static SyncCommitteeScheduledDuties.Builder builder() {
@@ -75,12 +83,25 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     return assignments.size();
   }
 
+  public void subscribeToSubnets() {
+    validatorApiChannel.subscribeToSyncCommitteeSubnets(
+        assignments.stream()
+            .map(
+                assignment ->
+                    new SyncCommitteeSubnetSubscription(
+                        assignment.getValidatorIndex(),
+                        assignment.getCommitteeIndices(),
+                        lastEpochInCommitteePeriod))
+            .collect(Collectors.toSet()));
+  }
+
   public static class Builder {
     private ValidatorApiChannel validatorApiChannel;
     private ForkProvider forkProvider;
     private final Map<Integer, ValidatorAndCommitteeIndices> assignments = new HashMap<>();
     private Spec spec;
     private ChainHeadTracker chainHeadTracker;
+    private UInt64 lastEpochInCommitteePeriod;
 
     public Builder spec(final Spec spec) {
       this.spec = spec;
@@ -122,15 +143,23 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
       return this;
     }
 
+    public Builder lastEpochInCommitteePeriod(final UInt64 lastEpochInCommitteePeriod) {
+      this.lastEpochInCommitteePeriod = lastEpochInCommitteePeriod;
+      return this;
+    }
+
     public SyncCommitteeScheduledDuties build() {
       checkNotNull(spec, "Must provide a spec");
       checkNotNull(validatorApiChannel, "Must provide a validatorApiChannel");
       checkNotNull(chainHeadTracker, "Must provide a chainHeadTracker");
       checkNotNull(forkProvider, "Must provide a forkProvider");
+      checkNotNull(lastEpochInCommitteePeriod, "Must provide lastEpochInCommitteePeriod");
       return new SyncCommitteeScheduledDuties(
           new SyncCommitteeProductionDuty(
               spec, forkProvider, validatorApiChannel, chainHeadTracker, assignments.values()),
-          assignments.values());
+          validatorApiChannel,
+          assignments.values(),
+          lastEpochInCommitteePeriod);
     }
   }
 }

@@ -347,7 +347,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     sendRequest(
             () ->
                 apiClient.subscribeToSyncCommitteeSubnets(
