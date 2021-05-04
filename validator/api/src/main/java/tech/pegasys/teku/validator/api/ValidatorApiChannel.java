@@ -67,6 +67,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
+  void subscribeToSyncCommitteeSubnets(List<SyncCommitteeSubnetSubscription> subscriptions);
+
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   void sendSignedAttestation(Attestation attestation);
