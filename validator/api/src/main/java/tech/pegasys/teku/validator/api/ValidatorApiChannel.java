@@ -77,7 +77,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
 
-  default void sendSyncCommitteeSignatures(List<SyncCommitteeSignature> signatures) {
-    throw new UnsupportedOperationException("Not implemented yet");
-  }
+  SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+      List<SyncCommitteeSignature> syncCommitteeSignatures);
 }

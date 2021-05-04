@@ -33,12 +33,14 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -73,6 +75,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String PUBLISHED_AGGREGATE_COUNTER_NAME =
       "beacon_node_published_aggregate_total";
   public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
+  public static final String COMMITTEE_SUBSCRIPTION_COUNTER_NAME =
+      "beacon_node_subscribe_sync_committee_total";
   private final ValidatorApiChannel delegate;
   private final BeaconChainRequestCounter forkInfoRequestCounter;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
@@ -89,6 +93,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final Counter sendAttestationRequestCounter;
   private final Counter sendAggregateRequestCounter;
   private final Counter sendBlockRequestCounter;
+  private final Counter subscribeSyncCommitteesRequestCounter;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
@@ -169,6 +174,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         metricsSystem.createCounter(
             TekuMetricCategory.VALIDATOR,
             PUBLISHED_BLOCK_COUNTER_NAME,
+            "Counter recording the number of signed blocks sent to the beacon node");
+    subscribeSyncCommitteesRequestCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            COMMITTEE_SUBSCRIPTION_COUNTER_NAME,
             "Counter recording the number of signed blocks sent to the beacon node");
   }
 
@@ -279,6 +289,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     sendBlockRequestCounter.inc();
     return delegate.sendSignedBlock(block);
+  }
+
+  @Override
+  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+    subscribeSyncCommitteesRequestCounter.inc();
+    return delegate.sendSyncCommitteeSignatures(syncCommitteeSignatures);
   }
 
   private <T> SafeFuture<Optional<T>> countRequest(
