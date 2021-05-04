@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 
 /**
  * Scheduled duties for sync committees.

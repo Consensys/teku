@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,24 +25,19 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-@SuppressWarnings({"FieldCanBeLocal", "unused", "UnusedVariable"})
 public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
-  private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
 
-  private final Spec spec;
-  private final ValidatorApiChannel validatorApiChannel;
+  private final SyncCommitteeProductionDuty productionDuty;
 
   private SyncCommitteeScheduledDuties(
-      final Spec spec,
-      final ValidatorApiChannel validatorApiChannel,
-      final ForkProvider forkProvider,
+      final SyncCommitteeProductionDuty productionDuty,
       final Collection<ValidatorAndCommitteeIndices> assignments) {
-    this.spec = spec;
-    this.validatorApiChannel = validatorApiChannel;
-    this.forkProvider = forkProvider;
+    this.productionDuty = productionDuty;
     this.assignments = assignments;
   }
 
@@ -59,7 +52,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
-    return SafeFuture.completedFuture(DutyResult.NO_OP);
+    return productionDuty.produceSignatures(slot);
   }
 
   @Override
@@ -82,30 +75,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     return assignments.size();
   }
 
-  private static class ValidatorAndCommitteeIndices {
-    private final Validator validator;
-    private final int validatorIndex;
-    private final Set<Integer> committeeIndices = new HashSet<>();
-
-    private ValidatorAndCommitteeIndices(final Validator validator, final int validatorIndex) {
-      this.validator = validator;
-      this.validatorIndex = validatorIndex;
-    }
-
-    public void addCommitteeIndex(final int subcommitteeIndex) {
-      committeeIndices.add(subcommitteeIndex);
-    }
-
-    public void addCommitteeIndices(final Collection<Integer> subcommitteeIndex) {
-      committeeIndices.addAll(subcommitteeIndex);
-    }
-  }
-
   public static class Builder {
     private ValidatorApiChannel validatorApiChannel;
     private ForkProvider forkProvider;
     private final Map<Integer, ValidatorAndCommitteeIndices> assignments = new HashMap<>();
     private Spec spec;
+    private ChainHeadTracker chainHeadTracker;
 
     public Builder spec(final Spec spec) {
       this.spec = spec;
@@ -114,6 +89,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
     public Builder validatorApiChannel(final ValidatorApiChannel validatorApiChannel) {
       this.validatorApiChannel = validatorApiChannel;
+      return this;
+    }
+
+    public Builder chainHeadTracker(final ChainHeadTracker chainHeadTracker) {
+      this.chainHeadTracker = chainHeadTracker;
       return this;
     }
 
@@ -145,9 +125,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     public SyncCommitteeScheduledDuties build() {
       checkNotNull(spec, "Must provide a spec");
       checkNotNull(validatorApiChannel, "Must provide a validatorApiChannel");
+      checkNotNull(chainHeadTracker, "Must provide a chainHeadTracker");
       checkNotNull(forkProvider, "Must provide a forkProvider");
       return new SyncCommitteeScheduledDuties(
-          spec, validatorApiChannel, forkProvider, assignments.values());
+          new SyncCommitteeProductionDuty(
+              spec, forkProvider, validatorApiChannel, chainHeadTracker, assignments.values()),
+          assignments.values());
     }
   }
 }

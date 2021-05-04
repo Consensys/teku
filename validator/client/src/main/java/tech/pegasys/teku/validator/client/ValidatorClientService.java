@@ -39,7 +39,8 @@ import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
-import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
+import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -177,11 +178,18 @@ public class ValidatorClientService extends Service {
             metricsSystem, attestationDutyLoader, useDependentRoots, spec));
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
+      final ChainHeadTracker chainHeadTracker = new ChainHeadTracker();
+      validatorTimingChannels.add(chainHeadTracker);
       final DutyLoader<SyncCommitteeScheduledDuties> syncCommitteeDutyLoader =
           new RetryingDutyLoader<>(
               asyncRunner,
               new SyncCommitteeDutyLoader(
-                  validators, validatorIndexProvider, spec, validatorApiChannel, forkProvider));
+                  validators,
+                  validatorIndexProvider,
+                  spec,
+                  validatorApiChannel,
+                  chainHeadTracker,
+                  forkProvider));
       validatorTimingChannels.add(
           new SyncCommitteeScheduler(metricsSystem, spec, syncCommitteeDutyLoader, new Random()));
     }

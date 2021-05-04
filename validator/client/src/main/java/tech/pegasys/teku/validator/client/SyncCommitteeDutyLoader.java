@@ -19,7 +19,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
+import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class SyncCommitteeDutyLoader
@@ -28,6 +29,7 @@ public class SyncCommitteeDutyLoader
 
   private final Spec spec;
   private final ValidatorApiChannel validatorApiChannel;
+  private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
 
   protected SyncCommitteeDutyLoader(
@@ -35,10 +37,12 @@ public class SyncCommitteeDutyLoader
       final ValidatorIndexProvider validatorIndexProvider,
       final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
+      final ChainHeadTracker chainHeadTracker,
       final ForkProvider forkProvider) {
     super(validators, validatorIndexProvider);
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;
+    this.chainHeadTracker = chainHeadTracker;
     this.forkProvider = forkProvider;
   }
 
@@ -55,6 +59,7 @@ public class SyncCommitteeDutyLoader
         SyncCommitteeScheduledDuties.builder()
             .forkProvider(forkProvider)
             .validatorApiChannel(validatorApiChannel)
+            .chainHeadTracker(chainHeadTracker)
             .spec(spec);
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
     return SafeFuture.completedFuture(dutyBuilder.build());

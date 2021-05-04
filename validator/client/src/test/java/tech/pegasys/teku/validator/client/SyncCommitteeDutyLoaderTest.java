@@ -33,7 +33,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
+import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class SyncCommitteeDutyLoaderTest {
@@ -52,11 +53,17 @@ class SyncCommitteeDutyLoaderTest {
           Map.of(validator1.getPublicKey(), validator1, validator2.getPublicKey(), validator2));
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ChainHeadTracker chainHeadTracker = mock(ChainHeadTracker.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
 
   private final SyncCommitteeDutyLoader dutyLoader =
       new SyncCommitteeDutyLoader(
-          validators, validatorIndexProvider, spec, validatorApiChannel, forkProvider);
+          validators,
+          validatorIndexProvider,
+          spec,
+          validatorApiChannel,
+          chainHeadTracker,
+          forkProvider);
 
   @BeforeEach
   void setUp() {
