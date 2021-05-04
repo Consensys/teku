@@ -196,7 +196,9 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
-        .add(Arguments.of(PostSyncCommitteeSubscriptions.ROUTE, PostSyncCommitteeSubscriptions.class))
+        .add(
+            Arguments.of(
+                PostSyncCommitteeSubscriptions.ROUTE, PostSyncCommitteeSubscriptions.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
 
     // config

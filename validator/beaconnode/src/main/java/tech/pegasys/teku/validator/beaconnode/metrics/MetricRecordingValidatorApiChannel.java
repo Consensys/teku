@@ -77,7 +77,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_published_aggregate_total";
   public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
   public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME =
-      "beacon_node_subscribe_sync_committee_subnet";
+      "beacon_node_subscribe_sync_committee_subnet_total";
   public static final String SYNC_COMMITTEE_SEND_SIGNATURES_NAME =
       "beacon_node_send_sync_committee_signatures_total";
   private final ValidatorApiChannel delegate;
