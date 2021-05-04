@@ -80,7 +80,6 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -492,7 +491,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
       final List<SyncCommitteeSignature> syncCommitteeSignatures) {
 
     final List<SafeFuture<InternalValidationResult>> addedSignatures =
@@ -505,7 +504,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
   }
 
-  private Optional<SubmitCommitteeSignaturesResult> getSendSyncCommitteesResultFromFutures(
+  private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
     final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
     for (int index = 0; index < internalValidationResults.size(); index++) {
@@ -513,11 +512,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           fromInternalValidationResult(internalValidationResults.get(index), index);
       maybeError.ifPresent(errorList::add);
     }
-
-    if (errorList.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(new SubmitCommitteeSignaturesResult(errorList));
+    return errorList;
   }
 
   private Optional<SubmitCommitteeSignatureError> fromInternalValidationResult(

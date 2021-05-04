@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 
 public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private final String errorString = "The Error Description";
@@ -51,11 +49,9 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
                 dataStructureUtil.randomBytes32(),
                 dataStructureUtil.randomUInt64(),
                 new BLSSignature(dataStructureUtil.randomSignature())));
-    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> future =
+    final SafeFuture<List<SubmitCommitteeSignatureError>> future =
         SafeFuture.completedFuture(
-            Optional.of(
-                new SubmitCommitteeSignaturesResult(
-                    List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, errorString)))));
+            List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, errorString)));
     when(validatorApiChannel.sendSyncCommitteeSignatures(
             requestBody.get(0).asInternalCommitteeSignature(spec).stream()
                 .collect(Collectors.toList())))

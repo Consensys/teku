@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -58,7 +59,6 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -290,7 +290,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
       final List<SyncCommitteeSignature> syncCommitteeSignatures) {
     return sendRequest(
         () ->
@@ -306,15 +306,15 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                     new tech.pegasys.teku.api.schema.BLSSignature(
                                         signature.getSignature())))
                         .collect(Collectors.toList()))
-                .map(this::responseToSyncCommitteeSignatures));
+                .map(this::responseToSyncCommitteeSignatures)
+                .orElse(emptyList()));
   }
 
-  private SubmitCommitteeSignaturesResult responseToSyncCommitteeSignatures(
+  private List<SubmitCommitteeSignatureError> responseToSyncCommitteeSignatures(
       final PostSyncCommitteeFailureResponse postSyncCommitteeFailureResponse) {
-    return new SubmitCommitteeSignaturesResult(
-        postSyncCommitteeFailureResponse.failures.stream()
-            .map(i -> new SubmitCommitteeSignatureError(i.index, i.message))
-            .collect(Collectors.toList()));
+    return postSyncCommitteeFailureResponse.failures.stream()
+        .map(i -> new SubmitCommitteeSignatureError(i.index, i.message))
+        .collect(Collectors.toList());
   }
 
   @Override
