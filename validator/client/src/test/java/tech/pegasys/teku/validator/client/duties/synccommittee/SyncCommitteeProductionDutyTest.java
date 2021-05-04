@@ -84,7 +84,12 @@ class SyncCommitteeProductionDutyTest {
 
     produceSignaturesAndReport(duties, slot);
 
-    verify(validatorLogger).dutySkippedWhileSyncing(SIGNATURE_TYPE, slot, 1);
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(SIGNATURE_TYPE),
+            eq(slot),
+            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalStateException.class));
   }
 
   @Test
