@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.validator.client.duties.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 
 class SyncCommitteeSchedulerTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
