@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -111,6 +112,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final Spec spec;
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeSignaturePool syncCommitteeSignaturePool;
+  private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -127,7 +129,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final PerformanceTracker performanceTracker,
       final Spec spec,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final SyncCommitteeSignaturePool syncCommitteeSignaturePool) {
+      final SyncCommitteeSignaturePool syncCommitteeSignaturePool,
+      final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
@@ -143,6 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
+    this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
   }
 
   @Override
@@ -407,8 +411,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void subscribeToSyncCommitteeSubnets(
       final List<SyncCommitteeSubnetSubscription> subscriptions) {
-    // TODO 3907 need to implement
-    LOG.error("subscribeToSyncCommitteeSubnets request is being ignored");
+    for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
+      subscription
+          .getSyncCommitteeIndices()
+          .forEach(
+              index ->
+                  syncCommitteeSubscriptionManager.subscribe(index, subscription.getUntilEpoch()));
+    }
   }
 
   @Override
