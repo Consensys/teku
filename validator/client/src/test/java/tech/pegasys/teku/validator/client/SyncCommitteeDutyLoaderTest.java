@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -74,6 +76,10 @@ class SyncCommitteeDutyLoaderTest {
   @Test
   void shouldRetrieveDuties() {
     final UInt64 epoch = UInt64.valueOf(56);
+    final UInt64 untilEpoch =
+        spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
+            .computeFirstEpochOfNextSyncCommitteePeriod(epoch)
+            .minusMinZero(1);
 
     when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
         .thenReturn(
@@ -88,6 +94,13 @@ class SyncCommitteeDutyLoaderTest {
 
     final SyncCommitteeScheduledDuties duties = loadDuties(epoch);
     assertThat(duties.countDuties()).isEqualTo(2);
+    // And should trigger subscription to subnets
+    verify(validatorApiChannel)
+        .subscribeToSyncCommitteeSubnets(
+            Set.of(
+                new SyncCommitteeSubnetSubscription(validator1Index, Set.of(1, 6, 25), untilEpoch),
+                new SyncCommitteeSubnetSubscription(
+                    validator2Index, Set.of(7, 50, 38), untilEpoch)));
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {

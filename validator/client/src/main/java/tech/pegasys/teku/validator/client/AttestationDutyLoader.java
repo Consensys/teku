@@ -72,7 +72,7 @@ public class AttestationDutyLoader
 
   @Override
   protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
-      final AttesterDuties duties) {
+      final UInt64 epoch, final AttesterDuties duties) {
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     return SafeFuture.allOf(

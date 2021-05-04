@@ -287,7 +287,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     subscribeSyncCommitteeRequestCounter.inc();
     delegate.subscribeToSyncCommitteeSubnets(subscriptions);
   }

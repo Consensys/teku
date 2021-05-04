@@ -14,7 +14,9 @@
 package tech.pegasys.teku.api;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -192,7 +194,7 @@ public class ValidatorDataProvider {
   }
 
   public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     validatorApiChannel.subscribeToSyncCommitteeSubnets(
         subscriptions.stream()
             .map(
@@ -201,7 +203,7 @@ public class ValidatorDataProvider {
                         subscription.validatorIndex.intValue(),
                         subscription.syncCommitteeIndices.stream()
                             .map(UInt64::intValue)
-                            .collect(toList()),
+                            .collect(toSet()),
                         subscription.untilEpoch))
             .collect(toList()));
   }

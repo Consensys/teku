@@ -53,7 +53,7 @@ public class BlockProductionDutyLoader
 
   @Override
   protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
-      final ProposerDuties duties) {
+      final UInt64 epoch, final ProposerDuties duties) {
     final SlotBasedScheduledDuties<BlockProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
     duties.getDuties().forEach(duty -> scheduleDuty(scheduledDuties, duty));

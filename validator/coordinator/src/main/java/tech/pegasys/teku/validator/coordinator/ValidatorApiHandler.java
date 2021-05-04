@@ -418,7 +418,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
       subscription
           .getSyncCommitteeIndices()
