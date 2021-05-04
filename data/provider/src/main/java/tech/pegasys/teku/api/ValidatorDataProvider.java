@@ -195,7 +195,14 @@ public class ValidatorDataProvider {
       final List<SyncCommitteeSubnetSubscription> subscriptions) {
     validatorApiChannel.subscribeToSyncCommitteeSubnets(
         subscriptions.stream()
-            .map(tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription::create)
+            .map(
+                subscription ->
+                    new tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription(
+                        subscription.validatorIndex.intValue(),
+                        subscription.syncCommitteeIndices.stream()
+                            .map(UInt64::intValue)
+                            .collect(toList()),
+                        subscription.untilEpoch))
             .collect(toList()));
   }
 

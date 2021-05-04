@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.api;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeSubnetSubscription {
@@ -55,22 +54,5 @@ public class SyncCommitteeSubnetSubscription {
   @Override
   public int hashCode() {
     return Objects.hash(validatorIndex, syncCommitteeIndices, untilEpoch);
-  }
-
-  public static SyncCommitteeSubnetSubscription create(
-      tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription schemaSubscription) {
-    return new SyncCommitteeSubnetSubscription(
-        schemaSubscription.validatorIndex.intValue(),
-        schemaSubscription.syncCommitteeIndices.stream()
-            .map(UInt64::intValue)
-            .collect(Collectors.toList()),
-        schemaSubscription.untilEpoch);
-  }
-
-  public tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription asSchemaObject() {
-    return new tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription(
-        UInt64.valueOf(validatorIndex),
-        syncCommitteeIndices.stream().map(UInt64::valueOf).collect(Collectors.toList()),
-        untilEpoch);
   }
 }

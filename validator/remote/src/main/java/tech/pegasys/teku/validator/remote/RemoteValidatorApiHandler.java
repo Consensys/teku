@@ -352,7 +352,15 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
             () ->
                 apiClient.subscribeToSyncCommitteeSubnets(
                     subscriptions.stream()
-                        .map(SyncCommitteeSubnetSubscription::asSchemaObject)
+                        .map(
+                            subscription ->
+                                new tech.pegasys.teku.api.schema.altair
+                                    .SyncCommitteeSubnetSubscription(
+                                    UInt64.valueOf(subscription.getValidatorIndex()),
+                                    subscription.getSyncCommitteeIndices().stream()
+                                        .map(UInt64::valueOf)
+                                        .collect(Collectors.toList()),
+                                    subscription.getUntilEpoch()))
                         .collect(Collectors.toList())))
         .finish(error -> LOG.error("Failed to subscribe to sync committee subnets", error));
   }
