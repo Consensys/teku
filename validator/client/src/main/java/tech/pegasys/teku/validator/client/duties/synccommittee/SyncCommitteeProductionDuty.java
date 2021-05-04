@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.validator.client.duties.synccommittee;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,12 +31,13 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 public class SyncCommitteeProductionDuty {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
@@ -84,17 +90,59 @@ public class SyncCommitteeProductionDuty {
     return SafeFuture.collectAll(
             assignments.stream()
                 .map(assignment -> produceSignature(forkInfo, slot, blockRoot, assignment)))
-        .thenApply(this::sendSignatures);
+        .thenCompose(this::sendSignatures);
   }
 
-  private DutyResult sendSignatures(final List<ProductionResult> results) {
-    final List<SyncCommitteeSignature> producedSignatures =
-        results.stream().flatMap(result -> result.signature.stream()).collect(Collectors.toList());
-    validatorApiChannel.sendSyncCommitteeSignatures(producedSignatures);
+  private SafeFuture<DutyResult> sendSignatures(final List<ProductionResult> results) {
+    // Split into results that produced a signature vs those that failed already
+    final List<ProductionResult> signatureCreated =
+        results.stream().filter(result -> result.signature.isPresent()).collect(toList());
+    final DutyResult combinedFailures =
+        combineResults(
+            results.stream().filter(result -> result.signature.isEmpty()).collect(toList()));
+
+    if (signatureCreated.isEmpty()) {
+      return SafeFuture.completedFuture(combinedFailures);
+    }
+
+    return validatorApiChannel
+        .sendSyncCommitteeSignatures(
+            signatureCreated.stream()
+                .map(result -> result.signature.orElseThrow())
+                .collect(toList()))
+        .thenApply(
+            errors -> {
+              errors.forEach(error -> replaceResult(signatureCreated, error));
+              return combineResults(signatureCreated).combine(combinedFailures);
+            });
+  }
+
+  private DutyResult combineResults(final List<ProductionResult> results) {
     return results.stream()
         .map(result -> result.result)
         .reduce(DutyResult::combine)
         .orElse(DutyResult.NO_OP);
+  }
+
+  private void replaceResult(
+      final List<ProductionResult> sentResults, final SubmitCommitteeSignatureError error) {
+    if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
+      LOG.error(
+          "Beacon node reported an error sending sync committee signature at index {} with message '{}' but only {} signatures were sent",
+          error.getIndex(),
+          error.getMessage(),
+          sentResults.size());
+      return;
+    }
+    final int index = error.getIndex().intValue();
+    final ProductionResult originalResult = sentResults.get(index);
+    sentResults.set(
+        index,
+        new ProductionResult(
+            originalResult.validatorPublicKey,
+            DutyResult.forError(
+                originalResult.validatorPublicKey,
+                new RestApiReportedException(error.getMessage()))));
   }
 
   private SafeFuture<ProductionResult> produceSignature(
@@ -102,6 +150,7 @@ public class SyncCommitteeProductionDuty {
       final UInt64 slot,
       final Bytes32 blockRoot,
       final ValidatorAndCommitteeIndices assignment) {
+    final BLSPublicKey validatorPublicKey = assignment.getValidator().getPublicKey();
     return assignment
         .getValidator()
         .getSigner()
@@ -109,11 +158,12 @@ public class SyncCommitteeProductionDuty {
         .thenApply(
             signature ->
                 new ProductionResult(
+                    validatorPublicKey,
                     createSyncCommitteeSignature(slot, blockRoot, assignment, signature)))
         .exceptionally(
             error ->
                 new ProductionResult(
-                    DutyResult.forError(assignment.getValidator().getPublicKey(), error)));
+                    validatorPublicKey, DutyResult.forError(validatorPublicKey, error)));
   }
 
   private SyncCommitteeSignature createSyncCommitteeSignature(
@@ -127,17 +177,33 @@ public class SyncCommitteeProductionDuty {
   }
 
   private static class ProductionResult {
+    private final BLSPublicKey validatorPublicKey;
     private final DutyResult result;
     private final Optional<SyncCommitteeSignature> signature;
 
-    private ProductionResult(final SyncCommitteeSignature signature) {
+    private ProductionResult(
+        final BLSPublicKey validatorPublicKey, final SyncCommitteeSignature signature) {
+      this.validatorPublicKey = validatorPublicKey;
       this.result = DutyResult.success(signature.getBeaconBlockRoot());
       this.signature = Optional.of(signature);
     }
 
-    private ProductionResult(final DutyResult result) {
+    private ProductionResult(final BLSPublicKey validatorPublicKey, final DutyResult result) {
+      this.validatorPublicKey = validatorPublicKey;
       this.result = result;
       this.signature = Optional.empty();
+    }
+  }
+
+  private static class RestApiReportedException extends Exception {
+    public RestApiReportedException(final String message) {
+      super(message);
+    }
+
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+      // Stack trace is meaningless as the rejection started in the beacon node so don't fill in
+      return this;
     }
   }
 }

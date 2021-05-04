@@ -14,7 +14,11 @@
 package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -38,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -59,6 +64,8 @@ class SyncCommitteeProductionDutyTest {
   @BeforeEach
   void setUp() {
     when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(validatorApiChannel.sendSyncCommitteeSignatures(any()))
+        .thenReturn(SafeFuture.completedFuture(emptyList()));
   }
 
   @Test
@@ -146,6 +153,47 @@ class SyncCommitteeProductionDutyTest {
             slot,
             Optional.of(validator2.getPublicKey().toAbbreviatedString()),
             exception);
+  }
+
+  @Test
+  void shouldReportPartialFailureWhenBeaconNodeRejectsSomeSignatures() {
+    final UInt64 slot = UInt64.valueOf(48);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final int validatorIndex1 = 11;
+    final int validatorIndex2 = 22;
+    final Validator validator2 = createValidator();
+    final BLSSignature signature1 = dataStructureUtil.randomSignature();
+    final BLSSignature signature2 = dataStructureUtil.randomSignature();
+    final SyncCommitteeProductionDuty duties =
+        createDuty(
+            committeeAssignment(validator, validatorIndex1, 1, 2, 3),
+            committeeAssignment(validator2, validatorIndex2, 1, 5));
+    when(chainHeadTracker.getCurrentChainHead(slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
+
+    when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(signature1));
+    when(validator2.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(signature2));
+
+    when(validatorApiChannel.sendSyncCommitteeSignatures(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "API Rejected"))));
+
+    produceSignaturesAndReport(duties, slot);
+
+    assertSentSignatures(
+        createSignature(slot, blockRoot, validatorIndex1, signature1),
+        createSignature(slot, blockRoot, validatorIndex2, signature2));
+
+    verify(validatorLogger).dutyCompleted(SIGNATURE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(SIGNATURE_TYPE),
+            eq(slot),
+            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            argThat(error -> error.getMessage().equals("API Rejected")));
   }
 
   @Test
