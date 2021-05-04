@@ -18,5 +18,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support for automatic fail-over of eth1-endpoints.  Multiple endpoints can be specified with the new `--eth1-endpoints` CLI option. Thanks to Enrico Del Fante.
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
 - implement POST `/eth/v1/validator/duties/sync/{epoch}` for Altair fork.
+- implement POST `/eth/v1/validator/sync_committee_subscriptions` for Altair fork.
 
 ### Bug Fixes

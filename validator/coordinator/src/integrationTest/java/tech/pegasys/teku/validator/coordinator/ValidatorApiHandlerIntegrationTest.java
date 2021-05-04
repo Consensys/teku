@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -76,6 +77,8 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
       mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
+      mock(SyncCommitteeSubscriptionManager.class);
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
           chainDataProvider,
@@ -92,7 +95,8 @@ public class ValidatorApiHandlerIntegrationTest {
           performanceTracker,
           spec,
           forkChoiceTrigger,
-          syncCommitteeSignaturePool);
+          syncCommitteeSignaturePool,
+          syncCommitteeSubscriptionManager);
 
   @BeforeEach
   public void setup() {
