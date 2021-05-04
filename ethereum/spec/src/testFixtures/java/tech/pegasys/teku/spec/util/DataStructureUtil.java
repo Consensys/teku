@@ -866,7 +866,7 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomSyncCommitteeContribution(slot), randomSignature());
   }
 
-  private SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {
+  public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {
     final int subcommitteeSize =
         spec.atSlot(slot).getSyncCommitteeUtil().orElseThrow().getSubcommitteeSize();
     return getAltairSchemaDefinitions(slot)

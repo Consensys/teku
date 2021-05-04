@@ -171,7 +171,15 @@ class MetricRecordingValidatorApiChannelTest {
             channel ->
                 channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomAttestation()));
+            dataStructureUtil.randomAttestation()),
+        requestDataTest(
+            "createSyncCommitteeContribution",
+            channel ->
+                channel.createSyncCommitteeContribution(
+                    slot, dataStructureUtil.randomPositiveInt(), dataStructureUtil.randomBytes32()),
+            MetricRecordingValidatorApiChannel
+                .CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
+            dataStructureUtil.randomSyncCommitteeContribution(slot)));
   }
 
   private static <T> Arguments requestDataTest(

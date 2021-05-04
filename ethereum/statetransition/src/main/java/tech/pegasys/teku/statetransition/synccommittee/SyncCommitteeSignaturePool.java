@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
@@ -94,18 +95,18 @@ public class SyncCommitteeSignaturePool implements SlotEventsChannel {
                         signature.getSignature().getSignature()));
   }
 
-  public synchronized SyncCommitteeContribution createContribution(
+  public synchronized Optional<SyncCommitteeContribution> createContribution(
       final UInt64 slot, final Bytes32 blockRoot, final int subcommitteeIndex) {
-    final ContributionData contributionData =
-        getContributionData(slot, blockRoot, subcommitteeIndex);
-    return spec.getSyncCommitteeUtil(slot)
-        .orElseThrow()
-        .createSyncCommitteeContribution(
-            slot,
-            blockRoot,
-            UInt64.valueOf(subcommitteeIndex),
-            contributionData.getParticipationIndices(),
-            contributionData.getAggregatedSignature());
+    return getContributionData(slot, blockRoot, subcommitteeIndex)
+        .map(
+            contributionData ->
+                spec.getSyncCommitteeUtilRequired(slot)
+                    .createSyncCommitteeContribution(
+                        slot,
+                        blockRoot,
+                        UInt64.valueOf(subcommitteeIndex),
+                        contributionData.getParticipationIndices(),
+                        contributionData.getAggregatedSignature()));
   }
 
   /**
@@ -119,12 +120,12 @@ public class SyncCommitteeSignaturePool implements SlotEventsChannel {
     committeeContributionData.headMap(slot.minusMinZero(1), false).clear();
   }
 
-  private ContributionData getContributionData(
+  private Optional<ContributionData> getContributionData(
       final UInt64 slot, final Bytes32 blockRoot, final int subcommitteeIndex) {
-    return committeeContributionData
-        .getOrDefault(slot, Collections.emptyMap())
-        .getOrDefault(
-            new BlockRootAndCommitteeIndex(blockRoot, subcommitteeIndex), new ContributionData());
+    return Optional.ofNullable(
+        committeeContributionData
+            .getOrDefault(slot, Collections.emptyMap())
+            .get(new BlockRootAndCommitteeIndex(blockRoot, subcommitteeIndex)));
   }
 
   private static class BlockRootAndCommitteeIndex {

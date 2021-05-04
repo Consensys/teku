@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -387,6 +388,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .createAggregateFor(attestationHashTreeRoot)
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
             .map(ValidateableAttestation::getAttestation));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    return SafeFuture.completedFuture(
+        syncCommitteeSignaturePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
 
   @Override
