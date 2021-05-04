@@ -49,6 +49,7 @@ import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -176,6 +177,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
+  private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -471,6 +473,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
             spec);
+    syncCommitteeSubscriptionManager = new SyncCommitteeSubscriptionManager(p2pNetwork);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
@@ -491,10 +494,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             performanceTracker,
             spec,
             forkChoiceTrigger,
-            syncCommitteeSignaturePool);
+            syncCommitteeSignaturePool,
+            syncCommitteeSubscriptionManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
+        .subscribe(SlotEventsChannel.class, syncCommitteeSubscriptionManager)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
