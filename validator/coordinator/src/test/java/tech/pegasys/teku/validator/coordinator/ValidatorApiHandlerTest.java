@@ -34,7 +34,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,6 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
@@ -636,43 +634,36 @@ class ValidatorApiHandlerTest {
   @Test
   void sendSyncCommitteeSignatures_shouldAllowEmptyRequest() {
     final List<SyncCommitteeSignature> signatures = List.of();
-    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
     assertThat(result).isCompleted();
   }
 
   @Test
-  void sendSyncCommitteeSignatures_shouldAddSignaturesToPool()
-      throws ExecutionException, InterruptedException {
+  void sendSyncCommitteeSignatures_shouldAddSignaturesToPool() {
     final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
     final List<SyncCommitteeSignature> signatures = List.of(signature);
     when(syncCommitteeSignaturePool.add(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.ACCEPT, "")));
-    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
-    assertThat(result).isCompleted();
-    assertThat(result.get()).isEmpty();
+    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   @Test
-  void sendSyncCommitteeSignatures_shouldRaiseErrors()
-      throws ExecutionException, InterruptedException {
+  void sendSyncCommitteeSignatures_shouldRaiseErrors() {
     final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
     final List<SyncCommitteeSignature> signatures = List.of(signature);
     when(syncCommitteeSignaturePool.add(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
-    final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> result =
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
-    assertThat(result).isCompleted();
-    final SubmitCommitteeSignaturesResult unwrappedResult = result.get().orElseThrow();
-    assertThat(unwrappedResult)
-        .isEqualTo(
-            new SubmitCommitteeSignaturesResult(
-                List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected"))));
+    assertThat(result)
+        .isCompletedWithValue(List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected")));
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
