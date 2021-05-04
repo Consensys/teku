@@ -407,7 +407,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void subscribeToSyncCommitteeSubnets(
       final List<SyncCommitteeSubnetSubscription> subscriptions) {
-    // FIXME 3907 need to implement
+    // TODO 3907 need to implement
+    LOG.error("subscribeToSyncCommitteeSubnets request is being ignored");
   }
 
   @Override
