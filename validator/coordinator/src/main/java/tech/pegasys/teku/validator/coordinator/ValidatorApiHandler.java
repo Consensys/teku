@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -66,6 +68,8 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -75,6 +79,8 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -105,6 +111,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final PerformanceTracker performanceTracker;
   private final Spec spec;
   private final ForkChoiceTrigger forkChoiceTrigger;
+  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -120,7 +127,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker,
       final Spec spec,
-      final ForkChoiceTrigger forkChoiceTrigger) {
+      final ForkChoiceTrigger forkChoiceTrigger,
+      final SyncCommitteeSignaturePool syncCommitteeSignaturePool) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
@@ -135,6 +143,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.performanceTracker = performanceTracker;
     this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
+    this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
   }
 
   @Override
@@ -480,6 +489,46 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               }
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+
+    final List<SafeFuture<InternalValidationResult>> addedSignatures =
+        syncCommitteeSignatures.stream()
+            .map(ValidateableSyncCommitteeSignature::fromValidator)
+            .map(syncCommitteeSignaturePool::add)
+            .collect(toList());
+
+    return SafeFuture.collectAll(addedSignatures.stream())
+        .thenApply(this::getSendSyncCommitteesResultFromFutures);
+  }
+
+  private Optional<SubmitCommitteeSignaturesResult> getSendSyncCommitteesResultFromFutures(
+      final List<InternalValidationResult> internalValidationResults) {
+    final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
+    for (int index = 0; index < internalValidationResults.size(); index++) {
+      final Optional<SubmitCommitteeSignatureError> maybeError =
+          fromInternalValidationResult(internalValidationResults.get(index), index);
+      maybeError.ifPresent(errorList::add);
+    }
+
+    if (errorList.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(new SubmitCommitteeSignaturesResult(errorList));
+  }
+
+  private Optional<SubmitCommitteeSignatureError> fromInternalValidationResult(
+      final InternalValidationResult internalValidationResult, final int resultIndex) {
+    if (!internalValidationResult.isReject()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SubmitCommitteeSignatureError(
+            UInt64.valueOf(resultIndex),
+            internalValidationResult.getDescription().orElse("Rejected")));
   }
 
   @VisibleForTesting

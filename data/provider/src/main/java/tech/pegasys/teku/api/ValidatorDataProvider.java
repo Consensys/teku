@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -145,6 +148,14 @@ public class ValidatorDataProvider {
 
               return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
             });
+  }
+
+  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> submitCommitteeSignatures(
+      final List<SyncCommitteeSignature> signatures) {
+    return validatorApiChannel.sendSyncCommitteeSignatures(
+        signatures.stream()
+            .flatMap(signature -> signature.asInternalCommitteeSignature(spec).stream())
+            .collect(Collectors.toList()));
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(

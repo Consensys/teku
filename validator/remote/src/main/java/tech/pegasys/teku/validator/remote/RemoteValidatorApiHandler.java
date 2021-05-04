@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -55,6 +57,8 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -283,6 +287,34 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     return sendRequest(
         () -> apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)));
+  }
+
+  @Override
+  public SafeFuture<Optional<SubmitCommitteeSignaturesResult>> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+    return sendRequest(
+        () ->
+            apiClient
+                .sendSyncCommitteeSignatures(
+                    syncCommitteeSignatures.stream()
+                        .map(
+                            signature ->
+                                new tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature(
+                                    signature.getSlot(),
+                                    signature.getBeaconBlockRoot(),
+                                    signature.getValidatorIndex(),
+                                    new tech.pegasys.teku.api.schema.BLSSignature(
+                                        signature.getSignature())))
+                        .collect(Collectors.toList()))
+                .map(this::responseToSyncCommitteeSignatures));
+  }
+
+  private SubmitCommitteeSignaturesResult responseToSyncCommitteeSignatures(
+      final PostSyncCommitteeFailureResponse postSyncCommitteeFailureResponse) {
+    return new SubmitCommitteeSignaturesResult(
+        postSyncCommitteeFailureResponse.failures.stream()
+            .map(i -> new SubmitCommitteeSignatureError(i.index, i.message))
+            .collect(Collectors.toList()));
   }
 
   @Override
