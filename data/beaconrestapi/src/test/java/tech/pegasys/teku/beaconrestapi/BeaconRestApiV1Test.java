@@ -76,6 +76,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -195,6 +196,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
+        .add(Arguments.of(PostSyncCommitteeSubscriptions.ROUTE, PostSyncCommitteeSubscriptions.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
 
     // config
