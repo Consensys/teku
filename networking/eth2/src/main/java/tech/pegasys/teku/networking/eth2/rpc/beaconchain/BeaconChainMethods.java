@@ -47,9 +47,10 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -100,7 +101,7 @@ public class BeaconChainMethods {
         createBeaconBlocksByRoot(spec, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBeaconBlocksByRange(
             spec, asyncRunner, recentChainData, combinedChainDataClient, peerLookup, rpcEncoding),
-        createMetadata(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
+        createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
 
@@ -263,14 +264,22 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final MetadataMessageHandler messageHandler =
         new MetadataMessageHandler(metadataMessagesFactory);
+    SszSchema<MetadataMessage> phase0MetadataSchema =
+        SszSchema.as(
+            MetadataMessage.class,
+            spec.forMilestone(SpecMilestone.PHASE0)
+                .getSchemaDefinitions()
+                .getMetadataMessageSchema());
     final RpcContextCodec<?, MetadataMessage> contextCodec =
-        RpcContextCodec.noop(MetadataMessage.SSZ_SCHEMA);
+        RpcContextCodec.noop(phase0MetadataSchema);
+    // TODO - add v2 method
     return new SingleProtocolEth2RpcMethod<>(
         asyncRunner,
         BeaconChainMethodIds.GET_METADATA,

@@ -16,20 +16,31 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class MetadataMessagesFactory implements ValueObserver<Iterable<Integer>> {
 
+  private final Spec spec;
   private final AtomicLong seqNumberGenerator = new AtomicLong();
-  private volatile MetadataMessage currentMessage = MetadataMessage.DEFAULT;
+  // TODO - update schema at fork boundaries
+  private volatile MetadataMessageSchema<?> currentSchema;
+  private volatile MetadataMessage currentMessage;
+
+  public MetadataMessagesFactory(final Spec spec) {
+    this.spec = spec;
+    currentSchema = spec.getGenesisSchemaDefinitions().getMetadataMessageSchema();
+    currentMessage = currentSchema.createDefault();
+  }
 
   @Override
   public void onValueChanged(Iterable<Integer> subnetIds) {
     currentMessage =
-        new MetadataMessage(
+        currentSchema.create(
             UInt64.valueOf(seqNumberGenerator.incrementAndGet()),
             SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
   }

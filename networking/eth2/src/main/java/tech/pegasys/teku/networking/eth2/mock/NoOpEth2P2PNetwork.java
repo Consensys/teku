@@ -17,9 +17,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockP2PNetwork;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
+  private final Spec spec;
+
+  public NoOpEth2P2PNetwork(final Spec spec) {
+    this.spec = spec;
+  }
 
   @Override
   public void onEpoch(final UInt64 epoch) {}
@@ -41,6 +47,6 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
 
   @Override
   public MetadataMessage getMetadata() {
-    return MetadataMessage.DEFAULT;
+    return spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
   }
 }
