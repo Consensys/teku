@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.validator.api;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeSubnetSubscription {
   private final int validatorIndex;
-  private final List<Integer> syncCommitteeIndices;
+  private final Set<Integer> syncCommitteeIndices;
   private final UInt64 untilEpoch;
 
   public SyncCommitteeSubnetSubscription(
-      final int validatorIndex, final List<Integer> syncCommitteeIndices, final UInt64 untilEpoch) {
+      final int validatorIndex, final Set<Integer> syncCommitteeIndices, final UInt64 untilEpoch) {
     this.validatorIndex = validatorIndex;
     this.syncCommitteeIndices = syncCommitteeIndices;
     this.untilEpoch = untilEpoch;
@@ -33,7 +33,7 @@ public class SyncCommitteeSubnetSubscription {
     return validatorIndex;
   }
 
-  public List<Integer> getSyncCommitteeIndices() {
+  public Set<Integer> getSyncCommitteeIndices() {
     return syncCommitteeIndices;
   }
 

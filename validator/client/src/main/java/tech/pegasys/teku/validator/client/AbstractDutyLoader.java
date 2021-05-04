@@ -51,7 +51,7 @@ public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implement
                               () ->
                                   new NodeDataUnavailableException(
                                       "Duties could not be calculated because chain data was not yet available")))
-                  .thenCompose(this::scheduleAllDuties)
+                  .thenCompose(duties -> scheduleAllDuties(epoch, duties))
                   .thenApply(Optional::of);
             });
   }
@@ -59,5 +59,5 @@ public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implement
   protected abstract SafeFuture<Optional<D>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
-  protected abstract SafeFuture<S> scheduleAllDuties(final D duties);
+  protected abstract SafeFuture<S> scheduleAllDuties(UInt64 epoch, D duties);
 }
