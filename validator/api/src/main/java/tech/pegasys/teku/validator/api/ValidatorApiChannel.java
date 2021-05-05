@@ -87,8 +87,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
       List<SyncCommitteeSignature> syncCommitteeSignatures);
 
-  default SafeFuture<Optional<String>> sendSignedContributionAndProofs(
+  default SafeFuture<Void> sendSignedContributionAndProofs(
       List<SignedContributionAndProof> aggregates) {
-    return SafeFuture.completedFuture(Optional.of("Not yet implemented"));
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 }

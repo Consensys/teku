@@ -195,21 +195,15 @@ public class SyncCommitteeAggregationDuty {
             producedAggregates.stream()
                 .map(result -> result.signedContributionAndProof.orElseThrow())
                 .collect(toList()))
-        .thenApply(
-            maybeErrorMessage -> {
-              if (maybeErrorMessage.isEmpty()) {
-                return combineResults(producedAggregates).combine(combinedFailures);
-              } else {
-                return producedAggregates.stream()
+        .thenApply(__ -> combineResults(producedAggregates).combine(combinedFailures))
+        .exceptionally(
+            error ->
+                producedAggregates.stream()
                     .map(
                         aggregationResult ->
-                            DutyResult.forError(
-                                aggregationResult.validatorPublicKey,
-                                new RestApiReportedException(maybeErrorMessage.get())))
+                            DutyResult.forError(aggregationResult.validatorPublicKey, error))
                     .reduce(DutyResult::combine)
-                    .orElse(DutyResult.NO_OP);
-              }
-            });
+                    .orElse(DutyResult.NO_OP));
   }
 
   private DutyResult combineResults(final List<AggregationResult> results) {
@@ -260,18 +254,6 @@ public class SyncCommitteeAggregationDuty {
       this.result =
           DutyResult.success(
               signedContributionAndProof.getMessage().getContribution().getBeaconBlockRoot());
-    }
-  }
-
-  private static class RestApiReportedException extends Exception {
-    public RestApiReportedException(final String message) {
-      super(message);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-      // Stack trace is meaningless as the rejection started in the beacon node so don't fill in
-      return this;
     }
   }
 }

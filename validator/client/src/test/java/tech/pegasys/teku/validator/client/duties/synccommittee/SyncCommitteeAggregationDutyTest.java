@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -97,7 +95,7 @@ class SyncCommitteeAggregationDutyTest {
 
     // Default to not returning errors when sending
     when(validatorApiChannel.sendSignedContributionAndProofs(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -221,9 +219,9 @@ class SyncCommitteeAggregationDutyTest {
     withValidatorAggregatingSubnet(validator1, 0);
     withValidatorAggregatingSubnet(validator2, 0);
 
-    final String errorMessage = "Bang";
+    final IllegalArgumentException exception = new IllegalArgumentException("Bang");
     when(validatorApiChannel.sendSignedContributionAndProofs(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(errorMessage)));
+        .thenReturn(SafeFuture.failedFuture(exception));
 
     final SyncCommitteeAggregationDuty duty =
         createDuty(
@@ -235,13 +233,12 @@ class SyncCommitteeAggregationDutyTest {
 
     verify(validatorLogger)
         .dutyFailed(
-            eq(TYPE),
-            eq(slot),
-            eq(
-                Set.of(
-                    validator1.getPublicKey().toAbbreviatedString(),
-                    validator2.getPublicKey().toAbbreviatedString())),
-            argThat(error -> error.getMessage().equals(errorMessage)));
+            TYPE,
+            slot,
+            Set.of(
+                validator1.getPublicKey().toAbbreviatedString(),
+                validator2.getPublicKey().toAbbreviatedString()),
+            exception);
   }
 
   private void withValidatorAggregatingSubnet(
