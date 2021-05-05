@@ -27,6 +27,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
@@ -78,6 +79,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -276,6 +278,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public void subscribeToSyncCommitteeSubnets(
       final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {}
+
+  @Override
+  public void sendContributionAndProofs(
+      final List<SignedContributionAndProof> signedContributionAndProofs) {
+    post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
+  }
 
   private ResponseHandler<Void> createHandler() {
     return createHandler(null);
