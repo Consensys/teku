@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test
-  public void testCorrectMetadataSent() throws Exception {
+  public void requestMetadata_shouldSendLatestAttnets() throws Exception {
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork();
     final Eth2Peer peer = peerAndNetwork.getPeer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
@@ -41,14 +41,75 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
 
     assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
     assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
-    peerAndNetwork.getNetwork().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
 
+    peerAndNetwork.getNetwork().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
     assertThat(md3.getAttnets().getBitCount()).isEqualTo(3);
     assertThat(md3.getAttnets().getBit(0)).isTrue();
     assertThat(md3.getAttnets().getBit(1)).isTrue();
     assertThat(md3.getAttnets().getBit(8)).isTrue();
+  }
+
+  @Test
+  public void requestMetadata_shouldSendLatestSyncnets() throws Exception {
+    final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
+    final Eth2Peer peer = peerAndNetwork.getPeer();
+    MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+    MetadataMessage md2 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+
+    assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
+    assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
+
+    // Subscribe to some sync committee subnets
+    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(1);
+    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(2);
+    MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+    assertThat(md3).isInstanceOf(MetadataMessageAltair.class);
+    final MetadataMessageAltair altairMetadata = (MetadataMessageAltair) md3;
+
+    // Check metadata
+    assertThat(altairMetadata.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
+    assertThat(altairMetadata.getSyncnets().getBitCount()).isEqualTo(2);
+    assertThat(altairMetadata.getSyncnets().getBit(1)).isTrue();
+    assertThat(altairMetadata.getSyncnets().getBit(2)).isTrue();
+
+    // Unsubscribe from sync committee subnet
+    peerAndNetwork.getNetwork().unsubscribeFromSyncCommitteeSubnetId(2);
+    MetadataMessage md4 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+    assertThat(md4).isInstanceOf(MetadataMessageAltair.class);
+    final MetadataMessageAltair altairMetadata2 = (MetadataMessageAltair) md4;
+
+    // Check metadata
+    assertThat(altairMetadata2.getSeqNumber()).isGreaterThan(altairMetadata.getSeqNumber());
+    assertThat(altairMetadata2.getSyncnets().getBitCount()).isEqualTo(1);
+    assertThat(altairMetadata2.getSyncnets().getBit(1)).isTrue();
+  }
+
+  @Test
+  public void requestMetadata_shouldSendLatestAttnetsAndSyncnets() throws Exception {
+    final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
+    final Eth2Peer peer = peerAndNetwork.getPeer();
+    MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+    MetadataMessage md2 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+
+    assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
+    assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
+
+    // Update attnets and syncnets
+    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(1);
+    peerAndNetwork.getNetwork().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
+    MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
+    assertThat(md3).isInstanceOf(MetadataMessageAltair.class);
+    final MetadataMessageAltair altairMetadata = (MetadataMessageAltair) md3;
+
+    assertThat(altairMetadata.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
+    assertThat(altairMetadata.getSyncnets().getBitCount()).isEqualTo(1);
+    assertThat(altairMetadata.getSyncnets().getBit(1)).isTrue();
+    assertThat(altairMetadata.getAttnets().getBitCount()).isEqualTo(3);
+    assertThat(altairMetadata.getAttnets().getBit(0)).isTrue();
+    assertThat(altairMetadata.getAttnets().getBit(1)).isTrue();
+    assertThat(altairMetadata.getAttnets().getBit(8)).isTrue();
   }
 
   @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")

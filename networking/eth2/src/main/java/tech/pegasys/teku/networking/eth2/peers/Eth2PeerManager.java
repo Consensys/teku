@@ -106,6 +106,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
+      final SubnetSubscriptionService syncCommitteeSubnetService,
       final RpcEncoding rpcEncoding,
       final Optional<Checkpoint> requiredCheckpoint,
       final Duration eth2RpcPingInterval,
@@ -118,9 +119,13 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
+    attestationSubnetService.subscribeToUpdates(
+        metadataMessagesFactory::updateAttestationSubnetIds);
+    syncCommitteeSubnetService.subscribeToUpdates(
+        metadataMessagesFactory::updateSyncCommitteeSubnetIds);
     final CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+
     return new Eth2PeerManager(
         spec,
         asyncRunner,
