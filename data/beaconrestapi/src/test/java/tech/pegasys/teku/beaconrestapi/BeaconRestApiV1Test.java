@@ -75,6 +75,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -244,7 +245,8 @@ public class BeaconRestApiV1Test {
         .add(
             Arguments.of(
                 PostSubscribeToBeaconCommitteeSubnet.ROUTE,
-                PostSubscribeToBeaconCommitteeSubnet.class));
+                PostSubscribeToBeaconCommitteeSubnet.class))
+        .add(Arguments.of(PostContributionAndProofs.ROUTE, PostContributionAndProofs.class));
 
     return builder.build();
   }

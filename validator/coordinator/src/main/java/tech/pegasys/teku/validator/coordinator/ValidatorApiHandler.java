@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
@@ -520,6 +521,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return SafeFuture.collectAll(addedSignatures.stream())
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
+  }
+
+  @Override
+  public SafeFuture<Void> sendContributionAndProofs(
+      final List<SignedContributionAndProof> signedContributionAndProofs) {
+    return SafeFuture.failedFuture(
+        new UnsupportedOperationException("sendContributionAndProofs not implemented yet"));
   }
 
   private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
