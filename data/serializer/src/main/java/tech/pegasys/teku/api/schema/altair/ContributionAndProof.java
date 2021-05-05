@@ -23,12 +23,15 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ContributionAndProof {
+  @JsonProperty("aggregator_index")
   @Schema(type = "string", format = "uint64")
   public final UInt64 aggregatorIndex;
 
+  @JsonProperty("selection_proof")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature selectionProof;
 
+  @JsonProperty("contribution")
   public final SyncCommitteeContribution contribution;
 
   @JsonCreator

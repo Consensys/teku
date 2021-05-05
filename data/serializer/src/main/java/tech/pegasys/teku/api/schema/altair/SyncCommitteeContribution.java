@@ -27,18 +27,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class SyncCommitteeContribution {
+  @JsonProperty("slot")
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
+  @JsonProperty("beacon_block_root")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 beaconBlockRoot;
 
+  @JsonProperty("subcommittee_index")
   @Schema(type = "string", format = "uint64")
   public final UInt64 subcommitteeIndex;
 
+  @JsonProperty("aggregation_bits")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final SszBitvector aggregationBits;
 
+  @JsonProperty("signature")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 

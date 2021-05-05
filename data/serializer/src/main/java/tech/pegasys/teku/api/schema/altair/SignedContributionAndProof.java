@@ -23,8 +23,10 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 
 public class SignedContributionAndProof {
 
+  @JsonProperty("message")
   public final ContributionAndProof message;
 
+  @JsonProperty("signature")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
