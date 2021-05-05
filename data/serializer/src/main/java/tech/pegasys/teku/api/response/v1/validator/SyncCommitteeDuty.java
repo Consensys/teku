@@ -45,7 +45,7 @@ public class SyncCommitteeDuty {
       description = "Index of validator in validator registry")
   public final UInt64 validatorIndex;
 
-  @JsonProperty("sync_committee_indices")
+  @JsonProperty("validator_sync_committee_indices")
   @ArraySchema(
       schema =
           @Schema(type = "string", example = EXAMPLE_UINT64, description = "The committee index"))
