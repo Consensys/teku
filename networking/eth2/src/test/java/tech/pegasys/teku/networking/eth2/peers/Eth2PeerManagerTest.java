@@ -72,7 +72,7 @@ public class Eth2PeerManagerTest {
           new NoOpMetricsSystem(),
           eth2PeerFactory,
           statusMessageFactory,
-          new MetadataMessagesFactory(spec),
+          new MetadataMessagesFactory(),
           rpcEncoding,
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,

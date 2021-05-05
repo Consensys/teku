@@ -67,7 +67,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             recentChainData,
             new NoOpMetricsSystem(),
             new StatusMessageFactory(recentChainData),
-            new MetadataMessagesFactory(spec),
+            new MetadataMessagesFactory(),
             getRpcEncoding());
 
     reqHandler = createRequestHandler(beaconChainMethods);

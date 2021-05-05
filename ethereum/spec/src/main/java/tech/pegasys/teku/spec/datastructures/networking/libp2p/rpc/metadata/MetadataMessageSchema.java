@@ -26,5 +26,9 @@ public interface MetadataMessageSchema<T extends MetadataMessage> extends SszCon
 
   T create(UInt64 seqNumber, SszBitvector attnets);
 
+  T create(UInt64 seqNumber, Iterable<Integer> attnets, final Iterable<Integer> syncnets);
+
+  T create(UInt64 seqNumber, Iterable<Integer> attnets);
+
   T createDefault();
 }

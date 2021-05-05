@@ -13,43 +13,43 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public class MetadataMessagesFactory implements ValueObserver<Iterable<Integer>> {
 
-  private final Spec spec;
-  private final AtomicLong seqNumberGenerator = new AtomicLong();
-  // TODO - update schema at fork boundaries
-  private volatile MetadataMessageSchema<?> currentSchema;
-  private volatile MetadataMessage currentMessage;
-
-  public MetadataMessagesFactory(final Spec spec) {
-    this.spec = spec;
-    currentSchema = spec.getGenesisSchemaDefinitions().getMetadataMessageSchema();
-    currentMessage = currentSchema.createDefault();
-  }
+  private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
+  private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
+  private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
+  private MetadataMessage currentMetadata;
 
   @Override
-  public void onValueChanged(Iterable<Integer> subnetIds) {
-    currentMessage =
-        currentSchema.create(
-            UInt64.valueOf(seqNumberGenerator.incrementAndGet()),
-            SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
+  public synchronized void onValueChanged(Iterable<Integer> attestationSubnetIds) {
+    seqNumberGenerator.incrementAndGet();
+    this.attestationSubnetIds = attestationSubnetIds;
+    // Clear metadata cache
+    currentMetadata = null;
   }
 
-  public MetadataMessage createMetadataMessage() {
-    return currentMessage;
+  public synchronized MetadataMessage createMetadataMessage(MetadataMessageSchema<?> schema) {
+    if (currentMetadata == null) {
+      currentMetadata =
+          schema.create(getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds);
+    }
+
+    return currentMetadata;
   }
 
   public PingMessage createPingMessage() {
-    return new PingMessage(currentMessage.getSeqNumber());
+    return new PingMessage(getCurrentSeqNumber());
+  }
+
+  private UInt64 getCurrentSeqNumber() {
+    return UInt64.valueOf(seqNumberGenerator.get());
   }
 }

@@ -42,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -51,6 +52,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
+  private final RecentChainData recentChainData;
   private final Eth2PeerFactory eth2PeerFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
 
@@ -79,6 +81,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
+    this.recentChainData = storageClient;
     this.eth2PeerFactory = eth2PeerFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
@@ -114,7 +117,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec) {
 
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
-    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory(spec);
+    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     final CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(recentChainData, historicalChainData, spec);
@@ -142,7 +145,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   public MetadataMessage getMetadataMessage() {
-    return metadataMessagesFactory.createMetadataMessage();
+    final MetadataMessageSchema<?> schema =
+        recentChainData.getCurrentSpec().getSchemaDefinitions().getMetadataMessageSchema();
+    return metadataMessagesFactory.createMetadataMessage(schema);
   }
 
   private void setUpPeriodicTasksForPeer(Eth2Peer peer) {

@@ -20,7 +20,6 @@ import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.util.config.Constants;
@@ -49,6 +48,18 @@ public class MetadataMessageSchemaAltair
   }
 
   @Override
+  public MetadataMessageAltair create(
+      final UInt64 seqNumber, final Iterable<Integer> attnets, final Iterable<Integer> syncnets) {
+    return create(
+        seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
+  }
+
+  @Override
+  public MetadataMessageAltair create(final UInt64 seqNumber, final Iterable<Integer> attnets) {
+    return create(seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().getDefault());
+  }
+
+  @Override
   public MetadataMessageAltair createDefault() {
     return new MetadataMessageAltair(this);
   }
@@ -58,7 +69,11 @@ public class MetadataMessageSchemaAltair
     return new MetadataMessageAltair(this, node);
   }
 
-  private SszSchema<SszBitvector> getSyncnetsSchema() {
-    return getFieldSchema2();
+  private SszBitvectorSchema<SszBitvector> getAttnestSchema() {
+    return (SszBitvectorSchema<SszBitvector>) getFieldSchema1();
+  }
+
+  private SszBitvectorSchema<SszBitvector> getSyncnetsSchema() {
+    return (SszBitvectorSchema<SszBitvector>) getFieldSchema2();
   }
 }

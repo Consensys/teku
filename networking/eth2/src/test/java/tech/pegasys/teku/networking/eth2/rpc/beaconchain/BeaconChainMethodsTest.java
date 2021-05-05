@@ -40,7 +40,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconChainMethodsTest {
 
-  private static final Spec SPEC = TestSpecFactory.createDefault();
   private static final Bytes SSZ_RECORDED_STATUS_REQUEST_BYTES =
       Bytes.fromHexString(
           "0x54ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
@@ -59,7 +58,7 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
-  final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory(SPEC);
+  final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
   @Test
   void testStatusRoundtripSerialization() throws Exception {

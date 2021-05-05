@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -270,26 +271,56 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     final MetadataMessageHandler messageHandler =
-        new MetadataMessageHandler(metadataMessagesFactory);
-    SszSchema<MetadataMessage> phase0MetadataSchema =
+        new MetadataMessageHandler(spec, metadataMessagesFactory);
+    final EmptyMessageSchema requestType = EmptyMessage.SSZ_SCHEMA;
+    final boolean expectResponse = true;
+    final SszSchema<MetadataMessage> phase0MetadataSchema =
         SszSchema.as(
             MetadataMessage.class,
             spec.forMilestone(SpecMilestone.PHASE0)
                 .getSchemaDefinitions()
                 .getMetadataMessageSchema());
-    final RpcContextCodec<?, MetadataMessage> contextCodec =
+    final RpcContextCodec<?, MetadataMessage> phase0ContextCodec =
         RpcContextCodec.noop(phase0MetadataSchema);
-    // TODO - add v2 method
-    return new SingleProtocolEth2RpcMethod<>(
-        asyncRunner,
-        BeaconChainMethodIds.GET_METADATA,
-        1,
-        rpcEncoding,
-        EmptyMessage.SSZ_SCHEMA,
-        true,
-        contextCodec,
-        messageHandler,
-        peerLookup);
+
+    final SingleProtocolEth2RpcMethod<EmptyMessage, MetadataMessage> v1Method =
+        new SingleProtocolEth2RpcMethod<>(
+            asyncRunner,
+            BeaconChainMethodIds.GET_METADATA,
+            1,
+            rpcEncoding,
+            requestType,
+            expectResponse,
+            phase0ContextCodec,
+            messageHandler,
+            peerLookup);
+
+    if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
+      final SszSchema<MetadataMessage> altairMetadataSchema =
+          SszSchema.as(
+              MetadataMessage.class,
+              spec.forMilestone(SpecMilestone.ALTAIR)
+                  .getSchemaDefinitions()
+                  .getMetadataMessageSchema());
+      final RpcContextCodec<?, MetadataMessage> altairContextCodec =
+          RpcContextCodec.noop(altairMetadataSchema);
+
+      final SingleProtocolEth2RpcMethod<EmptyMessage, MetadataMessage> v2Method =
+          new SingleProtocolEth2RpcMethod<>(
+              asyncRunner,
+              BeaconChainMethodIds.GET_METADATA,
+              2,
+              rpcEncoding,
+              requestType,
+              expectResponse,
+              altairContextCodec,
+              messageHandler,
+              peerLookup);
+      return VersionedEth2RpcMethod.create(
+          rpcEncoding, requestType, expectResponse, List.of(v2Method, v1Method));
+    } else {
+      return v1Method;
+    }
   }
 
   private static Eth2RpcMethod<PingMessage, PingMessage> createPing(
