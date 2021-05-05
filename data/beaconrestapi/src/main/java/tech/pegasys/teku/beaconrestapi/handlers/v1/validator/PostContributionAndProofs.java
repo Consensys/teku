@@ -20,8 +20,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
