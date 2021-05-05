@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap());
+  private static final int SUMMARY_VALIDATOR_LIMIT = 20;
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
@@ -147,9 +149,29 @@ public class DutyResult {
         + nodeSyncingCount
         + ", roots="
         + roots
-        + ", errors="
+        + ", failures="
         + failures
         + '}';
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DutyResult that = (DutyResult) o;
+    return getSuccessCount() == that.getSuccessCount()
+        && nodeSyncingCount == that.nodeSyncingCount
+        && Objects.equals(roots, that.roots)
+        && Objects.equals(failures, that.failures);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getSuccessCount(), nodeSyncingCount, roots, failures);
   }
 
   private static class FailureRecord {
@@ -163,6 +185,23 @@ public class DutyResult {
 
     public static FailureRecord merge(final FailureRecord a, final FailureRecord b) {
       return new FailureRecord(a.error, Sets.union(a.validatorKeys, b.validatorKeys));
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final FailureRecord that = (FailureRecord) o;
+      return Objects.equals(error, that.error) && Objects.equals(validatorKeys, that.validatorKeys);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(error, validatorKeys);
     }
   }
 }
