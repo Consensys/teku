@@ -33,11 +33,14 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -275,5 +278,40 @@ public class ValidatorDataProvider {
         new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
         UInt64.valueOf(duty.getValidatorIndex()),
         duty.getValidatorSyncCommitteeIndices());
+  }
+
+  public SafeFuture<Void> sendContributionAndProofs(
+      final List<SignedContributionAndProof> contributionAndProofs) {
+    return validatorApiChannel.sendContributionAndProofs(
+        contributionAndProofs.stream()
+            .map(this::asInternalContributionAndProofs)
+            .collect(toList()));
+  }
+
+  private tech.pegasys.teku.spec.datastructures.operations.versions.altair
+          .SignedContributionAndProof
+      asInternalContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {
+    final UInt64 slot = signedContributionAndProof.message.contribution.slot;
+    final Bytes32 root = signedContributionAndProof.message.contribution.beaconBlockRoot;
+    final UInt64 subcommitteeIndex =
+        signedContributionAndProof.message.contribution.subcommitteeIndex;
+    final Iterable<Integer> indices =
+        signedContributionAndProof.message.contribution.aggregationBits.getAllSetBits();
+    final tech.pegasys.teku.bls.BLSSignature signature =
+        signedContributionAndProof.message.contribution.signature.asInternalBLSSignature();
+    final SyncCommitteeContribution contribution =
+        spec.getSyncCommitteeUtilRequired(slot)
+            .createSyncCommitteeContribution(slot, root, subcommitteeIndex, indices, signature);
+
+    final ContributionAndProof message =
+        spec.getSyncCommitteeUtilRequired(slot)
+            .createContributionAndProof(
+                signedContributionAndProof.message.aggregatorIndex,
+                contribution,
+                signedContributionAndProof.message.selectionProof.asInternalBLSSignature());
+
+    return spec.getSyncCommitteeUtilRequired(slot)
+        .createSignedContributionAndProof(
+            message, signedContributionAndProof.signature.asInternalBLSSignature());
   }
 }
