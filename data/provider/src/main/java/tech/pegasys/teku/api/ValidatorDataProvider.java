@@ -277,7 +277,7 @@ public class ValidatorDataProvider {
     return new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
         new BLSPubKey(duty.getPublicKey().toBytesCompressed()),
         UInt64.valueOf(duty.getValidatorIndex()),
-        duty.getSyncCommitteeIndices());
+        duty.getValidatorSyncCommitteeIndices());
   }
 
   public void sendContributionAndProofs(
