@@ -314,15 +314,14 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendContributionAndProofs(
+  public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs) {
     final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
         signedContributionsRestSchema =
             signedContributionAndProofs.stream()
                 .map(this::asSignedContributionandProofs)
                 .collect(Collectors.toList());
-    sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema))
-        .finish(error -> LOG.error("Failed to send contribution and proofs", error));
+    return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
   }
 
   private tech.pegasys.teku.api.schema.altair.SignedContributionAndProof

@@ -15,13 +15,15 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static java.util.Arrays.asList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -76,11 +78,25 @@ public class PostContributionAndProofs implements Handler {
       final SignedContributionAndProof[] signedContributionAndProofs =
           jsonProvider.jsonToObject(ctx.body(), SignedContributionAndProof[].class);
 
-      provider.sendContributionAndProofs(asList(signedContributionAndProofs));
-      ctx.status(SC_OK);
+      provider
+          .sendContributionAndProofs(asList(signedContributionAndProofs))
+          .finish(error -> handleError(ctx, error));
     } catch (final JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
+    }
+  }
+
+  private void handleError(final Context ctx, final Throwable error) {
+    try {
+      final Throwable rootCause = Throwables.getRootCause(error);
+      if (rootCause instanceof IllegalArgumentException) {
+        ctx.status(SC_BAD_REQUEST);
+        ctx.result(BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
+      }
+      ctx.result(BadRequest.badRequest(jsonProvider, "Failed to submit contribution and proofs"));
+    } catch (JsonProcessingException ex) {
+      ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
   }
 }

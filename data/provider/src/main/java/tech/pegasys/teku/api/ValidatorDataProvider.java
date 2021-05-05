@@ -280,9 +280,9 @@ public class ValidatorDataProvider {
         duty.getValidatorSyncCommitteeIndices());
   }
 
-  public void sendContributionAndProofs(
+  public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {
-    validatorApiChannel.sendContributionAndProofs(
+    return validatorApiChannel.sendContributionAndProofs(
         contributionAndProofs.stream()
             .map(this::asInternalContributionAndProofs)
             .collect(toList()));

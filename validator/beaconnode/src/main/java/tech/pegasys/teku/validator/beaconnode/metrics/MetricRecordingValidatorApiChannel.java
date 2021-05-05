@@ -340,10 +340,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendContributionAndProofs(
+  public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs) {
     sendContributionAndProofsRequestCounter.inc();
-    delegate.sendContributionAndProofs(signedContributionAndProofs);
+    return delegate.sendContributionAndProofs(signedContributionAndProofs);
   }
 
   private <T> SafeFuture<Optional<T>> countRequest(
