@@ -527,6 +527,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
   }
 
+  @Override
+  public SafeFuture<Void> sendContributionAndProofs(
+      final List<SignedContributionAndProof> signedContributionAndProofs) {
+    return SafeFuture.failedFuture(
+        new UnsupportedOperationException("sendContributionAndProofs not implemented yet"));
+  }
+
   private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
     final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
