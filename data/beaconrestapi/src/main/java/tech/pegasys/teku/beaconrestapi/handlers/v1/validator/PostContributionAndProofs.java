@@ -15,13 +15,11 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static java.util.Arrays.asList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
@@ -36,6 +34,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostContributionAndProofs implements Handler {
@@ -78,25 +77,26 @@ public class PostContributionAndProofs implements Handler {
       final SignedContributionAndProof[] signedContributionAndProofs =
           jsonProvider.jsonToObject(ctx.body(), SignedContributionAndProof[].class);
 
-      provider
-          .sendContributionAndProofs(asList(signedContributionAndProofs))
-          .finish(error -> handleError(ctx, error));
+      final SafeFuture<Void> future =
+          provider.sendContributionAndProofs(asList(signedContributionAndProofs));
+
+      ctx.result(
+          future
+              .thenApplyChecked(result -> "")
+              .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private void handleError(final Context ctx, final Throwable error) {
-    try {
-      final Throwable rootCause = Throwables.getRootCause(error);
-      if (rootCause instanceof IllegalArgumentException) {
-        ctx.status(SC_BAD_REQUEST);
-        ctx.result(BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-      }
-      ctx.result(BadRequest.badRequest(jsonProvider, "Failed to submit contribution and proofs"));
-    } catch (JsonProcessingException ex) {
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
+  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
     }
+    return SafeFuture.of(
+        () -> BadRequest.badRequest(jsonProvider, "Failed to submit contribution and proofs"));
   }
 }
