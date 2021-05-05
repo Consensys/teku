@@ -69,6 +69,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
@@ -111,6 +112,8 @@ class ValidatorApiHandlerTest {
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
       mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
 
@@ -131,6 +134,7 @@ class ValidatorApiHandlerTest {
           spec,
           forkChoiceTrigger,
           syncCommitteeSignaturePool,
+          syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
 
   @BeforeEach

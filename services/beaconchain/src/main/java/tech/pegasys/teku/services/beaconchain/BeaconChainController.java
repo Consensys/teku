@@ -495,6 +495,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec,
             forkChoiceTrigger,
             syncCommitteeSignaturePool,
+            syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
