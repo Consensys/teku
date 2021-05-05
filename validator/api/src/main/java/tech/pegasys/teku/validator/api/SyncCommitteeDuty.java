@@ -22,15 +22,15 @@ public class SyncCommitteeDuty {
 
   private final BLSPublicKey publicKey;
   private final int validatorIndex;
-  private final Set<Integer> syncCommitteeIndices;
+  private final Set<Integer> validatorSyncCommitteeIndices;
 
   public SyncCommitteeDuty(
       final BLSPublicKey publicKey,
       final int validatorIndex,
-      final Set<Integer> syncCommitteeIndices) {
+      final Set<Integer> validatorSyncCommitteeIndices) {
     this.publicKey = publicKey;
     this.validatorIndex = validatorIndex;
-    this.syncCommitteeIndices = syncCommitteeIndices;
+    this.validatorSyncCommitteeIndices = validatorSyncCommitteeIndices;
   }
 
   public BLSPublicKey getPublicKey() {
@@ -41,8 +41,8 @@ public class SyncCommitteeDuty {
     return validatorIndex;
   }
 
-  public Set<Integer> getSyncCommitteeIndices() {
-    return syncCommitteeIndices;
+  public Set<Integer> getValidatorSyncCommitteeIndices() {
+    return validatorSyncCommitteeIndices;
   }
 
   @Override
@@ -51,13 +51,13 @@ public class SyncCommitteeDuty {
     if (o == null || getClass() != o.getClass()) return false;
     final SyncCommitteeDuty that = (SyncCommitteeDuty) o;
     return validatorIndex == that.validatorIndex
-        && syncCommitteeIndices == that.syncCommitteeIndices
+        && validatorSyncCommitteeIndices == that.validatorSyncCommitteeIndices
         && Objects.equals(publicKey, that.publicKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(publicKey, validatorIndex, syncCommitteeIndices);
+    return Objects.hash(publicKey, validatorIndex, validatorSyncCommitteeIndices);
   }
 
   @Override
@@ -65,7 +65,7 @@ public class SyncCommitteeDuty {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
         .add("validatorIndex", validatorIndex)
-        .add("syncCommitteeIndex", syncCommitteeIndices)
+        .add("syncCommitteeIndex", validatorSyncCommitteeIndices)
         .toString();
   }
 }
