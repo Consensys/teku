@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.google.common.base.Throwables;
@@ -86,7 +87,7 @@ class PendingDuties {
   private void reportDutyFailure(
       final Throwable error, final String producedType, final UInt64 slot) {
     dutiesPerformedCounter.labels(producedType, "failed").inc();
-    VALIDATOR_LOGGER.dutyFailed(producedType, slot, Optional.empty(), error);
+    VALIDATOR_LOGGER.dutyFailed(producedType, slot, emptySet(), error);
   }
 
   private void reportDutySuccess(

@@ -19,7 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ class DutyResultTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
-  private final Optional<String> validatorId = Optional.of(validatorKey.toAbbreviatedString());
+  private final Set<String> validatorId = Set.of(validatorKey.toAbbreviatedString());
 
   @Test
   void shouldReportSuccess() {
@@ -153,7 +152,7 @@ class DutyResultTest {
     combinedFuture.join().report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root1, root2));
     verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, Optional.empty(), exception2);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, Set.of(), exception2);
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
