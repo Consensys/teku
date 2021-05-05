@@ -55,7 +55,7 @@ public class SyncCommitteeDuty {
   public SyncCommitteeDuty(
       @JsonProperty("pubkey") final BLSPubKey pubkey,
       @JsonProperty("validator_index") final UInt64 validatorIndex,
-      @JsonProperty("sync_committee_indices") final Set<Integer> committeeIndices) {
+      @JsonProperty("validator_sync_committee_indices") final Set<Integer> committeeIndices) {
     this.pubkey = pubkey;
     this.validatorIndex = validatorIndex;
     this.committeeIndices =

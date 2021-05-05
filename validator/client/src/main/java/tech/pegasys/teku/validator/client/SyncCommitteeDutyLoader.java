@@ -79,6 +79,6 @@ public class SyncCommitteeDutyLoader
         .ifPresent(
             validator ->
                 dutyBuilder.committeeAssignments(
-                    validator, duty.getValidatorIndex(), duty.getSyncCommitteeIndices()));
+                    validator, duty.getValidatorIndex(), duty.getValidatorSyncCommitteeIndices()));
   }
 }
