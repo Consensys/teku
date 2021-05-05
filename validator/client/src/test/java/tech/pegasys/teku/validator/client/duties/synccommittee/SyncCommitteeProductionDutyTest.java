@@ -53,11 +53,11 @@ class SyncCommitteeProductionDutyTest {
   private static final String SIGNATURE_TYPE = "sync committee signature";
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ChainHeadTracker chainHeadTracker = mock(ChainHeadTracker.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+  private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 
   private final Validator validator = createValidator();
 
@@ -71,42 +71,9 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldReturnNoOpWhenNoValidatorsAssigned() {
     final SyncCommitteeProductionDuty duties = createDuty();
-    assertThat(duties.produceSignatures(UInt64.ONE)).isCompletedWithValue(DutyResult.NO_OP);
-    verifyNoInteractions(chainHeadTracker);
-  }
-
-  @Test
-  void shouldFailToProduceSignaturesWhenNodeHasNoBlock() {
-    final SyncCommitteeProductionDuty duties = createDuty(committeeAssignment(validator, 55, 1));
-    final UInt64 slot = UInt64.valueOf(25);
-    when(chainHeadTracker.getCurrentChainHead(slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    produceSignaturesAndReport(duties, slot);
-
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(SIGNATURE_TYPE),
-            eq(slot),
-            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
-            any(IllegalStateException.class));
-  }
-
-  @Test
-  void shouldFailToProduceSignaturesWhenRetrievingNodeHeadBlockFails() {
-    final SyncCommitteeProductionDuty duty = createDuty(committeeAssignment(validator, 55, 1));
-    final UInt64 slot = UInt64.valueOf(25);
-    final Exception exception = new RuntimeException("Oh dang");
-    when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(SafeFuture.failedFuture(exception));
-
-    produceSignaturesAndReport(duty, slot);
-
-    verify(validatorLogger)
-        .dutyFailed(
-            SIGNATURE_TYPE,
-            slot,
-            Set.of(validator.getPublicKey().toAbbreviatedString()),
-            exception);
+    assertThat(duties.produceSignatures(UInt64.ONE, blockRoot))
+        .isCompletedWithValue(DutyResult.NO_OP);
+    verifyNoInteractions(validatorApiChannel);
   }
 
   @Test
@@ -129,7 +96,6 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldReportPartialSuccessWhenSomeSignaturesAreProducedAndOthersFail() {
     final UInt64 slot = UInt64.valueOf(48);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
     final Validator validator2 = createValidator();
@@ -139,8 +105,6 @@ class SyncCommitteeProductionDutyTest {
         createDuty(
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
-    when(chainHeadTracker.getCurrentChainHead(slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
 
     when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
@@ -163,7 +127,6 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldReportPartialFailureWhenBeaconNodeRejectsSomeSignatures() {
     final UInt64 slot = UInt64.valueOf(48);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
     final Validator validator2 = createValidator();
@@ -173,8 +136,6 @@ class SyncCommitteeProductionDutyTest {
         createDuty(
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
-    when(chainHeadTracker.getCurrentChainHead(slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
 
     when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
@@ -204,13 +165,10 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldProduceSignature() {
     final UInt64 slot = UInt64.valueOf(25);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int validatorIndex = 23;
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SyncCommitteeProductionDuty duties =
         createDuty(committeeAssignment(validator, validatorIndex, 1));
-    when(chainHeadTracker.getCurrentChainHead(slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
 
     when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature));
@@ -226,7 +184,6 @@ class SyncCommitteeProductionDutyTest {
   @Test
   void shouldProduceOneSignatureForEachValidator() {
     final UInt64 slot = UInt64.valueOf(48);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
     final Validator validator2 = createValidator();
@@ -236,8 +193,6 @@ class SyncCommitteeProductionDutyTest {
         createDuty(
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
-    when(chainHeadTracker.getCurrentChainHead(slot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRoot)));
 
     when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
@@ -274,7 +229,7 @@ class SyncCommitteeProductionDutyTest {
 
   private void produceSignaturesAndReport(
       final SyncCommitteeProductionDuty duties, final UInt64 slot) {
-    final SafeFuture<DutyResult> result = duties.produceSignatures(slot);
+    final SafeFuture<DutyResult> result = duties.produceSignatures(slot, blockRoot);
     assertThat(result).isCompleted();
     result.join().report(SIGNATURE_TYPE, slot, validatorLogger);
   }
@@ -282,7 +237,7 @@ class SyncCommitteeProductionDutyTest {
   private SyncCommitteeProductionDuty createDuty(
       final ValidatorAndCommitteeIndices... assignments) {
     return new SyncCommitteeProductionDuty(
-        spec, forkProvider, validatorApiChannel, chainHeadTracker, asList(assignments));
+        spec, forkProvider, validatorApiChannel, asList(assignments));
   }
 
   private Validator createValidator() {

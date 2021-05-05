@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,7 @@ class ChainHeadTrackerTest {
 
   @Test
   void shouldReturnEmptyWhenNoUpdatesReceived() {
-    assertThatSafeFuture(tracker.getCurrentChainHead(UInt64.MAX_VALUE))
-        .isCompletedWithEmptyOptional();
+    assertThat(tracker.getCurrentChainHead(UInt64.MAX_VALUE)).isEmpty();
   }
 
   @Test
@@ -38,8 +37,7 @@ class ChainHeadTrackerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
     updateHead(slot, headBlockRoot);
-    assertThatSafeFuture(tracker.getCurrentChainHead(slot))
-        .isCompletedWithOptionalContaining(headBlockRoot);
+    assertThat(tracker.getCurrentChainHead(slot)).contains(headBlockRoot);
   }
 
   @Test
@@ -47,8 +45,7 @@ class ChainHeadTrackerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
     updateHead(slot, headBlockRoot);
-    assertThatSafeFuture(tracker.getCurrentChainHead(slot.plus(1)))
-        .isCompletedWithOptionalContaining(headBlockRoot);
+    assertThat(tracker.getCurrentChainHead(slot.plus(1))).contains(headBlockRoot);
   }
 
   @Test
@@ -56,7 +53,7 @@ class ChainHeadTrackerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
     updateHead(slot, headBlockRoot);
-    assertThatSafeFuture(tracker.getCurrentChainHead(slot.minus(1))).isCompletedWithEmptyOptional();
+    assertThat(tracker.getCurrentChainHead(slot.minus(1))).isEmpty();
   }
 
   private void updateHead(final UInt64 slot, final Bytes32 headBlockRoot) {

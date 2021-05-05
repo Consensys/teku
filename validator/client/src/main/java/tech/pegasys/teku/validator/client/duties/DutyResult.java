@@ -35,7 +35,6 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap());
-  private static final int SUMMARY_VALIDATOR_LIMIT = 20;
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;

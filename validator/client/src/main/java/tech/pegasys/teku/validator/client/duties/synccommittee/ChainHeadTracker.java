@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -24,12 +23,12 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
   private UInt64 headBlockSlot = UInt64.ZERO;
   private Optional<Bytes32> headBlockRoot = Optional.empty();
 
-  public synchronized SafeFuture<Optional<Bytes32>> getCurrentChainHead(final UInt64 atSlot) {
+  public synchronized Optional<Bytes32> getCurrentChainHead(final UInt64 atSlot) {
     if (headBlockSlot.isGreaterThan(atSlot)) {
       // We've moved on and no longer have a reference to what the head block was at that slot
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
-    return SafeFuture.completedFuture(headBlockRoot);
+    return headBlockRoot;
   }
 
   @Override
