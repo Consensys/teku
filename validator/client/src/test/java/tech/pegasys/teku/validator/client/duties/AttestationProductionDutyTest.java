@@ -89,7 +89,7 @@ class AttestationProductionDutyTest {
         .dutyFailed(
             eq(TYPE),
             eq(SLOT),
-            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -133,7 +133,7 @@ class AttestationProductionDutyTest {
         .dutyFailed(
             eq(TYPE),
             eq(SLOT),
-            eq(Optional.of(validator1.getPublicKey().toAbbreviatedString())),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -177,8 +177,7 @@ class AttestationProductionDutyTest {
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
-        .dutyFailed(
-            TYPE, SLOT, Optional.of(validator1.getPublicKey().toAbbreviatedString()), failure);
+        .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), failure);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -216,10 +215,7 @@ class AttestationProductionDutyTest {
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
         .dutyFailed(
-            TYPE,
-            SLOT,
-            Optional.of(validator1.getPublicKey().toAbbreviatedString()),
-            signingFailure);
+            TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), signingFailure);
     verifyNoMoreInteractions(validatorLogger);
   }
 

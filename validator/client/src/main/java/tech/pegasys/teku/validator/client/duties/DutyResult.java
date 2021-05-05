@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
   public static final DutyResult NO_OP = new DutyResult(0, 0, emptySet(), emptyMap());
-  private static final int SUMMARY_VALIDATOR_LIMIT = 20;
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
@@ -134,20 +132,10 @@ public class DutyResult {
                     producedType, slot, summarizeKeys(failure.validatorKeys), failure.error));
   }
 
-  private Optional<String> summarizeKeys(final Set<BLSPublicKey> validatorKeys) {
-    if (validatorKeys.isEmpty()) {
-      return Optional.empty();
-    }
-    final String suffix =
-        validatorKeys.size() > SUMMARY_VALIDATOR_LIMIT
-            ? "… (" + validatorKeys.size() + " total)"
-            : "";
-    return Optional.of(
-        validatorKeys.stream()
-                .limit(SUMMARY_VALIDATOR_LIMIT)
-                .map(BLSPublicKey::toAbbreviatedString)
-                .collect(Collectors.joining(", "))
-            + suffix);
+  private Set<String> summarizeKeys(final Set<BLSPublicKey> validatorKeys) {
+    return validatorKeys.stream()
+        .map(BLSPublicKey::toAbbreviatedString)
+        .collect(Collectors.toSet());
   }
 
   @Override

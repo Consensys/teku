@@ -217,7 +217,7 @@ class AggregationDutyTest {
         .dutyFailed(
             eq(TYPE),
             eq(SLOT),
-            eq(Optional.of(validator1.getPublicKey().toAbbreviatedString())),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -231,8 +231,7 @@ class AggregationDutyTest {
     performAndReportDuty();
 
     verify(validatorLogger)
-        .dutyFailed(
-            TYPE, SLOT, Optional.of(validator1.getPublicKey().toAbbreviatedString()), exception);
+        .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -270,8 +269,7 @@ class AggregationDutyTest {
     performAndReportDuty();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
     verify(validatorLogger)
-        .dutyFailed(
-            TYPE, SLOT, Optional.of(validator1.getPublicKey().toAbbreviatedString()), exception);
+        .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), exception);
     verifyNoMoreInteractions(validatorLogger);
   }
 
