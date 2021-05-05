@@ -239,7 +239,7 @@ public class BeaconChainMethods {
                 beaconBlocksByRangeHandler,
                 peerLookup);
 
-    if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
+    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
           RpcContextCodec.forkDigest(
               spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACONBLOCK);
@@ -295,7 +295,7 @@ public class BeaconChainMethods {
             messageHandler,
             peerLookup);
 
-    if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.ALTAIR)) {
+    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final SszSchema<MetadataMessage> altairMetadataSchema =
           SszSchema.as(
               MetadataMessage.class,
