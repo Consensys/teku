@@ -88,7 +88,7 @@ class SyncCommitteeProductionDutyTest {
         .dutyFailed(
             eq(SIGNATURE_TYPE),
             eq(slot),
-            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
   }
 
@@ -105,7 +105,7 @@ class SyncCommitteeProductionDutyTest {
         .dutyFailed(
             SIGNATURE_TYPE,
             slot,
-            Optional.of(validator.getPublicKey().toAbbreviatedString()),
+            Set.of(validator.getPublicKey().toAbbreviatedString()),
             exception);
   }
 
@@ -122,7 +122,7 @@ class SyncCommitteeProductionDutyTest {
         .dutyFailed(
             SIGNATURE_TYPE,
             slot,
-            Optional.of(validator.getPublicKey().toAbbreviatedString()),
+            Set.of(validator.getPublicKey().toAbbreviatedString()),
             exception);
   }
 
@@ -156,7 +156,7 @@ class SyncCommitteeProductionDutyTest {
         .dutyFailed(
             SIGNATURE_TYPE,
             slot,
-            Optional.of(validator2.getPublicKey().toAbbreviatedString()),
+            Set.of(validator2.getPublicKey().toAbbreviatedString()),
             exception);
   }
 
@@ -197,7 +197,7 @@ class SyncCommitteeProductionDutyTest {
         .dutyFailed(
             eq(SIGNATURE_TYPE),
             eq(slot),
-            eq(Optional.of(validator.getPublicKey().toAbbreviatedString())),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             argThat(error -> error.getMessage().equals("API Rejected")));
   }
 
