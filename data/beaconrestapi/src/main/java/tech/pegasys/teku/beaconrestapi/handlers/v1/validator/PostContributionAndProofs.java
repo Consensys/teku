@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -58,7 +59,7 @@ public class PostContributionAndProofs implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Publish contribution and proofs",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_EXPERIMENTAL},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = SignedContributionAndProof.class, isArray = true)}),
