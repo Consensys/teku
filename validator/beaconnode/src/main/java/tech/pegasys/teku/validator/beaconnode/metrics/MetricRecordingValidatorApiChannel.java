@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -52,7 +53,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_genesis_time_requests_total";
   public static final String GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME =
       "beacon_node_get_validator_indices_requests_total";
-  public static final String DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_duties_requests_total";
   public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
       "beacon_node_attestation_duties_requests_total";
   public static final String PROPOSER_DUTIES_REQUESTS_COUNTER_NAME =
@@ -67,6 +67,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_attestation_data_requests_total";
   public static final String AGGREGATE_REQUESTS_COUNTER_NAME =
       "beacon_node_aggregate_requests_total";
+  public static final String CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME =
+      "beacon_node_create_sync_committee_contribution_requests_total";
   public static final String AGGREGATION_SUBSCRIPTION_COUNTER_NAME =
       "beacon_node_aggregation_subscription_requests_total";
   public static final String PERSISTENT_SUBSCRIPTION_COUNTER_NAME =
@@ -90,6 +92,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter unsignedAttestationRequestsCounter;
   private final BeaconChainRequestCounter attestationDataRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
+  private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
@@ -148,6 +151,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         BeaconChainRequestCounter.create(
             metricsSystem,
             AGGREGATE_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests for aggregate attestations");
+    createSyncCommitteeContributionCounter =
+        BeaconChainRequestCounter.create(
+            metricsSystem,
+            CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
     getValidatorIndicesRequestCounter =
         metricsSystem.createCounter(
@@ -261,6 +269,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return countRequest(
         delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    return countRequest(
+        delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
+        createSyncCommitteeContributionCounter);
   }
 
   @Override

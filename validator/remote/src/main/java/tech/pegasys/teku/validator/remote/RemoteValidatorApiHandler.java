@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -325,6 +326,13 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
             apiClient
                 .createAggregate(slot, attestationHashTreeRoot)
                 .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    throw new UnsupportedOperationException(
+        "REST API for createSyncCommitteeContribution not supported");
   }
 
   @Override

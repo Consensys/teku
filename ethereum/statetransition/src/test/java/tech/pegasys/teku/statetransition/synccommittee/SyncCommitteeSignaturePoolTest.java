@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -28,6 +27,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -99,9 +99,10 @@ class SyncCommitteeSignaturePoolTest {
   void shouldCreateEmptyContributionWhenNoSignaturesAvailable() {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final SyncCommitteeContribution contribution = pool.createContribution(slot, blockRoot, 0);
+    final Optional<SyncCommitteeContribution> contribution =
+        pool.createContribution(slot, blockRoot, 0);
 
-    assertThat(contribution).isEqualTo(emptyContribution(slot, blockRoot, 0));
+    assertThat(contribution).isEmpty();
   }
 
   @Test
@@ -118,11 +119,11 @@ class SyncCommitteeSignaturePoolTest {
 
     addValid(signature);
 
-    final SyncCommitteeContribution contribution =
+    final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(
             signature.getSlot(), signature.getBeaconBlockRoot(), subcommitteeIndex);
 
-    assertThat(contribution).isEqualTo(createContributionFrom(subcommitteeIndex, signature));
+    assertThat(contribution).contains(createContributionFrom(subcommitteeIndex, signature));
   }
 
   @Test
@@ -148,12 +149,12 @@ class SyncCommitteeSignaturePoolTest {
             .build());
     addValid(signature2);
 
-    final SyncCommitteeContribution contribution =
+    final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(
             signature1.getSlot(), signature1.getBeaconBlockRoot(), subcommitteeIndex);
 
     assertThat(contribution)
-        .isEqualTo(createContributionFrom(subcommitteeIndex, signature1, signature2));
+        .contains(createContributionFrom(subcommitteeIndex, signature1, signature2));
   }
 
   @Test
@@ -175,11 +176,11 @@ class SyncCommitteeSignaturePoolTest {
 
     // One signature but gets included for all three subnets.
     assertThat(pool.createContribution(slot, blockRoot, 1))
-        .isEqualTo(createContributionFrom(1, signature));
+        .contains(createContributionFrom(1, signature));
     assertThat(pool.createContribution(slot, blockRoot, 3))
-        .isEqualTo(createContributionFrom(3, signature));
+        .contains(createContributionFrom(3, signature));
     assertThat(pool.createContribution(slot, blockRoot, 5))
-        .isEqualTo(createContributionFrom(5, signature));
+        .contains(createContributionFrom(5, signature));
   }
 
   @Test
@@ -193,11 +194,9 @@ class SyncCommitteeSignaturePoolTest {
 
     addValid(signature);
 
-    final SyncCommitteeContribution contribution =
+    final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(UInt64.ZERO, signature.getBeaconBlockRoot(), subcommitteeIndex);
-    assertThat(contribution)
-        .isEqualTo(
-            emptyContribution(UInt64.ZERO, signature.getBeaconBlockRoot(), subcommitteeIndex));
+    assertThat(contribution).isEmpty();
   }
 
   @Test
@@ -212,10 +211,9 @@ class SyncCommitteeSignaturePoolTest {
     addValid(signature);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final SyncCommitteeContribution contribution =
+    final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(signature.getSlot(), blockRoot, subcommitteeIndex);
-    assertThat(contribution)
-        .isEqualTo(emptyContribution(signature.getSlot(), blockRoot, subcommitteeIndex));
+    assertThat(contribution).isEmpty();
   }
 
   @Test
@@ -229,10 +227,9 @@ class SyncCommitteeSignaturePoolTest {
 
     addValid(signature);
 
-    final SyncCommitteeContribution contribution =
+    final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(signature.getSlot(), signature.getBeaconBlockRoot(), 1);
-    assertThat(contribution)
-        .isEqualTo(emptyContribution(signature.getSlot(), signature.getBeaconBlockRoot(), 1));
+    assertThat(contribution).isEmpty();
   }
 
   @Test
@@ -274,6 +271,7 @@ class SyncCommitteeSignaturePoolTest {
             slot ->
                 assertThat(
                         pool.createContribution(UInt64.valueOf(slot), blockRoot, subcommitteeIndex)
+                            .orElseThrow()
                             .getSignature()
                             .isInfinity())
                     .isFalse());
@@ -285,11 +283,9 @@ class SyncCommitteeSignaturePoolTest {
         .forEach(
             slot ->
                 assertThat(
-                        pool.createContribution(UInt64.valueOf(slot), blockRoot, subcommitteeIndex)
-                            .getSignature()
-                            .isInfinity())
+                        pool.createContribution(UInt64.valueOf(slot), blockRoot, subcommitteeIndex))
                     .describedAs("Contribution at slot %s should be empty", slot)
-                    .isTrue());
+                    .isEmpty());
   }
 
   private ValidateableSyncCommitteeSignature createSignatureInSlot(
@@ -323,12 +319,5 @@ class SyncCommitteeSignaturePoolTest {
             UInt64.valueOf(subnetId),
             participantIds,
             BLS.aggregate(blsSignatures));
-  }
-
-  private SyncCommitteeContribution emptyContribution(
-      final UInt64 slot, final Bytes32 beaconBlock, final int subnetId) {
-    return spec.getSyncCommitteeUtilRequired(slot)
-        .createSyncCommitteeContribution(
-            slot, beaconBlock, UInt64.valueOf(subnetId), emptySet(), BLSSignature.infinity());
   }
 }

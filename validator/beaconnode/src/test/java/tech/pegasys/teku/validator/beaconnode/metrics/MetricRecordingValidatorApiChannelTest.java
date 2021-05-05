@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -141,10 +142,13 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   public static Stream<Arguments> getDataRequestArguments() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final int subcommitteeIndex = dataStructureUtil.randomPositiveInt();
+    final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
     return Stream.of(
         requestDataTest(
             "getForkInfo",
@@ -171,7 +175,14 @@ class MetricRecordingValidatorApiChannelTest {
             channel ->
                 channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomAttestation()));
+            dataStructureUtil.randomAttestation()),
+        requestDataTest(
+            "createSyncCommitteeContribution",
+            channel ->
+                channel.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
+            MetricRecordingValidatorApiChannel
+                .CREATE_SYNC_COMMITTEE_CONTRIBUTION_REQUESTS_COUNTER_NAME,
+            dataStructureUtil.randomSyncCommitteeContribution(slot)));
   }
 
   private static <T> Arguments requestDataTest(
