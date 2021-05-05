@@ -41,24 +41,8 @@ public class MetadataMessageSchemaPhase0
 
   @Override
   public MetadataMessagePhase0 create(
-      final UInt64 seqNumber, final SszBitvector attnets, final SszBitvector syncnets) {
-    return create(seqNumber, attnets);
-  }
-
-  @Override
-  public MetadataMessagePhase0 create(final UInt64 seqNumber, final SszBitvector attnets) {
-    return new MetadataMessagePhase0(this, seqNumber, attnets);
-  }
-
-  @Override
-  public MetadataMessagePhase0 create(
       final UInt64 seqNumber, final Iterable<Integer> attnets, final Iterable<Integer> syncnets) {
-    return create(seqNumber, getAttnestSchema().ofBits(attnets));
-  }
-
-  @Override
-  public MetadataMessagePhase0 create(final UInt64 seqNumber, final Iterable<Integer> attnets) {
-    return create(seqNumber, getAttnestSchema().ofBits(attnets));
+    return new MetadataMessagePhase0(this, seqNumber, getAttnestSchema().ofBits(attnets));
   }
 
   @Override

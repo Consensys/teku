@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.Response;
@@ -31,8 +32,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -46,10 +45,10 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     String discoveryAddress = "discoveryaddress";
     final MockNodeId node1 = new MockNodeId(0);
     final UInt64 seqnr = dataStructureUtil.randomUInt64();
-    final SszBitvector attnets =
-        dataStructureUtil.randomSszBitvector(Constants.ATTESTATION_SUBNET_COUNT);
     final MetadataMessage metadataMessage =
-        spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().create(seqnr, attnets);
+        spec.getGenesisSchemaDefinitions()
+            .getMetadataMessageSchema()
+            .create(seqnr, List.of(1, 11, 15), Collections.emptyList());
 
     when(eth2P2PNetwork.getNodeId()).thenReturn(node1);
     when(eth2P2PNetwork.getEnr()).thenReturn(Optional.of(enr));

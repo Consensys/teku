@@ -38,25 +38,9 @@ public class MetadataMessageSchemaAltair
 
   @Override
   public MetadataMessageAltair create(
-      final UInt64 seqNumber, final SszBitvector attnets, final SszBitvector syncnets) {
-    return new MetadataMessageAltair(this, seqNumber, attnets, syncnets);
-  }
-
-  @Override
-  public MetadataMessageAltair create(final UInt64 seqNumber, final SszBitvector attnets) {
-    return new MetadataMessageAltair(this, seqNumber, attnets, getSyncnetsSchema().getDefault());
-  }
-
-  @Override
-  public MetadataMessageAltair create(
       final UInt64 seqNumber, final Iterable<Integer> attnets, final Iterable<Integer> syncnets) {
-    return create(
-        seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
-  }
-
-  @Override
-  public MetadataMessageAltair create(final UInt64 seqNumber, final Iterable<Integer> attnets) {
-    return create(seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().getDefault());
+    return new MetadataMessageAltair(
+        this, seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
   }
 
   @Override

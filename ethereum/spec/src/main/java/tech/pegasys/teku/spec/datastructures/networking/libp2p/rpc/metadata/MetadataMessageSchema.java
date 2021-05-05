@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
@@ -22,13 +21,7 @@ public interface MetadataMessageSchema<T extends MetadataMessage> extends SszCon
   @Override
   T createFromBackingNode(TreeNode node);
 
-  T create(UInt64 seqNumber, SszBitvector attnets, final SszBitvector syncnets);
-
-  T create(UInt64 seqNumber, SszBitvector attnets);
-
   T create(UInt64 seqNumber, Iterable<Integer> attnets, final Iterable<Integer> syncnets);
-
-  T create(UInt64 seqNumber, Iterable<Integer> attnets);
 
   T createDefault();
 }
