@@ -35,7 +35,6 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthChainId;
 import org.web3j.protocol.core.methods.response.EthLog;
-import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -170,7 +169,8 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
 
   @Override
   public SafeFuture<Boolean> ethSyncing() {
-    return sendAsync(web3j.ethSyncing()).thenApply(EthSyncing::isSyncing);
+    return sendAsync(web3j.ethSyncing())
+        .thenApply(response -> Web3jInSyncCheck.isSyncing(id, response));
   }
 
   @Override
