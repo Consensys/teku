@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -115,6 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final SyncCommitteeSignaturePool syncCommitteeSignaturePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -132,6 +134,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Spec spec,
       final ForkChoiceTrigger forkChoiceTrigger,
       final SyncCommitteeSignaturePool syncCommitteeSignaturePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -148,6 +151,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
+    this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
   }
 
@@ -523,13 +527,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
   }
 
-  @Override
-  public SafeFuture<Void> sendContributionAndProofs(
-      final List<SignedContributionAndProof> signedContributionAndProofs) {
-    return SafeFuture.failedFuture(
-        new UnsupportedOperationException("sendContributionAndProofs not implemented yet"));
-  }
-
   private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
     final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
@@ -539,6 +536,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       maybeError.ifPresent(errorList::add);
     }
     return errorList;
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedContributionAndProofs(
+      final Collection<SignedContributionAndProof> aggregates) {
+    return SafeFuture.collectAll(aggregates.stream().map(syncCommitteeContributionPool::add))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(InternalValidationResult::isReject)
+                      .flatMap(result -> result.getDescription().stream())
+                      .collect(toList());
+              if (!errorMessages.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "Invalid contribution and proofs: \n" + String.join("\n", errorMessages));
+              }
+            });
   }
 
   private Optional<SubmitCommitteeSignatureError> fromInternalValidationResult(
