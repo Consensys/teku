@@ -48,6 +48,10 @@ public class MathHelpers {
     }
   }
 
+  public static Bytes uint64ToBytes(long value) {
+    return uintToBytes(value, 8);
+  }
+
   public static Bytes32 uintToBytes32(long value) {
     return Bytes32.wrap(uintToBytes(value, 32));
   }
