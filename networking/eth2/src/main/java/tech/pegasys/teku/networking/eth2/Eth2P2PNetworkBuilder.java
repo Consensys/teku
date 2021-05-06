@@ -125,6 +125,7 @@ public class Eth2P2PNetworkBuilder {
             historicalChainData,
             metricsSystem,
             attestationSubnetService,
+            syncCommitteeSubnetService,
             rpcEncoding,
             requiredCheckpoint,
             eth2RpcPingInterval,
