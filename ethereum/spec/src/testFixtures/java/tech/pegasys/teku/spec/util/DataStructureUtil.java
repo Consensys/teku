@@ -867,13 +867,18 @@ public final class DataStructureUtil {
   }
 
   public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {
+    return randomSyncCommitteeContribution(slot, randomBytes32());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     final int subcommitteeSize =
         spec.atSlot(slot).getSyncCommitteeUtil().orElseThrow().getSubcommitteeSize();
     return getAltairSchemaDefinitions(slot)
         .getSyncCommitteeContributionSchema()
         .create(
             slot,
-            randomBytes32(),
+            beaconBlockRoot,
             UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
             randomSszBitvector(subcommitteeSize),
             randomSignature());

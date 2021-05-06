@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
@@ -188,6 +189,11 @@ public class SyncCommitteeUtil {
         getSyncSubcommittees(state, epoch)
             .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
     return assignments.getCommitteeIndices();
+  }
+
+  public Set<Integer> getSyncSubcommittees(final Set<Integer> committeeIndices) {
+    final int subcommitteeSize = getSubcommitteeSize();
+    return committeeIndices.stream().map(index -> index / subcommitteeSize).collect(toSet());
   }
 
   public Bytes32 getSyncCommitteeSignatureSigningRoot(

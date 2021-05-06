@@ -37,7 +37,6 @@ import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 public class SyncCommitteeProductionDuty {
   private static final Logger LOG = LogManager.getLogger();
-  private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
 
@@ -48,34 +47,20 @@ public class SyncCommitteeProductionDuty {
       final Spec spec,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final ChainHeadTracker chainHeadTracker,
       final Collection<ValidatorAndCommitteeIndices> assignments) {
-    this.chainHeadTracker = chainHeadTracker;
     this.forkProvider = forkProvider;
     this.assignments = assignments;
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;
   }
 
-  public SafeFuture<DutyResult> produceSignatures(final UInt64 slot) {
+  public SafeFuture<DutyResult> produceSignatures(final UInt64 slot, final Bytes32 blockRoot) {
     if (assignments.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     return forkProvider
         .getForkInfo()
-        .thenCompose(
-            forkInfo ->
-                chainHeadTracker
-                    .getCurrentChainHead(slot)
-                    .thenCompose(
-                        maybeBlockRoot ->
-                            maybeBlockRoot
-                                .map(blockRoot -> produceSignatures(forkInfo, slot, blockRoot))
-                                .orElseThrow(
-                                    () ->
-                                        new IllegalStateException(
-                                            "Chain head is not available or has advanced beyond slot "
-                                                + slot))))
+        .thenCompose(forkInfo -> produceSignatures(forkInfo, slot, blockRoot))
         .exceptionally(
             error ->
                 DutyResult.forError(
