@@ -32,7 +32,7 @@ public class SyncCommitteeDutyLoader
   private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
 
-  protected SyncCommitteeDutyLoader(
+  public SyncCommitteeDutyLoader(
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final Spec spec,
