@@ -33,6 +33,7 @@ import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -80,4 +81,7 @@ public interface ValidatorRestApiClient {
       UInt64 epoch, Collection<Integer> validatorIndices);
 
   void subscribeToSyncCommitteeSubnets(List<SyncCommitteeSubnetSubscription> subnetSubscriptions);
+
+  void sendContributionAndProofs(
+      final List<SignedContributionAndProof> signedContributionAndProofs);
 }
