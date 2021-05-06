@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -652,9 +653,7 @@ class ValidatorApiHandlerTest {
     final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
     final List<SyncCommitteeSignature> signatures = List.of(signature);
     when(syncCommitteeSignaturePool.add(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                InternalValidationResult.create(ValidationResultCode.ACCEPT, "")));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final SafeFuture<List<SubmitCommitteeSignatureError>> result =
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
     assertThat(result).isCompletedWithValue(emptyList());
@@ -672,6 +671,47 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
     assertThat(result)
         .isCompletedWithValue(List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected")));
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldAllowEmptyRequest() {
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(emptyList());
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldAddContributionsToPool() {
+    final SignedContributionAndProof contribution =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    when(syncCommitteeContributionPool.add(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(List.of(contribution));
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldReportErrors() {
+    final SignedContributionAndProof contribution1 =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    final SignedContributionAndProof contribution2 =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    when(syncCommitteeContributionPool.add(contribution1))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Bad")));
+    when(syncCommitteeContributionPool.add(contribution2))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Worse")));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(List.of(contribution1, contribution2));
+    assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessageContainingAll("Bad", "Worse");
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
