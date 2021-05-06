@@ -26,7 +26,10 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -34,15 +37,21 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeCon
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 
 public class GetSyncCommitteeContributionIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
+  final Bytes32 blockRoot = Bytes32.random();
+  BLSSignature sig = BLSSignature.empty();
+
+  @BeforeEach
+  void setup() {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+  }
 
   @Test
   void shouldReturnFailedIfNotCreated() throws IOException {
-    final Bytes32 blockRoot = Bytes32.random();
-    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final SafeFuture<Optional<SyncCommitteeContribution>> future =
         SafeFuture.completedFuture(Optional.empty());
 
@@ -52,11 +61,22 @@ public class GetSyncCommitteeContributionIntegrationTest
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
+  @ParameterizedTest
+  @ValueSource(
+      ints = {
+        Integer.MIN_VALUE,
+        -1,
+        NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT,
+        Integer.MAX_VALUE
+      })
+  void shouldRejectOutOfRangeSubcommitteeIndex(final int subcommittee) throws IOException {
+    Response response = get(ONE, subcommittee, blockRoot);
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string()).contains(subcommittee + " is outside of this range.");
+  }
+
   @Test
   void shouldReturnResultIfCreatedSuccessfully() throws IOException {
-    final Bytes32 blockRoot = Bytes32.random();
-    BLSSignature sig = BLSSignature.empty();
-    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final SafeFuture<Optional<SyncCommitteeContribution>> future =
         SafeFuture.completedFuture(
             Optional.of(

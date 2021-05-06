@@ -46,6 +46,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 public class GetSyncCommitteeContribution extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/validator/sync_committee_contribution";
@@ -79,7 +80,8 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
             required = true)
       },
       description =
-          "Returns an unsigned sync committee contribution, for an validator to sign and post.",
+          "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeSignature` "
+              + "values known to this node matching the specified slot, subcommittee index and beacon block root.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -100,9 +102,12 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
       final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
       final Bytes32 blockRoot = getParameterValueAsBytes32(parameters, BEACON_BLOCK_ROOT);
       final int subcommitteeIndex = getParameterValueAsInt(parameters, SUBCOMMITTEE_INDEX);
-      if (subcommitteeIndex < 0) {
+      if (subcommitteeIndex < 0
+          || subcommitteeIndex >= NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT) {
         throw new IllegalArgumentException(
-            String.format("'%s' needs to be greater than or equal to 0.", SUBCOMMITTEE_INDEX));
+            String.format(
+                "Subcommittee index needs to be between 0 and %s, %s is outside of this range.",
+                NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT - 1, subcommitteeIndex));
       }
 
       final SafeFuture<Optional<SyncCommitteeContribution>> future =
