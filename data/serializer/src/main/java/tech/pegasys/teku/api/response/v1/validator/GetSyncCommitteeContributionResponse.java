@@ -19,7 +19,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 
 public class GetSyncCommitteeContributionResponse {
   @JsonProperty("data")
-  final SyncCommitteeContribution data;
+  public final SyncCommitteeContribution data;
 
   @JsonCreator
   public GetSyncCommitteeContributionResponse(
