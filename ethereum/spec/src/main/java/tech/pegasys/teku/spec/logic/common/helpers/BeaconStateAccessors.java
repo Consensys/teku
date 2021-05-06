@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import java.util.Collection;
 import java.util.List;
@@ -145,7 +145,7 @@ public abstract class BeaconStateAccessors {
     UInt64 randaoIndex =
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
-    Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
+    Bytes epochBytes = uint64ToBytes(epoch);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
   }
 
@@ -170,7 +170,7 @@ public abstract class BeaconStateAccessors {
                   Hash.sha2_256(
                       Bytes.concatenate(
                           getSeed(state, epoch, config.getDomainBeaconProposer()),
-                          uintToBytes(slot.longValue(), 8)));
+                          uint64ToBytes(slot)));
               List<Integer> indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });

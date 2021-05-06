@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import com.google.common.primitives.UnsignedBytes;
@@ -74,7 +75,7 @@ public class MiscHelpers {
     while (true) {
       int candidate_index = indices.get(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha2_256(Bytes.concatenate(seed, uintToBytes(Math.floorDiv(i, 32), 8)));
+        hash = Hash.sha2_256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 32))));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
