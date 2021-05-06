@@ -35,8 +35,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
     networkFactory.stopAll();
   }
 
-  protected Eth2Peer createNetworks() {
-    return createNetworks(false, false);
+  protected Eth2Peer createPeer() {
+    return createRemotePeerAndNetwork().getPeer();
   }
 
   protected void setupPeerStorage(final boolean enableAltair) {
@@ -53,7 +53,24 @@ public abstract class AbstractRpcMethodIntegrationTest {
    * @param enableAltairRemotely Whether the remote peer receiving requests supports altair
    * @return An Eth2Peer to which we can send requests
    */
-  protected Eth2Peer createNetworks(
+  protected Eth2Peer createPeer(
+      final boolean enableAltairLocally, final boolean enableAltairRemotely) {
+    return createRemotePeerAndNetwork(enableAltairLocally, enableAltairRemotely).getPeer();
+  }
+
+  protected PeerAndNetwork createRemotePeerAndNetwork() {
+    return createRemotePeerAndNetwork(false, false);
+  }
+
+  /**
+   * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
+   * can send requests along with the corresponding remote Eth2P2PNetwork.
+   *
+   * @param enableAltairLocally Whether the "local" node supports altair
+   * @param enableAltairRemotely Whether the remote peer receiving requests supports altair
+   * @return An Eth2Peer to which we can send requests along with its corresponding Eth2P2PNetwork
+   */
+  protected PeerAndNetwork createRemotePeerAndNetwork(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) {
     // Set up remote peer storage
     final Spec remoteSpec = enableAltairRemotely ? altairEnabledSpec : phase0Spec;
@@ -89,9 +106,28 @@ public abstract class AbstractRpcMethodIntegrationTest {
               .spec(localSpec)
               .startNetwork();
 
-      return localNetwork.getPeer(remotePeerNetwork.getNodeId()).orElseThrow();
+      final Eth2Peer peer = localNetwork.getPeer(remotePeerNetwork.getNodeId()).orElseThrow();
+      return new PeerAndNetwork(peer, remotePeerNetwork);
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  public static class PeerAndNetwork {
+    private final Eth2Peer peer;
+    private final Eth2P2PNetwork network;
+
+    public PeerAndNetwork(final Eth2Peer peer, final Eth2P2PNetwork network) {
+      this.peer = peer;
+      this.network = network;
+    }
+
+    public Eth2Peer getPeer() {
+      return peer;
+    }
+
+    public Eth2P2PNetwork getNetwork() {
+      return network;
     }
   }
 }

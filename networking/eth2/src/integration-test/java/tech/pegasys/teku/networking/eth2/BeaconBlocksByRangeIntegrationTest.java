@@ -43,21 +43,21 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> response = requestBlocks(peer);
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> response = requestBlocks(peer);
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
     final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
@@ -69,7 +69,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void requestBlocksByRangeAfterPeerDisconnectedImmediately() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain();
@@ -90,7 +90,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void requestBlocksByRangeAfterPeerDisconnected() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain();
@@ -111,7 +111,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void requestBlockBySlotAfterPeerDisconnectedImmediately() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain();
@@ -128,7 +128,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void requestBlockByRootAfterPeerDisconnected() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain();
@@ -145,7 +145,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   void requestBlockBySlot_shouldReturnEmptyWhenBlockIsNotKnown() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
 
     final Optional<SignedBeaconBlock> result =
         waitFor(peer.requestBlockBySlot(UInt64.valueOf(49382982)));
@@ -156,7 +156,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   @MethodSource("altairVersioningOptions")
   public void requestBlockBySlot_withDisparateVersionsEnabled_requestPhase0Blocks(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
-    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
 
     // Setup chain
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
@@ -174,7 +174,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   public void requestBlockBySlot_withDisparateVersionsEnabled_requestAltairBlocks(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
     setupPeerStorage(true);
-    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain(altairSlot.minus(1));

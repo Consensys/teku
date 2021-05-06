@@ -183,6 +183,7 @@ public class Eth2P2PNetworkFactory {
                 historicalChainData,
                 METRICS_SYSTEM,
                 attestationSubnetService,
+                syncCommitteeSubnetService,
                 rpcEncoding,
                 requiredCheckpoint,
                 eth2RpcPingInterval,
