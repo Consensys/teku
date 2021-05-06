@@ -82,14 +82,12 @@ public class SyncCommitteeAggregationDuty {
                                     assignment))))
         .thenCompose(this::sendAggregates)
         .exceptionally(
-            error -> {
-              error.printStackTrace();
-              return DutyResult.forError(
-                  assignments.stream()
-                      .map(assignment -> assignment.getValidator().getPublicKey())
-                      .collect(Collectors.toSet()),
-                  error);
-            });
+            error ->
+                DutyResult.forError(
+                    assignments.stream()
+                        .map(assignment -> assignment.getValidator().getPublicKey())
+                        .collect(Collectors.toSet()),
+                    error));
   }
 
   private Stream<SafeFuture<AggregationResult>> performAggregationsForValidator(
