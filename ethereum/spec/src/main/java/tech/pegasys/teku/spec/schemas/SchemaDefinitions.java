@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 
 public interface SchemaDefinitions {
@@ -28,6 +29,8 @@ public interface SchemaDefinitions {
   BeaconBlockSchema getBeaconBlockSchema();
 
   BeaconBlockBodySchema<?> getBeaconBlockBodySchema();
+
+  MetadataMessageSchema<?> getMetadataMessageSchema();
 
   Optional<SchemaDefinitionsAltair> toVersionAltair();
 }

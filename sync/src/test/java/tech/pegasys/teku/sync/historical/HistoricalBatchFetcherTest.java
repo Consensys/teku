@@ -79,7 +79,7 @@ public class HistoricalBatchFetcherTest {
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
     firstBlockInBatch = blockBatch.get(0);
 
-    peer = RespondingEth2Peer.create(chainBuilder);
+    peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
@@ -142,7 +142,7 @@ public class HistoricalBatchFetcherTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    peer = RespondingEth2Peer.create(chain);
+    peer = RespondingEth2Peer.create(spec, chain);
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
@@ -197,7 +197,7 @@ public class HistoricalBatchFetcherTest {
 
   @Test
   public void run_peerReturnBlockFromADifferentChain() {
-    peer = RespondingEth2Peer.create(forkBuilder);
+    peer = RespondingEth2Peer.create(spec, forkBuilder);
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,

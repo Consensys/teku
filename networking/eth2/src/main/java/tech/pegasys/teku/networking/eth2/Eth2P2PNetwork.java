@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
