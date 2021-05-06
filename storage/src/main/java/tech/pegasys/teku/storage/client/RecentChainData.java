@@ -37,6 +37,7 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -369,6 +370,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public Optional<UInt64> getCurrentEpoch() {
     return getCurrentSlot().map(spec::computeEpochAtSlot);
+  }
+
+  /** @return The current spec version according to the recorded time */
+  public SpecVersion getCurrentSpec() {
+    return getCurrentSlot().map(spec::atSlot).orElseGet(spec::getGenesisSpec);
   }
 
   /** @return The number of slots between our chainhead and the current slot by time */

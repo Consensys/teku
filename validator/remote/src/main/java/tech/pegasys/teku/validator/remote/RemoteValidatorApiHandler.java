@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
+import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -309,6 +311,43 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         .collect(Collectors.toList()))
                 .map(this::responseToSyncCommitteeSignatures)
                 .orElse(emptyList()));
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedContributionAndProofs(
+      final Collection<SignedContributionAndProof> signedContributionAndProofs) {
+    final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
+        signedContributionsRestSchema =
+            signedContributionAndProofs.stream()
+                .map(this::asSignedContributionandProofs)
+                .collect(Collectors.toList());
+    return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
+  }
+
+  private tech.pegasys.teku.api.schema.altair.SignedContributionAndProof
+      asSignedContributionandProofs(final SignedContributionAndProof signedContributionAndProof) {
+    return new tech.pegasys.teku.api.schema.altair.SignedContributionAndProof(
+        asContributionAndProof(signedContributionAndProof.getMessage()),
+        new tech.pegasys.teku.api.schema.BLSSignature(signedContributionAndProof.getSignature()));
+  }
+
+  private ContributionAndProof asContributionAndProof(
+      final tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
+          message) {
+    return new ContributionAndProof(
+        message.getAggregatorIndex(),
+        new tech.pegasys.teku.api.schema.BLSSignature(message.getSelectionProof()),
+        asSyncCommitteeContribution(message.getContribution()));
+  }
+
+  private tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution asSyncCommitteeContribution(
+      final SyncCommitteeContribution contribution) {
+    return new tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution(
+        contribution.getSlot(),
+        contribution.getBeaconBlockRoot(),
+        contribution.getSubcommitteeIndex(),
+        contribution.getAggregationBits(),
+        new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
   private List<SubmitCommitteeSignatureError> responseToSyncCommitteeSignatures(

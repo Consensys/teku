@@ -51,14 +51,14 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> response = requestBlocks(peer, singletonList(Bytes32.ZERO));
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldReturnSingleBlockWhenOnlyOneMatches() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final SignedBeaconBlock block = addBlock();
 
     final List<SignedBeaconBlock> response =
@@ -68,7 +68,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnectedImmediately() throws RpcException {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
@@ -86,7 +86,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   @Test
   public void requestBlocksByRootAfterPeerDisconnected()
       throws RpcException, InterruptedException, ExecutionException, TimeoutException {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
@@ -103,7 +103,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void requestBlockByRootAfterPeerDisconnectedImmediately() {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
@@ -118,7 +118,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   @Test
   public void requestBlockByRootAfterPeerDisconnected()
       throws InterruptedException, ExecutionException, TimeoutException {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hashTreeRoot();
 
@@ -132,7 +132,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void shouldReturnMultipleBlocksWhenAllRequestsMatch() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
     final List<Bytes32> blockRoots =
         blocks.stream()
@@ -145,7 +145,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void shouldReturnMultipleLargeBlocksWhenAllRequestsMatch() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> blocks = largeBlockSequence(3);
     final List<Bytes32> blockRoots =
         blocks.stream().map(SignedBeaconBlock::getRoot).collect(toList());
@@ -155,7 +155,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   public void shouldReturnMatchingBlocksWhenSomeRequestsDoNotMatch() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
 
     // Real block roots interspersed with ones that don't match any blocks
@@ -172,7 +172,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
   @Test
   void requestBlockByRoot_shouldReturnEmptyWhenBlockIsNotKnown() throws Exception {
-    final Eth2Peer peer = createNetworks();
+    final Eth2Peer peer = createPeer();
     final Optional<SignedBeaconBlock> result =
         waitFor(peer.requestBlockByRoot(Bytes32.fromHexStringLenient("0x123456789")));
     assertThat(result).isEmpty();
@@ -182,7 +182,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   @MethodSource("altairVersioningOptions")
   public void requestBlockByRoot_withDisparateVersionsEnabled_requestPhase0Blocks(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
-    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
 
     // Setup chain
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
@@ -201,7 +201,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   public void requestBlockBySlot_withDisparateVersionsEnabled_requestAltairBlocks(
       final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
     setupPeerStorage(true);
-    final Eth2Peer peer = createNetworks(enableAltairLocally, enableAltairRemotely);
+    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain(altairSlot.minus(1));
