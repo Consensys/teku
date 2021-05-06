@@ -49,6 +49,10 @@ public class BeaconChainMethodIds {
     return extractVersion(methodId, BEACON_BLOCKS_BY_RANGE);
   }
 
+  public static int extractGetMetadataVersion(final String methodId) {
+    return extractVersion(methodId, GET_METADATA);
+  }
+
   @VisibleForTesting
   static int extractVersion(final String methodId, final String methodPrefix) {
     final String versionAndEncoding = methodId.replace(methodPrefix + "/", "");

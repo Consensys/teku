@@ -41,6 +41,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -53,7 +55,8 @@ import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBlockSyncServiceTest {
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
@@ -129,7 +132,7 @@ public class HistoricalBlockSyncServiceTest {
             .collect(Collectors.toList());
 
     // Set up a peer to respond
-    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
@@ -169,7 +172,7 @@ public class HistoricalBlockSyncServiceTest {
             .collect(Collectors.toList());
 
     // Set up a peer to respond
-    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));
 
     startService();
@@ -210,7 +213,7 @@ public class HistoricalBlockSyncServiceTest {
             .collect(Collectors.toList());
 
     // Set up a peer to respond
-    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
@@ -246,7 +249,7 @@ public class HistoricalBlockSyncServiceTest {
     final List<SignedBeaconBlock> expectedBlocks = List.of(genesis.getBlock());
 
     // Set up a peer to respond
-    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
@@ -279,7 +282,7 @@ public class HistoricalBlockSyncServiceTest {
             .collect(Collectors.toList());
 
     // Set up a peer to respond
-    final RespondingEth2Peer peer = RespondingEth2Peer.create(storageSystem.chainBuilder());
+    final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));

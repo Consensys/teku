@@ -567,7 +567,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!beaconConfig.p2pConfig().getNetworkConfig().isEnabled()) {
-      this.p2pNetwork = new NoOpEth2P2PNetwork();
+      this.p2pNetwork = new NoOpEth2P2PNetwork(spec);
       return;
     }
 
