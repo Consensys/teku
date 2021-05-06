@@ -61,7 +61,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Produce sync committee contribution",
+      summary = "Produce a sync committee contribution",
       tags = {TAG_EXPERIMENTAL},
       queryParams = {
         @OpenApiParam(
