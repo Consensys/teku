@@ -87,6 +87,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
       List<SyncCommitteeSignature> syncCommitteeSignatures);
 
-  SafeFuture<Void> sendContributionAndProofs(
-      List<SignedContributionAndProof> signedContributionAndProofs);
+  SafeFuture<Void> sendSignedContributionAndProofs(
+      Collection<SignedContributionAndProof> signedContributionAndProofs);
 }

@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -70,13 +70,15 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
-  private final BlockGossipChannel blockGossipChannel = Mockito.mock(BlockGossipChannel.class);
+  private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
       mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
   private final ValidatorApiHandler handler =
@@ -96,6 +98,7 @@ public class ValidatorApiHandlerIntegrationTest {
           spec,
           forkChoiceTrigger,
           syncCommitteeSignaturePool,
+          syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
 
   @BeforeEach

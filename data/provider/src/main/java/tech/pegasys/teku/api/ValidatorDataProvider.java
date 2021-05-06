@@ -301,7 +301,7 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Void> sendContributionAndProofs(
       final List<SignedContributionAndProof> contributionAndProofs) {
-    return validatorApiChannel.sendContributionAndProofs(
+    return validatorApiChannel.sendSignedContributionAndProofs(
         contributionAndProofs.stream()
             .map(this::asInternalContributionAndProofs)
             .collect(toList()));
