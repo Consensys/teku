@@ -20,9 +20,11 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.interfaces.VersionedData;
 
 public class SignedBeaconBlockAltair extends SignedBeaconBlock implements VersionedData {
+  private final BeaconBlockAltair message;
+
   @Override
   public BeaconBlockAltair getMessage() {
-    return (BeaconBlockAltair) super.getMessage();
+    return message;
   }
 
   @JsonCreator
@@ -30,5 +32,6 @@ public class SignedBeaconBlockAltair extends SignedBeaconBlock implements Versio
       @JsonProperty("message") final BeaconBlockAltair message,
       @JsonProperty("signature") final BLSSignature signature) {
     super(message, signature);
+    this.message = message;
   }
 }

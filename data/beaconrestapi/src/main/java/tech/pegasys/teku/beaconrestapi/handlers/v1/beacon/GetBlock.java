@@ -20,6 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,8 +39,10 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetBlock extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/beacon/blocks/:block_id";
@@ -77,6 +80,17 @@ public class GetBlock extends AbstractHandler implements Handler {
 
   private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
+    if (!chainDataProvider
+        .getMilestoneAtSlot(response.getMessage().slot)
+        .equals(SpecMilestone.PHASE0)) {
+      ctx.status(SC_BAD_REQUEST);
+      return Optional.of(
+          BadRequest.badRequest(
+              jsonProvider,
+              String.format(
+                  "Slot %s is not a phase0 slot, please fetch via /eth/v2/beacon/blocks",
+                  response.getMessage().slot)));
+    }
     return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response)));
   }
 }
