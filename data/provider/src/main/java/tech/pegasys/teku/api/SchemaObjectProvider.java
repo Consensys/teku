@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 /**
- * * Takes objects from Internal layers and converts to an appropriate schema object.
+ * Takes objects from Internal layers and converts to an appropriate schema object.
  *
  * <p>Handles slot sensitive conversions like conversion of blocks to phase0 or altair blocks
  */
