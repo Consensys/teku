@@ -25,9 +25,9 @@ import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 
 public class BeaconBlockBodyAltair extends BeaconBlockBody {
+  @JsonProperty("sync_aggregate")
   public final SyncAggregate syncAggregate;
 
   @JsonCreator
@@ -51,5 +51,14 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
         deposits,
         voluntary_exits);
     this.syncAggregate = sync_aggregate;
+  }
+
+  public BeaconBlockBodyAltair(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair
+              .BeaconBlockBodyAltair
+          message) {
+    super(message);
+    this.syncAggregate =
+        new tech.pegasys.teku.api.schema.altair.SyncAggregate(message.getSyncAggregate());
   }
 }

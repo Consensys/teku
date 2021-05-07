@@ -65,6 +65,7 @@ public class ChainDataProvider {
   private final StateSelectorFactory defaultStateSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final SchemaObjectProvider schemaObjectProvider;
 
   private final RecentChainData recentChainData;
 
@@ -75,6 +76,7 @@ public class ChainDataProvider {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
+    this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.defaultBlockSelectorFactory = new BlockSelectorFactory(combinedChainDataClient);
     this.defaultStateSelectorFactory = new StateSelectorFactory(combinedChainDataClient);
   }
@@ -110,6 +112,13 @@ public class ChainDataProvider {
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
         .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockV2(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
   public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {

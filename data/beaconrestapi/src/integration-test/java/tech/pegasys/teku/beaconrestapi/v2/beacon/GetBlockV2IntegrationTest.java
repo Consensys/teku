@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -66,6 +67,8 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
         .isEqualTo(created.get(0).getBlock().getSignature().toString());
     assertThat(data.getMessage().asInternalBeaconBlock(spec).getRoot().toHexString())
         .isEqualTo(created.get(0).getBlock().getMessage().getRoot().toHexString());
+    assertThat(data.getMessage().getBody().syncAggregate.syncCommitteeBits)
+        .isEqualTo(Bytes.fromHexString("0x00000000"));
   }
 
   public Response get(final String blockIdString) throws IOException {
