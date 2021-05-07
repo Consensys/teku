@@ -137,7 +137,7 @@ public class BlockFactory {
                     .syncAggregate(
                         () ->
                             contributionPool.createSyncAggregateForBlock(
-                                newSlot.minusMinZero(1), parentRoot)))
+                                newSlot, parentRoot)))
         .getBlock();
   }
 }

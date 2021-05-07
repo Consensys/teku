@@ -41,7 +41,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 
 class SyncCommitteeContributionPoolTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+
+  private final UInt64 forkSlot = UInt64.valueOf(8);
+  private final UInt64 altairSlot = forkSlot.plus(2);
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(forkSlot);
   private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -84,7 +87,7 @@ class SyncCommitteeContributionPoolTest {
   @Test
   void shouldCreateEmptySyncAggregateWhenPoolIsEmpty() {
     final SyncAggregate result =
-        pool.createSyncAggregateForBlock(UInt64.ONE, dataStructureUtil.randomBytes32());
+        pool.createSyncAggregateForBlock(altairSlot, dataStructureUtil.randomBytes32());
 
     assertThatSyncAggregate(result).isEmpty();
   }
@@ -109,7 +112,7 @@ class SyncCommitteeContributionPoolTest {
 
   @Test
   void shouldCreateSyncAggregateFromSingleContribution() {
-    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(5);
+    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(15);
     addValid(proof);
 
     final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
@@ -122,7 +125,7 @@ class SyncCommitteeContributionPoolTest {
 
   @Test
   void shouldSelectBestContribution() {
-    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(5);
+    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(25);
 
     final SignedContributionAndProof bestProof = withParticipationBits(proof, 1, 2, 3);
     addValid(withParticipationBits(proof, 1, 3));
@@ -137,19 +140,32 @@ class SyncCommitteeContributionPoolTest {
   }
 
   @Test
+  void shouldCreateSyncAggregateForForkSlot() {
+    final SyncAggregate result =
+        pool.createSyncAggregateForBlock(forkSlot, dataStructureUtil.randomBytes32());
+
+    assertThatSyncAggregate(result).isEmpty();
+  }
+
+  @Test
   void shouldPruneContributions() {
-    final SignedContributionAndProof proof1 = dataStructureUtil.randomSignedContributionAndProof(1);
-    final SignedContributionAndProof proof2 = dataStructureUtil.randomSignedContributionAndProof(2);
-    final SignedContributionAndProof proof3 = dataStructureUtil.randomSignedContributionAndProof(3);
-    final SignedContributionAndProof proof4 = dataStructureUtil.randomSignedContributionAndProof(4);
-    final SignedContributionAndProof proof5 = dataStructureUtil.randomSignedContributionAndProof(5);
+    final SignedContributionAndProof proof1 =
+        dataStructureUtil.randomSignedContributionAndProof(11);
+    final SignedContributionAndProof proof2 =
+        dataStructureUtil.randomSignedContributionAndProof(12);
+    final SignedContributionAndProof proof3 =
+        dataStructureUtil.randomSignedContributionAndProof(13);
+    final SignedContributionAndProof proof4 =
+        dataStructureUtil.randomSignedContributionAndProof(14);
+    final SignedContributionAndProof proof5 =
+        dataStructureUtil.randomSignedContributionAndProof(15);
     addValid(proof1);
     addValid(proof2);
     addValid(proof3);
     addValid(proof4);
     addValid(proof5);
 
-    pool.onSlot(UInt64.valueOf(5));
+    pool.onSlot(UInt64.valueOf(15));
 
     // Proof 1 and two were pruned
     assertThatSyncAggregate(getBlockSyncAggregateWithContribution(proof1)).isEmpty();
@@ -197,7 +213,7 @@ class SyncCommitteeContributionPoolTest {
   private SignedContributionAndProof withParticipationBits(
       final SignedContributionAndProof proof, final Integer... participationBits) {
     final SyncCommitteeContribution contribution = proof.getMessage().getContribution();
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(altairSlot);
     final SyncCommitteeContribution newContribution =
         syncCommitteeUtil.createSyncCommitteeContribution(
             contribution.getSlot(),
