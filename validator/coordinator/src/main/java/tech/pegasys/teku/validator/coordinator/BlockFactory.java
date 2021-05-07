@@ -135,9 +135,7 @@ public class BlockFactory {
                     .deposits(deposits)
                     .voluntaryExits(voluntaryExits)
                     .syncAggregate(
-                        () ->
-                            contributionPool.createSyncAggregateForBlock(
-                                newSlot.minusMinZero(1), parentRoot)))
+                        () -> contributionPool.createSyncAggregateForBlock(newSlot, parentRoot)))
         .getBlock();
   }
 }

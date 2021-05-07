@@ -109,10 +109,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
             .getOrDefault(slot, emptyMap())
             .getOrDefault(parentRoot, emptyMap())
             .values();
-    return spec.atSlot(slot)
-        .getSyncCommitteeUtil()
-        .orElseThrow()
-        .createSyncAggregate(contributions);
+    return spec.getSyncCommitteeUtilRequired(blockSlot).createSyncAggregate(contributions);
   }
 
   /**
