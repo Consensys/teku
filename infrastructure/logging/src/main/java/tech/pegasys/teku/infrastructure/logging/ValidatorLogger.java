@@ -26,7 +26,7 @@ public class ValidatorLogger {
   private static final int VALIDATOR_KEY_LIMIT = 20;
   public static final ValidatorLogger VALIDATOR_LOGGER =
       new ValidatorLogger(LoggingConfigurator.VALIDATOR_LOGGER_NAME);
-  public static final int LONGEST_TYPE_LENGTH = "attestation".length();
+  public static final int LONGEST_TYPE_LENGTH = "sync_contribution".length();
   private static final String PREFIX = "Validator   *** ";
 
   private final Logger log;
