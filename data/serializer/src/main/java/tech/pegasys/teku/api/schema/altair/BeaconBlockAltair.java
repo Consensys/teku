@@ -20,10 +20,12 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconBlockAltair extends BeaconBlock {
-  @Override
+  private final BeaconBlockBodyAltair body;
+
   @JsonProperty("body")
+  @Override
   public final BeaconBlockBodyAltair getBody() {
-    return (BeaconBlockBodyAltair) super.getBody();
+    return body;
   }
 
   @JsonCreator
@@ -34,5 +36,6 @@ public class BeaconBlockAltair extends BeaconBlock {
       @JsonProperty("state_root") final Bytes32 state_root,
       @JsonProperty("body") final BeaconBlockBodyAltair body) {
     super(slot, proposer_index, parent_root, state_root, body);
+    this.body = body;
   }
 }
