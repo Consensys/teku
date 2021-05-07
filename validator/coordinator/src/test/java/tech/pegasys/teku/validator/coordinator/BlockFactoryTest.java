@@ -87,7 +87,7 @@ class BlockFactoryTest {
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
     verify(syncCommitteeContributionPool)
-        .createSyncAggregateForBlock(UInt64.ZERO, block.getParentRoot());
+        .createSyncAggregateForBlock(UInt64.ONE, block.getParentRoot());
   }
 
   private SyncAggregate getSyncAggregate(final BeaconBlock block) {
@@ -134,7 +134,7 @@ class BlockFactoryTest {
     final BeaconState previousState =
         recentChainData.retrieveBlockState(bestBlockRoot).join().orElseThrow();
 
-    when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot.minus(1), bestBlockRoot))
+    when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
