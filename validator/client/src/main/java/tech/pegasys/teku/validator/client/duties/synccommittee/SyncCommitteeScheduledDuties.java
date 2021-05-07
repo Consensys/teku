@@ -98,7 +98,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public String getProductionType() {
-    return "sync_committee_signature";
+    return "sync_signature";
   }
 
   @Override
@@ -117,7 +117,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public String getAggregationType() {
-    return "sync_committee_contribution";
+    return "sync_contribution";
   }
 
   @Override
