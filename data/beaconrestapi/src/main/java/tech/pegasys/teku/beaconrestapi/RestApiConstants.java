@@ -28,12 +28,14 @@ public class RestApiConstants {
   public static final String SLOT = "slot";
   public static final String EPOCH = "epoch";
   public static final String COMMITTEE_INDEX = "committee_index";
+  public static final String SUBCOMMITTEE_INDEX = "subcommittee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
   public static final String GRAFFITI = "graffiti";
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
   public static final String INDEX = "index";
   public static final String TOPICS = "topics";
   public static final String PARENT_ROOT = "parent_root";
+  public static final String BEACON_BLOCK_ROOT = "beacon_block_root";
   public static final String STATUS = "status";
 
   public static final String TAG_NODE = "Node";

@@ -73,6 +73,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttesta
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
@@ -197,7 +198,8 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
-        .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
+        .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class))
+        .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class));
 
     // config
     builder

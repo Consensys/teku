@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -35,6 +36,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
+  private final MetadataMessageSchemaAltair metadataMessageSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
@@ -46,6 +48,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
+    this.metadataMessageSchema = new MetadataMessageSchemaAltair();
   }
 
   public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
@@ -75,6 +78,11 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  @Override
+  public MetadataMessageSchemaAltair getMetadataMessageSchema() {
+    return metadataMessageSchema;
   }
 
   @Override

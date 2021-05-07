@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 public class ForkUpgradeTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> FORK_UPGRADE_TEST_TYPES =
-      ImmutableMap.of("fork/fork", TestExecutor.IGNORE_TESTS);
+      ImmutableMap.of("fork/fork", new ForkUpgradeTestExecutor());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {

@@ -42,11 +42,12 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
@@ -56,6 +57,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   private static final MockNodeIdGenerator idGenerator = new MockNodeIdGenerator();
   private static final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
 
+  private final Spec spec;
   private final ChainBuilder chain;
   private final List<ChainBuilder> forks;
 
@@ -72,7 +74,11 @@ public class RespondingEth2Peer implements Eth2Peer {
       Function.identity();
 
   private RespondingEth2Peer(
-      final ChainBuilder chain, final List<ChainBuilder> forks, final PeerStatus status) {
+      final Spec spec,
+      final ChainBuilder chain,
+      final List<ChainBuilder> forks,
+      final PeerStatus status) {
+    this.spec = spec;
     this.chain = chain;
     this.forks = forks;
     this.status = status;
@@ -81,9 +87,9 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public static RespondingEth2Peer create(
-      final ChainBuilder chain, final ChainBuilder... forkChains) {
+      final Spec spec, final ChainBuilder chain, final ChainBuilder... forkChains) {
     return new RespondingEth2Peer(
-        chain, Arrays.asList(forkChains), createStatus(chain.getLatestBlockAndState()));
+        spec, chain, Arrays.asList(forkChains), createStatus(chain.getLatestBlockAndState()));
   }
 
   private static PeerStatus createStatus(final StateAndBlockSummary head) {
@@ -246,7 +252,9 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
-    return SafeFuture.completedFuture(MetadataMessage.DEFAULT);
+    final MetadataMessage defaultMetadata =
+        spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
+    return SafeFuture.completedFuture(defaultMetadata);
   }
 
   @Override

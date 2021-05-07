@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import org.assertj.core.api.AbstractCompletableFutureAssert;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.InstanceOfAssertFactory;
+import org.assertj.core.api.ThrowableAssert;
 
 public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFutureAssert<T>, T> {
 
@@ -38,12 +40,14 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
         .isSameAs(t);
   }
 
-  public void isCompletedExceptionallyWith(final Class<? extends Throwable> exceptionType) {
+  public ThrowableAssert isCompletedExceptionallyWith(
+      final Class<? extends Throwable> exceptionType) {
     isCompletedExceptionally();
-    Assertions.assertThatThrownBy(actual::join)
+    return Assertions.assertThatThrownBy(actual::join)
         .isInstanceOf(CompletionException.class)
         .extracting(Throwable::getCause)
-        .isInstanceOf(exceptionType);
+        .isInstanceOf(exceptionType)
+        .asInstanceOf(new InstanceOfAssertFactory<>(Throwable.class, ThrowableAssert::new));
   }
 
   public void isCompletedWithEmptyOptional() {

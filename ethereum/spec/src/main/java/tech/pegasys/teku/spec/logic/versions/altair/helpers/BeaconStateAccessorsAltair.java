@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +93,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final Integer candidateIndex = activeValidatorIndices.get(shuffledIndex);
       final int randomByte =
           ByteUtil.toUnsignedInt(
-              Hash.sha2_256(Bytes.wrap(seed, uintToBytes32(i / 32))).get(i % 32));
+              Hash.sha2_256(Bytes.wrap(seed, uint64ToBytes(i / 32))).get(i % 32));
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffective_balance();
       // Sample with replacement
       if (effectiveBalance

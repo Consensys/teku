@@ -314,8 +314,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendContributionAndProofs(
-      final List<SignedContributionAndProof> signedContributionAndProofs) {
+  public SafeFuture<Void> sendSignedContributionAndProofs(
+      final Collection<SignedContributionAndProof> signedContributionAndProofs) {
     final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
         signedContributionsRestSchema =
             signedContributionAndProofs.stream()
