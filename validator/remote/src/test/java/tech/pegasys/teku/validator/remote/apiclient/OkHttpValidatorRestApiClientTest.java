@@ -673,7 +673,7 @@ class OkHttpValidatorRestApiClientTest {
     apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.getForkSchedule();
+    apiClient.getGenesis();
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -687,7 +687,7 @@ class OkHttpValidatorRestApiClientTest {
   void shouldThrowRateLimitedExceptionWhen429ResponseReceived() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(429));
 
-    assertThatThrownBy(() -> apiClient.getForkSchedule()).isInstanceOf(RateLimitedException.class);
+    assertThatThrownBy(() -> apiClient.getGenesis()).isInstanceOf(RateLimitedException.class);
   }
 
   private String asJson(Object object) {

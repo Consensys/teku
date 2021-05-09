@@ -543,7 +543,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void shouldRetryAfterDelayWhenRequestRateLimited() {
-    when(apiClient.getForkSchedule()).thenThrow(new RateLimitedException("/fork"));
+    when(apiClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
 
     final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> result =
         apiHandler.getGenesisData();
@@ -551,7 +551,7 @@ class RemoteValidatorApiHandlerTest {
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();
       assertThat(result).isNotDone();
-      verify(apiClient, times(i + 1)).getForkSchedule();
+      verify(apiClient, times(i + 1)).getGenesis();
     }
 
     asyncRunner.executeQueuedActions();
