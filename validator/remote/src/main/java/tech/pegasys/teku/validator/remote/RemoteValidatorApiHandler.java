@@ -21,13 +21,11 @@ import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -86,30 +83,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork(final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getForkSchedule()
-                .map(forkSchedule -> forkSchedule.data)
-                .flatMap(
-                    forks -> {
-                      final TreeSet<tech.pegasys.teku.api.schema.Fork> sortedForks =
-                          new TreeSet<>(Comparator.comparing(fork -> fork.epoch));
-                      sortedForks.addAll(forks);
-                      tech.pegasys.teku.api.schema.Fork previousFork = null;
-                      for (tech.pegasys.teku.api.schema.Fork fork : sortedForks) {
-                        if (fork.epoch.isGreaterThan(epoch)) {
-                          return Optional.of(fork);
-                        }
-                        previousFork = fork;
-                      }
-                      return Optional.ofNullable(previousFork);
-                    })
-                .map(tech.pegasys.teku.api.schema.Fork::asInternalFork));
   }
 
   @Override

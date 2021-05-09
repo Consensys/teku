@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -487,41 +486,6 @@ class ValidatorApiHandlerTest {
             validatorApiHandler.createAggregate(
                 aggregate.get().getData().getSlot(), attestationData.hashTreeRoot()))
         .isCompletedWithValue(aggregate);
-  }
-
-  @Test
-  public void getNextFork_shouldReturnNextForkWhenOneIsPresent() {
-    final UInt64 forkSlot = UInt64.valueOf(16);
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(forkSlot);
-    final Fork expectedFork = spec.getForkSchedule().getFork(forkSlot);
-    final ValidatorApiHandler validatorApiHandler =
-        new ValidatorApiHandler(
-            chainDataProvider,
-            chainDataClient,
-            syncStateProvider,
-            blockFactory,
-            blockImportChannel,
-            blockGossipChannel,
-            attestationPool,
-            attestationManager,
-            attestationTopicSubscriptions,
-            activeValidatorTracker,
-            dutyMetrics,
-            performanceTracker,
-            spec,
-            forkChoiceTrigger,
-            syncCommitteeSignaturePool,
-            syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
-
-    assertThat(validatorApiHandler.getFork(ZERO)).isCompletedWithValue(Optional.of(expectedFork));
-  }
-
-  @Test
-  public void getNextFork_shouldReturnCurrentForkWhenThereIsNoNextFork() {
-    final Fork expectedFork = spec.getForkSchedule().getFork(ZERO);
-
-    assertThat(validatorApiHandler.getFork(ZERO)).isCompletedWithValue(Optional.of(expectedFork));
   }
 
   @Test

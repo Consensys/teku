@@ -41,7 +41,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
@@ -51,7 +50,6 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -78,48 +76,6 @@ class OkHttpValidatorRestApiClientTest {
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
-  }
-
-  @Test
-  public void getFork_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.getFork();
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_FORK.getPath(Map.of("state_id", "head")));
-  }
-
-  @Test
-  public void getFork_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.getFork())
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void getFork_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    assertThat(apiClient.getFork()).isEmpty();
-  }
-
-  @Test
-  public void getFork_WhenSuccess_ReturnsForkResponse() {
-    final GetStateForkResponse getStateForkResponse = schemaObjects.getStateForkResponse();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(getStateForkResponse)));
-
-    Optional<Fork> fork = apiClient.getFork();
-
-    assertThat(fork).isPresent();
-    assertThat(fork.get()).isEqualTo(getStateForkResponse.data);
   }
 
   @Test
@@ -717,7 +673,7 @@ class OkHttpValidatorRestApiClientTest {
     apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.getFork();
+    apiClient.getForkSchedule();
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -731,7 +687,7 @@ class OkHttpValidatorRestApiClientTest {
   void shouldThrowRateLimitedExceptionWhen429ResponseReceived() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(429));
 
-    assertThatThrownBy(() -> apiClient.getFork()).isInstanceOf(RateLimitedException.class);
+    assertThatThrownBy(() -> apiClient.getForkSchedule()).isInstanceOf(RateLimitedException.class);
   }
 
   private String asJson(Object object) {

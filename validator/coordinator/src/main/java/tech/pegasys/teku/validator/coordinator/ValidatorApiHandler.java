@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -153,14 +152,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork(final UInt64 epoch) {
-    return SafeFuture.completedFuture(
-        spec.getForkSchedule()
-            .getNextFork(epoch)
-            .or(() -> Optional.of(spec.getForkSchedule().getFork(epoch))));
   }
 
   @Override

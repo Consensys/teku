@@ -145,17 +145,11 @@ class MetricRecordingValidatorApiChannelTest {
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     final UInt64 slot = dataStructureUtil.randomUInt64();
-    final UInt64 epoch = dataStructureUtil.randomEpoch();
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final int subcommitteeIndex = dataStructureUtil.randomPositiveInt();
     final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
     return Stream.of(
-        requestDataTest(
-            "getForkInfo",
-            validatorApiChannel -> validatorApiChannel.getFork(epoch),
-            MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomFork()),
         requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,

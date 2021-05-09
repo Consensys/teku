@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -206,11 +205,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME,
             "Counter recording the number of signed contributions and proofs sent to the beacon node");
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork(final UInt64 epoch) {
-    return countRequest(delegate.getFork(epoch), forkInfoRequestCounter);
   }
 
   @Override
