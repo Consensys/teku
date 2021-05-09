@@ -63,7 +63,7 @@ class SyncCommitteeProductionDutyTest {
 
   @BeforeEach
   void setUp() {
-    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
     when(validatorApiChannel.sendSyncCommitteeSignatures(any()))
         .thenReturn(SafeFuture.completedFuture(emptyList()));
   }
@@ -81,7 +81,7 @@ class SyncCommitteeProductionDutyTest {
     final SyncCommitteeProductionDuty duty = createDuty(committeeAssignment(validator, 55, 1));
     final UInt64 slot = UInt64.valueOf(25);
     final Exception exception = new RuntimeException("Oh dang");
-    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.failedFuture(exception));
+    when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.failedFuture(exception));
 
     produceSignaturesAndReport(duty, slot);
 

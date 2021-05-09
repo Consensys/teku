@@ -67,7 +67,7 @@ public class SyncCommitteeAggregationDuty {
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtils.get();
     return forkProvider
-        .getForkInfo()
+        .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
                 SafeFuture.collectAll(

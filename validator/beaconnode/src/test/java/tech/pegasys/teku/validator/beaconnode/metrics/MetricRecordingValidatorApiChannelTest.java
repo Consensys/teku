@@ -151,11 +151,6 @@ class MetricRecordingValidatorApiChannelTest {
     final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
     return Stream.of(
         requestDataTest(
-            "getForkInfo",
-            ValidatorApiChannel::getFork,
-            MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomFork()),
-        requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,
             MetricRecordingValidatorApiChannel.GENESIS_TIME_REQUESTS_COUNTER_NAME,

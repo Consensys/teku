@@ -62,6 +62,6 @@ public abstract class AbstractDutySchedulerTest {
         SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));
     when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
     when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
-    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 }

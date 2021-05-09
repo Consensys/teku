@@ -147,7 +147,7 @@ public class AttestationDutyLoader
       final int aggregatorModulo,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     return forkProvider
-        .getForkInfo()
+        .getForkInfo(slot)
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .thenAccept(
             slotSignature -> {

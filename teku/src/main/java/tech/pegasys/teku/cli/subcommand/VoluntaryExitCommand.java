@@ -31,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -202,10 +201,6 @@ public class VoluntaryExitCommand implements Runnable {
     return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
   }
 
-  private Optional<tech.pegasys.teku.spec.datastructures.state.Fork> getFork() {
-    return apiClient.getFork().map(Fork::asInternalFork);
-  }
-
   private void initialise() {
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
@@ -222,13 +217,8 @@ public class VoluntaryExitCommand implements Runnable {
 
     spec = getSpec();
 
-    final Optional<tech.pegasys.teku.spec.datastructures.state.Fork> maybeFork = getFork();
-    if (maybeFork.isEmpty()) {
-      SUB_COMMAND_LOG.error("Unable to fetch fork, cannot generate an exit.");
-      System.exit(1);
-    }
-    fork = maybeFork.get();
     validateOrDefaultEpoch();
+    fork = spec.getForkSchedule().getFork(epoch);
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();

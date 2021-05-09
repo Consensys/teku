@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
-  public static final String FORK_REQUESTS_COUNTER_NAME = "beacon_node_fork_info_requests_total";
   public static final String GENESIS_TIME_REQUESTS_COUNTER_NAME =
       "beacon_node_genesis_time_requests_total";
   public static final String GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME =
@@ -86,7 +84,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME =
       "beacon_node_send_sync_committee_contributions_total";
   private final ValidatorApiChannel delegate;
-  private final BeaconChainRequestCounter forkInfoRequestCounter;
   private final BeaconChainRequestCounter genesisTimeRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
   private final BeaconChainRequestCounter syncCommitteeDutiesRequestCounter;
@@ -109,12 +106,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
     this.delegate = delegate;
-
-    forkInfoRequestCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            FORK_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests for fork info");
 
     genesisTimeRequestCounter =
         BeaconChainRequestCounter.create(
@@ -206,11 +197,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME,
             "Counter recording the number of signed contributions and proofs sent to the beacon node");
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork() {
-    return countRequest(delegate.getFork(), forkInfoRequestCounter);
   }
 
   @Override

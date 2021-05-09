@@ -54,7 +54,7 @@ public class ValidatorClientService extends Service {
   private final ForkProvider forkProvider;
   private final Spec spec;
 
-  private List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
+  private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
 
@@ -97,8 +97,7 @@ public class ValidatorClientService extends Service {
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
-    final ForkProvider forkProvider =
-        new ForkProvider(asyncRunner, validatorApiChannel, genesisDataProvider);
+    final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
     final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
 
@@ -216,7 +215,6 @@ public class ValidatorClientService extends Service {
     return initializationComplete.thenCompose(
         (__) -> {
           SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
-          forkProvider.start().reportExceptions();
           validatorIndexProvider.lookupValidators();
           eventChannels.subscribe(
               ValidatorTimingChannel.class,
