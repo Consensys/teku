@@ -209,8 +209,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Fork>> getFork() {
-    return countRequest(delegate.getFork(), forkInfoRequestCounter);
+  public SafeFuture<Optional<Fork>> getFork(final UInt64 epoch) {
+    return countRequest(delegate.getFork(epoch), forkInfoRequestCounter);
   }
 
   @Override

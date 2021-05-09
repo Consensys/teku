@@ -21,6 +21,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK_SCHEDULE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
@@ -112,6 +114,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             EMPTY_QUERY_PARAMS,
             createHandler(GetStateForkResponse.class))
         .map(GetStateForkResponse::getData);
+  }
+
+  @Override
+  public Optional<GetForkScheduleResponse> getForkSchedule() {
+    return get(
+        GET_FORK_SCHEDULE,
+        EMPTY_QUERY_PARAMS,
+        EMPTY_QUERY_PARAMS,
+        createHandler(GetForkScheduleResponse.class));
   }
 
   public Optional<GetSpecResponse> getConfigSpec() {

@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 public interface ValidatorApiChannel extends ChannelInterface {
   int UKNOWN_VALIDATOR_ID = -1;
 
-  SafeFuture<Optional<Fork>> getFork();
+  SafeFuture<Optional<Fork>> getFork(UInt64 epoch);
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 

@@ -156,9 +156,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Fork>> getFork() {
+  public SafeFuture<Optional<Fork>> getFork(final UInt64 epoch) {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getBestState().map(BeaconState::getFork));
+        spec.getForkSchedule()
+            .getNextFork(epoch)
+            .or(() -> Optional.of(spec.getForkSchedule().getFork(epoch))));
   }
 
   @Override

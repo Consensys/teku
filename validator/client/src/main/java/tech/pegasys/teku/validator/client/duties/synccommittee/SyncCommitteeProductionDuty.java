@@ -59,7 +59,7 @@ public class SyncCommitteeProductionDuty {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     return forkProvider
-        .getForkInfo()
+        .getForkInfo(slot)
         .thenCompose(forkInfo -> produceSignatures(forkInfo, slot, blockRoot))
         .exceptionally(
             error ->

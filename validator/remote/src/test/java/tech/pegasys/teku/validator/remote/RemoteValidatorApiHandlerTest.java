@@ -44,6 +44,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -91,20 +92,66 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void getForkInfo_WhenPresent_ReturnsValue() {
-    final Fork fork = dataStructureUtil.randomFork();
-    when(apiClient.getFork()).thenReturn(Optional.of(new tech.pegasys.teku.api.schema.Fork(fork)));
-    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
+  public void getForkInfo_WhenPresent_LaterForks_ReturnsFirstForkScheduledAfterEpoch() {
+    final Fork fork1 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(10));
+    final Fork fork2 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(15));
+    final Fork fork3 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(20));
 
-    assertThat(unwrapToValue(future)).isEqualTo(fork);
+    final List<tech.pegasys.teku.api.schema.Fork> forks =
+        List.of(
+            new tech.pegasys.teku.api.schema.Fork(fork3),
+            new tech.pegasys.teku.api.schema.Fork(fork2),
+            new tech.pegasys.teku.api.schema.Fork(fork1));
+    when(apiClient.getForkSchedule()).thenReturn(Optional.of(new GetForkScheduleResponse(forks)));
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork(UInt64.valueOf(12));
+
+    assertThat(unwrapToValue(future)).isEqualTo(fork2);
+  }
+
+  @Test
+  public void getForkInfo_WhenPresent_NoLaterForks_ReturnsLastScheduledFork() {
+    final Fork fork1 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(10));
+    final Fork fork2 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(15));
+    final Fork fork3 =
+        new Fork(
+            dataStructureUtil.randomBytes4(), dataStructureUtil.randomBytes4(), UInt64.valueOf(20));
+
+    final List<tech.pegasys.teku.api.schema.Fork> forks =
+        List.of(
+            new tech.pegasys.teku.api.schema.Fork(fork1),
+            new tech.pegasys.teku.api.schema.Fork(fork3), // Out of order but still last scheduled
+            new tech.pegasys.teku.api.schema.Fork(fork2));
+    when(apiClient.getForkSchedule()).thenReturn(Optional.of(new GetForkScheduleResponse(forks)));
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork(UInt64.valueOf(25));
+
+    assertThat(unwrapToValue(future)).isEqualTo(fork3);
+  }
+
+  @Test
+  public void getForkInfo_WhenPresent_NoForks_ReturnsEmpty() {
+    when(apiClient.getForkSchedule())
+        .thenReturn(Optional.of(new GetForkScheduleResponse(emptyList())));
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork(dataStructureUtil.randomEpoch());
+
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void getForkInfo_WhenNotPresent_ReturnsEmpty() {
-    when(apiClient.getFork()).thenReturn(Optional.empty());
-    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
+    when(apiClient.getForkSchedule()).thenReturn(Optional.empty());
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork(dataStructureUtil.randomEpoch());
 
-    assertThat(unwrapToOptional(future)).isNotPresent();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
@@ -561,14 +608,14 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void shouldRetryAfterDelayWhenRequestRateLimited() {
-    when(apiClient.getFork()).thenThrow(new RateLimitedException("/fork"));
+    when(apiClient.getForkSchedule()).thenThrow(new RateLimitedException("/fork"));
 
-    final SafeFuture<Optional<Fork>> result = apiHandler.getFork();
+    final SafeFuture<Optional<Fork>> result = apiHandler.getFork(dataStructureUtil.randomEpoch());
 
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();
       assertThat(result).isNotDone();
-      verify(apiClient, times(i + 1)).getFork();
+      verify(apiClient, times(i + 1)).getForkSchedule();
     }
 
     asyncRunner.executeQueuedActions();

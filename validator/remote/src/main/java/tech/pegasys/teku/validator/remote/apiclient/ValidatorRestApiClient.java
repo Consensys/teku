@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -43,6 +44,8 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 public interface ValidatorRestApiClient {
 
   Optional<Fork> getFork();
+
+  Optional<GetForkScheduleResponse> getForkSchedule();
 
   Optional<GetGenesisResponse> getGenesis();
 
