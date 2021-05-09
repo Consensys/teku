@@ -84,7 +84,7 @@ public class AttestationProductionDuty implements Duty {
     if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    return forkProvider.getForkInfo().thenCompose(this::produceAttestations);
+    return forkProvider.getForkInfo(slot).thenCompose(this::produceAttestations);
   }
 
   private SafeFuture<DutyResult> produceAttestations(final ForkInfo forkInfo) {

@@ -121,7 +121,7 @@ public class AggregationDuty implements Duty {
     final AggregateAndProof aggregateAndProof =
         new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
     return forkProvider
-        .getForkInfo()
+        .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
                 aggregator.validator.getSigner().signAggregateAndProof(aggregateAndProof, forkInfo))

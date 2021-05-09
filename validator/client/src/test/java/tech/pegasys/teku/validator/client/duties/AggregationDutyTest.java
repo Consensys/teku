@@ -66,7 +66,7 @@ class AggregationDutyTest {
 
   @BeforeEach
   public void setUp() {
-    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
   }
 
   @Test

@@ -20,7 +20,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
@@ -59,7 +58,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -74,7 +72,6 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -102,16 +99,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
-  }
-
-  @Override
-  public Optional<Fork> getFork() {
-    return get(
-            GET_FORK,
-            Map.of("state_id", "head"),
-            EMPTY_QUERY_PARAMS,
-            createHandler(GetStateForkResponse.class))
-        .map(GetStateForkResponse::getData);
   }
 
   public Optional<GetSpecResponse> getConfigSpec() {

@@ -489,21 +489,6 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
-    when(chainDataClient.getBestState()).thenReturn(Optional.empty());
-
-    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
-  public void getFork_shouldReturnForkFromHeadState() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
-    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
-
-    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
-  }
-
-  @Test
   public void subscribeToBeaconCommittee_shouldSubscribeViaAttestationTopicSubscriptions() {
     final int committeeIndex = 10;
     final UInt64 aggregationSlot = UInt64.valueOf(13);

@@ -91,7 +91,7 @@ class SyncCommitteeAggregationDutyTest {
 
   @BeforeEach
   void setUp() {
-    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
 
     // Default to not returning errors when sending
     when(validatorApiChannel.sendSignedContributionAndProofs(any()))
@@ -111,7 +111,7 @@ class SyncCommitteeAggregationDutyTest {
     final SyncCommitteeAggregationDuty duty =
         createDuty(committeeAssignment(validator1, 233, 1), committeeAssignment(validator2, 45, 2));
     final Exception exception = new RuntimeException("Ooopsie");
-    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.failedFuture(exception));
+    when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.failedFuture(exception));
 
     produceAggregatesAndReport(duty);
 

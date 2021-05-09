@@ -53,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -84,17 +83,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork() {
-    return sendRequest(
-        () ->
-            apiClient
-                .getFork()
-                .map(
-                    result ->
-                        new Fork(result.previous_version, result.current_version, result.epoch)));
   }
 
   @Override

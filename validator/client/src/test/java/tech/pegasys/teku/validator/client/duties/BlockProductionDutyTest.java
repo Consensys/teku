@@ -67,7 +67,7 @@ class BlockProductionDutyTest {
 
   @BeforeEach
   public void setUp() {
-    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
   @Test
