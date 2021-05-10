@@ -166,11 +166,16 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     }
 
     public void calculateDuties() {
+
+      // Always use the last epoch in the period since it's the most likely to still be in-memory
+      // This also handles the case where the fork slot is within the sync committee period by
+      // ensuring that we request an epoch after the fork slot has occurred.
       duties =
           duties.or(
               () ->
                   Optional.of(
-                      PendingDuties.calculateDuties(metricsSystem, dutyLoader, periodStartEpoch)));
+                      PendingDuties.calculateDuties(
+                          metricsSystem, dutyLoader, nextPeriodStartEpoch.minusMinZero(1))));
     }
 
     public void recalculate() {
