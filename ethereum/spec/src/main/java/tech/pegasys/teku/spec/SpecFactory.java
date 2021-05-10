@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 public class SpecFactory {
@@ -29,11 +30,13 @@ public class SpecFactory {
         SpecConfigLoader.loadConfig(
             configName,
             builder ->
-                altairForkSlot.ifPresent(
-                    florkSlot ->
-                        builder.altairBuilder(
-                            altairBuilder -> altairBuilder.altairForkSlot(florkSlot))));
+                altairForkSlot.ifPresent(forkSlot -> overrideAltairForkSlot(builder, forkSlot)));
     return create(config, altairForkSlot);
+  }
+
+  private static void overrideAltairForkSlot(
+      final SpecConfigBuilder builder, final UInt64 forkSlot) {
+    builder.altairBuilder(altairBuilder -> altairBuilder.altairForkSlot(forkSlot));
   }
 
   public static Spec create(final SpecConfig config, final Optional<UInt64> altairForkSlot) {

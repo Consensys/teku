@@ -43,6 +43,7 @@ public class Eth2NetworkConfiguration {
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
+  private final Optional<UInt64> altairForkSlot;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
@@ -57,7 +58,8 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
-      final boolean balanceAttackMitigationEnabled) {
+      final boolean balanceAttackMitigationEnabled,
+      final Optional<UInt64> altairForkSlot) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -65,6 +67,7 @@ public class Eth2NetworkConfiguration {
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
+    this.altairForkSlot = altairForkSlot;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
@@ -130,6 +133,10 @@ public class Eth2NetworkConfiguration {
     return balanceAttackMitigationEnabled;
   }
 
+  public Optional<UInt64> getAltairForkSlot() {
+    return altairForkSlot;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -166,7 +173,8 @@ public class Eth2NetworkConfiguration {
           discoveryBootnodes,
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
-          balanceAttackMitigationEnabled);
+          balanceAttackMitigationEnabled,
+          altairForkSlot);
     }
 
     public Builder constants(final String constants) {
