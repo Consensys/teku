@@ -231,7 +231,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           new IllegalArgumentException(
               String.format(
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
-                  combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
+                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
     }
     LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
@@ -612,17 +612,41 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(
       final SpecVersion specVersion, final UInt64 epoch) {
-    final Optional<BeaconState> bestState = combinedChainDataClient.getBestState();
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil = specVersion.getSyncCommitteeUtil();
-    if (bestState.isPresent()
-        && maybeSyncCommitteeUtil.isPresent()
-        && maybeSyncCommitteeUtil
-            .get()
-            .isStateUsableForCommitteeCalculationAtEpoch(bestState.get(), epoch)) {
-      return SafeFuture.completedFuture(bestState);
+    if (maybeSyncCommitteeUtil.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
+    final Optional<BeaconState> maybeBestState = combinedChainDataClient.getBestState();
+    if (maybeBestState.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final BeaconState bestState = maybeBestState.get();
+    if (syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(bestState, epoch)) {
+      return SafeFuture.completedFuture(maybeBestState);
     }
 
-    return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(epoch));
+    final UInt64 lastQueryableEpoch =
+        syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
+            combinedChainDataClient.getCurrentEpoch());
+    if (lastQueryableEpoch.isLessThan(epoch)) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              "Cannot calculate sync committee duties for epoch "
+                  + epoch
+                  + " because it is not within the current or next sync committee periods"));
+    }
+
+    final UInt64 requiredEpoch;
+    final UInt64 stateEpoch = spec.getCurrentEpoch(bestState);
+    if (epoch.isGreaterThan(stateEpoch)) {
+      // Use the earliest possible epoch since we'll need to process empty slots
+      requiredEpoch = syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(epoch);
+    } else {
+      // Use the latest possible epoch since it's most likely to still be in memory
+      requiredEpoch = syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(epoch);
+    }
+    return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(requiredEpoch));
   }
 
   private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(

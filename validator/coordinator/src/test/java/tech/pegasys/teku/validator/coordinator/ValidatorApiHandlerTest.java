@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -342,6 +344,25 @@ class ValidatorApiHandlerTest {
     final Optional<ProposerDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
         .isSortedAccordingTo(Comparator.comparing(ProposerDuty::getSlot));
+  }
+
+  @Test
+  void getSyncCommitteeDuties_shouldFailForEpochTooFarAhead() {
+    final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(EPOCH_START_SLOT).build();
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    final int epochsPerSyncCommitteePeriod =
+        SpecConfigAltair.required(spec.getSpecConfig(EPOCH)).getEpochsPerSyncCommitteePeriod();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(EPOCH_START_SLOT);
+    final UInt64 firstSlotAfterNextSyncCommitteePeriod =
+        syncCommitteeUtil
+            .computeFirstEpochOfCurrentSyncCommitteePeriod(EPOCH)
+            .plus(epochsPerSyncCommitteePeriod * 2L);
+    assertThatSafeFuture(
+            validatorApiHandler.getSyncCommitteeDuties(
+                firstSlotAfterNextSyncCommitteePeriod, List.of(1)))
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessageContaining("not within the current or next sync committee periods");
   }
 
   @Test

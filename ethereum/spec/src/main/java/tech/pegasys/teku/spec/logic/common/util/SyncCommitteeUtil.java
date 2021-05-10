@@ -290,9 +290,19 @@ public class SyncCommitteeUtil {
     return currentSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
+  public UInt64 computeLastEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {
+    return computeFirstEpochOfNextSyncCommitteePeriod(currentEpoch).minusMinZero(1);
+  }
+
   public UInt64 computeFirstEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
     final UInt64 nextSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch).plus(1);
     return nextSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
+  public UInt64 computeLastEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
+    final UInt64 nextSyncCommitteePeriodStart =
+        computeFirstEpochOfNextSyncCommitteePeriod(currentEpoch);
+    return nextSyncCommitteePeriodStart.plus(specConfig.getEpochsPerSyncCommitteePeriod()).minus(1);
   }
 
   private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
