@@ -204,10 +204,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     aggregate
         .getSyncCommitteeBits()
         .streamAllSetBits()
-        .forEach(
-            index -> {
-              participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey());
-            });
+        .forEach(index -> participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey()));
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateUtil.getDomain(
