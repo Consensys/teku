@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StatusLogger {
@@ -45,6 +46,13 @@ public class StatusLogger {
         "This software is licensed under the Apache License, Version 2.0 (the \"License\"); "
             + "you may not use this software except in compliance with the License. "
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
+  }
+
+  public void warnForkSlotChanged(final String milestoneName, final UInt64 newSlot) {
+    log.warn(
+        print(
+            milestoneName + " configuration has been overridden to activate at slot " + newSlot,
+            Color.YELLOW));
   }
 
   public void fatalError(final String description, final Throwable cause) {
