@@ -735,22 +735,17 @@ class ValidatorApiHandlerTest {
         .updated(
             state -> {
               state.setSlot(slot);
-              makeValidatorsActive(state);
+              final SszMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivation_eligibility_epoch(ZERO)
+                            .withActivation_epoch(ZERO)
+                            .withExit_epoch(SpecConfig.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(SpecConfig.FAR_FUTURE_EPOCH));
+              }
             });
-  }
-
-  private void makeValidatorsActive(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState state) {
-    final SszMutableList<Validator> validators = state.getValidators();
-    for (int i = 0; i < validators.size(); i++) {
-      validators.update(
-          i,
-          validator ->
-              validator
-                  .withActivation_eligibility_epoch(ZERO)
-                  .withActivation_epoch(ZERO)
-                  .withExit_epoch(SpecConfig.FAR_FUTURE_EPOCH)
-                  .withWithdrawable_epoch(SpecConfig.FAR_FUTURE_EPOCH));
-    }
   }
 }
