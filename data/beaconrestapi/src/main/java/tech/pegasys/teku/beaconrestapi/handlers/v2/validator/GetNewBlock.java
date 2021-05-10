@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.GRAFFITI;
@@ -22,8 +22,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 
@@ -41,19 +40,17 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
+import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/validator/blocks/:slot";
+  public static final String ROUTE = "/eth/v2/validator/blocks/:slot";
   private final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -70,7 +67,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_EXPERIMENTAL},
       description =
           "Requests a beacon node to produce a valid block, which can then be signed by a validator.",
       pathParams = {
@@ -88,7 +85,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetNewBlockResponse.class)),
+            content = @OpenApiContent(from = GetNewBlockResponseV2.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
@@ -103,18 +100,6 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
       final Optional<Bytes32> graffiti =
           getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
-
-      if (!provider.getMilestoneAtSlot(slot).equals(SpecMilestone.PHASE0)) {
-        ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
-        ctx.result(
-            BadRequest.badRequest(
-                jsonProvider,
-                String.format(
-                    "Slot %s is not a phase0 slot, please fetch via /eth/v2/validator/blocks",
-                    slot.toString())));
-        return;
-      }
-
       ctx.result(
           provider
               .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
@@ -123,7 +108,9 @@ public class GetNewBlock extends AbstractHandler implements Handler {
                     if (maybeBlock.isEmpty()) {
                       throw new ChainDataUnavailableException();
                     }
-                    return jsonProvider.objectToJSON(new GetNewBlockResponse(maybeBlock.get()));
+                    return jsonProvider.objectToJSON(
+                        new GetNewBlockResponseV2(
+                            provider.getMilestoneAtSlot(slot), maybeBlock.get()));
                   })
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {

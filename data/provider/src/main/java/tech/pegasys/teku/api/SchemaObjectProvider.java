@@ -40,7 +40,7 @@ public class SchemaObjectProvider {
         getBeaconBlock(internalBlock.getMessage()), new BLSSignature(internalBlock.getSignature()));
   }
 
-  private BeaconBlock getBeaconBlock(
+  public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
     if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.ALTAIR)) {
       return new BeaconBlockAltair(
