@@ -71,23 +71,24 @@ class SyncCommitteeSchedulerTest {
   void shouldCalculateCurrentPeriodDutiesOnFirstSlot() {
     scheduler.onSlot(UInt64.ONE);
 
-    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
+    // Should request the last epoch in the period as it's most likely to be non-finalized
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
   }
 
   @Test
   void shouldNotReloadDutiesAtNextEpochWhenInSameSyncCommitteePeriod() {
     scheduler.onSlot(UInt64.ONE);
-    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
 
     scheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
-    verify(dutyLoader, never()).loadDutiesForEpoch(UInt64.ONE);
+    verifyNoMoreInteractions(dutyLoader);
   }
 
   @Test
   void shouldPerformProductionForEachSlotWhenAttestationCreationDue() {
     scheduler.onSlot(UInt64.ONE);
 
-    requestedDutiesByEpoch.get(UInt64.ZERO).complete(Optional.of(duties));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
 
     UInt64.range(UInt64.ONE, UInt64.valueOf(10))
         .forEach(
@@ -101,7 +102,7 @@ class SyncCommitteeSchedulerTest {
   void shouldPerformAggregationForEachSlotWhenAttestationAggregationDue() {
     scheduler.onSlot(UInt64.ONE);
 
-    requestedDutiesByEpoch.get(UInt64.ZERO).complete(Optional.of(duties));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
 
     UInt64.range(UInt64.ONE, UInt64.valueOf(10))
         .forEach(
@@ -119,10 +120,10 @@ class SyncCommitteeSchedulerTest {
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(4);
 
     scheduler.onSlot(UInt64.ONE);
-    verify(dutyLoader, never()).loadDutiesForEpoch(nextSyncCommitteePeriodStartEpoch);
+    verify(dutyLoader, never()).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(1));
     scheduler.onSlot(spec.computeStartSlotAtEpoch(subscribeEpoch));
 
-    verify(dutyLoader).loadDutiesForEpoch(nextSyncCommitteePeriodStartEpoch);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(1));
   }
 
   @Test
@@ -146,10 +147,10 @@ class SyncCommitteeSchedulerTest {
     final UInt64 subscribeSlot = spec.computeStartSlotAtEpoch(subscribeEpoch);
 
     scheduler.onSlot(UInt64.ONE);
-    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
 
     scheduler.onSlot(subscribeSlot);
-    verify(dutyLoader).loadDutiesForEpoch(nextSyncCommitteePeriodStartEpoch);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(1));
     verifyNoMoreInteractions(dutyLoader);
 
     // Already calculated all the duties we need so don't calculate them again
@@ -170,12 +171,12 @@ class SyncCommitteeSchedulerTest {
     final SyncCommitteeScheduledDuties nextDuties = createScheduledDuties();
 
     scheduler.onSlot(UInt64.valueOf(5));
-    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
-    requestedDutiesByEpoch.get(UInt64.ZERO).complete(Optional.of(duties));
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
 
     scheduler.onSlot(subscribeSlot);
-    verify(dutyLoader).loadDutiesForEpoch(nextSyncCommitteePeriodStartEpoch);
-    requestedDutiesByEpoch.get(nextSyncCommitteePeriodStartEpoch).complete(Optional.of(nextDuties));
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(1));
+    getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Subscribed, but still performing duties for first sync committee period
     scheduler.onAttestationCreationDue(subscribeSlot);
@@ -204,8 +205,8 @@ class SyncCommitteeSchedulerTest {
 
     // Trigger calculation of duties for both current and next periods
     scheduler.onSlot(subscribeSlot);
-    requestedDutiesByEpoch.get(UInt64.ZERO).complete(Optional.of(duties));
-    requestedDutiesByEpoch.get(nextSyncCommitteePeriodStartEpoch).complete(Optional.of(nextDuties));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
+    getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Unexpectedly jump ahead to the next committee period without getting a slot event first
     scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot);
@@ -232,12 +233,23 @@ class SyncCommitteeSchedulerTest {
   @Test
   void shouldRecalculateDutiesWhenBeaconNodeRestarts() {
     scheduler.onSlot(UInt64.ZERO);
-    verify(dutyLoader).loadDutiesForEpoch(UInt64.ZERO);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
 
     // Reconnecting the event stream may mean the node restarted so recalculate duties to ensure
     // subscriptions are refreshed
     scheduler.onPossibleMissedEvents();
-    verify(dutyLoader, times(2)).loadDutiesForEpoch(UInt64.ZERO);
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+  }
+
+  private SafeFuture<Optional<SyncCommitteeScheduledDuties>>
+      getRequestedDutiesForSyncCommitteePeriod(final int syncCommitteePeriod) {
+    final UInt64 requestEpoch = getRequestEpochForCommitteePeriod(syncCommitteePeriod);
+    return requestedDutiesByEpoch.get(requestEpoch);
+  }
+
+  private UInt64 getRequestEpochForCommitteePeriod(final int syncCommitteePeriod) {
+    return UInt64.valueOf(epochsPerSyncCommitteePeriod * (syncCommitteePeriod + 1L))
+        .minusMinZero(1);
   }
 
   private SyncCommitteeScheduledDuties createScheduledDuties() {

@@ -80,6 +80,9 @@ public class SyncCommitteeUtil {
 
   public boolean isStateUsableForCommitteeCalculationAtEpoch(
       final BeaconState state, final UInt64 epoch) {
+    if (state.toVersionAltair().isEmpty()) {
+      return false;
+    }
     final UInt64 syncCommitteePeriod = computeSyncCommitteePeriod(epoch);
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
     final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);

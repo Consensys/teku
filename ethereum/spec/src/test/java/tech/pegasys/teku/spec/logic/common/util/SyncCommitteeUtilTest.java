@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -187,10 +188,10 @@ class SyncCommitteeUtilTest {
 
   @Test
   void shouldComputeFirstEpochOfNextSyncCommitteePeriod() {
-    final int epocsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+    final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
     final UInt64 period1Start = UInt64.ZERO;
-    final UInt64 period2Start = period1Start.plus(epocsPerPeriod);
-    final UInt64 period3Start = period2Start.plus(epocsPerPeriod);
+    final UInt64 period2Start = period1Start.plus(epochsPerPeriod);
+    final UInt64 period3Start = period2Start.plus(epochsPerPeriod);
 
     assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period1Start))
         .isEqualTo(period2Start);
@@ -203,6 +204,58 @@ class SyncCommitteeUtilTest {
         .isEqualTo(period3Start);
     assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2Start.plus(1)))
         .isEqualTo(period3Start);
+  }
+
+  @Test
+  void isStateUsableForCommitteeCalculationAtEpoch_shouldBeFalseWhenStateIsNotFromAltairFork() {
+    assertThat(
+            syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(
+                dataStructureUtil.randomBeaconState(UInt64.ZERO), UInt64.ZERO))
+        .isFalse();
+  }
+
+  @Test
+  void isStateUsableForCommitteeCalculationAtEpoch_shouldBeFalseWhenStateFromNextPeriod() {
+    final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+    final UInt64 period1Start = UInt64.ZERO;
+    final UInt64 period2Start = spec.computeStartSlotAtEpoch(period1Start.plus(epochsPerPeriod));
+
+    final BeaconStateAltair state =
+        dataStructureUtil.stateBuilderAltair().slot(period2Start).build();
+    assertThat(syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(state, UInt64.ZERO))
+        .isFalse();
+  }
+
+  @Test
+  void isStateUsableForCommitteeCalculationAtEpoch_shouldBeFalseWhenStateFromTwoPeriodsAgo() {
+    final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+
+    final BeaconStateAltair state =
+        dataStructureUtil.stateBuilderAltair().slot(UInt64.ZERO).build();
+    assertThat(
+            syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(
+                state, UInt64.valueOf(epochsPerPeriod).times(2)))
+        .isFalse();
+  }
+
+  @Test
+  void isStateUsableForCommitteeCalculationAtEpoch_shouldBeTrueWhenStateFromRequestedSyncPeriod() {
+    final BeaconStateAltair state =
+        dataStructureUtil.stateBuilderAltair().slot(UInt64.ZERO).build();
+    assertThat(syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(state, UInt64.ONE))
+        .isTrue();
+  }
+
+  @Test
+  void isStateUsableForCommitteeCalculationAtEpoch_shouldBeTrueWhenStateFromPreviousSyncPeriod() {
+    final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+
+    final BeaconStateAltair state =
+        dataStructureUtil.stateBuilderAltair().slot(UInt64.ZERO).build();
+    assertThat(
+            syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(
+                state, UInt64.valueOf(epochsPerPeriod).times(1)))
+        .isTrue();
   }
 
   private BeaconState createStateWithCurrentSyncCommittee(
