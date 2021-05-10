@@ -115,6 +115,13 @@ public class EventLogger {
     info(slotEventLog, Color.WHITE);
   }
 
+  public void networkUpgradeActivated(final UInt64 nodeEpoch, final String upgradeName) {
+    info(
+        String.format(
+            "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
+        Color.GREEN);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
