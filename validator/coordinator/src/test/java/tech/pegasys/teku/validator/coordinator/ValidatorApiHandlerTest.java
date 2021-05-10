@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -34,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -85,6 +89,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
@@ -342,6 +347,25 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  void getSyncCommitteeDuties_shouldFailForEpochTooFarAhead() {
+    final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(EPOCH_START_SLOT).build();
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    final int epochsPerSyncCommitteePeriod =
+        SpecConfigAltair.required(spec.getSpecConfig(EPOCH)).getEpochsPerSyncCommitteePeriod();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(EPOCH_START_SLOT);
+    final UInt64 firstSlotAfterNextSyncCommitteePeriod =
+        syncCommitteeUtil
+            .computeFirstEpochOfCurrentSyncCommitteePeriod(EPOCH)
+            .plus(epochsPerSyncCommitteePeriod * 2L);
+    assertThatSafeFuture(
+            validatorApiHandler.getSyncCommitteeDuties(
+                firstSlotAfterNextSyncCommitteePeriod, List.of(1)))
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessageContaining("not within the current or next sync committee periods");
+  }
+
+  @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -517,6 +541,23 @@ class ValidatorApiHandlerTest {
 
     verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
+  void subscribeToSyncCommitteeSubnets_shouldConvertCommitteeIndexToSubnetId() {
+    final SyncCommitteeSubnetSubscription subscription1 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(1, 2, 15, 30), UInt64.valueOf(44));
+    final SyncCommitteeSubnetSubscription subscription2 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(5, 10), UInt64.valueOf(35));
+    validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
+    System.out.println(spec.getSyncCommitteeUtilRequired(ZERO).getSubcommitteeSize());
+    verify(syncCommitteeSubscriptionManager).subscribe(0, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(3, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(7, subscription1.getUntilEpoch());
+
+    verify(syncCommitteeSubscriptionManager).subscribe(1, subscription2.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(2, subscription2.getUntilEpoch());
+    verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 
   @Test

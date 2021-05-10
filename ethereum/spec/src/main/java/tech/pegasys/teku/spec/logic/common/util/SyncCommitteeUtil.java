@@ -99,7 +99,9 @@ public class SyncCommitteeUtil {
     final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
     checkArgument(
         isStateUsableForCommitteeCalculationAtEpoch(state, epoch),
-        "State must be in the same or previous sync committee period");
+        "State must be in the same or previous sync committee period. Cannot calculate epoch {} from state at slot {}",
+        epoch,
+        state.getSlot());
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
     return BeaconStateCache.getTransitionCaches(altairState)
         .getSyncCommitteeCache()
@@ -290,9 +292,19 @@ public class SyncCommitteeUtil {
     return currentSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
   }
 
+  public UInt64 computeLastEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {
+    return computeFirstEpochOfNextSyncCommitteePeriod(currentEpoch).minusMinZero(1);
+  }
+
   public UInt64 computeFirstEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
     final UInt64 nextSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch).plus(1);
     return nextSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+  }
+
+  public UInt64 computeLastEpochOfNextSyncCommitteePeriod(final UInt64 currentEpoch) {
+    final UInt64 nextSyncCommitteePeriodStart =
+        computeFirstEpochOfNextSyncCommitteePeriod(currentEpoch);
+    return nextSyncCommitteePeriodStart.plus(specConfig.getEpochsPerSyncCommitteePeriod()).minus(1);
   }
 
   private UInt64 computeSyncCommitteePeriod(final UInt64 epoch) {
