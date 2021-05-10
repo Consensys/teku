@@ -26,6 +26,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -94,6 +95,14 @@ public class ForkSchedule {
     return epochToMilestone.values().stream()
         .map(milestoneToFork::get)
         .collect(Collectors.toList());
+  }
+
+  public void reportActivatingMilestones(final UInt64 epoch) {
+    final SpecMilestone activatingMilestone = epochToMilestone.get(epoch);
+    if (activatingMilestone == null) {
+      return;
+    }
+    EventLogger.EVENT_LOG.networkUpgradeActivated(epoch, activatingMilestone.name());
   }
 
   public SpecMilestone getSpecMilestoneAtEpoch(final UInt64 epoch) {
