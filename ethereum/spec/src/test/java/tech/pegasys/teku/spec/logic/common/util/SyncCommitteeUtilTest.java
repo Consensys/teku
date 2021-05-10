@@ -187,6 +187,26 @@ class SyncCommitteeUtilTest {
   }
 
   @Test
+  void shouldComputeLastEpochOfCurrentSyncCommitteePeriod() {
+    final UInt64 period1Start = UInt64.ZERO;
+    final UInt64 period1End = period1Start.plus(config.getEpochsPerSyncCommitteePeriod() - 1);
+    final UInt64 period2Start = period1Start.plus(config.getEpochsPerSyncCommitteePeriod());
+    final UInt64 period2End = period1End.plus(config.getEpochsPerSyncCommitteePeriod());
+
+    assertThat(syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(period1Start))
+        .isEqualTo(period1End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(period1Start.plus(1)))
+        .isEqualTo(period1End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(period1Start.plus(7)))
+        .isEqualTo(period1End);
+
+    assertThat(syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(period2Start))
+        .isEqualTo(period2End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(period2Start.plus(1)))
+        .isEqualTo(period2End);
+  }
+
+  @Test
   void shouldComputeFirstEpochOfNextSyncCommitteePeriod() {
     final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
     final UInt64 period1Start = UInt64.ZERO;
@@ -204,6 +224,28 @@ class SyncCommitteeUtilTest {
         .isEqualTo(period3Start);
     assertThat(syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2Start.plus(1)))
         .isEqualTo(period3Start);
+  }
+
+  @Test
+  void shouldComputeLastEpochOfNextSyncCommitteePeriod() {
+    final int epochsPerPeriod = config.getEpochsPerSyncCommitteePeriod();
+    final UInt64 period1Start = UInt64.ZERO;
+    final UInt64 period1End = UInt64.ZERO.plus(epochsPerPeriod - 1);
+    final UInt64 period2Start = period1Start.plus(epochsPerPeriod);
+    final UInt64 period2End = period1End.plus(epochsPerPeriod);
+    final UInt64 period3End = period2End.plus(epochsPerPeriod);
+
+    assertThat(syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(period1Start))
+        .isEqualTo(period2End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(period1Start.plus(1)))
+        .isEqualTo(period2End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(period1Start.plus(7)))
+        .isEqualTo(period2End);
+
+    assertThat(syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(period2Start))
+        .isEqualTo(period3End);
+    assertThat(syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(period2Start.plus(1)))
+        .isEqualTo(period3End);
   }
 
   @Test
