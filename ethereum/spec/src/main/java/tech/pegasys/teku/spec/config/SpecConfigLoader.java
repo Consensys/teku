@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -28,9 +29,14 @@ import tech.pegasys.teku.util.config.Constants;
 public class SpecConfigLoader {
 
   public static SpecConfig loadConfig(final String configName) {
+    return loadConfig(configName, __ -> {});
+  }
+
+  public static SpecConfig loadConfig(
+      final String configName, final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
     processConfig(configName, reader::read);
-    return reader.build();
+    return reader.build(modifier);
   }
 
   public static SpecConfig loadConfig(final Map<String, ?> config) {

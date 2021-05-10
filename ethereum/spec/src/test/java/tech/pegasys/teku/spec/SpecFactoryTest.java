@@ -27,7 +27,7 @@ public class SpecFactoryTest {
 
   @Test
   public void defaultFactoryShouldOnlySupportPhase0_mainnet() {
-    final Spec spec = SpecFactory.getDefault().create("mainnet");
+    final Spec spec = SpecFactory.create("mainnet");
     assertThat(spec.getForkSchedule().getSupportedMilestones())
         .containsExactly(SpecMilestone.PHASE0);
   }
@@ -35,7 +35,7 @@ public class SpecFactoryTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getKnownConfigNames")
   public void defaultFactoryShouldOnlySupportPhase0(final String configName) {
-    final Spec spec = SpecFactory.getDefault().create(configName);
+    final Spec spec = SpecFactory.create(configName);
     assertThat(spec.getForkSchedule().getSupportedMilestones())
         .containsExactly(SpecMilestone.PHASE0);
   }

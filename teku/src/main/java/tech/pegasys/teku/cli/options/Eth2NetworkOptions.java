@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2NetworkOptions {
@@ -46,6 +47,14 @@ public class Eth2NetworkOptions {
           "Contract address for the deposit contract. Only required when creating a custom network.",
       arity = "1")
   private String eth1DepositContractAddress = null; // Depends on network configuration
+
+  @Option(
+      names = {"--Xnetwork-altair-fork-slot"},
+      hidden = true,
+      paramLabel = "<slot>",
+      description = "Override the Altair fork activation slot.",
+      arity = "1")
+  private UInt64 altairForkSlot;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -133,6 +142,9 @@ public class Eth2NetworkOptions {
     }
     if (forkChoiceBalanceAttackMitigationEnabled != null) {
       builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
+    }
+    if (altairForkSlot != null) {
+      builder.altairForkSlot(altairForkSlot);
     }
   }
 }

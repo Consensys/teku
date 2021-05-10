@@ -13,27 +13,32 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
-public interface SpecFactory {
-  SpecFactory PHASE0 = new Phase0SpecFactory();
+public class SpecFactory {
 
-  static SpecFactory getDefault() {
-    return PHASE0;
+  public static Spec create(String configName) {
+    return create(configName, Optional.empty());
   }
 
-  default Spec create(String configName) {
-    return create(SpecConfigLoader.loadConfig(configName));
+  public static Spec create(String configName, final Optional<UInt64> altairForkSlot) {
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(
+            configName,
+            builder ->
+                altairForkSlot.ifPresent(
+                    florkSlot ->
+                        builder.altairBuilder(
+                            altairBuilder -> altairBuilder.altairForkSlot(florkSlot))));
+    return create(config, altairForkSlot);
   }
 
-  Spec create(SpecConfig config);
-
-  class Phase0SpecFactory implements SpecFactory {
-
-    @Override
-    public Spec create(SpecConfig config) {
-      return Spec.create(config, SpecMilestone.PHASE0);
-    }
+  public static Spec create(final SpecConfig config, final Optional<UInt64> altairForkSlot) {
+    final SpecMilestone highestMilestoneSupported =
+        altairForkSlot.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
+    return Spec.create(config, highestMilestoneSupported);
   }
 }

@@ -145,11 +145,12 @@ public class Eth2NetworkConfiguration {
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
+    private Optional<UInt64> altairForkSlot = Optional.empty();
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
 
-      final Spec spec = SpecFactory.getDefault().create(constants);
+      final Spec spec = SpecFactory.create(constants, altairForkSlot);
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
@@ -225,6 +226,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder balanceAttackMitigationEnabled(final boolean balanceAttackMitigationEnabled) {
       this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
+      return this;
+    }
+
+    public Builder altairForkSlot(final UInt64 altairForkSlot) {
+      this.altairForkSlot = Optional.of(altairForkSlot);
       return this;
     }
 
