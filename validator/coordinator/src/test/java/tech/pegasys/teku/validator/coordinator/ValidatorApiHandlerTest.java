@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -530,7 +531,12 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
     System.out.println(spec.getSyncCommitteeUtilRequired(ZERO).getSubcommitteeSize());
     verify(syncCommitteeSubscriptionManager).subscribe(0, subscription1.getUntilEpoch());
-    verify(syncCommitteeSubscriptionManager).subscribe(0, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(3, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(7, subscription1.getUntilEpoch());
+
+    verify(syncCommitteeSubscriptionManager).subscribe(1, subscription2.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(2, subscription2.getUntilEpoch());
+    verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 
   @Test
