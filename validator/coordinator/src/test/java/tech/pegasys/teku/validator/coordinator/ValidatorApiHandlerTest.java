@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -34,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,6 +89,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
@@ -538,6 +541,23 @@ class ValidatorApiHandlerTest {
 
     verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
+  void subscribeToSyncCommitteeSubnets_shouldConvertCommitteeIndexToSubnetId() {
+    final SyncCommitteeSubnetSubscription subscription1 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(1, 2, 15, 30), UInt64.valueOf(44));
+    final SyncCommitteeSubnetSubscription subscription2 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(5, 10), UInt64.valueOf(35));
+    validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
+    System.out.println(spec.getSyncCommitteeUtilRequired(ZERO).getSubcommitteeSize());
+    verify(syncCommitteeSubscriptionManager).subscribe(0, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(3, subscription1.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(7, subscription1.getUntilEpoch());
+
+    verify(syncCommitteeSubscriptionManager).subscribe(1, subscription2.getUntilEpoch());
+    verify(syncCommitteeSubscriptionManager).subscribe(2, subscription2.getUntilEpoch());
+    verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 
   @Test
