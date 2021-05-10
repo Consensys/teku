@@ -28,7 +28,7 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
 
   public static SpecConfigRayonism required(final SpecConfig specConfig) {
     return specConfig
-        .toVersionMerge()
+        .toVersionRayonism()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
@@ -40,7 +40,7 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
       final SpecConfig specConfig, final Function<SpecConfigRayonism, T> ctr) {
     return ctr.apply(
         specConfig
-            .toVersionMerge()
+            .toVersionRayonism()
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
@@ -61,7 +61,7 @@ public class SpecConfigRayonism extends DelegatingSpecConfig {
   }
 
   @Override
-  public Optional<SpecConfigRayonism> toVersionMerge() {
+  public Optional<SpecConfigRayonism> toVersionRayonism() {
     return Optional.of(this);
   }
 

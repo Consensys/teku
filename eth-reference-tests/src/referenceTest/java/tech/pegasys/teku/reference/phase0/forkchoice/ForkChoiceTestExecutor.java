@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -70,18 +69,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   }
 
   /**
-   * The anchor block is currently always a Phase 0 block because of the way the specs repo are
-   * doing Altair genesis. See https://github.com/ethereum/eth2.0-specs/pull/2323
-   *
    * @param testDefinition the test definition
    * @return the anchor block for the test
    */
   private SignedBeaconBlock loadAnchorBlock(final TestDefinition testDefinition) {
-    final Spec phase0Spec = TestSpecFactory.createPhase0(testDefinition.getConfigName());
     final BeaconBlock anchorBlock =
         TestDataUtils.loadSsz(
-            testDefinition, "anchor_block.ssz_snappy", phase0Spec::deserializeBeaconBlock);
-    return SignedBeaconBlock.create(phase0Spec, anchorBlock, BLSSignature.empty());
+            testDefinition,
+            "anchor_block.ssz_snappy",
+            testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema()
+                ::sszDeserialize);
+    return SignedBeaconBlock.create(testDefinition.getSpec(), anchorBlock, BLSSignature.empty());
   }
 
   private void runSteps(

@@ -14,9 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.rayonism.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
@@ -33,11 +33,14 @@ public class MiscHelpersRayonism extends MiscHelpers {
     return !state.getLatest_execution_payload_header().equals(new ExecutionPayloadHeader());
   }
 
-  public boolean isTransitionBlock(
-      final BeaconState genericState, final BeaconBlockBody genericBlockBody) {
+  public boolean isTransitionBlock(final BeaconState genericState, final BeaconBlock block) {
     final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
-    final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(genericBlockBody);
+    final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(block.getBody());
     return !isTransitionCompleted(state)
         && !blockBody.getExecution_payload().equals(new ExecutionPayload());
+  }
+
+  public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
+    return isTransitionCompleted(genericState) || isTransitionBlock(genericState, block);
   }
 }

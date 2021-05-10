@@ -80,22 +80,6 @@ public class Spec {
     this.genesisSpec = genesisSpec;
     this.forkManifest = forkManifest;
   }
-  //
-  //  public static Spec createMergeSinceGenesis(
-  //      final SpecConfigMerge config, final ForkManifest forkManifest, final String eth1Endpoint)
-  // {
-  //    Preconditions.checkArgument(
-  //        forkManifest.getGenesisFork().getCurrent_version().equals(config.getMergeForkVersion()),
-  //        "GENESIS_FORK_VERSION != MERGE_FORK_VERSION");
-  //    Preconditions.checkArgument(
-  //        forkManifest
-  //            .getGenesisFork()
-  //            .getEpoch()
-  //            .equals(new MiscHelpers(config).computeEpochAtSlot(config.getMergeForkSlot())),
-  //        "GENESIS_EPOCH != MERGE_FORK_EPOCH");
-  //    SpecVersion specVersion = SpecVersion.createMerge(config);
-  //    return new Spec(specVersion, forkManifest);
-  //  }
 
   public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
     final SpecVersion initialSpec =
@@ -166,7 +150,7 @@ public class Spec {
         .orElse(false)) {
       return SpecMilestone.ALTAIR;
     } else if (specConfig
-        .toVersionMerge()
+        .toVersionRayonism()
         .map(config -> fork.getCurrent_version().equals(config.getMergeForkVersion()))
         .orElse(false)) {
       return SpecMilestone.MERGE;

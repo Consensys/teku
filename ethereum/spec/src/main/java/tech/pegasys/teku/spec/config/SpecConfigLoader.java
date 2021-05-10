@@ -76,7 +76,7 @@ public class SpecConfigLoader {
   private static List<String> enumerateAvailableResources() {
     return Arrays.stream(Eth2Network.values())
         .map(Eth2Network::configName)
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml"))
+        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml", s + "/merge.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());
   }

@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -116,7 +117,7 @@ public interface BlockProcessor {
   void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
       throws BlockProcessingException;
 
-  default void processExecutionPayload(MutableBeaconState state, BeaconBlockBody blockBody)
+  default void processExecutionPayload(MutableBeaconState state, ExecutionPayload executionPayload)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in this spec version");
   }

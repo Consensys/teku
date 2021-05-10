@@ -19,11 +19,14 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -45,7 +48,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     DEPOSIT,
     VOLUNTARY_EXIT,
     ATTESTATION,
-    SYNC_COMMITTEE
+    SYNC_COMMITTEE,
+    EXECUTION_PAYLOAD
   }
 
   public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -73,6 +77,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/sync_committee",
               new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_COMMITTEE))
+          .put(
+              "operations/execution_payload",
+              new OperationsTestExecutor<>(
+                  "execution_payload.ssz_snappy", Operation.EXECUTION_PAYLOAD))
           .build();
 
   private final String dataFileName;
@@ -180,6 +188,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                             .getBeaconBlockBodySchema())
                     .getSyncAggregateSchema());
         processor.processSyncCommittee(state, syncAggregate);
+        break;
+      case EXECUTION_PAYLOAD:
+        final ExecutionPayload executionPayload =
+            loadSsz(testDefinition, dataFileName, ExecutionPayload.SSZ_SCHEMA);
+        final Boolean executionValid =
+            (Boolean)
+                TestDataUtils.loadYaml(testDefinition, "execution.yaml", Map.class)
+                    .get("execution_valid");
+        processor.processExecutionPayload(state, executionPayload, executionValid);
         break;
     }
   }

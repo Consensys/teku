@@ -182,8 +182,13 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress);
 
-    SpecConfig altairOrPhase0 = altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
-    return rayonismBuilder.map(b -> (SpecConfig) b.build(altairOrPhase0)).orElse(altairOrPhase0);
+    if (rayonismBuilder.isPresent()) {
+      return rayonismBuilder.get().build(phase0);
+    } else if (altairBuilder.isPresent()) {
+      return altairBuilder.get().build(phase0);
+    } else {
+      return phase0;
+    }
   }
 
   private void validate() {

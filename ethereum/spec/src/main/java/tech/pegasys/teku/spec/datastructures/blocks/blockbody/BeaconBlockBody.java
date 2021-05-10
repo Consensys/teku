@@ -46,7 +46,7 @@ public interface BeaconBlockBody extends SszContainer {
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
 
-  default Optional<BeaconBlockBodyRayonism> toVersionMerge() {
+  default Optional<BeaconBlockBodyRayonism> toVersionRayonism() {
     return Optional.empty();
   }
 }

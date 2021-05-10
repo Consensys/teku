@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.rayonism;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.spec.config.SpecConfigRayonism;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -132,7 +131,12 @@ public class SpecLogicRayonism extends AbstractSpecLogic {
             executionPayloadUtil);
     final StateTransitionRayonism stateTransition =
         StateTransitionRayonism.create(
-            config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
+            config,
+            blockProcessor,
+            miscHelpers,
+            epochProcessor,
+            beaconStateUtil,
+            beaconStateAccessors);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
     final BlockProposalUtil blockProposalUtil =

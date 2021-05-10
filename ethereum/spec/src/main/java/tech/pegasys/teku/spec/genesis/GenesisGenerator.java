@@ -96,7 +96,7 @@ public class GenesisGenerator {
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
 
     state
-        .toMutableVersionMerge()
+        .toMutableVersionRayonism()
         .ifPresent(
             stateMerge ->
                 stateMerge.setLatestExecutionPayloadHeader(

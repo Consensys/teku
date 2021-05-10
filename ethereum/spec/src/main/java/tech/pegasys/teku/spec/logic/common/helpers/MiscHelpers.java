@@ -103,7 +103,7 @@ public class MiscHelpers {
     return state.getGenesis_time().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
   }
 
-  public Optional<MiscHelpersRayonism> toVersionMerge() {
+  public Optional<MiscHelpersRayonism> toVersionRayonism() {
     return Optional.empty();
   }
 }

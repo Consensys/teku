@@ -749,7 +749,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   .thenAccept(
                       maybeABlock ->
                           maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
+                              .flatMap(block -> block.getBody().toVersionRayonism())
                               .ifPresent(
                                   body -> {
                                     // Check if there is a payload
@@ -770,7 +770,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   .thenAccept(
                       maybeABlock ->
                           maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
+                              .flatMap(block -> block.getBody().toVersionRayonism())
                               .ifPresent(
                                   body ->
                                       executionEngineService.finalizeBlock(

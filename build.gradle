@@ -207,8 +207,8 @@ allprojects {
 }
 
 // Note: v1.0.0 tests were republished to fix an initial error. This comment forces cache update
-def refTestVersion = 'v1.1.0-alpha.3'
-def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+def refTestVersion = 'v1.1.0-alpha.4-pre2'
+def refTestBaseUrl = 'https://github.com/protolambda/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
 

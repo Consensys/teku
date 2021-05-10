@@ -22,6 +22,8 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -86,6 +88,13 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
                           .getSyncCommitteeSigningDataSchema()))
+          .put(
+              "ssz_static/ExecutionPayloadHeader",
+              new SszTestExecutor<>(schemas -> ExecutionPayloadHeader.SSZ_SCHEMA))
+          .put(
+              "ssz_static/ExecutionPayload",
+              new SszTestExecutor<>(schemas -> ExecutionPayload.SSZ_SCHEMA))
+          .put("ssz_static/PowBlock", IGNORE_TESTS) // We don't have an PowBlock structure
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)

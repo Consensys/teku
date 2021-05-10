@@ -206,7 +206,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return Optional.empty();
   }
 
-  default Optional<MutableBeaconStateRayonism> toMutableVersionMerge() {
+  default Optional<MutableBeaconStateRayonism> toMutableVersionRayonism() {
     return Optional.empty();
   }
 }

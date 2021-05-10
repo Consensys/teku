@@ -43,7 +43,7 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
 
-  default Optional<BeaconBlockBodySchemaRayonism> toVersionMerge() {
+  default Optional<BeaconBlockBodySchemaRayonism> toVersionRayonism() {
     return Optional.empty();
   }
 }

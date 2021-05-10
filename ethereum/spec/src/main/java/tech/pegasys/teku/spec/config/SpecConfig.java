@@ -166,7 +166,7 @@ public interface SpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigRayonism> toVersionMerge() {
+  default Optional<SpecConfigRayonism> toVersionRayonism() {
     return Optional.empty();
   }
 }

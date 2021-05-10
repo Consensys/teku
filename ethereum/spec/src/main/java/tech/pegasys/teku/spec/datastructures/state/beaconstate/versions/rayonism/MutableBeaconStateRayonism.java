@@ -24,7 +24,7 @@ public interface MutableBeaconStateRayonism extends MutableBeaconState, BeaconSt
 
   static MutableBeaconStateRayonism required(final MutableBeaconState state) {
     return state
-        .toMutableVersionMerge()
+        .toMutableVersionRayonism()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
@@ -57,7 +57,7 @@ public interface MutableBeaconStateRayonism extends MutableBeaconState, BeaconSt
   BeaconStateRayonism commitChanges();
 
   @Override
-  default Optional<MutableBeaconStateRayonism> toMutableVersionMerge() {
+  default Optional<MutableBeaconStateRayonism> toMutableVersionRayonism() {
     return Optional.of(this);
   }
 }

@@ -29,7 +29,7 @@ public interface BeaconStateRayonism extends BeaconState {
 
   static BeaconStateRayonism required(final BeaconState state) {
     return state
-        .toVersionMerge()
+        .toVersionRayonism()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
@@ -57,7 +57,7 @@ public interface BeaconStateRayonism extends BeaconState {
   }
 
   @Override
-  default Optional<BeaconStateRayonism> toVersionMerge() {
+  default Optional<BeaconStateRayonism> toVersionRayonism() {
     return Optional.of(this);
   }
 

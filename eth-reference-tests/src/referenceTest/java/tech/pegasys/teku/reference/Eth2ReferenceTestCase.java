@@ -58,6 +58,11 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
+  private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     setConstants(testDefinition.getConfigName());
     getExecutorFor(testDefinition).runTest(testDefinition);
@@ -79,6 +84,8 @@ public abstract class Eth2ReferenceTestCase {
         testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
       } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
         testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+      } else if (testDefinition.getFork().equals(TestFork.MERGE)) {
+        testExecutor = MERGE_TEST_TYPES.get(testDefinition.getTestType());
       }
     }
 

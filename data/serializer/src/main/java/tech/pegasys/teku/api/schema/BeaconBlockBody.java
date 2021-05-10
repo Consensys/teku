@@ -86,7 +86,7 @@ public class BeaconBlockBody {
             .map(SignedVoluntaryExit::new)
             .collect(Collectors.toList());
     this.execution_payload =
-        body.toVersionMerge()
+        body.toVersionRayonism()
             .map(BeaconBlockBodyRayonism::getExecution_payload)
             .map(ExecutionPayload::new)
             .orElse(null);
@@ -125,7 +125,7 @@ public class BeaconBlockBody {
                       .collect(schema.getVoluntaryExitsSchema().collector()));
           if (execution_payload != null) {
             schema
-                .toVersionMerge()
+                .toVersionRayonism()
                 .ifPresent(
                     schemaMerge ->
                         builder.executionPayload(execution_payload::asInternalExecutionPayload));

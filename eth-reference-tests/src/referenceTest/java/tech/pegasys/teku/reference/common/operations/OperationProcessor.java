@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.common.operations;
 
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,5 +44,11 @@ public interface OperationProcessor {
       throws BlockProcessingException;
 
   void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
+      throws BlockProcessingException;
+
+  void processExecutionPayload(
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final Boolean executionValid)
       throws BlockProcessingException;
 }

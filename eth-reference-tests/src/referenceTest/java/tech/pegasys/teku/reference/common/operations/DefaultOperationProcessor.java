@@ -17,13 +17,16 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.versions.rayonism.block.BlockProcessorRayonism;
 
 public class DefaultOperationProcessor implements OperationProcessor {
   private final Spec spec;
@@ -82,5 +85,16 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
       throws BlockProcessingException {
     spec.atSlot(state.getSlot()).getBlockProcessor().processSyncCommittee(state, aggregate);
+  }
+
+  @Override
+  public void processExecutionPayload(
+      MutableBeaconState state, ExecutionPayload executionPayload, Boolean executionValid)
+      throws BlockProcessingException {
+    BlockProcessor blockProcessor =
+        BlockProcessorRayonism.required(spec.atSlot(state.getSlot()).getBlockProcessor())
+            .forProcessExecutionPayloadReferenceTest(executionValid);
+
+    blockProcessor.processExecutionPayload(state, executionPayload);
   }
 }

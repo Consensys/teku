@@ -17,11 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigRayonism;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodyRayonism;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -29,7 +29,14 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.MutableBeaconStateRayonism;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.client.ExecutionEngineClient;
+import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
+import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
+import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
+import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -74,6 +81,14 @@ public class BlockProcessorRayonism extends AbstractBlockProcessor {
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
+  public static BlockProcessorRayonism required(BlockProcessor blockProcessor) {
+    checkArgument(
+        blockProcessor instanceof BlockProcessorRayonism,
+        "Expected rayonism block processor but got %s",
+        blockProcessor.getClass());
+    return (BlockProcessorRayonism) blockProcessor;
+  }
+
   @Override
   public void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
       throws BlockProcessingException {
@@ -81,18 +96,11 @@ public class BlockProcessorRayonism extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processExecutionPayload(MutableBeaconState genericState, BeaconBlockBody genericBody)
+  public void processExecutionPayload(
+      MutableBeaconState genericState, ExecutionPayload executionPayload)
       throws BlockProcessingException {
     try {
       final MutableBeaconStateRayonism state = MutableBeaconStateRayonism.required(genericState);
-      final BeaconBlockBodyRayonism blockBody = BeaconBlockBodyRayonism.required(genericBody);
-      final ExecutionPayload executionPayload = blockBody.getExecution_payload();
-
-      // Pre-merge, skip processing
-      if (!miscHelpersRayonism.isTransitionCompleted(state)
-          && !miscHelpersRayonism.isTransitionBlock(state, blockBody)) {
-        return;
-      }
 
       if (miscHelpersRayonism.isTransitionCompleted(state)) {
         checkArgument(
@@ -160,5 +168,49 @@ public class BlockProcessorRayonism extends AbstractBlockProcessor {
     } else {
       state.getPrevious_epoch_attestations().append(pendingAttestation);
     }
+  }
+
+  public BlockProcessorRayonism forProcessExecutionPayloadReferenceTest(final Boolean executionValid) {
+    return new BlockProcessorRayonism(
+        SpecConfigRayonism.required(specConfig),
+        predicates,
+        miscHelpersRayonism,
+        beaconStateAccessors,
+        beaconStateMutators,
+        beaconStateUtil,
+        attestationUtil,
+        validatorsUtil,
+        attestationValidator,
+        new ExecutionPayloadUtil(
+            new ExecutionEngineService(
+                new ExecutionEngineClient() {
+                  @Override
+                  public SafeFuture<
+                          Response<
+                              tech.pegasys.teku.spec.executionengine.client.schema
+                                  .ExecutionPayload>>
+                      consensusAssembleBlock(AssembleBlockRequest request) {
+                    return null;
+                  }
+
+                  @Override
+                  public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(
+                      tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload
+                          request) {
+                    return SafeFuture.completedFuture(
+                        new Response<>(new NewBlockResponse(executionValid)));
+                  }
+
+                  @Override
+                  public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
+                    return null;
+                  }
+
+                  @Override
+                  public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(
+                      Bytes32 blockHash) {
+                    return null;
+                  }
+                })));
   }
 }

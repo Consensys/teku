@@ -174,7 +174,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return Optional.empty();
   }
 
-  default Optional<BeaconStateRayonism> toVersionMerge() {
+  default Optional<BeaconStateRayonism> toVersionRayonism() {
     return Optional.empty();
   }
 }
