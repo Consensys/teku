@@ -44,7 +44,9 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetNewBlockTest {
@@ -52,8 +54,8 @@ public class GetNewBlockTest {
       BLSTestUtil.randomSignature(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
   private Context context = mock(Context.class);
-  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
-  private final JsonProvider jsonProvider = new JsonProvider();
+  protected final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
+  protected final JsonProvider jsonProvider = new JsonProvider();
   private GetNewBlock handler;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
@@ -81,6 +83,7 @@ public class GetNewBlockTest {
             new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
     when(context.queryParamMap()).thenReturn(queryParams);
     when(context.pathParamMap()).thenReturn(pathParams);
+    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
     when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
@@ -105,6 +108,7 @@ public class GetNewBlockTest {
             new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
     when(context.queryParamMap()).thenReturn(params);
     when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
+    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
     when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.of(graffiti)))
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
@@ -123,6 +127,7 @@ public class GetNewBlockTest {
         Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
     when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
+    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
     when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("TEST")));
     handler.handle(context);
@@ -141,6 +146,7 @@ public class GetNewBlockTest {
         Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
     when(context.queryParamMap()).thenReturn(params);
+    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
     when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("TEST")));
     handler.handle(context);

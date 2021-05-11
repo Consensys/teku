@@ -197,6 +197,10 @@ public class BeaconRestApiV1Test {
     builder
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
+        .add(
+            Arguments.of(
+                tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
+                tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class))
         .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class));
