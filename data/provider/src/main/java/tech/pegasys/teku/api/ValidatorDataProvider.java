@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -33,11 +37,13 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -130,6 +136,26 @@ public class ValidatorDataProvider {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
     validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
+  }
+
+  public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
+      throws JsonProcessingException {
+    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final JsonNode jsonNode = mapper.readTree(jsonBlock);
+    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
+    final SignedBeaconBlock signedBeaconBlock;
+    checkNotNull(slot, "Slot was not found in json block");
+    switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0:
+        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlock.class);
+        break;
+      case ALTAIR:
+        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
+        break;
+      default:
+        throw new IllegalArgumentException("Could not determine milestone for slot " + slot);
+    }
+    return signedBeaconBlock;
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(

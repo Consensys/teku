@@ -232,7 +232,8 @@ public class TekuNode extends Node {
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponse.class).data);
+      return Optional.of(
+          (SignedBeaconBlock) jsonProvider.jsonToObject(result, GetBlockResponse.class).getData());
     }
   }
 
