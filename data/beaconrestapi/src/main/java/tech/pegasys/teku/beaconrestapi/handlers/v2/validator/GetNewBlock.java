@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -23,10 +22,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 
-import com.google.common.base.Throwables;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -34,33 +31,22 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlock extends AbstractHandler implements Handler {
+public class GetNewBlock extends tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock
+    implements Handler {
   public static final String ROUTE = "/eth/v2/validator/blocks/:slot";
-  private final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.provider = dataProvider.getValidatorDataProvider();
+    super(dataProvider, jsonProvider);
   }
 
-  GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.provider = provider;
+  public GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(provider, jsonProvider);
   }
 
   @OpenApi(
@@ -92,48 +78,12 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    try {
-      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-      final Map<String, String> pathParamMap = ctx.pathParamMap();
-
-      final UInt64 slot = UInt64.valueOf(pathParamMap.get(SLOT));
-      final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
-      final Optional<Bytes32> graffiti =
-          getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
-      ctx.result(
-          provider
-              .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
-              .thenApplyChecked(
-                  maybeBlock -> {
-                    if (maybeBlock.isEmpty()) {
-                      throw new ChainDataUnavailableException();
-                    }
-                    return jsonProvider.objectToJSON(
-                        new GetNewBlockResponseV2(
-                            provider.getMilestoneAtSlot(slot), maybeBlock.get()));
-                  })
-              .exceptionallyCompose(error -> handleError(ctx, error)));
-    } catch (final IllegalArgumentException e) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-    }
+    super.handle(ctx);
   }
 
-  private Optional<Bytes32> getOptionalParameterValueAsBytes32(
-      Map<String, List<String>> queryParamMap, final String key) {
-    if (queryParamMap.containsKey(key)) {
-      return Optional.of(getParameterValueAsBytes32(queryParamMap, key));
-    } else {
-      return Optional.empty();
-    }
-  }
-
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
-    }
-    return SafeFuture.failedFuture(error);
+  @Override
+  protected String produceResultString(final BeaconBlock block) throws JsonProcessingException {
+    return jsonProvider.objectToJSON(
+        new GetNewBlockResponseV2(provider.getMilestoneAtSlot(block.slot), block));
   }
 }

@@ -36,7 +36,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
-import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -153,19 +152,6 @@ public class GetNewBlockTest {
     handler.handle(context);
 
     verify(context).status(SC_BAD_REQUEST);
-  }
-
-  @Test
-  void shouldReturnBadRequestForAltairBlocks() throws Exception {
-    final Map<String, List<String>> params =
-        Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
-    when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
-    when(context.queryParamMap()).thenReturn(params);
-    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.ALTAIR);
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
-    verify(context).result(ArgumentMatchers.contains("please fetch via /eth/v2/validator/blocks"));
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

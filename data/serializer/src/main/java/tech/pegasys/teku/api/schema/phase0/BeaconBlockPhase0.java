@@ -11,32 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v2.validator;
+package tech.pegasys.teku.api.schema.phase0;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
+import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.interfaces.VersionedData;
-import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
-import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetNewBlockResponseV2 {
-
-  public final SpecMilestone version;
-  private final BeaconBlock data;
-
-  @Schema(oneOf = {BeaconBlockPhase0.class, BeaconBlockAltair.class})
-  public VersionedData getData() {
-    return data;
-  }
-
+public class BeaconBlockPhase0 extends BeaconBlock implements VersionedData {
   @JsonCreator
-  public GetNewBlockResponseV2(
-      @JsonProperty("version") final SpecMilestone version,
-      @JsonProperty("data") final BeaconBlock data) {
-    this.version = version;
-    this.data = data;
+  public BeaconBlockPhase0(
+      @JsonProperty("slot") final UInt64 slot,
+      @JsonProperty("proposer_index") final UInt64 proposer_index,
+      @JsonProperty("parent_root") final Bytes32 parent_root,
+      @JsonProperty("state_root") final Bytes32 state_root,
+      @JsonProperty("body") final BeaconBlockBody body) {
+    super(slot, proposer_index, parent_root, state_root, body);
   }
 }

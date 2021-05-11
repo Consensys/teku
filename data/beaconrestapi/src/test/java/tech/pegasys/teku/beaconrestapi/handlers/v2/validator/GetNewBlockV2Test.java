@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
@@ -29,11 +25,9 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
@@ -51,8 +45,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class GetNewBlockV2Test {
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       BLSTestUtil.randomSignature(1234);
-  private BLSSignature signature = new BLSSignature(signatureInternal);
-  private Context context = mock(Context.class);
+  private final BLSSignature signature = new BLSSignature(signatureInternal);
+  private final Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetNewBlock handler;
@@ -75,7 +69,7 @@ public class GetNewBlockV2Test {
         Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
 
     final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock randomBeaconBlock =
-        dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong());
+        dataStructureUtil.randomBeaconBlock(ONE);
 
     final BeaconBlock altairBlock = schemaProvider.getBeaconBlock(randomBeaconBlock);
     when(context.queryParamMap()).thenReturn(queryParams);
@@ -91,38 +85,5 @@ public class GetNewBlockV2Test {
         .isCompletedWithValue(
             jsonProvider.objectToJSON(
                 new GetNewBlockResponseV2(SpecMilestone.ALTAIR, altairBlock)));
-  }
-
-  @Test
-  void shouldReturnServerErrorWhenRuntimeExceptionReceived() throws Exception {
-    final Map<String, List<String>> params =
-        Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
-    when(context.queryParamMap()).thenReturn(params);
-    when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
-    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("TEST")));
-    handler.handle(context);
-
-    // Exception should just be propagated up via the future
-    verify(context, never()).status(anyInt());
-    verify(context)
-        .result(
-            argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
-  }
-
-  @Test
-  void shouldReturnBadRequestErrorWhenIllegalArgumentExceptionReceived() throws Exception {
-
-    final Map<String, List<String>> params =
-        Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
-    when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
-    when(context.queryParamMap()).thenReturn(params);
-    when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("TEST")));
-    handler.handle(context);
-
-    verify(context).status(SC_BAD_REQUEST);
   }
 }
