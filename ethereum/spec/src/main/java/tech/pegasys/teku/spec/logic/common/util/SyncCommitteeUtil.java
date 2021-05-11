@@ -99,7 +99,7 @@ public class SyncCommitteeUtil {
     final UInt64 currentSyncCommitteePeriod = computeSyncCommitteePeriod(currentEpoch);
     checkArgument(
         isStateUsableForCommitteeCalculationAtEpoch(state, epoch),
-        "State must be in the same or previous sync committee period. Cannot calculate epoch {} from state at slot {}",
+        "State must be in the same or previous sync committee period. Cannot calculate epoch %s from state at slot %s",
         epoch,
         state.getSlot());
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
