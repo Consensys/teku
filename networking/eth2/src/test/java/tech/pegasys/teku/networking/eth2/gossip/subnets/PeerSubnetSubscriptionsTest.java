@@ -114,6 +114,21 @@ class PeerSubnetSubscriptionsTest {
     assertThat(requiredPeers).isZero();
   }
 
+  @Test
+  void getSubscribersRequired_withAllSubnetsFull() {
+    final ImmutableMap.Builder<String, Collection<NodeId>> subscribersBuilder =
+        ImmutableMap.<String, Collection<NodeId>>builder();
+    for (int i = 0; i < ATTESTATION_SUBNET_COUNT; i++) {
+      subscribersBuilder.put("subnet_" + i, Set.of(PEER1, PEER2));
+    }
+    final Map<String, Collection<NodeId>> subscribersByTopic = subscribersBuilder.build();
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+    final PeerSubnetSubscriptions subscriptions =
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, 1);
+
+    assertThat(subscriptions.getSubscribersRequired()).isEqualTo(0);
+  }
+
   private void withSubscriberCountForAllSubnets(int subscriberCount) {
     final List<NodeId> subscribers = new ArrayList<>();
     IntStream.range(0, subscriberCount).mapToObj(MockNodeId::new).forEach(subscribers::add);

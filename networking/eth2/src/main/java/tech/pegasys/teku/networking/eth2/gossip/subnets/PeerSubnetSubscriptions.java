@@ -73,8 +73,10 @@ public class PeerSubnetSubscriptions {
   }
 
   public int getSubscribersRequired() {
-    return targetSubnetSubscriberCount
-        - streamSubnetIds().map(this::getSubscriberCountForSubnet).min().orElse(0);
+    final int required =
+        targetSubnetSubscriberCount
+            - streamSubnetIds().map(this::getSubscriberCountForSubnet).min().orElse(0);
+    return Math.max(required, 0);
   }
 
   private static IntStream streamSubnetIds() {
