@@ -284,7 +284,10 @@ public class SyncCommitteeUtil {
     // Can look-ahead one sync committee period.
     final UInt64 requiredSyncCommitteePeriod =
         computeSyncCommitteePeriod(requiredEpoch).minusMinZero(1);
-    return requiredSyncCommitteePeriod.times(specConfig.getEpochsPerSyncCommitteePeriod());
+    return requiredSyncCommitteePeriod
+        .times(specConfig.getEpochsPerSyncCommitteePeriod())
+        // But can't use a state from before the Altair fork
+        .max(miscHelpers.computeEpochAtSlot(specConfig.getAltairForkSlot()));
   }
 
   public UInt64 computeFirstEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {

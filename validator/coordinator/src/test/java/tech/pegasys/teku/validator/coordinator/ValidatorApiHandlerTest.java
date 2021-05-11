@@ -89,6 +89,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -363,6 +364,44 @@ class ValidatorApiHandlerTest {
                 firstSlotAfterNextSyncCommitteePeriod, List.of(1)))
         .isCompletedExceptionallyWith(IllegalArgumentException.class)
         .hasMessageContaining("not within the current or next sync committee periods");
+  }
+
+  @Test
+  void getSyncCommitteeDuties_shouldNotUseEpochPriorToFork() {
+    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(EPOCH_START_SLOT);
+    final ValidatorApiHandler validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            chainDataClient,
+            syncStateProvider,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriptions,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            syncCommitteeSignaturePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager);
+    // Best state is still in Phase0
+    final BeaconState state =
+        dataStructureUtil.stateBuilderPhase0().slot(PREVIOUS_EPOCH_START_SLOT.minus(1)).build();
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    when(chainDataClient.getStateAtSlotExact(any())).thenReturn(new SafeFuture<>());
+
+    final SafeFuture<Optional<SyncCommitteeDuties>> result =
+        validatorApiHandler.getSyncCommitteeDuties(EPOCH, List.of(1));
+    assertThat(result).isNotDone();
+
+    // The start of the sync committee period is prior to the fork block so we should use the
+    // fork block to ensure we actually have sync committees available.
+    verify(chainDataClient).getStateAtSlotExact(EPOCH_START_SLOT);
   }
 
   @Test
