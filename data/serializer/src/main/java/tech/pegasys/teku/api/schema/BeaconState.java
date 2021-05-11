@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class BeaconState {
@@ -42,6 +43,7 @@ public class BeaconState {
 
   public final Fork fork;
   public final BeaconBlockHeader latest_block_header;
+  public final ExecutionPayloadHeader latest_execution_payload_header;
 
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
@@ -90,6 +92,8 @@ public class BeaconState {
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("fork") final Fork fork,
       @JsonProperty("latest_block_header") final BeaconBlockHeader latest_block_header,
+      @JsonProperty("latest_execution_payload_header")
+          final ExecutionPayloadHeader latest_execution_payload_header,
       @JsonProperty("block_roots") final List<Bytes32> block_roots,
       @JsonProperty("state_roots") final List<Bytes32> state_roots,
       @JsonProperty("historical_roots") final List<Bytes32> historical_roots,
@@ -113,6 +117,7 @@ public class BeaconState {
     this.slot = slot;
     this.fork = fork;
     this.latest_block_header = latest_block_header;
+    this.latest_execution_payload_header = latest_execution_payload_header;
     this.block_roots = block_roots;
     this.state_roots = state_roots;
     this.historical_roots = historical_roots;
@@ -177,6 +182,15 @@ public class BeaconState {
       this.previous_epoch_attestations = null;
       this.current_epoch_attestations = null;
     }
+
+    final Optional<BeaconStateRayonism> maybeRayonismState = beaconState.toVersionRayonism();
+    if (maybeRayonismState.isPresent()) {
+      final BeaconStateRayonism rayonismState = maybeRayonismState.get();
+      this.latest_execution_payload_header =
+          new ExecutionPayloadHeader(rayonismState.getLatest_execution_payload_header());
+    } else {
+      this.latest_execution_payload_header = null;
+    }
   }
 
   public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState asInternalBeaconState(
@@ -237,6 +251,14 @@ public class BeaconState {
                                 current_epoch_attestations.stream()
                                     .map(PendingAttestation::asInternalPendingAttestation)
                                     .collect(Collectors.toList()));
+                      });
+
+              state
+                  .toMutableVersionRayonism()
+                  .ifPresent(
+                      rayonismState -> {
+                        rayonismState.setLatestExecutionPayloadHeader(
+                            latest_execution_payload_header.asInternalExecutionPayloadHeader());
                       });
             });
   }
