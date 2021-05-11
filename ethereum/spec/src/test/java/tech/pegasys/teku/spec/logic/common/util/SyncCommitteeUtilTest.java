@@ -156,6 +156,18 @@ class SyncCommitteeUtilTest {
     assertMinEpochForSyncCommitteePeriod(5);
   }
 
+  @Test
+  void getMinEpochForSyncCommitteeAssignments_shouldNotAllowEpochToBeLessThanForkEpoch() {
+    final UInt64 altairForkEpoch = UInt64.ONE;
+    final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
+    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairForkSlot);
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(altairForkSlot);
+    assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(altairForkEpoch))
+        .isEqualTo(altairForkEpoch);
+    assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(UInt64.valueOf(2)))
+        .isEqualTo(altairForkEpoch);
+  }
+
   private void assertMinEpochForSyncCommitteePeriod(final int period) {
     final UInt64 epochsPerPeriod = UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod());
     UInt64.range(epochsPerPeriod.times(period), epochsPerPeriod.times(period + 1))
