@@ -27,6 +27,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQ
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,14 +54,14 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/validator/blocks/:slot";
-  private final ValidatorDataProvider provider;
+  protected final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.provider = dataProvider.getValidatorDataProvider();
   }
 
-  GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+  public GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.provider = provider;
   }
@@ -109,13 +111,17 @@ public class GetNewBlock extends AbstractHandler implements Handler {
                     if (maybeBlock.isEmpty()) {
                       throw new ChainDataUnavailableException();
                     }
-                    return jsonProvider.objectToJSON(new GetNewBlockResponse(maybeBlock.get()));
+                    return produceResultString(maybeBlock.get());
                   })
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
+  }
+
+  protected String produceResultString(final BeaconBlock block) throws JsonProcessingException {
+    return jsonProvider.objectToJSON(new GetNewBlockResponse(block));
   }
 
   private Optional<Bytes32> getOptionalParameterValueAsBytes32(
