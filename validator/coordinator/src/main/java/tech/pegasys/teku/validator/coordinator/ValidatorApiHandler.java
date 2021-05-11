@@ -641,7 +641,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 stateEpoch = spec.getCurrentEpoch(bestState);
     if (epoch.isGreaterThan(stateEpoch)) {
       // Use the earliest possible epoch since we'll need to process empty slots
-      requiredEpoch = syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(epoch);
+      requiredEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
     } else {
       // Use the latest possible epoch since it's most likely to still be in memory
       requiredEpoch = syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(epoch);
