@@ -19,5 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
 - implement POST `/eth/v1/validator/duties/sync/{epoch}` for Altair fork.
 - implement GET and POST `/eth/v1/validator/sync_committee_subscriptions` for Altair fork.
+- implement GET `/eth/v2/validator/blocks/{slot}` for Altair fork.
+- `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.
 
 ### Bug Fixes

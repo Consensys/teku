@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -65,6 +66,7 @@ public class ValidatorDataProvider {
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final SchemaObjectProvider schemaObjectProvider;
 
   private static final int SC_INTERNAL_ERROR = 500;
   private static final int SC_ACCEPTED = 202;
@@ -77,6 +79,7 @@ public class ValidatorDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.spec = spec;
   }
 
@@ -107,7 +110,11 @@ public class ValidatorDataProvider {
             slot,
             tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
             graffiti)
-        .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
+        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getBeaconBlock));
+  }
+
+  public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
+    return spec.atSlot(slot).getMilestone();
   }
 
   public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
