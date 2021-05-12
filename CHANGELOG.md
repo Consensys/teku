@@ -12,6 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
+- Include expected path for keystore password file in error message when password file is not found.
 
 ### Bug Fixes
 

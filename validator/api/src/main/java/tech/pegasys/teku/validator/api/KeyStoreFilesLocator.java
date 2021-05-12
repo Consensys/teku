@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -98,37 +97,25 @@ class KeyStoreFilesLocator {
                 final Path relativeDirectoryPath =
                     keyDirectory.toPath().relativize(path.getParent());
                 final String keystoreName = path.getFileName().toString();
-                final Path passwordPath =
+                final File passwordFile =
                     passwordDirectory
                         .toPath()
                         .resolve(relativeDirectoryPath)
                         .resolve(
-                            keystoreName.substring(0, keystoreName.length() - ".json".length()));
-                final Optional<File> maybePassFile =
-                    findPassFile(passwordPath.toAbsolutePath().toString());
-                if (maybePassFile.isEmpty()) {
+                            keystoreName.substring(0, keystoreName.length() - ".json".length())
+                                + ".txt")
+                        .toFile();
+                if (!passwordFile.isFile()) {
                   throw new InvalidConfigurationException(
                       String.format(
-                          "Invalid configuration. No matching password file for (%s) in the key path.",
-                          path.toAbsolutePath().toString()));
+                          "Invalid configuration. Password file for keystore %s either doesn't exist or isn't readable. Expected to find it at %s",
+                          path.toAbsolutePath(), passwordFile.getAbsolutePath()));
                 }
-                pathMap.putIfAbsent(path, maybePassFile.get().toPath());
+                pathMap.putIfAbsent(path, passwordFile.toPath());
               });
     } catch (IOException e) {
       LOG.fatal("Failed to load keys from keystore", e);
     }
-  }
-
-  private Optional<File> findPassFile(final String absolutePassPathWithoutExtension) {
-    // bin type will be added here soon most likely.
-    List<String> extensions = List.of("txt");
-    for (String ext : extensions) {
-      final File file = new File(absolutePassPathWithoutExtension + "." + ext);
-      if (file.exists() && file.isFile()) {
-        return Optional.of(file);
-      }
-    }
-    return Optional.empty();
   }
 
   public List<Pair<Path, Path>> getFilePairs() {
