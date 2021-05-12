@@ -18,9 +18,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
-public class SignedBeaconBlockPhase0 extends SignedBeaconBlock implements VersionedData {
+public class SignedBeaconBlockPhase0 extends SignedBeaconBlock implements SignedBlock {
   @JsonCreator
   public SignedBeaconBlockPhase0(
       @JsonProperty("message") final BeaconBlock message,

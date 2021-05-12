@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -43,9 +44,11 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,8 +67,10 @@ public class ValidatorDataProviderTest {
   private final ArgumentCaptor<tech.pegasys.teku.spec.datastructures.operations.Attestation> args =
       ArgumentCaptor.forClass(tech.pegasys.teku.spec.datastructures.operations.Attestation.class);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final SchemaObjectProvider schemaProvider = new SchemaObjectProvider(spec);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -142,6 +147,40 @@ public class ValidatorDataProviderTest {
         provider.createUnsignedAttestationAtSlot(ZERO, 0);
     verify(validatorApiChannel).createUnsignedAttestation(ZERO, 0);
     assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  void parseBlock_shouldParsePhase0Blocks() throws JsonProcessingException {
+    final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+        schemaProvider.getSignedBeaconBlock(internalSignedBlock);
+    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
+
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+        provider.parseBlock(jsonProvider, signedBlockJson);
+
+    assertThat(parsedBlock).isEqualTo(signedBlock);
+    assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
+  }
+
+  @Test
+  void parseBlock_shouldParseAltairBlocks() throws JsonProcessingException {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SchemaObjectProvider schemaProvider = new SchemaObjectProvider(spec);
+    final ValidatorDataProvider provider =
+        new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+
+    final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+        schemaProvider.getSignedBeaconBlock(internalSignedBlock);
+    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
+
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+        provider.parseBlock(jsonProvider, signedBlockJson);
+
+    assertThat(parsedBlock).isEqualTo(signedBlock);
+    assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
   }
 
   @Test

@@ -18,10 +18,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.BeaconBlockBody;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BeaconBlockPhase0 extends BeaconBlock implements VersionedData {
+public class BeaconBlockPhase0 extends BeaconBlock implements UnsignedBlock {
   @JsonCreator
   public BeaconBlockPhase0(
       @JsonProperty("slot") final UInt64 slot,

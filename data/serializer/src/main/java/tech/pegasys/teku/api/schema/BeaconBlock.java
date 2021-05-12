@@ -20,12 +20,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 
-public class BeaconBlock implements VersionedData {
+public class BeaconBlock implements UnsignedBlock {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
