@@ -14,11 +14,21 @@
 package tech.pegasys.teku.api.response.v1.validator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
 public class GetNewBlockResponse {
-  public final BeaconBlock data;
+  @JsonIgnore public final BeaconBlock data;
+
+  @Schema(oneOf = {BeaconBlockPhase0.class, BeaconBlockAltair.class})
+  public UnsignedBlock getData() {
+    return data;
+  }
 
   @JsonCreator
   public GetNewBlockResponse(@JsonProperty("data") final BeaconBlock data) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -25,6 +27,9 @@ import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
 public class BeaconBlockBodyAltair extends BeaconBlockBody {
   @JsonProperty("sync_aggregate")
@@ -50,6 +55,7 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
         attestations,
         deposits,
         voluntary_exits);
+    checkNotNull(sync_aggregate, "Sync Aggregate is required for altair blocks");
     this.syncAggregate = sync_aggregate;
   }
 
@@ -60,5 +66,25 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
     super(message);
     this.syncAggregate =
         new tech.pegasys.teku.api.schema.altair.SyncAggregate(message.getSyncAggregate());
+    checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
+  }
+
+  @Override
+  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
+      asInternalBeaconBlockBody(final SpecVersion spec) {
+    BeaconBlockBodySchemaAltair schema =
+        (BeaconBlockBodySchemaAltair) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    SyncAggregateSchema syncAggregateSchema = schema.getSyncAggregateSchema();
+    return super.asInternalBeaconBlockBody(
+        spec,
+        (builder) ->
+            builder.syncAggregate(
+                () ->
+                    syncAggregateSchema.create(
+                        syncAggregateSchema
+                            .getSyncCommitteeBitsSchema()
+                            .fromBytes(syncAggregate.syncCommitteeBits)
+                            .getAllSetBits(),
+                        syncAggregate.syncCommitteeSignature.asInternalBLSSignature())));
   }
 }
