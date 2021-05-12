@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.response.EthChainId;
 import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -64,7 +65,7 @@ public class Web3jEth1MonitorableProviderTest {
 
   @Test
   void shouldUpdateCallTimestampOnFailure() {
-    failACall();
+    failACallByException();
 
     assertThat(provider.getLastCallTime()).isEqualTo(UInt64.valueOf(1000));
     assertThat(provider.getLastValidationTime()).isNotEqualTo(UInt64.valueOf(1000));
@@ -131,7 +132,18 @@ public class Web3jEth1MonitorableProviderTest {
   void validationShouldFailIfCorrectChainIdFailSyncingCall() {
     prepareRequestWithChainidResponse(request1, CHAIN_ID_CORRECT);
     when(web3.ethChainId()).thenReturn(request1);
-    prepareFailingRequest(request2);
+    prepareFailingRequestByException(request2);
+    when(web3.ethSyncing()).thenReturn(request2);
+
+    assertThat(provider.validate()).isCompletedWithValue(false);
+    assertThat(provider.isValid()).isFalse();
+  }
+
+  @Test
+  void validationShouldFailIfChainIdReturnsJRPCErrorNotSyncing() {
+    prepareFailingRequestWithChainidJRPCError(request1);
+    when(web3.ethChainId()).thenReturn(request1);
+    prepareRequestWithSyncingResponse(request2, false);
     when(web3.ethSyncing()).thenReturn(request2);
 
     assertThat(provider.validate()).isCompletedWithValue(false);
@@ -171,7 +183,7 @@ public class Web3jEth1MonitorableProviderTest {
 
     succeedAValidation();
 
-    failACall();
+    failACallByException();
 
     // advance less then required
     timeProvider.advanceTimeBySeconds(
@@ -201,8 +213,14 @@ public class Web3jEth1MonitorableProviderTest {
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
-  private void prepareFailingRequest(Request request) {
+  private void prepareFailingRequestByException(Request request) {
     when(request.sendAsync()).thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
+  }
+
+  private void prepareFailingRequestWithChainidJRPCError(Request request) {
+    EthChainId response = new EthChainId();
+    response.setError(new Response.Error(-100, "error message"));
+    when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
   private void failAValidation() {
@@ -225,8 +243,8 @@ public class Web3jEth1MonitorableProviderTest {
     assertThat(provider.isValid()).isTrue();
   }
 
-  private void failACall() {
-    prepareFailingRequest(request1);
+  private void failACallByException() {
+    prepareFailingRequestByException(request1);
     when(web3.ethSyncing()).thenReturn(request1);
 
     assertThat(provider.ethSyncing()).isCompletedExceptionally();
