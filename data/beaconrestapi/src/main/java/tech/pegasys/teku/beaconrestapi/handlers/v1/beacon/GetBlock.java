@@ -64,7 +64,7 @@ public class GetBlock extends AbstractHandler implements Handler {
       tags = {TAG_BEACON},
       description =
           "Retrieves block details for given block id.\n\n"
-              + "__NOTE__: only phase 0 blocks are returned, use `/eth/v2/beacon/blocks/{block_id}` for altair blocks.",
+              + "__NOTE__: only phase 0 blocks are returned, use `/eth/v2/beacon/blocks/{block_id}` for multiple milestone support.",
       pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetBlockResponse.class)),
