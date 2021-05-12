@@ -17,10 +17,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BeaconBlockAltair extends BeaconBlock implements VersionedData {
+public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
   private final BeaconBlockBodyAltair body;
 
   @JsonProperty("body")

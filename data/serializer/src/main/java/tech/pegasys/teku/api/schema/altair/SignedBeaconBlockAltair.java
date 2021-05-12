@@ -17,9 +17,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
-public class SignedBeaconBlockAltair extends SignedBeaconBlock implements VersionedData {
+public class SignedBeaconBlockAltair extends SignedBeaconBlock implements SignedBlock {
   private final BeaconBlockAltair message;
 
   @Override

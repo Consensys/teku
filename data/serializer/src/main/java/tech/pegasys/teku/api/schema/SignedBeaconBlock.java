@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.api.schema.interfaces.VersionedData;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.spec.Spec;
 
-public class SignedBeaconBlock implements VersionedData {
+public class SignedBeaconBlock implements SignedBlock {
   private final BeaconBlock message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
