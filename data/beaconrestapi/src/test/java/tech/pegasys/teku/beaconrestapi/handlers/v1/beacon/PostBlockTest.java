@@ -35,6 +35,8 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class PostBlockTest {
@@ -44,12 +46,13 @@ class PostBlockTest {
   private final Context context = mock(Context.class);
   private final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
   private final SyncDataProvider syncDataProvider = mock(SyncDataProvider.class);
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final PostBlock handler =
       new PostBlock(validatorDataProvider, syncDataProvider, jsonProvider);
 
-  DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void shouldReturnUnavailableIfSyncing() throws Exception {
@@ -64,6 +67,8 @@ class PostBlockTest {
   void shouldReturnBadRequestIfArgumentNotJSON() throws Exception {
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn("Not a beacon block.");
+    when(validatorDataProvider.parseBlock(any(), any()))
+        .thenThrow(mock(JsonProcessingException.class));
 
     handler.handle(context);
 
@@ -77,6 +82,8 @@ class PostBlockTest {
 
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(notASignedBlock);
+    when(validatorDataProvider.parseBlock(any(), any()))
+        .thenThrow(mock(JsonProcessingException.class));
 
     handler.handle(context);
 
