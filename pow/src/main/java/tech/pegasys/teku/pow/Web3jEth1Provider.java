@@ -125,7 +125,15 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private <S, T extends Response> SafeFuture<T> sendAsync(final Request<S, T> request) {
     try {
       return SafeFuture.of(request.sendAsync())
-          .thenPeek(__ -> updateLastCall(Result.SUCCESS))
+          .thenApply(
+              response -> {
+                if (response.hasError()) {
+                  throw new RuntimeException(response.getError().getMessage());
+                } else {
+                  updateLastCall(Result.SUCCESS);
+                  return response;
+                }
+              })
           .catchAndRethrow(__ -> updateLastCall(Result.FAILED));
     } catch (RejectedExecutionException ex) {
       LOG.debug("shutting down, ignoring error", ex);
