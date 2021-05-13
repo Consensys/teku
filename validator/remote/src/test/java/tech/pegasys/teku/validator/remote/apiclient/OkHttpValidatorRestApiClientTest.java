@@ -46,6 +46,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
+import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
@@ -217,6 +219,25 @@ class OkHttpValidatorRestApiClientTest {
         new MockResponse()
             .setResponseCode(SC_OK)
             .setBody(asJson(new GetNewBlockResponse(expectedBeaconBlock))));
+
+    Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
+
+    assertThat(beaconBlock).isPresent();
+    assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
+  }
+
+  @Test
+  public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    final UInt64 slot = UInt64.ONE;
+    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+    final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlockAltair();
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.ALTAIR, expectedBeaconBlock))));
 
     Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
 

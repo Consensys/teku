@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
+import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
@@ -30,12 +33,14 @@ import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SchemaObjectsTestFixture {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   public GetStateForkResponse getStateForkResponse() {
     return new GetStateForkResponse(new Fork(dataStructureUtil.randomFork()));
@@ -77,12 +82,19 @@ public class SchemaObjectsTestFixture {
             false,
             UInt64.ZERO,
             UInt64.ZERO,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH));
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH));
   }
 
   public BeaconBlock beaconBlock() {
     return new BeaconBlock(dataStructureUtil.randomBeaconBlock(UInt64.ONE));
+  }
+
+  public BeaconBlock beaconBlockAltair() {
+    final Spec altairSpec = TestSpecFactory.createMainnetAltair();
+    final DataStructureUtil altairData = new DataStructureUtil(altairSpec);
+    final SchemaObjectProvider schemaObjectProvider = new SchemaObjectProvider(altairSpec);
+    return schemaObjectProvider.getBeaconBlock(altairData.randomBeaconBlock(UInt64.ONE));
   }
 
   public SignedBeaconBlock signedBeaconBlock() {
