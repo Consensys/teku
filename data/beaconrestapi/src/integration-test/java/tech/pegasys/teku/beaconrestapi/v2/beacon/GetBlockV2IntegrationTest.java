@@ -41,7 +41,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
 
     assertThat(body.getVersion()).isEqualTo(SpecMilestone.PHASE0);
-    assertThat(body.getData()).isInstanceOf(SignedBeaconBlockPhase0.class);
+    assertThat(body.data).isInstanceOf(SignedBeaconBlockPhase0.class);
     final SignedBeaconBlockPhase0 data = (SignedBeaconBlockPhase0) body.getData();
     final SignedBlockAndState block = created.get(0);
     assertThat(data)
