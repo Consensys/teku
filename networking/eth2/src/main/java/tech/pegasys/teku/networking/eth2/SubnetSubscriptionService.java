@@ -50,7 +50,7 @@ public class SubnetSubscriptionService {
     subnetSubscriptions.unsubscribe(subscriptionId);
   }
 
-  private Set<Integer> getSubnets() {
+  public Set<Integer> getSubnets() {
     return subnetSubscriptions.get().map(Sets::newHashSet).orElseGet(HashSet::new);
   }
 }

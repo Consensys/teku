@@ -51,6 +51,9 @@ class NodeRecordConverterTest {
   private static final SszBitvectorSchema<?> ATT_SUBNET_SCHEMA =
       SCHEMA_DEFINITIONS.getAttnetsENRFieldSchema();
   private static final SszBitvector PERSISTENT_SUBNETS = ATT_SUBNET_SCHEMA.getDefault();
+  private static final SszBitvectorSchema<?> SYNCNETS_SCHEMA =
+      SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema();
+  private static final SszBitvector SYNCNETS = SYNCNETS_SCHEMA.getDefault();
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -65,7 +68,8 @@ class NodeRecordConverterTest {
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
-            PERSISTENT_SUBNETS);
+            PERSISTENT_SUBNETS,
+            SYNCNETS);
     assertThat(convertToDiscoveryPeer(nodeRecord, SCHEMA_DEFINITIONS)).contains(expectedPeer);
   }
 
@@ -98,7 +102,11 @@ class NodeRecordConverterTest {
                 new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP, 30303)))
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 30303), ENR_FORK_ID, PERSISTENT_SUBNETS));
+                PUB_KEY,
+                new InetSocketAddress("::1", 30303),
+                ENR_FORK_ID,
+                PERSISTENT_SUBNETS,
+                SYNCNETS));
   }
 
   @Test
@@ -127,7 +135,8 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 new InetSocketAddress("129.24.31.22", 1234),
                 ENR_FORK_ID,
-                PERSISTENT_SUBNETS));
+                PERSISTENT_SUBNETS,
+                SYNCNETS));
   }
 
   @Test
@@ -138,7 +147,11 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, PERSISTENT_SUBNETS));
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                ENR_FORK_ID,
+                PERSISTENT_SUBNETS,
+                SYNCNETS));
   }
 
   @Test
@@ -153,7 +166,11 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, persistentSubnets));
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                ENR_FORK_ID,
+                persistentSubnets,
+                SYNCNETS));
   }
 
   @Test
@@ -171,7 +188,8 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
-                ATT_SUBNET_SCHEMA.getDefault()));
+                ATT_SUBNET_SCHEMA.getDefault(),
+                SYNCNETS));
   }
 
   @Test
@@ -189,7 +207,8 @@ class NodeRecordConverterTest {
                 PUB_KEY,
                 new InetSocketAddress("::1", 1234),
                 Optional.of(enrForkId),
-                PERSISTENT_SUBNETS));
+                PERSISTENT_SUBNETS,
+                SYNCNETS));
   }
 
   @Test
@@ -203,7 +222,11 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), Optional.empty(), PERSISTENT_SUBNETS));
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                Optional.empty(),
+                PERSISTENT_SUBNETS,
+                SYNCNETS));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {

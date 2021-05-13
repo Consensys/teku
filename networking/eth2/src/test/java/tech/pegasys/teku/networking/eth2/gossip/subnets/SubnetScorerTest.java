@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -25,24 +24,30 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
-class AttestationSubnetScorerTest {
+class SubnetScorerTest {
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
+
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer =
-        AttestationSubnetScorer.create(new PeerSubnetSubscriptions.Builder().build());
+    final SubnetScorer scorer =
+        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions));
     assertThat(
             scorer.scoreCandidatePeer(
-                SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).getDefault()))
+                schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()))
         .isZero();
   }
 
   @Test
   void shouldScoreExistingPeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer =
-        AttestationSubnetScorer.create(new PeerSubnetSubscriptions.Builder().build());
+    final SubnetScorer scorer =
+        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions));
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -53,25 +58,28 @@ class AttestationSubnetScorerTest {
     final MockNodeId node3 = new MockNodeId(2);
     final MockNodeId node4 = new MockNodeId(3);
     final MockNodeId node5 = new MockNodeId(4);
-    final AttestationSubnetScorer scorer =
-        AttestationSubnetScorer.create(
-            new PeerSubnetSubscriptions.Builder()
-                // Subnet 1
-                .addSubscriber(1, node1)
-                .addSubscriber(1, node2)
-                .addSubscriber(1, node3)
-                .addSubscriber(1, node4)
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
+                .attestationSubnetSubscriptions(
+                    b ->
+                        b
+                            // Subnet 1
+                            .addSubscriber(1, node1)
+                            .addSubscriber(1, node2)
+                            .addSubscriber(1, node3)
+                            .addSubscriber(1, node4)
 
-                // Subnet 2
-                .addSubscriber(2, node1)
-                .addSubscriber(2, node2)
+                            // Subnet 2
+                            .addSubscriber(2, node1)
+                            .addSubscriber(2, node2)
 
-                // Subnet 3
-                .addSubscriber(3, node3)
+                            // Subnet 3
+                            .addSubscriber(3, node3)
 
-                // Subnet 4
-                .addSubscriber(4, node1)
-                .addSubscriber(4, node4)
+                            // Subnet 4
+                            .addSubscriber(4, node1)
+                            .addSubscriber(4, node4))
                 .build());
 
     assertExistingPeerScores(
@@ -88,21 +96,24 @@ class AttestationSubnetScorerTest {
     final MockNodeId node1 = new MockNodeId(0);
     final MockNodeId node2 = new MockNodeId(1);
     final MockNodeId node3 = new MockNodeId(2);
-    final AttestationSubnetScorer scorer =
-        AttestationSubnetScorer.create(
-            new PeerSubnetSubscriptions.Builder()
-                // Subnet 1
-                .addSubscriber(1, node1)
-                .addSubscriber(1, node2)
-                .addSubscriber(1, node3)
+    final SubnetScorer scorer =
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
+                .attestationSubnetSubscriptions(
+                    b ->
+                        b
+                            // Subnet 1
+                            .addSubscriber(1, node1)
+                            .addSubscriber(1, node2)
+                            .addSubscriber(1, node3)
 
-                // Subnet 2
-                .addSubscriber(2, node2)
+                            // Subnet 2
+                            .addSubscriber(2, node2)
 
-                // No subscribers for subnet 3
+                            // No subscribers for subnet 3
 
-                // Subnet 4
-                .addSubscriber(4, node3)
+                            // Subnet 4
+                            .addSubscriber(4, node3))
                 .build());
 
     assertCandidatePeerScores(
@@ -128,14 +139,19 @@ class AttestationSubnetScorerTest {
   @SafeVarargs
   private void assertCandidatePeerScores(
       final PeerScorer scorer, final Map.Entry<SszBitvector, Integer>... expected) {
+    final SszBitvector syncCommitteeSubscriptions =
+        schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     final Map<SszBitvector, Integer> actual =
         Stream.of(expected)
             .map(Map.Entry::getKey)
-            .collect(Collectors.toMap(Function.identity(), scorer::scoreCandidatePeer));
+            .collect(
+                Collectors.toMap(
+                    Function.identity(),
+                    (attnets) -> scorer.scoreCandidatePeer(attnets, syncCommitteeSubscriptions)));
     assertThat(actual).contains(expected);
   }
 
   private SszBitvector candidateWithSubnets(final int... subnetIds) {
-    return SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds);
+    return schemaDefinitions.getAttnetsENRFieldSchema().ofBits(subnetIds);
   }
 }

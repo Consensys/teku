@@ -29,9 +29,13 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
@@ -41,13 +45,20 @@ class PeerSubnetSubscriptionsTest {
   private static final NodeId PEER3 = new MockNodeId(3);
   private static final int TARGET_SUBSCRIBER_COUNT = 2;
 
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final SchemaDefinitionsSupplier currentSchemaDefinitions =
+      spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
-  private final AttestationSubnetTopicProvider topicProvider =
+  private final AttestationSubnetTopicProvider attestationTopicProvider =
       mock(AttestationSubnetTopicProvider.class);
+  private final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
+      mock(SyncCommitteeSubnetTopicProvider.class);
+  private final SubnetSubscriptionService subnetSubscriptionService =
+      mock(SubnetSubscriptionService.class);
 
   @BeforeEach
   void setUp() {
-    when(topicProvider.getTopicForSubnet(anyInt()))
+    when(attestationTopicProvider.getTopicForSubnet(anyInt()))
         .thenAnswer(invocation -> "subnet_" + invocation.getArgument(0));
   }
 
@@ -62,36 +73,63 @@ class PeerSubnetSubscriptionsTest {
             .build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     final PeerSubnetSubscriptions subscriptions =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT);
-    assertThat(subscriptions.getSubscriberCountForSubnet(0)).isEqualTo(3);
-    assertThat(subscriptions.getSubscriberCountForSubnet(1)).isEqualTo(1);
-    assertThat(subscriptions.getSubscriberCountForSubnet(2)).isEqualTo(2);
+        PeerSubnetSubscriptions.create(
+            currentSchemaDefinitions,
+            gossipNetwork,
+            attestationTopicProvider,
+            syncCommitteeTopicProvider,
+            subnetSubscriptionService,
+            TARGET_SUBSCRIBER_COUNT);
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isEqualTo(3);
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(1);
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(2)).isEqualTo(2);
 
-    assertThat(subscriptions.getSubscriptionsForPeer(PEER1)).isEqualTo(createBitvector(0, 1, 2));
-    assertThat(subscriptions.getSubscriptionsForPeer(PEER2)).isEqualTo(createBitvector(0));
-    assertThat(subscriptions.getSubscriptionsForPeer(PEER3)).isEqualTo(createBitvector(0, 2));
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER1))
+        .isEqualTo(createBitvector(0, 1, 2));
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER2))
+        .isEqualTo(createBitvector(0));
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER3))
+        .isEqualTo(createBitvector(0, 2));
   }
 
   @Test
   void shouldReturnEmptyBitvectorWhenPeerHasNoSubscriptions() {
     final SszBitvector subscriptions =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
-            .getSubscriptionsForPeer(PEER1);
+        PeerSubnetSubscriptions.create(
+                currentSchemaDefinitions,
+                gossipNetwork,
+                attestationTopicProvider,
+                syncCommitteeTopicProvider,
+                subnetSubscriptionService,
+                TARGET_SUBSCRIBER_COUNT)
+            .getAttestationSubnetSubscriptions(PEER1);
     assertThat(subscriptions).isEqualTo(createBitvector());
   }
 
   @Test
   void shouldReturnZeroWhenSubnetHasNoSubscribers() {
     final int subscriberCount =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
-            .getSubscriberCountForSubnet(1);
+        PeerSubnetSubscriptions.create(
+                currentSchemaDefinitions,
+                gossipNetwork,
+                attestationTopicProvider,
+                syncCommitteeTopicProvider,
+                subnetSubscriptionService,
+                TARGET_SUBSCRIBER_COUNT)
+            .getSubscriberCountForAttestationSubnet(1);
     assertThat(subscriberCount).isEqualTo(0);
   }
 
   @Test
   void shouldRequireAdditionalPeersWhenNotAllSubnetsHaveEnoughSubscribers() {
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+        PeerSubnetSubscriptions.create(
+                currentSchemaDefinitions,
+                gossipNetwork,
+                attestationTopicProvider,
+                syncCommitteeTopicProvider,
+                subnetSubscriptionService,
+                TARGET_SUBSCRIBER_COUNT)
             .getSubscribersRequired();
     assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
   }
@@ -100,7 +138,13 @@ class PeerSubnetSubscriptionsTest {
   void shouldRequireAdditionalPeersWhenAllSubnetsHaveSomeButNotEnoughSubscribers() {
     withSubscriberCountForAllSubnets(1);
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+        PeerSubnetSubscriptions.create(
+                currentSchemaDefinitions,
+                gossipNetwork,
+                attestationTopicProvider,
+                syncCommitteeTopicProvider,
+                subnetSubscriptionService,
+                TARGET_SUBSCRIBER_COUNT)
             .getSubscribersRequired();
     assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT - 1);
   }
@@ -109,7 +153,13 @@ class PeerSubnetSubscriptionsTest {
   void shouldRequireAdditionalPeersWhenAllSubnetsHaveEnoughSubscribers() {
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+        PeerSubnetSubscriptions.create(
+                currentSchemaDefinitions,
+                gossipNetwork,
+                attestationTopicProvider,
+                syncCommitteeTopicProvider,
+                subnetSubscriptionService,
+                TARGET_SUBSCRIBER_COUNT)
             .getSubscribersRequired();
     assertThat(requiredPeers).isZero();
   }
@@ -124,7 +174,13 @@ class PeerSubnetSubscriptionsTest {
     final Map<String, Collection<NodeId>> subscribersByTopic = subscribersBuilder.build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     final PeerSubnetSubscriptions subscriptions =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, 1);
+        PeerSubnetSubscriptions.create(
+            currentSchemaDefinitions,
+            gossipNetwork,
+            attestationTopicProvider,
+            syncCommitteeTopicProvider,
+            subnetSubscriptionService,
+            1);
 
     assertThat(subscriptions.getSubscribersRequired()).isEqualTo(0);
   }
@@ -136,7 +192,8 @@ class PeerSubnetSubscriptionsTest {
     IntStream.range(0, ATTESTATION_SUBNET_COUNT)
         .forEach(
             subnetId ->
-                subscribersByTopic.put(topicProvider.getTopicForSubnet(subnetId), subscribers));
+                subscribersByTopic.put(
+                    attestationTopicProvider.getTopicForSubnet(subnetId), subscribers));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
   }
 

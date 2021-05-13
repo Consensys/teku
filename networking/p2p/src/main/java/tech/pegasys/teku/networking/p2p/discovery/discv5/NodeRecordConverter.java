@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -50,12 +51,22 @@ public class NodeRecordConverter {
 
     final SszBitvectorSchema<SszBitvector> attnetsSchema =
         schemaDefinitions.getAttnetsENRFieldSchema();
-    final SszBitvector persistentSubnets =
+    final SszBitvector persistentAttestationSubnets =
         parseField(nodeRecord, ATTESTATION_SUBNET_ENR_FIELD, attnetsSchema::fromBytes)
             .orElse(attnetsSchema.getDefault());
 
+    final SszBitvectorSchema<SszBitvector> syncnetsSchema =
+        schemaDefinitions.getSyncnetsENRFieldSchema();
+    final SszBitvector syncCommitteeSubnets =
+        parseField(nodeRecord, SYNC_COMMITTEE_SUBNET_ENR_FIELD, syncnetsSchema::fromBytes)
+            .orElse(syncnetsSchema.getDefault());
+
     return new DiscoveryPeer(
-        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);
+        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
+        address,
+        enrForkId,
+        persistentAttestationSubnets,
+        syncCommitteeSubnets);
   }
 
   private static <T> Optional<T> parseField(
