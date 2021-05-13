@@ -150,10 +150,10 @@ public class StateTransition {
    * Processes slot
    */
   private BeaconState processSlot(final SpecVersion spec, final BeaconState preState) {
+    // Cache state root
+    Bytes32 previous_state_root = preState.hashTreeRoot();
     return preState.updated(
         state -> {
-          // Cache state root
-          Bytes32 previous_state_root = state.hashTreeRoot();
           int index = state.getSlot().mod(spec.getSlotsPerHistoricalRoot()).intValue();
           state.getState_roots().setElement(index, previous_state_root);
 
