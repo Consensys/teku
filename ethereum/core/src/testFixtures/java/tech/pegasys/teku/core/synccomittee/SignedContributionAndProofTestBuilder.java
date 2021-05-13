@@ -149,7 +149,7 @@ public class SignedContributionAndProofTestBuilder {
       final UInt64 validatorIndex, final Signer signer) {
     final SyncSubcommitteeAssignments assignments =
         syncCommitteeUtil
-            .getSyncSubcommittees(state, spec.computeEpochAtSlot(slot))
+            .getSyncSubcommittees(state, syncCommitteeUtil.getEpochForDutiesAtSlot(slot))
             .get(validatorIndex);
     checkArgument(
         assignments != null && assignments.getAssignedSubcommittees().contains(subcommitteeIndex),

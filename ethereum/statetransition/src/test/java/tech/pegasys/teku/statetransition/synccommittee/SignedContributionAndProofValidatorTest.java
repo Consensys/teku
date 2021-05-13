@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -39,7 +40,7 @@ class SignedContributionAndProofValidatorTest {
   private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(5).build();
+      InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(10).build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
 
   private final SignedContributionAndProofValidator validator =
@@ -57,6 +58,29 @@ class SignedContributionAndProofValidatorTest {
   void shouldAcceptWhenValid() {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    final SafeFuture<InternalValidationResult> result = validator.validate(message);
+    assertThat(result).isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  void shouldAcceptWhenValidInSlotLastSlotOfSyncCommitteePeriod() {
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
+    final UInt64 period2StartEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
+    final UInt64 period3StartEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2StartEpoch);
+    final UInt64 period2StartSlot = spec.computeStartSlotAtEpoch(period2StartEpoch);
+    final UInt64 period3StartSlot = spec.computeStartSlotAtEpoch(period3StartEpoch);
+    final UInt64 lastSlotOfPeriod = period3StartSlot.minus(1);
+
+    // The first two sync committees are the same so advance the chain into the second period
+    // so we can test going into the third period which is actually different
+    storageSystem.chainUpdater().advanceChainUntil(period2StartSlot);
+    storageSystem.chainUpdater().setCurrentSlot(lastSlotOfPeriod);
+    // Contributions from the last slot of the sync committee period should be valid according to
+    // the next sync committee since that's when they'll be included in blocks
+    final SignedContributionAndProof message =
+        chainBuilder.createValidSignedContributionAndProofBuilder(lastSlotOfPeriod).build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
     assertThat(result).isCompletedWithValue(ACCEPT);
   }

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -73,6 +74,39 @@ class SyncCommitteeSignatureValidatorTest {
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),
                 signature.getValidatorIndex());
+    final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
+    final ValidateableSyncCommitteeSignature validateableSignature =
+        ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
+
+    assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
+    // Should store the computed subcommittee assignments for the validator.
+    assertThat(validateableSignature.getSubcommitteeAssignments()).contains(assignments);
+  }
+
+  @Test
+  void shouldAcceptWhenValidInSlotLastSlotOfSyncCommitteePeriod() {
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
+    final UInt64 period2StartEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
+    final UInt64 period3StartEpoch =
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2StartEpoch);
+    final UInt64 period2StartSlot = spec.computeStartSlotAtEpoch(period2StartEpoch);
+    final UInt64 period3StartSlot = spec.computeStartSlotAtEpoch(period3StartEpoch);
+    final UInt64 lastSlotOfPeriod = period3StartSlot.minus(1);
+
+    // The first two sync committees are the same so advance the chain into the second period
+    // so we can test going into the third period which is actually different
+    final SignedBlockAndState chainHead =
+        storageSystem.chainUpdater().advanceChainUntil(period2StartSlot);
+    storageSystem.chainUpdater().setCurrentSlot(lastSlotOfPeriod);
+
+    final SyncCommitteeSignature signature =
+        chainBuilder.createSyncCommitteeSignature(lastSlotOfPeriod, chainHead.getRoot());
+    final SyncSubcommitteeAssignments assignments =
+        syncCommitteeUtil.getSubcommitteeAssignments(
+            chainHead.getState(),
+            syncCommitteeUtil.getEpochForDutiesAtSlot(lastSlotOfPeriod),
+            signature.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
     final ValidateableSyncCommitteeSignature validateableSignature =
         ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
