@@ -161,7 +161,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             Map.of("slot", slot.toString()),
             queryParams,
             createHandler(GetNewBlockResponse.class))
-        .map(response -> response.data);
+        .map(response -> (BeaconBlock) response.data);
   }
 
   @Override
