@@ -41,7 +41,6 @@ public class ValidatorConfig {
   private final Optional<URI> beaconNodeApiEndpoint;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
-  private final boolean useV2BlockCreation;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -58,8 +57,7 @@ public class ValidatorConfig {
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
       final int validatorExternalSignerConcurrentRequestLimit,
-      final boolean useDependentRoots,
-      final boolean useV2BlockCreation) {
+      final boolean useDependentRoots) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -78,7 +76,6 @@ public class ValidatorConfig {
     this.validatorExternalSignerConcurrentRequestLimit =
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
-    this.useV2BlockCreation = useV2BlockCreation;
   }
 
   public static Builder builder() {
@@ -146,10 +143,6 @@ public class ValidatorConfig {
     return useDependentRoots;
   }
 
-  public boolean useV2BlockCreation() {
-    return useV2BlockCreation;
-  }
-
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
@@ -167,7 +160,6 @@ public class ValidatorConfig {
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
     private boolean useDependentRoots = false;
-    private boolean useV2BlockCreation = false;
 
     private Builder() {}
 
@@ -276,8 +268,7 @@ public class ValidatorConfig {
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
           validatorExternalSignerConcurrentRequestLimit,
-          useDependentRoots,
-          useV2BlockCreation);
+          useDependentRoots);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
@@ -338,10 +329,6 @@ public class ValidatorConfig {
 
     private boolean onlyOneInitialized(final Object o1, final Object o2) {
       return (o1 == null) != (o2 == null);
-    }
-
-    public void useV2BlockCreation(final boolean useV2BlockCreation) {
-      this.useV2BlockCreation = useV2BlockCreation;
     }
   }
 }

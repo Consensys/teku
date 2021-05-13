@@ -87,15 +87,6 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean useDependentRoots = false;
 
-  @CommandLine.Option(
-      names = {"--Xuse-v2-block-creation"},
-      paramLabel = "<BOOLEAN>",
-      description = "Use v2 of block production (support altair block creation)",
-      hidden = true,
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean useV2BlockCreation = false;
-
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -116,8 +107,7 @@ public class ValidatorOptions {
                     .graffitiProvider(
                         new FileBackedGraffitiProvider(
                             Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                    .useDependentRoots(useDependentRoots)
-                    .useV2BlockCreation(useV2BlockCreation))
+                    .useDependentRoots(useDependentRoots))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);

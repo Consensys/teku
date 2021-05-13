@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -50,8 +51,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
       final Spec spec,
-      final boolean useIndependentAttestationTiming,
-      final boolean useV2BlockCreation) {
+      final boolean useIndependentAttestationTiming) {
 
     final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
@@ -62,7 +62,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     final OkHttpValidatorRestApiClient apiClient =
-        new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient, useV2BlockCreation);
+        new OkHttpValidatorRestApiClient(
+            apiEndpoint, okHttpClient, spec.isMilestoneSupported(SpecMilestone.ALTAIR));
 
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
