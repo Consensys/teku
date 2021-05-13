@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -37,33 +38,31 @@ public class SyncCommitteeStateUtils {
 
   public SafeFuture<Optional<BeaconStateAltair>> getStateForSyncCommittee(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
-    return recentChainData
-        .retrieveBlockState(beaconBlockRoot)
-        .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair))
-        .thenApply(maybeState -> ensureStateSuitable(slot, beaconBlockRoot, maybeState));
+    final Optional<UInt64> blockSlot = recentChainData.getSlotForBlockRoot(beaconBlockRoot);
+    if (blockSlot.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return getStateForBlockAtSlot(slot, beaconBlockRoot, blockSlot.get());
   }
 
-  private Optional<BeaconStateAltair> ensureStateSuitable(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final Optional<BeaconStateAltair> maybeState) {
-    if (maybeState.isEmpty()) {
-      return Optional.empty();
-    }
+  private SafeFuture<Optional<BeaconStateAltair>> getStateForBlockAtSlot(
+      final UInt64 slot, final Bytes32 beaconBlockRoot, final UInt64 blockSlot) {
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final UInt64 minEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
-    final UInt64 stateEpoch = spec.getCurrentEpoch(maybeState.get());
-    if (stateEpoch.isLessThan(minEpoch)) {
+    final UInt64 requiredEpoch =
+        syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(spec.computeEpochAtSlot(slot));
+
+    final UInt64 requiredSlot = spec.computeStartSlotAtEpoch(requiredEpoch);
+    if (blockSlot.plus(spec.getSlotsPerEpoch(blockSlot)).isLessThan(requiredSlot)) {
       LOG.warn(
           "Ignoring sync committee gossip because it refers to a block that is too old. "
-              + "Block root {} from epoch {} is more than two sync committee periods before current epoch {}",
+              + "Block root {} from slot {} is more than an epoch before the required slot {}",
           beaconBlockRoot,
-          stateEpoch,
-          epoch);
-      return Optional.empty();
-    } else {
-      return maybeState;
+          blockSlot,
+          requiredSlot);
+      return SafeFuture.completedFuture(Optional.empty());
     }
+    return recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(blockSlot.max(requiredSlot), beaconBlockRoot))
+        .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
   }
 }
