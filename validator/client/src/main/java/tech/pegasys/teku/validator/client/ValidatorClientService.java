@@ -82,6 +82,7 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = services.getEventChannels();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
+    final boolean useV2BlockCreation = config.getValidatorConfig().useV2BlockCreation();
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
@@ -89,7 +90,12 @@ public class ValidatorClientService extends Service {
             .map(
                 endpoint ->
                     RemoteBeaconNodeApi.create(
-                        services, asyncRunner, endpoint, config.getSpec(), useDependentRoots))
+                        services,
+                        asyncRunner,
+                        endpoint,
+                        config.getSpec(),
+                        useDependentRoots,
+                        useV2BlockCreation))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(

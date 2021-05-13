@@ -50,7 +50,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
       final Spec spec,
-      final boolean useIndependentAttestationTiming) {
+      final boolean useIndependentAttestationTiming,
+      final boolean useV2BlockCreation) {
 
     final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
@@ -61,7 +62,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     final OkHttpValidatorRestApiClient apiClient =
-        new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
+        new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient, useV2BlockCreation);
 
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
