@@ -37,7 +37,6 @@ import tech.pegasys.teku.core.synccomittee.SignedContributionAndProofTestBuilder
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -431,12 +430,15 @@ public class ChainBuilder {
   }
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
+    return createValidSignedContributionAndProofBuilder(getLatestSlot());
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
+      final UInt64 slot) {
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final Bytes32 beaconBlockRoot = latestBlockAndState.getRoot();
-    final UInt64 slot = latestBlockAndState.getSlot();
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final SpecVersion specVersion = spec.atSlot(slot);
-    final SyncCommitteeUtil syncCommitteeUtil = specVersion.getSyncCommitteeUtil().orElseThrow();
+    final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
 
     final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
         syncCommitteeUtil.getSyncSubcommittees(latestBlockAndState.getState(), epoch);

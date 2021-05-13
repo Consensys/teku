@@ -13,6 +13,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Include expected path for keystore password file in error message when password file is not found.
+- Added additional bootnodes for Pyrmont testnet.
 
 ### Bug Fixes
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
@@ -181,13 +180,6 @@ public class SyncCommitteeUtil {
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
-  public Set<Integer> getSyncSubcommittees(
-      final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
-    final SyncSubcommitteeAssignments assignments =
-        getSyncSubcommittees(state, epoch).get(validatorIndex);
-    return assignments != null ? assignments.getAssignedSubcommittees() : emptySet();
-  }
-
   public Set<Integer> getCommitteeIndices(
       final BeaconState state, final UInt64 epoch, final UInt64 validatorIndex) {
     final SyncSubcommitteeAssignments assignments =
@@ -278,6 +270,21 @@ public class SyncCommitteeUtil {
   public SignedContributionAndProof createSignedContributionAndProof(
       final ContributionAndProof message, final BLSSignature signature) {
     return schemaDefinitionsAltair.getSignedContributionAndProofSchema().create(message, signature);
+  }
+
+  /**
+   * Returns the epoch that should be used for determining sync committee duties at a given slot.
+   *
+   * <p>Sync committee duties are a bit weird, duties should be performed from one slot before the
+   * start of the sync committee period, to one slot before the end. This is so that when the
+   * signatures wind up included in a block at the next slot, it is inside the target sync committee
+   * period.
+   *
+   * @param slot the slot to perform duties for
+   * @return the epoch to use when calculating which duties to perform
+   */
+  public UInt64 getEpochForDutiesAtSlot(final UInt64 slot) {
+    return miscHelpers.computeEpochAtSlot(slot.plus(1));
   }
 
   public UInt64 getMinEpochForSyncCommitteeAssignments(final UInt64 requiredEpoch) {
