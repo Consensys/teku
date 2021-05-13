@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,20 +31,25 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 class NodeRecordConverterTest {
 
+  private static Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
   private static final Bytes PUB_KEY =
       Bytes.fromHexString("0x0295A5A50F083697FF8557F3C6FE0CDF8E8EC2141D15F19A5A45571ED9C38CE181");
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
   private static final SszBitvectorSchema<?> ATT_SUBNET_SCHEMA =
-      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
+      SCHEMA_DEFINITIONS.getAttnetsENRFieldSchema();
   private static final SszBitvector PERSISTENT_SUBNETS = ATT_SUBNET_SCHEMA.getDefault();
 
   @Test
@@ -62,7 +66,7 @@ class NodeRecordConverterTest {
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
             PERSISTENT_SUBNETS);
-    assertThat(convertToDiscoveryPeer(nodeRecord)).contains(expectedPeer);
+    assertThat(convertToDiscoveryPeer(nodeRecord, SCHEMA_DEFINITIONS)).contains(expectedPeer);
   }
 
   @Test
@@ -203,7 +207,7 @@ class NodeRecordConverterTest {
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {
-    return convertToDiscoveryPeer(createNodeRecord(fields));
+    return convertToDiscoveryPeer(createNodeRecord(fields), SCHEMA_DEFINITIONS);
   }
 
   private NodeRecord createNodeRecord(final EnrField... fields) {

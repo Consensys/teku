@@ -66,7 +66,8 @@ class DiscoveryNetworkTest {
   private final ConnectionManager connectionManager = mock(ConnectionManager.class);
 
   private final DiscoveryNetwork<Peer> discoveryNetwork =
-      new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, spec);
+      new DiscoveryNetwork<>(
+          p2pNetwork, discoveryService, connectionManager, spec, spec::getGenesisSchemaDefinitions);
 
   @Test
   public void shouldStartConnectionManagerAfterP2pAndDiscoveryStarted() {
@@ -156,7 +157,8 @@ class DiscoveryNetworkTest {
             peerSelectionStrategy,
             discoveryConfig,
             networkConfig,
-            spec);
+            spec,
+            spec::getGenesisSchemaDefinitions);
     assertThat(network.getEnr()).isEmpty();
   }
 

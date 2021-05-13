@@ -26,29 +26,33 @@ import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
-  static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
+  static Optional<DiscoveryPeer> convertToDiscoveryPeer(
+      final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
     return nodeRecord
         .getTcpAddress()
-        .map(address -> socketAddressToDiscoveryPeer(nodeRecord, address));
+        .map(address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
-      final NodeRecord nodeRecord, final InetSocketAddress address) {
+      final SchemaDefinitions schemaDefinitions,
+      final NodeRecord nodeRecord,
+      final InetSocketAddress address) {
 
     final Optional<EnrForkId> enrForkId =
         parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
 
+    final SszBitvectorSchema<SszBitvector> attnetsSchema =
+        schemaDefinitions.getAttnetsENRFieldSchema();
     final SszBitvector persistentSubnets =
-        parseField(
-                nodeRecord,
-                ATTESTATION_SUBNET_ENR_FIELD,
-                DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA::fromBytes)
-            .orElse(DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA.getDefault());
+        parseField(nodeRecord, ATTESTATION_SUBNET_ENR_FIELD, attnetsSchema::fromBytes)
+            .orElse(attnetsSchema.getDefault());
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);

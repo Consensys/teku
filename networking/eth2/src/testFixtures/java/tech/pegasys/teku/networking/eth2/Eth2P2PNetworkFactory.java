@@ -244,7 +244,8 @@ public class Eth2P2PNetworkFactory {
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
                 config.getNetworkConfig(),
-                config.getSpec());
+                config.getSpec(),
+                () -> config.getSpec().getGenesisSchemaDefinitions());
 
         final GossipForkManager.Builder gossipForkManagerBuilder =
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);

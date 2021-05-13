@@ -266,7 +266,8 @@ public class Eth2P2PNetworkBuilder {
             Collections::shuffle),
         discoConfig,
         networkConfig,
-        config.getSpec());
+        config.getSpec(),
+        () -> recentChainData.getCurrentSpec().getSchemaDefinitions());
   }
 
   private void validate() {
