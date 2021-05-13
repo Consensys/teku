@@ -63,13 +63,13 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       return;
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeUtils.get();
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getSpecConfig(currentEpoch));
+    final UInt64 dutiesEpoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
+    final SpecConfigAltair specConfig = SpecConfigAltair.required(spec.getSpecConfig(dutiesEpoch));
     if (currentSyncCommitteePeriod.isEmpty()) {
       final SyncCommitteePeriod committeePeriod =
           createSyncCommitteePeriod(
               syncCommitteeUtil,
-              syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(currentEpoch),
+              syncCommitteeUtil.computeFirstEpochOfCurrentSyncCommitteePeriod(dutiesEpoch),
               0);
       committeePeriod.calculateDuties();
       currentSyncCommitteePeriod = Optional.of(committeePeriod);
@@ -77,7 +77,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
     if (nextSyncCommitteePeriod.isEmpty()) {
       final UInt64 firstEpochOfNextSyncCommitteePeriod =
-          syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(currentEpoch);
+          syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(dutiesEpoch);
       final int subscribeEpochsPriorToNextSyncPeriod =
           earlySubscribeRandomSource.nextInt(specConfig.getEpochsPerSyncCommitteePeriod());
       nextSyncCommitteePeriod =
@@ -89,10 +89,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     }
 
     final SyncCommitteePeriod nextSyncCommitteePeriod = this.nextSyncCommitteePeriod.get();
-    if (currentEpoch.isGreaterThanOrEqualTo(nextSyncCommitteePeriod.subscribeEpoch)) {
+    if (dutiesEpoch.isGreaterThanOrEqualTo(nextSyncCommitteePeriod.subscribeEpoch)) {
       nextSyncCommitteePeriod.calculateDuties();
     }
-    if (currentEpoch.isGreaterThanOrEqualTo(nextSyncCommitteePeriod.periodStartEpoch)) {
+    if (dutiesEpoch.isGreaterThanOrEqualTo(nextSyncCommitteePeriod.periodStartEpoch)) {
       this.currentSyncCommitteePeriod = this.nextSyncCommitteePeriod;
       this.nextSyncCommitteePeriod = Optional.empty();
     }
@@ -119,7 +119,12 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   private Optional<PendingDuties> getDutiesForSlot(final UInt64 slot) {
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final Optional<SyncCommitteeUtil> maybeUtils = spec.getSyncCommitteeUtil(slot);
+    if (maybeUtils.isEmpty()) {
+      return Optional.empty();
+    }
+    final SyncCommitteeUtil syncCommitteeUtil = maybeUtils.get();
+    final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
     return Stream.of(currentSyncCommitteePeriod, nextSyncCommitteePeriod)
         .flatMap(Optional::stream)
         .filter(period -> period.isCurrentPeriodForEpoch(epoch))

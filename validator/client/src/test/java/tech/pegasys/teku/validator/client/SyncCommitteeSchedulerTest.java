@@ -160,7 +160,7 @@ class SyncCommitteeSchedulerTest {
   }
 
   @Test
-  void shouldSwitchToNextCommitteePeriodWhenFirstSlotReached() {
+  void shouldSwitchToNextCommitteePeriodWhenLastSlotOfSyncCommitteePeriodReached() {
     when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(5);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
@@ -182,10 +182,11 @@ class SyncCommitteeSchedulerTest {
     scheduler.onAttestationCreationDue(subscribeSlot);
     verify(duties).performProductionDuty(subscribeSlot);
 
-    scheduler.onSlot(nextSyncCommitteePeriodStartSlot);
-    scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot);
-    verify(nextDuties).performProductionDuty(nextSyncCommitteePeriodStartSlot);
-    verify(duties, never()).performProductionDuty(nextSyncCommitteePeriodStartSlot);
+    final UInt64 nextSyncCommitteeFirstDutySlot = nextSyncCommitteePeriodStartSlot.minus(1);
+    scheduler.onSlot(nextSyncCommitteeFirstDutySlot);
+    scheduler.onAttestationCreationDue(nextSyncCommitteeFirstDutySlot);
+    verify(nextDuties).performProductionDuty(nextSyncCommitteeFirstDutySlot);
+    verify(duties, never()).performProductionDuty(nextSyncCommitteeFirstDutySlot);
   }
 
   /**

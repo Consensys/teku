@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
 public class ValidateableSyncCommitteeSignature {
   private final SyncCommitteeSignature signature;
@@ -61,10 +62,13 @@ public class ValidateableSyncCommitteeSignature {
     if (currentValue.isPresent()) {
       return currentValue.get();
     }
+    final UInt64 signatureSlot = signature.getSlot();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(signatureSlot);
     final SyncSubcommitteeAssignments assignments =
-        spec.getSyncCommitteeUtilRequired(signature.getSlot())
-            .getSubcommitteeAssignments(
-                state, spec.computeEpochAtSlot(signature.getSlot()), signature.getValidatorIndex());
+        syncCommitteeUtil.getSubcommitteeAssignments(
+            state,
+            syncCommitteeUtil.getEpochForDutiesAtSlot(signatureSlot),
+            signature.getValidatorIndex());
 
     this.subcommitteeAssignments = Optional.of(assignments);
     return assignments;
