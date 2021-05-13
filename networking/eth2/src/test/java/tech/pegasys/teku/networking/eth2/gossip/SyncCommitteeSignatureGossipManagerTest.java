@@ -97,10 +97,12 @@ class SyncCommitteeSignatureGossipManagerTest {
         ValidateableSyncCommitteeSignature.fromValidator(
             dataStructureUtil.randomSyncCommitteeSignature());
 
+    final UInt64 dutyEpoch = UInt64.valueOf(333);
     final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().build();
     when(syncCommitteeStateUtils.getStateForSyncCommittee(
             signature.getSlot(), signature.getBeaconBlockRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    when(syncCommitteeUtil.getEpochForDutiesAtSlot(any())).thenReturn(dutyEpoch);
     when(syncCommitteeUtil.getSubcommitteeAssignments(any(), any(), any()))
         .thenReturn(
             SyncSubcommitteeAssignments.builder()
@@ -112,8 +114,7 @@ class SyncCommitteeSignatureGossipManagerTest {
     gossipManager.publish(signature);
 
     verify(syncCommitteeUtil)
-        .getSubcommitteeAssignments(
-            state, UInt64.ZERO, signature.getSignature().getValidatorIndex());
+        .getSubcommitteeAssignments(state, dutyEpoch, signature.getSignature().getValidatorIndex());
     verify(subnetSubscriptions).gossip(signature.getSignature(), 1);
     verify(subnetSubscriptions).gossip(signature.getSignature(), 3);
     verify(subnetSubscriptions).gossip(signature.getSignature(), 5);

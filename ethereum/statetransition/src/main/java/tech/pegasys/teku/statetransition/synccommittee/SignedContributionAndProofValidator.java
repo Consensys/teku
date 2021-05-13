@@ -149,7 +149,8 @@ public class SignedContributionAndProofValidator {
           contributionAndProof.getAggregatorIndex());
       return REJECT;
     }
-    final UInt64 contributionEpoch = spec.computeEpochAtSlot(contribution.getSlot());
+    final UInt64 contributionEpoch =
+        syncCommitteeUtil.getEpochForDutiesAtSlot(contribution.getSlot());
 
     // [REJECT] The aggregator's validator index is within the current sync subcommittee
     // i.e. state.validators[aggregate_and_proof.aggregator_index].pubkey in
