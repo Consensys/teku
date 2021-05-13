@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
@@ -35,13 +34,12 @@ public class GetBlockResponseV2 {
     @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "PHASE0"),
     @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "ALTAIR")
   })
-  private final SignedBlock data;
+  public final SignedBlock data;
 
   public SpecMilestone getVersion() {
     return version;
   }
 
-  @Schema(oneOf = {SignedBeaconBlockPhase0.class, SignedBeaconBlockAltair.class})
   public SignedBlock getData() {
     return data;
   }

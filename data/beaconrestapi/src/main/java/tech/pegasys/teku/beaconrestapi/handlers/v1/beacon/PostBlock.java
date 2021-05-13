@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -72,8 +73,7 @@ public class PostBlock implements Handler {
       method = HttpMethod.POST,
       summary = "Publish a signed block",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
+      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBlock.class)}),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
               + " The beacon node performs the required validation.",
