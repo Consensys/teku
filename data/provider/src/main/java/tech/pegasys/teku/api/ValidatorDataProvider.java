@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -48,7 +49,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -288,7 +292,7 @@ public class ValidatorDataProvider {
         contribution.getSlot(),
         contribution.getBeaconBlockRoot(),
         contribution.getSubcommitteeIndex(),
-        contribution.getAggregationBits(),
+        contribution.getAggregationBits().sszSerialize(),
         new BLSSignature(contribution.getSignature()));
   }
 
@@ -348,7 +352,8 @@ public class ValidatorDataProvider {
     final UInt64 subcommitteeIndex =
         signedContributionAndProof.message.contribution.subcommitteeIndex;
     final Iterable<Integer> indices =
-        signedContributionAndProof.message.contribution.aggregationBits.getAllSetBits();
+        getAggregationBits(signedContributionAndProof.message.contribution.aggregationBits, slot);
+
     final tech.pegasys.teku.bls.BLSSignature signature =
         signedContributionAndProof.message.contribution.signature.asInternalBLSSignature();
     final SyncCommitteeContribution contribution =
@@ -365,5 +370,16 @@ public class ValidatorDataProvider {
     return spec.getSyncCommitteeUtilRequired(slot)
         .createSignedContributionAndProof(
             message, signedContributionAndProof.signature.asInternalBLSSignature());
+  }
+
+  private Iterable<Integer> getAggregationBits(final Bytes aggregationBits, final UInt64 slot) {
+    final SchemaDefinitionsAltair altairDefinitions =
+        SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
+    final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
+        altairDefinitions.getSyncCommitteeContributionSchema();
+    final SszBitvector aggregationBitsVector =
+        syncCommitteeContributionSchema.getAggregationBitsSchema().fromBytes(aggregationBits);
+
+    return aggregationBitsVector.getAllSetBits();
   }
 }

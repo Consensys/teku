@@ -22,6 +22,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationRespo
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
@@ -79,6 +81,7 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -285,6 +288,26 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public void sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs) {
     post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
+  }
+
+  @Override
+  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    final Map<String, String> pathParams = Map.of();
+    final Map<String, String> queryParams =
+        Map.of(
+            "slot",
+            slot.toString(),
+            "subcommittee_index",
+            Integer.toString(subcommitteeIndex),
+            "beacon_block_root",
+            beaconBlockRoot.toHexString());
+    return get(
+            GET_SYNC_COMMITTEE_CONTRIBUTION,
+            pathParams,
+            queryParams,
+            createHandler(GetSyncCommitteeContributionResponse.class))
+        .map(response -> response.data);
   }
 
   private ResponseHandler<Void> createHandler() {
