@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
-  final NavigableMap<UInt64, Set<SignedBeaconBlock>> producedBlocksByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch = new TreeMap<>();
 
   final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new TreeMap<>();
 
@@ -65,7 +66,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final Spec spec;
 
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
-  private AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
+  private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
       CombinedChainDataClient combinedChainDataClient,
@@ -153,21 +154,19 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             .values().stream()
             .mapToInt(AtomicInteger::get)
             .sum();
-    List<SignedBeaconBlock> producedBlocks =
+    List<SlotAndBlockRoot> producedBlocks =
         producedBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
             .stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
 
-    long numberOfIncludedBlocks =
+    final BeaconState state = combinedChainDataClient.getBestState().orElseThrow();
+    final long numberOfIncludedBlocks =
         producedBlocks.stream()
             .filter(
-                sentBlock ->
-                    combinedChainDataClient
-                        .getBlockAtSlotExact(sentBlock.getSlot())
-                        .join()
-                        .map(block -> block.equals(sentBlock))
-                        .orElse(false))
+                producedBlock ->
+                    spec.getBlockRootAtSlot(state, producedBlock.getSlot())
+                        .equals(producedBlock.getBlockRoot()))
             .count();
 
     int numberOfProducedBlocks = producedBlocks.size();
@@ -302,9 +301,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   public void saveProducedBlock(SignedBeaconBlock block) {
     UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-    Set<SignedBeaconBlock> blocksInEpoch =
+    Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
-    blocksInEpoch.add(block);
+    blocksInEpoch.add(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
 
   @Override
