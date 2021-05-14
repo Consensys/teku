@@ -87,6 +87,18 @@ public class DefaultPerformanceTrackerTest {
   }
 
   @Test
+  void shouldDisplayBlockInclusionWhenProducedBlockIsChainHead() {
+    final UInt64 lastSlot = spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChainUntil(2);
+    chainUpdater.updateBestBlock(bestBlock);
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(bestBlock.getSlot()));
+    performanceTracker.saveProducedBlock(bestBlock.getBlock());
+    performanceTracker.onSlot(lastSlot);
+    BlockPerformance expectedBlockPerformance = new BlockPerformance(1, 1, 1);
+    verify(log).performance(expectedBlockPerformance.toString());
+  }
+
+  @Test
   void shouldDisplayOneMissedBlock() {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
