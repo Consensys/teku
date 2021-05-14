@@ -10,10 +10,10 @@ const log = (...args) => console.log(...args); // eslint-disable-line no-console
  * Main function to prepare and publish openapi spec to gh-pages branch
  */
 async function main() {
-  const cfg = config.getConfig();
-
-  const { distDir, specs, versions, ghPagesConfig } = cfg;
   try {
+    const cfg = config.getConfig();
+    const {distDir, specs, versions, ghPagesConfig} = cfg;
+
     prepareDistDir(distDir);
 
     specs.forEach(function (spec) {
@@ -23,8 +23,8 @@ async function main() {
     if (specs[0].isReleaseVersion) {
       const versionsJson = await fetchVersions(versions.url);
       const updatedVersionsJson = updateVersions(
-        versionsJson,
-        specs[0].version
+          versionsJson,
+          specs[0].version
       );
       saveVersionsJson(updatedVersionsJson, versions.dist);
     }
@@ -37,7 +37,7 @@ async function main() {
     cleanGhPagesCache();
     await publishToGHPages(distDir, ghPagesConfig);
     log(
-      `OpenAPI specs [${specs[0].version}] published to [${ghPagesConfig.branch}] using user [${ghPagesConfig.user.name}]`
+        `OpenAPI specs [${specs[0].version}] published to [${ghPagesConfig.branch}] using user [${ghPagesConfig.user.name}]`
     );
   } catch (err) {
     log(`ERROR: OpenAPI spec failed to publish: ${err.message}`);
@@ -51,8 +51,8 @@ async function main() {
  * @param {string} dirPath
  */
 function prepareDistDir(dirPath) {
-  fs.rmdirSync(dirPath, { recursive: true });
-  fs.mkdirSync(dirPath, { recursive: true });
+  fs.rmdirSync(dirPath, {recursive: true});
+  fs.mkdirSync(dirPath, {recursive: true});
 }
 
 function copySpecFileToDist(spec) {
@@ -74,7 +74,7 @@ async function fetchVersions(versionsUrl) {
   }
 
   throw new Error(
-    `${versionsUrl} fetch failed with status: ${response.statusText}`
+      `${versionsUrl} fetch failed with status: ${response.statusText}`
   );
 }
 

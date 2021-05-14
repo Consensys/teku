@@ -5,9 +5,9 @@ const GitUrlParse = require("git-url-parse");
 
 const distDir = process.env.OA_DIST_DIR || "./dist";
 const specDir =
-  process.env.OA_SPEC_DIR || "./spec";
+    process.env.OA_SPEC_DIR || "./spec";
 const gitUrl =
-  process.env.OA_GIT_URL || "git@github.com:Consensys/teku.git";
+    process.env.OA_GIT_URL || "git@github.com:Consensys/teku.git";
 const gitUserName = process.env.OA_GIT_USERNAME || "CircleCI Build";
 const gitEmail = process.env.OA_GIT_EMAIL || "ci-build@consensys.net";
 const branch = process.env.OA_GH_PAGES_BRANCH || "gh-pages";
@@ -20,7 +20,7 @@ module.exports = {
 function getConfig() {
   const repo = GitUrlParse(gitUrl);
   const specs = calculateSpecs();
-  if (specs.length == 0) {
+  if (specs.length === 0) {
     throw new Error("Unable to parse specs in dist" + distDir);
   }
 
@@ -72,7 +72,7 @@ function calculateSpecDetails(specFile) {
 }
 
 function calculateSpecVersion(specFile) {
-  return yaml.safeLoad(fs.readFileSync(specFile, "utf8")).info.version;
+  return yaml.load(fs.readFileSync(specFile, "utf8")).info.version;
 }
 
 function isReleaseVersion(specVersion) {
