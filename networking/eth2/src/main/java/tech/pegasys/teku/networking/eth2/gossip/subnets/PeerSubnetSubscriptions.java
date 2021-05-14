@@ -62,6 +62,7 @@ public class PeerSubnetSubscriptions {
         .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
         .attestationSubnetSubscriptions(
             b ->
+                // Track all attestation subnets
                 streamAllAttestationSubnetIds(currentSchemaDefinitions)
                     .forEach(
                         attestationSubnet -> {
@@ -75,6 +76,7 @@ public class PeerSubnetSubscriptions {
                         }))
         .syncCommitteeSubnetSubscriptions(
             b ->
+                // Only track sync committee subnets that we're subscribed to
                 syncCommitteeSubnetService
                     .getSubnets()
                     .forEach(

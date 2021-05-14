@@ -37,9 +37,7 @@ public class SubnetScorer implements PeerScorer {
         peerSubnetSubscriptions.getAttestationSubnetSubscriptions(peerId);
     final SszBitvector syncCommitteeSubscriptions =
         peerSubnetSubscriptions.getSyncCommitteeSubscriptions(peerId);
-    return attSubscriptions != null
-        ? score(attSubscriptions, syncCommitteeSubscriptions, this::scoreSubnetForExistingPeer)
-        : 0;
+    return score(attSubscriptions, syncCommitteeSubscriptions, this::scoreSubnetForExistingPeer);
   }
 
   @Override

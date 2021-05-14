@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -63,7 +66,11 @@ class SubnetScorerTest {
             PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
                 .attestationSubnetSubscriptions(
                     b ->
-                        b
+                        b.addRelevantSubnet(1)
+                            .addRelevantSubnet(2)
+                            .addRelevantSubnet(3)
+                            .addRelevantSubnet(4)
+
                             // Subnet 1
                             .addSubscriber(1, node1)
                             .addSubscriber(1, node2)
@@ -77,9 +84,16 @@ class SubnetScorerTest {
                             // Subnet 3
                             .addSubscriber(3, node3)
 
+                            // Irrelevant subnet
+                            .addSubscriber(5, node2))
+                .syncCommitteeSubnetSubscriptions(
+                    b ->
+                        b.addRelevantSubnet(4)
                             // Subnet 4
                             .addSubscriber(4, node1)
-                            .addSubscriber(4, node4))
+                            .addSubscriber(4, node4)
+                            // Irrelevant subnet
+                            .addSubscriber(2, node3))
                 .build());
 
     assertExistingPeerScores(
@@ -101,29 +115,42 @@ class SubnetScorerTest {
             PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
                 .attestationSubnetSubscriptions(
                     b ->
+                        b.addRelevantSubnet(1)
+                            .addRelevantSubnet(2)
+                            .addRelevantSubnet(3)
+                            .addRelevantSubnet(5)
+
+                            // Subnet 1
+                            .addSubscriber(1, node2)
+
+                            // No subscribers for subnet 2
+
+                            // Subnet 3
+                            .addSubscriber(3, node3))
+                .syncCommitteeSubnetSubscriptions(
+                    b ->
                         b
+                            // Tracked subnets
+                            .addRelevantSubnet(1)
+                            .addRelevantSubnet(2)
+
                             // Subnet 1
                             .addSubscriber(1, node1)
                             .addSubscriber(1, node2)
-                            .addSubscriber(1, node3)
-
-                            // Subnet 2
-                            .addSubscriber(2, node2)
-
-                            // No subscribers for subnet 3
-
-                            // Subnet 4
-                            .addSubscriber(4, node3))
+                            .addSubscriber(1, node3))
                 .build());
 
     assertCandidatePeerScores(
         scorer,
-        entry(candidateWithSubnets(1, 2, 4), 562),
-        entry(candidateWithSubnets(1, 2), 312),
-        entry(candidateWithSubnets(1, 3), 1062),
-        entry(candidateWithSubnets(1, 4), 312),
-        entry(candidateWithSubnets(), 0),
-        entry(candidateWithSubnets(5), 1000));
+        entry(candidateWithSubnets(List.of(1, 3), List.of(1)), 562),
+        entry(candidateWithSubnets(List.of(1), List.of(1)), 312),
+        entry(candidateWithSubnets(List.of(2), List.of(1)), 1062),
+        entry(candidateWithSubnets(List.of(3), List.of(1)), 312),
+        entry(candidateWithSubnets(emptyList(), emptyList()), 0),
+        entry(candidateWithSubnets(List.of(5), emptyList()), 1000),
+        entry(candidateWithSubnets(List.of(4), emptyList()), 0),
+        entry(candidateWithSubnets(emptyList(), List.of(2)), 1000),
+        entry(candidateWithSubnets(emptyList(), List.of(3)), 0));
   }
 
   @SafeVarargs
@@ -138,20 +165,26 @@ class SubnetScorerTest {
 
   @SafeVarargs
   private void assertCandidatePeerScores(
-      final PeerScorer scorer, final Map.Entry<SszBitvector, Integer>... expected) {
+      final PeerScorer scorer,
+      final Map.Entry<Pair<SszBitvector, SszBitvector>, Integer>... expected) {
     final SszBitvector syncCommitteeSubscriptions =
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
-    final Map<SszBitvector, Integer> actual =
+    final Map<Pair<SszBitvector, SszBitvector>, Integer> actual =
         Stream.of(expected)
             .map(Map.Entry::getKey)
             .collect(
                 Collectors.toMap(
                     Function.identity(),
-                    (attnets) -> scorer.scoreCandidatePeer(attnets, syncCommitteeSubscriptions)));
+                    (subscriptions) ->
+                        scorer.scoreCandidatePeer(
+                            subscriptions.getLeft(), subscriptions.getRight())));
     assertThat(actual).contains(expected);
   }
 
-  private SszBitvector candidateWithSubnets(final int... subnetIds) {
-    return schemaDefinitions.getAttnetsENRFieldSchema().ofBits(subnetIds);
+  private Pair<SszBitvector, SszBitvector> candidateWithSubnets(
+      final List<Integer> attnets, List<Integer> syncnets) {
+    return Pair.of(
+        schemaDefinitions.getAttnetsENRFieldSchema().ofBits(attnets),
+        schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(syncnets));
   }
 }
