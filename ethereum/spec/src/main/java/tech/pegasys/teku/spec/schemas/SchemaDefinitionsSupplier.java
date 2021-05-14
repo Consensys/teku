@@ -20,11 +20,11 @@ import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 public interface SchemaDefinitionsSupplier {
   SchemaDefinitions getSchemaDefinitions();
 
-  default SszBitvectorSchema<SszBitvector> getAttnetsSchema() {
+  default SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema() {
     return getSchemaDefinitions().getAttnetsENRFieldSchema();
   }
 
-  default SszBitvectorSchema<SszBitvector> getSyncnetsSchema() {
+  default SszBitvectorSchema<SszBitvector> getSyncnetsENRFieldSchema() {
     return getSchemaDefinitions().getSyncnetsENRFieldSchema();
   }
 }

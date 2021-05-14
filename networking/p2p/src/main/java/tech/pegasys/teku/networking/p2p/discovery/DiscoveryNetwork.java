@@ -169,13 +169,19 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
-        currentSchemaDefinitionsSupplier.getAttnetsSchema().ofBits(subnetIds).sszSerialize());
+        currentSchemaDefinitionsSupplier
+            .getAttnetsENRFieldSchema()
+            .ofBits(subnetIds)
+            .sszSerialize());
   }
 
   public void setSyncCommitteeSubnetSubscriptions(Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         SYNC_COMMITTEE_SUBNET_ENR_FIELD,
-        currentSchemaDefinitionsSupplier.getSyncnetsSchema().ofBits(subnetIds).sszSerialize());
+        currentSchemaDefinitionsSupplier
+            .getSyncnetsENRFieldSchema()
+            .ofBits(subnetIds)
+            .sszSerialize());
   }
 
   public void setPreGenesisForkInfo() {

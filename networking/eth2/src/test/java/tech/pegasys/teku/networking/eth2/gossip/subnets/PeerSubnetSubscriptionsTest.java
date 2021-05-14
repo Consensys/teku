@@ -184,7 +184,7 @@ class PeerSubnetSubscriptionsTest {
   public void isAttestationSubnetRelevant() {
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
-    final int attSubnetsCount = currentSchemaDefinitions.getAttnetsSchema().getLength();
+    final int attSubnetsCount = currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength();
     for (int i = 0; i < attSubnetsCount; i++) {
       assertThat(subscriptions.isAttestationSubnetRelevant(i)).isTrue();
     }
@@ -226,10 +226,10 @@ class PeerSubnetSubscriptionsTest {
   }
 
   private SszBitvector createAttnetsBitvector(final int... subnets) {
-    return currentSchemaDefinitions.getAttnetsSchema().ofBits(subnets);
+    return currentSchemaDefinitions.getAttnetsENRFieldSchema().ofBits(subnets);
   }
 
   private SszBitvector createSyncnetsBitvector(final int... subnets) {
-    return currentSchemaDefinitions.getSyncnetsSchema().ofBits(subnets);
+    return currentSchemaDefinitions.getSyncnetsENRFieldSchema().ofBits(subnets);
   }
 }

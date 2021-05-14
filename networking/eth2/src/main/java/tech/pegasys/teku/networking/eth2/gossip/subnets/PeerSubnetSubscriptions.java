@@ -95,7 +95,7 @@ public class PeerSubnetSubscriptions {
 
   private static IntStream streamAllAttestationSubnetIds(
       final SchemaDefinitionsSupplier currentSchemaDefinitions) {
-    return IntStream.range(0, currentSchemaDefinitions.getAttnetsSchema().getLength());
+    return IntStream.range(0, currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength());
   }
 
   static Builder builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
@@ -255,9 +255,9 @@ public class PeerSubnetSubscriptions {
 
     private Builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
       attestationSubnetSubscriptions =
-          SubnetSubscriptions.builder(currentSchemaDefinitions.getAttnetsSchema());
+          SubnetSubscriptions.builder(currentSchemaDefinitions.getAttnetsENRFieldSchema());
       syncCommitteeSubnetSubscriptions =
-          SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsSchema());
+          SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsENRFieldSchema());
     }
 
     public PeerSubnetSubscriptions build() {
