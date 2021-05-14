@@ -374,7 +374,7 @@ public class ValidatorDataProvider {
 
   private Iterable<Integer> getAggregationBits(final Bytes aggregationBits, final UInt64 slot) {
     final SchemaDefinitionsAltair altairDefinitions =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionAltair().orElseThrow();
+        SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
     final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
         altairDefinitions.getSyncCommitteeContributionSchema();
     final SszBitvector aggregationBitsVector =

@@ -99,10 +99,8 @@ public class SyncCommitteeContribution {
       asInternalSyncCommitteeContribution(
           final Spec spec, final SyncCommitteeContribution syncCommitteeContribution) {
     final SchemaDefinitionsAltair altairDefinitions =
-        spec.atSlot(syncCommitteeContribution.slot)
-            .getSchemaDefinitions()
-            .toVersionAltair()
-            .orElseThrow();
+        SchemaDefinitionsAltair.required(
+            spec.atSlot(syncCommitteeContribution.slot).getSchemaDefinitions());
     final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
         altairDefinitions.getSyncCommitteeContributionSchema();
 
