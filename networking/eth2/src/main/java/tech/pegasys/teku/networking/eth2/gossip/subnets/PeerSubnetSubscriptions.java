@@ -96,12 +96,12 @@ public class PeerSubnetSubscriptions {
     return IntStream.range(0, currentSchemaDefinitions.getAttnetsSchema().getLength());
   }
 
-  public static Builder builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
+  static Builder builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
     return new Builder(currentSchemaDefinitions);
   }
 
   @VisibleForTesting
-  public static PeerSubnetSubscriptions createEmpty(
+  static PeerSubnetSubscriptions createEmpty(
       final SchemaDefinitionsSupplier currentSchemaDefinitions) {
     return builder(currentSchemaDefinitions).build();
   }
@@ -120,6 +120,14 @@ public class PeerSubnetSubscriptions {
 
   public SszBitvector getSyncCommitteeSubscriptions(final NodeId peerId) {
     return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
+  }
+
+  public PeerScorer createScorer() {
+    return SubnetScorer.create(this);
+  }
+
+  public int getSubscribersRequired() {
+    return getMinSubscriberCount().map(c -> Math.max(targetSubnetSubscriberCount - c, 0)).orElse(0);
   }
 
   private Optional<Integer> getMinSubscriberCount() {
@@ -144,14 +152,6 @@ public class PeerSubnetSubscriptions {
         .streamRelevantSubnets()
         .map(syncCommitteeSubnetSubscriptions::getSubscriberCountForSubnet)
         .min(Integer::compare);
-  }
-
-  public PeerScorer createScorer() {
-    return SubnetScorer.create(this);
-  }
-
-  public int getSubscribersRequired() {
-    return getMinSubscriberCount().map(c -> Math.max(targetSubnetSubscriberCount - c, 0)).orElse(0);
   }
 
   public interface Factory {

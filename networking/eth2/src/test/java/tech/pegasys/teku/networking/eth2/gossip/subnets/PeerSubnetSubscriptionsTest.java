@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 class PeerSubnetSubscriptionsTest {
   private static final NodeId PEER1 = new MockNodeId(1);
@@ -53,151 +52,160 @@ class PeerSubnetSubscriptionsTest {
       mock(AttestationSubnetTopicProvider.class);
   private final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
       mock(SyncCommitteeSubnetTopicProvider.class);
-  private final SubnetSubscriptionService subnetSubscriptionService =
-      mock(SubnetSubscriptionService.class);
+  private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
 
   @BeforeEach
   void setUp() {
     when(attestationTopicProvider.getTopicForSubnet(anyInt()))
-        .thenAnswer(invocation -> "subnet_" + invocation.getArgument(0));
+        .thenAnswer(invocation -> "attnet_" + invocation.getArgument(0));
+    when(syncCommitteeTopicProvider.getTopicForSubnet(anyInt()))
+        .thenAnswer(invocation -> "syncnet_" + invocation.getArgument(0));
   }
 
   @Test
-  void shouldCreateFromTopicMap() {
+  void create_shouldSetUpExpectedSubscriptions() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+
     final Map<String, Collection<NodeId>> subscribersByTopic =
         ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("subnet_0", Set.of(PEER1, PEER2, PEER3))
-            .put("subnet_1", Set.of(PEER1))
-            .put("subnet_2", Set.of(PEER1, PEER3))
+            .put("attnet_0", Set.of(PEER1, PEER2, PEER3))
+            .put("attnet_1", Set.of(PEER1))
+            .put("attnet_2", Set.of(PEER1, PEER3))
+            .put("syncnet_1", Set.of(PEER2))
             .put("blocks", Set.of(PEER1, PEER2, PEER3))
             .build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
-    final PeerSubnetSubscriptions subscriptions =
-        PeerSubnetSubscriptions.create(
-            currentSchemaDefinitions,
-            gossipNetwork,
-            attestationTopicProvider,
-            syncCommitteeTopicProvider,
-            subnetSubscriptionService,
-            TARGET_SUBSCRIBER_COUNT);
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
     assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isEqualTo(3);
     assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(1);
     assertThat(subscriptions.getSubscriberCountForAttestationSubnet(2)).isEqualTo(2);
 
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(0)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(1)).isEqualTo(1);
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(2)).isEqualTo(0);
+
     assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER1))
-        .isEqualTo(createBitvector(0, 1, 2));
+        .isEqualTo(createAttnetsBitvector(0, 1, 2));
     assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER2))
-        .isEqualTo(createBitvector(0));
+        .isEqualTo(createAttnetsBitvector(0));
     assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER3))
-        .isEqualTo(createBitvector(0, 2));
+        .isEqualTo(createAttnetsBitvector(0, 2));
+
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER1))
+        .isEqualTo(createSyncnetsBitvector());
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER2))
+        .isEqualTo(createSyncnetsBitvector(1));
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER3))
+        .isEqualTo(createSyncnetsBitvector());
   }
 
   @Test
-  void shouldReturnEmptyBitvectorWhenPeerHasNoSubscriptions() {
-    final SszBitvector subscriptions =
-        PeerSubnetSubscriptions.create(
-                currentSchemaDefinitions,
-                gossipNetwork,
-                attestationTopicProvider,
-                syncCommitteeTopicProvider,
-                subnetSubscriptionService,
-                TARGET_SUBSCRIBER_COUNT)
-            .getAttestationSubnetSubscriptions(PEER1);
-    assertThat(subscriptions).isEqualTo(createBitvector());
+  void create_withNoSubscriptions() {
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(1)).isEqualTo(0);
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER1))
+        .isEqualTo(createAttnetsBitvector());
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER1))
+        .isEqualTo(createSyncnetsBitvector());
   }
 
   @Test
-  void shouldReturnZeroWhenSubnetHasNoSubscribers() {
-    final int subscriberCount =
-        PeerSubnetSubscriptions.create(
-                currentSchemaDefinitions,
-                gossipNetwork,
-                attestationTopicProvider,
-                syncCommitteeTopicProvider,
-                subnetSubscriptionService,
-                TARGET_SUBSCRIBER_COUNT)
-            .getSubscriberCountForAttestationSubnet(1);
-    assertThat(subscriberCount).isEqualTo(0);
+  void getSubscribersRequired_withNoSubscriptions() {
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.getSubscribersRequired()).isEqualTo(TARGET_SUBSCRIBER_COUNT);
   }
 
   @Test
-  void shouldRequireAdditionalPeersWhenNotAllSubnetsHaveEnoughSubscribers() {
-    final int requiredPeers =
-        PeerSubnetSubscriptions.create(
-                currentSchemaDefinitions,
-                gossipNetwork,
-                attestationTopicProvider,
-                syncCommitteeTopicProvider,
-                subnetSubscriptionService,
-                TARGET_SUBSCRIBER_COUNT)
-            .getSubscribersRequired();
-    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
-  }
+  void getSubscribersRequired_allSubnetsAreJustBelowTarget() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
 
-  @Test
-  void shouldRequireAdditionalPeersWhenAllSubnetsHaveSomeButNotEnoughSubscribers() {
     withSubscriberCountForAllSubnets(1);
-    final int requiredPeers =
-        PeerSubnetSubscriptions.create(
-                currentSchemaDefinitions,
-                gossipNetwork,
-                attestationTopicProvider,
-                syncCommitteeTopicProvider,
-                subnetSubscriptionService,
-                TARGET_SUBSCRIBER_COUNT)
-            .getSubscribersRequired();
+    final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
     assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT - 1);
   }
 
   @Test
-  void shouldRequireAdditionalPeersWhenAllSubnetsHaveEnoughSubscribers() {
+  void getSubscribersRequired_allSubnetsHaveExactlyEnoughSubscribers() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
-    final int requiredPeers =
-        PeerSubnetSubscriptions.create(
-                currentSchemaDefinitions,
-                gossipNetwork,
-                attestationTopicProvider,
-                syncCommitteeTopicProvider,
-                subnetSubscriptionService,
-                TARGET_SUBSCRIBER_COUNT)
-            .getSubscribersRequired();
+    final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
     assertThat(requiredPeers).isZero();
   }
 
   @Test
-  void getSubscribersRequired_withAllSubnetsFull() {
-    final ImmutableMap.Builder<String, Collection<NodeId>> subscribersBuilder =
-        ImmutableMap.<String, Collection<NodeId>>builder();
-    for (int i = 0; i < ATTESTATION_SUBNET_COUNT; i++) {
-      subscribersBuilder.put("subnet_" + i, Set.of(PEER1, PEER2));
-    }
-    final Map<String, Collection<NodeId>> subscribersByTopic = subscribersBuilder.build();
-    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
-    final PeerSubnetSubscriptions subscriptions =
-        PeerSubnetSubscriptions.create(
-            currentSchemaDefinitions,
-            gossipNetwork,
-            attestationTopicProvider,
-            syncCommitteeTopicProvider,
-            subnetSubscriptionService,
-            1);
+  void getSubscribersRequired_allSubnetsOverlyFull() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+
+    withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT + 1);
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
     assertThat(subscriptions.getSubscribersRequired()).isEqualTo(0);
   }
 
+  @Test
+  void getSubscribersRequired_onlySyncnetsAreBelowTarget() {
+    // Set up attnets to be full, syncnets to be empty
+    withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
+    syncnetSubscriptions.setSubscriptions(List.of(0, 1));
+
+    final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
+    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
+  }
+
+  @Test
+  void getSubscribersRequired_attnetsAreFull_noRequiredSyncnets() {
+    withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT + 1);
+
+    final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
+    assertThat(requiredPeers).isEqualTo(0);
+  }
+
+  private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
+    return PeerSubnetSubscriptions.create(
+        currentSchemaDefinitions,
+        gossipNetwork,
+        attestationTopicProvider,
+        syncCommitteeTopicProvider,
+        syncnetSubscriptions,
+        TARGET_SUBSCRIBER_COUNT);
+  }
+
   private void withSubscriberCountForAllSubnets(int subscriberCount) {
+    // Set up subscribers
     final List<NodeId> subscribers = new ArrayList<>();
     IntStream.range(0, subscriberCount).mapToObj(MockNodeId::new).forEach(subscribers::add);
+    // Set up attestation topic subscriptions
     final Map<String, Collection<NodeId>> subscribersByTopic = new HashMap<>();
     IntStream.range(0, ATTESTATION_SUBNET_COUNT)
         .forEach(
             subnetId ->
                 subscribersByTopic.put(
                     attestationTopicProvider.getTopicForSubnet(subnetId), subscribers));
+    // Set up sync committee topic subscriptions
+    syncnetSubscriptions
+        .getSubnets()
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    syncCommitteeTopicProvider.getTopicForSubnet(subnetId), subscribers));
+
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
   }
 
-  private SszBitvector createBitvector(final int... subnets) {
-    return SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnets);
+  private SszBitvector createAttnetsBitvector(final int... subnets) {
+    return currentSchemaDefinitions.getAttnetsSchema().ofBits(subnets);
+  }
+
+  private SszBitvector createSyncnetsBitvector(final int... subnets) {
+    return currentSchemaDefinitions.getSyncnetsSchema().ofBits(subnets);
   }
 }
