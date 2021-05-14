@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -160,18 +161,27 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
 
-    final BeaconState state = combinedChainDataClient.getBestState().orElseThrow();
+    final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
+    final BeaconState state = chainHead.getState();
     final long numberOfIncludedBlocks =
         producedBlocks.stream()
             .filter(
                 producedBlock ->
-                    spec.getBlockRootAtSlot(state, producedBlock.getSlot())
-                        .equals(producedBlock.getBlockRoot()))
+                    // Chain head root itself isn't available in state history
+                    producedBlock.getBlockRoot().equals(chainHead.getRoot())
+                        || isInHistoricBlockRoots(state, producedBlock))
             .count();
 
     int numberOfProducedBlocks = producedBlocks.size();
     return new BlockPerformance(
         numberOfBlockProductionAttempts, (int) numberOfIncludedBlocks, numberOfProducedBlocks);
+  }
+
+  private boolean isInHistoricBlockRoots(
+      final BeaconState state, final SlotAndBlockRoot producedBlock) {
+    return producedBlock.getSlot().isLessThan(state.getSlot())
+        && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
+            .equals(producedBlock.getBlockRoot());
   }
 
   private AttestationPerformance getAttestationPerformanceForEpoch(
