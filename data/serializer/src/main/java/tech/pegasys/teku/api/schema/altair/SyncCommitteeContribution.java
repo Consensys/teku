@@ -21,9 +21,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class SyncCommitteeContribution {
@@ -41,7 +45,7 @@ public class SyncCommitteeContribution {
 
   @JsonProperty("aggregation_bits")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final SszBitvector aggregationBits;
+  public final Bytes aggregationBits;
 
   @JsonProperty("signature")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
@@ -52,13 +56,25 @@ public class SyncCommitteeContribution {
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("beacon_block_root") final Bytes32 beaconBlockRoot,
       @JsonProperty("subcommittee_index") final UInt64 subcommitteeIndex,
-      @JsonProperty("aggregation_bits") final SszBitvector aggregationBits,
+      @JsonProperty("aggregation_bits") final Bytes aggregationBits,
       @JsonProperty("signature") final BLSSignature signature) {
     this.slot = slot;
     this.beaconBlockRoot = beaconBlockRoot;
     this.subcommitteeIndex = subcommitteeIndex;
     this.aggregationBits = aggregationBits;
     this.signature = signature;
+  }
+
+  public SyncCommitteeContribution(
+      final tech.pegasys.teku.spec.datastructures.operations.versions.altair
+              .SyncCommitteeContribution
+          contribution) {
+    this(
+        contribution.getSlot(),
+        contribution.getBeaconBlockRoot(),
+        contribution.getSubcommitteeIndex(),
+        contribution.getAggregationBits().sszSerialize(),
+        new BLSSignature(contribution.getSignature()));
   }
 
   @Override
@@ -76,5 +92,28 @@ public class SyncCommitteeContribution {
   @Override
   public int hashCode() {
     return Objects.hash(slot, beaconBlockRoot, subcommitteeIndex, aggregationBits, signature);
+  }
+
+  public static tech.pegasys.teku.spec.datastructures.operations.versions.altair
+          .SyncCommitteeContribution
+      asInternalSyncCommitteeContribution(
+          final Spec spec, final SyncCommitteeContribution syncCommitteeContribution) {
+    final SchemaDefinitionsAltair altairDefinitions =
+        SchemaDefinitionsAltair.required(
+            spec.atSlot(syncCommitteeContribution.slot).getSchemaDefinitions());
+    final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
+        altairDefinitions.getSyncCommitteeContributionSchema();
+
+    final SszBitvector aggregationBitsVector =
+        syncCommitteeContributionSchema
+            .getAggregationBitsSchema()
+            .fromBytes(syncCommitteeContribution.aggregationBits);
+    return spec.getSyncCommitteeUtilRequired(syncCommitteeContribution.slot)
+        .createSyncCommitteeContribution(
+            syncCommitteeContribution.slot,
+            syncCommitteeContribution.beaconBlockRoot,
+            syncCommitteeContribution.subcommitteeIndex,
+            aggregationBitsVector.getAllSetBits(),
+            syncCommitteeContribution.signature.asInternalBLSSignature());
   }
 }
