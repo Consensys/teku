@@ -337,7 +337,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         contribution.getSlot(),
         contribution.getBeaconBlockRoot(),
         contribution.getSubcommitteeIndex(),
-        contribution.getAggregationBits(),
+        contribution.getAggregationBits().sszSerialize(),
         new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
@@ -361,8 +361,14 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    throw new UnsupportedOperationException(
-        "REST API for createSyncCommitteeContribution not supported");
+    return sendRequest(
+        () ->
+            apiClient
+                .createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot)
+                .map(
+                    contribution ->
+                        tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution
+                            .asInternalSyncCommitteeContribution(spec, contribution)));
   }
 
   @Override
