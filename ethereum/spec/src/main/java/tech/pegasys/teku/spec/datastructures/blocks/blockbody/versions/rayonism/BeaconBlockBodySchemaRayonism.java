@@ -38,7 +38,7 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BeaconBlockBodySchemaRayonism
     extends ContainerSchema9<
-    BeaconBlockBodyRayonism,
+        BeaconBlockBodyRayonism,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -115,7 +115,8 @@ public class BeaconBlockBodySchemaRayonism
   @Override
   public BeaconBlockBodyRayonism createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderRayonism builder = new BeaconBlockBodyBuilderRayonism().schema(this);
+    final BeaconBlockBodyBuilderRayonism builder =
+        new BeaconBlockBodyBuilderRayonism().schema(this);
     builderConsumer.accept(builder);
     return builder.build();
   }

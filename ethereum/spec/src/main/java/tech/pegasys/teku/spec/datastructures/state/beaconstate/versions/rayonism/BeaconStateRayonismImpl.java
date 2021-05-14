@@ -28,7 +28,8 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 class BeaconStateRayonismImpl extends AbstractBeaconState<MutableBeaconStateRayonism>
     implements BeaconStateRayonism, BeaconStateCache, ValidatorStatsRayonism {
 
-  BeaconStateRayonismImpl(final BeaconStateSchema<BeaconStateRayonism, MutableBeaconStateRayonism> schema) {
+  BeaconStateRayonismImpl(
+      final BeaconStateSchema<BeaconStateRayonism, MutableBeaconStateRayonism> schema) {
     super(schema);
   }
 
@@ -47,7 +48,7 @@ class BeaconStateRayonismImpl extends AbstractBeaconState<MutableBeaconStateRayo
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-  BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
+      BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     MutableBeaconStateRayonism writableCopy = createWritableCopyPriv();
     mutator.mutate(writableCopy);

@@ -35,7 +35,7 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 /** A Beacon block body */
 public class BeaconBlockBodyRayonism
     extends Container9<
-    BeaconBlockBodyRayonism,
+        BeaconBlockBodyRayonism,
         SszSignature,
         Eth1Data,
         SszBytes32,

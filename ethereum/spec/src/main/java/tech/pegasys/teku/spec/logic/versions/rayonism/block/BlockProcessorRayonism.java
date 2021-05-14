@@ -170,7 +170,8 @@ public class BlockProcessorRayonism extends AbstractBlockProcessor {
     }
   }
 
-  public BlockProcessorRayonism forProcessExecutionPayloadReferenceTest(final Boolean executionValid) {
+  public BlockProcessorRayonism forProcessExecutionPayloadReferenceTest(
+      final Boolean executionValid) {
     return new BlockProcessorRayonism(
         SpecConfigRayonism.required(specConfig),
         predicates,

@@ -58,7 +58,7 @@ class MutableBeaconStateRayonismImpl extends AbstractMutableBeaconState<BeaconSt
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-  BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
+      BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     throw new UnsupportedOperationException();
   }

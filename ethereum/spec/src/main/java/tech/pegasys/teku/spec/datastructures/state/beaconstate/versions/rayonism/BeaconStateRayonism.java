@@ -61,6 +61,7 @@ public interface BeaconStateRayonism extends BeaconState {
     return Optional.of(this);
   }
 
-  <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconStateRayonism updatedMerge(
-      Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator) throws E1, E2, E3;
+  <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateRayonism updatedMerge(Mutator<MutableBeaconStateRayonism, E1, E2, E3> mutator)
+          throws E1, E2, E3;
 }
