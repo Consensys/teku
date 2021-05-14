@@ -54,7 +54,7 @@ public class SubnetScorer implements PeerScorer {
       final SszBitvector attestationSubnetSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions,
       final IntUnaryOperator subscriberCountToScore) {
-    final int attSubnetSubscriberCount =
+    final int attestationSubnetScore =
         attestationSubnetSubscriptions
             .streamAllSetBits()
             .filter(peerSubnetSubscriptions::isAttestationSubnetRelevant)
@@ -66,7 +66,7 @@ public class SubnetScorer implements PeerScorer {
                 })
             .sum();
 
-    final int syncCommitteeSubnetSubscriberCount =
+    final int syncCommitteeSubnetScore =
         syncCommitteeSubnetSubscriptions
             .streamAllSetBits()
             .filter(peerSubnetSubscriptions::isSyncCommitteeSubnetRelevant)
@@ -78,7 +78,7 @@ public class SubnetScorer implements PeerScorer {
                 })
             .sum();
 
-    return attSubnetSubscriberCount + syncCommitteeSubnetSubscriberCount;
+    return attestationSubnetScore + syncCommitteeSubnetScore;
   }
 
   private int scoreSubnetForExistingPeer(final int subscriberCount) {
