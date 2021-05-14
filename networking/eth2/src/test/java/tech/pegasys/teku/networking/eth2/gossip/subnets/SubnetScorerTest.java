@@ -167,8 +167,6 @@ class SubnetScorerTest {
   private void assertCandidatePeerScores(
       final PeerScorer scorer,
       final Map.Entry<Pair<SszBitvector, SszBitvector>, Integer>... expected) {
-    final SszBitvector syncCommitteeSubscriptions =
-        schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     final Map<Pair<SszBitvector, SszBitvector>, Integer> actual =
         Stream.of(expected)
             .map(Map.Entry::getKey)
