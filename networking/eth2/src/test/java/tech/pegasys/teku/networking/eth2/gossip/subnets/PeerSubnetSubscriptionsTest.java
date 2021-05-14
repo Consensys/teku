@@ -55,7 +55,7 @@ class PeerSubnetSubscriptionsTest {
   private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
 
   @BeforeEach
-  void setUp() {
+  public void setUp() {
     when(attestationTopicProvider.getTopicForSubnet(anyInt()))
         .thenAnswer(invocation -> "attnet_" + invocation.getArgument(0));
     when(syncCommitteeTopicProvider.getTopicForSubnet(anyInt()))
@@ -63,7 +63,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void create_shouldSetUpExpectedSubscriptions() {
+  public void create_shouldSetUpExpectedSubscriptions() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(List.of(0, 1));
 
@@ -102,7 +102,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void create_withNoSubscriptions() {
+  public void create_withNoSubscriptions() {
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
     assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(0);
@@ -114,14 +114,14 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void getSubscribersRequired_withNoSubscriptions() {
+  public void getSubscribersRequired_withNoSubscriptions() {
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
     assertThat(subscriptions.getSubscribersRequired()).isEqualTo(TARGET_SUBSCRIBER_COUNT);
   }
 
   @Test
-  void getSubscribersRequired_allSubnetsAreJustBelowTarget() {
+  public void getSubscribersRequired_allSubnetsAreJustBelowTarget() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(List.of(0, 1));
 
@@ -131,7 +131,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void getSubscribersRequired_allSubnetsHaveExactlyEnoughSubscribers() {
+  public void getSubscribersRequired_allSubnetsHaveExactlyEnoughSubscribers() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(List.of(0, 1));
 
@@ -141,7 +141,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void getSubscribersRequired_allSubnetsOverlyFull() {
+  public void getSubscribersRequired_allSubnetsOverlyFull() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(List.of(0, 1));
 
@@ -152,7 +152,7 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void getSubscribersRequired_onlySyncnetsAreBelowTarget() {
+  public void getSubscribersRequired_onlySyncnetsAreBelowTarget() {
     // Set up attnets to be full, syncnets to be empty
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
     syncnetSubscriptions.setSubscriptions(List.of(0, 1));
@@ -162,11 +162,35 @@ class PeerSubnetSubscriptionsTest {
   }
 
   @Test
-  void getSubscribersRequired_attnetsAreFull_noRequiredSyncnets() {
+  public void getSubscribersRequired_attnetsAreFull_noRequiredSyncnets() {
     withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT + 1);
 
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
     assertThat(requiredPeers).isEqualTo(0);
+  }
+
+  @Test
+  public void isSyncCommitteeSubnetRelevant() {
+    syncnetSubscriptions.setSubscriptions(List.of(1, 3));
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.isSyncCommitteeSubnetRelevant(0)).isFalse();
+    assertThat(subscriptions.isSyncCommitteeSubnetRelevant(1)).isTrue();
+    assertThat(subscriptions.isSyncCommitteeSubnetRelevant(2)).isFalse();
+    assertThat(subscriptions.isSyncCommitteeSubnetRelevant(3)).isTrue();
+  }
+
+  @Test
+  public void isAttestationSubnetRelevant() {
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    final int attSubnetsCount = currentSchemaDefinitions.getAttnetsSchema().getLength();
+    for (int i = 0; i < attSubnetsCount; i++) {
+      assertThat(subscriptions.isAttestationSubnetRelevant(i)).isTrue();
+    }
+
+    assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount)).isFalse();
+    assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount + 1)).isFalse();
   }
 
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {

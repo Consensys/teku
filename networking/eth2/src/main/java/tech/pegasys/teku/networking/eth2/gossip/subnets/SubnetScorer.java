@@ -59,6 +59,7 @@ public class SubnetScorer implements PeerScorer {
     final int attSubnetSubscriberCount =
         attestationSubnetSubscriptions
             .streamAllSetBits()
+            .filter(peerSubnetSubscriptions::isAttestationSubnetRelevant)
             .map(
                 subnetId -> {
                   int subscriberCount =
@@ -70,6 +71,7 @@ public class SubnetScorer implements PeerScorer {
     final int syncCommitteeSubnetSubscriberCount =
         syncCommitteeSubnetSubscriptions
             .streamAllSetBits()
+            .filter(peerSubnetSubscriptions::isSyncCommitteeSubnetRelevant)
             .map(
                 subnetId -> {
                   int subscriberCount =

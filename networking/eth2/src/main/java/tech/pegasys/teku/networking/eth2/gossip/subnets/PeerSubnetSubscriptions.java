@@ -16,13 +16,13 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -122,6 +122,14 @@ public class PeerSubnetSubscriptions {
     return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
 
+  public boolean isSyncCommitteeSubnetRelevant(final int subnetId) {
+    return syncCommitteeSubnetSubscriptions.isSubnetRelevant(subnetId);
+  }
+
+  public boolean isAttestationSubnetRelevant(final int subnetId) {
+    return attestationSubnetSubscriptions.isSubnetRelevant(subnetId);
+  }
+
   public PeerScorer createScorer() {
     return SubnetScorer.create(this);
   }
@@ -168,13 +176,13 @@ public class PeerSubnetSubscriptions {
 
   public static class SubnetSubscriptions {
     private final SszBitvectorSchema<?> subscriptionSchema;
-    private final List<Integer> relevantSubnets;
+    private final Set<Integer> relevantSubnets;
     private final Map<Integer, Integer> subscriberCountBySubnetId;
     private final Map<NodeId, SszBitvector> subscriptionsByPeer;
 
     private SubnetSubscriptions(
         final SszBitvectorSchema<?> subscriptionSchema,
-        final List<Integer> relevantSubnets,
+        final Set<Integer> relevantSubnets,
         final Map<Integer, Integer> subscriberCountBySubnetId,
         final Map<NodeId, SszBitvector> subscriptionsByPeer) {
       this.subscriptionSchema = subscriptionSchema;
@@ -187,12 +195,12 @@ public class PeerSubnetSubscriptions {
       return new Builder(subscriptionSchema);
     }
 
-    public List<Integer> getRelevantSubnets() {
-      return relevantSubnets;
+    public boolean isSubnetRelevant(final int subnetId) {
+      return relevantSubnets.contains(subnetId);
     }
 
     public Stream<Integer> streamRelevantSubnets() {
-      return getRelevantSubnets().stream();
+      return relevantSubnets.stream();
     }
 
     public int getSubscriberCountForSubnet(final int subnetId) {
@@ -206,7 +214,7 @@ public class PeerSubnetSubscriptions {
     public static class Builder {
       private final SszBitvectorSchema<?> subscriptionSchema;
 
-      private final List<Integer> relevantSubnets = new ArrayList<>();
+      private final Set<Integer> relevantSubnets = new HashSet<>();
       private final Map<Integer, Integer> subscriberCountBySubnetId = new HashMap<>();
       private final Map<NodeId, SszBitvector> subscriptionsByPeer = new HashMap<>();
 
