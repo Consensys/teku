@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -33,6 +34,7 @@ public class Eth1HeadTracker {
   private final Eth1Provider eth1Provider;
   private Optional<UInt64> headAtFollowDistance = Optional.empty();
   private final AtomicBoolean reachedHead = new AtomicBoolean(false);
+  private UInt64 eth1FollowDistance = ETH1_FOLLOW_DISTANCE;
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
 
@@ -78,7 +80,10 @@ public class Eth1HeadTracker {
       LOG.debug("Not processing Eth1 blocks because chain has not reached minimum follow distance");
       return;
     }
-    final UInt64 newHeadAtFollowDistance = headBlockNumber.minus(ETH1_FOLLOW_DISTANCE);
+    eth1FollowDistance =
+        adjustEth1FollowDistanceByTimestamp(
+            headBlockNumber, UInt64.valueOf(headBlock.getTimestamp()), eth1FollowDistance);
+    final UInt64 newHeadAtFollowDistance = headBlockNumber.minus(eth1FollowDistance);
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {
@@ -89,6 +94,43 @@ public class Eth1HeadTracker {
       LOG.debug("ETH1 block at follow distance updated to {}", newHeadAtFollowDistance);
       subscribers.deliver(HeadUpdatedSubscriber::onHeadUpdated, newHeadAtFollowDistance);
     }
+  }
+
+  private synchronized UInt64 adjustEth1FollowDistanceByTimestamp(
+      final UInt64 headBlockNumber,
+      final UInt64 headBlockTimestamp,
+      final UInt64 eth1FollowDistance) {
+    if (eth1FollowDistance.equals(UInt64.ZERO)) {
+      return eth1FollowDistance;
+    }
+
+    final UInt64 timestampAtFollowDistance =
+        headBlockTimestamp.min(
+            headBlockTimestamp.minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK)));
+
+    UInt64 newEth1FollowDistance = eth1FollowDistance;
+
+    Block block =
+        eth1Provider.getGuaranteedEth1Block(headBlockNumber.minus(newEth1FollowDistance)).join();
+    Block prevBlock = block;
+    while (newEth1FollowDistance.isGreaterThan(UInt64.ZERO)
+        && UInt64.valueOf(block.getTimestamp()).isLessThanOrEqualTo(timestampAtFollowDistance)) {
+      newEth1FollowDistance = newEth1FollowDistance.decrement();
+      prevBlock = block;
+      block =
+          eth1Provider.getGuaranteedEth1Block(headBlockNumber.minus(newEth1FollowDistance)).join();
+    }
+
+    if (!newEth1FollowDistance.equals(eth1FollowDistance)) {
+      LOG.debug(
+          "ETH1_FOLLOW_DISTANCE adjusted from {} to {}, block at follow distance boundary: number {} timestamp {}",
+          eth1FollowDistance,
+          newEth1FollowDistance,
+          prevBlock.getNumber(),
+          prevBlock.getTimestamp());
+    }
+
+    return newEth1FollowDistance;
   }
 
   public long subscribe(final HeadUpdatedSubscriber subscriber) {
