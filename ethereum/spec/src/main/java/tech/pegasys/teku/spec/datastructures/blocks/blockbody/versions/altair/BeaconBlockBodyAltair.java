@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -78,11 +77,11 @@ public class BeaconBlockBodyAltair
   }
 
   public static BeaconBlockBodyAltair required(final BeaconBlockBody body) {
-    checkArgument(
-        body instanceof BeaconBlockBodyAltair,
-        "Expected altair block body but got %s",
-        body.getClass());
-    return (BeaconBlockBodyAltair) body;
+    return body.toVersionAltair()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected altair block body but got " + body.getClass().getSimpleName()));
   }
 
   @Override
@@ -132,5 +131,10 @@ public class BeaconBlockBodyAltair
   @Override
   public BeaconBlockBodySchemaAltair getSchema() {
     return (BeaconBlockBodySchemaAltair) super.getSchema();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 }
