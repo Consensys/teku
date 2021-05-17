@@ -423,8 +423,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeUtil syncCommitteeUtil =
           spec.getSyncCommitteeUtilRequired(
               spec.computeStartSlotAtEpoch(subscription.getUntilEpoch()));
+      final Set<Integer> syncCommitteeIndices = subscription.getSyncCommitteeIndices();
+      performanceTracker.saveExpectedSyncCommitteeParticipant(
+          subscription.getValidatorIndex(), syncCommitteeIndices, subscription.getUntilEpoch());
       syncCommitteeUtil
-          .getSyncSubcommittees(subscription.getSyncCommitteeIndices())
+          .getSyncSubcommittees(syncCommitteeIndices)
           .forEach(index -> syncCommitteeSubscriptionManager.subscribe(index, unsubscribeSlot));
     }
   }
@@ -516,11 +519,23 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final List<SafeFuture<InternalValidationResult>> addedSignatures =
         syncCommitteeSignatures.stream()
             .map(ValidateableSyncCommitteeSignature::fromValidator)
-            .map(syncCommitteeSignaturePool::add)
+            .map(this::processSyncCommitteeSignature)
             .collect(toList());
 
     return SafeFuture.collectAll(addedSignatures.stream())
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
+  }
+
+  private SafeFuture<InternalValidationResult> processSyncCommitteeSignature(
+      final ValidateableSyncCommitteeSignature signature) {
+    return syncCommitteeSignaturePool
+        .add(signature)
+        .thenPeek(
+            result -> {
+              if (result.isAccept() || result.isSaveForFuture()) {
+                performanceTracker.saveProducedSyncCommitteeSignature(signature.getSignature());
+              }
+            });
   }
 
   private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(

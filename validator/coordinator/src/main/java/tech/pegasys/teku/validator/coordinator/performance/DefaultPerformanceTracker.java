@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -64,6 +65,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final ValidatorPerformanceMetrics validatorPerformanceMetrics;
   private final ValidatorPerformanceTrackingMode mode;
   private final ActiveValidatorTracker validatorTracker;
+  private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker;
   private final Spec spec;
 
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
@@ -75,12 +77,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       ValidatorPerformanceMetrics validatorPerformanceMetrics,
       ValidatorPerformanceTrackingMode mode,
       ActiveValidatorTracker validatorTracker,
+      SyncCommitteePerformanceTracker syncCommitteePerformanceTracker,
       final Spec spec) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.statusLogger = statusLogger;
     this.validatorPerformanceMetrics = validatorPerformanceMetrics;
     this.mode = mode;
     this.validatorTracker = validatorTracker;
+    this.syncCommitteePerformanceTracker = syncCommitteePerformanceTracker;
     this.spec = spec;
   }
 
@@ -143,6 +147,21 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
           producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
           blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
+        }
+      }
+    }
+
+    // Nothing to report until epoch 0 is complete
+    if (!currentEpoch.isZero()) {
+      final SyncCommitteePerformance syncCommitteePerformance =
+          syncCommitteePerformanceTracker.calculatePerformance(currentEpoch.minus(1)).join();
+      if (syncCommitteePerformance.getNumberOfExpectedSignatures() > 0) {
+        if (mode.isLoggingEnabled()) {
+          statusLogger.performance(syncCommitteePerformance.toString());
+        }
+
+        if (mode.isMetricsEnabled()) {
+          validatorPerformanceMetrics.updateSyncCommitteePerformance(syncCommitteePerformance);
         }
       }
     }
@@ -321,6 +340,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();
+  }
+
+  @Override
+  public void saveExpectedSyncCommitteeParticipant(
+      final int validatorIndex,
+      final Set<Integer> syncCommitteeIndices,
+      final UInt64 subscribeUntilEpoch) {
+    syncCommitteePerformanceTracker.saveExpectedSyncCommitteeParticipant(
+        validatorIndex, syncCommitteeIndices, subscribeUntilEpoch);
+  }
+
+  @Override
+  public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {
+    syncCommitteePerformanceTracker.saveProducedSyncCommitteeSignature(signature);
   }
 
   static long getPercentage(final long numerator, final long denominator) {
