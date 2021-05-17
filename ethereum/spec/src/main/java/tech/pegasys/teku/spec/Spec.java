@@ -21,6 +21,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -35,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -386,16 +386,6 @@ public class Spec {
     return stateTransition.initiate(preState, signedBlock, validateStateRootAndSignatures);
   }
 
-  public BeaconState initiateStateTransition(
-      BeaconState preState,
-      SignedBeaconBlock signedBlock,
-      boolean validateStateRootAndSignatures,
-      final IndexedAttestationCache indexedAttestationCache)
-      throws StateTransitionException {
-    return stateTransition.initiate(
-        preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     return stateTransition.processSlots(preState, slot);
@@ -417,6 +407,7 @@ public class Spec {
 
   // Block Processor Utils
 
+  @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return atState(state).getBlockProcessor().validateAttestation(state, data);
@@ -442,21 +433,6 @@ public class Spec {
   public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
       throws BlockProcessingException {
     atState(state).getBlockProcessor().processAttestations(state, attestations);
-  }
-
-  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processSyncCommittee(state, syncAggregate);
-  }
-
-  public void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    atState(state)
-        .getBlockProcessor()
-        .processAttestations(state, attestations, indexedAttestationCache);
   }
 
   public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
