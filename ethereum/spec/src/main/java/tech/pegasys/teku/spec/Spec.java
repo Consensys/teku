@@ -39,15 +39,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -55,7 +50,6 @@ import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -63,7 +57,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -407,42 +400,14 @@ public class Spec {
 
   // Block Processor Utils
 
+  public BlockProcessor getBlockProcessor(final UInt64 slot) {
+    return atSlot(slot).getBlockProcessor();
+  }
+
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return atState(state).getBlockProcessor().validateAttestation(state, data);
-  }
-
-  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processBlockHeader(state, blockHeader);
-  }
-
-  public void processProposerSlashings(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processProposerSlashings(state, proposerSlashings);
-  }
-
-  public void processAttesterSlashings(
-      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttesterSlashings(state, attesterSlashings);
-  }
-
-  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttestations(state, attestations);
-  }
-
-  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processDeposits(state, deposits);
-  }
-
-  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processVoluntaryExits(state, exits);
   }
 
   public boolean isEnoughVotesToUpdateEth1Data(
