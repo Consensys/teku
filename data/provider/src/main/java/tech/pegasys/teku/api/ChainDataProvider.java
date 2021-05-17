@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -55,6 +57,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -436,6 +439,34 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return SafeFuture.completedFuture(Optional.of(result));
+  }
+
+  public SafeFuture<Optional<StateSyncCommittees>> getStateSyncCommittees(
+      final String stateIdParam, final Optional<UInt64> epoch) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateIdParam)
+        .getState()
+        .thenApply(maybeState -> maybeState.map(state -> getSyncCommitteesFromState(state, epoch)));
+  }
+
+  private StateSyncCommittees getSyncCommitteesFromState(
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
+      final Optional<UInt64> epochQueryParam) {
+    final UInt64 epoch = epochQueryParam.orElse(spec.computeEpochAtSlot(state.getSlot()));
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+
+    final SyncCommittee committee =
+        spec.getSyncCommitteeUtilRequired(slot).getSyncCommittee(state, epoch);
+    final List<UInt64> committeeIndices =
+        committee.getPubkeys().stream()
+            .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey.getBLSPublicKey()).stream())
+            .map(UInt64::valueOf)
+            .collect(toList());
+
+    return new StateSyncCommittees(
+        committeeIndices,
+        Lists.partition(
+            committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
