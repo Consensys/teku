@@ -455,8 +455,16 @@ public class ChainDataProvider {
     final UInt64 epoch = epochQueryParam.orElse(spec.computeEpochAtSlot(state.getSlot()));
     final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
-    final SyncCommittee committee =
-        spec.getSyncCommitteeUtilRequired(slot).getSyncCommittee(state, epoch);
+    final Optional<SyncCommittee> maybeCommittee =
+        spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
+    // * if the requested epoch is outside of valid range, an illegalArgumentException is raised
+    // * if getSyncCommitteeUtil was not present, maybeCommittee will be empty,
+    //   indicating the state is pre-altair, and in this case, an empty committees list can be returned
+    if (maybeCommittee.isEmpty()) {
+      return new StateSyncCommittees(List.of(), List.of());
+    }
+
+    final SyncCommittee committee = maybeCommittee.get();
     final List<UInt64> committeeIndices =
         committee.getPubkeys().stream()
             .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey.getBLSPublicKey()).stream())
