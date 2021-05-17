@@ -128,6 +128,7 @@ import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -347,6 +348,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               new ValidatorPerformanceMetrics(metricsSystem),
               beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode(),
               activeValidatorTracker,
+              new SyncCommitteePerformanceTracker(spec, combinedChainDataClient),
               spec);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
