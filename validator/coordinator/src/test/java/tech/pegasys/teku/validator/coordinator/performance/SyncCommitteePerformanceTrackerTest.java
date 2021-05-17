@@ -38,13 +38,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignatureSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class SyncCommitteePerformanceTrackerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
