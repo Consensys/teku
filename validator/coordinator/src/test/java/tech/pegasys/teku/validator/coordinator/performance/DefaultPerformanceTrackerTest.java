@@ -29,6 +29,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -57,19 +58,26 @@ public class DefaultPerformanceTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StatusLogger log = mock(StatusLogger.class);
   private final ActiveValidatorTracker validatorTracker = mock(ActiveValidatorTracker.class);
+  private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker =
+      mock(SyncCommitteePerformanceTracker.class);
+  private final ValidatorPerformanceMetrics validatorPerformanceMetrics =
+      mock(ValidatorPerformanceMetrics.class);
 
   private final DefaultPerformanceTracker performanceTracker =
       new DefaultPerformanceTracker(
           storageSystem.combinedChainDataClient(),
           log,
-          mock(ValidatorPerformanceMetrics.class),
+          validatorPerformanceMetrics,
           ValidatorPerformanceTrackingMode.ALL,
           validatorTracker,
+          syncCommitteePerformanceTracker,
           spec);
 
   @BeforeEach
   void beforeEach() {
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(0);
+    when(syncCommitteePerformanceTracker.calculatePerformance(any()))
+        .thenReturn(SafeFuture.completedFuture(new SyncCommitteePerformance(0, 0, 0)));
     chainUpdater.initializeGenesis();
     performanceTracker.start(UInt64.ZERO);
   }
@@ -291,7 +299,7 @@ public class DefaultPerformanceTrackerTest {
                     a.getData().equals(attestation1.getData())
                         && !a.getAggregation_bits().equals(attestation1.getAggregation_bits()))
             .findFirst()
-            .get();
+            .orElseThrow();
 
     block1Options.addAttestation(attestation1);
     block1Options.addAttestation(attestation2);
@@ -320,6 +328,18 @@ public class DefaultPerformanceTrackerTest {
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 
+  @Test
+  void shouldReportSyncCommitteePerformance() {
+    final SyncCommitteePerformance performance = new SyncCommitteePerformance(10, 9, 8);
+    final UInt64 epoch = UInt64.valueOf(2);
+    when(syncCommitteePerformanceTracker.calculatePerformance(epoch.minus(1)))
+        .thenReturn(SafeFuture.completedFuture(performance));
+
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
+    verify(log).performance(performance.toString());
+    verify(validatorPerformanceMetrics).updateSyncCommitteePerformance(performance);
+  }
+
   private Attestation createAttestation(
       ChainBuilder chainBuilder, int validForBlockAtSlot, int vouchingForBlockAtSlot) {
     return chainBuilder
@@ -330,7 +350,7 @@ public class DefaultPerformanceTrackerTest {
                     .getBeacon_block_root()
                     .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
         .findFirst()
-        .get();
+        .orElseThrow();
   }
 
   private Attestation createAttestation(int validForBlockAtSlot, int vouchingForBlockAtSlot) {
