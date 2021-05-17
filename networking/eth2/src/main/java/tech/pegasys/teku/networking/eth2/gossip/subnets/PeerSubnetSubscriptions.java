@@ -141,27 +141,15 @@ public class PeerSubnetSubscriptions {
   }
 
   private Optional<Integer> getMinSubscriberCount() {
-    final Optional<Integer> minAttestationSubscribers = getMinAttestationSubscriberCount();
-    final Optional<Integer> minSyncnetSubscribers = getMinSyncCommitteeSubscriberCount();
+    final Optional<Integer> minAttestationSubscribers =
+        attestationSubnetSubscriptions.getMinSubscriberCount();
+    final Optional<Integer> minSyncnetSubscribers =
+        syncCommitteeSubnetSubscriptions.getMinSubscriberCount();
     if (minAttestationSubscribers.isPresent() && minSyncnetSubscribers.isPresent()) {
       return Optional.of(Math.min(minAttestationSubscribers.get(), minSyncnetSubscribers.get()));
     } else {
       return minAttestationSubscribers.or(() -> minSyncnetSubscribers);
     }
-  }
-
-  private Optional<Integer> getMinAttestationSubscriberCount() {
-    return attestationSubnetSubscriptions
-        .streamRelevantSubnets()
-        .map(attestationSubnetSubscriptions::getSubscriberCountForSubnet)
-        .min(Integer::compare);
-  }
-
-  private Optional<Integer> getMinSyncCommitteeSubscriberCount() {
-    return syncCommitteeSubnetSubscriptions
-        .streamRelevantSubnets()
-        .map(syncCommitteeSubnetSubscriptions::getSubscriberCountForSubnet)
-        .min(Integer::compare);
   }
 
   public interface Factory {
@@ -201,8 +189,16 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.contains(subnetId);
     }
 
-    public Stream<Integer> streamRelevantSubnets() {
+    private Stream<Integer> streamRelevantSubnets() {
       return relevantSubnets.stream();
+    }
+
+    /**
+     * @return The minimum subscriber count across relevant subnets. Returns an empty value if is
+     *     there are no relevant subnets.
+     */
+    public Optional<Integer> getMinSubscriberCount() {
+      return streamRelevantSubnets().map(this::getSubscriberCountForSubnet).min(Integer::compare);
     }
 
     public int getSubscriberCountForSubnet(final int subnetId) {
