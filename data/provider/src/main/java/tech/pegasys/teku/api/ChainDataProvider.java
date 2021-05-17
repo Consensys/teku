@@ -164,7 +164,7 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(state -> state.map(BeaconState::new));
+        .thenApply(maybeState -> maybeState.map(schemaObjectProvider::getBeaconState));
   }
 
   public SafeFuture<Optional<StateSszResponse>> getBeaconStateSsz(final String stateIdParam) {

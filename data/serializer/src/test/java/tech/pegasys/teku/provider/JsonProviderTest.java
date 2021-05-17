@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -106,7 +107,7 @@ class JsonProviderTest {
   void beaconStateJsonTest() throws JsonProcessingException {
     tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState stateInternal =
         dataStructureUtil.randomBeaconState(UInt64.valueOf(16));
-    BeaconState state = new BeaconState(stateInternal);
+    BeaconState state = new BeaconStatePhase0(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
   }

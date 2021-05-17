@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_JSON;
@@ -24,7 +24,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_DEBUG;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
@@ -43,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.StateSszResponse;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -52,7 +52,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetState extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/debug/beacon/states/:state_id";
+  public static final String ROUTE = "/eth/v2/debug/beacon/states/:state_id";
   private final ChainDataProvider chainDataProvider;
 
   public GetState(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -68,17 +68,16 @@ public class GetState extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state",
-      tags = {TAG_DEBUG},
+      tags = {TAG_EXPERIMENTAL},
       description =
           "Returns full BeaconState object for given state_id.\n\n"
-              + "Use Accept header to select `application/octet-stream` if SSZ response type is required.\n\n"
-              + "__NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.",
+              + "Use Accept header to select `application/octet-stream` if SSZ response type is required.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetStateResponse.class),
+              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetStateResponseV2.class),
               @OpenApiContent(type = HEADER_ACCEPT_OCTET)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
@@ -119,15 +118,6 @@ public class GetState extends AbstractHandler implements Handler {
   private Optional<String> handleJsonResult(Context ctx, final BeaconState response)
       throws JsonProcessingException {
     final SpecMilestone milestone = chainDataProvider.getMilestoneAtSlot(response.slot);
-    if (!milestone.equals(SpecMilestone.PHASE0)) {
-      ctx.status(SC_BAD_REQUEST);
-      return Optional.of(
-          BadRequest.badRequest(
-              jsonProvider,
-              String.format(
-                  "Slot %s is not a phase0 slot, please fetch via /eth/v2/debug/states",
-                  response.slot)));
-    }
-    return Optional.of(jsonProvider.objectToJSON(new GetStateResponse(milestone, response)));
+    return Optional.of(jsonProvider.objectToJSON(new GetStateResponseV2(milestone, response)));
   }
 }

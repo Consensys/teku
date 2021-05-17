@@ -21,17 +21,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 
-public class BeaconState {
+public abstract class BeaconState implements State {
   @Schema(type = "string", format = "uint64")
   public final UInt64 genesis_time;
 
@@ -73,9 +73,6 @@ public class BeaconState {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> slashings;
 
-  public final List<PendingAttestation> previous_epoch_attestations;
-  public final List<PendingAttestation> current_epoch_attestations;
-
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final SszBitvector justification_bits;
 
@@ -84,7 +81,7 @@ public class BeaconState {
   public final Checkpoint finalized_checkpoint;
 
   @JsonCreator
-  public BeaconState(
+  protected BeaconState(
       @JsonProperty("genesis_time") final UInt64 genesis_time,
       @JsonProperty("genesis_validators_root") final Bytes32 genesis_validators_root,
       @JsonProperty("slot") final UInt64 slot,
@@ -100,10 +97,6 @@ public class BeaconState {
       @JsonProperty("balances") final List<UInt64> balances,
       @JsonProperty("randao_mixes") final List<Bytes32> randao_mixes,
       @JsonProperty("slashings") final List<UInt64> slashings,
-      @JsonProperty("previous_epoch_attestations")
-          final List<PendingAttestation> previous_epoch_attestations,
-      @JsonProperty("current_epoch_attestations")
-          final List<PendingAttestation> current_epoch_attestations,
       @JsonProperty("justification_bits") final SszBitvector justification_bits,
       @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
       @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
@@ -123,19 +116,17 @@ public class BeaconState {
     this.balances = balances;
     this.randao_mixes = randao_mixes;
     this.slashings = slashings;
-    this.previous_epoch_attestations = previous_epoch_attestations;
-    this.current_epoch_attestations = current_epoch_attestations;
     this.justification_bits = justification_bits;
     this.previous_justified_checkpoint = previous_justified_checkpoint;
     this.current_justified_checkpoint = current_justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
   }
 
-  public BeaconState(final BeaconBlockAndState blockAndState) {
+  protected BeaconState(final BeaconBlockAndState blockAndState) {
     this(blockAndState.getState());
   }
 
-  public BeaconState(
+  protected BeaconState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconState) {
     this.genesis_time = beaconState.getGenesis_time();
     this.genesis_validators_root = beaconState.getGenesis_validators_root();
@@ -160,23 +151,6 @@ public class BeaconState {
     this.current_justified_checkpoint =
         new Checkpoint(beaconState.getCurrent_justified_checkpoint());
     this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
-
-    // Optionally set phase0-specific versioned fields
-    final Optional<BeaconStatePhase0> maybePhase0State = beaconState.toVersionPhase0();
-    if (maybePhase0State.isPresent()) {
-      final BeaconStatePhase0 genesisState = maybePhase0State.get();
-      this.previous_epoch_attestations =
-          genesisState.getPrevious_epoch_attestations().stream()
-              .map(PendingAttestation::new)
-              .collect(Collectors.toList());
-      this.current_epoch_attestations =
-          genesisState.getCurrent_epoch_attestations().stream()
-              .map(PendingAttestation::new)
-              .collect(Collectors.toList());
-    } else {
-      this.previous_epoch_attestations = null;
-      this.current_epoch_attestations = null;
-    }
   }
 
   public tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState asInternalBeaconState(
@@ -221,23 +195,9 @@ public class BeaconState {
                   current_justified_checkpoint.asInternalCheckpoint());
               state.setFinalized_checkpoint(finalized_checkpoint.asInternalCheckpoint());
 
-              state
-                  .toMutableVersionPhase0()
-                  .ifPresent(
-                      genesisState -> {
-                        genesisState
-                            .getPrevious_epoch_attestations()
-                            .setAll(
-                                previous_epoch_attestations.stream()
-                                    .map(PendingAttestation::asInternalPendingAttestation)
-                                    .collect(Collectors.toList()));
-                        genesisState
-                            .getCurrent_epoch_attestations()
-                            .setAll(
-                                current_epoch_attestations.stream()
-                                    .map(PendingAttestation::asInternalPendingAttestation)
-                                    .collect(Collectors.toList()));
-                      });
+              applyAdditionalFields(state);
             });
   }
+
+  protected abstract void applyAdditionalFields(final MutableBeaconState state);
 }
