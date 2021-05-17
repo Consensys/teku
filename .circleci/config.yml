@@ -137,7 +137,7 @@ jobs:
       - run:
           name: Spotless
           command: |
-            ./gradlew --no-daemon --parallel spotlessCheck checkMavenCoordinateCollisions
+            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
 
   unitTests:
     parallelism: 2
