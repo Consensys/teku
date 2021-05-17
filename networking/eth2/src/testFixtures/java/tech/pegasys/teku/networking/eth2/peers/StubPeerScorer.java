@@ -15,19 +15,23 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class StubPeerScorer implements PeerScorer {
   private final Map<NodeId, Integer> peerScores = new HashMap<>();
-  private final Map<SszBitvector, Integer> candidateScores = new HashMap<>();
+  private final Map<Pair<SszBitvector, SszBitvector>, Integer> candidateScores = new HashMap<>();
 
   public void setScore(final NodeId peerId, final int score) {
     peerScores.put(peerId, score);
   }
 
-  public void setScore(final SszBitvector subscriptions, final int score) {
-    candidateScores.put(subscriptions, score);
+  public void setScore(
+      final SszBitvector attestationSubscriptions,
+      final SszBitvector syncCommitteeSubnetSubscriptions,
+      final int score) {
+    candidateScores.put(Pair.of(attestationSubscriptions, syncCommitteeSubnetSubscriptions), score);
   }
 
   @Override
@@ -36,7 +40,10 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreCandidatePeer(final SszBitvector subscriptions) {
-    return candidateScores.getOrDefault(subscriptions, 0);
+  public int scoreCandidatePeer(
+      final SszBitvector attestationSubscriptions,
+      final SszBitvector syncCommitteeSubnetSubscriptions) {
+    return candidateScores.getOrDefault(
+        Pair.of(attestationSubscriptions, syncCommitteeSubnetSubscriptions), 0);
   }
 }
