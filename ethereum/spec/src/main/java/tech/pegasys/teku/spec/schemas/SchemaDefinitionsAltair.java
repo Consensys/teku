@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningDataSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
-public class SchemaDefinitionsAltair implements SchemaDefinitions {
+public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaAltair beaconStateSchema;
   private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;

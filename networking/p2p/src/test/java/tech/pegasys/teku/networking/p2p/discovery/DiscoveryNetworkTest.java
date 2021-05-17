@@ -50,13 +50,16 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
@@ -66,7 +69,8 @@ class DiscoveryNetworkTest {
   private final ConnectionManager connectionManager = mock(ConnectionManager.class);
 
   private final DiscoveryNetwork<Peer> discoveryNetwork =
-      new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, spec);
+      new DiscoveryNetwork<>(
+          p2pNetwork, discoveryService, connectionManager, spec, spec::getGenesisSchemaDefinitions);
 
   @Test
   public void shouldStartConnectionManagerAfterP2pAndDiscoveryStarted() {
@@ -156,7 +160,8 @@ class DiscoveryNetworkTest {
             peerSelectionStrategy,
             discoveryConfig,
             networkConfig,
-            spec);
+            spec,
+            spec::getGenesisSchemaDefinitions);
     assertThat(network.getEnr()).isEmpty();
   }
 
@@ -269,10 +274,13 @@ class DiscoveryNetworkTest {
   }
 
   public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
+    final SszBitvector syncCommitteeSubnets =
+        schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     return new DiscoveryPeer(
         BLSPublicKey.empty().toSSZBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
-        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).getDefault());
+        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).getDefault(),
+        syncCommitteeSubnets);
   }
 }
