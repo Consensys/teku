@@ -459,7 +459,8 @@ public class ChainDataProvider {
         spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
     // * if the requested epoch is outside of valid range, an illegalArgumentException is raised
     // * if getSyncCommitteeUtil was not present, maybeCommittee will be empty,
-    //   indicating the state is pre-altair, and in this case, an empty committees list can be returned
+    //   indicating the state is pre-altair, and in this case, an empty committees list can be
+    // returned
     if (maybeCommittee.isEmpty()) {
       return new StateSyncCommittees(List.of(), List.of());
     }
