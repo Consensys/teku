@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -35,21 +33,22 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
-  static final SszBitvectorSchema<SszBitvector> SUBNET_SUBSCRIPTIONS_SCHEMA =
-      SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT);
+  private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
 
   public static DiscoveryService create(
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
       final KeyValueStore<String, Bytes> kvStore,
-      final Bytes privateKey) {
-    return new DiscV5Service(discoConfig, p2pConfig, kvStore, privateKey);
+      final Bytes privateKey,
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
+    return new DiscV5Service(
+        discoConfig, p2pConfig, kvStore, privateKey, currentSchemaDefinitionsSupplier);
   }
 
   private final DiscoverySystem discoverySystem;
@@ -57,9 +56,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   private DiscV5Service(
       final DiscoveryConfig discoConfig,
-      NetworkConfig p2pConfig,
-      KeyValueStore<String, Bytes> kvStore,
-      final Bytes privateKey) {
+      final NetworkConfig p2pConfig,
+      final KeyValueStore<String, Bytes> kvStore,
+      final Bytes privateKey,
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
+    this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
@@ -113,7 +114,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   @Override
   public Stream<DiscoveryPeer> streamKnownPeers() {
-    return activeNodes().map(NodeRecordConverter::convertToDiscoveryPeer).flatMap(Optional::stream);
+    final SchemaDefinitions schemaDefinitions =
+        currentSchemaDefinitionsSupplier.getSchemaDefinitions();
+    return activeNodes()
+        .map(n -> NodeRecordConverter.convertToDiscoveryPeer(n, schemaDefinitions))
+        .flatMap(Optional::stream);
   }
 
   @Override
@@ -137,7 +142,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
             (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
             nodeRecord.getUdpAddress().get(),
             Optional.empty(),
-            SUBNET_SUBSCRIPTIONS_SCHEMA.getDefault());
+            currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
+            currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault());
 
     return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
   }

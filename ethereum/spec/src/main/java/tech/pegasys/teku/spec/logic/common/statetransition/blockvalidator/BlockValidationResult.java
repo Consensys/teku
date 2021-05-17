@@ -13,25 +13,26 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
+import java.util.function.Supplier;
+
 /** Represents block validation result which may contain reason exception in case of a failure */
 public class BlockValidationResult {
   public static BlockValidationResult SUCCESSFUL = new BlockValidationResult(true);
-  public static BlockValidationResult FAILED = new BlockValidationResult(false);
 
   private final boolean isValid;
-  private final Exception reason;
+  private final String failureReason;
 
-  private BlockValidationResult(Exception reason) {
+  private BlockValidationResult(String failureReason) {
+    this.failureReason = failureReason;
     this.isValid = false;
-    this.reason = reason;
   }
 
   private BlockValidationResult(boolean isValid) {
     this.isValid = isValid;
-    reason = null;
+    failureReason = null;
   }
 
-  public static BlockValidationResult failedExceptionally(final Exception reason) {
+  public static BlockValidationResult failed(final String reason) {
     return new BlockValidationResult(reason);
   }
 
@@ -39,7 +40,18 @@ public class BlockValidationResult {
     return isValid;
   }
 
-  public Exception getReason() {
-    return reason;
+  public String getFailureReason() {
+    return failureReason;
+  }
+
+  @SafeVarargs
+  public static BlockValidationResult allOf(final Supplier<BlockValidationResult>... checks) {
+    for (Supplier<BlockValidationResult> check : checks) {
+      final BlockValidationResult result = check.get();
+      if (!result.isValid()) {
+        return result;
+      }
+    }
+    return SUCCESSFUL;
   }
 }
