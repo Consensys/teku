@@ -122,10 +122,10 @@ This document is adapted from the following sources:
 - Kubernetes community-membership.md, available at [kub community membership].  
 - OSSWatch Benevolent Dictator Governance Model, available at [oss watch benevolent dictator].  
 
-[CLA.md]: /CLA.md
+[CLA.md]: CLA.md
 [oss watch benevolent dictator]: http://oss-watch.ac.uk/resources/benevolentdictatorgovernancemodel
 [kub community membership]: https://raw.githubusercontent.com/kubernetes/community/master/community-membership.md
-[contributor guide]: /CONTRIBUTING.md
-[New contributors]: /CONTRIBUTING.md
+[contributor guide]: CONTRIBUTING.md
+[New contributors]: CONTRIBUTING.md
 [two-factor authentication]: https://help.github.com/articles/about-two-factor-authentication
 [Teku Discord]: https://discord.gg/7hPv2T6
