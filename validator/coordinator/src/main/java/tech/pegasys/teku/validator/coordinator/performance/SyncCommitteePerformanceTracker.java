@@ -85,7 +85,7 @@ public class SyncCommitteePerformanceTracker {
 
     int producedSignatureCount = 0;
     final List<SafeFuture<Integer>> includedSignatureCountFutures = new ArrayList<>();
-    for (Entry<UInt64, Set<UInt64>> entry : producingValidatorsBySlot.entrySet()) {
+    for (Map.Entry<UInt64, Set<UInt64>> entry : producingValidatorsBySlot.entrySet()) {
       final UInt64 slot = entry.getKey();
       final Set<UInt64> producingValidators = entry.getValue();
 
