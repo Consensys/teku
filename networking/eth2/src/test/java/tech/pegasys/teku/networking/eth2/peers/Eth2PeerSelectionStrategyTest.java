@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -41,11 +40,15 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 class Eth2PeerSelectionStrategyTest {
 
+  private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static final SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
@@ -109,9 +112,18 @@ class Eth2PeerSelectionStrategyTest {
     final Eth2PeerSelectionStrategy strategy = createStrategy(1, 2, 0);
     when(network.getPeerCount()).thenReturn(2); // At upper bound of peers
     when(peerSubnetSubscriptions.getSubscribersRequired()).thenReturn(2);
-    peerScorer.setScore(DISCOVERY_PEER1.getPersistentSubnets(), 0);
-    peerScorer.setScore(DISCOVERY_PEER2.getPersistentSubnets(), 200);
-    peerScorer.setScore(DISCOVERY_PEER3.getPersistentSubnets(), 150);
+    peerScorer.setScore(
+        DISCOVERY_PEER1.getPersistentAttestationSubnets(),
+        DISCOVERY_PEER1.getSyncCommitteeSubnets(),
+        0);
+    peerScorer.setScore(
+        DISCOVERY_PEER2.getPersistentAttestationSubnets(),
+        DISCOVERY_PEER1.getSyncCommitteeSubnets(),
+        200);
+    peerScorer.setScore(
+        DISCOVERY_PEER3.getPersistentAttestationSubnets(),
+        DISCOVERY_PEER1.getSyncCommitteeSubnets(),
+        150);
 
     // Connect to additional peers to try to fill subnets even though it goes over the target
     assertThat(
@@ -130,10 +142,22 @@ class Eth2PeerSelectionStrategyTest {
     final DiscoveryPeer discoveryPeer2 = createDiscoveryPeer(PEER2, 2);
     final DiscoveryPeer discoveryPeer3 = createDiscoveryPeer(PEER3, 3);
     final DiscoveryPeer discoveryPeer4 = createDiscoveryPeer(PEER4, 4);
-    peerScorer.setScore(discoveryPeer1.getPersistentSubnets(), 100);
-    peerScorer.setScore(discoveryPeer2.getPersistentSubnets(), 200);
-    peerScorer.setScore(discoveryPeer3.getPersistentSubnets(), 150);
-    peerScorer.setScore(discoveryPeer4.getPersistentSubnets(), 500);
+    peerScorer.setScore(
+        discoveryPeer1.getPersistentAttestationSubnets(),
+        discoveryPeer1.getSyncCommitteeSubnets(),
+        100);
+    peerScorer.setScore(
+        discoveryPeer2.getPersistentAttestationSubnets(),
+        discoveryPeer2.getSyncCommitteeSubnets(),
+        200);
+    peerScorer.setScore(
+        discoveryPeer3.getPersistentAttestationSubnets(),
+        discoveryPeer3.getSyncCommitteeSubnets(),
+        150);
+    peerScorer.setScore(
+        discoveryPeer4.getPersistentAttestationSubnets(),
+        discoveryPeer4.getSyncCommitteeSubnets(),
+        500);
 
     assertThat(
             strategy.selectPeersToConnect(
@@ -299,15 +323,16 @@ class Eth2PeerSelectionStrategyTest {
     shuffler = list -> list.sort(Comparator.comparing(shuffledOrder::indexOf));
   }
 
-  private static DiscoveryPeer createDiscoveryPeer(final PeerAddress peer, final int... subnetIds) {
-    return createDiscoveryPeer(peer.getId().toBytes(), subnetIds);
+  private static DiscoveryPeer createDiscoveryPeer(final PeerAddress peer, final int... attnets) {
+    return createDiscoveryPeer(peer.getId().toBytes(), attnets);
   }
 
-  private static DiscoveryPeer createDiscoveryPeer(final Bytes peerId, final int... subnetIds) {
+  private static DiscoveryPeer createDiscoveryPeer(final Bytes peerId, final int... attnets) {
     return new DiscoveryPeer(
         peerId,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
-        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
+        SCHEMA_DEFINITIONS.getAttnetsENRFieldSchema().ofBits(attnets),
+        SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema().getDefault());
   }
 }

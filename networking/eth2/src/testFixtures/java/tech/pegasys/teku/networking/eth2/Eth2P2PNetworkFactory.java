@@ -51,6 +51,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
@@ -77,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -207,8 +209,10 @@ public class Eth2P2PNetworkFactory {
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
                 Constants.REPUTATION_MANAGER_CAPACITY);
-        final AttestationSubnetTopicProvider subnetTopicProvider =
+        final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+        final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
+            new SyncCommitteeSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
             new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
@@ -218,6 +222,8 @@ public class Eth2P2PNetworkFactory {
                 discoConfig.getMinPeers(),
                 discoConfig.getMaxPeers(),
                 discoConfig.getMinRandomlySelectedPeers());
+        final SchemaDefinitionsSupplier currentSchemaDefinitions =
+            () -> config.getSpec().getGenesisSchemaDefinitions();
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -237,14 +243,18 @@ public class Eth2P2PNetworkFactory {
                     targetPeerRange,
                     gossipNetwork ->
                         PeerSubnetSubscriptions.create(
+                            currentSchemaDefinitions,
                             gossipNetwork,
-                            subnetTopicProvider,
+                            attestationSubnetTopicProvider,
+                            syncCommitteeTopicProvider,
+                            syncCommitteeSubnetService,
                             config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
                 config.getDiscoveryConfig(),
                 config.getNetworkConfig(),
-                config.getSpec());
+                config.getSpec(),
+                currentSchemaDefinitions);
 
         final GossipForkManager.Builder gossipForkManagerBuilder =
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
