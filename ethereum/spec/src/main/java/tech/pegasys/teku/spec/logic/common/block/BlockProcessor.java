@@ -57,16 +57,8 @@ public interface BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException;
 
-  default BeaconState processBlock(
+  BeaconState processBlock(
       BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
-  }
-
-  void processBlock(
-      final MutableBeaconState state,
-      final BeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)

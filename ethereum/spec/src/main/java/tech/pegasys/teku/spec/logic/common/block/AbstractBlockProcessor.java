@@ -270,7 +270,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processBlock(
+  public BeaconState processBlock(
+      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
+      throws BlockProcessingException {
+    return preState.updated(state -> processBlock(state, block, indexedAttestationCache));
+  }
+
+  protected void processBlock(
       final MutableBeaconState state,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache)
