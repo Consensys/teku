@@ -33,6 +33,20 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
+/**
+ * Tracks and reports validator performance metrics for production of sync committee signatures.
+ *
+ * <p>The tracking is done based on the rewards paid, which may be different to the number of
+ * signatures actually produced, signed and published to gossip. This is done so that the percent of
+ * available rewards earned can be accurately calculated from these reports.
+ *
+ * <p>The difference comes from the fact that validators may be appear multiple times in the same
+ * sync subcommittee, including multiple times in the same subcommittee. A validator in the sync
+ * committee will always produce one signature per slot. The beacon node will publish that same
+ * signature to each subcommittee the validator is assigned to. The {@link SyncAggregate} actually
+ * included in blocks includes that same signature multiple times - once for each time the validator
+ * is in the sync committee.
+ */
 public class SyncCommitteePerformanceTracker {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -58,17 +72,37 @@ public class SyncCommitteePerformanceTracker {
             .map(expectedSyncCommitteeParticipantsByPeriodEndEpoch::get)
             .orElse(Collections.emptyMap());
 
-    final UInt64 lastSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch.plus(1)).minus(1);
     final Map<UInt64, Set<UInt64>> producingValidatorsBySlot =
-        signatureProducersBySlot.subMap(
-            spec.computeStartSlotAtEpoch(epoch).minusMinZero(1), true, lastSlotOfEpoch, false);
+        getProducingValidatorsForEpoch(epoch);
     return calculateSyncCommitteePerformance(
             epoch, expectedSyncCommitteeParticipants, producingValidatorsBySlot)
-        .thenPeek(__ -> clearReportedData(epoch, lastSlotOfEpoch));
+        .thenPeek(__ -> clearReportedData(epoch));
   }
 
-  private void clearReportedData(final UInt64 epoch, final UInt64 lastSlotOfEpoch) {
+  private UInt64 getLastSlotOfEpoch(final UInt64 epoch) {
+    return spec.computeStartSlotAtEpoch(epoch.plus(1)).minus(1);
+  }
+
+  /**
+   * Gets the set of validators that produces signatures by slot, for inclusion in the specified
+   * epoch.
+   *
+   * <p>Note that validators produce sync committee signatures from the slot before the epoch starts
+   * up to and not including the last slot of the epoch. See {@link
+   * tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil#getEpochForDutiesAtSlot(UInt64)}
+   *
+   * @param epoch the epoch to get producing validators for.
+   * @return map of slot to set of validators that produced a signature.
+   */
+  private NavigableMap<UInt64, Set<UInt64>> getProducingValidatorsForEpoch(final UInt64 epoch) {
+    final UInt64 lastSlotOfEpoch = getLastSlotOfEpoch(epoch);
+    return signatureProducersBySlot.subMap(
+        spec.computeStartSlotAtEpoch(epoch).minusMinZero(1), true, lastSlotOfEpoch, false);
+  }
+
+  private void clearReportedData(final UInt64 epoch) {
     // Clear data that has been reported on.
+    final UInt64 lastSlotOfEpoch = getLastSlotOfEpoch(epoch);
     signatureProducersBySlot.headMap(lastSlotOfEpoch, false).clear();
     expectedSyncCommitteeParticipantsByPeriodEndEpoch.headMap(epoch, true).clear();
   }
