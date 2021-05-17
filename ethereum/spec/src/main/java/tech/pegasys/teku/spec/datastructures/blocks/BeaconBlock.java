@@ -25,7 +25,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public final class BeaconBlock
+public class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary {
 

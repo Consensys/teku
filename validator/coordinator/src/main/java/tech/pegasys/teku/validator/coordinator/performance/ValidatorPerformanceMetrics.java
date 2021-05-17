@@ -34,6 +34,11 @@ public class ValidatorPerformanceMetrics {
   private final SettableGauge numberOfProducedBlocks;
   private final SettableGauge numberOfIncludedBlocks;
 
+  // Sync Committee Performance Metrics
+  private final SettableGauge numberOfExpectedSignatures;
+  private final SettableGauge numberOfProducedSignatures;
+  private final SettableGauge numberOfIncludedSignatures;
+
   public ValidatorPerformanceMetrics(final MetricsSystem metricsSystem) {
 
     // Attestation Performance Metrics
@@ -105,6 +110,26 @@ public class ValidatorPerformanceMetrics {
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "included_blocks",
             "Number of included blocks");
+
+    // Sync Committee Performance Metrics
+    numberOfExpectedSignatures =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "expected_sync_committee_signatures",
+            "Number of expected sync committee signatures");
+    numberOfProducedSignatures =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "produced_sync_committee_signatures",
+            "Number of produced sync committee signatures");
+    numberOfIncludedSignatures =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "included_sync_committee_signatures",
+            "Number of included sync committee signatures");
   }
 
   public void updateAttestationPerformanceMetrics(
@@ -123,5 +148,11 @@ public class ValidatorPerformanceMetrics {
     numberOfExpectedBlocks.set(blockPerformance.numberOfExpectedBlocks);
     numberOfProducedBlocks.set(blockPerformance.numberOfProducedBlocks);
     numberOfIncludedBlocks.set(blockPerformance.numberOfIncludedBlocks);
+  }
+
+  public void updateSyncCommitteePerformance(final SyncCommitteePerformance performance) {
+    numberOfExpectedSignatures.set(performance.getNumberOfExpectedSignatures());
+    numberOfProducedSignatures.set(performance.getNumberOfProducedSignatures());
+    numberOfIncludedSignatures.set(performance.getNumberOfIncludedSignatures());
   }
 }
