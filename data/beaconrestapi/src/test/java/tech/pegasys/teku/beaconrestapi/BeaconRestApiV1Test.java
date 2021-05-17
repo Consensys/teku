@@ -179,6 +179,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAttestations.ROUTE, GetAttestations.class))
         .add(Arguments.of(GetAttesterSlashings.ROUTE, GetAttesterSlashings.class))
         .add(Arguments.of(GetProposerSlashings.ROUTE, GetProposerSlashings.class))
+        .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class))
         .add(Arguments.of(GetVoluntaryExits.ROUTE, GetVoluntaryExits.class));
 
     // events
