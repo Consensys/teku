@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Optimised how block production metrics are calculated.
 
 ### Bug Fixes
+- Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
