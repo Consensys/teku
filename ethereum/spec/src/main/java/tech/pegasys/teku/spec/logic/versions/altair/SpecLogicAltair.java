@@ -136,11 +136,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
-            config,
-            beaconStateAccessors,
-            attestationUtil,
-            blockProcessor,
-            miscHelpers);
+            config, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
     final SyncCommitteeUtil syncCommitteeUtil =

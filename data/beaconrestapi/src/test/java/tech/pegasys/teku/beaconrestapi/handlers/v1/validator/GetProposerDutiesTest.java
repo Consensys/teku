@@ -31,15 +31,12 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 
 public class GetProposerDutiesTest extends AbstractValidatorApiTest {
-  private BeaconStateUtil beaconStateUtil;
 
   @BeforeEach
   public void setup() {
     handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
-    beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
   }
 
   @Test

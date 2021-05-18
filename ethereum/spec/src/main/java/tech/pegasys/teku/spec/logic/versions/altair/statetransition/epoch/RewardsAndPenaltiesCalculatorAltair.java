@@ -37,7 +37,6 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
 
   private final SpecConfigAltair specConfigAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
-  private final MiscHelpersAltair miscHelpersAltair;
 
   private final BeaconStateAltair stateAltair;
   private final Map<Integer, UInt64> baseRewardCache = new HashMap<>();
@@ -51,7 +50,6 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     super(specConfig, miscHelpers, beaconStateAccessors, state, validatorStatuses);
     this.stateAltair = state;
     this.specConfigAltair = specConfig;
-    this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
   }
 
