@@ -726,6 +726,7 @@ class ValidatorApiHandlerTest {
     final SafeFuture<List<SubmitCommitteeSignatureError>> result =
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
     assertThat(result).isCompletedWithValue(emptyList());
+    verify(performanceTracker).saveProducedSyncCommitteeSignature(signature);
   }
 
   @Test
@@ -740,6 +741,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSyncCommitteeSignatures(signatures);
     assertThat(result)
         .isCompletedWithValue(List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected")));
+    verify(performanceTracker, never()).saveProducedSyncCommitteeSignature(signature);
   }
 
   @Test

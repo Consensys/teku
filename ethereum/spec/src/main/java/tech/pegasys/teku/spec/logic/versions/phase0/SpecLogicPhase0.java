@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
@@ -45,6 +46,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
+      final OperationValidator operationValidator,
       final ValidatorStatusFactoryPhase0 validatorStatusFactory,
       final EpochProcessorPhase0 epochProcessor,
       final BlockProcessorPhase0 blockProcessor,
@@ -59,6 +61,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
+        operationValidator,
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
@@ -95,6 +98,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
+    final OperationValidator operationValidator =
+        OperationValidator.create(beaconStateAccessors, attestationUtil, validatorsUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -117,7 +122,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator);
+            attestationValidator,
+            operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
@@ -132,6 +138,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
+        operationValidator,
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -48,11 +47,16 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 class ConnectionManagerTest {
 
+  private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static final SchemaDefinitionsSupplier SCHEMA_DEFINITIONS_SUPPLIER =
+      SPEC::getGenesisSchemaDefinitions;
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
@@ -422,6 +426,7 @@ class ConnectionManagerTest {
         peerId,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
-        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
+        SCHEMA_DEFINITIONS_SUPPLIER.getAttnetsENRFieldSchema().ofBits(subnetIds),
+        SCHEMA_DEFINITIONS_SUPPLIER.getSyncnetsENRFieldSchema().getDefault());
   }
 }

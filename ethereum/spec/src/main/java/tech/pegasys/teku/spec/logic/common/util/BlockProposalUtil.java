@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -70,7 +71,8 @@ public class BlockProposalUtil {
 
     // Run state transition and set state root
     try {
-      final BeaconState newState = blockProcessor.processBlock(blockSlotState, newBlock);
+      final BeaconState newState =
+          blockProcessor.processBlock(blockSlotState, newBlock, IndexedAttestationCache.NOOP);
 
       Bytes32 stateRoot = newState.hashTreeRoot();
       BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);

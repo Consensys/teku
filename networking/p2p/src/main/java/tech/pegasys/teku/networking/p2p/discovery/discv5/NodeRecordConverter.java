@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -26,32 +27,46 @@ import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
-  static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
+  static Optional<DiscoveryPeer> convertToDiscoveryPeer(
+      final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
     return nodeRecord
         .getTcpAddress()
-        .map(address -> socketAddressToDiscoveryPeer(nodeRecord, address));
+        .map(address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
-      final NodeRecord nodeRecord, final InetSocketAddress address) {
+      final SchemaDefinitions schemaDefinitions,
+      final NodeRecord nodeRecord,
+      final InetSocketAddress address) {
 
     final Optional<EnrForkId> enrForkId =
         parseField(nodeRecord, ETH2_ENR_FIELD, EnrForkId.SSZ_SCHEMA::sszDeserialize);
 
-    final SszBitvector persistentSubnets =
-        parseField(
-                nodeRecord,
-                ATTESTATION_SUBNET_ENR_FIELD,
-                DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA::fromBytes)
-            .orElse(DiscV5Service.SUBNET_SUBSCRIPTIONS_SCHEMA.getDefault());
+    final SszBitvectorSchema<SszBitvector> attnetsSchema =
+        schemaDefinitions.getAttnetsENRFieldSchema();
+    final SszBitvector persistentAttestationSubnets =
+        parseField(nodeRecord, ATTESTATION_SUBNET_ENR_FIELD, attnetsSchema::fromBytes)
+            .orElse(attnetsSchema.getDefault());
+
+    final SszBitvectorSchema<SszBitvector> syncnetsSchema =
+        schemaDefinitions.getSyncnetsENRFieldSchema();
+    final SszBitvector syncCommitteeSubnets =
+        parseField(nodeRecord, SYNC_COMMITTEE_SUBNET_ENR_FIELD, syncnetsSchema::fromBytes)
+            .orElse(syncnetsSchema.getDefault());
 
     return new DiscoveryPeer(
-        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);
+        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
+        address,
+        enrForkId,
+        persistentAttestationSubnets,
+        syncCommitteeSubnets);
   }
 
   private static <T> Optional<T> parseField(

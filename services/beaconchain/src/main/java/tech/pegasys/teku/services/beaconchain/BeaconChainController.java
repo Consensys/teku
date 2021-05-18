@@ -70,7 +70,6 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -128,6 +127,7 @@ import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -347,6 +347,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               new ValidatorPerformanceMetrics(metricsSystem),
               beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode(),
               activeValidatorTracker,
+              new SyncCommitteePerformanceTracker(spec, combinedChainDataClient),
               spec);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
@@ -356,13 +357,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttesterSlashingPool() {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
-    AttesterSlashingValidator validator =
-        new AttesterSlashingValidator(
-            recentChainData, new AttesterSlashingStateTransitionValidator());
     attesterSlashingPool =
         new OperationPool<>(
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
-            validator);
+            new AttesterSlashingValidator(recentChainData, spec));
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 

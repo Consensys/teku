@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
+package tech.pegasys.teku.api.response.v1.beacon;
 
-public final class BlockProcessingException extends Exception {
-  public BlockProcessingException(String message, Exception cause) {
-    super(message, cause);
-  }
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-  public BlockProcessingException(String err) {
-    super(err);
-  }
+public class GetStateSyncCommitteesResponse {
+  public final StateSyncCommittees data;
 
-  public BlockProcessingException(Exception e) {
-    super(e);
+  @JsonCreator
+  public GetStateSyncCommitteesResponse(@JsonProperty("data") final StateSyncCommittees data) {
+    this.data = data;
   }
 }
