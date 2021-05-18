@@ -163,7 +163,12 @@ public class SyncCommitteeUtil {
     checkArgument(
         syncCommitteePeriod.equals(currentSyncCommitteePeriod)
             || syncCommitteePeriod.equals(nextSyncCommitteePeriod),
-        "State must be in the same or previous sync committee period");
+        "State must be in the same or previous sync committee period. "
+            + "State epoch %s (period: %s), requested epoch %s (period: %s)",
+        currentEpoch,
+        currentSyncCommitteePeriod,
+        epoch,
+        syncCommitteePeriod);
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
     return syncCommitteePeriod.equals(currentSyncCommitteePeriod)
         ? altairState.getCurrentSyncCommittee()
