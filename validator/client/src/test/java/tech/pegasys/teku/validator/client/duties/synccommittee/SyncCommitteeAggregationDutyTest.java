@@ -77,7 +77,7 @@ class SyncCommitteeAggregationDutyTest {
   private final BLSSignature aggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
-              "0xb2f3b1c336da71bd336cb091fd22a25aa0a3601dbc00f686944b70ddb1a78d2f65f5c7ff8afa15b8662d283ada458d6d04b02ade21c7bf48b9f15e98c6a153b9a475dcf9c35bccebdefb412d8eba2c35cf345f9af5e90859755a83abb55bcf41"));
+              "0x8f5c34de9e22ceaa7e8d165fc0553b32f02188539e89e2cc91e2eb9077645986550d872ee3403204ae5d554eae3cac12124e18d2324bccc814775316aaef352abc0450812b3ca9fde96ecafa911b3b8bfddca8db4027f08e29c22a9c370ad933"));
   private final Validator validator1 =
       new Validator(dataStructureUtil.randomPublicKey(), mock(Signer.class), Optional::empty);
   private final Validator validator2 =
@@ -96,6 +96,9 @@ class SyncCommitteeAggregationDutyTest {
     // Default to not returning errors when sending
     when(validatorApiChannel.sendSignedContributionAndProofs(any()))
         .thenReturn(SafeFuture.COMPLETE);
+
+    assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(nonAggregatorSignature)).isFalse();
+    assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(aggregatorSignature)).isTrue();
   }
 
   @Test
@@ -153,7 +156,7 @@ class SyncCommitteeAggregationDutyTest {
 
   @Test
   void shouldCreateAndSendSignedContributionAndProof() {
-    final int committeeIndex = 5;
+    final int committeeIndex = 9;
     final int subcommitteeIndex = 1;
     withValidatorAggregatingSubnet(validator1, subcommitteeIndex);
 
