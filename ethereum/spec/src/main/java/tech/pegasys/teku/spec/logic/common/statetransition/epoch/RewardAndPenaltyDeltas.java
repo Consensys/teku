@@ -29,10 +29,6 @@ public class RewardAndPenaltyDeltas {
     }
   }
 
-  public int size() {
-    return deltas.size();
-  }
-
   public RewardAndPenalty getDelta(final int validatorIndex) {
     return deltas.get(validatorIndex);
   }
