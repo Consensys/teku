@@ -63,8 +63,8 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
@@ -95,6 +95,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
   private final AttestationDataStateTransitionValidator attestationValidator;
+  private final OperationValidator operationValidator;
 
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
@@ -105,7 +106,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final AttestationDataStateTransitionValidator attestationValidator,
+      final OperationValidator operationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
@@ -115,6 +117,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationValidator = attestationValidator;
+    this.operationValidator = operationValidator;
   }
 
   @Override
@@ -506,14 +509,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
-          final AttesterSlashingStateTransitionValidator validator =
-              new AttesterSlashingStateTransitionValidator();
-
           // For each attester_slashing in block.body.attester_slashings:
           for (AttesterSlashing attesterSlashing : attesterSlashings) {
             List<UInt64> indicesToSlash = new ArrayList<>();
             final Optional<OperationInvalidReason> invalidReason =
-                validator.validate(state, attesterSlashing, indicesToSlash);
+                operationValidator.validateAttesterSlashing(
+                    state, attesterSlashing, indicesToSlash::add);
 
             checkArgument(
                 invalidReason.isEmpty(),
