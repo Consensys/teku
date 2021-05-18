@@ -506,7 +506,7 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final BeaconBlock block,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
