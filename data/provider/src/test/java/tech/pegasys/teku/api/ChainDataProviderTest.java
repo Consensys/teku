@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.StateSyncCommittees;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -49,12 +50,15 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -76,8 +80,8 @@ public class ChainDataProviderTest {
   private final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private UInt64 actualBalance;
-  private final DataStructureUtil data = new DataStructureUtil();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final DataStructureUtil data = new DataStructureUtil(spec);
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
 
   @BeforeEach
@@ -451,6 +455,43 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getStateSyncCommittees_shouldGetCommittees()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider = setupAltairState();
+    final List<UInt64> committeeIndices =
+        List.of(UInt64.valueOf(6), UInt64.valueOf(9), UInt64.valueOf(0));
+
+    final SafeFuture<Optional<StateSyncCommittees>> future =
+        provider.getStateSyncCommittees("head", Optional.empty());
+    assertThat(future).isCompleted();
+    assertThat(future.get().get())
+        .isEqualTo(new StateSyncCommittees(committeeIndices, List.of(committeeIndices)));
+  }
+
+  @Test
+  public void getStateSyncCommittees_shouldReturnEmptyListBeforeAltair()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        data.randomBeaconState();
+    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+
+    final SafeFuture<Optional<StateSyncCommittees>> future =
+        provider.getStateSyncCommittees("head", Optional.empty());
+    assertThat(future.get().get()).isEqualTo(new StateSyncCommittees(List.of(), List.of()));
+  }
+
+  @Test
+  public void getStateSyncCommittees_shouldRejectFarFutureEpoch() {
+    final ChainDataProvider provider = setupAltairState();
+    final SafeFuture<Optional<StateSyncCommittees>> future =
+        provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
+    SafeFutureAssert.assertThatSafeFuture(future)
+        .isCompletedExceptionallyWith(IllegalArgumentException.class);
+  }
+
+  @Test
   public void getStateFork_shouldGetForkAtGenesis()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -512,5 +553,28 @@ public class ChainDataProviderTest {
     assertThat(response).isPresent();
     assertThat(response.get())
         .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
+  }
+
+  private ChainDataProvider setupAltairState() {
+    final Spec altair = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(altair);
+    final ChainDataProvider provider =
+        new ChainDataProvider(altair, recentChainData, mockCombinedChainDataClient);
+
+    final SszList<tech.pegasys.teku.spec.datastructures.state.Validator> validators =
+        dataStructureUtil.randomSszList(
+            dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
+            16,
+            dataStructureUtil::randomValidator);
+    final SyncCommittee currentSyncCommittee = dataStructureUtil.randomSyncCommittee(validators);
+
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        dataStructureUtil
+            .stateBuilderAltair()
+            .validators(validators)
+            .currentSyncCommittee(currentSyncCommittee)
+            .build();
+    when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
+    return provider;
   }
 }

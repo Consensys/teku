@@ -55,6 +55,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
@@ -339,6 +340,7 @@ public class BeaconRestApi {
     app.get(
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
     app.get(GetStateCommittees.ROUTE, new GetStateCommittees(dataProvider, jsonProvider));
+    app.get(GetStateSyncCommittees.ROUTE, new GetStateSyncCommittees(dataProvider, jsonProvider));
 
     app.get(GetBlockHeaders.ROUTE, new GetBlockHeaders(dataProvider, jsonProvider));
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
