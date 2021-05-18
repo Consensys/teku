@@ -86,6 +86,13 @@ public class BeaconStateUtil {
     return genesisTime.compareTo(specConfig.getMinGenesisTime()) >= 0;
   }
 
+  public UInt64 computeNextEpochBoundary(final UInt64 slot) {
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
+    return miscHelpers.computeStartSlotAtEpoch(currentEpoch).equals(slot)
+        ? currentEpoch
+        : currentEpoch.plus(1);
+  }
+
   public Bytes32 computeDomain(Bytes4 domainType) {
     return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
   }

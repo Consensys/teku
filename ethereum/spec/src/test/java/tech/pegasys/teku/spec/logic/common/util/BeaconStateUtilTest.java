@@ -87,6 +87,22 @@ public class BeaconStateUtilTest {
   }
 
   @Test
+  void compute_next_epoch_boundary_slotAtBoundary() {
+    final UInt64 expectedEpoch = UInt64.valueOf(2);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(expectedEpoch);
+
+    assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
+  }
+
+  @Test
+  void compute_next_epoch_boundary_slotPriorToBoundary() {
+    final UInt64 expectedEpoch = UInt64.valueOf(2);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(expectedEpoch).minus(1);
+
+    assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
+  }
+
+  @Test
   void getCurrentDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT);
     assertThat(beaconStateUtil.getCurrentDutyDependentRoot(state))
