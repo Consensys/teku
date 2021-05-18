@@ -52,7 +52,6 @@ public class BeaconStateUtil {
 
   private final SpecConfig specConfig;
   private final SchemaDefinitions schemaDefinitions;
-  private final ValidatorsUtil validatorsUtil;
   private final CommitteeUtil committeeUtil;
 
   private final Predicates predicates;
@@ -62,14 +61,12 @@ public class BeaconStateUtil {
   public BeaconStateUtil(
       final SpecConfig specConfig,
       final SchemaDefinitions schemaDefinitions,
-      final ValidatorsUtil validatorsUtil,
       final CommitteeUtil committeeUtil,
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
-    this.validatorsUtil = validatorsUtil;
     this.committeeUtil = committeeUtil;
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
@@ -94,21 +91,6 @@ public class BeaconStateUtil {
     return miscHelpers.computeStartSlotAtEpoch(currentEpoch).equals(slot)
         ? currentEpoch
         : currentEpoch.plus(1);
-  }
-
-  public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
-      throws IllegalArgumentException {
-    checkArgument(
-        isBlockRootAvailableFromState(state, slot),
-        "Block at slot %s not available from state at slot %s",
-        slot,
-        state.getSlot());
-    int latestBlockRootIndex = slot.mod(specConfig.getSlotsPerHistoricalRoot()).intValue();
-    return state.getBlock_roots().getElement(latestBlockRootIndex);
-  }
-
-  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
-    return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
   }
 
   public Bytes32 computeDomain(Bytes4 domainType) {
@@ -327,12 +309,6 @@ public class BeaconStateUtil {
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root
         ? BeaconBlock.fromGenesisState(schemaDefinitions, state).getRoot()
-        : getBlockRootAtSlot(state, slot);
-  }
-
-  private boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
-    UInt64 slotPlusHistoricalRoot = slot.plus(specConfig.getSlotsPerHistoricalRoot());
-    return slot.isLessThan(state.getSlot())
-        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
+        : beaconStateAccessors.getBlockRootAtSlot(state, slot);
   }
 }
