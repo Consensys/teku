@@ -360,7 +360,7 @@ public class CombinedChainDataClient {
     List<CommitteeAssignment> result = new ArrayList<>();
     final BeaconStateUtil beaconStateUtil = spec.atEpoch(epoch).getBeaconStateUtil();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
-    final UInt64 startingSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);
     int committeeCount = beaconStateUtil.getCommitteeCountPerSlot(state, epoch).intValue();
     for (int i = 0; i < slotsPerEpoch; i++) {
       UInt64 slot = startingSlot.plus(i);
