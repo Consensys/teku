@@ -1,0 +1,17 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^http(s)?://localhost"
+    },
+    {
+      "pattern": "^http(s)?://127.0.0.1"
+    },
+    {
+      "comment": "Consensys.net now has a ddos attack protection",
+      "pattern": "^http(s)?://consensys.net"
+    }
+  ],
+  "timeout": "30s",
+  "retryOn429": true,
+  "aliveStatusCodes": [429, 200]
+}
