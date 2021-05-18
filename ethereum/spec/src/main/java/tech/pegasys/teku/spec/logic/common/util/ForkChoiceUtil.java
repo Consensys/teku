@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 public class ForkChoiceUtil {
 
   private final SpecConfig specConfig;
-  private final BeaconStateUtil beaconStateUtil;
   private final BeaconStateAccessors beaconStateAccessors;
   private final AttestationUtil attestationUtil;
   private final BlockProcessor blockProcessor;
@@ -51,13 +50,11 @@ public class ForkChoiceUtil {
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationUtil attestationUtil,
       final BlockProcessor blockProcessor,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
-    this.beaconStateUtil = beaconStateUtil;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationUtil = attestationUtil;
     this.blockProcessor = blockProcessor;

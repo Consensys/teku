@@ -137,7 +137,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
             config,
-            beaconStateUtil,
             beaconStateAccessors,
             attestationUtil,
             blockProcessor,
