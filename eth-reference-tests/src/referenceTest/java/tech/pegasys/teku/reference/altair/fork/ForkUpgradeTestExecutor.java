@@ -75,6 +75,7 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
     assertThatSszData(result).isEqualByGettersTo(postState);
   }
 
+  @SuppressWarnings({"unused", "UnusedVariable"})
   private static class MetaData {
     @JsonProperty(value = "post_fork", required = true)
     private String postFork;
