@@ -62,7 +62,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
               state.getInactivityScores().setAll(SszUInt64.ZERO, validatorCount);
 
               // Fill in sync committees
-              // Note: A duplicate committee is assigned for the currenta nd next committee at the
+              // Note: A duplicate committee is assigned for the current and next committee at the
               // fork boundary
               final SyncCommittee committee = beaconStateAccessors.getNextSyncCommittee(state);
               state.setCurrentSyncCommittee(committee);
