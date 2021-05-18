@@ -179,8 +179,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
 
     // Participation flag indices
     final List<Integer> participationFlagIndices = new ArrayList<>();
-    final UInt64 stateSlot = state.getSlot();
-    final UInt64 dataSlot = data.getSlot();
     if (isMatchingSource
         && inclusionDelay.isLessThanOrEqualTo(integerSquareRoot(config.getSlotsPerEpoch()))) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX);
