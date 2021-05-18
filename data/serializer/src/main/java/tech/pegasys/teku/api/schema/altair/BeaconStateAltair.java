@@ -17,6 +17,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
@@ -32,9 +35,16 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
+
 public class BeaconStateAltair extends BeaconState implements State {
   public final Bytes previous_epoch_participation;
   public final Bytes current_epoch_participation;
+  @JsonProperty("inactivity_scores")
+  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
+  public final List<UInt64> inactivity_scores;
+  public final SyncCommittee current_sync_committee;
+  public final SyncCommittee next_sync_committee;
 
   @JsonCreator
   public BeaconStateAltair(
@@ -58,7 +68,10 @@ public class BeaconStateAltair extends BeaconState implements State {
       @JsonProperty("justification_bits") final SszBitvector justification_bits,
       @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
       @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
-      @JsonProperty("finalized_checkpoint") final Checkpoint finalized_checkpoint) {
+      @JsonProperty("finalized_checkpoint") final Checkpoint finalized_checkpoint,
+      @JsonProperty("inactivity_scores")final List<UInt64> inactivity_scores,
+      @JsonProperty("current_sync_committee") final SyncCommittee current_sync_committee,
+      @JsonProperty("next_sync_committee") final SyncCommittee next_sync_committee) {
     super(
         genesis_time,
         genesis_validators_root,
@@ -81,6 +94,9 @@ public class BeaconStateAltair extends BeaconState implements State {
         finalized_checkpoint);
     this.previous_epoch_participation = previous_epoch_participation;
     this.current_epoch_participation = current_epoch_participation;
+    this.inactivity_scores = inactivity_scores;
+    this.current_sync_committee = current_sync_committee;
+    this.next_sync_committee = next_sync_committee;
   }
 
   public BeaconStateAltair(
@@ -90,6 +106,9 @@ public class BeaconStateAltair extends BeaconState implements State {
         altair = beaconState.toVersionAltair().orElseThrow();
     this.previous_epoch_participation = altair.getPreviousEpochParticipation().sszSerialize();
     this.current_epoch_participation = altair.getCurrentEpochParticipation().sszSerialize();
+    this.inactivity_scores = altair.getInactivityScores().asListUnboxed();
+    this.current_sync_committee = new SyncCommittee(altair.getCurrentSyncCommittee());
+    this.next_sync_committee = new SyncCommittee(altair.getNextSyncCommittee());
   }
 
   @Override
@@ -116,6 +135,9 @@ public class BeaconStateAltair extends BeaconState implements State {
                   .getCurrentEpochParticipation()
                   .createWritableCopy()
                   .setAll(currentEpochParticipation);
+              beaconStateAltair.getInactivityScores().createWritableCopy().setAllElements(inactivity_scores);
+              // FIXME 3994 need current and next sync committee written
+              // beaconStateAltair.getCurrentSyncCommittee().createWritableCopy()
             });
   }
 
