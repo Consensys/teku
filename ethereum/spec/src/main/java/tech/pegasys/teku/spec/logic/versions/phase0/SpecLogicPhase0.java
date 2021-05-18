@@ -82,7 +82,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
 
     // Operation validaton
     final AttestationDataStateTransitionValidator attestationValidator =
-        new AttestationDataStateTransitionValidator();
+        new AttestationDataStateTransitionValidator(config, miscHelpers, beaconStateAccessors);
 
     // Util
     final CommitteeUtil committeeUtil = new CommitteeUtil(config);

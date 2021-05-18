@@ -131,6 +131,13 @@ public class AttestationUtil {
 
   public AttestationProcessingResult isValidIndexedAttestation(
       BeaconState state, ValidateableAttestation attestation) {
+    return isValidIndexedAttestation(state, attestation, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
     if (attestation.isValidIndexedAttestation()) {
       return AttestationProcessingResult.SUCCESSFUL;
     } else {
@@ -139,7 +146,7 @@ public class AttestationUtil {
             getIndexedAttestation(state, attestation.getAttestation());
         attestation.setIndexedAttestation(indexedAttestation);
         AttestationProcessingResult result =
-            isValidIndexedAttestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+            isValidIndexedAttestation(state, indexedAttestation, blsSignatureVerifier);
         if (result.isSuccessful()) {
           attestation.saveCommitteeShufflingSeed(state);
           attestation.setValidIndexedAttestation();

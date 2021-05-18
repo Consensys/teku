@@ -13,21 +13,33 @@
 
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationDataStateTransitionValidator
     implements OperationStateTransitionValidator<AttestationData> {
+
+  private final SpecConfig specConfig;
+  private final MiscHelpers miscHelpers;
+  private final BeaconStateAccessors beaconStateAccessors;
+
+  public AttestationDataStateTransitionValidator(
+      final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors) {
+    this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
+  }
 
   @Override
   public Optional<OperationInvalidReason> validate(
@@ -41,12 +53,14 @@ public class AttestationDataStateTransitionValidator
                 AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH),
         () ->
             check(
-                data.getTarget().getEpoch().equals(get_previous_epoch(state))
-                    || data.getTarget().getEpoch().equals(get_current_epoch(state)),
+                data.getTarget().getEpoch().equals(beaconStateAccessors.getPreviousEpoch(state))
+                    || data.getTarget()
+                        .getEpoch()
+                        .equals(beaconStateAccessors.getCurrentEpoch(state)),
                 AttestationInvalidReason.NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH),
         () ->
             check(
-                data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot())),
+                data.getTarget().getEpoch().equals(miscHelpers.computeEpochAtSlot(data.getSlot())),
                 AttestationInvalidReason.SLOT_NOT_IN_EPOCH),
         () ->
             check(
@@ -57,10 +71,12 @@ public class AttestationDataStateTransitionValidator
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
         () ->
             check(
-                state.getSlot().isLessThanOrEqualTo(data.getSlot().plus(SLOTS_PER_EPOCH)),
+                state
+                    .getSlot()
+                    .isLessThanOrEqualTo(data.getSlot().plus(specConfig.getSlotsPerEpoch())),
                 AttestationInvalidReason.SUBMITTED_TOO_LATE),
         () -> {
-          if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
+          if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
             return check(
                 data.getSource().equals(state.getCurrent_justified_checkpoint()),
                 AttestationInvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
