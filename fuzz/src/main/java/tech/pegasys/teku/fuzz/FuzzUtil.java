@@ -93,7 +93,10 @@ public class FuzzUtil {
       BeaconState postState =
           structuredInput
               .getState()
-              .updated(state -> spec.processAttestations(state, attestations));
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processAttestations(state, attestations));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -116,9 +119,9 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    spec.processAttesterSlashings(state, slashings);
-                  });
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processAttesterSlashings(state, slashings));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -155,9 +158,9 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    spec.processBlockHeader(state, structuredInput.getBlock());
-                  });
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processBlockHeader(state, structuredInput.getBlock()));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -177,9 +180,8 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    spec.processDeposits(state, deposits);
-                  });
+                  state ->
+                      spec.getBlockProcessor(state.getSlot()).processDeposits(state, deposits));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -202,9 +204,9 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    spec.processProposerSlashings(state, proposerSlashings);
-                  });
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processProposerSlashings(state, proposerSlashings));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -252,9 +254,9 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    spec.processVoluntaryExits(state, voluntaryExits);
-                  });
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processVoluntaryExits(state, voluntaryExits));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
