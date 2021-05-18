@@ -21,6 +21,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 
 public class ValidatorPerformanceMetricsTest {
+
+  private static final int NUMBER_OF_EXPECTED_SIGNATURES = 64;
+  private static final int NUMBER_OF_PRODUCED_SIGNATURES = 60;
+  private static final int NUMBER_OF_INCLUDED_SIGNATURES = 52;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   public final ValidatorPerformanceMetrics validatorPerformanceMetrics =
       new ValidatorPerformanceMetrics(metricsSystem);
@@ -34,7 +38,7 @@ public class ValidatorPerformanceMetricsTest {
   private final int CORRECT_TARGET_COUNT = 20;
   private final int CORRECT_HEAD_BLOCK_COUNT = 14;
 
-  private final int NUMBER_OF_EXPECTED_BLOCKS = 55;
+  private final int NUMBER_OF_EXPECTED_BLOCKS = 51;
   private final int NUMBER_OF_PRODUCED_BLOCKS = 5;
   private final int NUMBER_OF_INCLUDED_BLOCKS = 3;
 
@@ -53,10 +57,17 @@ public class ValidatorPerformanceMetricsTest {
       new BlockPerformance(
           NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
 
+  private final SyncCommitteePerformance syncCommitteePerformance =
+      new SyncCommitteePerformance(
+          NUMBER_OF_EXPECTED_SIGNATURES,
+          NUMBER_OF_PRODUCED_SIGNATURES,
+          NUMBER_OF_INCLUDED_SIGNATURES);
+
   @BeforeEach
   void setUp() {
     validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
     validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+    validatorPerformanceMetrics.updateSyncCommitteePerformance(syncCommitteePerformance);
   }
 
   @Test
@@ -124,5 +135,32 @@ public class ValidatorPerformanceMetricsTest {
   void getIncludedBlocks() {
     assertThat(metricsSystem.getGauge(VALIDATOR_PERFORMANCE, "included_blocks").getValue())
         .isEqualTo(NUMBER_OF_INCLUDED_BLOCKS);
+  }
+
+  @Test
+  void getExpectedSignatures() {
+    assertThat(
+            metricsSystem
+                .getGauge(VALIDATOR_PERFORMANCE, "expected_sync_committee_signatures")
+                .getValue())
+        .isEqualTo(NUMBER_OF_EXPECTED_SIGNATURES);
+  }
+
+  @Test
+  void getProducedSignatures() {
+    assertThat(
+            metricsSystem
+                .getGauge(VALIDATOR_PERFORMANCE, "produced_sync_committee_signatures")
+                .getValue())
+        .isEqualTo(NUMBER_OF_PRODUCED_SIGNATURES);
+  }
+
+  @Test
+  void getIncludedSignatures() {
+    assertThat(
+            metricsSystem
+                .getGauge(VALIDATOR_PERFORMANCE, "included_sync_committee_signatures")
+                .getValue())
+        .isEqualTo(NUMBER_OF_INCLUDED_SIGNATURES);
   }
 }

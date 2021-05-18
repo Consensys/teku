@@ -328,6 +328,28 @@ public final class DataStructureUtil {
             () -> new SszPublicKey(randomPublicKey())));
   }
 
+  public SyncCommittee randomSyncCommittee(SszList<Validator> validators) {
+    final SyncCommitteeSchema syncCommitteeSchema =
+        ((BeaconStateSchemaAltair)
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema())
+            .getCurrentSyncCommitteeSchema();
+    return syncCommitteeSchema.create(
+        randomSszVector(
+            syncCommitteeSchema.getPubkeysSchema(),
+            () -> new SszPublicKey(randomValidatorKey(validators))),
+        randomSszVector(
+            syncCommitteeSchema.getPubkeyAggregatesSchema(),
+            () -> new SszPublicKey(randomPublicKey())));
+  }
+
+  private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {
+    final int rand = new Random(nextSeed()).nextInt();
+    final int index = rand > 0 ? rand % validators.size() : (-1 * rand) % validators.size();
+    return validators.get(index).getPublicKey();
+  }
+
   public SyncCommitteeSignature randomSyncCommitteeSignature() {
     return randomSyncCommitteeSignature(randomUInt64());
   }
