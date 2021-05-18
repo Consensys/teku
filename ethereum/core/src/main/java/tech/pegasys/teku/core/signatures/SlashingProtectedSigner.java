@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 /**
@@ -129,8 +129,8 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
-    return delegate.signSyncCommitteeSelectionProof(signingData, forkInfo);
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
+    return delegate.signSyncCommitteeSelectionProof(selectionData, forkInfo);
   }
 
   @Override
