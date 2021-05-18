@@ -595,11 +595,11 @@ class ValidatorApiHandlerTest {
     final UInt64 unsubscribeSlotSubscription2 =
         spec.computeStartSlotAtEpoch(UInt64.valueOf(35).increment());
     verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription1);
+    verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(3, unsubscribeSlotSubscription1);
-    verify(syncCommitteeSubscriptionManager).subscribe(7, unsubscribeSlotSubscription1);
 
+    verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription2);
     verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription2);
-    verify(syncCommitteeSubscriptionManager).subscribe(2, unsubscribeSlotSubscription2);
     verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 
