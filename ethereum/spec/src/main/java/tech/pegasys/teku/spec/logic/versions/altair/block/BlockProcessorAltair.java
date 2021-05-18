@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -69,7 +70,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final AttestationDataStateTransitionValidator attestationValidator,
+      final OperationValidator operationValidator) {
     super(
         specConfig,
         predicates,
@@ -79,7 +81,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
-        attestationValidator);
+        attestationValidator,
+        operationValidator);
 
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;

@@ -356,6 +356,11 @@ public class Spec {
         .validate(store, validateableAttestation, maybeTargetState);
   }
 
+  public Optional<OperationInvalidReason> validateAttesterSlashing(
+      final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+  }
+
   public BlockImportResult onBlock(
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
