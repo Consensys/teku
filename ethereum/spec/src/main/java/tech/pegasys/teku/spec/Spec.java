@@ -25,6 +25,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -300,6 +301,18 @@ public class Spec {
     return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
   }
 
+  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
+  }
+
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    return atState(state).getBeaconStateUtil().getBeaconCommittee(state, slot, index);
+  }
+
+  public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+  }
+
   // ForkChoice utils
   public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
     return atTime(genesisTime, currentTime)
@@ -498,6 +511,15 @@ public class Spec {
     return atSlot(slot)
         .getAttestationUtil()
         .getGenericAttestationData(slot, state, block, committeeIndex);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
+    return atState(state)
+        .getAttestationUtil()
+        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers
