@@ -173,7 +173,7 @@ public class ForkSchedule {
       // Current fork info
       final UInt64 forkEpoch = maybeForkEpoch.get();
       final Bytes4 forkVersion = maybeForkVersion.get();
-      final UInt64 forkSlot = spec.getBeaconStateUtil().computeStartSlotAtEpoch(forkEpoch);
+      final UInt64 forkSlot = spec.miscHelpers().computeStartSlotAtEpoch(forkEpoch);
       final UInt64 genesisOffset = spec.getForkChoiceUtil().getSlotStartTime(forkSlot, UInt64.ZERO);
       final Fork fork = new Fork(prevForkVersion.orElse(forkVersion), forkVersion, forkEpoch);
 

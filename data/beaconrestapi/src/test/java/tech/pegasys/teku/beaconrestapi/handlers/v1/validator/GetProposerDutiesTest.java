@@ -51,8 +51,7 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     GetProposerDutiesResponse duties =
         new GetProposerDutiesResponse(
             Bytes32.fromHexString("0x1234"),
-            List.of(
-                getProposerDuty(2, beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
+            List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 

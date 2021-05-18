@@ -87,22 +87,6 @@ public class BeaconStateUtilTest {
   }
 
   @Test
-  void compute_next_epoch_boundary_slotAtBoundary() {
-    final UInt64 expectedEpoch = UInt64.valueOf(2);
-    final UInt64 slot = beaconStateUtil.computeStartSlotAtEpoch(expectedEpoch);
-
-    assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
-  }
-
-  @Test
-  void compute_next_epoch_boundary_slotPriorToBoundary() {
-    final UInt64 expectedEpoch = UInt64.valueOf(2);
-    final UInt64 slot = beaconStateUtil.computeStartSlotAtEpoch(expectedEpoch).minus(1);
-
-    assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
-  }
-
-  @Test
   void getCurrentDutyDependentRoot_genesisStateReturnsFinalizedCheckpointRoot() {
     final BeaconState state = dataStructureUtil.randomBeaconState(GENESIS_SLOT);
     assertThat(beaconStateUtil.getCurrentDutyDependentRoot(state))
@@ -195,7 +179,7 @@ public class BeaconStateUtilTest {
   @ParameterizedTest(name = "n={0}")
   @MethodSource("getNValues")
   void isSlotAtNthEpochBoundary_withSkippedBlock(final int n) {
-    final int nthStartSlot = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
+    final int nthStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
 
     final UInt64 genesisSlot = UInt64.ZERO;
     final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + 1);
@@ -207,7 +191,7 @@ public class BeaconStateUtilTest {
   @ParameterizedTest(name = "n={0}")
   @MethodSource("getNValues")
   public void isSlotAtNthEpochBoundary_withSkippedEpochs_oneEpochAndSlotSkipped(final int n) {
-    final int nthStartSlot = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
+    final int nthStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
 
     final UInt64 genesisSlot = UInt64.ZERO;
     final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + SLOTS_PER_EPOCH + 1);
@@ -220,8 +204,7 @@ public class BeaconStateUtilTest {
   @ParameterizedTest(name = "n={0}")
   @MethodSource("getNValues")
   public void isSlotAtNthEpochBoundary_withSkippedEpochs_nearlyNEpochsSkipped(final int n) {
-    final int startSlotAt2N =
-        beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n * 2L)).intValue();
+    final int startSlotAt2N = spec.computeStartSlotAtEpoch(UInt64.valueOf(n * 2L)).intValue();
 
     final UInt64 genesisSlot = UInt64.ZERO;
     final UInt64 block1Slot = UInt64.valueOf(startSlotAt2N - 1);
@@ -335,7 +318,7 @@ public class BeaconStateUtilTest {
   @Test
   void getAttestersTotalEffectiveBalance_shouldRejectRequestFromBeyondLookAheadPeriod() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
-    final UInt64 epoch3Start = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(3));
+    final UInt64 epoch3Start = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
     assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
         .isInstanceOf(IllegalArgumentException.class);
   }

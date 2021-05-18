@@ -91,7 +91,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateUtil(
             config,
             schemaDefinitions,
-            validatorsUtil,
             committeeUtil,
             predicates,
             miscHelpers,
@@ -125,7 +124,13 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             attestationValidator,
             operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, blockProcessor, miscHelpers);
+        new ForkChoiceUtil(
+            config,
+            beaconStateUtil,
+            beaconStateAccessors,
+            attestationUtil,
+            blockProcessor,
+            miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 

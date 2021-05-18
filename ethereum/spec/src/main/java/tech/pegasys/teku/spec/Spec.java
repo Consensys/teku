@@ -266,7 +266,7 @@ public class Spec {
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
@@ -282,11 +282,11 @@ public class Spec {
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+    return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
 
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+    return atState(state).beaconStateAccessors().getBlockRootAtSlot(state, slot);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -295,10 +295,6 @@ public class Spec {
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     return atState(state).getBeaconStateUtil().getCurrentDutyDependentRoot(state);
-  }
-
-  public UInt64 computeNextEpochBoundary(final UInt64 slot) {
-    return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
   }
 
   // ForkChoice utils

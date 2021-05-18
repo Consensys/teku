@@ -140,6 +140,6 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
   protected boolean matchesEpochStartBlock(
       final BeaconState state, final UInt64 currentEpoch, final Bytes32 root) {
-    return beaconStateUtil.getBlockRoot(state, currentEpoch).equals(root);
+    return beaconStateAccessors.getBlockRoot(state, currentEpoch).equals(root);
   }
 }
