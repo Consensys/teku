@@ -19,6 +19,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class MiscHelpersAltair extends MiscHelpers {
@@ -27,7 +28,8 @@ public class MiscHelpersAltair extends MiscHelpers {
       List.of(
           IncentivizationWeights.TIMELY_SOURCE_WEIGHT,
           IncentivizationWeights.TIMELY_TARGET_WEIGHT,
-          IncentivizationWeights.TIMELY_HEAD_WEIGHT);
+          // TODO: This is faithfully reproducing a bug in the spec.
+          UInt64.valueOf(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX));
 
   public MiscHelpersAltair(final SpecConfig specConfig) {
     super(specConfig);
