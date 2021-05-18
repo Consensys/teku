@@ -42,8 +42,8 @@ import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 class NodeRecordConverterTest {
 
-  private static Spec SPEC = TestSpecFactory.createMinimalAltair();
-  private static SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
+  private static final Spec SPEC = TestSpecFactory.createMinimalAltair();
+  private static final SchemaDefinitions SCHEMA_DEFINITIONS = SPEC.getGenesisSchemaDefinitions();
   private static final Bytes PUB_KEY =
       Bytes.fromHexString("0x0295A5A50F083697FF8557F3C6FE0CDF8E8EC2141D15F19A5A45571ED9C38CE181");
   private static final Bytes IPV6_LOCALHOST =
@@ -187,7 +187,7 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldConvertSyncnets() {
-    SszBitvector syncnets = SYNCNETS_SCHEMA.ofBits(1, 4);
+    SszBitvector syncnets = SYNCNETS_SCHEMA.ofBits(1, 3);
     Bytes encodedSyncnets = syncnets.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
@@ -203,7 +203,8 @@ class NodeRecordConverterTest {
   @Test
   public void shouldUseEmptySyncnetsFieldValueIsInvalid() {
     SszBitvector syncnets =
-        SszBitvectorSchema.create(SYNCNETS_SCHEMA.getLength() * 2L).ofBits(1); // Incorrect length
+        SszBitvectorSchema.create(SYNCNETS_SCHEMA.getLength() * 2L)
+            .ofBits(1, 4); // Incorrect length
     Bytes encodedSyncnets = syncnets.sszSerialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(

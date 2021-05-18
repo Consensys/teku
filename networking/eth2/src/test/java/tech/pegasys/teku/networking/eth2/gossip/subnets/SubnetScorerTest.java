@@ -88,10 +88,10 @@ class SubnetScorerTest {
                             .addSubscriber(5, node2))
                 .syncCommitteeSubnetSubscriptions(
                     b ->
-                        b.addRelevantSubnet(4)
+                        b.addRelevantSubnet(3)
                             // Subnet 4
-                            .addSubscriber(4, node1)
-                            .addSubscriber(4, node4)
+                            .addSubscriber(3, node1)
+                            .addSubscriber(3, node4)
                             // Irrelevant subnet
                             .addSubscriber(2, node3))
                 .build());
