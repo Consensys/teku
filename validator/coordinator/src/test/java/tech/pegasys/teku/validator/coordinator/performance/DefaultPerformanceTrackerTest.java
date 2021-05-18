@@ -50,8 +50,8 @@ public class DefaultPerformanceTrackerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
   final SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.slotsPerEpoch(4));
   private final Spec spec = TestSpecFactory.createPhase0(specConfig);
-  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-  protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  protected ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
