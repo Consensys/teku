@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
-public class SchemaDefinitionsPhase0 implements SchemaDefinitions {
+public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final BeaconStateSchema<?, ?> beaconStateSchema;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;

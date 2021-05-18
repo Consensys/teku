@@ -19,6 +19,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 
 public interface SchemaDefinitions {
 
@@ -31,6 +33,10 @@ public interface SchemaDefinitions {
   BeaconBlockBodySchema<?> getBeaconBlockBodySchema();
 
   MetadataMessageSchema<?> getMetadataMessageSchema();
+
+  SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema();
+
+  SszBitvectorSchema<SszBitvector> getSyncnetsENRFieldSchema();
 
   Optional<SchemaDefinitionsAltair> toVersionAltair();
 }

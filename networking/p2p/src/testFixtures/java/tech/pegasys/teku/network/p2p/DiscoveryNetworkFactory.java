@@ -116,7 +116,8 @@ public class DiscoveryNetworkFactory {
                 peerSelectionStrategy,
                 discoveryConfig,
                 config,
-                spec);
+                spec,
+                spec::getGenesisSchemaDefinitions);
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);
