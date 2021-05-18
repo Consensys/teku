@@ -17,10 +17,10 @@ PROPORTIONAL_SLASHING_MULTIPLIER_ALTAIR: 2
 # ---------------------------------------------------------------
 # 2**10 (= 1,024)
 SYNC_COMMITTEE_SIZE: 1024
-# 2**6 (= 64)
-SYNC_PUBKEYS_PER_AGGREGATE: 64
 # 2**2 (= 4)
 INACTIVITY_SCORE_BIAS: 4
+# 2**4 (= 16)
+INACTIVITY_SCORE_RECOVERY_RATE: 16
 
 
 # Time parameters
@@ -39,17 +39,13 @@ DOMAIN_CONTRIBUTION_AND_PROOF: 0x09000000
 # Fork
 # ---------------------------------------------------------------
 ALTAIR_FORK_VERSION: 0x01000000
-ALTAIR_FORK_SLOT: 18446744073709551615
+ALTAIR_FORK_EPOCH: 18446744073709551615
 
 
 # Sync protocol
 # ---------------------------------------------------------------
 # 1
 MIN_SYNC_COMMITTEE_PARTICIPANTS: 1
-# 2**13
-MAX_VALID_LIGHT_CLIENT_UPDATES: 8192
-# 2**13 (=8192)
-LIGHT_CLIENT_UPDATE_TIMEOUT: 8192
 
 
 # Validator
