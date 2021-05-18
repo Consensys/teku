@@ -80,9 +80,9 @@ public abstract class AbstractNode implements Node {
   private void reportForkSlotOverrides(final TekuConfiguration tekuConfig) {
     tekuConfig
         .eth2NetworkConfiguration()
-        .getAltairForkSlot()
+        .getAltairForkEpoch()
         .ifPresent(
-            forkSlot -> STATUS_LOG.warnForkSlotChanged(SpecMilestone.ALTAIR.name(), forkSlot));
+            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.ALTAIR.name(), forkEpoch));
   }
 
   protected abstract ServiceController getServiceController();

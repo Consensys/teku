@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 class ForkProviderTest {
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(16));
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(2));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
 

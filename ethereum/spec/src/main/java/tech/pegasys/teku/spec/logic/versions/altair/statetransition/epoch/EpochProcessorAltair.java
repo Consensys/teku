@@ -96,13 +96,11 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   @Override
   public void processSyncCommitteeUpdates(final MutableBeaconState genericState) {
-    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
-    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(genericState).increment();
     if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
+      final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
-      state.setNextSyncCommittee(
-          beaconStateAccessorsAltair.getSyncCommittee(
-              state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
+      state.setNextSyncCommittee(beaconStateAccessorsAltair.getNextSyncCommittee(state));
     }
   }
 

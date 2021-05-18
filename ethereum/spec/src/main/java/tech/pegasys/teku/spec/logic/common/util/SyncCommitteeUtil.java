@@ -37,9 +37,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -222,23 +222,23 @@ public class SyncCommitteeUtil {
     return beaconStateUtil.computeSigningRoot(contributionAndProof, domain);
   }
 
-  public Bytes getSyncCommitteeSigningDataSigningRoot(
-      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
+  public Bytes getSyncAggregatorSelectionDataSigningRoot(
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
         beaconStateUtil.getDomain(
             domainSyncCommitteeSelectionProof,
-            miscHelpers.computeEpochAtSlot(signingData.getSlot()),
+            miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return beaconStateUtil.computeSigningRoot(signingData, domain);
+    return beaconStateUtil.computeSigningRoot(selectionData, domain);
   }
 
-  public SyncCommitteeSigningData createSyncCommitteeSigningData(
+  public SyncAggregatorSelectionData createSyncAggregatorSelectionData(
       final UInt64 slot, final UInt64 subcommitteeIndex) {
     return schemaDefinitionsAltair
-        .getSyncCommitteeSigningDataSchema()
+        .getSyncAggregatorSelectionDataSchema()
         .create(slot, subcommitteeIndex);
   }
 
@@ -294,7 +294,7 @@ public class SyncCommitteeUtil {
     return requiredSyncCommitteePeriod
         .times(specConfig.getEpochsPerSyncCommitteePeriod())
         // But can't use a state from before the Altair fork
-        .max(miscHelpers.computeEpochAtSlot(specConfig.getAltairForkSlot()));
+        .max(specConfig.getAltairForkEpoch());
   }
 
   public UInt64 computeFirstEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {

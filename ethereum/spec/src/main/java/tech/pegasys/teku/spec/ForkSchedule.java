@@ -161,18 +161,19 @@ public class ForkSchedule {
 
     private void processMilestone(final SpecVersion spec) {
       final SpecMilestone milestone = spec.getMilestone();
-      final Optional<UInt64> maybeForkSlot = SpecMilestone.getForkSlot(spec.getConfig(), milestone);
+      final Optional<UInt64> maybeForkEpoch =
+          SpecMilestone.getForkEpoch(spec.getConfig(), milestone);
       final Optional<Bytes4> maybeForkVersion =
           SpecMilestone.getForkVersion(spec.getConfig(), milestone);
-      if (maybeForkSlot.isEmpty() || maybeForkVersion.isEmpty()) {
+      if (maybeForkEpoch.isEmpty() || maybeForkVersion.isEmpty()) {
         // This milestone is not enabled
         return;
       }
 
       // Current fork info
-      final UInt64 forkSlot = maybeForkSlot.get();
+      final UInt64 forkEpoch = maybeForkEpoch.get();
       final Bytes4 forkVersion = maybeForkVersion.get();
-      final UInt64 forkEpoch = spec.miscHelpers().computeEpochAtSlot(forkSlot);
+      final UInt64 forkSlot = spec.getBeaconStateUtil().computeStartSlotAtEpoch(forkEpoch);
       final UInt64 genesisOffset = spec.getForkChoiceUtil().getSlotStartTime(forkSlot, UInt64.ZERO);
       final Fork fork = new Fork(prevForkVersion.orElse(forkVersion), forkVersion, forkEpoch);
 

@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
@@ -208,10 +208,10 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
+      final SyncAggregatorSelectionData signingData, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
             signingData.getSlot(),
-            utils -> utils.getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo))
+            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(signingData, forkInfo))
         .thenCompose(
             signingRoot ->
                 sign(

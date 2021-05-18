@@ -1,7 +1,5 @@
 # Mainnet preset - Altair
 
-CONFIG_NAME: "mainnet"
-
 # Duplicate, divergent field
 MAX_COMMITTEES_PER_SLOT: 62
 

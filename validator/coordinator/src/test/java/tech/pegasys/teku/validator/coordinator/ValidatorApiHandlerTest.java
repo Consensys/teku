@@ -368,7 +368,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getSyncCommitteeDuties_shouldNotUseEpochPriorToFork() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(EPOCH_START_SLOT);
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(EPOCH);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             chainDataProvider,

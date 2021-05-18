@@ -323,9 +323,7 @@ public final class DataStructureUtil {
     return syncCommitteeSchema.create(
         randomSszVector(
             syncCommitteeSchema.getPubkeysSchema(), () -> new SszPublicKey(randomPublicKey())),
-        randomSszVector(
-            syncCommitteeSchema.getPubkeyAggregatesSchema(),
-            () -> new SszPublicKey(randomPublicKey())));
+        new SszPublicKey(randomPublicKey()));
   }
 
   public SyncCommitteeSignature randomSyncCommitteeSignature() {

@@ -29,8 +29,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -116,8 +116,9 @@ public class SyncCommitteeAggregationDuty {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot) {
 
-    final SyncCommitteeSigningData signingData =
-        syncCommitteeUtil.createSyncCommitteeSigningData(slot, UInt64.valueOf(subcommitteeIndex));
+    final SyncAggregatorSelectionData signingData =
+        syncCommitteeUtil.createSyncAggregatorSelectionData(
+            slot, UInt64.valueOf(subcommitteeIndex));
     final Validator validator = assignment.getValidator();
     return validator
         .getSigner()
