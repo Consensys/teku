@@ -86,7 +86,7 @@ public class ForkChoiceUtil {
 
   public UInt64 computeSlotsSinceEpochStart(UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-    final UInt64 epochStartSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    final UInt64 epochStartSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     return slot.minus(epochStartSlot);
   }
 
@@ -262,7 +262,7 @@ public class ForkChoiceUtil {
     }
 
     // LMD vote must be consistent with FFG vote target
-    final UInt64 target_slot = beaconStateUtil.computeStartSlotAtEpoch(target.getEpoch());
+    final UInt64 target_slot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
     if (getAncestor(forkChoiceStrategy, attestation.getData().getBeacon_block_root(), target_slot)
         .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
         .orElse(true)) {
@@ -444,7 +444,7 @@ public class ForkChoiceUtil {
     }
 
     UInt64 justifiedSlot =
-        beaconStateUtil.computeStartSlotAtEpoch(store.getJustifiedCheckpoint().getEpoch());
+        miscHelpers.computeStartSlotAtEpoch(store.getJustifiedCheckpoint().getEpoch());
     return hasAncestorAtSlot(
         forkChoiceStrategy,
         new_justified_checkpoint.getRoot(),

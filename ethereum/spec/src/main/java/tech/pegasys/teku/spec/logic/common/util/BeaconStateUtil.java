@@ -91,7 +91,9 @@ public class BeaconStateUtil {
 
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
-    return computeStartSlotAtEpoch(currentEpoch).equals(slot) ? currentEpoch : currentEpoch.plus(1);
+    return miscHelpers.computeStartSlotAtEpoch(currentEpoch).equals(slot)
+        ? currentEpoch
+        : currentEpoch.plus(1);
   }
 
   public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
@@ -106,11 +108,7 @@ public class BeaconStateUtil {
   }
 
   public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
-    return getBlockRootAtSlot(state, computeStartSlotAtEpoch(epoch));
-  }
-
-  public UInt64 computeStartSlotAtEpoch(UInt64 epoch) {
-    return epoch.times(specConfig.getSlotsPerEpoch());
+    return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
   }
 
   public Bytes32 computeDomain(Bytes4 domainType) {
@@ -258,7 +256,7 @@ public class BeaconStateUtil {
 
   public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
     final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
-    return computeStartSlotAtEpoch(previousEpoch);
+    return miscHelpers.computeStartSlotAtEpoch(previousEpoch);
   }
 
   private void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
@@ -325,7 +323,7 @@ public class BeaconStateUtil {
   }
 
   private Bytes32 getDutyDependentRoot(final BeaconState state, final UInt64 epoch) {
-    final UInt64 slot = computeStartSlotAtEpoch(epoch).minusMinZero(1);
+    final UInt64 slot = miscHelpers.computeStartSlotAtEpoch(epoch).minusMinZero(1);
     return slot.equals(state.getSlot())
         // No previous block, use algorithm for calculating the genesis block root
         ? BeaconBlock.fromGenesisState(schemaDefinitions, state).getRoot()

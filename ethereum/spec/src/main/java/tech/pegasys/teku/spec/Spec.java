@@ -265,7 +265,7 @@ public class Spec {
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
