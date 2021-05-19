@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -42,19 +43,19 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 public class ForkChoiceUtil {
 
   private final SpecConfig specConfig;
-  private final BeaconStateUtil beaconStateUtil;
+  private final BeaconStateAccessors beaconStateAccessors;
   private final AttestationUtil attestationUtil;
   private final BlockProcessor blockProcessor;
   private final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
+      final BeaconStateAccessors beaconStateAccessors,
       final AttestationUtil attestationUtil,
       final BlockProcessor blockProcessor,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
-    this.beaconStateUtil = beaconStateUtil;
+    this.beaconStateAccessors = beaconStateAccessors;
     this.attestationUtil = attestationUtil;
     this.blockProcessor = blockProcessor;
     this.miscHelpers = miscHelpers;
@@ -386,7 +387,7 @@ public class ForkChoiceUtil {
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
     if (blockSlot.isGreaterThan(SpecConfig.GENESIS_SLOT)
-        && !beaconStateUtil
+        && !beaconStateAccessors
             .getBlockRootAtSlot(blockSlotState, blockSlot.minus(1))
             .equals(block.getParentRoot())) {
       // Block is at same slot as its parent or the parent root doesn't match the state

@@ -124,12 +124,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     // Matching roots
     final boolean isMatchingHead =
         data.getBeacon_block_root()
-            .equals(beaconStateUtil.getBlockRootAtSlot(state, data.getSlot()));
+            .equals(beaconStateAccessors.getBlockRootAtSlot(state, data.getSlot()));
     final boolean isMatchingSource = data.getSource().equals(justifiedCheckpoint);
     final boolean isMatchingTarget =
         data.getTarget()
             .getRoot()
-            .equals(beaconStateUtil.getBlockRoot(state, data.getTarget().getEpoch()));
+            .equals(beaconStateAccessors.getBlockRoot(state, data.getTarget().getEpoch()));
 
     // Participation flag indices
     final List<Integer> participationFlagIndices = new ArrayList<>();
@@ -219,7 +219,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             miscHelpers.computeEpochAtSlot(previousSlot));
     final Bytes32 signingRoot =
         beaconStateUtil.computeSigningRoot(
-            beaconStateUtil.getBlockRootAtSlot(state, previousSlot), domain);
+            beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(
         signatureVerifier,

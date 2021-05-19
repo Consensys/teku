@@ -234,7 +234,7 @@ public class AttestationUtil {
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
             ? block.getRoot()
-            : beaconStateUtil.getBlockRootAtSlot(state, start_slot);
+            : beaconStateAccessors.getBlockRootAtSlot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);
 
