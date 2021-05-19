@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -70,9 +71,11 @@ public class BlockProposalUtil {
                 beaconBlockBody);
 
     // Run state transition and set state root
+    // Skip verifying signatures as all operations are coming from our own pools.
     try {
       final BeaconState newState =
-          blockProcessor.processBlock(blockSlotState, newBlock, IndexedAttestationCache.NOOP);
+          blockProcessor.processUnsignedBlock(
+              blockSlotState, newBlock, IndexedAttestationCache.NOOP, BLSSignatureVerifier.NO_OP);
 
       Bytes32 stateRoot = newState.hashTreeRoot();
       BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);

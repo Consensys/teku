@@ -21,9 +21,9 @@ import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAl
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -90,13 +90,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   public void processBlock(
       final MutableBeaconState genericState,
       final BeaconBlock block,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache);
-    processSyncCommittee(state, blockBody.getSyncAggregate());
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    processSyncCommittee(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
@@ -167,7 +168,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processSyncCommittee(
-      final MutableBeaconState baseState, final SyncAggregate aggregate)
+      final MutableBeaconState baseState,
+      final SyncAggregate aggregate,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
@@ -187,7 +190,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(
-        participantPubkeys, signingRoot, aggregate.getSyncCommitteeSignature().getSignature())) {
+        signatureVerifier,
+        participantPubkeys,
+        signingRoot,
+        aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
 
@@ -222,10 +228,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   private boolean eth2FastAggregateVerify(
-      List<BLSPublicKey> pubkeys, Bytes32 message, BLSSignature signature) {
+      final BLSSignatureVerifier signatureVerifier,
+      List<BLSPublicKey> pubkeys,
+      Bytes32 message,
+      BLSSignature signature) {
     if (pubkeys.isEmpty() && signature.isInfinity()) {
       return true;
     }
-    return BLS.fastAggregateVerify(pubkeys, message, signature);
+    return signatureVerifier.verify(pubkeys, message, signature);
   }
 }
