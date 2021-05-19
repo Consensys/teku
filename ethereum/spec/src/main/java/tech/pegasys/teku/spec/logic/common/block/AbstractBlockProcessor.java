@@ -492,8 +492,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
+      final MutableBeaconState state,
+      final SszList<Attestation> attestations,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final CapturingIndexedAttestationCache indexedAttestationCache =
