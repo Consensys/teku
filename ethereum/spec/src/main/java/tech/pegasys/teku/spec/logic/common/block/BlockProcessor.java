@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.block;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -39,6 +40,13 @@ public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
+  BeaconState processSignedBlock(
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      boolean validateStateRootAndSignatures,
+      IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException;
+
   /**
    * Processes the given block on top of {@code blockSlotState} and optionally validates the block
    *
@@ -50,15 +58,19 @@ public interface BlockProcessor {
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
-  BeaconState processAndValidateBlock(
-      final SignedBeaconBlock signedBlock,
-      final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures,
-      final IndexedAttestationCache indexedAttestationCache)
+  BeaconState processSignedBlock(
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      boolean validateStateRootAndSignatures,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier)
       throws StateTransitionException;
 
-  BeaconState processBlock(
-      BeaconState preState, BeaconBlock block, IndexedAttestationCache indexedAttestationCache)
+  BeaconState processUnsignedBlock(
+      BeaconState preState,
+      BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -69,17 +81,27 @@ public interface BlockProcessor {
   long getVoteCount(BeaconState state, Eth1Data eth1Data);
 
   void processProposerSlashings(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
+      MutableBeaconState state,
+      SszList<ProposerSlashing> proposerSlashings,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   void processAttesterSlashings(
-      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
+      MutableBeaconState state,
+      SszList<AttesterSlashing> attesterSlashings,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
+  void processAttestations(
+      MutableBeaconState state,
+      SszList<Attestation> attestations,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
+  void processDeposits(
+      MutableBeaconState state,
+      SszList<? extends Deposit> deposits,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   void processDepositWithoutCheckingMerkleProof(
@@ -87,9 +109,13 @@ public interface BlockProcessor {
       final Deposit deposit,
       final Map<BLSPublicKey, Integer> pubKeyToIndexMap);
 
-  void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
+  void processVoluntaryExits(
+      MutableBeaconState state,
+      SszList<SignedVoluntaryExit> exits,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
+  void processSyncCommittee(
+      MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 }

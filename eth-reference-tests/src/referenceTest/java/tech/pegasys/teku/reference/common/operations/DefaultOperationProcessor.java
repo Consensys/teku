@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -41,7 +42,9 @@ public class DefaultOperationProcessor implements OperationProcessor {
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processAttesterSlashings(
-            state, beaconBlockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings));
+            state,
+            beaconBlockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings),
+            BLSSignatureVerifier.SIMPLE);
   }
 
   @Override
@@ -50,7 +53,9 @@ public class DefaultOperationProcessor implements OperationProcessor {
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processProposerSlashings(
-            state, beaconBlockBodySchema.getProposerSlashingsSchema().of(proposerSlashing));
+            state,
+            beaconBlockBodySchema.getProposerSlashingsSchema().of(proposerSlashing),
+            BLSSignatureVerifier.SIMPLE);
   }
 
   @Override
@@ -64,7 +69,10 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processDeposit(final MutableBeaconState state, final Deposit deposit)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processDeposits(state, beaconBlockBodySchema.getDepositsSchema().of(deposit));
+        .processDeposits(
+            state,
+            beaconBlockBodySchema.getDepositsSchema().of(deposit),
+            BLSSignatureVerifier.SIMPLE);
   }
 
   @Override
@@ -73,19 +81,25 @@ public class DefaultOperationProcessor implements OperationProcessor {
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processVoluntaryExits(
-            state, beaconBlockBodySchema.getVoluntaryExitsSchema().of(voluntaryExit));
+            state,
+            beaconBlockBodySchema.getVoluntaryExitsSchema().of(voluntaryExit),
+            BLSSignatureVerifier.SIMPLE);
   }
 
   @Override
   public void processAttestation(final MutableBeaconState state, final Attestation attestation)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processAttestations(state, beaconBlockBodySchema.getAttestationsSchema().of(attestation));
+        .processAttestations(
+            state,
+            beaconBlockBodySchema.getAttestationsSchema().of(attestation),
+            BLSSignatureVerifier.SIMPLE);
   }
 
   @Override
   public void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processSyncCommittee(state, aggregate);
+    spec.getBlockProcessor(state.getSlot())
+        .processSyncCommittee(state, aggregate, BLSSignatureVerifier.SIMPLE);
   }
 }

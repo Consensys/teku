@@ -80,7 +80,7 @@ public class StateTransition {
       BeaconState postSlotState = processSlots(preState, slot);
 
       final BlockProcessor blockProcessor = specProvider.getSpec(slot).getBlockProcessor();
-      return blockProcessor.processAndValidateBlock(
+      return blockProcessor.processSignedBlock(
           signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationCache);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.warn("State Transition error", e);

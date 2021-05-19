@@ -19,6 +19,7 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -46,7 +47,8 @@ public class FuzzRegressionTest {
                 state.updated(
                     mutableState ->
                         spec.getBlockProcessor(mutableState.getSlot())
-                            .processAttesterSlashings(mutableState, slashings)))
+                            .processAttesterSlashings(
+                                mutableState, slashings, BLSSignatureVerifier.NO_OP)))
         .isInstanceOf(BlockProcessingException.class);
   }
 

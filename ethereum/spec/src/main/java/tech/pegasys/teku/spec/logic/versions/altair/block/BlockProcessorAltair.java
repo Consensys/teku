@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -93,20 +94,22 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   public void processBlock(
       final MutableBeaconState genericState,
       final BeaconBlock block,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache);
-    processSyncCommittee(state, blockBody.getSyncAggregate());
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    processSyncCommittee(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider) {
+      final IndexedAttestationProvider indexedAttestationProvider,
+      final BLSSignatureVerifier signatureVerifier) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationData data = attestation.getData();
 
@@ -199,7 +202,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processSyncCommittee(
-      final MutableBeaconState baseState, final SyncAggregate aggregate)
+      final MutableBeaconState baseState,
+      final SyncAggregate aggregate,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
