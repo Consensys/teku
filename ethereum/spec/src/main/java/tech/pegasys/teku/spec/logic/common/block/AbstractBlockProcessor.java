@@ -152,7 +152,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               blockSlotState, signedBlock.getMessage(), indexedAttestationCache, signatureVerifier);
 
       BlockValidationResult blockValidationResult =
-          validateBlock(blockSlotState, signedBlock, postState, indexedAttestationCache);
+          validateBlock(
+              blockSlotState, signedBlock, postState, indexedAttestationCache, signatureVerifier);
 
       if (!blockValidationResult.isValid()) {
         throw new BlockProcessingException(blockValidationResult.getFailureReason());
@@ -177,36 +178,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    */
   @CheckReturnValue
   private BlockValidationResult validateBlock(
-      BeaconState preState,
-      SignedBeaconBlock block,
-      BeaconState postState,
-      IndexedAttestationCache indexedAttestationCache) {
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final BeaconState postState,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier) {
     return BlockValidationResult.allOf(
-        () -> validateBlockSignatures(preState, block, indexedAttestationCache),
+        () -> verifyBlockSignatures(preState, block, indexedAttestationCache, signatureVerifier),
         () -> validatePostState(postState, block));
-  }
-
-  @CheckReturnValue
-  private BlockValidationResult validateBlockSignatures(
-      BeaconState preState,
-      SignedBeaconBlock block,
-      IndexedAttestationCache indexedAttestationCache) {
-    BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
-    BlockValidationResult noBLSValidationResult =
-        verifyBlockSignatures(preState, block, indexedAttestationCache, signatureVerifier);
-    // during the above validatePreState() call BatchSignatureVerifier just collected
-    // a bunch of signatures to be verified in optimized batched way on the following step
-    if (!noBLSValidationResult.isValid()) {
-      // something went wrong aside of signatures verification
-      return noBLSValidationResult;
-    } else {
-      if (!signatureVerifier.batchVerify()) {
-        // validate again naively to get exact invalid signature
-        return verifyBlockSignatures(
-            preState, block, indexedAttestationCache, BLSSignatureVerifier.SIMPLE);
-      }
-      return BlockValidationResult.SUCCESSFUL;
-    }
   }
 
   @CheckReturnValue
