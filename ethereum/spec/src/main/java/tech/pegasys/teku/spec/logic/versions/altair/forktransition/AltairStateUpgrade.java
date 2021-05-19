@@ -13,16 +13,25 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.forktransition;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 
@@ -30,14 +39,20 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
   final SpecConfigAltair specConfig;
   final SchemaDefinitionsAltair schemaDefinitions;
   final BeaconStateAccessorsAltair beaconStateAccessors;
+  private final AttestationUtil attestationUtil;
+  private final MiscHelpersAltair miscHelpersAltair;
 
   public AltairStateUpgrade(
       final SpecConfigAltair specConfig,
       final SchemaDefinitionsAltair schemaDefinitions,
-      final BeaconStateAccessorsAltair beaconStateAccessors) {
+      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final AttestationUtil attestationUtil,
+      final MiscHelpersAltair miscHelpersAltair) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.attestationUtil = attestationUtil;
+    this.miscHelpersAltair = miscHelpersAltair;
   }
 
   @Override
@@ -61,6 +76,10 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
               state.getCurrentEpochParticipation().setAll(SszByte.ZERO, validatorCount);
               state.getInactivityScores().setAll(SszUInt64.ZERO, validatorCount);
 
+              // Fill in previous epoch participation from the pre state's pending attestations
+              translateParticipation(
+                  state, BeaconStatePhase0.required(preState).getPrevious_epoch_attestations());
+
               // Fill in sync committees
               // Note: A duplicate committee is assigned for the current and next committee at the
               // fork boundary
@@ -68,5 +87,33 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
               state.setCurrentSyncCommittee(committee);
               state.setNextSyncCommittee(committee);
             });
+  }
+
+  private void translateParticipation(
+      final MutableBeaconStateAltair state, final SszList<PendingAttestation> pendingAttestations) {
+    for (PendingAttestation attestation : pendingAttestations) {
+      final AttestationData data = attestation.getData();
+      final UInt64 inclusionDelay = attestation.getInclusion_delay();
+
+      // Translate attestation inclusion info to flag indices
+      final List<Integer> participationFlagIndices =
+          beaconStateAccessors.getAttestationParticipationFlagIndices(state, data, inclusionDelay);
+
+      // Apply flags to all attesting validators
+      final SszMutableList<SszByte> epochParticipation = state.getPreviousEpochParticipation();
+      attestationUtil
+          .streamAttestingIndices(state, data, attestation.getAggregation_bits())
+          .forEach(
+              index -> {
+                final byte previousFlags = epochParticipation.get(index).get();
+                byte newFlags = previousFlags;
+                for (int flagIndex : participationFlagIndices) {
+                  newFlags = miscHelpersAltair.addFlag(newFlags, flagIndex);
+                }
+                if (previousFlags != newFlags) {
+                  epochParticipation.set(index, SszByte.of(newFlags));
+                }
+              });
+    }
   }
 }

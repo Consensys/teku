@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -160,7 +159,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the flag indices that are satisfied by data with respect to state.
    */
   public List<Integer> getAttestationParticipationFlagIndices(
-      final BeaconStateAltair state, final AttestationData data, final UInt64 inclusionDelay) {
+      final BeaconState state, final AttestationData data, final UInt64 inclusionDelay) {
     final Checkpoint justifiedCheckpoint;
     if (data.getTarget().getEpoch().equals(getCurrentEpoch(state))) {
       justifiedCheckpoint = state.getCurrent_justified_checkpoint();
