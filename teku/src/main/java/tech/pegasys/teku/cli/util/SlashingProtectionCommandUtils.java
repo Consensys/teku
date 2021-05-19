@@ -38,6 +38,7 @@ public class SlashingProtectionCommandUtils {
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
     return ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
   }
+
   public static UInt64 getComputedSlot(
       final UInt64 genesisTime, final UInt64 oneEpochInFuture, final Spec spec) {
     final int secondsPerSlot = spec.getGenesisSpec().getConfig().getSecondsPerSlot();

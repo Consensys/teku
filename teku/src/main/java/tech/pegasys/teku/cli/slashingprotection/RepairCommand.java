@@ -17,7 +17,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
-
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
@@ -91,15 +90,17 @@ public class RepairCommand implements Runnable {
             spec, eth2NetworkOptions.getNetworkConfiguration().getInitialState());
 
     final UInt64 computedSlot = getComputedSlot(initialAnchor, spec);
-    final UInt64 computedEpoch = spec.atSlot(computedSlot).miscHelpers().computeEpochAtSlot(computedSlot);
+    final UInt64 computedEpoch =
+        spec.atSlot(computedSlot).miscHelpers().computeEpochAtSlot(computedSlot);
     final SlashingProtectionRepairer repairer =
-        new SlashingProtectionRepairer(SUB_COMMAND_LOG, spec);
+        new SlashingProtectionRepairer(SUB_COMMAND_LOG, updateAllEnabled);
+
     repairer.initialise(slashProtectionPath);
 
-    if (repairer.hasUpdates(updateAllEnabled)) {
+    if (repairer.hasUpdates()) {
       if (!checkOnlyEnabled) {
         confirmOrExit();
-        repairer.updateRecords(computedSlot, computedEpoch, updateAllEnabled);
+        repairer.updateRecords(computedSlot, computedEpoch);
       } else {
         SUB_COMMAND_LOG.display("Updates have been skipped as --check-only-enabled was set.");
       }
@@ -115,9 +116,12 @@ public class RepairCommand implements Runnable {
       return suppliedSlot;
     } else if (initialAnchor.isPresent()) {
       final UInt64 genesisTime = initialAnchor.get().getState().getGenesis_time();
-      final int secondsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch() * spec.getGenesisSpec().getConfig().getSecondsPerSlot();
+      final int secondsPerEpoch =
+          spec.getGenesisSpec().getSlotsPerEpoch()
+              * spec.getGenesisSpec().getConfig().getSecondsPerSlot();
       final UInt64 oneEpochInFuture = timeProvider.getTimeInSeconds().plus(secondsPerEpoch);
-      final UInt64 computedSlot = SlashingProtectionCommandUtils.getComputedSlot(genesisTime, oneEpochInFuture, spec);
+      final UInt64 computedSlot =
+          SlashingProtectionCommandUtils.getComputedSlot(genesisTime, oneEpochInFuture, spec);
       displaySlotUpdateMessage(computedSlot, spec, "Computed slot");
       return computedSlot;
     }
@@ -127,16 +131,21 @@ public class RepairCommand implements Runnable {
     throw new IllegalStateException("Should not have got past System.exit.");
   }
 
-  private void displaySlotUpdateMessage(final UInt64 slot, final Spec spec, final String description) {
-    SUB_COMMAND_LOG.display(description + " " + slot +
-        ", which will set attestation source/target to epoch " +
-        spec.atSlot(slot).miscHelpers().computeEpochAtSlot(slot));
+  private void displaySlotUpdateMessage(
+      final UInt64 slot, final Spec spec, final String description) {
+    SUB_COMMAND_LOG.display(
+        description
+            + " "
+            + slot
+            + ", which will set attestation source/target to epoch "
+            + spec.atSlot(slot).miscHelpers().computeEpochAtSlot(slot));
   }
 
   private void confirmOrExit() {
     SUB_COMMAND_LOG.display("");
-    SUB_COMMAND_LOG.display("REMINDER! If the validator is running, you should not be updating slashing protection records.");
-    if(updateAllEnabled) {
+    SUB_COMMAND_LOG.display(
+        "REMINDER! If the validator is running, you should not be updating slashing protection records.");
+    if (updateAllEnabled) {
       SUB_COMMAND_LOG.display("All valid slashing protection files will also be updated.");
     }
     SUB_COMMAND_LOG.display("Are you sure you wish to continue (yes/no)? ");

@@ -28,20 +28,18 @@ import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 
 public class SlashingProtectionRepairer {
-  //  private final JsonProvider jsonProvider = new JsonProvider();
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private final Set<String> invalidRecords = new HashSet<>();
   private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
   private final SubCommandLogger log;
-  private final Spec spec;
   private Path slashingProtectionPath;
+  private final boolean updateAllEnabled;
 
-  public SlashingProtectionRepairer(final SubCommandLogger log, final Spec spec) {
+  public SlashingProtectionRepairer(final SubCommandLogger log, final boolean updateAllEnabled) {
     this.log = log;
-    this.spec = spec;
+    this.updateAllEnabled = updateAllEnabled;
   }
 
   public void initialise(final Path slashProtectionPath) {
@@ -57,24 +55,26 @@ public class SlashingProtectionRepairer {
     try {
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
-      if (maybeRecord.isEmpty()) {
-        log.display(file.getName() + ": empty slashing protection record");
-        invalidRecords.add(pubkey);
+      if (maybeRecord.isEmpty() && invalidRecords.add(pubkey)) {
+        log.display(pubkey + ": empty slashing protection record");
         return;
       }
 
+      if (updateAllEnabled) {
+        log.display(pubkey + ": looks valid");
+      }
       ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
       signingHistoryList.add(
           new SigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
 
     } catch (Exception e) {
       if (invalidRecords.add(pubkey)) {
-        display("Incomplete slashing protection data", pubkey);
+        log.display(pubkey + ": Incomplete slashing protection data");
       }
     }
   }
 
-  public void updateRecords(final UInt64 slot, final UInt64 epoch, final boolean updateAllEnabled) {
+  public void updateRecords(final UInt64 slot, final UInt64 epoch) {
     invalidRecords.forEach(pubkey -> updateValidatorSigningRecord(pubkey, epoch, slot));
     if (updateAllEnabled) {
       signingHistoryList.forEach(
@@ -89,14 +89,14 @@ public class SlashingProtectionRepairer {
       updateValidatorSigningRecord(toDisplayString(historyRecord.pubkey), epoch, slot);
     } else {
       log.error(
-          "NOT UPDATED - Validator signing record was beyond supplied slot - "
-              + toDisplayString(historyRecord.pubkey));
+          toDisplayString(historyRecord.pubkey)
+              + ": Existing record was higher than the update requested");
     }
   }
 
   private void updateValidatorSigningRecord(
       final String pubkey, final UInt64 epoch, final UInt64 slot) {
-    display("Updating", pubkey);
+    log.display(pubkey + ": updating");
     Path outputFile = slashingProtectionPath.resolve(pubkey + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
@@ -113,7 +113,7 @@ public class SlashingProtectionRepairer {
       syncDataAccessor.syncedWrite(
           outputFile, signingHistory.toValidatorSigningRecord(existingRecord, null).toBytes());
     } catch (IOException e) {
-      log.error("Validator " + signingHistory.pubkey.toHexString() + " was not updated.");
+      log.error(pubkey + ": update failed, " + e.getMessage());
     }
   }
 
@@ -136,15 +136,11 @@ public class SlashingProtectionRepairer {
             == 0;
   }
 
-  private void display(final String message, final String pubkey) {
-    log.display(message + " " + pubkey);
-  }
-
   private String toDisplayString(final BLSPubKey pubkey) {
     return pubkey.toBytes().toUnprefixedHexString().toLowerCase();
   }
 
-  public boolean hasUpdates(final boolean updateAllEnabled) {
+  public boolean hasUpdates() {
     if (updateAllEnabled) {
       return signingHistoryList.size() + invalidRecords.size() > 0;
     }
