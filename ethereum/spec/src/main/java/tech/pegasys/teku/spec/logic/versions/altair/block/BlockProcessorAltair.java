@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSqu
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -108,8 +107,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider,
-      final BLSSignatureVerifier signatureVerifier) {
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationData data = attestation.getData();
 
@@ -224,7 +222,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             beaconStateUtil.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(
-        participantPubkeys, signingRoot, aggregate.getSyncCommitteeSignature().getSignature())) {
+        signatureVerifier,
+        participantPubkeys,
+        signingRoot,
+        aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
 
@@ -259,10 +260,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   private boolean eth2FastAggregateVerify(
-      List<BLSPublicKey> pubkeys, Bytes32 message, BLSSignature signature) {
+      final BLSSignatureVerifier signatureVerifier,
+      List<BLSPublicKey> pubkeys,
+      Bytes32 message,
+      BLSSignature signature) {
     if (pubkeys.isEmpty() && signature.isInfinity()) {
       return true;
     }
-    return BLS.fastAggregateVerify(pubkeys, message, signature);
+    return signatureVerifier.verify(pubkeys, message, signature);
   }
 }

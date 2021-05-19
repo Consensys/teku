@@ -35,6 +35,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -288,8 +289,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
-    processOperationsNoValidation(
-        state, block.getBody(), indexedAttestationCache, signatureVerifier);
+    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
   }
 
   @Override
@@ -379,8 +379,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier)
+      final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -397,10 +396,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
           processProposerSlashingsNoValidation(state, body.getProposer_slashings());
-          processAttesterSlashings(state, body.getAttester_slashings(), signatureVerifier);
-          processAttestations(
-              state, body.getAttestations(), indexedAttestationCache, signatureVerifier, false);
-          processDeposits(state, body.getDeposits(), signatureVerifier);
+          processAttesterSlashings(state, body.getAttester_slashings());
+          processAttestationsNoVerification(state, body.getAttestations(), indexedAttestationCache);
+          processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
           // @process_shard_receipt_proofs
         });
@@ -467,9 +465,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processAttesterSlashings(
-      MutableBeaconState state,
-      SszList<AttesterSlashing> attesterSlashings,
-      final BLSSignatureVerifier signatureVerifier)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -499,24 +495,22 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       SszList<Attestation> attestations,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
-    processAttestations(state, attestations, IndexedAttestationCache.NOOP, signatureVerifier);
+    final CapturingIndexedAttestationCache indexedAttestationCache =
+        IndexedAttestationCache.capturing();
+    processAttestationsNoVerification(state, attestations, indexedAttestationCache);
+
+    final BlockValidationResult result =
+        verifyAttestationSignatures(
+            state, attestations, signatureVerifier, indexedAttestationCache);
+    if (!result.isValid()) {
+      throw new BlockProcessingException(result.getFailureReason());
+    }
   }
 
-  private void processAttestations(
+  protected void processAttestationsNoVerification(
       MutableBeaconState state,
       SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException {
-    processAttestations(state, attestations, indexedAttestationCache, signatureVerifier, true);
-  }
-
-  protected void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier,
-      final boolean verifySignatures)
+      IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
@@ -525,15 +519,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           for (Attestation attestation : attestations) {
             // Validate
             assertAttestationValid(state, attestation);
-            processAttestation(state, attestation, indexedAttestationProvider, signatureVerifier);
-            if (verifySignatures) {
-              final BlockValidationResult result =
-                  verifyAttestationSignatures(
-                      state, attestations, signatureVerifier, indexedAttestationProvider);
-              if (!result.isValid()) {
-                throw new BlockProcessingException(result.getFailureReason());
-              }
-            }
+            processAttestation(state, attestation, indexedAttestationProvider);
           }
         });
   }
@@ -547,7 +533,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   /**
    * Corresponds to fork-specific logic from "process_attestation" spec method. Common validation
-   * and signature verification logic can be found in {@link #processAttestations}.
+   * and signature verification logic can be found in {@link
+   * #verifyAttestationSignatures(BeaconState, SszList, BLSSignatureVerifier,
+   * IndexedAttestationCache)}.
    *
    * @param genericState The state corresponding to the block being processed
    * @param attestation An attestation in the body of the block being processed
@@ -556,8 +544,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected abstract void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider,
-      final BLSSignatureVerifier signatureVerifier);
+      final IndexedAttestationProvider indexedAttestationProvider);
 
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
@@ -597,10 +584,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processDeposits(
-      MutableBeaconState state,
-      SszList<? extends Deposit> deposits,
-      final BLSSignatureVerifier signatureVerifier)
+  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     safelyProcess(
         () -> {

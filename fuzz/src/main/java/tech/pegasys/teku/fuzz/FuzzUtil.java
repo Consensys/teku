@@ -122,7 +122,7 @@ public class FuzzUtil {
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
-                          .processAttesterSlashings(state, slashings, signatureVerifier));
+                          .processAttesterSlashings(state, slashings));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
@@ -179,8 +179,7 @@ public class FuzzUtil {
               .getState()
               .updated(
                   state ->
-                      spec.getBlockProcessor(state.getSlot())
-                          .processDeposits(state, deposits, signatureVerifier));
+                      spec.getBlockProcessor(state.getSlot()).processDeposits(state, deposits));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

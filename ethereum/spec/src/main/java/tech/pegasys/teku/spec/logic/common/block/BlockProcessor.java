@@ -84,9 +84,7 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   void processAttesterSlashings(
-      MutableBeaconState state,
-      SszList<AttesterSlashing> attesterSlashings,
-      BLSSignatureVerifier signatureVerifier)
+      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException;
 
   void processAttestations(
@@ -95,10 +93,7 @@ public interface BlockProcessor {
       BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processDeposits(
-      MutableBeaconState state,
-      SszList<? extends Deposit> deposits,
-      BLSSignatureVerifier signatureVerifier)
+  void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
       throws BlockProcessingException;
 
   void processDepositWithoutCheckingMerkleProof(

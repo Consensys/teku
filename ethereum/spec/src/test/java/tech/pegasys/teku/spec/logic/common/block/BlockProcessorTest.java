@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -229,8 +228,7 @@ public abstract class BlockProcessorTest {
         schema.of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
-    return beaconState.updated(
-        state -> blockProcessor.processDeposits(state, deposits, BLSSignatureVerifier.SIMPLE));
+    return beaconState.updated(state -> blockProcessor.processDeposits(state, deposits));
   }
 
   private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {

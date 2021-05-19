@@ -64,8 +64,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   protected void processAttestation(
       final MutableBeaconState genericState,
       final Attestation attestation,
-      final IndexedAttestationProvider indexedAttestationProvider,
-      final BLSSignatureVerifier signatureVerifier) {
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
     final AttestationData data = attestation.getData();
 

@@ -42,9 +42,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processAttesterSlashings(
-            state,
-            beaconBlockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings),
-            BLSSignatureVerifier.SIMPLE);
+            state, beaconBlockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings));
   }
 
   @Override
@@ -69,10 +67,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processDeposit(final MutableBeaconState state, final Deposit deposit)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processDeposits(
-            state,
-            beaconBlockBodySchema.getDepositsSchema().of(deposit),
-            BLSSignatureVerifier.SIMPLE);
+        .processDeposits(state, beaconBlockBodySchema.getDepositsSchema().of(deposit));
   }
 
   @Override
