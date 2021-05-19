@@ -18,16 +18,16 @@ import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class SyncCommitteeSigningData
-    extends Container2<SyncCommitteeSigningData, SszUInt64, SszUInt64> {
+public class SyncAggregatorSelectionData
+    extends Container2<SyncAggregatorSelectionData, SszUInt64, SszUInt64> {
 
-  protected SyncCommitteeSigningData(
-      final SyncCommitteeSigningDataSchema schema, final TreeNode backingNode) {
+  protected SyncAggregatorSelectionData(
+      final SyncAggregatorSelectionDataSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  protected SyncCommitteeSigningData(
-      final SyncCommitteeSigningDataSchema schema,
+  protected SyncAggregatorSelectionData(
+      final SyncAggregatorSelectionDataSchema schema,
       final SszUInt64 slot,
       final SszUInt64 subcommitteeIndex) {
     super(schema, slot, subcommitteeIndex);

@@ -48,8 +48,8 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -448,13 +448,13 @@ public class ChainBuilder {
       final Signer signer = getSigner(validatorIndex.intValue());
       final SyncSubcommitteeAssignments assignments = entry.getValue();
       for (int subcommitteeIndex : assignments.getAssignedSubcommittees()) {
-        final SyncCommitteeSigningData syncCommitteeSigningData =
-            syncCommitteeUtil.createSyncCommitteeSigningData(
+        final SyncAggregatorSelectionData syncAggregatorSelectionData =
+            syncCommitteeUtil.createSyncAggregatorSelectionData(
                 slot, UInt64.valueOf(subcommitteeIndex));
         final BLSSignature proof =
             signer
                 .signSyncCommitteeSelectionProof(
-                    syncCommitteeSigningData, latestBlockAndState.getState().getForkInfo())
+                    syncAggregatorSelectionData, latestBlockAndState.getState().getForkInfo())
                 .join();
         if (syncCommitteeUtil.isSyncCommitteeAggregator(proof)) {
           return new SignedContributionAndProofTestBuilder()
