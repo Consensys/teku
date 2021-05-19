@@ -14,6 +14,7 @@
 package tech.pegasys.teku.dataproviders.generators;
 
 import java.util.stream.Stream;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -36,7 +37,7 @@ public class StreamingStateRegenerator {
 
   private void processBlock(final SignedBeaconBlock block) {
     try {
-      state = spec.initiateStateTransition(state, block, false);
+      state = spec.processBlock(state, block, BLSSignatureVerifier.NO_OP);
     } catch (StateTransitionException e) {
       throw new IllegalStateException("Regenerating state failed", e);
     }

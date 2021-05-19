@@ -75,7 +75,7 @@ public class Spec {
     this.forkSchedule = forkSchedule;
 
     // Setup state transition
-    this.stateTransition = StateTransition.create(this::atSlot);
+    this.stateTransition = new StateTransition(this::atSlot);
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
@@ -387,18 +387,6 @@ public class Spec {
         .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
-  // State Transition Utils
-  public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
-      throws StateTransitionException {
-    return stateTransition.initiate(preState, signedBlock);
-  }
-
-  public BeaconState initiateStateTransition(
-      BeaconState preState, SignedBeaconBlock signedBlock, boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return stateTransition.initiate(preState, signedBlock, validateStateRootAndSignatures);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     return stateTransition.processSlots(preState, slot);
@@ -422,6 +410,25 @@ public class Spec {
 
   public BlockProcessor getBlockProcessor(final UInt64 slot) {
     return atSlot(slot).getBlockProcessor();
+  }
+
+  public BeaconState processBlock(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processSignedBlock(
+              block,
+              blockSlotState,
+              signatureVerifier != BLSSignatureVerifier.NO_OP,
+              IndexedAttestationCache.NOOP,
+              signatureVerifier);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new StateTransitionException(e);
+    }
   }
 
   @CheckReturnValue

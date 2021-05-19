@@ -56,7 +56,6 @@ public class FuzzUtil {
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
 
-  private final boolean disable_bls;
   private final BLSSignatureVerifier signatureVerifier;
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
@@ -67,7 +66,6 @@ public class FuzzUtil {
             : TestSpecFactory.createMinimalPhase0();
     beaconBlockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(useMainnetConfig, disable_bls);
-    this.disable_bls = disable_bls;
     this.signatureVerifier = disable_bls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
   }
 
@@ -137,13 +135,10 @@ public class FuzzUtil {
     BlockFuzzInput structuredInput =
         deserialize(input, BlockFuzzInput.createSchema(spec.getGenesisSpec()));
 
-    boolean validate_root_and_sigs = !disable_bls;
     try {
       BeaconState postState =
-          spec.initiateStateTransition(
-              structuredInput.getState(),
-              structuredInput.getSigned_block(),
-              validate_root_and_sigs);
+          spec.processBlock(
+              structuredInput.getState(), structuredInput.getSigned_block(), signatureVerifier);
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.dataproviders.generators;
 
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -28,7 +29,7 @@ class BlockProcessor {
   public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
 
     try {
-      final BeaconState postState = spec.initiateStateTransition(preState, block, false);
+      final BeaconState postState = spec.processBlock(preState, block, BLSSignatureVerifier.NO_OP);
       assertBlockAndStateMatch(block, postState);
       return postState;
     } catch (StateTransitionException e) {
