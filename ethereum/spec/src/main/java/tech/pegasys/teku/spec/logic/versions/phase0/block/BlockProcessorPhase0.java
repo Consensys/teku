@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -83,7 +84,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processSyncCommittee(
-      final MutableBeaconState state, final SyncAggregate syncAggregate)
+      final MutableBeaconState state,
+      final SyncAggregate syncAggregate,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No SyncAggregates in phase0");
   }

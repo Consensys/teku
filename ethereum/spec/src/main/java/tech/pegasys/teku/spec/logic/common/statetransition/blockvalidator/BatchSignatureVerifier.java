@@ -76,6 +76,9 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
             .map(job -> BLS.prepareBatchVerify(job.idx, job.publicKeys, job.message, job.signature))
             .collect(Collectors.toList());
     complete = true;
+    if (batchSemiAggregates.isEmpty()) {
+      return true;
+    }
     return BLS.completeBatchVerify(batchSemiAggregates);
   }
 }
