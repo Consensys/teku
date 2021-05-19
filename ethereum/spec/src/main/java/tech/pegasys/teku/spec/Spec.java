@@ -421,7 +421,7 @@ public class Spec {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
-          .processSignedBlock(
+          .processAndValidateBlock(
               block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);

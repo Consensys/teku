@@ -123,14 +123,15 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public BeaconState processSignedBlock(
+  public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
-        processSignedBlock(signedBlock, blockSlotState, indexedAttestationCache, signatureVerifier);
+        processAndValidateBlock(
+            signedBlock, blockSlotState, indexedAttestationCache, signatureVerifier);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block "
@@ -140,7 +141,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public BeaconState processSignedBlock(
+  public BeaconState processAndValidateBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,

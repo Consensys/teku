@@ -40,7 +40,7 @@ public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
-  BeaconState processSignedBlock(
+  BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache)
@@ -56,7 +56,7 @@ public interface BlockProcessor {
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
-  BeaconState processSignedBlock(
+  BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
