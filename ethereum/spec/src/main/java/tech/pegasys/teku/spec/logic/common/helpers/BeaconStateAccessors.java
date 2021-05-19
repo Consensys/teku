@@ -201,6 +201,27 @@ public abstract class BeaconStateAccessors {
         stateEpoch);
   }
 
+  public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
+      throws IllegalArgumentException {
+    checkArgument(
+        isBlockRootAvailableFromState(state, slot),
+        "Block at slot %s not available from state at slot %s",
+        slot,
+        state.getSlot());
+    int latestBlockRootIndex = slot.mod(config.getSlotsPerHistoricalRoot()).intValue();
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
+  }
+
+  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
+    return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
+  }
+
+  private boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
+    UInt64 slotPlusHistoricalRoot = slot.plus(config.getSlotsPerHistoricalRoot());
+    return slot.isLessThan(state.getSlot())
+        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
+  }
+
   // Custom accessors
 
   /**
