@@ -129,8 +129,8 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncAggregatorSelectionData signingData, final ForkInfo forkInfo) {
-    return delegate.signSyncCommitteeSelectionProof(signingData, forkInfo);
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
+    return delegate.signSyncCommitteeSelectionProof(selectionData, forkInfo);
   }
 
   @Override

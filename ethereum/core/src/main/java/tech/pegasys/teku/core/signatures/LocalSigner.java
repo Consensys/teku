@@ -96,10 +96,10 @@ public class LocalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncAggregatorSelectionData signingData, final ForkInfo forkInfo) {
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
-            signingData.getSlot(),
-            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(signingData, forkInfo))
+            selectionData.getSlot(),
+            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(selectionData, forkInfo))
         .thenCompose(this::sign);
   }
 

@@ -208,10 +208,10 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncAggregatorSelectionData signingData, final ForkInfo forkInfo) {
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
-            signingData.getSlot(),
-            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(signingData, forkInfo))
+            selectionData.getSlot(),
+            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(selectionData, forkInfo))
         .thenCompose(
             signingRoot ->
                 sign(
@@ -219,9 +219,9 @@ public class ExternalSigner implements Signer {
                     SignType.SYNC_COMMITTEE_SELECTION_PROOF,
                     Map.of(
                         "slot",
-                        signingData.getSlot(),
+                        selectionData.getSlot(),
                         "subcommittee_index",
-                        signingData.getSubcommitteeIndex(),
+                        selectionData.getSubcommitteeIndex(),
                         FORK_INFO,
                         forkInfo(forkInfo)),
                     slashableGenericMessage("sync committee selection proof")));

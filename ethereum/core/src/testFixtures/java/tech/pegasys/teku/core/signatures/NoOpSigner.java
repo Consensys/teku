@@ -71,7 +71,7 @@ public class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncAggregatorSelectionData signingData, final ForkInfo forkInfo) {
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 

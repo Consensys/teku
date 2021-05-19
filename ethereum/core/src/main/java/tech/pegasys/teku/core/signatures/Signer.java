@@ -44,7 +44,7 @@ public interface Signer {
       UInt64 slot, Bytes32 beaconBlockRoot, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      SyncAggregatorSelectionData signingData, ForkInfo forkInfo);
+      SyncAggregatorSelectionData selectionData, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signContributionAndProof(
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);

@@ -201,21 +201,6 @@ public abstract class BeaconStateAccessors {
         stateEpoch);
   }
 
-  // Custom accessors
-
-  /**
-   * Calculates how many additional attestations from the previous epoch can be accommodated by this
-   * state during block processing
-   *
-   * @param state The state to be processed, should already be at the slot of the block being
-   *     processed
-   * @return The remaining capacity for attestations from the previous epoch
-   */
-  public int getPreviousEpochAttestationCapacity(final BeaconState state) {
-    // No strict limit in general
-    return Integer.MAX_VALUE;
-  }
-
   public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
       throws IllegalArgumentException {
     checkArgument(
@@ -235,5 +220,20 @@ public abstract class BeaconStateAccessors {
     UInt64 slotPlusHistoricalRoot = slot.plus(config.getSlotsPerHistoricalRoot());
     return slot.isLessThan(state.getSlot())
         && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
+  }
+
+  // Custom accessors
+
+  /**
+   * Calculates how many additional attestations from the previous epoch can be accommodated by this
+   * state during block processing
+   *
+   * @param state The state to be processed, should already be at the slot of the block being
+   *     processed
+   * @return The remaining capacity for attestations from the previous epoch
+   */
+  public int getPreviousEpochAttestationCapacity(final BeaconState state) {
+    // No strict limit in general
+    return Integer.MAX_VALUE;
   }
 }

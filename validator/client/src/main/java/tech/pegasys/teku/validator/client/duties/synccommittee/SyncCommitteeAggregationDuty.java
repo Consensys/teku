@@ -116,13 +116,13 @@ public class SyncCommitteeAggregationDuty {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot) {
 
-    final SyncAggregatorSelectionData signingData =
+    final SyncAggregatorSelectionData selectionData =
         syncCommitteeUtil.createSyncAggregatorSelectionData(
             slot, UInt64.valueOf(subcommitteeIndex));
     final Validator validator = assignment.getValidator();
     return validator
         .getSigner()
-        .signSyncCommitteeSelectionProof(signingData, forkInfo)
+        .signSyncCommitteeSelectionProof(selectionData, forkInfo)
         .thenCompose(
             selectionProof -> {
               if (syncCommitteeUtil.isSyncCommitteeAggregator(selectionProof)) {
