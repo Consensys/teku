@@ -324,7 +324,7 @@ public class ForkChoiceUtil {
     try {
       state =
           blockProcessor.processAndValidateBlock(
-              signedBlock, blockSlotState, true, indexedAttestationCache);
+              signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
