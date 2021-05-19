@@ -17,76 +17,57 @@ import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.util.Optional;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
 public class ForkUpgradeTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> FORK_UPGRADE_TEST_TYPES =
-      ImmutableMap.of("transition/core", new ForkUpgradeTestExecutor());
+      ImmutableMap.of("fork/fork", new ForkUpgradeTestExecutor());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
 
-    if (metadata.postFork.equals("altair")) {
-      processAltairUpgrade(testDefinition, metadata);
+    if (metadata.fork.equals("altair")) {
+      processAltairUpgrade(testDefinition);
     } else {
       throw new TestAbortedException(
           "Unhandled fork upgrade for test "
               + testDefinition.getDisplayName()
               + ": "
-              + metadata.postFork);
+              + metadata.fork);
     }
   }
 
-  private void processAltairUpgrade(final TestDefinition testDefinition, final MetaData metadata)
-      throws Exception {
-
-    final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
-    final SpecConfig config =
-        TestConfigLoader.loadConfig(
-            testDefinition.getConfigName(),
-            c -> c.altairBuilder(a -> a.altairForkEpoch(forkEpoch)));
-    final Spec spec = SpecFactory.create(config, Optional.of(forkEpoch));
+  private void processAltairUpgrade(final TestDefinition testDefinition) {
+    final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
+    final BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> phase0Schema =
+        BeaconStateSchemaPhase0.create(spec.getConfig());
     final BeaconState preState =
-        TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", spec::deserializeBeaconState);
-    final BeaconState postState =
-        TestDataUtils.loadSsz(testDefinition, "post.ssz_snappy", spec::deserializeBeaconState);
+        TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", phase0Schema);
+    final BeaconState postState = TestDataUtils.loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
-    BeaconState result = preState;
-    for (int i = 0; i < metadata.blocksCount; i++) {
-      final SignedBeaconBlock block =
-          TestDataUtils.loadSsz(
-              testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+    final StateUpgrade<?> stateUpgrade =
+        testDefinition.getSpec().atEpoch(UInt64.ZERO).getStateUpgrade().orElseThrow();
 
-      result = spec.initiateStateTransition(result, block, true);
-    }
-    assertThatSszData(result).isEqualByGettersTo(postState);
+    final BeaconState updated = stateUpgrade.upgrade(preState);
+
+    assertThatSszData(updated).isEqualByGettersTo(postState);
   }
 
-  @SuppressWarnings({"unused", "UnusedVariable"})
   private static class MetaData {
-    @JsonProperty(value = "post_fork", required = true)
-    private String postFork;
-
-    @JsonProperty(value = "fork_epoch", required = true)
-    private int forkEpoch;
-
-    @JsonProperty(value = "blocks_count", required = true)
-    private int blocksCount;
-
-    @JsonProperty(value = "fork_block", required = true)
-    private int forkBlock;
+    @JsonProperty(value = "fork", required = true)
+    private String fork;
   }
 }
