@@ -43,7 +43,6 @@ public interface BlockProcessor {
   BeaconState processSignedBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
-      boolean validateStateRootAndSignatures,
       IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException;
 
@@ -53,7 +52,6 @@ public interface BlockProcessor {
    * @param signedBlock The block to be processed
    * @param blockSlotState The preState on which this block should be procssed, this preState must
    *     already be advanced to the block's slot
-   * @param validateStateRootAndSignatures Whether to run signature and state root validations
    * @param indexedAttestationCache A cache of indexed attestations
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
@@ -61,7 +59,6 @@ public interface BlockProcessor {
   BeaconState processSignedBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
-      boolean validateStateRootAndSignatures,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier)
       throws StateTransitionException;

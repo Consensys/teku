@@ -322,8 +322,7 @@ public class ForkChoiceUtil {
     // Check the block is valid and compute the post-state
     try {
       state =
-          blockProcessor.processSignedBlock(
-              signedBlock, blockSlotState, true, indexedAttestationCache);
+          blockProcessor.processSignedBlock(signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

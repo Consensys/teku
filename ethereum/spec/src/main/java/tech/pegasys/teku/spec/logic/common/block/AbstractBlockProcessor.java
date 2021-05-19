@@ -125,39 +125,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   public BeaconState processSignedBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache)
       throws StateTransitionException {
-    if (validateStateRootAndSignatures) {
-      final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
-      final BeaconState result =
-          processSignedBlock(
-              signedBlock,
-              blockSlotState,
-              validateStateRootAndSignatures,
-              indexedAttestationCache,
-              signatureVerifier);
-      if (!signatureVerifier.batchVerify()) {
-        throw new StateTransitionException(
-            "Batch signature verification failed for block "
-                + LogFormatter.formatBlock(signedBlock.getSlot(), signedBlock.getRoot()));
-      }
-      return result;
-    } else {
-      return processSignedBlock(
-          signedBlock,
-          blockSlotState,
-          validateStateRootAndSignatures,
-          indexedAttestationCache,
-          BLSSignatureVerifier.NO_OP);
+    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final BeaconState result =
+        processSignedBlock(signedBlock, blockSlotState, indexedAttestationCache, signatureVerifier);
+    if (!signatureVerifier.batchVerify()) {
+      throw new StateTransitionException(
+          "Batch signature verification failed for block "
+              + LogFormatter.formatBlock(signedBlock.getSlot(), signedBlock.getRoot()));
     }
+    return result;
   }
 
   @Override
   public BeaconState processSignedBlock(
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier)
       throws StateTransitionException {
@@ -167,13 +151,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processUnsignedBlock(
               blockSlotState, signedBlock.getMessage(), indexedAttestationCache, signatureVerifier);
 
-      if (validateStateRootAndSignatures) {
-        BlockValidationResult blockValidationResult =
-            validateBlock(blockSlotState, signedBlock, postState, indexedAttestationCache);
+      BlockValidationResult blockValidationResult =
+          validateBlock(blockSlotState, signedBlock, postState, indexedAttestationCache);
 
-        if (!blockValidationResult.isValid()) {
-          throw new BlockProcessingException(blockValidationResult.getFailureReason());
-        }
+      if (!blockValidationResult.isValid()) {
+        throw new BlockProcessingException(blockValidationResult.getFailureReason());
       }
 
       return postState;

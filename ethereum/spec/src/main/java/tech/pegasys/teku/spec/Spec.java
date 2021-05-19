@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -421,12 +422,23 @@ public class Spec {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processSignedBlock(
-              block,
-              blockSlotState,
-              signatureVerifier != BLSSignatureVerifier.NO_OP,
-              IndexedAttestationCache.NOOP,
-              signatureVerifier);
+              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
     } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
+  public BeaconState replayValidatedBlock(final BeaconState preState, final SignedBeaconBlock block)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processUnsignedBlock(
+              blockSlotState,
+              block.getMessage(),
+              IndexedAttestationCache.NOOP,
+              BLSSignatureVerifier.NO_OP);
+    } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
   }

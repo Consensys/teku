@@ -91,9 +91,9 @@ public class SanityBlocksTestExecutor implements TestExecutor {
             spec.processBlock(
                 result,
                 block,
-                metaData.getBlsSetting() != IGNORED
-                    ? BLSSignatureVerifier.SIMPLE
-                    : BLSSignatureVerifier.NO_OP);
+                metaData.getBlsSetting() == IGNORED
+                    ? BLSSignatureVerifier.NO_OP
+                    : BLSSignatureVerifier.SIMPLE);
       }
       return result;
     } catch (StateTransitionException e) {
