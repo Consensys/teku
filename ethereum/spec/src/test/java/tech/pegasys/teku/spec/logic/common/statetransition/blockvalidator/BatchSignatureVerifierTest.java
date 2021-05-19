@@ -68,4 +68,10 @@ public class BatchSignatureVerifierTest {
     assertThat(verifier.toVerify.size()).isEqualTo(nThreads * iterations);
     assertThat(verifier.toVerify).doesNotContainNull();
   }
+
+  @Test
+  void shouldBeValidWhenNothingVerified() {
+    final BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+    assertThat(verifier.batchVerify()).isTrue();
+  }
 }
