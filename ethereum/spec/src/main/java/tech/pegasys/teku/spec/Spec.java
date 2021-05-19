@@ -277,11 +277,11 @@ public class Spec {
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+    return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
 
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+    return atState(state).beaconStateAccessors().getBlockRootAtSlot(state, slot);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
