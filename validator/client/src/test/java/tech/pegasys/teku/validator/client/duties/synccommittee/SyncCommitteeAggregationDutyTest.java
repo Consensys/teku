@@ -39,8 +39,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -129,8 +129,8 @@ class SyncCommitteeAggregationDutyTest {
   void shouldDoNothingWhenNoValidatorsAreAggregators() {
     final SyncCommitteeAggregationDuty duty = createDuty(committeeAssignment(validator1, 11, 1));
 
-    final SyncCommitteeSigningData expectedSigningData =
-        syncCommitteeUtil.createSyncCommitteeSigningData(slot, UInt64.ZERO);
+    final SyncAggregatorSelectionData expectedSigningData =
+        syncCommitteeUtil.createSyncAggregatorSelectionData(slot, UInt64.ZERO);
     when(validator1.getSigner().signSyncCommitteeSelectionProof(expectedSigningData, forkInfo))
         .thenReturn(SafeFuture.completedFuture(nonAggregatorSignature));
 
@@ -243,8 +243,9 @@ class SyncCommitteeAggregationDutyTest {
 
   private void withValidatorAggregatingSubnet(
       final Validator validator, final int subcommitteeIndex) {
-    final SyncCommitteeSigningData expectedSigningData =
-        syncCommitteeUtil.createSyncCommitteeSigningData(slot, UInt64.valueOf(subcommitteeIndex));
+    final SyncAggregatorSelectionData expectedSigningData =
+        syncCommitteeUtil.createSyncAggregatorSelectionData(
+            slot, UInt64.valueOf(subcommitteeIndex));
     when(validator.getSigner().signSyncCommitteeSelectionProof(expectedSigningData, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregatorSignature));
 
