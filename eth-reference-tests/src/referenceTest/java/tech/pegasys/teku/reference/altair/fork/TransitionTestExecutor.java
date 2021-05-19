@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import org.opentest4j.TestAbortedException;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
@@ -70,7 +71,7 @@ public class TransitionTestExecutor implements TestExecutor {
           TestDataUtils.loadSsz(
               testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
 
-      result = spec.initiateStateTransition(result, block, true);
+      result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
     }
     assertThatSszData(result).isEqualByGettersTo(postState);
   }
