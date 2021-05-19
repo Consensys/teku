@@ -42,7 +42,7 @@ public class TestSpecFactory {
    * Create a spec that forks to altair at the provided slot
    *
    * @param altairForkEpoch The altair fork epoch
-   * @return A spec with phase0 and altair enabled, forking to altair at the given slot
+   * @return A spec with phase0 and altair enabled, forking to altair at the given epoch
    */
   public static Spec createMinimalWithAltairForkEpoch(final UInt64 altairForkEpoch) {
     final SpecConfigAltair config = getAltairSpecConfig(Eth2Network.MINIMAL, altairForkEpoch);
