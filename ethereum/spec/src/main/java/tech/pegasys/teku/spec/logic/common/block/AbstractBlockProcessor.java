@@ -713,6 +713,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
     final Bytes32 domain = beaconStateUtil.computeDomain(specConfig.getDomainDeposit());
     final Bytes signing_root = beaconStateUtil.computeSigningRoot(deposit_message, domain);
+    // Note that this can't use batch signature verification as invalid deposits can be included
+    // in blocks and processing differs based on whether the signature is valid or not.
     return BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
   }
 
