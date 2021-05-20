@@ -34,9 +34,11 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   void shouldUseAltairForkBlockIfSpecified() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xnetwork-altair-fork-slot", "64");
+        getTekuConfigurationFromArguments("--Xnetwork-altair-fork-epoch", "64");
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    assertThat(spec.getForkSchedule().getSpecMilestoneAtSlot(UInt64.valueOf(64)))
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(63)))
+        .isEqualTo(SpecMilestone.PHASE0);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(64)))
         .isEqualTo(SpecMilestone.ALTAIR);
   }
 }

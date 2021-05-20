@@ -5,8 +5,6 @@
 # SLOTS_PER_EPOCH is 4 instead of 8
 # MIN_GENESIS_ACTIVE_VALIDATOR_COUNT is 4 instead of 64
 
-CONFIG_NAME: "swift"
-
 # Misc
 # ---------------------------------------------------------------
 

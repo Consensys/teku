@@ -25,6 +25,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.reference.phase0.rewards.ExpectedDeltas;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.FlagIndexAndWeight;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.RewardsAndPenaltiesCalculatorAltair;
 
 public class RewardsTestExecutorAltair implements TestExecutor {
@@ -70,7 +70,7 @@ public class RewardsTestExecutorAltair implements TestExecutor {
         testDefinition,
         "head_deltas.ssz_snappy",
         applyFlagIndexDeltas(
-            calculator, validatorStatuses, MiscHelpersAltair.TIMELY_HEAD_FLAG_INDEX_AND_WEIGHT));
+            calculator, validatorStatuses, ParticipationFlags.TIMELY_HEAD_FLAG_INDEX));
     assertDeltas(
         testDefinition,
         "inactivity_penalty_deltas.ssz_snappy",
@@ -79,20 +79,19 @@ public class RewardsTestExecutorAltair implements TestExecutor {
         testDefinition,
         "source_deltas.ssz_snappy",
         applyFlagIndexDeltas(
-            calculator, validatorStatuses, MiscHelpersAltair.TIMELY_SOURCE_FLAG_INDEX_AND_WEIGHT));
+            calculator, validatorStatuses, ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX));
     assertDeltas(
         testDefinition,
         "target_deltas.ssz_snappy",
         applyFlagIndexDeltas(
-            calculator, validatorStatuses, MiscHelpersAltair.TIMELY_TARGET_FLAG_INDEX_AND_WEIGHT));
+            calculator, validatorStatuses, ParticipationFlags.TIMELY_TARGET_FLAG_INDEX));
   }
 
   private Supplier<RewardAndPenaltyDeltas> applyFlagIndexDeltas(
       final RewardsAndPenaltiesCalculatorAltair calculator,
       final ValidatorStatuses validatorStatuses,
-      final FlagIndexAndWeight flagIndexAndWeight) {
-    return apply(
-        validatorStatuses, deltas -> calculator.processFlagIndexDeltas(deltas, flagIndexAndWeight));
+      final int flagIndex) {
+    return apply(validatorStatuses, deltas -> calculator.processFlagIndexDeltas(deltas, flagIndex));
   }
 
   private Supplier<RewardAndPenaltyDeltas> apply(

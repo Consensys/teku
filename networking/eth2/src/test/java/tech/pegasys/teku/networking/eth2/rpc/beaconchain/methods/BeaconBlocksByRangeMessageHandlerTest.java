@@ -115,7 +115,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v1RequestForPhase0Block() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
@@ -128,7 +128,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v1RequestForAltairBlock() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
@@ -142,7 +142,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v1RequestForRangeOfBlocksAcrossForkBoundary() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
@@ -157,7 +157,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v2RequestForPhase0Block() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
@@ -170,7 +170,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v2RequestForAltairBlock() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
@@ -183,7 +183,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void validateRequest_altairSpec_v2RequestForRangeOfBlocksAcrossForkBoundary() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 
