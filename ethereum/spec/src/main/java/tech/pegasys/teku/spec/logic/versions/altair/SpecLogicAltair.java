@@ -150,7 +150,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
 
     // State upgrade
     final AltairStateUpgrade stateUpgrade =
-        new AltairStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+        new AltairStateUpgrade(
+            config, schemaDefinitions, beaconStateAccessors, attestationUtil, miscHelpers);
 
     return new SpecLogicAltair(
         predicates,

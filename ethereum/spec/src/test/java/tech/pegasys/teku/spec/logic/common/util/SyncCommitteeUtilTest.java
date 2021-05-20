@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -160,7 +160,7 @@ class SyncCommitteeUtilTest {
   void getMinEpochForSyncCommitteeAssignments_shouldNotAllowEpochToBeLessThanForkEpoch() {
     final UInt64 altairForkEpoch = UInt64.ONE;
     final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairForkSlot);
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(altairForkSlot);
     assertThat(syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(altairForkEpoch))
         .isEqualTo(altairForkEpoch);
@@ -320,7 +320,7 @@ class SyncCommitteeUtilTest {
         .currentSyncCommittee(
             stateSchema
                 .getCurrentSyncCommitteeSchema()
-                .create(committeePublicKeys, Collections.emptyList()))
+                .create(committeePublicKeys, new SszPublicKey(BLSPublicKey.empty())))
         .build();
   }
 }
