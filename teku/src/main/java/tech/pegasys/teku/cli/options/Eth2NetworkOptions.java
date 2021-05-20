@@ -147,4 +147,8 @@ public class Eth2NetworkOptions {
       builder.altairForkSlot(altairForkSlot);
     }
   }
+
+  public String getNetwork() {
+    return network;
+  }
 }

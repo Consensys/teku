@@ -16,13 +16,10 @@ package tech.pegasys.teku.cli.util;
 import java.nio.file.Path;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class SlashingProtectionCommandUtils {
-
   public static void verifySlashingProtectionPathExists(
       final SubCommandLogger subCommandLogger, final Path slashProtectionPath) {
     if (!slashProtectionPath.toFile().exists() || !slashProtectionPath.toFile().isDirectory()) {
@@ -37,11 +34,5 @@ public class SlashingProtectionCommandUtils {
   public static Path getSlashingProtectionPath(final ValidatorClientDataOptions dataOptions) {
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
     return ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
-  }
-
-  public static UInt64 getComputedSlot(
-      final UInt64 genesisTime, final UInt64 oneEpochInFuture, final Spec spec) {
-    final int secondsPerSlot = spec.getGenesisSpec().getConfig().getSecondsPerSlot();
-    return oneEpochInFuture.minusMinZero(genesisTime).dividedBy(secondsPerSlot);
   }
 }

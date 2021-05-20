@@ -66,7 +66,7 @@ public class RepairCommand implements Runnable {
   private boolean updateAllEnabled = false;
 
   @CommandLine.Option(
-      names = {"--with-slot"},
+      names = {"--slot"},
       paramLabel = "<INTEGER>",
       description =
           "Update slashing protection files to contain the specified slot as a minimum."
@@ -93,9 +93,7 @@ public class RepairCommand implements Runnable {
     final UInt64 computedEpoch =
         spec.atSlot(computedSlot).miscHelpers().computeEpochAtSlot(computedSlot);
     final SlashingProtectionRepairer repairer =
-        new SlashingProtectionRepairer(SUB_COMMAND_LOG, updateAllEnabled);
-
-    repairer.initialise(slashProtectionPath);
+        SlashingProtectionRepairer.create(SUB_COMMAND_LOG, slashProtectionPath, updateAllEnabled);
 
     if (repairer.hasUpdates()) {
       if (!checkOnlyEnabled) {
@@ -120,9 +118,10 @@ public class RepairCommand implements Runnable {
           spec.getGenesisSpec().getSlotsPerEpoch()
               * spec.getGenesisSpec().getConfig().getSecondsPerSlot();
       final UInt64 oneEpochInFuture = timeProvider.getTimeInSeconds().plus(secondsPerEpoch);
-      final UInt64 computedSlot =
-          SlashingProtectionCommandUtils.getComputedSlot(genesisTime, oneEpochInFuture, spec);
-      displaySlotUpdateMessage(computedSlot, spec, "Computed slot");
+      final UInt64 computedSlot = spec.getCurrentSlot(oneEpochInFuture, genesisTime);
+      final String network =
+          eth2NetworkOptions.getNetwork() == null ? "" : eth2NetworkOptions.getNetwork();
+      displaySlotUpdateMessage(computedSlot, spec, "Computed " + network + " slot");
       return computedSlot;
     }
     SUB_COMMAND_LOG.exit(

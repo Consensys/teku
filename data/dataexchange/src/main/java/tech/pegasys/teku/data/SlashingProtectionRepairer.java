@@ -33,6 +33,7 @@ public class SlashingProtectionRepairer {
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private final Set<String> invalidRecords = new HashSet<>();
   private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private final List<String> errorList = new ArrayList<>();
   private final SubCommandLogger log;
   private Path slashingProtectionPath;
   private final boolean updateAllEnabled;
@@ -42,7 +43,17 @@ public class SlashingProtectionRepairer {
     this.updateAllEnabled = updateAllEnabled;
   }
 
-  public void initialise(final Path slashProtectionPath) {
+  public static SlashingProtectionRepairer create(
+      final SubCommandLogger subCommandLog,
+      final Path slashProtectionPath,
+      final boolean updateAllEnabled) {
+    final SlashingProtectionRepairer repairer =
+        new SlashingProtectionRepairer(subCommandLog, updateAllEnabled);
+    repairer.initialise(slashProtectionPath);
+    return repairer;
+  }
+
+  private void initialise(final Path slashProtectionPath) {
     this.slashingProtectionPath = slashProtectionPath;
     File slashingProtectionRecords = slashProtectionPath.toFile();
     Arrays.stream(slashingProtectionRecords.listFiles())
@@ -75,69 +86,53 @@ public class SlashingProtectionRepairer {
   }
 
   public void updateRecords(final UInt64 slot, final UInt64 epoch) {
-    invalidRecords.forEach(pubkey -> updateValidatorSigningRecord(pubkey, epoch, slot));
+    invalidRecords.forEach(
+        pubkey ->
+            writeValidatorSigningRecord(
+                new ValidatorSigningRecord(null, slot, epoch, epoch), pubkey));
     if (updateAllEnabled) {
       signingHistoryList.forEach(
           (historyRecord) -> updateValidatorSigningRecord(slot, epoch, historyRecord));
     }
+    displayUpdateErrors();
   }
 
   private void updateValidatorSigningRecord(
       final UInt64 slot, final UInt64 epoch, final SigningHistory historyRecord) {
-    if (canUpdateSignedBlock(historyRecord, slot)
-        && canUpdateSignedAttestation(historyRecord, epoch)) {
-      updateValidatorSigningRecord(toDisplayString(historyRecord.pubkey), epoch, slot);
-    } else {
-      log.error(
-          toDisplayString(historyRecord.pubkey)
-              + ": Existing record was higher than the update requested");
+    final ValidatorSigningRecord currentRecord =
+        historyRecord.toValidatorSigningRecord(Optional.empty(), null);
+    final ValidatorSigningRecord updatedRecord =
+        updateSigningRecord(slot, epoch, Optional.of(currentRecord));
+    if (!currentRecord.equals(updatedRecord)) {
+      writeValidatorSigningRecord(updatedRecord, toDisplayString(historyRecord.pubkey));
     }
   }
 
-  private void updateValidatorSigningRecord(
-      final String pubkey, final UInt64 epoch, final UInt64 slot) {
+  private void writeValidatorSigningRecord(
+      final ValidatorSigningRecord updatedRecord, final String pubkey) {
     log.display(pubkey + ": updating");
     Path outputFile = slashingProtectionPath.resolve(pubkey + ".yml");
-    Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
-    if (outputFile.toFile().exists()) {
-      try {
-        existingRecord = syncDataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
-      } catch (Exception e) {
-        // ignore failed read, we'll write a new record
-      }
-    }
-    final SigningHistory signingHistory =
-        new SigningHistory(
-            BLSPubKey.fromHexString(pubkey), new ValidatorSigningRecord(null, slot, epoch, epoch));
     try {
-      syncDataAccessor.syncedWrite(
-          outputFile, signingHistory.toValidatorSigningRecord(existingRecord, null).toBytes());
+      syncDataAccessor.syncedWrite(outputFile, updatedRecord.toBytes());
     } catch (IOException e) {
-      log.error(pubkey + ": update failed, " + e.getMessage());
+      errorList.add(pubkey + ": update failed, " + e.getMessage());
     }
-  }
-
-  private boolean canUpdateSignedAttestation(final SigningHistory history, final UInt64 epoch) {
-    return history.signedAttestations.isEmpty()
-        || history.signedAttestations.stream()
-                .filter(
-                    signedAttestation ->
-                        signedAttestation.sourceEpoch.isGreaterThan(epoch)
-                            || signedAttestation.targetEpoch.isGreaterThan(epoch))
-                .count()
-            == 0;
-  }
-
-  private boolean canUpdateSignedBlock(SigningHistory history, final UInt64 slot) {
-    return history.signedBlocks.isEmpty()
-        || history.signedBlocks.stream()
-                .filter(signedBlock -> signedBlock.slot.isGreaterThan(slot))
-                .count()
-            == 0;
   }
 
   private String toDisplayString(final BLSPubKey pubkey) {
     return pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+  }
+
+  private void displayUpdateErrors() {
+    if (errorList.isEmpty()) {
+      return;
+    }
+
+    log.display("");
+    log.display("The following errors were encountered:");
+    for (String err : errorList) {
+      log.display(err);
+    }
   }
 
   public boolean hasUpdates() {
@@ -145,5 +140,28 @@ public class SlashingProtectionRepairer {
       return signingHistoryList.size() + invalidRecords.size() > 0;
     }
     return invalidRecords.size() > 0;
+  }
+
+  static ValidatorSigningRecord updateSigningRecord(
+      final UInt64 blockSlot,
+      final UInt64 attestationEpoch,
+      final Optional<ValidatorSigningRecord> maybeRecord) {
+    final UInt64 sourceEpoch =
+        maybeRecord
+            .map(ValidatorSigningRecord::getAttestationSourceEpoch)
+            .orElse(attestationEpoch)
+            .max(attestationEpoch);
+    final UInt64 targetEpoch =
+        maybeRecord
+            .map(ValidatorSigningRecord::getAttestationTargetEpoch)
+            .orElse(attestationEpoch)
+            .max(attestationEpoch);
+    final UInt64 slot =
+        maybeRecord.map(ValidatorSigningRecord::getBlockSlot).orElse(blockSlot).max(blockSlot);
+    return new ValidatorSigningRecord(
+        maybeRecord.map(ValidatorSigningRecord::getGenesisValidatorsRoot).orElse(null),
+        slot,
+        sourceEpoch,
+        targetEpoch);
   }
 }
