@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -59,7 +58,7 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
     final BeaconState postState = TestDataUtils.loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
     final StateUpgrade<?> stateUpgrade =
-        testDefinition.getSpec().atEpoch(UInt64.ZERO).getStateUpgrade().orElseThrow();
+        testDefinition.getSpec().getGenesisSpec().getStateUpgrade().orElseThrow();
 
     final BeaconState updated = stateUpgrade.upgrade(preState);
 
