@@ -49,12 +49,12 @@ public class Eth2NetworkOptions {
   private String eth1DepositContractAddress = null; // Depends on network configuration
 
   @Option(
-      names = {"--Xnetwork-altair-fork-slot"},
+      names = {"--Xnetwork-altair-fork-epoch"},
       hidden = true,
-      paramLabel = "<slot>",
-      description = "Override the Altair fork activation slot.",
+      paramLabel = "<epoch>",
+      description = "Override the Altair fork activation epoch.",
       arity = "1")
-  private UInt64 altairForkSlot;
+  private UInt64 altairForkEpoch;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -143,8 +143,8 @@ public class Eth2NetworkOptions {
     if (forkChoiceBalanceAttackMitigationEnabled != null) {
       builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
     }
-    if (altairForkSlot != null) {
-      builder.altairForkSlot(altairForkSlot);
+    if (altairForkEpoch != null) {
+      builder.altairForkEpoch(altairForkEpoch);
     }
   }
 

@@ -37,8 +37,9 @@ public class StateTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
 
-  private final UInt64 altairTransitionSlot = UInt64.valueOf(8);
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairTransitionSlot);
+  private final UInt64 altairTransitionEpoch = UInt64.ONE;
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairTransitionEpoch);
+  private final UInt64 altairTransitionSlot = spec.computeStartSlotAtEpoch(altairTransitionEpoch);
 
   private final BeaconState genesis = createGenesis(spec);
   private final StateTransition stateTransition = new StateTransition(spec::atSlot);

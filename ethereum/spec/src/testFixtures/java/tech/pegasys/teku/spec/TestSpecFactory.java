@@ -41,11 +41,11 @@ public class TestSpecFactory {
   /**
    * Create a spec that forks to altair at the provided slot
    *
-   * @param altairForkSlot The altair fork slot, must be on an epoch boundary
-   * @return A spec with phase0 and altair enabled, forking to altair at the given slot
+   * @param altairForkEpoch The altair fork epoch
+   * @return A spec with phase0 and altair enabled, forking to altair at the given epoch
    */
-  public static Spec createMinimalWithAltairFork(final UInt64 altairForkSlot) {
-    final SpecConfigAltair config = getAltairSpecConfig(Eth2Network.MINIMAL, altairForkSlot);
+  public static Spec createMinimalWithAltairForkEpoch(final UInt64 altairForkEpoch) {
+    final SpecConfigAltair config = getAltairSpecConfig(Eth2Network.MINIMAL, altairForkEpoch);
     return create(config, SpecMilestone.ALTAIR);
   }
 
@@ -87,9 +87,9 @@ public class TestSpecFactory {
   }
 
   private static SpecConfigAltair getAltairSpecConfig(
-      final Eth2Network network, final UInt64 altairForkSlot) {
+      final Eth2Network network, final UInt64 altairForkEpoch) {
     return SpecConfigAltair.required(
         TestConfigLoader.loadConfig(
-            network.configName(), c -> c.altairBuilder(a -> a.altairForkSlot(altairForkSlot))));
+            network.configName(), c -> c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
   }
 }

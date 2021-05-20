@@ -66,6 +66,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
@@ -191,6 +192,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetIdentity.ROUTE, GetIdentity.class))
         .add(Arguments.of(GetPeerById.ROUTE, GetPeerById.class))
         .add(Arguments.of(GetPeers.ROUTE, GetPeers.class))
+        .add(Arguments.of(GetPeerCount.ROUTE, GetPeerCount.class))
         .add(Arguments.of(GetSyncing.ROUTE, GetSyncing.class))
         .add(Arguments.of(GetVersion.ROUTE, GetVersion.class));
 

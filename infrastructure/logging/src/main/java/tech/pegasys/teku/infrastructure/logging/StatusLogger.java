@@ -48,10 +48,10 @@ public class StatusLogger {
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
-  public void warnForkSlotChanged(final String milestoneName, final UInt64 newSlot) {
+  public void warnForkEpochChanged(final String milestoneName, final UInt64 newEpoch) {
     log.warn(
         print(
-            milestoneName + " configuration has been overridden to activate at slot " + newSlot,
+            milestoneName + " configuration has been overridden to activate at epoch " + newEpoch,
             Color.YELLOW));
   }
 
