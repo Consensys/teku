@@ -37,25 +37,27 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
-  private final BeaconStateAccessors beaconStateAccessors;
+  private final BeaconStateAccessorsAltair beaconStateAccessors;
   private final BeaconStateUtil beaconStateUtil;
   private final ValidatorsUtil validatorsUtil;
   private final SpecConfigAltair specConfig;
@@ -63,7 +65,7 @@ public class SyncCommitteeUtil {
   private final SchemaDefinitionsAltair schemaDefinitionsAltair;
 
   public SyncCommitteeUtil(
-      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorsUtil validatorsUtil,
       final SpecConfigAltair specConfig,
@@ -163,7 +165,12 @@ public class SyncCommitteeUtil {
     checkArgument(
         syncCommitteePeriod.equals(currentSyncCommitteePeriod)
             || syncCommitteePeriod.equals(nextSyncCommitteePeriod),
-        "State must be in the same or previous sync committee period");
+        "State must be in the same or previous sync committee period. "
+            + "State epoch %s (period: %s), requested epoch %s (period: %s)",
+        currentEpoch,
+        currentSyncCommitteePeriod,
+        epoch,
+        syncCommitteePeriod);
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
     return syncCommitteePeriod.equals(currentSyncCommitteePeriod)
         ? altairState.getCurrentSyncCommittee()
@@ -222,23 +229,23 @@ public class SyncCommitteeUtil {
     return beaconStateUtil.computeSigningRoot(contributionAndProof, domain);
   }
 
-  public Bytes getSyncCommitteeSigningDataSigningRoot(
-      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
+  public Bytes getSyncAggregatorSelectionDataSigningRoot(
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
         beaconStateUtil.getDomain(
             domainSyncCommitteeSelectionProof,
-            miscHelpers.computeEpochAtSlot(signingData.getSlot()),
+            miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return beaconStateUtil.computeSigningRoot(signingData, domain);
+    return beaconStateUtil.computeSigningRoot(selectionData, domain);
   }
 
-  public SyncCommitteeSigningData createSyncCommitteeSigningData(
+  public SyncAggregatorSelectionData createSyncAggregatorSelectionData(
       final UInt64 slot, final UInt64 subcommitteeIndex) {
     return schemaDefinitionsAltair
-        .getSyncCommitteeSigningDataSchema()
+        .getSyncAggregatorSelectionDataSchema()
         .create(slot, subcommitteeIndex);
   }
 
@@ -294,7 +301,7 @@ public class SyncCommitteeUtil {
     return requiredSyncCommitteePeriod
         .times(specConfig.getEpochsPerSyncCommitteePeriod())
         // But can't use a state from before the Altair fork
-        .max(miscHelpers.computeEpochAtSlot(specConfig.getAltairForkSlot()));
+        .max(specConfig.getAltairForkEpoch());
   }
 
   public UInt64 computeFirstEpochOfCurrentSyncCommitteePeriod(final UInt64 currentEpoch) {
@@ -344,5 +351,15 @@ public class SyncCommitteeUtil {
     } else {
       return schema.create(participantIndices, BLS.aggregate(signatures));
     }
+  }
+
+  public void setGenesisStateSyncCommittees(final MutableBeaconState state) {
+    final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
+
+    // Note: A duplicate committee is assigned for the current and next committee at the fork
+    // boundary
+    final SyncCommittee syncCommittee = beaconStateAccessors.getNextSyncCommittee(state);
+    stateAltair.setCurrentSyncCommittee(syncCommittee);
+    stateAltair.setNextSyncCommittee(syncCommittee);
   }
 }

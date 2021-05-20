@@ -44,7 +44,9 @@ public class FuzzRegressionTest {
     assertThatThrownBy(
             () ->
                 state.updated(
-                    mutableState -> spec.processAttesterSlashings(mutableState, slashings)))
+                    mutableState ->
+                        spec.getBlockProcessor(mutableState.getSlot())
+                            .processAttesterSlashings(mutableState, slashings)))
         .isInstanceOf(BlockProcessingException.class);
   }
 

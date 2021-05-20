@@ -25,7 +25,7 @@ the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questio
 ## Teku developers 
 
 * [Contribution Guidelines](CONTRIBUTING.md)
-* [Coding Conventions](https://github.com/hyperledger/besu/blob/master/CODING-CONVENTIONS.md)
+* [Coding Conventions](https://wiki.hyperledger.org/display/BESU/Coding+Conventions)
 
 ## Binary Releases
 

@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 public interface Signer {
@@ -44,7 +44,7 @@ public interface Signer {
       UInt64 slot, Bytes32 beaconBlockRoot, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      SyncCommitteeSigningData signingData, ForkInfo forkInfo);
+      SyncAggregatorSelectionData selectionData, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signContributionAndProof(
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);

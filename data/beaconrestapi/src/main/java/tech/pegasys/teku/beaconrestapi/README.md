@@ -2,14 +2,14 @@
 
 ## Resources
 
-* [eth2-spec]("https://github.com/ethereum/eth2.0-specs")
-* [eth2-api]("https://github.com/ethereum/eth2.0-APIs")
-* [Prysm API]("https://api.prylabs.net/#")
-* [Lighthouse API]("https://lighthouse-book.sigmaprime.io/http.html")
+* [eth2-spec](https://github.com/ethereum/eth2.0-specs)
+* [eth2-api](https://github.com/ethereum/eth2.0-APIs)
+* [Prysm API](https://docs.prylabs.network/docs/how-prysm-works/ethereum-2-public-api)
+* [Lighthouse API](https://lighthouse-book.sigmaprime.io/api-bn.html)
 
 ## /node/genesis_time
 
-In [eth2-spec]("https://github.com/ethereum/eth2.0-specs") genesis_time should either return
+In [eth2-spec](https://github.com/ethereum/eth2.0-specs) genesis_time should either return
 * 200 code and a numeric
 * 500 internal error
 

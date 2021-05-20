@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -41,11 +42,13 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
+  protected final OperationValidator operationValidator;
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
   protected final BlockProcessor blockProcessor;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+
   // State upgrade
   protected final Optional<StateUpgrade<?>> stateUpgrade;
 
@@ -58,6 +61,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
+      final OperationValidator operationValidator,
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
@@ -77,6 +81,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.blockProcessor = blockProcessor;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.operationValidator = operationValidator;
     this.stateUpgrade = stateUpgrade;
   }
 
@@ -103,6 +108,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public AttestationUtil getAttestationUtil() {
     return attestationUtil;
+  }
+
+  @Override
+  public OperationValidator getOperationValidator() {
+    return operationValidator;
   }
 
   @Override

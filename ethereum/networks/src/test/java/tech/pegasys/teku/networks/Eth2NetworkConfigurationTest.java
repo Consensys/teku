@@ -50,8 +50,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConfig().getConfigName())
-        .isEqualTo("Custom Constants");
+    assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
   @Test
@@ -61,8 +60,7 @@ public class Eth2NetworkConfigurationTest {
     final Eth2NetworkConfiguration config =
         Eth2NetworkConfiguration.builder().constants(url.toString()).build();
     assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConfig().getConfigName())
-        .isEqualTo("Custom Constants");
+    assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
   }
 
   @Test

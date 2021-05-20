@@ -19,25 +19,26 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class SyncCommitteeSigningDataSchema
-    extends ContainerSchema2<SyncCommitteeSigningData, SszUInt64, SszUInt64> {
+public class SyncAggregatorSelectionDataSchema
+    extends ContainerSchema2<SyncAggregatorSelectionData, SszUInt64, SszUInt64> {
 
-  public static final SyncCommitteeSigningDataSchema INSTANCE =
-      new SyncCommitteeSigningDataSchema();
+  public static final SyncAggregatorSelectionDataSchema INSTANCE =
+      new SyncAggregatorSelectionDataSchema();
 
-  private SyncCommitteeSigningDataSchema() {
+  private SyncAggregatorSelectionDataSchema() {
     super(
-        "SyncCommitteeSigningData",
+        "SyncAggregatorSelectionData",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("subcommittee_index", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   @Override
-  public SyncCommitteeSigningData createFromBackingNode(final TreeNode node) {
-    return new SyncCommitteeSigningData(this, node);
+  public SyncAggregatorSelectionData createFromBackingNode(final TreeNode node) {
+    return new SyncAggregatorSelectionData(this, node);
   }
 
-  public SyncCommitteeSigningData create(final UInt64 slot, final UInt64 subcommitteeIndex) {
-    return new SyncCommitteeSigningData(this, SszUInt64.of(slot), SszUInt64.of(subcommitteeIndex));
+  public SyncAggregatorSelectionData create(final UInt64 slot, final UInt64 subcommitteeIndex) {
+    return new SyncAggregatorSelectionData(
+        this, SszUInt64.of(slot), SszUInt64.of(subcommitteeIndex));
   }
 }

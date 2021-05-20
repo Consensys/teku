@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Include expected path for keystore password file in error message when password file is not found.
 - Added additional bootnodes for Pyrmont testnet.
 - Optimised how block production metrics are calculated.
+- implement GET `/eth/v1/node/peer_count` standard api endpoint.
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
@@ -25,4 +26,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - implement GET and POST `/eth/v1/validator/sync_committee_subscriptions` for Altair fork.
 - implement GET `/eth/v2/validator/blocks/{slot}` for Altair fork.
 - implement GET `/eth/v2/debug/beacon/states/:state_id` for Altair fork.
+- implement GET `/eth/v1/beacon/states/{state_id}/sync_committees` for Altair fork.
 - `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.

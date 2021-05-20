@@ -131,6 +131,13 @@ public class AttestationUtil {
 
   public AttestationProcessingResult isValidIndexedAttestation(
       BeaconState state, ValidateableAttestation attestation) {
+    return isValidIndexedAttestation(state, attestation, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
     if (attestation.isValidIndexedAttestation()) {
       return AttestationProcessingResult.SUCCESSFUL;
     } else {
@@ -139,7 +146,7 @@ public class AttestationUtil {
             getIndexedAttestation(state, attestation.getAttestation());
         attestation.setIndexedAttestation(indexedAttestation);
         AttestationProcessingResult result =
-            isValidIndexedAttestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+            isValidIndexedAttestation(state, indexedAttestation, blsSignatureVerifier);
         if (result.isSuccessful()) {
           attestation.saveCommitteeShufflingSeed(state);
           attestation.setValidIndexedAttestation();
@@ -223,11 +230,11 @@ public class AttestationUtil {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.getRoot();
-    UInt64 start_slot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    UInt64 start_slot = miscHelpers.computeStartSlotAtEpoch(epoch);
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
             ? block.getRoot()
-            : beaconStateUtil.getBlockRootAtSlot(state, start_slot);
+            : beaconStateAccessors.getBlockRootAtSlot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);
 

@@ -24,10 +24,10 @@ import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SyncCommittee
-    extends Container2<SyncCommittee, SszVector<SszPublicKey>, SszVector<SszPublicKey>> {
+    extends Container2<SyncCommittee, SszVector<SszPublicKey>, SszPublicKey> {
 
   public static class SyncCommitteeSchema
-      extends ContainerSchema2<SyncCommittee, SszVector<SszPublicKey>, SszVector<SszPublicKey>> {
+      extends ContainerSchema2<SyncCommittee, SszVector<SszPublicKey>, SszPublicKey> {
 
     public SyncCommitteeSchema(final SpecConfigAltair specConfigAltair) {
       super(
@@ -36,12 +36,7 @@ public class SyncCommittee
               "pubkeys",
               SszVectorSchema.create(
                   SszPublicKeySchema.INSTANCE, specConfigAltair.getSyncCommitteeSize())),
-          namedSchema(
-              "pubkey_aggregates",
-              SszVectorSchema.create(
-                  SszPublicKeySchema.INSTANCE,
-                  specConfigAltair.getSyncCommitteeSize()
-                      / specConfigAltair.getSyncPubkeysPerAggregate())));
+          namedSchema("aggregate_pubkey", SszPublicKeySchema.INSTANCE));
     }
 
     @Override
@@ -50,25 +45,18 @@ public class SyncCommittee
     }
 
     public SyncCommittee create(
-        final List<SszPublicKey> pubkeys, final List<SszPublicKey> pubkeyAggregates) {
-      return create(
-          getPubkeysSchema().createFromElements(pubkeys),
-          getPubkeyAggregatesSchema().createFromElements(pubkeyAggregates));
+        final List<SszPublicKey> pubkeys, final SszPublicKey aggregatePubkey) {
+      return create(getPubkeysSchema().createFromElements(pubkeys), aggregatePubkey);
     }
 
     public SyncCommittee create(
-        final SszVector<SszPublicKey> pubkeys, final SszVector<SszPublicKey> pubkeyAggregates) {
-      return new SyncCommittee(this, pubkeys, pubkeyAggregates);
+        final SszVector<SszPublicKey> pubkeys, final SszPublicKey aggregatePubkey) {
+      return new SyncCommittee(this, pubkeys, aggregatePubkey);
     }
 
     @SuppressWarnings("unchecked")
     public SszVectorSchema<SszPublicKey, SszVector<SszPublicKey>> getPubkeysSchema() {
       return (SszVectorSchema<SszPublicKey, SszVector<SszPublicKey>>) getChildSchema(0);
-    }
-
-    @SuppressWarnings("unchecked")
-    public SszVectorSchema<SszPublicKey, SszVector<SszPublicKey>> getPubkeyAggregatesSchema() {
-      return (SszVectorSchema<SszPublicKey, SszVector<SszPublicKey>>) getChildSchema(1);
     }
   }
 
@@ -79,15 +67,15 @@ public class SyncCommittee
   private SyncCommittee(
       final SyncCommitteeSchema type,
       final SszVector<SszPublicKey> pubkeys,
-      final SszVector<SszPublicKey> pubkeyAggregates) {
-    super(type, pubkeys, pubkeyAggregates);
+      final SszPublicKey aggregatePubkey) {
+    super(type, pubkeys, aggregatePubkey);
   }
 
   public SszVector<SszPublicKey> getPubkeys() {
     return getField0();
   }
 
-  public SszVector<SszPublicKey> getPubkeyAggregates() {
+  public SszPublicKey getAggregatePubkey() {
     return getField1();
   }
 }

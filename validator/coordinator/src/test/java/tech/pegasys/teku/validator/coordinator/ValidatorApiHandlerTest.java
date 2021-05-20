@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -368,7 +367,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   void getSyncCommitteeDuties_shouldNotUseEpochPriorToFork() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(EPOCH_START_SLOT);
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(EPOCH);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             chainDataProvider,
@@ -479,7 +478,7 @@ class ValidatorApiHandlerTest {
         .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
     assertThat(attestation.getData())
         .isEqualTo(
-            AttestationUtil.getGenericAttestationData(
+            spec.getGenericAttestationData(
                 slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toSSZBytes())
@@ -520,7 +519,7 @@ class ValidatorApiHandlerTest {
         .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
     assertThat(attestation.getData())
         .isEqualTo(
-            AttestationUtil.getGenericAttestationData(
+            spec.getGenericAttestationData(
                 slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toSSZBytes())
@@ -595,11 +594,11 @@ class ValidatorApiHandlerTest {
     final UInt64 unsubscribeSlotSubscription2 =
         spec.computeStartSlotAtEpoch(UInt64.valueOf(35).increment());
     verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription1);
+    verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(3, unsubscribeSlotSubscription1);
-    verify(syncCommitteeSubscriptionManager).subscribe(7, unsubscribeSlotSubscription1);
 
+    verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription2);
     verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription2);
-    verify(syncCommitteeSubscriptionManager).subscribe(2, unsubscribeSlotSubscription2);
     verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 

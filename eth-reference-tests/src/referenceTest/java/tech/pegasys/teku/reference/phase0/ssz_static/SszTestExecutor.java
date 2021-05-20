@@ -81,11 +81,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas).getSyncCommitteeSignatureSchema()))
           .put(
-              "ssz_static/SyncCommitteeSigningData",
+              "ssz_static/SyncAggregatorSelectionData",
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
-                          .getSyncCommitteeSigningDataSchema()))
+                          .getSyncAggregatorSelectionDataSchema()))
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)

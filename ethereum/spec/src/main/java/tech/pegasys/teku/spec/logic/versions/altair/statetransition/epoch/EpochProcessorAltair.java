@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -96,19 +97,20 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   @Override
   public void processSyncCommitteeUpdates(final MutableBeaconState genericState) {
-    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
-    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).increment();
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(genericState).increment();
     if (nextEpoch.mod(specConfigAltair.getEpochsPerSyncCommitteePeriod()).isZero()) {
+      final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
       state.setCurrentSyncCommittee(state.getNextSyncCommittee());
-      state.setNextSyncCommittee(
-          beaconStateAccessorsAltair.getSyncCommittee(
-              state, nextEpoch.plus(specConfigAltair.getEpochsPerSyncCommitteePeriod())));
+      state.setNextSyncCommittee(beaconStateAccessorsAltair.getNextSyncCommittee(state));
     }
   }
 
   @Override
   public void processInactivityUpdates(
       final MutableBeaconState baseState, final ValidatorStatuses validatorStatuses) {
+    if (beaconStateAccessors.getCurrentEpoch(baseState).equals(SpecConfig.GENESIS_EPOCH)) {
+      return;
+    }
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszMutableUInt64List inactivityScores = state.getInactivityScores();
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
@@ -119,15 +121,20 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
         continue;
       }
 
+      // Increase inactivity score of inactive validators
+      final UInt64 currentScore = inactivityScores.getElement(i);
       if (validatorStatus.isNotSlashed() && validatorStatus.isPreviousEpochTargetAttester()) {
-        final UInt64 currentScore = inactivityScores.getElement(i);
         if (currentScore.isGreaterThan(0)) {
           inactivityScores.setElement(i, currentScore.decrement());
         }
-      } else if (isInInactivityLeak) {
-        final UInt64 currentScore = inactivityScores.getElement(i);
+      } else {
         inactivityScores.setElement(
             i, currentScore.plus(specConfigAltair.getInactivityScoreBias()));
+      }
+      // Decrease the score of all validators for forgiveness when not during a leak
+      if (!isInInactivityLeak) {
+        inactivityScores.setElement(
+            i, currentScore.minusMinZero(specConfigAltair.getInactivityScoreRecoveryRate()));
       }
     }
   }
