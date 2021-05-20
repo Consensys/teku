@@ -22,15 +22,12 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
-import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
 public class ForkUpgradeTestExecutor implements TestExecutor {
 
@@ -60,11 +57,9 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", phase0Schema);
     final BeaconState postState = TestDataUtils.loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
-    final AltairStateUpgrade stateUpgrade =
-        new AltairStateUpgrade(
-            (SpecConfigAltair) spec.getConfig(),
-            (SchemaDefinitionsAltair) spec.getSchemaDefinitions(),
-            (BeaconStateAccessorsAltair) spec.beaconStateAccessors());
+    final StateUpgrade<?> stateUpgrade =
+        testDefinition.getSpec().getGenesisSpec().getStateUpgrade().orElseThrow();
+
     final BeaconState updated = stateUpgrade.upgrade(preState);
 
     assertThatSszData(updated).isEqualByGettersTo(postState);

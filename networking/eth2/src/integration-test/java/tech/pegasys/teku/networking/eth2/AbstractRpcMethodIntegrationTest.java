@@ -23,11 +23,13 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractRpcMethodIntegrationTest {
-  protected final UInt64 altairSlot = UInt64.valueOf(16); // Epoch 2 for minimal
   protected StorageSystem peerStorage;
 
   private final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-  private final Spec altairEnabledSpec = TestSpecFactory.createMinimalWithAltairFork(altairSlot);
+  protected final UInt64 altairEpoch = UInt64.valueOf(2);
+  private final Spec altairEnabledSpec =
+      TestSpecFactory.createMinimalWithAltairForkEpoch(altairEpoch);
+  protected final UInt64 altairSlot = altairEnabledSpec.computeStartSlotAtEpoch(altairEpoch);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach

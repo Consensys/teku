@@ -42,9 +42,10 @@ import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 
 class SyncCommitteeContributionPoolTest {
 
-  private final UInt64 forkSlot = UInt64.valueOf(8);
+  private final UInt64 forkEpoch = UInt64.ONE;
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(forkEpoch);
+  private final UInt64 forkSlot = spec.computeStartSlotAtEpoch(forkEpoch);
   private final UInt64 altairSlot = forkSlot.plus(2);
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(forkSlot);
   private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

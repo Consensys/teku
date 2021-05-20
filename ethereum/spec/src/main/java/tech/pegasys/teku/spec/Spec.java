@@ -219,12 +219,13 @@ public class Spec {
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
-    return GenesisGenerator.initializeBeaconStateFromEth1(
-        getGenesisSpec(), eth1BlockHash, eth1Timestamp, deposits);
+    final GenesisGenerator genesisGenerator = createGenesisGenerator();
+    genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    return genesisGenerator.getGenesisState();
   }
 
   public GenesisGenerator createGenesisGenerator() {
-    return new GenesisGenerator(getGenesisSpec());
+    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getFork(SpecConfig.GENESIS_EPOCH));
   }
 
   // Serialization

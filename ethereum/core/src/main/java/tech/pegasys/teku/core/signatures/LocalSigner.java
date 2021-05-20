@@ -99,7 +99,7 @@ public class LocalSigner implements Signer {
       final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
             selectionData.getSlot(),
-            utils -> utils.getSyncAggregatorSigningDataSigningRoot(selectionData, forkInfo))
+            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(selectionData, forkInfo))
         .thenCompose(this::sign);
   }
 

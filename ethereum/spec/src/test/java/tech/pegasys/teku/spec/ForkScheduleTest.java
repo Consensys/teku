@@ -38,22 +38,14 @@ public class ForkScheduleTest {
       SpecConfigAltair.required(
           TestConfigLoader.loadConfig(
               Eth2Network.MINIMAL.configName(),
-              c ->
-                  c.altairBuilder(
-                      a -> {
-                        a.altairForkSlot(FORK_SLOT_ALTAIR);
-                      })));
+              c -> c.altairBuilder(a -> a.altairForkEpoch(FORK_EPOCH_ALTAIR))));
 
   // Set config starting altair at genesis
   private static final SpecConfigAltair ALTAIR_CONFIG =
       SpecConfigAltair.required(
           TestConfigLoader.loadConfig(
               Eth2Network.MINIMAL.configName(),
-              c ->
-                  c.altairBuilder(
-                      a -> {
-                        a.altairForkSlot(UInt64.ZERO);
-                      })));
+              c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))));
 
   // Set up config with no altair transition
   private static final SpecConfig PHASE0_CONFIG =
@@ -431,7 +423,7 @@ public class ForkScheduleTest {
   }
 
   private Fork getAltairFork(final SpecConfigAltair config) {
-    final UInt64 forkEpoch = config.getAltairForkSlot().dividedBy(config.getSlotsPerEpoch());
+    final UInt64 forkEpoch = config.getAltairForkEpoch();
     return new Fork(config.getGenesisForkVersion(), config.getAltairForkVersion(), forkEpoch);
   }
 

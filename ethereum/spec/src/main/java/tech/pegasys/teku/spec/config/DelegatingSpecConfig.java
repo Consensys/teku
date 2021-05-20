@@ -31,11 +31,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public String getConfigName() {
-    return specConfig.getConfigName();
-  }
-
-  @Override
   public UInt64 getBaseRewardsPerEpoch() {
     return specConfig.getBaseRewardsPerEpoch();
   }

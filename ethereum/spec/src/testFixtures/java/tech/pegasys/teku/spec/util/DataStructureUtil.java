@@ -323,9 +323,7 @@ public final class DataStructureUtil {
     return syncCommitteeSchema.create(
         randomSszVector(
             syncCommitteeSchema.getPubkeysSchema(), () -> new SszPublicKey(randomPublicKey())),
-        randomSszVector(
-            syncCommitteeSchema.getPubkeyAggregatesSchema(),
-            () -> new SszPublicKey(randomPublicKey())));
+        new SszPublicKey(randomPublicKey()));
   }
 
   public SyncCommittee randomSyncCommittee(SszList<Validator> validators) {
@@ -339,9 +337,7 @@ public final class DataStructureUtil {
         randomSszVector(
             syncCommitteeSchema.getPubkeysSchema(),
             () -> new SszPublicKey(randomValidatorKey(validators))),
-        randomSszVector(
-            syncCommitteeSchema.getPubkeyAggregatesSchema(),
-            () -> new SszPublicKey(randomPublicKey())));
+        new SszPublicKey(randomPublicKey()));
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {

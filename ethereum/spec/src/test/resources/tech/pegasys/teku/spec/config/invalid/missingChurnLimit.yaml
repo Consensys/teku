@@ -1,8 +1,6 @@
 # Mainnet with missing constants
 # Hide MIN_PER_EPOCH_CHURN_LIMIT
 
-CONFIG_NAME: "mainnet"
-
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
