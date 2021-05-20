@@ -20,20 +20,29 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_PARTIAL_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SYNCING_STATUS;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SYNCING_STATUS_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 
 public class GetHealth implements Handler {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/node/health";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
@@ -54,6 +63,9 @@ public class GetHealth implements Handler {
       summary = "Get node health",
       description = "Returns node health status in http status codes. Useful for load balancers.",
       tags = {TAG_NODE},
+      queryParams = {
+        @OpenApiParam(name = SYNCING_STATUS, description = SYNCING_STATUS_DESCRIPTION)
+      },
       responses = {
         @OpenApiResponse(status = RES_OK, description = "Node is ready"),
         @OpenApiResponse(
@@ -69,7 +81,16 @@ public class GetHealth implements Handler {
     if (!chainDataProvider.isStoreAvailable()) {
       ctx.status(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
-      ctx.status(SC_PARTIAL_CONTENT);
+      int syncingStatus = SC_PARTIAL_CONTENT;
+      try {
+        final Map<String, List<String>> parameters = ctx.queryParamMap();
+        if (!parameters.isEmpty()) {
+          syncingStatus = getParameterValueAsInt(parameters, SYNCING_STATUS);
+        }
+      } catch (final IllegalArgumentException ex) {
+        LOG.trace("Illegal parameter in GetHealth", ex);
+      }
+      ctx.status(syncingStatus);
     } else {
       ctx.status(SC_OK);
     }
