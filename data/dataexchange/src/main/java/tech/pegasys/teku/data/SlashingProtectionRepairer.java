@@ -56,7 +56,7 @@ public class SlashingProtectionRepairer {
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty() && invalidRecords.add(pubkey)) {
-        log.display(pubkey + ": empty slashing protection record");
+        log.display(pubkey + ": Empty slashing protection record");
         return;
       }
 
@@ -69,7 +69,7 @@ public class SlashingProtectionRepairer {
 
     } catch (Exception e) {
       if (invalidRecords.add(pubkey)) {
-        log.display(pubkey + ": Incomplete slashing protection data");
+        log.display(pubkey + ": Incomplete or invalid slashing protection data");
       }
     }
   }
