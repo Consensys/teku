@@ -135,14 +135,14 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     if (previousEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
       UInt64 previousEpoch = beaconStateAccessors.getPreviousEpoch(state);
       Checkpoint newCheckpoint =
-          new Checkpoint(previousEpoch, beaconStateUtil.getBlockRoot(state, previousEpoch));
+          new Checkpoint(previousEpoch, beaconStateAccessors.getBlockRoot(state, previousEpoch));
       state.setCurrent_justified_checkpoint(newCheckpoint);
       justificationBits = justificationBits.withBit(1);
     }
 
     if (currentEpochTargetBalance.times(3).isGreaterThanOrEqualTo(totalActiveBalance.times(2))) {
       Checkpoint newCheckpoint =
-          new Checkpoint(currentEpoch, beaconStateUtil.getBlockRoot(state, currentEpoch));
+          new Checkpoint(currentEpoch, beaconStateAccessors.getBlockRoot(state, currentEpoch));
       state.setCurrent_justified_checkpoint(newCheckpoint);
       justificationBits = justificationBits.withBit(0);
     }

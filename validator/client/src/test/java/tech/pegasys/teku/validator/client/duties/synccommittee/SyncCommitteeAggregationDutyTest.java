@@ -39,8 +39,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -60,7 +60,7 @@ class SyncCommitteeAggregationDutyTest {
                       altairModifier ->
                           altairModifier
                               .targetAggregatorsPerSyncSubcommittee(1)
-                              .altairForkSlot(UInt64.ZERO))));
+                              .altairForkEpoch(UInt64.ZERO))));
   private final SyncCommitteeUtil syncCommitteeUtil =
       spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -77,7 +77,7 @@ class SyncCommitteeAggregationDutyTest {
   private final BLSSignature aggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
-              "0xb2f3b1c336da71bd336cb091fd22a25aa0a3601dbc00f686944b70ddb1a78d2f65f5c7ff8afa15b8662d283ada458d6d04b02ade21c7bf48b9f15e98c6a153b9a475dcf9c35bccebdefb412d8eba2c35cf345f9af5e90859755a83abb55bcf41"));
+              "0x8f5c34de9e22ceaa7e8d165fc0553b32f02188539e89e2cc91e2eb9077645986550d872ee3403204ae5d554eae3cac12124e18d2324bccc814775316aaef352abc0450812b3ca9fde96ecafa911b3b8bfddca8db4027f08e29c22a9c370ad933"));
   private final Validator validator1 =
       new Validator(dataStructureUtil.randomPublicKey(), mock(Signer.class), Optional::empty);
   private final Validator validator2 =
@@ -96,6 +96,9 @@ class SyncCommitteeAggregationDutyTest {
     // Default to not returning errors when sending
     when(validatorApiChannel.sendSignedContributionAndProofs(any()))
         .thenReturn(SafeFuture.COMPLETE);
+
+    assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(nonAggregatorSignature)).isFalse();
+    assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(aggregatorSignature)).isTrue();
   }
 
   @Test
@@ -129,8 +132,8 @@ class SyncCommitteeAggregationDutyTest {
   void shouldDoNothingWhenNoValidatorsAreAggregators() {
     final SyncCommitteeAggregationDuty duty = createDuty(committeeAssignment(validator1, 11, 1));
 
-    final SyncCommitteeSigningData expectedSigningData =
-        syncCommitteeUtil.createSyncCommitteeSigningData(slot, UInt64.ZERO);
+    final SyncAggregatorSelectionData expectedSigningData =
+        syncCommitteeUtil.createSyncAggregatorSelectionData(slot, UInt64.ZERO);
     when(validator1.getSigner().signSyncCommitteeSelectionProof(expectedSigningData, forkInfo))
         .thenReturn(SafeFuture.completedFuture(nonAggregatorSignature));
 
@@ -153,7 +156,7 @@ class SyncCommitteeAggregationDutyTest {
 
   @Test
   void shouldCreateAndSendSignedContributionAndProof() {
-    final int committeeIndex = 5;
+    final int committeeIndex = 9;
     final int subcommitteeIndex = 1;
     withValidatorAggregatingSubnet(validator1, subcommitteeIndex);
 
@@ -243,8 +246,9 @@ class SyncCommitteeAggregationDutyTest {
 
   private void withValidatorAggregatingSubnet(
       final Validator validator, final int subcommitteeIndex) {
-    final SyncCommitteeSigningData expectedSigningData =
-        syncCommitteeUtil.createSyncCommitteeSigningData(slot, UInt64.valueOf(subcommitteeIndex));
+    final SyncAggregatorSelectionData expectedSigningData =
+        syncCommitteeUtil.createSyncAggregatorSelectionData(
+            slot, UInt64.valueOf(subcommitteeIndex));
     when(validator.getSigner().signSyncCommitteeSelectionProof(expectedSigningData, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregatorSignature));
 

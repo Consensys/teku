@@ -25,6 +25,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -43,11 +44,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -63,7 +61,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -79,7 +76,7 @@ public class Spec {
     this.forkSchedule = forkSchedule;
 
     // Setup state transition
-    this.stateTransition = StateTransition.create(this::atSlot);
+    this.stateTransition = new StateTransition(this::atSlot);
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
@@ -222,12 +219,13 @@ public class Spec {
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
-    return GenesisGenerator.initializeBeaconStateFromEth1(
-        getGenesisSpec(), eth1BlockHash, eth1Timestamp, deposits);
+    final GenesisGenerator genesisGenerator = createGenesisGenerator();
+    genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    return genesisGenerator.getGenesisState();
   }
 
   public GenesisGenerator createGenesisGenerator() {
-    return new GenesisGenerator(getGenesisSpec());
+    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getFork(SpecConfig.GENESIS_EPOCH));
   }
 
   // Serialization
@@ -265,7 +263,7 @@ public class Spec {
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
@@ -281,11 +279,11 @@ public class Spec {
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+    return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
 
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+    return atState(state).beaconStateAccessors().getBlockRootAtSlot(state, slot);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -298,6 +296,18 @@ public class Spec {
 
   public UInt64 computeNextEpochBoundary(final UInt64 slot) {
     return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
+  }
+
+  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
+  }
+
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    return atState(state).getBeaconStateUtil().getBeaconCommittee(state, slot, index);
+  }
+
+  public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
   }
 
   // ForkChoice utils
@@ -379,18 +389,6 @@ public class Spec {
         .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
-  // State Transition Utils
-  public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
-      throws StateTransitionException {
-    return stateTransition.initiate(preState, signedBlock);
-  }
-
-  public BeaconState initiateStateTransition(
-      BeaconState preState, SignedBeaconBlock signedBlock, boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return stateTransition.initiate(preState, signedBlock, validateStateRootAndSignatures);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     return stateTransition.processSlots(preState, slot);
@@ -412,42 +410,44 @@ public class Spec {
 
   // Block Processor Utils
 
+  public BlockProcessor getBlockProcessor(final UInt64 slot) {
+    return atSlot(slot).getBlockProcessor();
+  }
+
+  public BeaconState processBlock(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processAndValidateBlock(
+              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
+  public BeaconState replayValidatedBlock(final BeaconState preState, final SignedBeaconBlock block)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processUnsignedBlock(
+              blockSlotState,
+              block.getMessage(),
+              IndexedAttestationCache.NOOP,
+              BLSSignatureVerifier.NO_OP);
+    } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return atState(state).getBlockProcessor().validateAttestation(state, data);
-  }
-
-  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processBlockHeader(state, blockHeader);
-  }
-
-  public void processProposerSlashings(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processProposerSlashings(state, proposerSlashings);
-  }
-
-  public void processAttesterSlashings(
-      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttesterSlashings(state, attesterSlashings);
-  }
-
-  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttestations(state, attestations);
-  }
-
-  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processDeposits(state, deposits);
-  }
-
-  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processVoluntaryExits(state, exits);
   }
 
   public boolean isEnoughVotesToUpdateEth1Data(
@@ -493,11 +493,20 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final BeaconBlock block,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
         .getGenericAttestationData(slot, state, block, committeeIndex);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
+    return atState(state)
+        .getAttestationUtil()
+        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers

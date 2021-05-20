@@ -20,14 +20,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class StateTransition {
 
@@ -39,63 +35,6 @@ public class StateTransition {
     this.specProvider = specProvider;
   }
 
-  public static StateTransition create(final SpecProvider specProvider) {
-    return new StateTransition(specProvider);
-  }
-
-  public BeaconState initiate(BeaconState preState, SignedBeaconBlock signedBlock)
-      throws StateTransitionException {
-    return initiate(preState, signedBlock, true);
-  }
-
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Runs state transition up to and with the given block
-   *
-   * @param preState
-   * @param signed_block
-   * @param validateStateRootAndSignatures
-   * @return
-   * @throws StateTransitionException
-   */
-  public BeaconState initiate(
-      BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return initiate(
-        preState, signed_block, validateStateRootAndSignatures, IndexedAttestationCache.NOOP);
-  }
-
-  public BeaconState initiate(
-      BeaconState preState,
-      SignedBeaconBlock signedBlock,
-      boolean validateStateRootAndSignatures,
-      final IndexedAttestationCache indexedAttestationCache)
-      throws StateTransitionException {
-    try {
-      // * Process slots (including those with no blocks) since block
-      // * beaconStateConsumer only consumes the missing slots here,
-      //   the new block will be processed when adding to the store.
-      final UInt64 slot = signedBlock.getMessage().getSlot();
-      BeaconState postSlotState = processSlots(preState, slot);
-
-      final BlockProcessor blockProcessor = specProvider.getSpec(slot).getBlockProcessor();
-      return blockProcessor.processAndValidateBlock(
-          signedBlock, postSlotState, validateStateRootAndSignatures, indexedAttestationCache);
-    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.warn("State Transition error", e);
-      throw new StateTransitionException(e);
-    }
-  }
-
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Processes slots through state slot through given slot
-   *
-   * @throws EpochProcessingException
-   * @throws SlotProcessingException
-   */
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     try {
@@ -144,11 +83,6 @@ public class StateTransition {
     }
   }
 
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Processes slot
-   */
   private BeaconState processSlot(final SpecVersion spec, final BeaconState preState) {
     // Cache state root
     Bytes32 previous_state_root = preState.hashTreeRoot();

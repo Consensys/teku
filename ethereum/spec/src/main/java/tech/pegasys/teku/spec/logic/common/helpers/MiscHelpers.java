@@ -89,8 +89,11 @@ public class MiscHelpers {
   }
 
   public UInt64 computeEpochAtSlot(UInt64 slot) {
-    // TODO this should take into account hard forks
     return slot.dividedBy(specConfig.getSlotsPerEpoch());
+  }
+
+  public UInt64 computeStartSlotAtEpoch(UInt64 epoch) {
+    return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
   public UInt64 computeActivationExitEpoch(UInt64 epoch) {

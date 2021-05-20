@@ -25,23 +25,24 @@ public class SpecFactory {
     return create(configName, Optional.empty());
   }
 
-  public static Spec create(String configName, final Optional<UInt64> altairForkSlot) {
+  public static Spec create(String configName, final Optional<UInt64> altairForkEpoch) {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
             configName,
             builder ->
-                altairForkSlot.ifPresent(forkSlot -> overrideAltairForkSlot(builder, forkSlot)));
-    return create(config, altairForkSlot);
+                altairForkEpoch.ifPresent(
+                    forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch)));
+    return create(config, altairForkEpoch);
   }
 
-  private static void overrideAltairForkSlot(
-      final SpecConfigBuilder builder, final UInt64 forkSlot) {
-    builder.altairBuilder(altairBuilder -> altairBuilder.altairForkSlot(forkSlot));
+  private static void overrideAltairForkEpoch(
+      final SpecConfigBuilder builder, final UInt64 forkEpoch) {
+    builder.altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch));
   }
 
-  public static Spec create(final SpecConfig config, final Optional<UInt64> altairForkSlot) {
+  public static Spec create(final SpecConfig config, final Optional<UInt64> altairForkEpoch) {
     final SpecMilestone highestMilestoneSupported =
-        altairForkSlot.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
+        altairForkEpoch.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
     return Spec.create(config, highestMilestoneSupported);
   }
 }
