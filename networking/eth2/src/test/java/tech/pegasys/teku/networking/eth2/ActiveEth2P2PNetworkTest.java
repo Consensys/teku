@@ -52,8 +52,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ActiveEth2P2PNetworkTest {
   private final UInt64 altairForkEpoch = UInt64.valueOf(2);
-  private final UInt64 altairForkSlot = altairForkEpoch.times(8);
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairForkSlot);
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   // Stubs and mocks

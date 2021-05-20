@@ -36,9 +36,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.synccomittee.SignedContributionAndProofTestBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -60,8 +58,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
@@ -247,17 +243,6 @@ public class ChainBuilder {
     BeaconState genesisState =
         new MockStartBeaconStateGenerator(spec)
             .createInitialBeaconState(genesisTime, initialDepositData);
-
-    if (spec.atSlot(UInt64.ZERO).getMilestone() == SpecMilestone.ALTAIR) {
-      // Convert from a phase0 to Altair state.
-      // Hopefully https://github.com/ethereum/eth2.0-specs/pull/2323 will remove this requirement
-      genesisState =
-          new AltairStateUpgrade(
-                  SpecConfigAltair.required(spec.getGenesisSpecConfig()),
-                  SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions()),
-                  (BeaconStateAccessorsAltair) spec.atEpoch(UInt64.ZERO).beaconStateAccessors())
-              .upgrade(genesisState);
-    }
 
     // Generate genesis block
     BeaconBlock genesisBlock = BeaconBlock.fromGenesisState(spec, genesisState);

@@ -31,8 +31,6 @@ public interface SpecConfig {
 
   Map<String, Object> getRawConfig();
 
-  String getConfigName();
-
   UInt64 getBaseRewardsPerEpoch();
 
   int getDepositContractTreeDepth();

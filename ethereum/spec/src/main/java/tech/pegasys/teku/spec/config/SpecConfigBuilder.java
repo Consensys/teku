@@ -27,7 +27,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigBuilder {
   private final Map<String, Object> rawConfig = new HashMap<>();
-  private String configName = "Custom (unknown)";
 
   // Misc
   private UInt64 eth1FollowDistance;
@@ -118,7 +117,6 @@ public class SpecConfigBuilder {
     final SpecConfig phase0 =
         new SpecConfigPhase0(
             rawConfig,
-            configName,
             eth1FollowDistance,
             maxCommitteesPerSlot,
             targetCommitteeSize,
@@ -184,7 +182,6 @@ public class SpecConfigBuilder {
 
   private void validate() {
     checkArgument(rawConfig.size() > 0, "Raw spec config must be provided");
-    validateConstant("configName", configName);
     validateConstant("eth1FollowDistance", eth1FollowDistance);
     validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
     validateConstant("targetCommitteeSize", targetCommitteeSize);
@@ -269,12 +266,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder rawConfig(final Map<String, ?> rawConfig) {
     checkNotNull(rawConfig);
     this.rawConfig.putAll(rawConfig);
-    return this;
-  }
-
-  public SpecConfigBuilder configName(final String configName) {
-    checkNotNull(configName);
-    this.configName = configName;
     return this;
   }
 
@@ -655,8 +646,8 @@ public class SpecConfigBuilder {
 
     // Misc
     private Integer syncCommitteeSize;
-    private Integer syncPubkeysPerAggregate;
     private UInt64 inactivityScoreBias;
+    private UInt64 inactivityScoreRecoveryRate;
 
     // Time
     private Integer epochsPerSyncCommitteePeriod;
@@ -668,12 +659,10 @@ public class SpecConfigBuilder {
 
     // Fork
     private Bytes4 altairForkVersion;
-    private UInt64 altairForkSlot;
+    private UInt64 altairForkEpoch;
 
     // Sync protocol
     private Integer minSyncCommitteeParticipants;
-    private Integer maxValidLightClientUpdates;
-    private Integer lightClientUpdateTimeout;
 
     // Validator
     private Integer targetAggregatorsPerSyncSubcommittee;
@@ -687,17 +676,15 @@ public class SpecConfigBuilder {
           minSlashingPenaltyQuotientAltair,
           proportionalSlashingMultiplierAltair,
           syncCommitteeSize,
-          syncPubkeysPerAggregate,
           inactivityScoreBias,
+          inactivityScoreRecoveryRate,
           epochsPerSyncCommitteePeriod,
           domainSyncCommittee,
           domainSyncCommitteeSelectionProof,
           domainContributionAndProof,
           altairForkVersion,
-          altairForkSlot,
+          altairForkEpoch,
           minSyncCommitteeParticipants,
-          maxValidLightClientUpdates,
-          lightClientUpdateTimeout,
           targetAggregatorsPerSyncSubcommittee);
     }
 
@@ -707,17 +694,15 @@ public class SpecConfigBuilder {
       validateConstant(
           "proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
       validateConstant("syncCommitteeSize", syncCommitteeSize);
-      validateConstant("syncPubkeysPerAggregate", syncPubkeysPerAggregate);
       validateConstant("inactivityScoreBias", inactivityScoreBias);
+      validateConstant("inactivityScoreRecoveryRate", inactivityScoreRecoveryRate);
       validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
       validateConstant("domainSyncCommittee", domainSyncCommittee);
       validateConstant("domainSyncCommitteeSelectionProof", domainSyncCommitteeSelectionProof);
       validateConstant("domainContributionAndProof", domainContributionAndProof);
       validateConstant("altairForkVersion", altairForkVersion);
-      validateConstant("altairForkSlot", altairForkSlot);
+      validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
-      validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
-      validateConstant("lightClientUpdateTimeout", lightClientUpdateTimeout);
       validateConstant(
           "targetAggregatorsPerSyncSubcommittee", targetAggregatorsPerSyncSubcommittee);
     }
@@ -746,12 +731,6 @@ public class SpecConfigBuilder {
     public AltairBuilder syncCommitteeSize(final Integer syncCommitteeSize) {
       checkNotNull(syncCommitteeSize);
       this.syncCommitteeSize = syncCommitteeSize;
-      return this;
-    }
-
-    public AltairBuilder syncPubkeysPerAggregate(final Integer syncPubkeysPerAggregate) {
-      checkNotNull(syncPubkeysPerAggregate);
-      this.syncPubkeysPerAggregate = syncPubkeysPerAggregate;
       return this;
     }
 
@@ -786,33 +765,27 @@ public class SpecConfigBuilder {
       return this;
     }
 
+    public AltairBuilder inactivityScoreRecoveryRate(final UInt64 inactivityScoreRecoveryRate) {
+      checkNotNull(inactivityScoreRecoveryRate);
+      this.inactivityScoreRecoveryRate = inactivityScoreRecoveryRate;
+      return this;
+    }
+
     public AltairBuilder altairForkVersion(final Bytes4 altairForkVersion) {
       checkNotNull(altairForkVersion);
       this.altairForkVersion = altairForkVersion;
       return this;
     }
 
-    public AltairBuilder altairForkSlot(final UInt64 altairForkSlot) {
-      checkNotNull(altairForkSlot);
-      this.altairForkSlot = altairForkSlot;
+    public AltairBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
+      checkNotNull(altairForkEpoch);
+      this.altairForkEpoch = altairForkEpoch;
       return this;
     }
 
     public AltairBuilder minSyncCommitteeParticipants(final Integer minSyncCommitteeParticipants) {
       checkNotNull(minSyncCommitteeParticipants);
       this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
-      return this;
-    }
-
-    public AltairBuilder maxValidLightClientUpdates(final Integer maxValidLightClientUpdates) {
-      checkNotNull(maxValidLightClientUpdates);
-      this.maxValidLightClientUpdates = maxValidLightClientUpdates;
-      return this;
-    }
-
-    public AltairBuilder lightClientUpdateTimeout(final Integer lightClientUpdateTimeout) {
-      checkNotNull(lightClientUpdateTimeout);
-      this.lightClientUpdateTimeout = lightClientUpdateTimeout;
       return this;
     }
 

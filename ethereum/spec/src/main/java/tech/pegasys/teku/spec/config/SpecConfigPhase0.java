@@ -21,7 +21,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
-  private final String configName;
 
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
@@ -110,7 +109,6 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
-      final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
       final int targetCommitteeSize,
@@ -171,7 +169,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int depositNetworkId,
       final Bytes depositContractAddress) {
     this.rawConfig = rawConfig;
-    this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
     this.targetCommitteeSize = targetCommitteeSize;
@@ -236,11 +233,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public Map<String, Object> getRawConfig() {
     return rawConfig;
-  }
-
-  @Override
-  public String getConfigName() {
-    return configName;
   }
 
   @Override
@@ -595,7 +587,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
         && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
-        && Objects.equals(configName, that.configName)
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -629,7 +620,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         baseRewardsPerEpoch,
         depositContractTreeDepth,
         justificationBitsLength,
-        configName,
         eth1FollowDistance,
         maxCommitteesPerSlot,
         targetCommitteeSize,

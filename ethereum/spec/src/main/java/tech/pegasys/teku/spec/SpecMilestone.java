@@ -80,14 +80,14 @@ public enum SpecMilestone {
     }
   }
 
-  static Optional<UInt64> getForkSlot(final SpecConfig specConfig, final SpecMilestone milestone) {
+  static Optional<UInt64> getForkEpoch(final SpecConfig specConfig, final SpecMilestone milestone) {
     switch (milestone) {
       case PHASE0:
-        // Phase0 can only ever start at slot 0 - no non-zero slot is valid. However, another fork
-        // may also be configured to start at slot 0, effectively overriding phase0
+        // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another fork
+        // may also be configured to start at epoch 0, effectively overriding phase0
         return Optional.of(UInt64.ZERO);
       case ALTAIR:
-        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkSlot);
+        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }

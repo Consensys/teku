@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.block;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.SYNC_REWARD_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
+import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,14 +27,12 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -49,7 +47,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.FlagIndexAndWeight;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
@@ -111,46 +108,18 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationData data = attestation.getData();
 
-    final SszMutableList<SszByte> epochParticipation;
-    final Checkpoint justifiedCheckpoint;
-    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
-      epochParticipation = state.getCurrentEpochParticipation();
-      justifiedCheckpoint = state.getCurrent_justified_checkpoint();
-    } else {
-      epochParticipation = state.getPreviousEpochParticipation();
-      justifiedCheckpoint = state.getPrevious_justified_checkpoint();
-    }
-
-    // Matching roots
-    final boolean isMatchingHead =
-        data.getBeacon_block_root()
-            .equals(beaconStateAccessors.getBlockRootAtSlot(state, data.getSlot()));
-    final boolean isMatchingSource = data.getSource().equals(justifiedCheckpoint);
-    final boolean isMatchingTarget =
-        data.getTarget()
-            .getRoot()
-            .equals(beaconStateAccessors.getBlockRoot(state, data.getTarget().getEpoch()));
-
-    // Participation flag indices
-    final List<Integer> participationFlagIndices = new ArrayList<>();
-    final UInt64 stateSlot = state.getSlot();
-    final UInt64 dataSlot = data.getSlot();
-    if (isMatchingHead
-        && isMatchingTarget
-        && stateSlot.equals(dataSlot.plus(specConfig.getMinAttestationInclusionDelay()))) {
-      participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
-    }
-    if (isMatchingSource
-        && stateSlot.isLessThanOrEqualTo(
-            dataSlot.plus(integerSquareRoot(specConfig.getSlotsPerEpoch())))) {
-      participationFlagIndices.add(ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX);
-    }
-    if (isMatchingTarget
-        && stateSlot.isLessThanOrEqualTo(dataSlot.plus(specConfig.getSlotsPerEpoch()))) {
-      participationFlagIndices.add(ParticipationFlags.TIMELY_TARGET_FLAG_INDEX);
-    }
+    final List<Integer> participationFlagIndices =
+        beaconStateAccessorsAltair.getAttestationParticipationFlagIndices(
+            state, data, state.getSlot().minus(data.getSlot()));
 
     // Update epoch participation flags
+    final SszMutableList<SszByte> epochParticipation;
+    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
+      epochParticipation = state.getCurrentEpochParticipation();
+    } else {
+      epochParticipation = state.getPreviousEpochParticipation();
+    }
+
     UInt64 proposerRewardNumerator = UInt64.ZERO;
     final SszUInt64List attestingIndices =
         indexedAttestationProvider.getIndexedAttestation(attestation).getAttesting_indices();
@@ -159,9 +128,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       byte participationFlags = epochParticipation.get(index).get();
       final UInt64 baseReward = beaconStateAccessorsAltair.getBaseReward(state, index);
       boolean shouldUpdate = false;
-      for (FlagIndexAndWeight flagIndicesAndWeight : miscHelpersAltair.getFlagIndicesAndWeights()) {
-        final int flagIndex = flagIndicesAndWeight.getIndex();
-        final UInt64 weight = flagIndicesAndWeight.getWeight();
+      for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
+        final UInt64 weight = PARTICIPATION_FLAG_WEIGHTS.get(flagIndex);
 
         if (participationFlagIndices.contains(flagIndex)
             && !miscHelpersAltair.hasFlag(participationFlags, flagIndex)) {

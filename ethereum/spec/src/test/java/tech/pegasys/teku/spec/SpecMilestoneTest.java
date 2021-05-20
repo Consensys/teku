@@ -91,17 +91,17 @@ public class SpecMilestoneTest {
   @Test
   public void getForkSlot_phase0() {
     final UInt64 expected = UInt64.ZERO;
-    assertThat(SpecMilestone.getForkSlot(specConfig, SpecMilestone.PHASE0)).contains(expected);
+    assertThat(SpecMilestone.getForkEpoch(specConfig, SpecMilestone.PHASE0)).contains(expected);
   }
 
   @Test
   public void getForkSlot_altair() {
-    final UInt64 expected = specConfig.getAltairForkSlot();
-    assertThat(SpecMilestone.getForkSlot(specConfig, SpecMilestone.ALTAIR)).contains(expected);
+    final UInt64 expected = specConfig.getAltairForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(specConfig, SpecMilestone.ALTAIR)).contains(expected);
   }
 
   @Test
   public void getForkSlot_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkSlot(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
   }
 }

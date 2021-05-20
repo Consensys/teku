@@ -60,8 +60,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRootMethodId(2, RpcEncoding.SSZ_SNAPPY);
 
-  private final UInt64 altairForkSlot = UInt64.valueOf(8);
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairFork(altairForkSlot);
+  private final UInt64 altairForkEpoch = UInt64.ONE;
+  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);
+  private final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   final UpdatableStore store = mock(UpdatableStore.class);
@@ -179,7 +180,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @Test
   public void validateResponse_altairSpec_v1RequestForPhase0Block() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairFork(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRootMessageHandler handler =
         new BeaconBlocksByRootMessageHandler(spec, recentChainData);
 
@@ -230,13 +231,11 @@ public class BeaconBlocksByRootMessageHandlerTest {
     // Create some blocks to request
     final UInt64 latestSlot = storageSystem.chainBuilder().getLatestSlot();
     chainUpdater.advanceChainUntil(latestSlot.plus(chainSize));
-    final List<SignedBeaconBlock> blocks =
-        storageSystem
-            .chainBuilder()
-            .streamBlocksAndStates(latestSlot.plus(1))
-            .map(SignedBlockAndState::getBlock)
-            .collect(Collectors.toList());
 
-    return blocks;
+    return storageSystem
+        .chainBuilder()
+        .streamBlocksAndStates(latestSlot.plus(1))
+        .map(SignedBlockAndState::getBlock)
+        .collect(Collectors.toList());
   }
 }

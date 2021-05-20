@@ -21,16 +21,15 @@ public class ParticipationFlagsTest {
 
   @Test
   public void isTimelyTarget() {
-    assertThat(ParticipationFlags.isTimelyTarget(4)).isTrue();
-    assertThat(ParticipationFlags.isTimelyTarget(5)).isTrue();
+    assertThat(ParticipationFlags.isTimelyTarget(1)).isFalse();
+    assertThat(ParticipationFlags.isTimelyTarget(2)).isTrue();
+    assertThat(ParticipationFlags.isTimelyTarget(3)).isTrue();
+    assertThat(ParticipationFlags.isTimelyTarget(4)).isFalse();
+    assertThat(ParticipationFlags.isTimelyTarget(5)).isFalse();
     assertThat(ParticipationFlags.isTimelyTarget(6)).isTrue();
     assertThat(ParticipationFlags.isTimelyTarget(7)).isTrue();
-    assertThat(ParticipationFlags.isTimelyTarget(12)).isTrue();
-
-    assertThat(ParticipationFlags.isTimelyTarget(1)).isFalse();
-    assertThat(ParticipationFlags.isTimelyTarget(2)).isFalse();
-    assertThat(ParticipationFlags.isTimelyTarget(3)).isFalse();
     assertThat(ParticipationFlags.isTimelyTarget(8)).isFalse();
+    assertThat(ParticipationFlags.isTimelyTarget(12)).isFalse();
   }
 
   @Test

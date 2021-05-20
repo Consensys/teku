@@ -31,8 +31,6 @@ public class Constants {
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
       ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
 
-  @Deprecated public static String CONFIG_NAME;
-
   // Non-configurable constants
   @Deprecated public static final long GENESIS_SLOT = 0;
   @Deprecated public static final long GENESIS_EPOCH = 0;

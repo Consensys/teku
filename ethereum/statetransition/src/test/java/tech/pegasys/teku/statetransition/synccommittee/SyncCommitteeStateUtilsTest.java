@@ -37,7 +37,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class SyncCommitteeStateUtilsTest {
 
   private static final int EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 10;
-  private static final UInt64 ALTAIR_FORK_SLOT = UInt64.valueOf(8);
+  private static final UInt64 ALTAIR_FORK_EPOCH = UInt64.ONE;
   private final Spec spec =
       TestSpecFactory.createAltair(
           TestConfigLoader.loadConfig(
@@ -46,11 +46,11 @@ class SyncCommitteeStateUtilsTest {
                   builder.altairBuilder(
                       altairBuilder ->
                           altairBuilder
-                              .altairForkSlot(ALTAIR_FORK_SLOT)
+                              .altairForkEpoch(ALTAIR_FORK_EPOCH)
                               .epochsPerSyncCommitteePeriod(EPOCHS_PER_SYNC_COMMITTEE_PERIOD))));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SyncCommitteeUtil syncCommitteeUtil =
-      spec.getSyncCommitteeUtilRequired(ALTAIR_FORK_SLOT);
+      spec.atEpoch(ALTAIR_FORK_EPOCH).getSyncCommitteeUtil().orElseThrow();
 
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 
@@ -97,13 +97,12 @@ class SyncCommitteeStateUtilsTest {
 
   @Test
   void shouldProcessSlotsIfStateIsWithinAnEpochOfForkSlot() {
-    final UInt64 slot = ALTAIR_FORK_SLOT;
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(ALTAIR_FORK_EPOCH);
     // Block is from before the Altair for sow we will need to process slots up to the fork slot
     final UInt64 blockSlot = UInt64.ZERO;
     final UInt64 stateSlot =
         spec.computeStartSlotAtEpoch(
-            syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch));
+            syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(ALTAIR_FORK_EPOCH));
     when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
     final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().slot(stateSlot).build();
     when(recentChainData.retrieveStateAtSlot(new SlotAndBlockRoot(stateSlot, blockRoot)))

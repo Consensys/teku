@@ -49,7 +49,7 @@ class SyncCommitteeSignatureValidatorTest {
               phase0Builder ->
                   phase0Builder.altairBuilder(
                       altairBuilder ->
-                          altairBuilder.syncCommitteeSize(16).altairForkSlot(UInt64.ZERO))));
+                          altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO))));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(17).build();
