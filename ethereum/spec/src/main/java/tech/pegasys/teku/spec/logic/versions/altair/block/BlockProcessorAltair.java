@@ -21,9 +21,9 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSqu
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -69,7 +70,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final AttestationDataStateTransitionValidator attestationValidator,
+      final OperationValidator operationValidator) {
     super(
         specConfig,
         predicates,
@@ -79,7 +81,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
-        attestationValidator);
+        attestationValidator,
+        operationValidator);
 
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
@@ -90,13 +93,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   public void processBlock(
       final MutableBeaconState genericState,
       final BeaconBlock block,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache);
-    processSyncCommittee(state, blockBody.getSyncAggregate());
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    processSyncCommittee(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
@@ -120,12 +124,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     // Matching roots
     final boolean isMatchingHead =
         data.getBeacon_block_root()
-            .equals(beaconStateUtil.getBlockRootAtSlot(state, data.getSlot()));
+            .equals(beaconStateAccessors.getBlockRootAtSlot(state, data.getSlot()));
     final boolean isMatchingSource = data.getSource().equals(justifiedCheckpoint);
     final boolean isMatchingTarget =
         data.getTarget()
             .getRoot()
-            .equals(beaconStateUtil.getBlockRoot(state, data.getTarget().getEpoch()));
+            .equals(beaconStateAccessors.getBlockRoot(state, data.getTarget().getEpoch()));
 
     // Participation flag indices
     final List<Integer> participationFlagIndices = new ArrayList<>();
@@ -196,7 +200,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processSyncCommittee(
-      final MutableBeaconState baseState, final SyncAggregate aggregate)
+      final MutableBeaconState baseState,
+      final SyncAggregate aggregate,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
@@ -213,10 +219,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             miscHelpers.computeEpochAtSlot(previousSlot));
     final Bytes32 signingRoot =
         beaconStateUtil.computeSigningRoot(
-            beaconStateUtil.getBlockRootAtSlot(state, previousSlot), domain);
+            beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(
-        participantPubkeys, signingRoot, aggregate.getSyncCommitteeSignature().getSignature())) {
+        signatureVerifier,
+        participantPubkeys,
+        signingRoot,
+        aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
 
@@ -251,10 +260,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   private boolean eth2FastAggregateVerify(
-      List<BLSPublicKey> pubkeys, Bytes32 message, BLSSignature signature) {
+      final BLSSignatureVerifier signatureVerifier,
+      List<BLSPublicKey> pubkeys,
+      Bytes32 message,
+      BLSSignature signature) {
     if (pubkeys.isEmpty() && signature.isInfinity()) {
       return true;
     }
-    return BLS.fastAggregateVerify(pubkeys, message, signature);
+    return signatureVerifier.verify(pubkeys, message, signature);
   }
 }

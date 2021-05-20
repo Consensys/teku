@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -60,6 +61,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public AttestationUtil getAttestationUtil() {
     return specLogic.getAttestationUtil();
+  }
+
+  @Override
+  public OperationValidator getOperationValidator() {
+    return specLogic.getOperationValidator();
   }
 
   @Override
