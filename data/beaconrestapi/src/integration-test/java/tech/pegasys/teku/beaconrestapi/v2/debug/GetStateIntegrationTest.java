@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,63 +11,45 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.v1.debug;
+package tech.pegasys.teku.beaconrestapi.v2.debug;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
 
 import java.io.IOException;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-
   @Test
-  public void shouldGetStateAsJson() throws IOException {
+  public void shouldGetPhase0StateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final Response response = get("head", HEADER_ACCEPT_JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponse stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
+    final GetStateResponseV2 stateResponse =
+        jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
     assertThat(stateResponse).isNotNull();
+    assertThat(stateResponse.version).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(stateResponse.data).isInstanceOf(BeaconStatePhase0.class);
   }
 
   @Test
-  public void shouldGetStateAsJsonWithoutHeader() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head");
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateResponse stateResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetStateResponse.class);
-    assertThat(stateResponse).isNotNull();
-  }
-
-  @Test
-  public void shouldGetStateAsOctetStream() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", HEADER_ACCEPT_OCTET);
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final BeaconState state =
-        spec.getGenesisSchemaDefinitions()
-            .getBeaconStateSchema()
-            .sszDeserialize(Bytes.wrap(response.body().bytes()));
-    assertThat(state).isNotNull();
-  }
-
-  @Test
-  public void shouldRejectAltairStateRequestsForJson() throws IOException {
+  public void shouldGetAltairStateAsJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final Response response = get("head");
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    final Response response = get("head", HEADER_ACCEPT_JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final GetStateResponseV2 stateResponse =
+        jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
+    assertThat(stateResponse).isNotNull();
+    assertThat(stateResponse.version).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(stateResponse.data).isInstanceOf(BeaconStateAltair.class);
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {

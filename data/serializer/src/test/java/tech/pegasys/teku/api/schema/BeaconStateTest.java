@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -28,7 +29,7 @@ public class BeaconStateTest {
 
   @Test
   public void shouldConvertToInternalObject() {
-    BeaconState beaconState = new BeaconState(beaconStateInternal);
+    BeaconState beaconState = new BeaconStatePhase0(beaconStateInternal);
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);
   }
