@@ -7,4 +7,6 @@ dependencies {
     implementation project(':data:signingrecord')
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:logging')
+
+    testImplementation testFixtures(project(':ethereum:spec'))
 }

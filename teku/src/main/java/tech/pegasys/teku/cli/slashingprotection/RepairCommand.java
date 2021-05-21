@@ -97,7 +97,7 @@ public class RepairCommand implements Runnable {
 
     if (repairer.hasUpdates()) {
       if (!checkOnlyEnabled) {
-        confirmOrExit();
+        confirmOrExit(computedSlot, computedEpoch);
         repairer.updateRecords(computedSlot, computedEpoch);
       } else {
         SUB_COMMAND_LOG.display("Updates have been skipped as --check-only-enabled was set.");
@@ -140,13 +140,15 @@ public class RepairCommand implements Runnable {
             + spec.atSlot(slot).miscHelpers().computeEpochAtSlot(slot));
   }
 
-  private void confirmOrExit() {
+  private void confirmOrExit(final UInt64 slot, final UInt64 epoch) {
     SUB_COMMAND_LOG.display("");
     SUB_COMMAND_LOG.display(
         "REMINDER! If the validator is running, you should not be updating slashing protection records.");
     if (updateAllEnabled) {
       SUB_COMMAND_LOG.display("All valid slashing protection files will also be updated.");
     }
+    SUB_COMMAND_LOG.display("block slot -> " + slot);
+    SUB_COMMAND_LOG.display("attestation source/target -> " + epoch);
     SUB_COMMAND_LOG.display("Are you sure you wish to continue (yes/no)? ");
     Scanner scanner = new Scanner(System.in, Charset.defaultCharset().name());
     final String confirmation = scanner.next();

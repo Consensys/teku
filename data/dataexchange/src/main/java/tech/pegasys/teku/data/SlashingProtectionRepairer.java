@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
@@ -62,25 +63,29 @@ public class SlashingProtectionRepairer {
   }
 
   private void readSlashProtectionFile(final File file) {
-    final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
+    final String filePrefix =
+        file.getName().substring(0, file.getName().length() - ".yml".length());
     try {
+      BLSPubKey pubkey = BLSPubKey.fromHexString(filePrefix);
+
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
-      if (maybeRecord.isEmpty() && invalidRecords.add(pubkey)) {
-        log.display(pubkey + ": Empty slashing protection record");
+      if (maybeRecord.isEmpty() && invalidRecords.add(filePrefix)) {
+        log.display(filePrefix + ": Empty slashing protection record");
         return;
       }
 
       if (updateAllEnabled) {
-        log.display(pubkey + ": looks valid");
+        log.display(filePrefix + ": looks valid");
       }
       ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
-      signingHistoryList.add(
-          new SigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
+      signingHistoryList.add(new SigningHistory(pubkey, validatorSigningRecord));
 
+    } catch (PublicKeyException e) {
+      log.display(" --- " + file.getName() + " - invalid public key - ignoring file");
     } catch (Exception e) {
-      if (invalidRecords.add(pubkey)) {
-        log.display(pubkey + ": Incomplete or invalid slashing protection data");
+      if (invalidRecords.add(filePrefix)) {
+        log.display(filePrefix + ": Incomplete or invalid slashing protection data");
       }
     }
   }
