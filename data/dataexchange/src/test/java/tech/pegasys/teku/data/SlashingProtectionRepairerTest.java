@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -113,33 +112,24 @@ public class SlashingProtectionRepairerTest {
 
   @Test
   public void shouldNotUpdateFilesWithInvalidPubkeys(@TempDir Path tempDir) throws IOException {
-    final File slashingFolder =
-        new File(tempDir.toAbsolutePath().toFile(), "validator/slashprotection");
-    final Path slashingProtectionPath = slashingFolder.toPath();
-    setupPathForTest(slashingProtectionPath, Map.of("a.yml", Optional.of(validatorSigningRecord)));
-
+    setupPathForTest(tempDir, Map.of("a.yml", Optional.of(validatorSigningRecord)));
     SlashingProtectionRepairer repairer =
-        SlashingProtectionRepairer.create(subCommandLogger, slashingProtectionPath, true);
+        SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
     assertThat(repairer.hasUpdates()).isFalse();
     verify(subCommandLogger).display(" --- a.yml - invalid public key - ignoring file");
 
     repairer.updateRecords(UInt64.MAX_VALUE, UInt64.MAX_VALUE);
     verifyNoMoreInteractions(subCommandLogger);
 
-    assertThat(fileContents(slashingProtectionPath.resolve("a.yml")))
+    assertThat(fileContents(tempDir.resolve("a.yml")))
         .isEqualTo(Optional.of(validatorSigningRecord));
   }
 
   @Test
   public void shouldUpdateValidAndInvalidFiles(@TempDir Path tempDir) throws IOException {
-    final File slashingFolder =
-        new File(tempDir.toAbsolutePath().toFile(), "validator/slashprotection");
-    final Path slashingProtectionPath = slashingFolder.toPath();
-
-    setupPathForTest(slashingProtectionPath, testData);
-
+    setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
-        SlashingProtectionRepairer.create(subCommandLogger, slashingProtectionPath, true);
+        SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
     assertThat(repairer.hasUpdates()).isTrue();
 
     final UInt64 blockSlot = UInt64.valueOf(1023999);
@@ -150,28 +140,22 @@ public class SlashingProtectionRepairerTest {
         Optional.of(
             new ValidatorSigningRecord(null, blockSlot, attestationEpoch, attestationEpoch));
 
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(0)))).isEqualTo(defaultRecord);
+    assertThat(fileContents(tempDir.resolve(keys.get(0)))).isEqualTo(defaultRecord);
     // all original values were lower, so the entire file should get updated
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(1)))).isEqualTo(defaultRecord);
+    assertThat(fileContents(tempDir.resolve(keys.get(1)))).isEqualTo(defaultRecord);
     // sourceAttestation changed, but other values were higher
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(2))))
+    assertThat(fileContents(tempDir.resolve(keys.get(2))))
         .isEqualTo(
             optionalSigningRecord(UInt64.valueOf(1024000), attestationEpoch, UInt64.valueOf(2345)));
     // all original values were better
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(3))))
-        .isEqualTo(testData.get(keys.get(3)));
+    assertThat(fileContents(tempDir.resolve(keys.get(3)))).isEqualTo(testData.get(keys.get(3)));
   }
 
   @Test
   public void shouldUpdateInvalidFiles(@TempDir Path tempDir) throws IOException {
-    final File slashingFolder =
-        new File(tempDir.toAbsolutePath().toFile(), "validator/slashprotection");
-    final Path slashingProtectionPath = slashingFolder.toPath();
-
-    setupPathForTest(slashingProtectionPath, testData);
-
+    setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
-        SlashingProtectionRepairer.create(subCommandLogger, slashingProtectionPath, false);
+        SlashingProtectionRepairer.create(subCommandLogger, tempDir, false);
     assertThat(repairer.hasUpdates()).isTrue();
 
     final UInt64 blockSlot = UInt64.valueOf(1023999);
@@ -182,13 +166,10 @@ public class SlashingProtectionRepairerTest {
         Optional.of(
             new ValidatorSigningRecord(null, blockSlot, attestationEpoch, attestationEpoch));
 
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(0)))).isEqualTo(defaultRecord);
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(1))))
-        .isEqualTo(testData.get(keys.get(1)));
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(2))))
-        .isEqualTo(testData.get(keys.get(2)));
-    assertThat(fileContents(slashingProtectionPath.resolve(keys.get(3))))
-        .isEqualTo(testData.get(keys.get(3)));
+    assertThat(fileContents(tempDir.resolve(keys.get(0)))).isEqualTo(defaultRecord);
+    assertThat(fileContents(tempDir.resolve(keys.get(1)))).isEqualTo(testData.get(keys.get(1)));
+    assertThat(fileContents(tempDir.resolve(keys.get(2)))).isEqualTo(testData.get(keys.get(2)));
+    assertThat(fileContents(tempDir.resolve(keys.get(3)))).isEqualTo(testData.get(keys.get(3)));
   }
 
   private Optional<ValidatorSigningRecord> fileContents(final Path file) throws IOException {
