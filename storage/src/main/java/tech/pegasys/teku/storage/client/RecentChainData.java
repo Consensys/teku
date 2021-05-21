@@ -89,7 +89,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final boolean updateHeadForEmptySlots;
 
   private volatile UpdatableStore store;
-  private volatile Optional<GenesisData> genesisData;
+  private volatile Optional<GenesisData> genesisData = Optional.empty();
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();

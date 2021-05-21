@@ -190,6 +190,12 @@ class RecentChainDataTest {
     assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
   }
 
+  @Test
+  void getGenesisData_shouldBeEmptyPreGenesis() {
+    initPreGenesis();
+    assertThat(recentChainData.getGenesisData()).isEmpty();
+  }
+
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void updateHead_validUpdate(final boolean updateHeadForEmptySlots) {
