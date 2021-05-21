@@ -94,6 +94,10 @@ public class RestApiConstants {
   public static final String PARAM_VALIDATOR_DESCRIPTION =
       "Either hex encoded public key (with 0x prefix) or validator index";
 
+  public static final String SYNCING_STATUS = "syncing_status";
+  public static final String SYNCING_STATUS_DESCRIPTION =
+      "Customize syncing status instead of deafult " + SC_PARTIAL_CONTENT;
+
   public static final String HEADER_ACCEPT = "Accept";
   public static final String HEADER_ACCEPT_JSON = "application/json";
   public static final String HEADER_ACCEPT_OCTET = "application/octet-stream";
