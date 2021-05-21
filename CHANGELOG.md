@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
+- Use system default character set for console output rather than forcing UTF-8. Avoids corrupting characters on systems using charsets that are not ascii based.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
