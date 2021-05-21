@@ -64,13 +64,6 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   }
 
   @Test
-  public void shouldRejectUnsupportedAcceptTypes() throws IOException {
-    startRestAPIAtGenesis(SpecMilestone.PHASE0);
-    final Response response = get("head", "invalid");
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-  }
-
-  @Test
   public void shouldRejectAltairStateRequestsForJson() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final Response response = get("head");

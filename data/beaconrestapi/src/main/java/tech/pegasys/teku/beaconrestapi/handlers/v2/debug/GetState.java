@@ -25,7 +25,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,7 +45,6 @@ import tech.pegasys.teku.api.response.StateSszResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -89,20 +87,17 @@ public class GetState extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (maybeAcceptHeader.orElse(HEADER_ACCEPT_JSON).equalsIgnoreCase(HEADER_ACCEPT_JSON)) {
-      final SafeFuture<Optional<BeaconState>> future =
-          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
-    } else if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
       final SafeFuture<Optional<StateSszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
     } else {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(
-          BadRequest.badRequest(
-              jsonProvider, "Received an unsupported accept-header: " + maybeAcceptHeader.get()));
+      // accept header is not octet, could be anything else, or even not set - our default return is
+      // json.
+      final SafeFuture<Optional<BeaconState>> future =
+          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
+      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 

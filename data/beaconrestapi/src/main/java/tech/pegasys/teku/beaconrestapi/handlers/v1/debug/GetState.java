@@ -90,20 +90,17 @@ public class GetState extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (maybeAcceptHeader.orElse(HEADER_ACCEPT_JSON).equalsIgnoreCase(HEADER_ACCEPT_JSON)) {
-      final SafeFuture<Optional<BeaconState>> future =
-          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
-    } else if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
       final SafeFuture<Optional<StateSszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
     } else {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(
-          BadRequest.badRequest(
-              jsonProvider, "Received an unsupported accept-header: " + maybeAcceptHeader.get()));
+      // accept header is not octet, could be anything else, or even not set - our default return is
+      // json.
+      final SafeFuture<Optional<BeaconState>> future =
+          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
+      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 
