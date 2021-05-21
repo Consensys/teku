@@ -216,6 +216,10 @@ public class BeaconRestApiV1Test {
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
+    builder.add(
+        Arguments.of(
+            tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState.ROUTE,
+            tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState.class));
 
     // TEKU
     builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
