@@ -17,12 +17,13 @@ import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.slashingprotection.ExportCommand;
 import tech.pegasys.teku.cli.slashingprotection.ImportCommand;
+import tech.pegasys.teku.cli.slashingprotection.RepairCommand;
 
 @CommandLine.Command(
     name = "slashing-protection",
     description = "Manage local slashing protection data used by the validator client.",
     mixinStandardHelpOptions = true,
-    subcommands = {ImportCommand.class, ExportCommand.class},
+    subcommands = {ImportCommand.class, ExportCommand.class, RepairCommand.class},
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",

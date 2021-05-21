@@ -36,7 +36,7 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
-class WeakSubjectivityInitializer {
+public class WeakSubjectivityInitializer {
 
   private static final Logger LOG = LogManager.getLogger();
 
