@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
@@ -26,8 +25,8 @@ public final class Teku {
   public static void main(final String... args) {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
     Security.addProvider(new BouncyCastleProvider());
-    final PrintWriter outputWriter = new PrintWriter(System.out, true, UTF_8);
-    final PrintWriter errorWriter = new PrintWriter(System.err, true, UTF_8);
+    final PrintWriter outputWriter = new PrintWriter(System.out, true, Charset.defaultCharset());
+    final PrintWriter errorWriter = new PrintWriter(System.err, true, Charset.defaultCharset());
     final int result =
         new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), Teku::start).parse(args);
     if (result != 0) {
