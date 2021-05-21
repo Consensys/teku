@@ -16,12 +16,22 @@ package tech.pegasys.teku.api.response.v1.debug;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetStateResponse {
-  public final BeaconState data;
+  public final BeaconStatePhase0 data;
 
   @JsonCreator
-  public GetStateResponse(@JsonProperty("data") final BeaconState data) {
+  public GetStateResponse(@JsonProperty("data") final BeaconStatePhase0 data) {
     this.data = data;
+  }
+
+  public GetStateResponse(final SpecMilestone specMilestone, final BeaconState data) {
+    if (!specMilestone.equals(SpecMilestone.PHASE0)) {
+      throw new IllegalArgumentException(
+          String.format("Beacon state at slot %s is not a phase0 state", data.slot));
+    }
+    this.data = (BeaconStatePhase0) data;
   }
 }

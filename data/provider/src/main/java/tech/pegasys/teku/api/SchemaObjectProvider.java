@@ -16,9 +16,12 @@ package tech.pegasys.teku.api;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.BeaconBlockBody;
+import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -63,5 +66,13 @@ public class SchemaObjectProvider {
     return new BeaconBlockBodyAltair(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair
             .required(body));
+  }
+
+  public BeaconState getBeaconState(
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    if (spec.atSlot(state.getSlot()).getMilestone().equals(SpecMilestone.ALTAIR)) {
+      return new BeaconStateAltair(state);
+    }
+    return new BeaconStatePhase0(state);
   }
 }
