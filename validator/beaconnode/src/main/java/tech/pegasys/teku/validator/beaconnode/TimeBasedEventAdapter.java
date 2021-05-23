@@ -62,7 +62,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     taskScheduler.scheduleRepeatingEvent(nextSlotStartTime, secondsPerSlot, this::onStartSlot);
     if (useIndependentAttestationTiming) {
       taskScheduler.scheduleRepeatingEvent(
-          nextSlotStartTime.plus(oneThirdSlotSeconds + 1),
+          nextSlotStartTime.plus(oneThirdSlotSeconds),
           secondsPerSlot,
           this::onAttestationCreationDue);
     }
