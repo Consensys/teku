@@ -313,31 +313,41 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-    return combinedChainDataClient
-        .getSignedBlockAndStateInEffectAtSlot(slot)
+    return forkChoiceTrigger
+        .ensureForkChoiceCompleteForSlot(slot)
         .thenCompose(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-              final BeaconBlock block = blockAndState.getBlock().getMessage();
-              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                // The current effective block is too far in the past - so roll the state
-                // forward to the current epoch. Ensures we have the latest justified checkpoint
-                return combinedChainDataClient
-                    .getCheckpointState(epoch, blockAndState)
-                    .thenApply(
-                        checkpointState ->
-                            Optional.of(
+            __ ->
+                combinedChainDataClient
+                    .getSignedBlockAndStateInEffectAtSlot(slot)
+                    .thenCompose(
+                        maybeBlockAndState -> {
+                          if (maybeBlockAndState.isEmpty()) {
+                            return SafeFuture.completedFuture(Optional.empty());
+                          }
+                          final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+                          final BeaconBlock block = blockAndState.getBlock().getMessage();
+                          if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                            // The current effective block is too far in the past - so roll the
+                            // state
+                            // forward to the current epoch. Ensures we have the latest justified
+                            // checkpoint
+                            return combinedChainDataClient
+                                .getCheckpointState(epoch, blockAndState)
+                                .thenApply(
+                                    checkpointState ->
+                                        Optional.of(
+                                            createAttestation(
+                                                block,
+                                                checkpointState.getState(),
+                                                slot,
+                                                committeeIndex)));
+                          } else {
+                            final Attestation attestation =
                                 createAttestation(
-                                    block, checkpointState.getState(), slot, committeeIndex)));
-              } else {
-                final Attestation attestation =
-                    createAttestation(block, blockAndState.getState(), slot, committeeIndex);
-                return SafeFuture.completedFuture(Optional.of(attestation));
-              }
-            });
+                                    block, blockAndState.getState(), slot, committeeIndex);
+                            return SafeFuture.completedFuture(Optional.of(attestation));
+                          }
+                        }));
   }
 
   @Override

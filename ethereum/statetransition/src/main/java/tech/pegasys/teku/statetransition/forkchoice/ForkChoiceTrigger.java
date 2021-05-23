@@ -32,4 +32,6 @@ public interface ForkChoiceTrigger {
   void onAttestationsDueForSlot(final UInt64 nodeSlot);
 
   SafeFuture<Void> prepareForBlockProduction(final UInt64 slot);
+
+  SafeFuture<Void> ensureForkChoiceCompleteForSlot(UInt64 slot);
 }

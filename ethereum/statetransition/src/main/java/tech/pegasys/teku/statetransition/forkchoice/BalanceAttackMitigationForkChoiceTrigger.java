@@ -80,6 +80,11 @@ class BalanceAttackMitigationForkChoiceTrigger implements ForkChoiceTrigger {
     }
   }
 
+  @Override
+  public SafeFuture<Void> ensureForkChoiceCompleteForSlot(final UInt64 slot) {
+    return processHead(slot).result;
+  }
+
   protected ForkChoiceUpdate processHead(final UInt64 nodeSlot) {
     // Keep trying to get our slot processed until we or someone else gets it done
     while (true) {
