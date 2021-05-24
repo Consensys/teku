@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -606,7 +605,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
+        spec.getCommitteeAssignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
           final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(

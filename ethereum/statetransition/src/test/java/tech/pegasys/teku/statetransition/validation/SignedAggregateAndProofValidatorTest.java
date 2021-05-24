@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assignment;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -494,6 +493,6 @@ class SignedAggregateAndProofValidatorTest {
 
   private CommitteeAssignment getCommitteeAssignment(
       final StateAndBlockSummary chainHead, final int aggregatorIndex, final UInt64 epoch) {
-    return get_committee_assignment(chainHead.getState(), epoch, aggregatorIndex).orElseThrow();
+    return spec.getCommitteeAssignment(chainHead.getState(), epoch, aggregatorIndex).orElseThrow();
   }
 }

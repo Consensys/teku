@@ -81,6 +81,17 @@ public class ValidatorsUtil {
             && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
   }
 
+  /**
+   * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
+   * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
+   * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``
+   * is the slot at which the committee is assigned Return None if no assignment.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validator_index the validator that is calling this function.
+   * @return Optional.of(CommitteeAssignment).
+   */
   public Optional<CommitteeAssignment> getCommitteeAssignment(
       BeaconState state, UInt64 epoch, int validator_index) {
     return getCommitteeAssignment(
