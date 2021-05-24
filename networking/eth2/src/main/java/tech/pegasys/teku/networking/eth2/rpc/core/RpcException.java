@@ -91,13 +91,16 @@ public class RpcException extends Exception {
     }
   }
 
-  // Custom errors
+  // Unavailable data
+
   public static class ResourceUnavailableException extends RpcException {
 
     public ResourceUnavailableException(final String errorMessage) {
       super(RESOURCE_UNAVAILABLE, errorMessage);
     }
   }
+
+  // Custom errors
 
   public static class LengthOutOfBoundsException extends RpcException {
     public LengthOutOfBoundsException() {
