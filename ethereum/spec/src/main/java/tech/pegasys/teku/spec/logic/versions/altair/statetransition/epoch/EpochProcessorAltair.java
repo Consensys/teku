@@ -123,18 +123,20 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
       // Increase inactivity score of inactive validators
       final UInt64 currentScore = inactivityScores.getElement(i);
+      UInt64 newScore = currentScore;
       if (validatorStatus.isNotSlashed() && validatorStatus.isPreviousEpochTargetAttester()) {
         if (currentScore.isGreaterThan(0)) {
-          inactivityScores.setElement(i, currentScore.decrement());
+          newScore = currentScore.decrement();
         }
       } else {
-        inactivityScores.setElement(
-            i, currentScore.plus(specConfigAltair.getInactivityScoreBias()));
+        newScore = currentScore.plus(specConfigAltair.getInactivityScoreBias());
       }
       // Decrease the score of all validators for forgiveness when not during a leak
       if (!isInInactivityLeak) {
-        inactivityScores.setElement(
-            i, currentScore.minusMinZero(specConfigAltair.getInactivityScoreRecoveryRate()));
+        newScore = newScore.minusMinZero(specConfigAltair.getInactivityScoreRecoveryRate());
+      }
+      if (!currentScore.equals(newScore)) {
+        inactivityScores.setElement(i, newScore);
       }
     }
   }
