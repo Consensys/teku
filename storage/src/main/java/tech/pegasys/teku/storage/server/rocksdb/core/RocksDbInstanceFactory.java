@@ -38,26 +38,27 @@ import org.rocksdb.Statistics;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.Schema;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 
 public class RocksDbInstanceFactory {
   static {
     RocksDbUtil.loadNativeLibrary();
   }
 
-  public static RocksDbAccessor create(
+  public static KvStoreAccessor create(
       final MetricsSystem metricsSystem,
       final MetricCategory metricCategory,
-      final RocksDbConfiguration configuration,
-      final Collection<RocksDbColumn<?, ?>> columns)
+      final KvStoreConfiguration configuration,
+      final Collection<KvStoreColumn<?, ?>> columns)
       throws DatabaseStorageException {
     // Track resources that need to be closed
 
     checkArgument(
-        columns.stream().map(RocksDbColumn::getId).distinct().count() == columns.size(),
+        columns.stream().map(KvStoreColumn::getId).distinct().count() == columns.size(),
         "Column IDs are not distinct");
 
     // Create options
@@ -73,8 +74,8 @@ public class RocksDbInstanceFactory {
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(columns, columnFamilyOptions);
-    Map<Bytes, RocksDbColumn<?, ?>> columnsById =
-        columns.stream().collect(Collectors.toMap(RocksDbColumn::getId, Function.identity()));
+    Map<Bytes, KvStoreColumn<?, ?>> columnsById =
+        columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
     try {
       // columnHandles will be filled when the db is opened
@@ -87,18 +88,18 @@ public class RocksDbInstanceFactory {
               columnDescriptors,
               columnHandles);
 
-      final ImmutableMap.Builder<RocksDbColumn<?, ?>, ColumnFamilyHandle> builder =
+      final ImmutableMap.Builder<KvStoreColumn<?, ?>, ColumnFamilyHandle> builder =
           ImmutableMap.builder();
       for (ColumnFamilyHandle columnHandle : columnHandles) {
         final Bytes columnId = Bytes.wrap(columnHandle.getName());
-        final RocksDbColumn<?, ?> rocksDbColumn = columnsById.get(columnId);
-        if (rocksDbColumn != null) {
+        final KvStoreColumn<?, ?> column = columnsById.get(columnId);
+        if (column != null) {
           // We need to check for null because the default column will not match a RocksDbColumn
-          builder.put(rocksDbColumn, columnHandle);
+          builder.put(column, columnHandle);
         }
         resources.add(columnHandle);
       }
-      final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandlesMap =
+      final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandlesMap =
           builder.build();
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
@@ -128,7 +129,7 @@ public class RocksDbInstanceFactory {
   }
 
   private static DBOptions createDBOptions(
-      final RocksDbConfiguration configuration, final Statistics stats) {
+      final KvStoreConfiguration configuration, final Statistics stats) {
     final DBOptions options =
         new DBOptions()
             .setCreateIfMissing(true)
@@ -148,7 +149,7 @@ public class RocksDbInstanceFactory {
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final RocksDbConfiguration configuration, final Cache cache) {
+      final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
@@ -156,7 +157,7 @@ public class RocksDbInstanceFactory {
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
-      final Collection<RocksDbColumn<?, ?>> columns,
+      final Collection<KvStoreColumn<?, ?>> columns,
       final ColumnFamilyOptions columnFamilyOptions) {
     List<ColumnFamilyDescriptor> columnDescriptors =
         columns.stream()

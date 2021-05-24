@@ -17,15 +17,15 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
+import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
 
 public class InMemoryRocksDbDatabaseFactory {
 
   public static Database createV4(
-      MockRocksDbInstance hotDb,
-      MockRocksDbInstance coldDb,
+      MockKvStoreInstance hotDb,
+      MockKvStoreInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -41,8 +41,8 @@ public class InMemoryRocksDbDatabaseFactory {
   }
 
   public static Database createV6(
-      MockRocksDbInstance hotDb,
-      MockRocksDbInstance coldDb,
+      MockKvStoreInstance hotDb,
+      MockKvStoreInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,

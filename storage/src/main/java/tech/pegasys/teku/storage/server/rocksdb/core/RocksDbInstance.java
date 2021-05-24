@@ -33,15 +33,17 @@ import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteOptions;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
-public class RocksDbInstance implements RocksDbAccessor {
+public class RocksDbInstance implements KvStoreAccessor {
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;
-  private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
+  private final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
   private final List<AutoCloseable> resources;
   private final Set<Transaction> openTransactions = new HashSet<>();
 
@@ -50,7 +52,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   RocksDbInstance(
       final TransactionDB db,
       final ColumnFamilyHandle defaultHandle,
-      final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+      final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles,
       final List<AutoCloseable> resources) {
     this.db = db;
     this.defaultHandle = defaultHandle;
@@ -59,7 +61,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <T> Optional<T> get(RocksDbVariable<T> variable) {
+  public <T> Optional<T> get(KvStoreVariable<T> variable) {
     assertOpen();
     try {
       return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
@@ -70,7 +72,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key) {
+  public <K, V> Optional<V> get(KvStoreColumn<K, V> column, K key) {
     assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
@@ -83,7 +85,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Map<K, V> getAll(RocksDbColumn<K, V> column) {
+  public <K, V> Map<K, V> getAll(KvStoreColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream = stream(column)) {
       return stream.collect(Collectors.toMap(ColumnEntry::getKey, ColumnEntry::getValue));
@@ -91,7 +93,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(RocksDbColumn<K, V> column, final K key) {
+  public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(KvStoreColumn<K, V> column, final K key) {
     assertOpen();
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     final Consumer<RocksIterator> setupIterator = it -> it.seekForPrev(keyBytes);
@@ -101,7 +103,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final RocksDbColumn<K, V> column) {
+  public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final KvStoreColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream =
         createStream(column, AbstractRocksIterator::seekToFirst)) {
@@ -110,7 +112,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
+  public <K, V> Optional<K> getLastKey(final KvStoreColumn<K, V> column) {
     assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     try (final RocksIterator rocksDbIterator = db.newIterator(handle)) {
@@ -123,7 +125,7 @@ public class RocksDbInstance implements RocksDbAccessor {
 
   @Override
   @MustBeClosed
-  public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
+  public <K, V> Stream<ColumnEntry<K, V>> stream(KvStoreColumn<K, V> column) {
     assertOpen();
     return createStream(column, RocksIterator::seekToFirst);
   }
@@ -131,7 +133,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
-      final RocksDbColumn<K, V> column, final K from, final K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();
     return createStream(
         column,
@@ -141,7 +143,7 @@ public class RocksDbInstance implements RocksDbAccessor {
 
   @Override
   @MustBeClosed
-  public synchronized RocksDbTransaction startTransaction() {
+  public synchronized KvStoreTransaction startTransaction() {
     assertOpen();
     Transaction tx = new Transaction(db, defaultHandle, columnHandles, openTransactions::remove);
     openTransactions.add(tx);
@@ -150,14 +152,14 @@ public class RocksDbInstance implements RocksDbAccessor {
 
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
-      RocksDbColumn<K, V> column, Consumer<RocksIterator> setupIterator) {
+      KvStoreColumn<K, V> column, Consumer<RocksIterator> setupIterator) {
     return createStream(column, setupIterator, key -> true);
   }
 
   @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
-      RocksDbColumn<K, V> column,
+      KvStoreColumn<K, V> column,
       Consumer<RocksIterator> setupIterator,
       Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -185,9 +187,9 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
   }
 
-  public static class Transaction implements RocksDbTransaction {
+  public static class Transaction implements KvStoreTransaction {
     private final ColumnFamilyHandle defaultHandle;
-    private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
+    private final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles;
     private final org.rocksdb.Transaction rocksDbTx;
     private final WriteOptions writeOptions;
 
@@ -199,7 +201,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     private Transaction(
         final TransactionDB db,
         final ColumnFamilyHandle defaultHandle,
-        final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+        final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandles,
         final Consumer<Transaction> onClosed) {
       this.defaultHandle = defaultHandle;
       this.columnHandles = columnHandles;
@@ -209,7 +211,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
-    public <T> void put(RocksDbVariable<T> variable, T value) {
+    public <T> void put(KvStoreVariable<T> variable, T value) {
       applyUpdate(
           () -> {
             final byte[] serialized = variable.getSerializer().serialize(value);
@@ -222,7 +224,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
-    public <K, V> void put(RocksDbColumn<K, V> column, K key, V value) {
+    public <K, V> void put(KvStoreColumn<K, V> column, K key, V value) {
       applyUpdate(
           () -> {
             final byte[] keyBytes = column.getKeySerializer().serialize(key);
@@ -237,7 +239,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
-    public <K, V> void put(RocksDbColumn<K, V> column, Map<K, V> data) {
+    public <K, V> void put(KvStoreColumn<K, V> column, Map<K, V> data) {
       applyUpdate(
           () -> {
             final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -254,7 +256,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
-    public <K, V> void delete(RocksDbColumn<K, V> column, K key) {
+    public <K, V> void delete(KvStoreColumn<K, V> column, K key) {
       applyUpdate(
           () -> {
             final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -267,7 +269,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
-    public <T> void delete(RocksDbVariable<T> variable) {
+    public <T> void delete(KvStoreVariable<T> variable) {
       applyUpdate(
           () -> {
             try {

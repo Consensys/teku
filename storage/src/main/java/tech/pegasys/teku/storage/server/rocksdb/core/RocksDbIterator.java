@@ -28,19 +28,20 @@ import org.apache.logging.log4j.Logger;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
 class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue>>, AutoCloseable {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RocksDbColumn<TKey, TValue> column;
+  private final KvStoreColumn<TKey, TValue> column;
   private final RocksIterator rocksIterator;
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Predicate<TKey> continueTest;
   private final Supplier<Boolean> isDatabaseClosed;
 
   private RocksDbIterator(
-      final RocksDbColumn<TKey, TValue> column,
+      final KvStoreColumn<TKey, TValue> column,
       final RocksIterator rocksIterator,
       final Predicate<TKey> continueTest,
       final Supplier<Boolean> isDatabaseClosed) {
@@ -52,7 +53,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
 
   @MustBeClosed
   public static <K, V> RocksDbIterator<K, V> create(
-      final RocksDbColumn<K, V> column,
+      final KvStoreColumn<K, V> column,
       final RocksIterator rocksIt,
       final Predicate<K> continueTest,
       final Supplier<Boolean> isDatabaseClosed) {

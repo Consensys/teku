@@ -43,9 +43,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
-import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
-import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -145,7 +145,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final RocksDbHotDao.HotUpdater updater =
+    try (final KvStoreHotDao.HotUpdater updater =
         ((RocksDbDatabase) database).hotDao.hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
@@ -160,7 +160,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final RocksDbFinalizedDao.FinalizedUpdater updater =
+    try (final KvStoreFinalizedDao.FinalizedUpdater updater =
         ((RocksDbDatabase) database).finalizedDao.finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
@@ -175,7 +175,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeInitialAnchor(genesisAnchor);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    try (final RocksDbEth1Dao.Eth1Updater updater =
+    try (final KvStoreEth1Dao.Eth1Updater updater =
         ((RocksDbDatabase) database).eth1Dao.eth1Updater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
