@@ -76,7 +76,9 @@ public class TransitionTestExecutor implements TestExecutor {
       try {
         result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
       } catch (final StateTransitionException e) {
-        Assertions.fail("Failed to process block " + i + " at slot " + block.getSlot(), e);
+        Assertions.fail(
+            "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),
+            e);
       }
     }
     assertThatSszData(result).isEqualByGettersTo(postState);
