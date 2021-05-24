@@ -47,11 +47,12 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/eth1_data_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_ETH1_DATA_RESET))
-          // Tests use both participation_flag_updates and participation_record_updates
-          // See https://github.com/ethereum/eth2.0-specs/issues/2440
           .put(
               "epoch_processing/participation_flag_updates",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
+
+          // Altair calls the method participation_flag_updates and phase0 calls it
+          // participation_record_updates but both map to the same operation in teku
           .put(
               "epoch_processing/participation_record_updates",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
