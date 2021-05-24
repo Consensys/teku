@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -45,16 +46,32 @@ class MiscHelpersTest {
 
   @Test
   void testListShuffleAndShuffledIndexCompatibility() {
+    when(specConfig.getShuffleRoundCount()).thenReturn(10);
     Bytes32 seed = Bytes32.ZERO;
     int index_count = 3333;
-    List<Integer> indexes = IntStream.range(0, index_count).boxed().collect(Collectors.toList());
+    int[] indexes = IntStream.range(0, index_count).toArray();
 
     miscHelpers.shuffleList(indexes, seed);
     assertThat(indexes)
         .isEqualTo(
             IntStream.range(0, index_count)
-                .map(i -> miscHelpers.computeShuffledIndex(i, indexes.size(), seed))
-                .boxed()
-                .collect(Collectors.toList()));
+                .map(i -> miscHelpers.computeShuffledIndex(i, indexes.length, seed))
+                .toArray());
+  }
+
+  @Test
+  void shuffleList_compareListAndArrayVersions() {
+    when(specConfig.getShuffleRoundCount()).thenReturn(10);
+    Bytes32 seed = Bytes32.ZERO;
+    int index_count = 3333;
+
+    int[] indexes = IntStream.range(0, index_count).toArray();
+    miscHelpers.shuffleList(indexes, seed);
+
+    List<Integer> indexList = IntStream.range(0, index_count).boxed().collect(Collectors.toList());
+    final List<Integer> result = miscHelpers.shuffleList(indexList, seed);
+
+    assertThat(result)
+        .containsExactlyElementsOf(Arrays.stream(indexes).boxed().collect(Collectors.toList()));
   }
 }
