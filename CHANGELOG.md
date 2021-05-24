@@ -10,6 +10,7 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+- When handling blocksByRange requests that target blocks we haven't yet downloaded, return the standard "resource unavailable" response code (3) rather than a custom response code.
 
 ### Additions and Improvements
 - Include expected path for keystore password file in error message when password file is not found.
