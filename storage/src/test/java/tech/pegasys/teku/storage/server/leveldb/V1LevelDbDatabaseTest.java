@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.leveldb;
 
 import java.io.File;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class V1LevelDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
+public class V1LevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
 
   @Override
   protected StorageSystem createStorageSystem(

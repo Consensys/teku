@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.kvstore;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,7 +80,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<StoreBuilder> storeBuilder =
-        ((RocksDbDatabase) database).createMemoryStore(() -> 0L);
+        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
     assertThat(storeBuilder).isNotEmpty();
 
     final UpdatableStore store =
@@ -146,7 +146,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeInitialAnchor(genesisAnchor);
 
     try (final KvStoreHotDao.HotUpdater updater =
-        ((RocksDbDatabase) database).hotDao.hotUpdater()) {
+        ((KvStoreDatabase) database).hotDao.hotUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(
@@ -161,7 +161,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeInitialAnchor(genesisAnchor);
 
     try (final KvStoreFinalizedDao.FinalizedUpdater updater =
-        ((RocksDbDatabase) database).finalizedDao.finalizedUpdater()) {
+        ((KvStoreDatabase) database).finalizedDao.finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedBlock(newBlock.getBlock()))
@@ -176,7 +176,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     try (final KvStoreEth1Dao.Eth1Updater updater =
-        ((RocksDbDatabase) database).eth1Dao.eth1Updater()) {
+        ((KvStoreDatabase) database).eth1Dao.eth1Updater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();

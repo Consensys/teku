@@ -11,17 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.kvstore;
 
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
 
-public class InMemoryRocksDbDatabaseFactory {
+public class InMemoryKvStoreDatabaseFactory {
 
   public static Database createV4(
       MockKvStoreInstance hotDb,
@@ -30,7 +29,7 @@ public class InMemoryRocksDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    return RocksDbDatabase.createV4(
+    return KvStoreDatabase.createV4(
         new StubMetricsSystem(),
         hotDb,
         coldDb,
@@ -47,7 +46,7 @@ public class InMemoryRocksDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    return RocksDbDatabase.createV6(
+    return KvStoreDatabase.createV6(
         new StubMetricsSystem(),
         hotDb,
         coldDb,

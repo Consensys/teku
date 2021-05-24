@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -37,7 +37,6 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
 
 public class RocksDbInstance implements KvStoreAccessor {
 

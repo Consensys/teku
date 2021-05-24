@@ -11,25 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.kvstore;
 
 import java.io.File;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class V2LevelDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
+public class InMemoryV4KvStoreDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
-    return FileBackedStorageSystemBuilder.create()
-        .dataDir(tempDir.toPath())
-        .version(DatabaseVersion.LEVELDB2)
+    return InMemoryStorageSystemBuilder.create()
+        .version(DatabaseVersion.V4)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)

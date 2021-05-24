@@ -28,7 +28,8 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class FileBackedStorageSystemBuilder {
@@ -156,7 +157,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createLevelDb1Database() {
-    return RocksDbDatabase.createLevelDb(
+    return LevelDbDatabaseFactory.createLevelDb(
         new StubMetricsSystem(),
         KvStoreConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
         KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
@@ -174,7 +175,7 @@ public class FileBackedStorageSystemBuilder {
     Optional<KvStoreConfiguration> coldConfig =
         v6ArchiveDir.map(dir -> KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
 
-    return RocksDbDatabase.createV6(
+    return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         hotConfigDefault.withDatabaseDir(hotDir),
         coldConfig,
@@ -194,7 +195,7 @@ public class FileBackedStorageSystemBuilder {
     Optional<KvStoreConfiguration> coldConfig =
         v6ArchiveDir.map(dir -> KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
 
-    return RocksDbDatabase.createLevelDbV2(
+    return LevelDbDatabaseFactory.createLevelDbV2(
         new StubMetricsSystem(),
         hotConfigDefault.withDatabaseDir(hotDir),
         coldConfig,
@@ -207,7 +208,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV5Database() {
-    return RocksDbDatabase.createV4(
+    return RocksDbDatabaseFactory.createV4(
         new StubMetricsSystem(),
         KvStoreConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
         KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
@@ -218,7 +219,7 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV4Database() {
-    return RocksDbDatabase.createV4(
+    return RocksDbDatabaseFactory.createV4(
         new StubMetricsSystem(),
         KvStoreConfiguration.v4Settings(hotDir),
         KvStoreConfiguration.v4Settings(archiveDir),

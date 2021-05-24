@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Iterator;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.kvstore;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractRocksDbDatabaseTest {
+public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractRocksDbDatabaseTest {
 
   @Test
   public void shouldPersistHotStates_everyEpoch() {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -42,7 +42,6 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.Schema;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbExceptionUtil;
 
 public class RocksDbInstanceFactory {
   static {

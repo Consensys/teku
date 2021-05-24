@@ -26,11 +26,11 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
-import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -177,7 +177,7 @@ public class InMemoryStorageSystemBuilder {
                   V6SchemaFinalized.create(spec).getAllVariables()));
       coldDb = hotDb;
     }
-    return InMemoryRocksDbDatabaseFactory.createV6(
+    return InMemoryKvStoreDatabaseFactory.createV6(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
@@ -198,7 +198,7 @@ public class InMemoryStorageSystemBuilder {
               V4SchemaFinalized.create(spec).getAllColumns(),
               V4SchemaFinalized.create(spec).getAllVariables());
     }
-    return InMemoryRocksDbDatabaseFactory.createV4(
+    return InMemoryKvStoreDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 

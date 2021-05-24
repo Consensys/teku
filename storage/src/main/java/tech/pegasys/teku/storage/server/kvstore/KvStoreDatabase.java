@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.kvstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
@@ -77,8 +74,6 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
-import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreEth1Dao.Eth1Updater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
@@ -88,17 +83,15 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpda
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreProtoArrayDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.leveldb.LevelDbInstanceFactory;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
-public class RocksDbDatabase implements Database {
+public class KvStoreDatabase implements Database {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int TX_BATCH_SIZE = 500;
@@ -116,148 +109,6 @@ public class RocksDbDatabase implements Database {
 
   public static Database createV4(
       final MetricsSystem metricsSystem,
-      final KvStoreConfiguration hotConfiguration,
-      final KvStoreConfiguration finalizedConfiguration,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
-    final KvStoreAccessor hotDb =
-        RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            hotConfiguration,
-            V4SchemaHot.create(spec).getAllColumns());
-    final KvStoreAccessor finalizedDb =
-        RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_FINALIZED_DB,
-            finalizedConfiguration,
-            V4SchemaFinalized.create(spec).getAllColumns());
-    return createV4(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  public static Database createV6(
-      final MetricsSystem metricsSystem,
-      final KvStoreConfiguration hotConfiguration,
-      final Optional<KvStoreConfiguration> finalizedConfiguration,
-      final SchemaHot schemaHot,
-      final SchemaFinalized schemaFinalized,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
-    final KvStoreAccessor hotDb;
-    final KvStoreAccessor finalizedDb;
-
-    if (finalizedConfiguration.isPresent()) {
-      hotDb =
-          RocksDbInstanceFactory.create(
-              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
-      finalizedDb =
-          RocksDbInstanceFactory.create(
-              metricsSystem,
-              STORAGE_FINALIZED_DB,
-              finalizedConfiguration.get(),
-              schemaFinalized.getAllColumns());
-    } else {
-
-      ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-      allColumns.addAll(schemaFinalized.getAllColumns());
-      finalizedDb =
-          RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-      hotDb = finalizedDb;
-    }
-    return createV6(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  public static Database createLevelDb(
-      final MetricsSystem metricsSystem,
-      final KvStoreConfiguration hotConfiguration,
-      final KvStoreConfiguration finalizedConfiguration,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
-    final List<KvStoreColumn<?, ?>> v4FinalizedColumns =
-        V4SchemaFinalized.create(spec).getAllColumns();
-    final KvStoreAccessor hotDb =
-        LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, v4FinalizedColumns);
-    final KvStoreAccessor finalizedDb =
-        LevelDbInstanceFactory.create(
-            metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, v4FinalizedColumns);
-    return createV4(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  public static Database createLevelDbV2(
-      final MetricsSystem metricsSystem,
-      final KvStoreConfiguration hotConfiguration,
-      final Optional<KvStoreConfiguration> finalizedConfiguration,
-      final SchemaHot schemaHot,
-      final SchemaFinalized schemaFinalized,
-      final StateStorageMode stateStorageMode,
-      final long stateStorageFrequency,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
-    final KvStoreAccessor hotDb;
-    final KvStoreAccessor finalizedDb;
-
-    if (finalizedConfiguration.isPresent()) {
-      hotDb =
-          LevelDbInstanceFactory.create(
-              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
-      finalizedDb =
-          LevelDbInstanceFactory.create(
-              metricsSystem,
-              STORAGE_FINALIZED_DB,
-              finalizedConfiguration.get(),
-              schemaFinalized.getAllColumns());
-    } else {
-
-      ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-      allColumns.addAll(schemaFinalized.getAllColumns());
-      finalizedDb =
-          LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-      hotDb = finalizedDb;
-    }
-    return createV6(
-        metricsSystem,
-        hotDb,
-        finalizedDb,
-        schemaHot,
-        schemaFinalized,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  static Database createV4(
-      final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
       final StateStorageMode stateStorageMode,
@@ -268,7 +119,7 @@ public class RocksDbDatabase implements Database {
     final V4FinalizedKvStoreDao finalizedDbDao =
         new V4FinalizedKvStoreDao(
             finalizedDb, V4SchemaFinalized.create(spec), stateStorageFrequency);
-    return new RocksDbDatabase(
+    return new KvStoreDatabase(
         metricsSystem,
         dao,
         finalizedDbDao,
@@ -279,7 +130,7 @@ public class RocksDbDatabase implements Database {
         spec);
   }
 
-  static Database createV6(
+  public static Database createV6(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
@@ -292,7 +143,7 @@ public class RocksDbDatabase implements Database {
     final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
     final V4FinalizedKvStoreDao finalizedDbDao =
         new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, stateStorageFrequency);
-    return new RocksDbDatabase(
+    return new KvStoreDatabase(
         metricsSystem,
         dao,
         finalizedDbDao,
@@ -303,7 +154,7 @@ public class RocksDbDatabase implements Database {
         spec);
   }
 
-  private RocksDbDatabase(
+  private KvStoreDatabase(
       final MetricsSystem metricsSystem,
       final KvStoreHotDao hotDao,
       final KvStoreFinalizedDao finalizedDao,
