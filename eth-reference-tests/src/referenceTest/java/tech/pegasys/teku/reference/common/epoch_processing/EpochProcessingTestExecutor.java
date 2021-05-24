@@ -47,8 +47,13 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/eth1_data_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_ETH1_DATA_RESET))
+          // Tests use both participation_flag_updates and participation_record_updates
+          // See https://github.com/ethereum/eth2.0-specs/issues/2440
           .put(
               "epoch_processing/participation_flag_updates",
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
+          .put(
+              "epoch_processing/participation_record_updates",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
           .put(
               "epoch_processing/randao_mixes_reset",
