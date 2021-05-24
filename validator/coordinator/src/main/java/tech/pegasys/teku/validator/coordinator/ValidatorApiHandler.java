@@ -194,8 +194,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
-    final UInt64 slot =
-        spec.atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -365,10 +364,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
     final AttestationData attestationData =
         spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
-    final List<Integer> committee =
-        spec.atSlot(slot)
-            .getBeaconStateUtil()
-            .getBeaconCommittee(state, slot, committeeIndexUnsigned);
+    final List<Integer> committee = spec.getBeaconCommittee(state, slot, committeeIndexUnsigned);
 
     SszBitlist aggregationBits =
         Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committee.size());
@@ -612,8 +608,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
         CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot =
-              spec.atEpoch(epoch).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,

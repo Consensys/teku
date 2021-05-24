@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -149,6 +150,29 @@ public abstract class BeaconStateAccessors {
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
   }
 
+  /**
+   * return the number of committees in each slot for the given `epoch`.
+   *
+   * @param state
+   * @param epoch
+   * @return
+   */
+  public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
+    List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    return getCommitteeCountPerSlot(activeValidatorIndices.size());
+  }
+
+  public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
+    return UInt64.valueOf(
+        Math.max(
+            1,
+            Math.min(
+                config.getMaxCommitteesPerSlot(),
+                Math.floorDiv(
+                    Math.floorDiv(activeValidatorCount, config.getSlotsPerEpoch()),
+                    config.getTargetCommitteeSize()))));
+  }
+
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(config.getEpochsPerHistoricalVector()).intValue();
     return state.getRandao_mixes().getElement(index);
@@ -235,5 +259,41 @@ public abstract class BeaconStateAccessors {
   public int getPreviousEpochAttestationCapacity(final BeaconState state) {
     // No strict limit in general
     return Integer.MAX_VALUE;
+  }
+
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    // Make sure state is within range of the slot being queried
+    validateStateForCommitteeQuery(state, slot);
+
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBeaconCommittee()
+        .get(
+            TekuPair.of(slot, index),
+            p -> {
+              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+              UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
+              int committeeIndex =
+                  slot.mod(config.getSlotsPerEpoch())
+                      .times(committees_per_slot)
+                      .plus(index)
+                      .intValue();
+              int count = committees_per_slot.times(config.getSlotsPerEpoch()).intValue();
+              return miscHelpers.computeCommittee(
+                  state,
+                  getActiveValidatorIndices(state, epoch),
+                  getSeed(state, epoch, config.getDomainBeaconAttester()),
+                  committeeIndex,
+                  count);
+            });
+  }
+
+  public void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+    final UInt64 oldestQueryableSlot =
+        miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
+    checkArgument(
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
   }
 }

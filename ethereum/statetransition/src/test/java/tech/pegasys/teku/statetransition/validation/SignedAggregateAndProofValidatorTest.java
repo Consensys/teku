@@ -23,7 +23,6 @@ import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assig
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -97,6 +97,7 @@ class SignedAggregateAndProofValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
@@ -408,9 +409,12 @@ class SignedAggregateAndProofValidatorTest {
     // Sanity check
     final int committeeLength = committeeAssignment.getCommittee().size();
     final int aggregatorModulo =
-        spec.atEpoch(ZERO).getCommitteeUtil().getAggregatorModulo(committeeLength);
+        genesisSpec.getValidatorsUtil().getAggregatorModulo(committeeLength);
     assertThat(aggregatorModulo).isGreaterThan(1);
-    assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
+    assertThat(
+            genesisSpec
+                .getValidatorsUtil()
+                .isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();
 
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(aggregate)))

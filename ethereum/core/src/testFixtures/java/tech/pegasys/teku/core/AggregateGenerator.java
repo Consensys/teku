@@ -25,6 +25,7 @@ import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -170,14 +171,13 @@ public class AggregateGenerator {
         final int validatorIndex, final BeaconState state, final Attestation attestation) {
       final UInt64 slot = attestation.getData().getSlot();
       final UInt64 committeeIndex = attestation.getData().getIndex();
+      final SpecVersion specVersion = spec.atSlot(slot);
       final List<Integer> beaconCommittee =
-          CommitteeUtil.get_beacon_committee(state, slot, committeeIndex);
+          specVersion.beaconStateAccessors().getBeaconCommittee(state, slot, committeeIndex);
       final int aggregatorModulo =
-          spec.atSlot(state.getSlot())
-              .getCommitteeUtil()
-              .getAggregatorModulo(beaconCommittee.size());
+          specVersion.getValidatorsUtil().getAggregatorModulo(beaconCommittee.size());
       final BLSSignature selectionProof = createSelectionProof(validatorIndex, state, slot);
-      if (CommitteeUtil.isAggregator(selectionProof, aggregatorModulo)) {
+      if (specVersion.getValidatorsUtil().isAggregator(selectionProof, aggregatorModulo)) {
         return Optional.of(selectionProof);
       }
       return Optional.empty();

@@ -17,7 +17,6 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -37,12 +36,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -75,8 +74,9 @@ public class AggregateAttestationValidator {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Attestation aggregate = aggregateAndProof.getAggregate();
-
     final UInt64 aggregateSlot = aggregate.getData().getSlot();
+    final SpecVersion specVersion = spec.atSlot(aggregateSlot);
+
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
@@ -134,15 +134,17 @@ public class AggregateAttestationValidator {
                         }
 
                         final List<Integer> beaconCommittee =
-                            CommitteeUtil.get_beacon_committee(
+                            spec.getBeaconCommittee(
                                 state, aggregateSlot, aggregate.getData().getIndex());
 
                         final int aggregatorModulo =
-                            spec.atSlot(aggregateSlot)
-                                .getCommitteeUtil()
+                            specVersion
+                                .getValidatorsUtil()
                                 .getAggregatorModulo(beaconCommittee.size());
-                        if (!isAggregator(
-                            aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
+                        if (!specVersion
+                            .getValidatorsUtil()
+                            .isAggregator(
+                                aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
                           LOG.trace(
                               "Rejecting aggregate because selection proof does not select validator as aggregator");
                           return InternalValidationResult.REJECT;

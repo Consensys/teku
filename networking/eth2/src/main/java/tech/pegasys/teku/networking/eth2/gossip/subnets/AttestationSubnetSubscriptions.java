@@ -29,7 +29,6 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -89,7 +88,9 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     return recentChainData
         .retrieveStateInEffectAtSlot(attestation.getData().getSlot())
         .thenApply(
-            state -> state.map(s -> CommitteeUtil.computeSubnetForAttestation(s, attestation)));
+            state ->
+                state.map(
+                    s -> recentChainData.getSpec().computeSubnetForAttestation(s, attestation)));
   }
 
   @Override

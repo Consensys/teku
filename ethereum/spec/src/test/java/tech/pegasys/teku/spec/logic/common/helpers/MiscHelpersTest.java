@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -42,17 +44,17 @@ class MiscHelpersTest {
   }
 
   @Test
-  void computeShuffledIndex_testListShuffleAndShuffledIndexCompatibility() {
-    when(specConfig.getShuffleRoundCount()).thenReturn(10);
+  void testListShuffleAndShuffledIndexCompatibility() {
     Bytes32 seed = Bytes32.ZERO;
     int index_count = 3333;
-    int[] indexes = IntStream.range(0, index_count).toArray();
+    List<Integer> indexes = IntStream.range(0, index_count).boxed().collect(Collectors.toList());
 
-    tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.shuffle_list(indexes, seed);
+    miscHelpers.shuffleList(indexes, seed);
     assertThat(indexes)
         .isEqualTo(
             IntStream.range(0, index_count)
-                .map(i -> miscHelpers.computeShuffledIndex(i, indexes.length, seed))
-                .toArray());
+                .map(i -> miscHelpers.computeShuffledIndex(i, indexes.size(), seed))
+                .boxed()
+                .collect(Collectors.toList()));
   }
 }

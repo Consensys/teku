@@ -28,11 +28,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -43,6 +45,8 @@ class EpochCachePrimerTest {
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final Spec realSpec = TestSpecFactory.createMinimalPhase0();
   private final Spec mockSpec = mock(Spec.class);
+  private final SpecVersion mockSpecVersion = mock(SpecVersion.class);
+  private final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
   private final BeaconStateUtil beaconStateUtil = mock(BeaconStateUtil.class);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
@@ -54,7 +58,8 @@ class EpochCachePrimerTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChainUntil(5);
     storageSystem.chainUpdater().updateBestBlock(head);
 
-    // Delegate
+    // Delegate to spec
+    when(mockSpec.atSlot(any())).thenReturn(mockSpecVersion);
     when(mockSpec.getSlotsPerEpoch(any())).thenReturn(realSpec.getSlotsPerEpoch(UInt64.ZERO));
     when(mockSpec.computeStartSlotAtEpoch(any()))
         .thenAnswer(invocation -> realSpec.computeStartSlotAtEpoch(invocation.getArgument(0)));
@@ -74,6 +79,10 @@ class EpochCachePrimerTest {
             invocation ->
                 realSpec.getCommitteeCountPerSlot(
                     invocation.getArgument(0), invocation.getArgument(1)));
+
+    // Delegate to SpecVersion
+    when(mockSpecVersion.beaconStateAccessors()).thenReturn(beaconStateAccessors);
+    when(mockSpecVersion.beaconStateAccessors()).thenReturn(beaconStateAccessors);
   }
 
   @Test
@@ -125,12 +134,13 @@ class EpochCachePrimerTest {
             UInt64.range(UInt64.ZERO, realSpec.getCommitteeCountPerSlot(state, lookaheadEpoch))
                 .forEach(
                     committeeIndex ->
-                        verify(beaconStateUtil).getBeaconCommittee(state, slot, committeeIndex)));
+                        verify(beaconStateAccessors)
+                            .getBeaconCommittee(state, slot, committeeIndex)));
 
     final UInt64 firstSlotAfterLookAheadPeriod =
         realSpec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1));
     // Should not precalculate beyond the end of the look ahead period
-    verify(beaconStateUtil, never())
+    verify(beaconStateAccessors, never())
         .getBeaconCommittee(
             any(),
             argThat(argument -> argument.isGreaterThanOrEqualTo(firstSlotAfterLookAheadPeriod)),
