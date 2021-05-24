@@ -203,7 +203,7 @@ public class SyncCommitteeUtil {
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
       final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             specConfig.getDomainSyncCommittee(),
             epoch,
             forkInfo.getFork(),
@@ -221,7 +221,7 @@ public class SyncCommitteeUtil {
       final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             specConfig.getDomainContributionAndProof(),
             miscHelpers.computeEpochAtSlot(contribution.getSlot()),
             forkInfo.getFork(),
@@ -234,7 +234,7 @@ public class SyncCommitteeUtil {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             domainSyncCommitteeSelectionProof,
             miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
