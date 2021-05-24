@@ -48,8 +48,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               "epoch_processing/eth1_data_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_ETH1_DATA_RESET))
           .put(
-              "epoch_processing/participation_record_updates",
-              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_RECORD_UPDATES))
+              "epoch_processing/participation_flag_updates",
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
           .put(
               "epoch_processing/randao_mixes_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_RANDAO_MIXES_RESET))

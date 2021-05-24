@@ -46,7 +46,7 @@ public class EpochProcessingExecutor {
       case PROCESS_EFFECTIVE_BALANCE_UPDATES:
         epochProcessor.processEffectiveBalanceUpdates(state);
         break;
-      case PROCESS_PARTICIPATION_RECORD_UPDATES:
+      case PROCESS_PARTICIPATION_FLAG_UPDATES:
         epochProcessor.processParticipationUpdates(state);
         break;
       case PROCESS_ETH1_DATA_RESET:
