@@ -27,8 +27,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.ForkData;
+import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.ssz.Merkleizable;
+import tech.pegasys.teku.ssz.collections.SszByteVector;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class MiscHelpers {
   protected final SpecConfig specConfig;
@@ -193,5 +199,42 @@ public class MiscHelpers {
         }
       }
     }
+  }
+
+  public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
+    return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
+  }
+
+  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
+    SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
+    return domainWrappedObject.hashTreeRoot();
+  }
+
+  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
+    SigningData domainWrappedObject =
+        new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
+    return domainWrappedObject.hashTreeRoot();
+  }
+
+  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
+  }
+
+  public Bytes32 computeDomain(Bytes4 domainType) {
+    return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
+  }
+
+  public Bytes32 computeDomain(
+      Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
+    final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    return computeDomain(domainType, forkDataRoot);
+  }
+
+  private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
+    return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
+  }
+
+  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 }

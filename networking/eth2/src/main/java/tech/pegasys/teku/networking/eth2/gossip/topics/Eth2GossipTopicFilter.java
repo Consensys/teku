@@ -67,7 +67,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .map(
             nextFork ->
                 spec.atEpoch(nextFork.getEpoch())
-                    .getBeaconStateUtil()
+                    .miscHelpers()
                     .computeForkDigest(
                         nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))
         .ifPresent(

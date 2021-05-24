@@ -147,7 +147,7 @@ public class BeaconStateUtilTest {
     Bytes32 domain =
         beaconStateUtil.getDomain(
             createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
-    Bytes signing_root = beaconStateUtil.computeSigningRoot(depositMessage, domain);
+    Bytes signing_root = genesisSpec.miscHelpers().computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
   }

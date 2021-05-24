@@ -208,7 +208,7 @@ public class SyncCommitteeUtil {
             epoch,
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return beaconStateUtil.computeSigningRoot(blockRoot, domain);
+    return miscHelpers.computeSigningRoot(blockRoot, domain);
   }
 
   public Bytes getContributionAndProofSigningRoot(
@@ -226,7 +226,7 @@ public class SyncCommitteeUtil {
             miscHelpers.computeEpochAtSlot(contribution.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return beaconStateUtil.computeSigningRoot(contributionAndProof, domain);
+    return miscHelpers.computeSigningRoot(contributionAndProof, domain);
   }
 
   public Bytes getSyncAggregatorSelectionDataSigningRoot(
@@ -239,7 +239,7 @@ public class SyncCommitteeUtil {
             miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return beaconStateUtil.computeSigningRoot(selectionData, domain);
+    return miscHelpers.computeSigningRoot(selectionData, domain);
   }
 
   public SyncAggregatorSelectionData createSyncAggregatorSelectionData(
