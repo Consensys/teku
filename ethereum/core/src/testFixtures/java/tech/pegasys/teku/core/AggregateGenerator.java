@@ -171,8 +171,7 @@ public class AggregateGenerator {
       final UInt64 slot = attestation.getData().getSlot();
       final UInt64 committeeIndex = attestation.getData().getIndex();
       final SpecVersion specVersion = spec.atSlot(slot);
-      final List<Integer> beaconCommittee =
-          specVersion.beaconStateAccessors().getBeaconCommittee(state, slot, committeeIndex);
+      final List<Integer> beaconCommittee = spec.getBeaconCommittee(state, slot, committeeIndex);
       final int aggregatorModulo =
           specVersion.getValidatorsUtil().getAggregatorModulo(beaconCommittee.size());
       final BLSSignature selectionProof = createSelectionProof(validatorIndex, state, slot);
