@@ -139,7 +139,7 @@ public class MiscHelpers {
     return Arrays.stream(indexes).boxed().collect(Collectors.toList());
   }
 
-  private void shuffleList(int[] input, Bytes32 seed) {
+  public void shuffleList(int[] input, Bytes32 seed) {
 
     int listSize = input.length;
     if (listSize == 0) {

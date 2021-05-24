@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -122,7 +121,7 @@ public class AggregateGenerator {
     private SignedAggregateAndProof generateWithAnyValidAggregatorIndex(
         final Attestation aggregate) {
       final List<Integer> beaconCommittee =
-          CommitteeUtil.get_beacon_committee(
+          spec.getBeaconCommittee(
               stateAtSlot, aggregate.getData().getSlot(), aggregate.getData().getIndex());
       for (int validatorIndex : beaconCommittee) {
         final Optional<BLSSignature> maybeSelectionProof =
