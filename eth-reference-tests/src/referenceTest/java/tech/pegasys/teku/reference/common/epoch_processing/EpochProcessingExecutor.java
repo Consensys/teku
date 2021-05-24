@@ -64,10 +64,18 @@ public class EpochProcessingExecutor {
       case SYNC_COMMITTEE_UPDATES:
         epochProcessor.processSyncCommitteeUpdates(state);
         break;
+      case INACTIVITY_UPDATES:
+        processInactivityUpdates(state);
+        break;
       default:
         throw new UnsupportedOperationException(
             "Attempted to execute unknown operation type: " + operation);
     }
+  }
+
+  private void processInactivityUpdates(final MutableBeaconState state) {
+    epochProcessor.processInactivityUpdates(
+        state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
   public void processSlashings(final MutableBeaconState state) {

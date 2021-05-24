@@ -62,6 +62,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/sync_committee_updates",
               new EpochProcessingTestExecutor(EpochOperation.SYNC_COMMITTEE_UPDATES))
+          .put(
+              "epoch_processing/inactivity_updates",
+              new EpochProcessingTestExecutor(EpochOperation.INACTIVITY_UPDATES))
           .build();
 
   private final EpochOperation operation;
