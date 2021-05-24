@@ -99,6 +99,14 @@ public class MiscHelpers {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
+  public boolean isSlotAtNthEpochBoundary(
+      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
+    checkArgument(n > 0, "Parameter n must be greater than 0");
+    final UInt64 blockEpoch = computeEpochAtSlot(blockSlot);
+    final UInt64 parentEpoch = computeEpochAtSlot(parentSlot);
+    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+  }
+
   public UInt64 computeActivationExitEpoch(UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
   }

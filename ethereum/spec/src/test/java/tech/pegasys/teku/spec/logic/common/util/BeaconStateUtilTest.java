@@ -19,14 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -190,51 +188,6 @@ public class BeaconStateUtilTest {
           .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
           .isEqualTo(expected);
     }
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  void isSlotAtNthEpochBoundary_withSkippedBlock(final int n) {
-    final int nthStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_oneEpochAndSlotSkipped(final int n) {
-    final int nthStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + SLOTS_PER_EPOCH + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_nearlyNEpochsSkipped(final int n) {
-    final int startSlotAt2N = spec.computeStartSlotAtEpoch(UInt64.valueOf(n * 2L)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(startSlotAt2N - 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    final UInt64 block3Slot = block2Slot.plus(1);
-
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block3Slot, block2Slot, n)).isFalse();
-  }
-
-  public static Stream<Arguments> getNValues() {
-    return Stream.of(
-        Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
   }
 
   @Test

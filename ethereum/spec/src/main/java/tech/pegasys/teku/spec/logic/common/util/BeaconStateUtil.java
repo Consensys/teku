@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
@@ -187,14 +186,6 @@ public class BeaconStateUtil {
     SigningData domainWrappedObject =
         new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
-  }
-
-  public boolean isSlotAtNthEpochBoundary(
-      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
-    checkArgument(n > 0, "Parameter n must be greater than 0");
-    final UInt64 blockEpoch = miscHelpers.computeEpochAtSlot(blockSlot);
-    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
-    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
