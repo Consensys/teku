@@ -23,11 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
-public class LevelDbTransaction implements RocksDbTransaction {
+public class LevelDbTransaction implements KvStoreTransaction {
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -43,32 +43,32 @@ public class LevelDbTransaction implements RocksDbTransaction {
   }
 
   @Override
-  public <T> void put(final RocksDbVariable<T> variable, final T value) {
+  public <T> void put(final KvStoreVariable<T> variable, final T value) {
     assertOpen();
     writeBatch.put(getVariableKey(variable), variable.getSerializer().serialize(value));
   }
 
   @Override
-  public <K, V> void put(final RocksDbColumn<K, V> column, final K key, final V value) {
+  public <K, V> void put(final KvStoreColumn<K, V> column, final K key, final V value) {
     assertOpen();
     writeBatch.put(getColumnKey(column, key), serializeValue(column, value));
   }
 
   @Override
-  public <K, V> void put(final RocksDbColumn<K, V> column, final Map<K, V> data) {
+  public <K, V> void put(final KvStoreColumn<K, V> column, final Map<K, V> data) {
     assertOpen();
     data.forEach(
         (key, value) -> writeBatch.put(getColumnKey(column, key), serializeValue(column, value)));
   }
 
   @Override
-  public <K, V> void delete(final RocksDbColumn<K, V> column, final K key) {
+  public <K, V> void delete(final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
     writeBatch.delete(getColumnKey(column, key));
   }
 
   @Override
-  public <T> void delete(final RocksDbVariable<T> variable) {
+  public <T> void delete(final KvStoreVariable<T> variable) {
     assertOpen();
     writeBatch.delete(getVariableKey(variable));
   }
@@ -110,7 +110,7 @@ public class LevelDbTransaction implements RocksDbTransaction {
     dbInstance.assertOpen();
   }
 
-  private <K, V> byte[] serializeValue(final RocksDbColumn<K, V> column, final V value) {
+  private <K, V> byte[] serializeValue(final KvStoreColumn<K, V> column, final V value) {
     return column.getValueSerializer().serialize(value);
   }
 }

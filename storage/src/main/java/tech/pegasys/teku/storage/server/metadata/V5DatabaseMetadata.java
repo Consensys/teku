@@ -24,7 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.io.File;
 import java.io.IOException;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 
 /**
  * Defines the configuration for a database. The configuration used when a database is created is
@@ -49,23 +49,23 @@ public class V5DatabaseMetadata {
   @VisibleForTesting static final String HOT_DB_CONFIGURATION_KEY = "hotDbConfiguration";
 
   @JsonProperty(HOT_DB_CONFIGURATION_KEY)
-  private RocksDbConfiguration hotDbConfiguration = new RocksDbConfiguration();
+  private KvStoreConfiguration hotDbConfiguration = new KvStoreConfiguration();
 
   @JsonProperty("archiveDbConfiguration")
-  private RocksDbConfiguration archiveDbConfiguration = new RocksDbConfiguration();
+  private KvStoreConfiguration archiveDbConfiguration = new KvStoreConfiguration();
 
   public static V5DatabaseMetadata v5Defaults() {
     final V5DatabaseMetadata metadata = new V5DatabaseMetadata();
-    metadata.hotDbConfiguration = RocksDbConfiguration.v5HotDefaults();
-    metadata.archiveDbConfiguration = RocksDbConfiguration.v5ArchiveDefaults();
+    metadata.hotDbConfiguration = KvStoreConfiguration.v5HotDefaults();
+    metadata.archiveDbConfiguration = KvStoreConfiguration.v5ArchiveDefaults();
     return metadata;
   }
 
-  public RocksDbConfiguration getHotDbConfiguration() {
+  public KvStoreConfiguration getHotDbConfiguration() {
     return hotDbConfiguration;
   }
 
-  public RocksDbConfiguration getArchiveDbConfiguration() {
+  public KvStoreConfiguration getArchiveDbConfiguration() {
     return archiveDbConfiguration;
   }
 
