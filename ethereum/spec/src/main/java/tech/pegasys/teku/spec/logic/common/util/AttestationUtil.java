@@ -199,7 +199,7 @@ public class AttestationUtil {
             state,
             specConfig.getDomainBeaconAttester(),
             indexed_attestation.getData().getTarget().getEpoch());
-    Bytes signing_root = beaconStateUtil.computeSigningRoot(indexed_attestation.getData(), domain);
+    Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
       LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");

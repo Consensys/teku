@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -185,10 +186,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setPreGenesisForkInfo() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 genesisForkVersion = genesisSpec.getConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
-            spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
+            genesisSpec.miscHelpers().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConfig.FAR_FUTURE_EPOCH);
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());

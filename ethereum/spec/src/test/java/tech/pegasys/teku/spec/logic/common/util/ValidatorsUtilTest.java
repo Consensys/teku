@@ -101,7 +101,8 @@ class ValidatorsUtilTest {
   @Test
   void testIsAggregatorReturnsFalseOnARealCase() {
     Bytes signingRoot =
-        spec.getGenesisBeaconStateUtil()
+        spec.getGenesisSpec()
+            .miscHelpers()
             .computeSigningRoot(
                 UInt64.valueOf(57950),
                 Bytes32.fromHexString(
