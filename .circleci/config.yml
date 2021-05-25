@@ -182,7 +182,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 2
+    parallelism: 3
     executor: machine_executor
     steps:
       - prepare
