@@ -24,7 +24,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
@@ -187,16 +186,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(SEND_SIGNED_BLOCK, beaconBlock, createHandler())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
-  }
-
-  @Override
-  public Optional<Attestation> createUnsignedAttestation(
-      final UInt64 slot, final int committeeIndex) {
-    final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
-    queryParams.put("committee_index", String.valueOf(committeeIndex));
-
-    return get(GET_UNSIGNED_ATTESTATION, queryParams, createHandler(Attestation.class));
   }
 
   @Override

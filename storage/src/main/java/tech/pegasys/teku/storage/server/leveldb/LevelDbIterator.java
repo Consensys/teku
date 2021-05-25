@@ -23,20 +23,20 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.iq80.leveldb.DBIterator;
-import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
 public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
 
   private final LevelDbInstance dbInstance;
   private final DBIterator iterator;
-  private final RocksDbColumn<K, V> column;
+  private final KvStoreColumn<K, V> column;
   private final byte[] lastKey;
 
   public LevelDbIterator(
       final LevelDbInstance dbInstance,
       final DBIterator iterator,
-      final RocksDbColumn<K, V> column,
+      final KvStoreColumn<K, V> column,
       final byte[] lastKey) {
     this.dbInstance = dbInstance;
     this.iterator = iterator;
