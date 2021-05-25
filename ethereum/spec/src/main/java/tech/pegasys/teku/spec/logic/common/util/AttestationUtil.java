@@ -120,7 +120,7 @@ public class AttestationUtil {
   public IntStream streamAttestingIndices(
       BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee =
-        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",

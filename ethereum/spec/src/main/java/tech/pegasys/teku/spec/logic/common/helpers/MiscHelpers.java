@@ -19,13 +19,16 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class MiscHelpers {
   protected final SpecConfig specConfig;
@@ -98,5 +101,89 @@ public class MiscHelpers {
 
   public UInt64 computeActivationExitEpoch(UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
+  }
+
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(final UInt64 slot) {
+    final UInt64 epoch = computeEpochAtSlot(slot);
+    return getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+  }
+
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
+    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    return computeStartSlotAtEpoch(previousEpoch);
+  }
+
+  public List<Integer> computeCommittee(
+      BeaconState state, List<Integer> indices, Bytes32 seed, int index, int count) {
+    int start = Math.floorDiv(indices.size() * index, count);
+    int end = Math.floorDiv(indices.size() * (index + 1), count);
+    return computeCommitteeShuffle(state, indices, seed, start, end);
+  }
+
+  private List<Integer> computeCommitteeShuffle(
+      BeaconState state, List<Integer> indices, Bytes32 seed, int fromIndex, int toIndex) {
+    if (fromIndex < toIndex) {
+      int indexCount = indices.size();
+      checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
+      checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
+    }
+    return BeaconStateCache.getTransitionCaches(state)
+        .getCommitteeShuffle()
+        .get(seed, s -> shuffleList(indices, s))
+        .subList(fromIndex, toIndex);
+  }
+
+  List<Integer> shuffleList(List<Integer> input, Bytes32 seed) {
+    int[] indexes = input.stream().mapToInt(i -> i).toArray();
+    shuffleList(indexes, seed);
+    return Arrays.stream(indexes).boxed().collect(Collectors.toList());
+  }
+
+  public void shuffleList(int[] input, Bytes32 seed) {
+
+    int listSize = input.length;
+    if (listSize == 0) {
+      return;
+    }
+
+    for (int round = specConfig.getShuffleRoundCount() - 1; round >= 0; round--) {
+
+      Bytes roundAsByte = Bytes.of((byte) round);
+
+      // This needs to be unsigned modulo.
+      int pivot =
+          bytesToUInt64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+              .mod(listSize)
+              .intValue();
+
+      Bytes hashBytes = Bytes.EMPTY;
+      int mirror1 = (pivot + 2) / 2;
+      int mirror2 = (pivot + listSize) / 2;
+      for (int i = mirror1; i <= mirror2; i++) {
+
+        int flip, bitIndex;
+        if (i <= pivot) {
+          flip = pivot - i;
+          bitIndex = i & 0xff;
+          if (bitIndex == 0 || i == mirror1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uintToBytes(i / 256, 4)));
+          }
+        } else {
+          flip = pivot + listSize - i;
+          bitIndex = flip & 0xff;
+          if (bitIndex == 0xff || i == pivot + 1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uintToBytes(flip / 256, 4)));
+          }
+        }
+
+        int theByte = hashBytes.get(bitIndex / 8);
+        int theBit = (theByte >> (bitIndex & 0x07)) & 1;
+        if (theBit != 0) {
+          int tmp = input[i];
+          input[i] = input[flip];
+          input[flip] = tmp;
+        }
+      }
+    }
   }
 }

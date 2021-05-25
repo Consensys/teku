@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -42,7 +41,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
-      final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -57,7 +55,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
-        committeeUtil,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -85,16 +82,11 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new AttestationDataStateTransitionValidator(config, miscHelpers, beaconStateAccessors);
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
+    final ValidatorsUtil validatorsUtil =
+        new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
-            config,
-            schemaDefinitions,
-            committeeUtil,
-            predicates,
-            miscHelpers,
-            beaconStateAccessors);
+            config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
@@ -134,7 +126,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
-        committeeUtil,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
