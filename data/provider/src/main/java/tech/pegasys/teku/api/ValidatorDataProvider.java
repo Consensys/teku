@@ -121,21 +121,14 @@ public class ValidatorDataProvider {
     return spec.atSlot(slot).getMilestone();
   }
 
-  public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
+  public SafeFuture<Optional<AttestationData>> createAttestationDataAtSlot(
       UInt64 slot, int committeeIndex) {
     if (!isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return validatorApiChannel
-        .createUnsignedAttestation(slot, committeeIndex)
-        .thenApply(
-            maybeAttestation ->
-                maybeAttestation.map(
-                    attestation ->
-                        new Attestation(
-                            attestation.getAggregation_bits(),
-                            new AttestationData(attestation.getData()),
-                            new BLSSignature(attestation.getAggregate_signature()))));
+        .createAttestationData(slot, committeeIndex)
+        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
   }
 
   public void submitAttestations(List<Attestation> attestations) {

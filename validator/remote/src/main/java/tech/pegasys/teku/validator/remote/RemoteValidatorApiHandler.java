@@ -229,16 +229,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-      final UInt64 slot, final int committeeIndex) {
-    return sendRequest(
-        () ->
-            apiClient
-                .createUnsignedAttestation(slot, committeeIndex)
-                .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
-  }
-
-  @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return sendRequest(

@@ -39,7 +39,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -103,8 +103,8 @@ public class GetAttestationData extends AbstractHandler {
             String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
       }
 
-      final SafeFuture<Optional<Attestation>> future =
-          provider.createUnsignedAttestationAtSlot(slot, committeeIndex);
+      final SafeFuture<Optional<AttestationData>> future =
+          provider.createAttestationDataAtSlot(slot, committeeIndex);
       handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
@@ -112,8 +112,8 @@ public class GetAttestationData extends AbstractHandler {
     }
   }
 
-  private Optional<String> processResult(final Context ctx, final Attestation attestation)
+  private Optional<String> processResult(final Context ctx, final AttestationData attestationData)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetAttestationDataResponse(attestation.data)));
+    return Optional.of(jsonProvider.objectToJSON(new GetAttestationDataResponse(attestationData)));
   }
 }
