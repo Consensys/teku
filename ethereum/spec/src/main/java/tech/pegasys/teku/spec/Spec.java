@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
@@ -275,7 +276,7 @@ public class Spec {
   }
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+    return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
@@ -302,12 +303,17 @@ public class Spec {
     return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
   }
 
-  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
-    return atState(state).getBeaconStateUtil().getBeaconCommittee(state, slot, index);
+  public int computeSubnetForCommittee(
+      final UInt64 attestationSlot, final UInt64 committeeIndex, final UInt64 committeesPerSlot) {
+    return atSlot(attestationSlot)
+        .getBeaconStateUtil()
+        .computeSubnetForCommittee(attestationSlot, committeeIndex, committeesPerSlot);
   }
 
-  public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
   }
 
   // ForkChoice utils
@@ -469,9 +475,8 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
 
-  // Validator Utils
-  public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
-    return getActiveValidatorIndices(state, epoch).size();
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    return atState(state).beaconStateAccessors().getBeaconCommittee(state, slot, index);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(
@@ -479,9 +484,19 @@ public class Spec {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, proposerIndex);
   }
 
+  // Validator Utils
+  public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
+    return getActiveValidatorIndices(state, epoch).size();
+  }
+
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
     return atState(state).getValidatorsUtil().getValidatorIndex(state, publicKey);
+  }
+
+  public Optional<CommitteeAssignment> getCommitteeAssignment(
+      BeaconState state, UInt64 epoch, int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
   // Attestation helpers

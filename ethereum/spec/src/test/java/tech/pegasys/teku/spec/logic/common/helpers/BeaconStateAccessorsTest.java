@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -77,6 +80,53 @@ public class BeaconStateAccessorsTest {
 
     UInt64 totalBalance = beaconStateAccessors.getTotalBalance(state, committee.getCommittee());
     assertEquals(expectedBalance, totalBalance);
+  }
+
+  @Test
+  public void getBeaconCommittee_stateIsTooOld() {
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
+    final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
+
+    final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
+    assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommittee(state, outOfRangeSlot, ONE))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Committee information must be derived from a state no older than the previous epoch");
+  }
+
+  @Test
+  public void getBeaconCommittee_stateFromEpochThatIsTooOld() {
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch.plus(ONE)).minus(ONE);
+    final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
+
+    final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
+    assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommittee(state, outOfRangeSlot, ONE))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Committee information must be derived from a state no older than the previous epoch");
+  }
+
+  @Test
+  public void getBeaconCommittee_stateIsJustNewEnough() {
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
+    final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
+
+    final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
+    final UInt64 inRangeSlot = outOfRangeSlot.minus(ONE);
+    assertDoesNotThrow(() -> beaconStateAccessors.getBeaconCommittee(state, inRangeSlot, ONE));
+  }
+
+  @Test
+  public void getBeaconCommittee_stateIsNewerThanSlot() {
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
+    final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
+
+    final UInt64 oldSlot = epochSlot.minus(ONE);
+    assertDoesNotThrow(() -> beaconStateAccessors.getBeaconCommittee(state, oldSlot, ONE));
   }
 
   private BeaconState createBeaconState() {

@@ -54,7 +54,7 @@ class EpochCachePrimerTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChainUntil(5);
     storageSystem.chainUpdater().updateBestBlock(head);
 
-    // Delegate
+    // Delegate to spec
     when(mockSpec.getSlotsPerEpoch(any())).thenReturn(realSpec.getSlotsPerEpoch(UInt64.ZERO));
     when(mockSpec.computeStartSlotAtEpoch(any()))
         .thenAnswer(invocation -> realSpec.computeStartSlotAtEpoch(invocation.getArgument(0)));
@@ -125,12 +125,12 @@ class EpochCachePrimerTest {
             UInt64.range(UInt64.ZERO, realSpec.getCommitteeCountPerSlot(state, lookaheadEpoch))
                 .forEach(
                     committeeIndex ->
-                        verify(beaconStateUtil).getBeaconCommittee(state, slot, committeeIndex)));
+                        verify(mockSpec).getBeaconCommittee(state, slot, committeeIndex)));
 
     final UInt64 firstSlotAfterLookAheadPeriod =
         realSpec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1));
     // Should not precalculate beyond the end of the look ahead period
-    verify(beaconStateUtil, never())
+    verify(mockSpec, never())
         .getBeaconCommittee(
             any(),
             argThat(argument -> argument.isGreaterThanOrEqualTo(firstSlotAfterLookAheadPeriod)),

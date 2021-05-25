@@ -31,9 +31,9 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -696,7 +696,7 @@ public final class DataStructureUtil {
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
       UInt64 blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
-    List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
+    List<tech.pegasys.teku.ethereum.pow.api.Deposit> deposits = new ArrayList<>();
     for (long i = depositIndexStartInclusive; i < depositIndexEndExclusive; i++) {
       deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
@@ -729,12 +729,12 @@ public final class DataStructureUtil {
         randomDepositData());
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(long index) {
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(long index) {
     return randomDepositEvent(UInt64.valueOf(index));
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
-    return new tech.pegasys.teku.pow.event.Deposit(
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(UInt64 index) {
+    return new tech.pegasys.teku.ethereum.pow.api.Deposit(
         BLSTestUtil.randomPublicKey(nextSeed()),
         randomBytes32(),
         randomSignature(),
@@ -742,7 +742,7 @@ public final class DataStructureUtil {
         index);
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent() {
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent() {
     return randomDepositEvent(randomUInt64());
   }
 
@@ -933,13 +933,11 @@ public final class DataStructureUtil {
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
-    return genesisSpec.getBeaconStateUtil().computeDomain(domain);
+    return genesisSpec.miscHelpers().computeDomain(domain);
   }
 
   private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return spec.getGenesisSpec()
-        .getBeaconStateUtil()
-        .computeSigningRoot(proofOfPossessionData, domain);
+    return spec.getGenesisSpec().miscHelpers().computeSigningRoot(proofOfPossessionData, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {

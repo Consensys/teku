@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -65,7 +64,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -194,8 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
-    final UInt64 slot =
-        spec.atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -304,7 +301,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
@@ -330,24 +327,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     .thenApply(
                         checkpointState ->
                             Optional.of(
-                                createAttestation(
+                                createAttestationData(
                                     block, checkpointState.getState(), slot, committeeIndex)));
               } else {
-                final Attestation attestation =
-                    createAttestation(block, blockAndState.getState(), slot, committeeIndex);
-                return SafeFuture.completedFuture(Optional.of(attestation));
+                final AttestationData attestationData =
+                    createAttestationData(block, blockAndState.getState(), slot, committeeIndex);
+                return SafeFuture.completedFuture(Optional.of(attestationData));
               }
             });
   }
 
-  @Override
-  public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
-    return createUnsignedAttestation(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::getData));
-  }
-
-  private Attestation createAttestation(
+  private AttestationData createAttestationData(
       final BeaconBlock block,
       final BeaconState state,
       final UInt64 slot,
@@ -363,16 +353,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               + (committeeCount - 1));
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
-    final AttestationData attestationData =
-        spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
-    final List<Integer> committee =
-        spec.atSlot(slot)
-            .getBeaconStateUtil()
-            .getBeaconCommittee(state, slot, committeeIndexUnsigned);
-
-    SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committee.size());
-    return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
+    return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
   @Override
@@ -610,10 +591,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
+        spec.getCommitteeAssignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot =
-              spec.atEpoch(epoch).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,

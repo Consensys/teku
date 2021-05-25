@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -38,7 +37,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final BeaconStateAccessors beaconStateAccessors;
   protected final BeaconStateMutators beaconStateMutators;
   // Utils
-  protected final CommitteeUtil committeeUtil;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
@@ -57,7 +55,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
-      final CommitteeUtil committeeUtil,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -72,7 +69,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
-    this.committeeUtil = committeeUtil;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
@@ -88,11 +84,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public Optional<StateUpgrade<?>> getStateUpgrade() {
     return stateUpgrade;
-  }
-
-  @Override
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
   }
 
   @Override

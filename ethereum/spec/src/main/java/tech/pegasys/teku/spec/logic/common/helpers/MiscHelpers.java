@@ -19,13 +19,22 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.ForkData;
+import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.ssz.Merkleizable;
+import tech.pegasys.teku.ssz.collections.SszByteVector;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class MiscHelpers {
   protected final SpecConfig specConfig;
@@ -96,7 +105,136 @@ public class MiscHelpers {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
+  public boolean isSlotAtNthEpochBoundary(
+      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
+    checkArgument(n > 0, "Parameter n must be greater than 0");
+    final UInt64 blockEpoch = computeEpochAtSlot(blockSlot);
+    final UInt64 parentEpoch = computeEpochAtSlot(parentSlot);
+    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+  }
+
   public UInt64 computeActivationExitEpoch(UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
+  }
+
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(final UInt64 slot) {
+    final UInt64 epoch = computeEpochAtSlot(slot);
+    return getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+  }
+
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
+    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    return computeStartSlotAtEpoch(previousEpoch);
+  }
+
+  public List<Integer> computeCommittee(
+      BeaconState state, List<Integer> indices, Bytes32 seed, int index, int count) {
+    int start = Math.floorDiv(indices.size() * index, count);
+    int end = Math.floorDiv(indices.size() * (index + 1), count);
+    return computeCommitteeShuffle(state, indices, seed, start, end);
+  }
+
+  private List<Integer> computeCommitteeShuffle(
+      BeaconState state, List<Integer> indices, Bytes32 seed, int fromIndex, int toIndex) {
+    if (fromIndex < toIndex) {
+      int indexCount = indices.size();
+      checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
+      checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
+    }
+    return BeaconStateCache.getTransitionCaches(state)
+        .getCommitteeShuffle()
+        .get(seed, s -> shuffleList(indices, s))
+        .subList(fromIndex, toIndex);
+  }
+
+  List<Integer> shuffleList(List<Integer> input, Bytes32 seed) {
+    int[] indexes = input.stream().mapToInt(i -> i).toArray();
+    shuffleList(indexes, seed);
+    return Arrays.stream(indexes).boxed().collect(Collectors.toList());
+  }
+
+  public void shuffleList(int[] input, Bytes32 seed) {
+
+    int listSize = input.length;
+    if (listSize == 0) {
+      return;
+    }
+
+    for (int round = specConfig.getShuffleRoundCount() - 1; round >= 0; round--) {
+
+      Bytes roundAsByte = Bytes.of((byte) round);
+
+      // This needs to be unsigned modulo.
+      int pivot =
+          bytesToUInt64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+              .mod(listSize)
+              .intValue();
+
+      Bytes hashBytes = Bytes.EMPTY;
+      int mirror1 = (pivot + 2) / 2;
+      int mirror2 = (pivot + listSize) / 2;
+      for (int i = mirror1; i <= mirror2; i++) {
+
+        int flip, bitIndex;
+        if (i <= pivot) {
+          flip = pivot - i;
+          bitIndex = i & 0xff;
+          if (bitIndex == 0 || i == mirror1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uintToBytes(i / 256, 4)));
+          }
+        } else {
+          flip = pivot + listSize - i;
+          bitIndex = flip & 0xff;
+          if (bitIndex == 0xff || i == pivot + 1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uintToBytes(flip / 256, 4)));
+          }
+        }
+
+        int theByte = hashBytes.get(bitIndex / 8);
+        int theBit = (theByte >> (bitIndex & 0x07)) & 1;
+        if (theBit != 0) {
+          int tmp = input[i];
+          input[i] = input[flip];
+          input[flip] = tmp;
+        }
+      }
+    }
+  }
+
+  public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
+    return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
+  }
+
+  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
+    SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
+    return domainWrappedObject.hashTreeRoot();
+  }
+
+  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
+    SigningData domainWrappedObject =
+        new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
+    return domainWrappedObject.hashTreeRoot();
+  }
+
+  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
+  }
+
+  public Bytes32 computeDomain(Bytes4 domainType) {
+    return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
+  }
+
+  public Bytes32 computeDomain(
+      Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
+    final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    return computeDomain(domainType, forkDataRoot);
+  }
+
+  private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
+    return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
+  }
+
+  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 }

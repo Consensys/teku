@@ -8,6 +8,7 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:core')
+  implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':networking:eth2')
   implementation project(':util')

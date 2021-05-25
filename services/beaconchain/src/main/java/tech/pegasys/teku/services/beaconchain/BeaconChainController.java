@@ -445,7 +445,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttestationTopicSubscriber() {
     LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
-    this.attestationTopicSubscriber = new AttestationTopicSubscriber(p2pNetwork);
+    this.attestationTopicSubscriber = new AttestationTopicSubscriber(spec, p2pNetwork);
   }
 
   private void initActiveValidatorTracker() {

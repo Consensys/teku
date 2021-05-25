@@ -120,7 +120,7 @@ public class AttestationUtil {
   public IntStream streamAttestingIndices(
       BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee =
-        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
@@ -199,7 +199,7 @@ public class AttestationUtil {
             state,
             specConfig.getDomainBeaconAttester(),
             indexed_attestation.getData().getTarget().getEpoch());
-    Bytes signing_root = beaconStateUtil.computeSigningRoot(indexed_attestation.getData(), domain);
+    Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
       LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");

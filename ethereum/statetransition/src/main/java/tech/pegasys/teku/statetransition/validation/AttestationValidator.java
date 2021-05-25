@@ -217,7 +217,8 @@ public class AttestationValidator {
       final Attestation attestation, final BeaconState blockState) {
     final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
     final Checkpoint targetEpoch = attestation.getData().getTarget();
-    final UInt64 earliestSlot = spec.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
+    final UInt64 earliestSlot =
+        spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(targetEpoch.getEpoch());
     final UInt64 earliestEpoch = spec.computeEpochAtSlot(earliestSlot);
 
     if (blockState.getSlot().isLessThan(earliestSlot)) {
