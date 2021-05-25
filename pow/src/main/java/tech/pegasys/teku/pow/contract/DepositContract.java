@@ -16,6 +16,9 @@ package tech.pegasys.teku.pow.contract;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.Event;
@@ -28,6 +31,10 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.pow.api.Deposit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("rawtypes")
 public class DepositContract extends Contract {
@@ -39,7 +46,7 @@ public class DepositContract extends Contract {
   public static final Event DEPOSITEVENT_EVENT =
       new Event(
           "DepositEvent",
-          Arrays.<TypeReference<?>>asList(
+          Arrays.asList(
               new TypeReference<DynamicBytes>() {},
               new TypeReference<DynamicBytes>() {},
               new TypeReference<DynamicBytes>() {},
@@ -94,5 +101,14 @@ public class DepositContract extends Contract {
     public byte[] signature;
 
     public byte[] index;
+
+    public Deposit toDeposit() {
+      return new Deposit(
+          BLSPublicKey.fromBytesCompressed(Bytes48.wrap(pubkey)),
+          Bytes32.wrap(withdrawal_credentials),
+          BLSSignature.fromBytesCompressed(Bytes.wrap(signature)),
+          UInt64.valueOf(Bytes.wrap(amount).reverse().toLong()),
+          UInt64.valueOf(Bytes.wrap(index).reverse().toLong()));
+    }
   }
 }

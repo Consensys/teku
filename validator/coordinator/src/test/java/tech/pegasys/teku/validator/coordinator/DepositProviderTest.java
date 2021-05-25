@@ -27,10 +27,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -57,7 +57,7 @@ public class DepositProviderTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BeaconState state = mock(BeaconState.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private List<tech.pegasys.teku.pow.event.Deposit> allSeenDepositsList;
+  private List<tech.pegasys.teku.ethereum.pow.api.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
   private Eth1Data randomEth1Data;
 
@@ -169,7 +169,7 @@ public class DepositProviderTest {
   @Test
   void shouldNotifyEth1DataCacheOfDepositBlocks() {
     setup(16);
-    final tech.pegasys.teku.pow.event.Deposit deposit =
+    final tech.pegasys.teku.ethereum.pow.api.Deposit deposit =
         dataStructureUtil.randomDepositEvent(UInt64.ZERO);
     final DepositsFromBlockEvent event =
         DepositsFromBlockEvent.create(

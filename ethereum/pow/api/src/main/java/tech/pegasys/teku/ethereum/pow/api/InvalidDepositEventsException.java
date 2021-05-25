@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.exception;
+package tech.pegasys.teku.ethereum.pow.api;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.pow.api;
 
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 
 public interface MinGenesisTimeBlockEventChannel {
   void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
