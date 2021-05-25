@@ -163,7 +163,7 @@ class MetricRecordingValidatorApiChannelTest {
         requestDataTest(
             "createAttestationData",
             channel -> channel.createAttestationData(slot, 4),
-            MetricRecordingValidatorApiChannel.UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME,
+            MetricRecordingValidatorApiChannel.ATTESTATION_DATA_REQUEST_COUNTER_NAME,
             dataStructureUtil.randomAttestationData()),
         requestDataTest(
             "createAggregate",

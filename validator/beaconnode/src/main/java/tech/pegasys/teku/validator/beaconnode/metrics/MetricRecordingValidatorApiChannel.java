@@ -60,8 +60,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_sync_committee_duties_requests_total";
   public static final String UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME =
       "beacon_node_unsigned_block_requests_total";
-  public static final String UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME =
-      "beacon_node_unsigned_attestation_requests_total";
   public static final String ATTESTATION_DATA_REQUEST_COUNTER_NAME =
       "beacon_node_attestation_data_requests_total";
   public static final String AGGREGATE_REQUESTS_COUNTER_NAME =
@@ -89,7 +87,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter syncCommitteeDutiesRequestCounter;
   private final BeaconChainRequestCounter proposerDutiesRequestCounter;
   private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
-  private final BeaconChainRequestCounter unsignedAttestationRequestsCounter;
   private final BeaconChainRequestCounter attestationDataRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
   private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
@@ -132,11 +129,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for unsigned blocks");
-    unsignedAttestationRequestsCounter =
-        BeaconChainRequestCounter.create(
-            metricsSystem,
-            UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME,
-            "Counter recording the number of requests for unsigned attestations");
     attestationDataRequestsCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
