@@ -133,6 +133,24 @@ class MiscHelpersTest {
     assertThat(miscHelpers.isSlotAtNthEpochBoundary(block3Slot, block2Slot, n)).isFalse();
   }
 
+  @ParameterizedTest(name = "n={0}")
+  @MethodSource("getNValues")
+  public void isSlotAtNthEpochBoundary_allSlotsFilled(final int n) {
+    final UInt64 epochs = UInt64.valueOf(n * 3L);
+    final UInt64 slots = epochs.times(specConfig.getSlotsPerEpoch());
+
+    for (int i = 1; i <= slots.intValue(); i++) {
+      final boolean expected = i % (n * specConfig.getSlotsPerEpoch()) == 0 && i != 0;
+
+      final UInt64 blockSlot = UInt64.valueOf(i);
+      assertThat(
+              tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
+                  blockSlot, blockSlot.minus(1), n))
+          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
+          .isEqualTo(expected);
+    }
+  }
+
   public static Stream<Arguments> getNValues() {
     return Stream.of(
         Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));

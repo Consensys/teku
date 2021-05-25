@@ -24,8 +24,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -170,24 +168,6 @@ public class BeaconStateUtilTest {
                     UInt64.ONE, UInt64.ZERO, -1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_allSlotsFilled(final int n) {
-    final UInt64 epochs = UInt64.valueOf(n * 3);
-    final UInt64 slots = epochs.times(SLOTS_PER_EPOCH);
-
-    for (int i = 1; i <= slots.intValue(); i++) {
-      final boolean expected = i % (n * SLOTS_PER_EPOCH) == 0 && i != 0;
-
-      final UInt64 blockSlot = UInt64.valueOf(i);
-      assertThat(
-              tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
-                  blockSlot, blockSlot.minus(1), n))
-          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
-          .isEqualTo(expected);
-    }
   }
 
   @Test
