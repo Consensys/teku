@@ -42,7 +42,7 @@ class DutyMetricsTest {
           timeProvider,
           recentChainData,
           attestationHistogram,
-          attestationHistogram,
+          attestationRequestHistogram,
           attestationRequestDelayCurrent,
           spec);
 
