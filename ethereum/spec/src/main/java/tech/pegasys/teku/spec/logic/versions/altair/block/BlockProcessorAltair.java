@@ -186,7 +186,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             specConfigAltair.getDomainSyncCommittee(),
             miscHelpers.computeEpochAtSlot(previousSlot));
     final Bytes32 signingRoot =
-        beaconStateUtil.computeSigningRoot(
+        miscHelpersAltair.computeSigningRoot(
             beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
 
     if (!eth2FastAggregateVerify(

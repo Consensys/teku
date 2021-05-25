@@ -41,7 +41,7 @@ class Eth2GossipTopicFilterTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Bytes4 nextForkDigest =
       spec.atEpoch(nextFork.getEpoch())
-          .getBeaconStateUtil()
+          .miscHelpers()
           .computeForkDigest(nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot());
 
   private final Eth2GossipTopicFilter filter =

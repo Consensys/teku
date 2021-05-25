@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -264,10 +265,11 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfoAtInitialization() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 genesisForkVersion = genesisSpec.getConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
-            spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
+            genesisSpec.miscHelpers().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConfig.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", enrForkId.sszSerialize());

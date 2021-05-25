@@ -67,7 +67,6 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
@@ -671,8 +670,10 @@ class Store implements UpdatableStore {
         && parentSlot
             .map(
                 slot ->
-                    BeaconStateUtil.isSlotAtNthEpochBoundary(
-                        blockSlot, slot, hotStatePersistenceFrequencyInEpochs))
+                    spec.getGenesisSpec()
+                        .miscHelpers()
+                        .isSlotAtNthEpochBoundary(
+                            blockSlot, slot, hotStatePersistenceFrequencyInEpochs))
             .orElse(false);
   }
 
@@ -680,7 +681,11 @@ class Store implements UpdatableStore {
       final UInt64 blockSlot, final Bytes32 parentRoot, final int n) {
     return blockMetadata
         .blockSlot(parentRoot)
-        .map(parentSlot -> BeaconStateUtil.isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
+        .map(
+            parentSlot ->
+                spec.getGenesisSpec()
+                    .miscHelpers()
+                    .isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
         .orElse(false);
   }
 
