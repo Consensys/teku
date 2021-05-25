@@ -18,22 +18,22 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 class LevelDbUtils {
 
   /** There's no default column in LevelDB so we use a -1 column prefix to store variables. */
   private static final byte VARIABLE_COLUMN_PREFIX = -1;
 
-  static byte[] getKeyAfterColumn(final RocksDbColumn<?, ?> column) {
+  static byte[] getKeyAfterColumn(final KvStoreColumn<?, ?> column) {
     final byte[] keyAfterColumn = column.getId().toArray();
     keyAfterColumn[keyAfterColumn.length - 1]++;
     return keyAfterColumn;
   }
 
-  static byte[] getVariableKey(final RocksDbVariable<?> variable) {
+  static byte[] getVariableKey(final KvStoreVariable<?> variable) {
     final byte[] suffix = variable.getId().toArrayUnsafe();
     final byte[] key = new byte[suffix.length + 1];
     // All 1s in binary so right at the end of the index.
@@ -42,14 +42,14 @@ class LevelDbUtils {
     return key;
   }
 
-  static <K, V> byte[] getColumnKey(final RocksDbColumn<K, V> column, final K key) {
+  static <K, V> byte[] getColumnKey(final KvStoreColumn<K, V> column, final K key) {
     final byte[] prefix = column.getId().toArrayUnsafe();
     final byte[] suffix = column.getKeySerializer().serialize(key);
     checkArgument(suffix.length > 0, "Empty item key detected for serialization of %s", key);
     return concat(prefix, suffix);
   }
 
-  static <K, V> boolean isFromColumn(final RocksDbColumn<K, V> column, final byte[] key) {
+  static <K, V> boolean isFromColumn(final KvStoreColumn<K, V> column, final byte[] key) {
     final byte[] prefix = column.getId().toArrayUnsafe();
     if (key.length < prefix.length) {
       return false;
@@ -69,18 +69,18 @@ class LevelDbUtils {
   }
 
   static <K, V> Optional<ColumnEntry<K, V>> asOptionalColumnEntry(
-      final RocksDbColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
+      final KvStoreColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
     return Optional.of(asColumnEntry(column, entry));
   }
 
   static <K, V> ColumnEntry<K, V> asColumnEntry(
-      final RocksDbColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
+      final KvStoreColumn<K, V> column, final Map.Entry<byte[], byte[]> entry) {
     return ColumnEntry.create(
         deserializeKey(column, entry.getKey()),
         column.getValueSerializer().deserialize(entry.getValue()));
   }
 
-  static <K, V> K deserializeKey(final RocksDbColumn<K, V> column, final byte[] key) {
+  static <K, V> K deserializeKey(final KvStoreColumn<K, V> column, final byte[] key) {
     final byte[] keyBytes = Arrays.copyOfRange(key, column.getId().size(), key.length);
     return column.getKeySerializer().deserialize(keyBytes);
   }

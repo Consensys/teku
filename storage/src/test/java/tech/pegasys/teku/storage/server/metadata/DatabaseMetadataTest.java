@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 
 class DatabaseMetadataTest {
 
@@ -75,7 +75,7 @@ class DatabaseMetadataTest {
   void shouldPopulateValuesForNewFields(@TempDir final File tempDir) throws Exception {
     final File metadataFile = new File(tempDir, "metadata.yml");
     writeMetaData(ImmutableMap.of(HOT_DB_CONFIGURATION_KEY, Collections.emptyMap()), metadataFile);
-    final RocksDbConfiguration defaultConfiguration = new RocksDbConfiguration();
+    final KvStoreConfiguration defaultConfiguration = new KvStoreConfiguration();
 
     final V5DatabaseMetadata result =
         V5DatabaseMetadata.init(metadataFile, V5DatabaseMetadata.v5Defaults());

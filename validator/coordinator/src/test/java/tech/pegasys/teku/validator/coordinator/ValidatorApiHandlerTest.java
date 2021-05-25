@@ -443,17 +443,17 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
+  public void createAttestationData_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(ONE, 1);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(ONE, 1);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
 
   @Test
-  public void createUnsignedAttestation_shouldCreateAttestation() {
+  public void createAttestationData_shouldCreateAttestation() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
 
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
@@ -467,26 +467,22 @@ class ValidatorApiHandlerTest {
         .thenReturn(blockAndStateResult);
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<Attestation> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = result.join();
     assertThat(maybeAttestation).isPresent();
-    final Attestation attestation = maybeAttestation.orElseThrow();
-    assertThat(attestation.getAggregation_bits())
-        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
-    assertThat(attestation.getData())
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
                 slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
-    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
-    assertThat(attestation.getAggregate_signature().toSSZBytes())
-        .isEqualTo(BLSSignature.empty().toSSZBytes());
+    assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 
   @Test
-  public void createUnsignedAttestation_shouldUseCorrectSourceWhenEpochTransitionRequired() {
+  public void createAttestationData_shouldUseCorrectSourceWhenEpochTransitionRequired() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
@@ -508,22 +504,18 @@ class ValidatorApiHandlerTest {
                 CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<Attestation> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = result.join();
     assertThat(maybeAttestation).isPresent();
-    final Attestation attestation = maybeAttestation.orElseThrow();
-    assertThat(attestation.getAggregation_bits())
-        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
-    assertThat(attestation.getData())
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
                 slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
-    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
-    assertThat(attestation.getAggregate_signature().toSSZBytes())
-        .isEqualTo(BLSSignature.empty().toSSZBytes());
+    assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 
   @Test
