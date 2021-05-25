@@ -58,8 +58,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
-  SafeFuture<Optional<Attestation>> createUnsignedAttestation(UInt64 slot, int committeeIndex);
-
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
   SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);

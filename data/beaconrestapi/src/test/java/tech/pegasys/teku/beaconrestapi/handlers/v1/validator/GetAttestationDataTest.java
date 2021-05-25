@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -47,7 +47,8 @@ class GetAttestationDataTest {
   private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetAttestationData handler;
-  private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
+  private AttestationData attestationData =
+      new AttestationData(dataStructureUtil.randomAttestationData());
 
   @SuppressWarnings("unchecked")
   final ArgumentCaptor<SafeFuture<String>> resultCaptor = ArgumentCaptor.forClass(SafeFuture.class);
@@ -87,7 +88,7 @@ class GetAttestationDataTest {
     Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.createUnsignedAttestationAtSlot(UInt64.ONE, 1))
+    when(provider.createAttestationDataAtSlot(UInt64.ONE, 1))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
@@ -103,15 +104,15 @@ class GetAttestationDataTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.createUnsignedAttestationAtSlot(UInt64.ONE, 1))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
+    when(provider.createAttestationDataAtSlot(UInt64.ONE, 1))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
     handler.handle(context);
 
     verify(context).result(resultCaptor.capture());
     final SafeFuture<String> result = resultCaptor.getValue();
     assertThat(result)
         .isCompletedWithValue(
-            jsonProvider.objectToJSON(new GetAttestationDataResponse(attestation.data)));
+            jsonProvider.objectToJSON(new GetAttestationDataResponse(attestationData)));
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)
