@@ -23,4 +23,5 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:spec'))
 
   testFixturesImplementation project(':util')
+  testFixturesImplementation project(':ethereum:pow:api')
 }
