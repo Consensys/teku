@@ -11,17 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.event;
+package tech.pegasys.teku.ethereum.pow.api;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.contract.DepositContract;
 
 public class Deposit {
 
@@ -30,14 +27,6 @@ public class Deposit {
   private final BLSSignature signature;
   private final UInt64 amount;
   private final UInt64 merkle_tree_index;
-
-  public Deposit(DepositContract.DepositEventEventResponse response) {
-    this.merkle_tree_index = UInt64.valueOf(Bytes.wrap(response.index).reverse().toLong());
-    this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes48.wrap(response.pubkey));
-    this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
-    this.signature = BLSSignature.fromBytesCompressed(Bytes.wrap(response.signature));
-    this.amount = UInt64.valueOf(Bytes.wrap(response.amount).reverse().toLong());
-  }
 
   public Deposit(
       BLSPublicKey pubkey,

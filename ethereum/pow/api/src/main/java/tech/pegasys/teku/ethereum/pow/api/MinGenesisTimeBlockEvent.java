@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.event;
+package tech.pegasys.teku.ethereum.pow.api;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;

@@ -18,10 +18,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 
 public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();

@@ -32,14 +32,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
-import tech.pegasys.teku.pow.event.Deposit;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -194,7 +193,7 @@ public class DepositFetcher {
         UInt64.valueOf(block.getNumber()),
         Bytes32.fromHexString(block.getHash()),
         UInt64.valueOf(block.getTimestamp()),
-        groupedDepositEventResponse.stream().map(Deposit::new));
+        groupedDepositEventResponse.stream().map(DepositEventEventResponse::toDeposit));
   }
 
   private List<SafeFuture<EthBlock.Block>> getListOfEthBlockFutures(

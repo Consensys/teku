@@ -16,8 +16,8 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.stream.Stream;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 
 /**
  * Provides an abstract "data access object" interface for working with ETH1 data from the

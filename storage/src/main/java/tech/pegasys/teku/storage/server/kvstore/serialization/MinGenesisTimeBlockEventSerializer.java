@@ -16,8 +16,8 @@ package tech.pegasys.teku.storage.server.kvstore.serialization;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 class MinGenesisTimeBlockEventSerializer implements KvStoreSerializer<MinGenesisTimeBlockEvent> {
   @Override
