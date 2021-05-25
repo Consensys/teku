@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -193,8 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
-    final UInt64 slot =
-        spec.atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -593,10 +591,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
+        spec.getCommitteeAssignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot =
-              spec.atEpoch(epoch).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,

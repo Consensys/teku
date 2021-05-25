@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -358,15 +357,14 @@ public class CombinedChainDataClient {
 
   public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
-    final BeaconStateUtil beaconStateUtil = spec.atEpoch(epoch).getBeaconStateUtil();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
     final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);
-    int committeeCount = beaconStateUtil.getCommitteeCountPerSlot(state, epoch).intValue();
+    int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
     for (int i = 0; i < slotsPerEpoch; i++) {
       UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
-        List<Integer> committee = beaconStateUtil.getBeaconCommittee(state, slot, idx);
+        List<Integer> committee = spec.getBeaconCommittee(state, slot, idx);
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }

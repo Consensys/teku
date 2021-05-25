@@ -226,7 +226,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     requestBlocks(startBlock, count, skip);
 
     final RpcException expectedError =
-        new RpcException.HistoricalDataUnavailableException(
+        new RpcException.ResourceUnavailableException(
             "Requested historical blocks are currently unavailable");
     verify(listener).completeWithErrorResponse(expectedError);
     verifyNoMoreInteractions(listener);
@@ -246,7 +246,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     requestBlocks(startBlock, count, skip);
 
     final RpcException expectedError =
-        new RpcException.HistoricalDataUnavailableException(
+        new RpcException.ResourceUnavailableException(
             "Requested historical blocks are currently unavailable");
     verify(listener).completeWithErrorResponse(expectedError);
     verifyNoMoreInteractions(listener);

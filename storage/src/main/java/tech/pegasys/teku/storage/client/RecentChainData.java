@@ -377,6 +377,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getCurrentSlot().map(spec::atSlot).orElseGet(spec::getGenesisSpec);
   }
 
+  public Spec getSpec() {
+    return spec;
+  }
+
   /** @return The number of slots between our chainhead and the current slot by time */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead

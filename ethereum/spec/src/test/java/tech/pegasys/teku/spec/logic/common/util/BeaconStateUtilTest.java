@@ -285,7 +285,7 @@ public class BeaconStateUtilTest {
           UInt64.valueOf(i).times(specConfig.getEffectiveBalanceIncrement()));
     }
     final BeaconState state = stateBuilder.build();
-    assertThat(beaconStateUtil.getCommitteeCountPerSlot(state, UInt64.ZERO))
+    assertThat(genesisSpec.beaconStateAccessors().getCommitteeCountPerSlot(state, UInt64.ZERO))
         .isGreaterThan(UInt64.ZERO);
 
     // Randao seed is fixed for state so we know the committee allocations will be the same
