@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.event;
+package tech.pegasys.teku.ethereum.pow.api;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 
 public class DepositsFromBlockEvent {
   private final UInt64 blockNumber;

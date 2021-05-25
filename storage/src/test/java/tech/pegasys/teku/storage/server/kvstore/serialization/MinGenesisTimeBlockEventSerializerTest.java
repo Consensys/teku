@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.serialization;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class MinGenesisTimeBlockEventSerializerTest {

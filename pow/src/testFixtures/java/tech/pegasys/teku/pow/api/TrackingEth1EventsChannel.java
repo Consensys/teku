@@ -15,8 +15,8 @@ package tech.pegasys.teku.pow.api;
 
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 
 public class TrackingEth1EventsChannel implements Eth1EventsChannel {
   private final List<Object> orderedList = new ArrayList<>();
