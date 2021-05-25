@@ -14,7 +14,7 @@
 package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -56,19 +56,11 @@ public class BLS {
   }
 
   public static void resetBlsImplementation() {
-    try {
-      if (BlstLoader.INSTANCE.isPresent()) {
-        BLS_IMPL = BlstLoader.INSTANCE.get();
-        // A reliable way to check if Blst has loaded is to try to use it. This throws an Error if
-        // Blst is not present even when getting the class instance somehow succeeded.
-        BLS_IMPL.generateKeyPair(0);
-        LOG.info("BLS: loaded BLST library");
-      } else {
-        throw new RuntimeException("Failed to load Blst library.");
-      }
-    } catch (RuntimeException | Error e) {
-      STATUS_LOG.fatalError("BLS: Failed to load Blst library.", e);
-      System.exit(2);
+    if (BlstLoader.INSTANCE.isPresent()) {
+      BLS_IMPL = BlstLoader.INSTANCE.get();
+      LOG.info("BLS: loaded BLST library");
+    } else {
+      throw new RuntimeException("Failed to load Blst library.");
     }
   }
 

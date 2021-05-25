@@ -35,14 +35,19 @@ public class BlstLoader {
 
   private static Optional<BLS12381> loadBlst() {
     try {
+      // Trigger loading of native library
+      Class.forName("supranational.blst.blstJNI");
+
+      // Load actual implementation - *might* trigger loading but doesn't always
       final Class<?> blstClass = Class.forName("tech.pegasys.teku.bls.impl.blst.BlstBLS12381");
       return Optional.of((BLS12381) blstClass.getDeclaredConstructor().newInstance());
     } catch (final InstantiationException
+        | ExceptionInInitializerError
         | InvocationTargetException
         | NoSuchMethodException
         | IllegalAccessException
         | ClassNotFoundException e) {
-      LOG.debug("Couldn't load native BLS library", e);
+      LOG.error("Couldn't load native BLS library", e);
       return Optional.empty();
     }
   }
