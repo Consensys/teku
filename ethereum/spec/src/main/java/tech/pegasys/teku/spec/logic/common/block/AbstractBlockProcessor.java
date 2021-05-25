@@ -222,7 +222,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       return BlockValidationResult.failed("Public key not found for validator " + proposerIndex);
     }
     final Bytes signing_root =
-        beaconStateUtil.computeSigningRoot(
+        miscHelpers.computeSigningRoot(
             block.getMessage(),
             beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
     if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
@@ -351,7 +351,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
-    final Bytes signing_root = beaconStateUtil.computeSigningRoot(epoch, domain);
+    final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
     if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");
     }
@@ -675,8 +675,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final UInt64 amount = deposit.getData().getAmount();
     final DepositMessage deposit_message =
         new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-    final Bytes32 domain = beaconStateUtil.computeDomain(specConfig.getDomainDeposit());
-    final Bytes signing_root = beaconStateUtil.computeSigningRoot(deposit_message, domain);
+    final Bytes32 domain = miscHelpers.computeDomain(specConfig.getDomainDeposit());
+    final Bytes signing_root = miscHelpers.computeSigningRoot(deposit_message, domain);
     // Note that this can't use batch signature verification as invalid deposits can be included
     // in blocks and processing differs based on whether the signature is valid or not.
     return BLS.verify(pubkey, signing_root, deposit.getData().getSignature());

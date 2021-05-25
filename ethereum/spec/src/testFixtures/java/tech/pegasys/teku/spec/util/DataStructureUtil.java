@@ -933,13 +933,11 @@ public final class DataStructureUtil {
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
-    return genesisSpec.getBeaconStateUtil().computeDomain(domain);
+    return genesisSpec.miscHelpers().computeDomain(domain);
   }
 
   private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return spec.getGenesisSpec()
-        .getBeaconStateUtil()
-        .computeSigningRoot(proofOfPossessionData, domain);
+    return spec.getGenesisSpec().miscHelpers().computeSigningRoot(proofOfPossessionData, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
