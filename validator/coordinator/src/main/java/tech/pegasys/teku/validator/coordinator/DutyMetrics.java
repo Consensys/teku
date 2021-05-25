@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import com.google.common.annotations.VisibleForTesting;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,6 +28,8 @@ public class DutyMetrics {
   private final TimeProvider timeProvider;
   private final RecentChainData recentChainData;
   private final MetricsHistogram attestationHistogram;
+  private final MetricsHistogram attestationRequestHistogram;
+  private final SettableGauge attestationRequestDelayCurrent;
   private final Spec spec;
 
   @VisibleForTesting
@@ -34,10 +37,14 @@ public class DutyMetrics {
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
       final MetricsHistogram attestationHistogram,
+      final MetricsHistogram attestationRequestHistogram,
+      final SettableGauge attestationRequestDelayCurrent,
       final Spec spec) {
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
     this.attestationHistogram = attestationHistogram;
+    this.attestationRequestHistogram = attestationRequestHistogram;
+    this.attestationRequestDelayCurrent = attestationRequestDelayCurrent;
     this.spec = spec;
   }
 
@@ -53,7 +60,37 @@ public class DutyMetrics {
             "attestation_publication_delay",
             "Histogram recording delay in milliseconds from scheduled time to an attestation being published",
             1);
-    return new DutyMetrics(timeProvider, recentChainData, attestationHistogram, spec);
+
+    final MetricsHistogram attestationRequestHistogram =
+        MetricsHistogram.create(
+            TekuMetricCategory.VALIDATOR,
+            metricsSystem,
+            "attestation_request_delay",
+            "Histogram recording delay in milliseconds from slot start time to an attestation being requested when no block produced",
+            1);
+    final SettableGauge attestationRequestDelayCurrent =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "attestation_request_delay_current",
+            "Histogram recording delay in milliseconds from slot start time to an attestation being requested when no block produced");
+    return new DutyMetrics(
+        timeProvider,
+        recentChainData,
+        attestationHistogram,
+        attestationRequestHistogram,
+        attestationRequestDelayCurrent,
+        spec);
+  }
+
+  public void onEmptySlotAttestationRequested(final long delayMs) {
+    final long delaySinceSlotStart = delayMs + 4000;
+    if (delaySinceSlotStart < 0) {
+      System.out.println("What the? " + delayMs);
+    } else {
+      attestationRequestHistogram.recordValue(delaySinceSlotStart);
+      attestationRequestDelayCurrent.set(delaySinceSlotStart);
+    }
   }
 
   public void onAttestationPublished(final UInt64 slot) {
@@ -68,9 +105,7 @@ public class DutyMetrics {
   }
 
   private UInt64 calculateExpectedAttestationTimeInMillis(final UInt64 slot) {
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
-    return genesisTime
-        .plus(slot.times(spec.getSecondsPerSlot(slot)))
+    return spec.getSlotStartTime(slot, recentChainData.getGenesisTime())
         .plus(spec.getSecondsPerSlot(slot) / 3)
         .times(1000);
   }

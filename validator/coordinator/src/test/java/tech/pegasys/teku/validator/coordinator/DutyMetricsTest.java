@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,8 +35,16 @@ class DutyMetricsTest {
       StubTimeProvider.withTimeInSeconds(GENESIS_TIME.longValue());
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final MetricsHistogram attestationHistogram = mock(MetricsHistogram.class);
+  private final MetricsHistogram attestationRequestHistogram = mock(MetricsHistogram.class);
+  private final SettableGauge attestationRequestDelayCurrent = mock(SettableGauge.class);
   private final DutyMetrics metrics =
-      new DutyMetrics(timeProvider, recentChainData, attestationHistogram, spec);
+      new DutyMetrics(
+          timeProvider,
+          recentChainData,
+          attestationHistogram,
+          attestationHistogram,
+          attestationRequestDelayCurrent,
+          spec);
 
   @BeforeEach
   void setUp() {

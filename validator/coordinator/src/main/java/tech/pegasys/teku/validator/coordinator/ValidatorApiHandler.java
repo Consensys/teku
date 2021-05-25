@@ -312,6 +312,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
+    final long requestTime = System.currentTimeMillis();
 
     return forkChoiceTrigger
         .ensureForkChoiceCompleteForSlot(slot)
@@ -345,6 +346,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                             final Attestation attestation =
                                 createAttestation(
                                     block, blockAndState.getState(), slot, committeeIndex);
+                            if (block.getSlot().isLessThan(slot)) {
+                              // Attesting to an empty slot
+                              final UInt64 slotStartTime =
+                                  spec.getSlotStartTime(
+                                      slot, blockAndState.getState().getGenesis_time());
+                              final UInt64 attestationDueTime =
+                                  slotStartTime.plus(spec.getSecondsPerSlot(slot) / 3);
+                              final long requestDelay =
+                                  requestTime - attestationDueTime.longValue();
+                              dutyMetrics.onEmptySlotAttestationRequested(requestDelay);
+                            }
                             return SafeFuture.completedFuture(Optional.of(attestation));
                           }
                         }));
