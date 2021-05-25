@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
