@@ -19,7 +19,5 @@ public abstract class RpcResponseStatus {
   // Standard errors
   public static final byte INVALID_REQUEST_CODE = 1;
   public static final byte SERVER_ERROR_CODE = 2;
-
-  // Custom errors
-  public static final byte HISTORICAL_DATA_UNAVAILABLE = (byte) 222;
+  public static final byte RESOURCE_UNAVAILABLE = 3;
 }
