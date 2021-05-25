@@ -308,64 +308,6 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void createUnsignedAttestation_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.createUnsignedAttestation(slot, committeeIndex);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath(emptyMap()));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
-    assertThat(request.getRequestUrl().queryParameter("committee_index"))
-        .isEqualTo(String.valueOf(committeeIndex));
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenNotFound_ThrowsException() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-
-    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenSuccess_ReturnsAttestation() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-    final Attestation expectedAttestation = schemaObjects.attestation();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestation)));
-
-    Optional<Attestation> attestation = apiClient.createUnsignedAttestation(slot, committeeIndex);
-
-    assertThat(attestation).isPresent();
-    assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
-  }
-
-  @Test
   public void createAttestationData_MakesExpectedRequest() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;

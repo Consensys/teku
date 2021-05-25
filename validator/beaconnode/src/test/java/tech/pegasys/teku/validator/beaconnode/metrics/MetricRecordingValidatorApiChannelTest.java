@@ -161,10 +161,10 @@ class MetricRecordingValidatorApiChannelTest {
             MetricRecordingValidatorApiChannel.UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomBeaconBlock(slot)),
         requestDataTest(
-            "createUnsignedAttestation",
-            channel -> channel.createUnsignedAttestation(slot, 4),
-            MetricRecordingValidatorApiChannel.UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME,
-            dataStructureUtil.randomAttestation()),
+            "createAttestationData",
+            channel -> channel.createAttestationData(slot, 4),
+            MetricRecordingValidatorApiChannel.ATTESTATION_DATA_REQUEST_COUNTER_NAME,
+            dataStructureUtil.randomAttestationData()),
         requestDataTest(
             "createAggregate",
             channel ->
