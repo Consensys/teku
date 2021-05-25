@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.impl.BLS12381;
 
 /**
- * The BLST JNI clases use a static block to automatically load the native library. That means that
+ * The BLST JNI classes use a static block to automatically load the native library. That means that
  * it loads as soon as the class is loaded which is hard to control. Since the native library may
  * not be supported on all platforms we need to control when the native library loads and handle any
  * exceptions from it by using a fallback instead.

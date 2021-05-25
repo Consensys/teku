@@ -102,9 +102,9 @@ public final class BLSPublicKey {
   }
 
   /**
-   * Construct from a Mikuli PublicKey object.
+   * Construct from an implementation-specific PublicKey object.
    *
-   * @param publicKey A Mikuli PublicKey
+   * @param publicKey An implementation-specific PublicKey
    */
   BLSPublicKey(PublicKey publicKey) {
     this(() -> publicKey, Suppliers.memoize(publicKey::toBytesCompressed));
