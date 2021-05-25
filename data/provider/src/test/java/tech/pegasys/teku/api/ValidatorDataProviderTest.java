@@ -128,24 +128,24 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldThrowIfStoreNotFound() {
+  void getAttestationDataAtSlot_shouldThrowIfStoreNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    final SafeFuture<Optional<Attestation>> result =
-        provider.createUnsignedAttestationAtSlot(ZERO, 0);
+    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+        provider.createAttestationDataAtSlot(ZERO, 0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
     verify(combinedChainDataClient).isStoreAvailable();
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfBlockNotFound() {
+  void getAttestationDataAtSlot_shouldReturnEmptyIfBlockNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(validatorApiChannel.createUnsignedAttestation(ZERO, 0))
+    when(validatorApiChannel.createAttestationData(ZERO, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<Optional<Attestation>> result =
-        provider.createUnsignedAttestationAtSlot(ZERO, 0);
-    verify(validatorApiChannel).createUnsignedAttestation(ZERO, 0);
+    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+        provider.createAttestationDataAtSlot(ZERO, 0);
+    verify(validatorApiChannel).createAttestationData(ZERO, 0);
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
@@ -184,23 +184,20 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnAttestation() {
+  void getAttestationDataAtSlot_shouldReturnAttestationData() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    final tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
-        dataStructureUtil.randomAttestation();
-    when(validatorApiChannel.createUnsignedAttestation(ONE, 0))
-        .thenReturn(completedFuture(Optional.of(internalAttestation)));
+    final tech.pegasys.teku.spec.datastructures.operations.AttestationData internalData =
+        dataStructureUtil.randomAttestationData();
+    when(validatorApiChannel.createAttestationData(ONE, 0))
+        .thenReturn(completedFuture(Optional.of(internalData)));
 
-    final SafeFuture<Optional<Attestation>> result =
-        provider.createUnsignedAttestationAtSlot(ONE, 0);
+    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+        provider.createAttestationDataAtSlot(ONE, 0);
     assertThat(result).isCompleted();
-    Attestation attestation = result.join().orElseThrow();
-    assertThat(attestation.data.index).isEqualTo(internalAttestation.getData().getIndex());
-    assertThat(attestation.signature.toHexString())
-        .isEqualTo(internalAttestation.getAggregate_signature().toSSZBytes().toHexString());
-    assertThat(attestation.data.slot).isEqualTo(internalAttestation.getData().getSlot());
-    assertThat(attestation.data.beacon_block_root)
-        .isEqualTo(internalAttestation.getData().getBeacon_block_root());
+    tech.pegasys.teku.api.schema.AttestationData data = result.join().orElseThrow();
+    assertThat(data.index).isEqualTo(internalData.getIndex());
+    assertThat(data.slot).isEqualTo(internalData.getSlot());
+    assertThat(data.beacon_block_root).isEqualTo(internalData.getBeacon_block_root());
   }
 
   @Test

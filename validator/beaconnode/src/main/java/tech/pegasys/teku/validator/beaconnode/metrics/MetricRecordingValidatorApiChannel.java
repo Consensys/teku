@@ -245,14 +245,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-      final UInt64 slot, final int committeeIndex) {
-    return countRequest(
-        delegate.createUnsignedAttestation(slot, committeeIndex),
-        unsignedAttestationRequestsCounter);
-  }
-
-  @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return countRequest(

@@ -315,29 +315,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedAttestation_WhenNone_ReturnsEmpty() {
-    when(apiClient.createUnsignedAttestation(any(), anyInt())).thenReturn(Optional.empty());
-
-    SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
-
-    assertThat(unwrapToOptional(future)).isEmpty();
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenFound_ReturnsAttestation() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
-
-    when(apiClient.createUnsignedAttestation(eq(UInt64.ONE), eq(0)))
-        .thenReturn(Optional.of(schemaAttestation));
-
-    SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
-
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
-  }
-
-  @Test
   public void createAttestationData_WhenNone_ReturnsEmpty() {
     when(apiClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
 
