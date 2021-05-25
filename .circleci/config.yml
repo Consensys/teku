@@ -182,7 +182,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 3
+    parallelism: 4
     executor: machine_executor
     steps:
       - prepare
@@ -243,7 +243,7 @@ jobs:
             - ./eth-reference-tests/
 
   referenceTests:
-    parallelism: 5
+    parallelism: 4
     executor: large_executor
     steps:
       - prepare
