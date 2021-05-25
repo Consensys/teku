@@ -28,7 +28,6 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -63,7 +62,7 @@ public class ShuffleBenchmark {
   @Measurement(iterations = 5)
   public void shuffledListBench(Blackhole bh) {
     int[] indexes = IntStream.range(0, indexCount).toArray();
-    CommitteeUtil.shuffle_list(indexes, seed);
+    miscHelpers.shuffleList(indexes, seed);
     bh.consume(indexes);
   }
 }

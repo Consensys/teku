@@ -277,8 +277,7 @@ public class AttestationGenerator {
           validatorIndex++) {
         lastProcessedValidatorIndex = validatorIndex;
         final Optional<CommitteeAssignment> maybeAssignment =
-            CommitteeAssignmentUtil.get_committee_assignment(
-                headState, assignedSlotEpoch, validatorIndex);
+            spec.getCommitteeAssignment(headState, assignedSlotEpoch, validatorIndex);
 
         if (maybeAssignment.isEmpty()) {
           continue;

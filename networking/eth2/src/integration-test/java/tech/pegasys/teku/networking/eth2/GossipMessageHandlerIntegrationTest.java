@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -261,7 +260,7 @@ public class GossipMessageHandlerIntegrationTest {
         ValidateableAttestation.from(attestationGenerator.validAttestation(bestBlockAndState));
 
     final int subnetId =
-        computeSubnetForAttestation(
+        spec.computeSubnetForAttestation(
             bestBlockAndState.getState(), validAttestation.getAttestation());
     node1.network().subscribeToAttestationSubnetId(subnetId);
     node2.network().subscribeToAttestationSubnetId(subnetId);
@@ -325,7 +324,8 @@ public class GossipMessageHandlerIntegrationTest {
         node1.storageClient().getChainHead().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
 
-    final int subnetId = computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
+    final int subnetId =
+        spec.computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
 
     ValidateableAttestation validAttestation =
         ValidateableAttestation.fromNetwork(attestation, subnetId);
