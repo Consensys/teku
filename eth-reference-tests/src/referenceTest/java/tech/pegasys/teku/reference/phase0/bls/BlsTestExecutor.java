@@ -15,7 +15,6 @@ package tech.pegasys.teku.reference.phase0.bls;
 
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestExecutor;
 
@@ -30,13 +29,6 @@ public abstract class BlsTestExecutor implements TestExecutor {
       } finally {
         BLS.resetBlsImplementation();
       }
-    }
-
-    try {
-      BLS.setBlsImplementation(MikuliBLS12381.INSTANCE);
-      runTestImpl(testDefinition);
-    } finally {
-      BLS.resetBlsImplementation();
     }
   }
 

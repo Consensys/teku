@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Optimised how block production metrics are calculated.
 - implement GET `/eth/v1/node/peer_count` standard api endpoint.
 - When handling blocksByRange requests that target blocks we haven't yet downloaded, return the standard "resource unavailable" response code (3) rather than a custom response code.
+- Remove legacy pure Java BLS cryptography implementation (Mikuli). 
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
