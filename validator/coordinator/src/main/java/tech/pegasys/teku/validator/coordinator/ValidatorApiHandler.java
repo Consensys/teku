@@ -354,7 +354,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                               final UInt64 attestationDueTime =
                                   slotStartTime.plus(spec.getSecondsPerSlot(slot) / 3);
                               final long requestDelay =
-                                  requestTime - attestationDueTime.longValue();
+                                  requestTime - (attestationDueTime.longValue() * 1000);
                               dutyMetrics.onEmptySlotAttestationRequested(requestDelay);
                             }
                             return SafeFuture.completedFuture(Optional.of(attestation));
