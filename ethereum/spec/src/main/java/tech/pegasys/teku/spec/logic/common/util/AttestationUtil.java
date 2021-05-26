@@ -47,17 +47,14 @@ public class AttestationUtil {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfig specConfig;
-  private final BeaconStateUtil beaconStateUtil;
   private final BeaconStateAccessors beaconStateAccessors;
   private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
       final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
       final BeaconStateAccessors beaconStateAccessors,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
-    this.beaconStateUtil = beaconStateUtil;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
   }

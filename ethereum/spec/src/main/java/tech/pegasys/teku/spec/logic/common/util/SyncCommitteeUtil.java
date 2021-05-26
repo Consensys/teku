@@ -58,7 +58,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SyncCommitteeUtil {
 
   private final BeaconStateAccessorsAltair beaconStateAccessors;
-  private final BeaconStateUtil beaconStateUtil;
   private final ValidatorsUtil validatorsUtil;
   private final SpecConfigAltair specConfig;
   private final MiscHelpers miscHelpers;
@@ -66,13 +65,11 @@ public class SyncCommitteeUtil {
 
   public SyncCommitteeUtil(
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final BeaconStateUtil beaconStateUtil,
       final ValidatorsUtil validatorsUtil,
       final SpecConfigAltair specConfig,
       final MiscHelpers miscHelpers,
       final SchemaDefinitionsAltair schemaDefinitionsAltair) {
     this.beaconStateAccessors = beaconStateAccessors;
-    this.beaconStateUtil = beaconStateUtil;
     this.validatorsUtil = validatorsUtil;
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
