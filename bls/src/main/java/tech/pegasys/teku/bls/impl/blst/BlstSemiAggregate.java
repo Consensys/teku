@@ -19,7 +19,7 @@ import supranational.blst.BLST_ERROR;
 import supranational.blst.Pairing;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 
-final class BlstSemiAggregate implements BatchSemiAggregate {
+public final class BlstSemiAggregate implements BatchSemiAggregate {
 
   static BlstSemiAggregate createInvalid() {
     return new BlstSemiAggregate();
