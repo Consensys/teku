@@ -123,11 +123,9 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
       // Increase inactivity score of inactive validators
       final UInt64 currentScore = inactivityScores.getElement(i);
-      UInt64 newScore = currentScore;
+      UInt64 newScore;
       if (validatorStatus.isNotSlashed() && validatorStatus.isPreviousEpochTargetAttester()) {
-        if (currentScore.isGreaterThan(0)) {
-          newScore = currentScore.decrement();
-        }
+        newScore = currentScore.minusMinZero(1);
       } else {
         newScore = currentScore.plus(specConfigAltair.getInactivityScoreBias());
       }
