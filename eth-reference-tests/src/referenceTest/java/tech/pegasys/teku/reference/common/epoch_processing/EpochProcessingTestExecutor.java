@@ -48,8 +48,14 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               "epoch_processing/eth1_data_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_ETH1_DATA_RESET))
           .put(
+              "epoch_processing/participation_flag_updates",
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
+
+          // Altair calls the method participation_flag_updates and phase0 calls it
+          // participation_record_updates but both map to the same operation in teku
+          .put(
               "epoch_processing/participation_record_updates",
-              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_RECORD_UPDATES))
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_PARTICIPATION_FLAG_UPDATES))
           .put(
               "epoch_processing/randao_mixes_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_RANDAO_MIXES_RESET))
@@ -62,6 +68,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/sync_committee_updates",
               new EpochProcessingTestExecutor(EpochOperation.SYNC_COMMITTEE_UPDATES))
+          .put(
+              "epoch_processing/inactivity_updates",
+              new EpochProcessingTestExecutor(EpochOperation.INACTIVITY_UPDATES))
           .build();
 
   private final EpochOperation operation;
