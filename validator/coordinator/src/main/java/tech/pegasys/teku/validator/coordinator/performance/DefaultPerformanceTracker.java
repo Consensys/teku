@@ -170,12 +170,16 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private BlockPerformance getBlockPerformanceForEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     int numberOfBlockProductionAttempts =
-        blockProductionAttemptsByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false)
-            .values().stream()
+        blockProductionAttemptsByEpoch
+            .subMap(startEpochInclusive, true, endEpochExclusive, false)
+            .values()
+            .stream()
             .mapToInt(AtomicInteger::get)
             .sum();
     List<SlotAndBlockRoot> producedBlocks =
-        producedBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
+        producedBlocksByEpoch
+            .subMap(startEpochInclusive, true, endEpochExclusive, false)
+            .values()
             .stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());

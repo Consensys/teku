@@ -61,9 +61,11 @@
       "moduleName": ".*"
     },
     {
-      "moduleLicense": "IAIK of Graz University of Technology License",
-      "moduleVersion": "1.4.7",
-      "moduleName": "org.xipki.iaik:sunpkcs11-wrapper"
+      "moduleLicense": "The JSON License",
+      "moduleName": "org.json:json"
+    },
+    {
+      "moduleName": "io.libp2p:jvm-libp2p-minimal"
     }
   ]
 }
