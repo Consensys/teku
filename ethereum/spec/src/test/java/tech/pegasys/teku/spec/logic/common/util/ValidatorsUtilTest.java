@@ -27,10 +27,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ValidatorsUtilTest {
@@ -124,36 +122,23 @@ class ValidatorsUtilTest {
   }
 
   @Test
-  void getAggregatorModulo_boundaryTest() {
-    final SpecConfig specConfig =
-        TestConfigLoader.loadConfig(
-            Eth2Network.MINIMAL.configName(), b -> b.targetAggregatorsPerCommittee(100));
-    final Spec spec = TestSpecFactory.createPhase0(specConfig);
-    final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
-
-    // invalid cases technically
-    assertThat(validatorsUtil.getAggregatorModulo(Integer.MIN_VALUE)).isEqualTo(1);
-    assertThat(validatorsUtil.getAggregatorModulo(-1)).isEqualTo(1);
-
-    // practical lower bounds
-    assertThat(validatorsUtil.getAggregatorModulo(0)).isEqualTo(1);
-    assertThat(validatorsUtil.getAggregatorModulo(199)).isEqualTo(1);
-
-    // upper bound - valid
-    assertThat(validatorsUtil.getAggregatorModulo(Integer.MAX_VALUE)).isEqualTo(21474836);
-  }
-
-  @Test
   void getAggregatorModulo_samples() {
-    final SpecConfig specConfig =
-        TestConfigLoader.loadConfig(
-            Eth2Network.MINIMAL.configName(), b -> b.targetAggregatorsPerCommittee(100));
-    final Spec spec = TestSpecFactory.createPhase0(specConfig);
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
+    // check assumptions
+    assertThat(specConfig.getTargetAggregatorsPerCommittee()).isEqualTo(16);
 
-    assertThat(validatorsUtil.getAggregatorModulo(200)).isEqualTo(2);
-    assertThat(validatorsUtil.getAggregatorModulo(300)).isEqualTo(3);
-    assertThat(validatorsUtil.getAggregatorModulo(1000)).isEqualTo(10);
-    assertThat(validatorsUtil.getAggregatorModulo(100000)).isEqualTo(1000);
+    assertThat(validatorsUtil.getAggregatorModulo(-1)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(0)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(1)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(15)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(16)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(31)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(32)).isEqualTo(2);
+    assertThat(validatorsUtil.getAggregatorModulo(47)).isEqualTo(2);
+    assertThat(validatorsUtil.getAggregatorModulo(48)).isEqualTo(3);
+    assertThat(validatorsUtil.getAggregatorModulo(160)).isEqualTo(10);
+    assertThat(validatorsUtil.getAggregatorModulo(16000)).isEqualTo(1000);
+    assertThat(validatorsUtil.getAggregatorModulo(Integer.MAX_VALUE)).isEqualTo(134217727);
   }
 }

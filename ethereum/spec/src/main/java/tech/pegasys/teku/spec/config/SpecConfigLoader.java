@@ -24,9 +24,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.networks.Eth2Presets;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoader {
+  private static final String CONFIG_PATH = "configs/";
+  private static final String PRESET_PATH = "presets/";
 
   public static SpecConfig loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
@@ -47,48 +50,74 @@ public class SpecConfigLoader {
 
   static void processConfig(final String source, final InputStreamProcessor processor) {
     // TODO(#3394) - move Constants resources from util to this module
-    final ResourceLoader loader =
+    final ResourceLoader configLoader =
         ResourceLoader.classpathUrlOrFile(
             Constants.class,
-            enumerateAvailableResources(),
+            enumerateAvailableConfigResources(),
+            s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+    final ResourceLoader presetLoader =
+        ResourceLoader.classpathUrlOrFile(
+            Constants.class,
+            enumerateAvailablePresetResources(),
             s -> s.endsWith(".yaml") || s.endsWith(".yml"));
 
     try {
-      // Try to load single file format
-      final Optional<InputStream> singleFileInput = loader.load(source + ".yaml", source);
-      if (singleFileInput.isPresent()) {
-        processor.process(singleFileInput.get());
-        return;
-      }
-
-      // Otherwise, try multi-file format
-      // Phase0 is required
-      final InputStream phase0Input =
-          loader
-              .load(source + "/phase0.yaml", source + "/phase0.yml")
+      // Load the supplied config
+      final InputStream configFile =
+          configLoader
+              .load(CONFIG_PATH + source + ".yaml", source)
               .orElseThrow(
                   () -> new FileNotFoundException("Could not load spec config from " + source));
-      processor.process(phase0Input);
+      final Optional<String> maybePreset = processor.processConfig(configFile);
+
+      // Load preset if any is set
+      if (maybePreset.isEmpty()) {
+        return;
+      }
+      final String preset = maybePreset.get();
+      // Phase0 is required
+      final InputStream phase0Input =
+          presetLoader
+              .load(PRESET_PATH + preset + "/phase0.yaml", PRESET_PATH + preset + "/phase0.yml")
+              .orElseThrow(
+                  () -> new FileNotFoundException("Could not load spec config from " + source));
+      processor.processConfig(phase0Input);
       // Altair is optional
       final Optional<InputStream> altairInput =
-          loader.load(source + "/altair.yaml", source + "/altair.yml");
+          presetLoader.load(
+              PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
       if (altairInput.isPresent()) {
-        processor.process(altairInput.get());
+        processor.processConfig(altairInput.get());
       }
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load spec config", e);
     }
   }
 
-  private static List<String> enumerateAvailableResources() {
+  private static List<String> enumerateAvailableConfigResources() {
     return Arrays.stream(Eth2Network.values())
         .map(Eth2Network::configName)
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml"))
+        .map(s -> CONFIG_PATH + s + ".yaml")
+        .collect(Collectors.toList());
+  }
+
+  private static List<String> enumerateAvailablePresetResources() {
+    return Arrays.stream(Eth2Presets.values())
+        .map(Eth2Presets::configName)
+        .map(s -> List.of(PRESET_PATH + s + "/phase0.yaml", PRESET_PATH + s + "/altair.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());
   }
 
+  @FunctionalInterface
   interface InputStreamProcessor {
-    void process(InputStream inputStream) throws IOException;
+    /**
+     * Process the given config input, optionally returning a preset that should be loaded.
+     *
+     * @param inputStream The input stream containing config data to be processed
+     * @return An optional preset that should be loaded
+     * @throws IOException Thrown if an error occurs while reading the input stream
+     */
+    Optional<String> processConfig(InputStream inputStream) throws IOException;
   }
 }

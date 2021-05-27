@@ -52,50 +52,36 @@ public class SpecConfigLoaderTest {
 
   @Test
   public void shouldLoadMainnetFromFileUrl() throws Exception {
-    final URL url =
-        Constants.class
-            .getClassLoader()
-            .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml");
+    final URL url = getMainnetConfigResourceAsUrl();
     final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
-    assertAllPhase0FieldsSet(config);
-  }
-
-  @Test
-  public void shouldLoadMainnetFromDirectoryUrl() throws Exception {
-    final String filePath =
-        Constants.class
-            .getClassLoader()
-            .getResource("tech/pegasys/teku/util/config/mainnet/phase0.yaml")
-            .toString();
-    final String directoryPath = filePath.replace("/phase0.yaml", "");
-    final SpecConfig config = SpecConfigLoader.loadConfig(directoryPath);
     assertAllAltairFieldsSet(config);
   }
 
   @Test
   public void shouldLoadMainnetFromFile(@TempDir Path tempDir) throws Exception {
-    writeMainnetToFile(tempDir, "phase0.yaml");
+    try (final InputStream inputStream = getMainnetConfigAsStream()) {
+      final Path file = tempDir.resolve("mainnet.yml");
+      writeStreamToFile(inputStream, file);
+      final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+      assertAllAltairFieldsSet(config);
+    }
+  }
 
-    final Path file = tempDir.resolve("phase0.yaml");
-    final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+  @Test
+  public void shouldLoadLegacyMainnetConfigFromFileUrl() throws Exception {
+    final URL url = getLegacyMainnetConfigResourceAsUrl();
+    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
     assertAllPhase0FieldsSet(config);
   }
 
   @Test
-  public void shouldLoadMainnetFromDirectory(@TempDir Path tempDir) throws Exception {
-    writeMainnetToFile(tempDir, "phase0.yaml");
-    writeMainnetToFile(tempDir, "altair.yaml");
-
-    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
-    assertAllAltairFieldsSet(config);
-  }
-
-  @Test
-  public void shouldLoadMainnetPhase0FromDirectory(@TempDir Path tempDir) throws Exception {
-    writeMainnetToFile(tempDir, "phase0.yaml");
-
-    final SpecConfig config = SpecConfigLoader.loadConfig(tempDir.toAbsolutePath().toString());
-    assertAllPhase0FieldsSet(config);
+  public void shouldLoadLegacyMainnetConfigFromFile(@TempDir Path tempDir) throws Exception {
+    try (final InputStream inputStream = getLegacyMainnetConfigAsStream()) {
+      final Path file = tempDir.resolve("mainnet.yml");
+      writeStreamToFile(inputStream, file);
+      final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+      assertAllPhase0FieldsSet(config);
+    }
   }
 
   @Test
@@ -121,14 +107,34 @@ public class SpecConfigLoaderTest {
         Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
   }
 
-  private void writeMainnetToFile(final Path directory, final String configFile) throws Exception {
-    final Path file = directory.resolve(configFile);
-    final InputStream configStream =
-        Constants.class
-            .getClassLoader()
-            .getResourceAsStream("tech/pegasys/teku/util/config/mainnet/" + configFile);
-    byte[] buffer = new byte[configStream.available()];
-    configStream.read(buffer);
-    Files.write(file, buffer);
+  private void writeStreamToFile(final InputStream inputStream, final Path filePath)
+      throws Exception {
+    byte[] buffer = new byte[inputStream.available()];
+    inputStream.read(buffer);
+    Files.write(filePath, buffer);
+  }
+
+  private InputStream getMainnetConfigAsStream() {
+    return Constants.class
+        .getClassLoader()
+        .getResourceAsStream("tech/pegasys/teku/util/config/configs/mainnet.yaml");
+  }
+
+  private URL getMainnetConfigResourceAsUrl() {
+    return Constants.class
+        .getClassLoader()
+        .getResource("tech/pegasys/teku/util/config/configs/mainnet.yaml");
+  }
+
+  private InputStream getLegacyMainnetConfigAsStream() {
+    return getClass()
+        .getClassLoader()
+        .getResourceAsStream("tech/pegasys/teku/spec/config/standard/mainnet.yaml");
+  }
+
+  private URL getLegacyMainnetConfigResourceAsUrl() {
+    return getClass()
+        .getClassLoader()
+        .getResource("tech/pegasys/teku/spec/config/standard/mainnet.yaml");
   }
 }

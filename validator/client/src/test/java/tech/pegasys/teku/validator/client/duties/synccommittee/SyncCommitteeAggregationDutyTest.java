@@ -36,6 +36,9 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.DelegatingSpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -51,16 +54,8 @@ import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 class SyncCommitteeAggregationDutyTest {
   private final String TYPE = "sync_aggregate";
-  private final Spec spec =
-      TestSpecFactory.createAltair(
-          TestConfigLoader.loadConfig(
-              "minimal",
-              modifier ->
-                  modifier.altairBuilder(
-                      altairModifier ->
-                          altairModifier
-                              .targetAggregatorsPerSyncSubcommittee(1)
-                              .altairForkEpoch(UInt64.ZERO))));
+
+  private final Spec spec = TestSpecFactory.createAltair(createSpecConfig());
   private final SyncCommitteeUtil syncCommitteeUtil =
       spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -99,6 +94,24 @@ class SyncCommitteeAggregationDutyTest {
 
     assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(nonAggregatorSignature)).isFalse();
     assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(aggregatorSignature)).isTrue();
+  }
+
+  private static SpecConfig createSpecConfig() {
+    final SpecConfigAltair baseConfig =
+        TestConfigLoader.loadConfig(
+                "minimal",
+                modifier ->
+                    modifier.altairBuilder(
+                        altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
+            .toVersionAltair()
+            .orElseThrow();
+
+    return new DelegatingSpecConfigAltair(baseConfig) {
+      @Override
+      public int getTargetAggregatorsPerSyncSubcommittee() {
+        return 1;
+      }
+    };
   }
 
   @Test
