@@ -1,0 +1,8 @@
+{
+  "bundles" : [
+    { "bundleName" : "MIT", "licenseName" : "MIT License", "licenseUrl" : "https://opensource.org/licenses/MIT" }
+  ],
+  "transformationRules" : [
+    { "bundleName" : "MIT", "licenseNamePattern" : "\"MIT\\sLicense\"" }
+  ]
+}

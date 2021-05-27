@@ -1,0 +1,1 @@
+org.junit:junit-bom:5.6.0|https://junit.org/junit5/|Eclipse Public License - v 2.0|https://github.com/junit-team/junit5/blob/main/LICENSE.md
