@@ -166,8 +166,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && Objects.equals(domainContributionAndProof, that.domainContributionAndProof)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
-        && Objects.equals(
-            targetAggregatorsPerSyncSubcommittee, that.targetAggregatorsPerSyncSubcommittee);
+        && targetAggregatorsPerSyncSubcommittee == that.targetAggregatorsPerSyncSubcommittee;
   }
 
   @Override
