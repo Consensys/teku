@@ -129,12 +129,12 @@ public class SpecConfigLoaderTest {
   private InputStream getLegacyMainnetConfigAsStream() {
     return getClass()
         .getClassLoader()
-        .getResourceAsStream("tech/pegasys/teku/spec/config/standard/mainnet.yaml");
+        .getResourceAsStream("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
   }
 
   private URL getLegacyMainnetConfigResourceAsUrl() {
     return getClass()
         .getClassLoader()
-        .getResource("tech/pegasys/teku/spec/config/standard/mainnet.yaml");
+        .getResource("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
   }
 }
