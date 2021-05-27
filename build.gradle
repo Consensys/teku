@@ -655,7 +655,11 @@ distributions {
   main {
     contents {
       from("./LICENSE") { into "." }
-      from("build/reports/license/license-dependency.html") { into "." }
+      from("build/reports/licenses") {
+        into "./licenses"
+        exclude "**/dependencies-without-allowed-license.json"
+        exclude "**/project-licenses-for-check-license-task.json"
+      }
       from("libs") { into "native" }
       from("build/teku.autocomplete.sh") { into "." }
     }
