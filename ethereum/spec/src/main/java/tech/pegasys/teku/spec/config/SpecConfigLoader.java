@@ -49,49 +49,67 @@ public class SpecConfigLoader {
   }
 
   static void processConfig(final String source, final InputStreamProcessor processor) {
-    // TODO(#3394) - move Constants resources from util to this module
-    final ResourceLoader configLoader =
-        ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateAvailableConfigResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"));
-    final ResourceLoader presetLoader =
-        ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateAvailablePresetResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"));
-
-    try {
-      // Load the supplied config
-      final InputStream configFile =
-          configLoader
-              .load(CONFIG_PATH + source + ".yaml", source)
-              .orElseThrow(
-                  () -> new FileNotFoundException("Could not load spec config from " + source));
+    try (final InputStream configFile = loadConfigurationFile(source)) {
       final Optional<String> maybePreset = processor.processConfig(configFile);
 
-      // Load preset if any is set
       if (maybePreset.isEmpty()) {
+        // Legacy config files won't have a preset field
         return;
       }
       final String preset = maybePreset.get();
-      // Phase0 is required
-      final InputStream phase0Input =
-          presetLoader
-              .load(PRESET_PATH + preset + "/phase0.yaml", PRESET_PATH + preset + "/phase0.yml")
-              .orElseThrow(
-                  () -> new FileNotFoundException("Could not load spec config from " + source));
-      processor.processConfig(phase0Input);
-      // Altair is optional
-      final Optional<InputStream> altairInput =
-          presetLoader.load(
-              PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
-      if (altairInput.isPresent()) {
-        processor.processConfig(altairInput.get());
+
+      try (final InputStream phase0Input = loadPhase0Preset(source, preset)) {
+        processor.processConfig(phase0Input);
+      }
+
+      try (final InputStream altairInput = loadAltairPreset(preset).orElse(null)) {
+        // Altair is optional
+        if (altairInput != null) {
+          processor.processConfig(altairInput);
+        }
       }
     } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load spec config", e);
+      throw new IllegalArgumentException("Failed to load spec config: " + source, e);
     }
+  }
+
+  private static InputStream loadConfigurationFile(final String source) throws IOException {
+    return getConfigLoader()
+        .load(CONFIG_PATH + source + ".yaml", source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));
+  }
+
+  private static InputStream loadPhase0Preset(final String source, final String preset)
+      throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/phase0.yaml", PRESET_PATH + preset + "/phase0.yml")
+        .orElseThrow(
+            () ->
+                new FileNotFoundException(
+                    String.format(
+                        "Could not load spec config preset '%s' specified in config '%s'",
+                        preset, source)));
+  }
+
+  private static Optional<InputStream> loadAltairPreset(final String preset) throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
+  }
+
+  private static ResourceLoader getConfigLoader() {
+    // TODO(#3394) - move Constants resources from util to this module
+    return ResourceLoader.classpathUrlOrFile(
+        Constants.class,
+        enumerateAvailableConfigResources(),
+        s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+  }
+
+  private static ResourceLoader getPresetLoader() {
+    // TODO(#3394) - move Constants resources from util to this module
+    return ResourceLoader.classpathUrlOrFile(
+        Constants.class,
+        enumerateAvailablePresetResources(),
+        s -> s.endsWith(".yaml") || s.endsWith(".yml"));
   }
 
   private static List<String> enumerateAvailableConfigResources() {
