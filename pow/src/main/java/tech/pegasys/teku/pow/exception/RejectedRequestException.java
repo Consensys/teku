@@ -15,7 +15,7 @@ package tech.pegasys.teku.pow.exception;
 
 public class RejectedRequestException extends RuntimeException {
 
-  public RejectedRequestException(final String message) {
-    super(message);
+  public RejectedRequestException(final int code, final String message) {
+    super(code + ": " + message);
   }
 }
