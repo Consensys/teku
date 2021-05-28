@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
@@ -203,7 +204,7 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
 
   private void notifyNewHead(final Block headBlock) {
     searchForwards = true;
-    if (lastNotifiedChainHead != headBlock) {
+    if (!headBlock.equals(lastNotifiedChainHead)) {
       LOG.trace(
           "Found new latest block before follow distance at block number {}, timestamp {}",
           headBlock.getNumber(),

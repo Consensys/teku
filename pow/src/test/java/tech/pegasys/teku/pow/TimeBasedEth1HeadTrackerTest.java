@@ -99,7 +99,7 @@ class TimeBasedEth1HeadTrackerTest {
     assertThat(headTracker.init()).isCompleted();
 
     verify(eth1Provider).getLatestEth1Block();
-    final long followDistanceBlockNumber = blocks.size() - FOLLOW_DISTANCE - 1;
+    final int followDistanceBlockNumber = blocks.size() - FOLLOW_DISTANCE - 1;
     verifyBlockRequested(followDistanceBlockNumber);
     verify(subscriber).onHeadUpdated(UInt64.valueOf(followDistanceBlockNumber));
     verifyNoMoreInteractions(subscriber);
