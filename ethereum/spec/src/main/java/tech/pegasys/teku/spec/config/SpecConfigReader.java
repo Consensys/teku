@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,8 +45,8 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
   private static final String PRESET_KEY = "PRESET_BASE";
-  private static final Set<String> KEYS_TO_IGNORE =
-      Set.of(
+  private static final ImmutableSet<String> KEYS_TO_IGNORE =
+      ImmutableSet.of(
           PRESET_KEY,
           // Unsupported, upcoming fork-related keys
           "MERGE_FORK_VERSION",
@@ -53,8 +54,8 @@ public class SpecConfigReader {
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
           "TRANSITION_TOTAL_DIFFICULTY");
-  private static final Set<String> CONSTANT_KEYS =
-      Set.of(
+  private static final ImmutableSet<String> CONSTANT_KEYS =
+      ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored
           "BLS_WITHDRAWAL_PREFIX",
           "TARGET_AGGREGATORS_PER_COMMITTEE",
