@@ -86,7 +86,7 @@ class ConstantsReader {
       try (final InputStream preset = createPresetInputStream(source, maybePreset.get())) {
         loadConstants(preset);
       }
-    } catch (IOException e) {
+    } catch (IOException | IllegalArgumentException e) {
       throw new InvalidConfigurationException("Failed to load constants from " + source, e);
     }
   }
@@ -103,7 +103,16 @@ class ConstantsReader {
                 .readValues(input)
                 .next();
     values.forEach(ConstantsReader::setField);
-    return Optional.ofNullable(values.get(PRESET_FIELD)).map(v -> (String) v);
+    return Optional.ofNullable(values.get(PRESET_FIELD)).map(ConstantsReader::castPresetField);
+  }
+
+  private static String castPresetField(final Object value) {
+    if (!(value instanceof String)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Unable to parse %s field (value = '%s') as a string", PRESET_FIELD, value));
+    }
+    return (String) value;
   }
 
   private static InputStream createConfigInputStream(final String source) throws IOException {
@@ -126,7 +135,7 @@ class ConstantsReader {
             () ->
                 new FileNotFoundException(
                     String.format(
-                        "Could not load preset '%s' for config source '%s' ", preset, source)));
+                        "Could not load preset '%s' for config source '%s'", preset, source)));
   }
 
   private static void setField(final String key, final Object value) {

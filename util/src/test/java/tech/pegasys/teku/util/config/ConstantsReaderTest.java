@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
@@ -90,6 +91,25 @@ class ConstantsReaderTest {
   void shouldThrowInvalidConfigurationExceptionWhenNetworkFileNotFound() {
     assertThatThrownBy(() -> Constants.setConstants("doesNotExist/notARealFile.yaml"))
         .isInstanceOf(InvalidConfigurationException.class);
+  }
+
+  @Test
+  public void shouldThrowInvalidConfigurationExceptionWhenPresetIsInvalid() {
+    final String configFile =
+        getClass().getResource("invalid/invalidPresetType.yaml").toExternalForm();
+    assertThatThrownBy(() -> Constants.setConstants(configFile))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasCauseInstanceOf(IllegalArgumentException.class)
+        .hasRootCauseMessage("Unable to parse PRESET_BASE field (value = '300') as a string");
+  }
+
+  @Test
+  public void shouldThrowInvalidConfigurationExceptionWhenPresetIsNotFound() {
+    final String configFile = getClass().getResource("invalid/unknownPreset.yaml").toExternalForm();
+    assertThatThrownBy(() -> Constants.setConstants(configFile))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasCauseInstanceOf(FileNotFoundException.class)
+        .hasRootCauseMessage("Could not load preset 'foo' for config source '%s'", configFile);
   }
 
   static Stream<Arguments> knownNetworks() {
