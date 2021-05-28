@@ -121,7 +121,7 @@ public class SpecConfigLoader {
 
   private static List<String> enumerateAvailablePresetResources() {
     return Arrays.stream(Eth2Presets.values())
-        .map(Eth2Presets::configName)
+        .map(Eth2Presets::presetName)
         .map(s -> List.of(PRESET_PATH + s + "/phase0.yaml", PRESET_PATH + s + "/altair.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());

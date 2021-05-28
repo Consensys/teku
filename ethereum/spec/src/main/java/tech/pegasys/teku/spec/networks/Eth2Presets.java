@@ -19,8 +19,7 @@ public enum Eth2Presets {
   MAINNET,
   MINIMAL;
 
-  public String configName() {
-    // TODO(#3356) - Store config with filename matching enum so we don't have to convert
-    return name().toLowerCase(Locale.US).replace("_", "-");
+  public String presetName() {
+    return name().toLowerCase(Locale.US);
   }
 }
