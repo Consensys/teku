@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - implement GET `/eth/v1/node/peer_count` standard api endpoint.
 - When handling blocksByRange requests that target blocks we haven't yet downloaded, return the standard "resource unavailable" response code (3) rather than a custom response code.
 - Remove legacy pure Java BLS cryptography implementation (Mikuli). 
+- Rework network configuration parsing to accept the new config format.  For details on the new format, see the [eth2.0-specs repo](https://github.com/ethereum/eth2.0-specs/pull/2390).  With this change, we no longer support pointing to directories for the network configuration.  Now, the network config (supplied via `--network`) should always point to a single yaml file. 
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
