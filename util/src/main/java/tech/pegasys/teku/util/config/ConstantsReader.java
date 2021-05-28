@@ -15,18 +15,24 @@ package tech.pegasys.teku.util.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
+  private static final String CONFIG_PATH = "configs/";
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
@@ -39,17 +45,35 @@ class ConstantsReader {
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
+  public static void loadConstantsFrom(final String source) {
+    try (final InputStream input = createInputStream(source)) {
+      loadConstants(input);
+    } catch (IOException e) {
+      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
+    }
+  }
+
+  @VisibleForTesting
   @SuppressWarnings("unchecked")
-  public static void loadConstantsFrom(final InputStream source) throws IOException {
+  static void loadConstants(final InputStream input) throws IOException {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Map<String, Object> values =
         (Map<String, Object>)
             mapper
                 .readerFor(
                     mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class))
-                .readValues(source)
+                .readValues(input)
                 .next();
     values.forEach(ConstantsReader::setField);
+  }
+
+  private static InputStream createInputStream(final String source) throws IOException {
+    return ResourceLoader.classpathUrlOrFile(
+            Constants.class,
+            enumerateNetworkResources(),
+            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
+        .load(CONFIG_PATH + source + ".yaml", source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
 
   private static void setField(final String key, final Object value) {
@@ -96,5 +120,11 @@ class ConstantsReader {
 
   private static <T> Function<Object, T> toString(final Function<String, T> function) {
     return value -> function.apply(value.toString());
+  }
+
+  private static List<String> enumerateNetworkResources() {
+    return Constants.NETWORK_DEFINITIONS.stream()
+        .map(s -> CONFIG_PATH + s + ".yaml")
+        .collect(Collectors.toList());
   }
 }

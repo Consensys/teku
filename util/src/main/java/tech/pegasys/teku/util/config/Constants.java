@@ -14,15 +14,9 @@
 package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -191,27 +185,7 @@ public class Constants {
    */
   @Deprecated
   public static void setConstants(final String source) {
-    try (final InputStream input = createInputStream(source)) {
-      ConstantsReader.loadConstantsFrom(input);
-    } catch (IOException e) {
-      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
-    }
+    ConstantsReader.loadConstantsFrom(source);
     SpecDependent.resetAll();
-  }
-
-  private static InputStream createInputStream(final String source) throws IOException {
-    return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateNetworkResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
-        .load(source + ".yaml", source + "/phase0.yaml", source)
-        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
-  }
-
-  private static List<String> enumerateNetworkResources() {
-    return NETWORK_DEFINITIONS.stream()
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml"))
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
   }
 }

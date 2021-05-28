@@ -43,7 +43,7 @@ class ConstantsReaderTest {
   public void shouldLoadConstants() throws Exception {
     final String config =
         "MAX_COMMITTEES_PER_SLOT: 68\n" + "# 2**7 (= 128)\n" + "TARGET_COMMITTEE_SIZE: 129";
-    ConstantsReader.loadConstantsFrom(
+    ConstantsReader.loadConstants(
         new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8)));
 
     // Sanity check a couple of values
@@ -81,7 +81,7 @@ class ConstantsReaderTest {
 
   @Test
   public void shouldLoadFromUrl() throws Exception {
-    Constants.setConstants(Constants.class.getResource("swift.yaml").toExternalForm());
+    Constants.setConstants(Constants.class.getResource("configs/swift.yaml").toExternalForm());
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(4);
     assertAllFieldsSet();
   }
