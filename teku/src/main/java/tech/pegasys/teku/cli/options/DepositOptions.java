@@ -36,8 +36,20 @@ public class DepositOptions {
       arity = "1")
   private int eth1LogsMaxBlockRange = 10_000;
 
+  @Option(
+      names = {"--Xeth1-time-based-head-tracking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable experimental time based Eth1 head tracking",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean useTimeBasedHeadTracking = false;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
-        b -> b.eth1Endpoints(eth1Endpoints).eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
+        b ->
+            b.eth1Endpoints(eth1Endpoints)
+                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
+                .useTimeBasedHeadTracking(useTimeBasedHeadTracking));
   }
 }

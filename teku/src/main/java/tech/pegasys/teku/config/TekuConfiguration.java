@@ -180,13 +180,12 @@ public class TekuConfiguration {
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
 
+      // Add specs
       interopConfigBuilder.specProvider(spec);
-      // Update storage config
       storageConfigurationBuilder.specProvider(spec);
-      // Update weak subjectivity
       weakSubjectivityBuilder.specProvider(spec);
-      // Update p2p config
       p2pConfigBuilder.specProvider(spec);
+      powchainConfigBuilder.specProvider(spec);
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,
