@@ -68,7 +68,7 @@ public class SpecConfigLoader {
           processor.processConfig(altairInput);
         }
       }
-    } catch (IOException e) {
+    } catch (IOException | IllegalArgumentException e) {
       throw new IllegalArgumentException("Failed to load spec config: " + source, e);
     }
   }

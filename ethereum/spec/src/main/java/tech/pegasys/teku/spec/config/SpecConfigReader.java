@@ -109,7 +109,16 @@ public class SpecConfigReader {
   public Optional<String> read(final InputStream source) throws IOException {
     final Map<String, Object> rawValues = readValues(source);
     loadFromMap(rawValues);
-    return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(value -> (String) value);
+    return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
+  }
+
+  private String castPresetValue(final Object preset) {
+    if (!(preset instanceof String)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Unable to parse config field '%s' (value = '%s') as a string", PRESET_KEY, preset));
+    }
+    return (String) preset;
   }
 
   public void loadFromMap(final Map<String, ?> rawValues) {

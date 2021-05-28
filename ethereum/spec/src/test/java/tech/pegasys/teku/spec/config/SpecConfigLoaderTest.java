@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
@@ -85,6 +86,33 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
+  public void shouldHandleInvalidPresetValue_wrongType(@TempDir Path tempDir) throws Exception {
+    try (final InputStream inputStream = loadInvalidFile("invalidPreset_wrongType.yaml")) {
+      final Path file = tempDir.resolve("invalid.yml");
+      writeStreamToFile(inputStream, file);
+      assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Failed to load spec config")
+          .hasRootCauseMessage(
+              "Unable to parse config field 'PRESET_BASE' (value = '300') as a string");
+    }
+  }
+
+  @Test
+  public void shouldHandleInvalidPresetValue_unknownPreset(@TempDir Path tempDir) throws Exception {
+    try (final InputStream inputStream = loadInvalidFile("invalidPreset_unknown.yaml")) {
+      final Path file = tempDir.resolve("invalid.yml");
+      writeStreamToFile(inputStream, file);
+      assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Failed to load spec config")
+          .hasRootCauseMessage(
+              "Could not load spec config preset 'foo' specified in config '%s'",
+              file.toAbsolutePath().toString());
+    }
+  }
+
+  @Test
   public void shouldTestAllKnownNetworks() {
     final List<String> testedNetworks =
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
@@ -136,5 +164,9 @@ public class SpecConfigLoaderTest {
     return getClass()
         .getClassLoader()
         .getResource("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
+  }
+
+  private InputStream loadInvalidFile(final String file) {
+    return getClass().getResourceAsStream("invalid/" + file);
   }
 }
