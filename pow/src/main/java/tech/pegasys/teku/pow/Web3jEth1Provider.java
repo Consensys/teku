@@ -29,6 +29,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.Response.Error;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -128,7 +129,8 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
           .thenApply(
               response -> {
                 if (response.hasError()) {
-                  throw new RuntimeException(response.getError().getMessage());
+                  final Error error = response.getError();
+                  throw new RejectedRequestException(error.getCode(), error.getMessage());
                 } else {
                   updateLastCall(Result.SUCCESS);
                   return response;
@@ -186,17 +188,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
     return sendAsync(web3j.ethGetLogs(ethFilter))
         .thenApply(EthLog::getLogs)
-        .thenApply(
-            logs -> {
-              if (logs == null) {
-                // We got a response from the node but it didn't include even an empty list
-                // of logs.  This happens with Infura when more than 10,000 log entries match
-                // so treat as an explicit rejection of the request to allow the requested block
-                // range to be reduced.
-                throw new RejectedRequestException("No logs returned by ETH1 node");
-              }
-              return (List<EthLog.LogResult<?>>) (List) logs;
-            });
+        .thenApply(logs -> (List<EthLog.LogResult<?>>) (List) logs);
   }
 
   @Override

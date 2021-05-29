@@ -168,7 +168,7 @@ public class DepositsFetcherTest {
 
     // But there are too many results
     final Eth1RequestException err = new Eth1RequestException();
-    err.addSuppressed(new RejectedRequestException("Nah mate"));
+    err.addSuppressed(new RejectedRequestException(-32005, "Nah mate"));
     request1Response.completeExceptionally(err);
 
     // So it halves the batch size and retries
