@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE;
 
 import java.util.Objects;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
@@ -45,14 +48,17 @@ public class SyncCommitteeSignatureValidator {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
+  private final TimeProvider timeProvider;
 
   public SyncCommitteeSignatureValidator(
       final Spec spec,
       final RecentChainData recentChainData,
-      final SyncCommitteeStateUtils syncCommitteeStateUtils) {
+      final SyncCommitteeStateUtils syncCommitteeStateUtils,
+      final TimeProvider timeProvider) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
+    this.timeProvider = timeProvider;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -70,10 +76,10 @@ public class SyncCommitteeSignatureValidator {
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
-    // [IGNORE] The signature's slot is for the current slot, i.e. sync_committee_signature.slot ==
-    // current_slot.
-    if (recentChainData.getCurrentSlot().isEmpty()
-        || !signature.getSlot().equals(recentChainData.getCurrentSlot().orElseThrow())) {
+    // [IGNORE] The signature's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
+    // allowance),
+    // i.e. sync_committee_signature.slot == current_slot.
+    if (!isSignatureForCurrentSlot(signature.getSlot())) {
       LOG.trace("Ignoring sync committee signature because it is not from the current slot");
       return SafeFuture.completedFuture(IGNORE);
     }
@@ -105,6 +111,22 @@ public class SyncCommitteeSignatureValidator {
               return validateWithState(
                   validateableSignature, signature, syncCommitteeUtil, state, uniquenessKey);
             });
+  }
+
+  boolean isSignatureForCurrentSlot(final UInt64 slot) {
+    if (recentChainData.getCurrentSlot().isEmpty()) {
+      return false;
+    }
+    final UInt64 slotMillis = secondsToMillis(spec.atSlot(slot).getConfig().getSecondsPerSlot());
+    final UInt64 slotStartTimeMillis =
+        secondsToMillis(spec.getSlotStartTime(slot, recentChainData.getGenesisTime()));
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
+    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+
+    return currentTimeMillis.isGreaterThanOrEqualTo(
+            slotStartTimeMillis.minusMinZero(MAXIMUM_GOSSIP_CLOCK_DISPARITY))
+        && currentTimeMillis.isLessThanOrEqualTo(
+            slotEndTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY));
   }
 
   private InternalValidationResult validateWithState(

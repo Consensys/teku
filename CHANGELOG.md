@@ -17,12 +17,14 @@ For information on changes in released versions of Teku, see the [releases page]
 - Optimised how block production metrics are calculated.
 - implement GET `/eth/v1/node/peer_count` standard api endpoint.
 - When handling blocksByRange requests that target blocks we haven't yet downloaded, return the standard "resource unavailable" response code (3) rather than a custom response code.
-- Remove legacy pure Java BLS cryptography implementation (Mikuli). 
+- Remove legacy pure Java BLS cryptography implementation (Mikuli).
+- Added `beacon_eth1_requests_total` metric to report the number of requests sent to eth1 endpoints.
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
 - Use system default character set for console output rather than forcing UTF-8. Avoids corrupting characters on systems using charsets that are not ascii based.
 - Fixed a `NullPointerException` from validator clients for new networks, prior to genesis being known.
+- Fixed regression where eth_getLogs responses from Infura that rejected the request because they returned too many logs did not retry the request with a smaller request range.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
