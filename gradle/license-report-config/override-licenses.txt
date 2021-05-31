@@ -1,2 +1,0 @@
-io.libp2p:jvm-libp2p-minimal:0.8.2-RELEASE|https://libp2p.io/|Apache License, Version 2.0|https://github.com/libp2p/jvm-libp2p/blob/develop/LICENSE-APACHE
-org.junit:junit-bom:5.6.0|https://junit.org/junit5/|Eclipse Public License - v 2.0|https://github.com/junit-team/junit5/blob/main/LICENSE.md

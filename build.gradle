@@ -1,12 +1,19 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
-import tech.pegasys.internal.license.GroupedLicensesHtmlRenderer
 import java.text.SimpleDateFormat
-import java.util.stream.Collectors
+
+buildscript {
+  repositories {
+    maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+  }
+  dependencies {
+    classpath 'tech.pegasys.internal.license.reporter:license-reporter:develop'
+  }
+}
 
 plugins {
   id 'com.diffplug.spotless' version '5.12.5'
   id 'com.github.ben-manes.versions' version '0.28.0'
-  id 'com.github.jk1.dependency-license-report'
+  id 'com.github.jk1.dependency-license-report' version '1.16'
   id 'io.spring.dependency-management' version '1.0.9.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.1' apply false
   id 'net.researchgate.release' version '2.8.1'
@@ -260,18 +267,11 @@ task deploy() {}
 licenseReport {
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
-  projects = [project] + project.subprojects.stream().filter(project -> !project.name.equals("errorprone-checks")).collect(Collectors.toList())
+  projects = [project] + project.subprojects.findAll {it.name != "errorprone-checks" }
   excludes = ['org.junit:junit-bom']
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
-  filters = [
-          new LicenseBundleNormalizer(["bundlePath": new File("${rootDir}/gradle/license-report-config/license-normalizer.json"), "createDefaultTransformationRules": true])
-  ]
-  renderers = [
-          new GroupedLicensesHtmlRenderer(["projectName":"Teku",
-                                           "multiLicensesFile": new File("${rootDir}/gradle/license-report-config/multi-licenses.txt"),
-                  "licenseOverrideFile": new File("${rootDir}/gradle/license-report-config/override-licenses.txt")
-          ])
-  ]
+  filters = [new LicenseBundleNormalizer()]
+  renderers = [new tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer()]
 }
 
 task checkMavenCoordinateCollisions {
