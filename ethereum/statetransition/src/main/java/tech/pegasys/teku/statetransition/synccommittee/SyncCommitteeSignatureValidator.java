@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
@@ -116,10 +117,9 @@ public class SyncCommitteeSignatureValidator {
     if (recentChainData.getCurrentSlot().isEmpty()) {
       return false;
     }
-    final UInt64 slotMillis =
-        UInt64.valueOf(spec.atSlot(slot).getConfig().getSecondsPerSlot()).times(1000);
+    final UInt64 slotMillis = secondsToMillis(spec.atSlot(slot).getConfig().getSecondsPerSlot());
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
+        secondsToMillis(spec.getSlotStartTime(slot, recentChainData.getGenesisTime()));
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
 
