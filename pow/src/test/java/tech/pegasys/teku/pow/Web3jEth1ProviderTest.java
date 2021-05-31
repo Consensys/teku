@@ -32,6 +32,7 @@ import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
@@ -55,6 +56,7 @@ public class Web3jEth1ProviderTest {
     timeProvider = StubTimeProvider.withTimeInSeconds(1000);
     provider =
         new Web3jEth1Provider(
+            new StubMetricsSystem(),
             Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
             web3,
             asyncRunner,
