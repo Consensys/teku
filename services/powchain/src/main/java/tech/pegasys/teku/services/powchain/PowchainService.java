@@ -78,6 +78,7 @@ public class PowchainService extends Service {
                 .mapToObj(
                     idx ->
                         new Web3jEth1Provider(
+                            serviceConfig.getMetricsSystem(),
                             Eth1Provider.generateEth1ProviderId(
                                 idx + 1, powConfig.getEth1Endpoints().get(idx)),
                             web3js.get(idx),
