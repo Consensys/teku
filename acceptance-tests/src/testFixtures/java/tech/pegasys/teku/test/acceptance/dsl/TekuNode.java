@@ -18,6 +18,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -53,8 +55,11 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -163,6 +168,20 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
+  public void waitForSyncCommitteeAggregate() {
+    LOG.debug("Wait for full sync committee aggregates");
+    waitFor(
+        () -> {
+          final Optional<SignedBlock> block = fetchHeadBlock();
+          if (block.isPresent()) {
+            final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
+            assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits).isEqualTo(Bytes.fromHexString("0xffffffff"));
+          }
+        },
+        2,
+        MINUTES);
+  }
+
   public void waitUntilInSyncWith(final TekuNode targetNode) {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
@@ -227,12 +246,12 @@ public class TekuNode extends Node {
     return Optional.of(response.data);
   }
 
-  private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head");
+  private Optional<SignedBlock> fetchHeadBlock() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponse.class).data);
+      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponseV2.class).data);
     }
   }
 
@@ -266,11 +285,11 @@ public class TekuNode extends Node {
             .collect(toList());
     waitFor(
         () -> {
-          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
+          final Optional<SignedBlock> maybeBlock = fetchHeadBlock();
           final Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeBlock).isPresent();
           assertThat(maybeState).isPresent();
-          SignedBeaconBlock block = maybeBlock.get();
+          SignedBeaconBlock block = (SignedBeaconBlock) maybeBlock.get();
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
@@ -484,6 +503,11 @@ public class TekuNode extends Node {
     public Config withNetwork(String networkName) {
       this.networkName = networkName;
       configMap.put("network", networkName);
+      return this;
+    }
+
+    public Config withAltairSlot(final UInt64 altairSlot) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
     }
 
