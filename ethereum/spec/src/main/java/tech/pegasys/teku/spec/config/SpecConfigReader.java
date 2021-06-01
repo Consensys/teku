@@ -125,9 +125,11 @@ public class SpecConfigReader {
   public void loadFromMap(final Map<String, ?> rawValues) {
     processSeenValues(rawValues);
     final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
+    // Remove any keys that we're ignoring
+    KEYS_TO_IGNORE.forEach(unprocessedConfig::remove);
 
     // Process phase0 config
-    configBuilder.rawConfig(rawValues);
+    configBuilder.rawConfig(unprocessedConfig);
     streamConfigSetters(configBuilder.getClass())
         .forEach(
             setter -> {
@@ -148,8 +150,6 @@ public class SpecConfigReader {
               unprocessedConfig.remove(constantKey);
             });
 
-    // Remove any keys that we're ignoring
-    KEYS_TO_IGNORE.forEach(unprocessedConfig::remove);
     // Check any constants that have been configured and then ignore
     final Set<String> configuredConstants =
         Sets.intersection(CONSTANT_KEYS, unprocessedConfig.keySet());
