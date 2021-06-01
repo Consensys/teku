@@ -309,54 +309,55 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
-    final long requestTime = System.currentTimeMillis();
 
     return forkChoiceTrigger
         .ensureForkChoiceCompleteForSlot(slot)
         .thenCompose(
-            __ ->
-                combinedChainDataClient
-                    .getSignedBlockAndStateInEffectAtSlot(slot)
-                    .thenCompose(
-                        maybeBlockAndState -> {
-                          if (maybeBlockAndState.isEmpty()) {
-                            return SafeFuture.completedFuture(Optional.empty());
+            __ -> {
+              final long requestTime = System.currentTimeMillis();
+              return combinedChainDataClient
+                  .getSignedBlockAndStateInEffectAtSlot(slot)
+                  .thenCompose(
+                      maybeBlockAndState -> {
+                        if (maybeBlockAndState.isEmpty()) {
+                          return SafeFuture.completedFuture(Optional.empty());
+                        }
+                        final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+                        final BeaconBlock block = blockAndState.getBlock().getMessage();
+                        if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                          // The current effective block is too far in the past - so roll the
+                          // state
+                          // forward to the current epoch. Ensures we have the latest justified
+                          // checkpoint
+                          return combinedChainDataClient
+                              .getCheckpointState(epoch, blockAndState)
+                              .thenApply(
+                                  checkpointState ->
+                                      Optional.of(
+                                          createAttestationData(
+                                              block,
+                                              checkpointState.getState(),
+                                              slot,
+                                              committeeIndex)));
+                        } else {
+                          final AttestationData attestationData =
+                              createAttestationData(
+                                  block, blockAndState.getState(), slot, committeeIndex);
+                          if (block.getSlot().isLessThan(slot)) {
+                            // Attesting to an empty slot
+                            final UInt64 slotStartTime =
+                                spec.getSlotStartTime(
+                                    slot, blockAndState.getState().getGenesis_time());
+                            final UInt64 attestationDueTime =
+                                slotStartTime.plus(spec.getSecondsPerSlot(slot) / 3);
+                            final long requestDelay =
+                                requestTime - (attestationDueTime.longValue() * 1000);
+                            dutyMetrics.onEmptySlotAttestationRequested(requestDelay);
                           }
-                          final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-                          final BeaconBlock block = blockAndState.getBlock().getMessage();
-                          if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                            // The current effective block is too far in the past - so roll the
-                            // state
-                            // forward to the current epoch. Ensures we have the latest justified
-                            // checkpoint
-                            return combinedChainDataClient
-                                .getCheckpointState(epoch, blockAndState)
-                                .thenApply(
-                                    checkpointState ->
-                                        Optional.of(
-                                            createAttestationData(
-                                                block,
-                                                checkpointState.getState(),
-                                                slot,
-                                                committeeIndex)));
-                          } else {
-                            final AttestationData attestationData =
-                                createAttestationData(
-                                    block, blockAndState.getState(), slot, committeeIndex);
-                            if (block.getSlot().isLessThan(slot)) {
-                              // Attesting to an empty slot
-                              final UInt64 slotStartTime =
-                                  spec.getSlotStartTime(
-                                      slot, blockAndState.getState().getGenesis_time());
-                              final UInt64 attestationDueTime =
-                                  slotStartTime.plus(spec.getSecondsPerSlot(slot) / 3);
-                              final long requestDelay =
-                                  requestTime - (attestationDueTime.longValue() * 1000);
-                              dutyMetrics.onEmptySlotAttestationRequested(requestDelay);
-                            }
-                            return SafeFuture.completedFuture(Optional.of(attestationData));
-                          }
-                        }));
+                          return SafeFuture.completedFuture(Optional.of(attestationData));
+                        }
+                      });
+            });
   }
 
   private AttestationData createAttestationData(
