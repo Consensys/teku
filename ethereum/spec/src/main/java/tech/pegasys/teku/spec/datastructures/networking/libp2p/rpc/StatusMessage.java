@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_fork_digest;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.ssz.containers.Container5;
 import tech.pegasys.teku.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
@@ -25,7 +25,6 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes4;
-import tech.pegasys.teku.util.config.Constants;
 
 public class StatusMessage
     extends Container5<StatusMessage, SszBytes4, SszBytes32, SszUInt64, SszBytes32, SszUInt64>
@@ -72,15 +71,16 @@ public class StatusMessage
         SszUInt64.of(headSlot));
   }
 
-  public static StatusMessage createPreGenesisStatus() {
+  public static StatusMessage createPreGenesisStatus(final Spec spec) {
     return new StatusMessage(
-        createPreGenesisForkDigest(), Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO);
+        createPreGenesisForkDigest(spec), Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO);
   }
 
-  private static Bytes4 createPreGenesisForkDigest() {
-    final Bytes4 genesisFork = Constants.GENESIS_FORK_VERSION;
+  private static Bytes4 createPreGenesisForkDigest(final Spec spec) {
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 genesisFork = genesisSpec.getConfig().getGenesisForkVersion();
     final Bytes32 emptyValidatorsRoot = Bytes32.ZERO;
-    return compute_fork_digest(genesisFork, emptyValidatorsRoot);
+    return genesisSpec.miscHelpers().computeForkDigest(genesisFork, emptyValidatorsRoot);
   }
 
   public Bytes4 getForkDigest() {

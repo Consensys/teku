@@ -224,7 +224,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final Bytes signing_root =
         miscHelpers.computeSigningRoot(
             block.getMessage(),
-            beaconStateUtil.getDomain(state, specConfig.getDomainBeaconProposer()));
+            beaconStateAccessors.getDomain(state, specConfig.getDomainBeaconProposer()));
     if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
       return BlockValidationResult.failed("Invalid block signature: " + block);
     }
@@ -350,7 +350,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes32 domain = beaconStateUtil.getDomain(state, specConfig.getDomainRandao());
+    final Bytes32 domain = beaconStateAccessors.getDomain(state, specConfig.getDomainRandao());
     final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
     if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");

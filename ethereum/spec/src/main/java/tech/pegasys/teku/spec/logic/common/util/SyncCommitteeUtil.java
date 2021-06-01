@@ -58,7 +58,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SyncCommitteeUtil {
 
   private final BeaconStateAccessorsAltair beaconStateAccessors;
-  private final BeaconStateUtil beaconStateUtil;
   private final ValidatorsUtil validatorsUtil;
   private final SpecConfigAltair specConfig;
   private final MiscHelpers miscHelpers;
@@ -66,13 +65,11 @@ public class SyncCommitteeUtil {
 
   public SyncCommitteeUtil(
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final BeaconStateUtil beaconStateUtil,
       final ValidatorsUtil validatorsUtil,
       final SpecConfigAltair specConfig,
       final MiscHelpers miscHelpers,
       final SchemaDefinitionsAltair schemaDefinitionsAltair) {
     this.beaconStateAccessors = beaconStateAccessors;
-    this.beaconStateUtil = beaconStateUtil;
     this.validatorsUtil = validatorsUtil;
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
@@ -203,7 +200,7 @@ public class SyncCommitteeUtil {
   public Bytes32 getSyncCommitteeSignatureSigningRoot(
       final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             specConfig.getDomainSyncCommittee(),
             epoch,
             forkInfo.getFork(),
@@ -221,7 +218,7 @@ public class SyncCommitteeUtil {
       final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             specConfig.getDomainContributionAndProof(),
             miscHelpers.computeEpochAtSlot(contribution.getSlot()),
             forkInfo.getFork(),
@@ -234,7 +231,7 @@ public class SyncCommitteeUtil {
     final Bytes4 domainSyncCommitteeSelectionProof =
         specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
-        beaconStateUtil.getDomain(
+        beaconStateAccessors.getDomain(
             domainSyncCommitteeSelectionProof,
             miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),

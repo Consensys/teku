@@ -94,7 +94,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
+        new AttestationUtil(config, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(beaconStateAccessors, attestationUtil, validatorsUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
@@ -133,12 +133,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
-            beaconStateAccessors,
-            beaconStateUtil,
-            validatorsUtil,
-            config,
-            miscHelpers,
-            schemaDefinitions);
+            beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
 
     // State upgrade
     final AltairStateUpgrade stateUpgrade =
