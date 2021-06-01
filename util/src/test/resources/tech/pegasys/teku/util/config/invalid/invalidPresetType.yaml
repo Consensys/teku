@@ -1,7 +1,7 @@
 # Minimal config
 
 # Extends the minimal preset
-PRESET_BASE: 'minimal'
+PRESET_BASE: 300
 
 # Genesis
 # ---------------------------------------------------------------
