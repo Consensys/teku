@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async.runloop;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -98,6 +99,7 @@ class AsyncRunLoopTest {
     when(logic.getDelayUntilNextAdvance()).thenReturn(firstAdvanceDelay, secondAdvanceDelay);
 
     runLoop.start();
+    verify(logic).init();
     verify(logic, never()).advance();
 
     advanceTime(firstAdvanceDelay);
@@ -110,6 +112,9 @@ class AsyncRunLoopTest {
     // Advance remaining time until second advance is due and confirm it is invoked
     advanceTime(secondAdvanceDelay.minus(firstAdvanceDelay));
     verify(logic, times(2)).advance();
+
+    verify(logic, atLeastOnce()).getDelayUntilNextAdvance();
+    verifyNoMoreInteractions(logic);
   }
 
   @Test
