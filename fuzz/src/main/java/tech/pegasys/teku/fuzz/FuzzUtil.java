@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.fuzz;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Optional;
@@ -37,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SszData;
@@ -218,7 +219,7 @@ public class FuzzUtil {
       return Optional.empty();
     }
     // Mask it to make ensure positive before using remainder.
-    int count = BeaconStateUtil.bytes_to_int64(Bytes.wrap(input, 0, 2)).mod(100).intValue();
+    int count = bytesToUInt64(Bytes.wrap(input, 0, 2)).mod(100).intValue();
 
     Bytes32 seed = Bytes32.wrap(input, 2);
 

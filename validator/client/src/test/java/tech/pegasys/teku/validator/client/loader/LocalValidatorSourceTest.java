@@ -59,6 +59,7 @@ class LocalValidatorSourceTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final ValidatorConfig config = mock(ValidatorConfig.class);
   private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
+  private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
 
   private final LocalValidatorSource validatorSource =
       new LocalValidatorSource(spec, config, keystoreLocker, asyncRunner);
@@ -170,7 +171,7 @@ class LocalValidatorSourceTest {
     final Bytes4 version = Bytes4.fromHexString("0x00000000");
     final UInt64 epoch = UInt64.ZERO;
     final ForkInfo forkInfo = new ForkInfo(new Fork(version, version, UInt64.ZERO), Bytes32.ZERO);
-    final Bytes signingRoot = SigningRootUtil.signingRootForRandaoReveal(epoch, forkInfo);
+    final Bytes signingRoot = signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo);
 
     final SafeFuture<BLSSignature> signingFuture = signer.createRandaoReveal(epoch, forkInfo);
     asyncRunner.executeQueuedActions();
