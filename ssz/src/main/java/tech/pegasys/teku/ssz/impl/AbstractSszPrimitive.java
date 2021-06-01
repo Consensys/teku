@@ -26,7 +26,6 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   private final C value;
 
   protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<C, V> schema) {
-    checkNotNull(value);
     this.schema = schema;
     this.value = value;
   }

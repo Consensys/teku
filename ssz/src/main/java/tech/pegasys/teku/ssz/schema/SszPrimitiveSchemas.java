@@ -27,6 +27,7 @@ import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszNone;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
@@ -37,6 +38,36 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 /** The collection of commonly used basic types */
 public interface SszPrimitiveSchemas {
+
+  AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(0) {
+        @Override
+        public SszNone createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return SszNone.INSTANCE;
+        }
+
+        @Override
+        protected TreeNode updateBackingNode(TreeNode srcNode, int internalIndex,
+            SszData newValue) {
+          return srcNode;
+        }
+
+        @Override
+        public SszNone boxed(Void rawValue) {
+          return SszNone.INSTANCE;
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return LeafNode.EMPTY_LEAF;
+        }
+
+        @Override
+        public String toString() {
+          return "None";
+        }
+      };
+
   AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override

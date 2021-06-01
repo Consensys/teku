@@ -13,16 +13,19 @@
 
 package tech.pegasys.teku.ssz.schema.collections;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.ssz.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszUnionSchemaTest;
 
 public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
 
   static Stream<SszSchema<?>> complexElementSchemas() {
-    return Stream.concat(
+    return Stream.of(
         SszContainerSchemaTest.testContainerSchemas(),
+        SszUnionSchemaTest.testUnionSchemas(),
         Stream.of(
             SszBitvectorSchema.create(1),
             SszBitvectorSchema.create(8),
@@ -34,6 +37,7 @@ public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTest
             SszBitlistSchema.create(9),
             SszByteVectorSchema.create(3),
             SszBytes32VectorSchema.create(3),
-            SszUInt64ListSchema.create(3)));
+            SszUInt64ListSchema.create(3))
+    ).flatMap(Function.identity());
   }
 }
