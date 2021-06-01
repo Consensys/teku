@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -23,19 +24,23 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class MultiNodeAltairAcceptanceTest extends AcceptanceTestBase {
   static final int NODE_VALIDATORS = 8;
 
-  private TekuNode beaconNode;
+  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
+  private TekuNode primaryNode;
+  private TekuNode secondaryNode;
   private TekuValidatorNode validatorClient;
 
   @BeforeEach
   public void setup() {
-    beaconNode =
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(5).intValue();
+    primaryNode =
+        createTekuNode(
+            config -> configureNode(config, genesisTime).withInteropValidators(0, NODE_VALIDATORS));
+    secondaryNode =
         createTekuNode(
             config ->
-                config
-                    .withNetwork("minimal")
-                    .withAltairEpoch(UInt64.ZERO)
-                    .withInteropNumberOfValidators(NODE_VALIDATORS * 2)
-                    .withInteropValidators(0, NODE_VALIDATORS));
+                configureNode(config, genesisTime)
+                    .withInteropValidators(0, 0)
+                    .withPeers(primaryNode));
     validatorClient =
         createValidatorNode(
             config ->
@@ -43,13 +48,22 @@ public class MultiNodeAltairAcceptanceTest extends AcceptanceTestBase {
                     .withNetwork("minimal")
                     .withAltairEpoch(UInt64.ZERO)
                     .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
-                    .withBeaconNode(beaconNode));
+                    .withBeaconNode(secondaryNode));
   }
 
   @Test
   public void shouldContainSyncCommitteeAggregates() throws Exception {
-    beaconNode.start();
+    primaryNode.start();
+    secondaryNode.start();
     validatorClient.start();
-    beaconNode.waitForFullSyncCommitteeAggregate();
+    secondaryNode.waitForFullSyncCommitteeAggregate();
+  }
+
+  private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
+    return node.withNetwork("minimal")
+        .withAltairEpoch(UInt64.ZERO)
+        .withGenesisTime(genesisTime)
+        .withInteropNumberOfValidators(NODE_VALIDATORS)
+        .withRealNetwork();
   }
 }

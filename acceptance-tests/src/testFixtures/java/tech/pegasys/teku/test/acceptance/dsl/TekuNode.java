@@ -175,6 +175,9 @@ public class TekuNode extends Node {
           assertThat(block.get()).isInstanceOf(SignedBeaconBlockAltair.class);
 
           final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
+          LOG.debug(
+              "Aggregate {}",
+              altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits.toHexString());
           assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits)
               .isEqualTo(Bytes.fromHexString("0xffffffff"));
         },
