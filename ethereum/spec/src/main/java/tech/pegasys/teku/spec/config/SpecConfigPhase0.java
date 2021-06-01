@@ -22,6 +22,22 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
+  // Domain constants
+  private final Bytes4 domainBeaconProposer = Bytes4.fromHexString("0x00000000");
+  private final Bytes4 domainBeaconAttester = Bytes4.fromHexString("0x01000000");
+  private final Bytes4 domainRandao = Bytes4.fromHexString("0x02000000");
+  private final Bytes4 domainDeposit = Bytes4.fromHexString("0x03000000");
+  private final Bytes4 domainVoluntaryExit = Bytes4.fromHexString("0x04000000");
+  private final Bytes4 domainSelectionProof = Bytes4.fromHexString("0x05000000");
+  private final Bytes4 domainAggregateAndProof = Bytes4.fromHexString("0x06000000");
+
+  // Validator constants
+  private final int targetAggregatorsPerCommittee = 16;
+  private final int randomSubnetsPerValidator = 1;
+  private final int epochsPerRandomSubnetSubscription = 256;
+
+  // Other constants
+  private final Bytes blsWithdrawalPrefix = Bytes.fromHexString("0x00");
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
   private final int justificationBitsLength = 4;
@@ -49,7 +65,6 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   // Initial values
   private final Bytes4 genesisForkVersion;
-  private final Bytes blsWithdrawalPrefix;
 
   // Time parameters
   private final UInt64 genesisDelay;
@@ -84,20 +99,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxDeposits;
   private final int maxVoluntaryExits;
 
-  // Signature domains
-  private final Bytes4 domainBeaconProposer;
-  private final Bytes4 domainBeaconAttester;
-  private final Bytes4 domainRandao;
-  private final Bytes4 domainDeposit;
-  private final Bytes4 domainVoluntaryExit;
-  private final Bytes4 domainSelectionProof;
-  private final Bytes4 domainAggregateAndProof;
-
   // Validator
-  private final int targetAggregatorsPerCommittee;
   private final UInt64 secondsPerEth1Block;
-  private final int randomSubnetsPerValidator;
-  private final int epochsPerRandomSubnetSubscription;
 
   // Fork Choice
   private final int safeSlotsToUpdateJustified;
@@ -127,7 +130,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final UInt64 ejectionBalance,
       final UInt64 effectiveBalanceIncrement,
       final Bytes4 genesisForkVersion,
-      final Bytes blsWithdrawalPrefix,
       final UInt64 genesisDelay,
       final int secondsPerSlot,
       final int minAttestationInclusionDelay,
@@ -153,17 +155,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxAttestations,
       final int maxDeposits,
       final int maxVoluntaryExits,
-      final Bytes4 domainBeaconProposer,
-      final Bytes4 domainBeaconAttester,
-      final Bytes4 domainRandao,
-      final Bytes4 domainDeposit,
-      final Bytes4 domainVoluntaryExit,
-      final Bytes4 domainSelectionProof,
-      final Bytes4 domainAggregateAndProof,
-      final int targetAggregatorsPerCommittee,
       final UInt64 secondsPerEth1Block,
-      final int randomSubnetsPerValidator,
-      final int epochsPerRandomSubnetSubscription,
       final int safeSlotsToUpdateJustified,
       final int depositChainId,
       final int depositNetworkId,
@@ -187,7 +179,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.ejectionBalance = ejectionBalance;
     this.effectiveBalanceIncrement = effectiveBalanceIncrement;
     this.genesisForkVersion = genesisForkVersion;
-    this.blsWithdrawalPrefix = blsWithdrawalPrefix;
     this.genesisDelay = genesisDelay;
     this.secondsPerSlot = secondsPerSlot;
     this.minAttestationInclusionDelay = minAttestationInclusionDelay;
@@ -213,17 +204,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxAttestations = maxAttestations;
     this.maxDeposits = maxDeposits;
     this.maxVoluntaryExits = maxVoluntaryExits;
-    this.domainBeaconProposer = domainBeaconProposer;
-    this.domainBeaconAttester = domainBeaconAttester;
-    this.domainRandao = domainRandao;
-    this.domainDeposit = domainDeposit;
-    this.domainVoluntaryExit = domainVoluntaryExit;
-    this.domainSelectionProof = domainSelectionProof;
-    this.domainAggregateAndProof = domainAggregateAndProof;
-    this.targetAggregatorsPerCommittee = targetAggregatorsPerCommittee;
     this.secondsPerEth1Block = secondsPerEth1Block;
-    this.randomSubnetsPerValidator = randomSubnetsPerValidator;
-    this.epochsPerRandomSubnetSubscription = epochsPerRandomSubnetSubscription;
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;

@@ -24,9 +24,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.networks.Eth2Presets;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoader {
+  private static final String CONFIG_PATH = "configs/";
+  private static final String PRESET_PATH = "presets/";
 
   public static SpecConfig loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
@@ -46,49 +49,93 @@ public class SpecConfigLoader {
   }
 
   static void processConfig(final String source, final InputStreamProcessor processor) {
-    // TODO(#3394) - move Constants resources from util to this module
-    final ResourceLoader loader =
-        ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateAvailableResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+    try (final InputStream configFile = loadConfigurationFile(source)) {
+      final Optional<String> maybePreset = processor.processConfig(configFile);
 
-    try {
-      // Try to load single file format
-      final Optional<InputStream> singleFileInput = loader.load(source + ".yaml", source);
-      if (singleFileInput.isPresent()) {
-        processor.process(singleFileInput.get());
+      if (maybePreset.isEmpty()) {
+        // Legacy config files won't have a preset field
         return;
       }
+      final String preset = maybePreset.get();
 
-      // Otherwise, try multi-file format
-      // Phase0 is required
-      final InputStream phase0Input =
-          loader
-              .load(source + "/phase0.yaml", source + "/phase0.yml")
-              .orElseThrow(
-                  () -> new FileNotFoundException("Could not load spec config from " + source));
-      processor.process(phase0Input);
-      // Altair is optional
-      final Optional<InputStream> altairInput =
-          loader.load(source + "/altair.yaml", source + "/altair.yml");
-      if (altairInput.isPresent()) {
-        processor.process(altairInput.get());
+      try (final InputStream phase0Input = loadPhase0Preset(source, preset)) {
+        processor.processConfig(phase0Input);
       }
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Failed to load spec config", e);
+
+      try (final InputStream altairInput = loadAltairPreset(preset).orElse(null)) {
+        // Altair is optional
+        if (altairInput != null) {
+          processor.processConfig(altairInput);
+        }
+      }
+    } catch (IOException | IllegalArgumentException e) {
+      throw new IllegalArgumentException("Failed to load spec config: " + source, e);
     }
   }
 
-  private static List<String> enumerateAvailableResources() {
+  private static InputStream loadConfigurationFile(final String source) throws IOException {
+    return getConfigLoader()
+        .load(CONFIG_PATH + source + ".yaml", source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));
+  }
+
+  private static InputStream loadPhase0Preset(final String source, final String preset)
+      throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/phase0.yaml", PRESET_PATH + preset + "/phase0.yml")
+        .orElseThrow(
+            () ->
+                new FileNotFoundException(
+                    String.format(
+                        "Could not load spec config preset '%s' specified in config '%s'",
+                        preset, source)));
+  }
+
+  private static Optional<InputStream> loadAltairPreset(final String preset) throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
+  }
+
+  private static ResourceLoader getConfigLoader() {
+    // TODO(#3394) - move Constants resources from util to this module
+    return ResourceLoader.classpathUrlOrFile(
+        Constants.class,
+        enumerateAvailableConfigResources(),
+        s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+  }
+
+  private static ResourceLoader getPresetLoader() {
+    // TODO(#3394) - move Constants resources from util to this module
+    return ResourceLoader.classpathUrlOrFile(
+        Constants.class,
+        enumerateAvailablePresetResources(),
+        s -> s.endsWith(".yaml") || s.endsWith(".yml"));
+  }
+
+  private static List<String> enumerateAvailableConfigResources() {
     return Arrays.stream(Eth2Network.values())
         .map(Eth2Network::configName)
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml", s + "/altair.yaml"))
+        .map(s -> CONFIG_PATH + s + ".yaml")
+        .collect(Collectors.toList());
+  }
+
+  private static List<String> enumerateAvailablePresetResources() {
+    return Arrays.stream(Eth2Presets.values())
+        .map(Eth2Presets::presetName)
+        .map(s -> List.of(PRESET_PATH + s + "/phase0.yaml", PRESET_PATH + s + "/altair.yaml"))
         .flatMap(List::stream)
         .collect(Collectors.toList());
   }
 
+  @FunctionalInterface
   interface InputStreamProcessor {
-    void process(InputStream inputStream) throws IOException;
+    /**
+     * Process the given config input, optionally returning a preset that should be loaded.
+     *
+     * @param inputStream The input stream containing config data to be processed
+     * @return An optional preset that should be loaded
+     * @throws IOException Thrown if an error occurs while reading the input stream
+     */
+    Optional<String> processConfig(InputStream inputStream) throws IOException;
   }
 }
