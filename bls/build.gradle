@@ -6,15 +6,12 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   implementation 'tech.pegasys:jblst'
+  implementation project(':infrastructure:logging')
 
-
-  testImplementation project(':infrastructure:logging')
   testImplementation('com.googlecode.json-simple:json-simple') {
       exclude group: 'junit', module: 'junit'
   }
 
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
-  testFixturesImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 }

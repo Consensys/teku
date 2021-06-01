@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.isAggregator;
-
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
@@ -24,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -93,7 +92,7 @@ public class AttestationDutyLoader
     final Validator validator = maybeValidator.get();
     final int aggregatorModulo =
         spec.atSlot(duty.getSlot())
-            .getCommitteeUtil()
+            .getValidatorsUtil()
             .getAggregatorModulo(duty.getCommitteeLength());
 
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
@@ -151,7 +150,9 @@ public class AttestationDutyLoader
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .thenAccept(
             slotSignature -> {
-              final boolean isAggregator = isAggregator(slotSignature, aggregatorModulo);
+              final SpecVersion specVersion = spec.atSlot(slot);
+              final boolean isAggregator =
+                  specVersion.getValidatorsUtil().isAggregator(slotSignature, aggregatorModulo);
               beaconCommitteeSubscriptions.subscribeToBeaconCommittee(
                   new CommitteeSubscriptionRequest(
                       validatorIndex,

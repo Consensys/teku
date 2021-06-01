@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.util.config.Constants;
 public class AttestationValidator {
 
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
-  private static final UInt64 MILLIS_PER_SECOND = UInt64.valueOf(1000);
   private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
@@ -217,7 +217,8 @@ public class AttestationValidator {
       final Attestation attestation, final BeaconState blockState) {
     final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
     final Checkpoint targetEpoch = attestation.getData().getTarget();
-    final UInt64 earliestSlot = spec.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
+    final UInt64 earliestSlot =
+        spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(targetEpoch.getEpoch());
     final UInt64 earliestEpoch = spec.computeEpochAtSlot(earliestSlot);
 
     if (blockState.getSlot().isLessThan(earliestSlot)) {
@@ -258,10 +259,6 @@ public class AttestationValidator {
       final UInt64 currentTimeMillis, final Attestation attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
     return maximumBroadcastTimeMillis(attestationSlot).isLessThan(currentTimeMillis);
-  }
-
-  private UInt64 secondsToMillis(final UInt64 seconds) {
-    return seconds.times(MILLIS_PER_SECOND);
   }
 
   private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {

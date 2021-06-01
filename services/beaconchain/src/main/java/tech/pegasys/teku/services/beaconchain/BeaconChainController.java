@@ -445,7 +445,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttestationTopicSubscriber() {
     LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
-    this.attestationTopicSubscriber = new AttestationTopicSubscriber(p2pNetwork);
+    this.attestationTopicSubscriber = new AttestationTopicSubscriber(spec, p2pNetwork);
   }
 
   private void initActiveValidatorTracker() {
@@ -556,7 +556,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     syncCommitteeSignaturePool =
         new SyncCommitteeSignaturePool(
             spec,
-            new SyncCommitteeSignatureValidator(spec, recentChainData, syncCommitteeStateUtils));
+            new SyncCommitteeSignatureValidator(
+                spec, recentChainData, syncCommitteeStateUtils, timeProvider));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeSignaturePool);

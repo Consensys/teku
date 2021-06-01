@@ -16,12 +16,21 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ValidatorsUtilTest {
@@ -87,5 +96,64 @@ class ValidatorsUtilTest {
             validatorsUtil.getValidatorIndex(
                 nextState, BLSPublicKey.fromBytesCompressed(validator.getPubkeyBytes())))
         .contains(nextState.getValidators().size() - 1);
+  }
+
+  @Test
+  void testIsAggregatorReturnsFalseOnARealCase() {
+    Bytes signingRoot =
+        spec.getGenesisSpec()
+            .miscHelpers()
+            .computeSigningRoot(
+                UInt64.valueOf(57950),
+                Bytes32.fromHexString(
+                    "0x05000000b5303f2ad2010d699a76c8e62350947421a3e4a979779642cfdb0f66"));
+    BLSSignature selectionProof =
+        BLSSignature.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xaa176502f0a5e954e4c6b452d0e11a03513c19b6d189f125f07b6c5c120df011c31da4c4a9c4a52a5a48fcba5b14d7b316b986a146187966d2341388bbf1f86c42e90553ba009ba10edc6b5544a6e945ce6d2419197f66ab2b9df2b0a0c89987"));
+    BLSPublicKey pKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0xb0861f72583516b17a3fdc33419d5c04c0a4444cc2478136b4935f3148797699e3ef4a4b2227b14876b3d49ff03b796d"));
+    int committeeLen = 146;
+
+    assertThat(BLS.verify(pKey, signingRoot, selectionProof)).isTrue();
+
+    int aggregatorModulo = validatorsUtil.getAggregatorModulo(committeeLen);
+    assertThat(validatorsUtil.isAggregator(selectionProof, aggregatorModulo)).isFalse();
+  }
+
+  @Test
+  void getAggregatorModulo_boundaryTest() {
+    final SpecConfig specConfig =
+        TestConfigLoader.loadConfig(
+            Eth2Network.MINIMAL.configName(), b -> b.targetAggregatorsPerCommittee(100));
+    final Spec spec = TestSpecFactory.createPhase0(specConfig);
+    final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
+
+    // invalid cases technically
+    assertThat(validatorsUtil.getAggregatorModulo(Integer.MIN_VALUE)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(-1)).isEqualTo(1);
+
+    // practical lower bounds
+    assertThat(validatorsUtil.getAggregatorModulo(0)).isEqualTo(1);
+    assertThat(validatorsUtil.getAggregatorModulo(199)).isEqualTo(1);
+
+    // upper bound - valid
+    assertThat(validatorsUtil.getAggregatorModulo(Integer.MAX_VALUE)).isEqualTo(21474836);
+  }
+
+  @Test
+  void getAggregatorModulo_samples() {
+    final SpecConfig specConfig =
+        TestConfigLoader.loadConfig(
+            Eth2Network.MINIMAL.configName(), b -> b.targetAggregatorsPerCommittee(100));
+    final Spec spec = TestSpecFactory.createPhase0(specConfig);
+    final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
+
+    assertThat(validatorsUtil.getAggregatorModulo(200)).isEqualTo(2);
+    assertThat(validatorsUtil.getAggregatorModulo(300)).isEqualTo(3);
+    assertThat(validatorsUtil.getAggregatorModulo(1000)).isEqualTo(10);
+    assertThat(validatorsUtil.getAggregatorModulo(100000)).isEqualTo(1000);
   }
 }

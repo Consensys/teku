@@ -28,7 +28,7 @@ import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
 
-class BlstSignature implements Signature {
+public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
   private static final Bytes INFINITY_BYTES =

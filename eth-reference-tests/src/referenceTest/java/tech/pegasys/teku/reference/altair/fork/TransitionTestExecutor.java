@@ -18,6 +18,7 @@ import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class TransitionTestExecutor implements TestExecutor {
 
@@ -71,7 +73,13 @@ public class TransitionTestExecutor implements TestExecutor {
           TestDataUtils.loadSsz(
               testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
 
-      result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
+      try {
+        result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
+      } catch (final StateTransitionException e) {
+        Assertions.fail(
+            "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),
+            e);
+      }
     }
     assertThatSszData(result).isEqualByGettersTo(postState);
   }

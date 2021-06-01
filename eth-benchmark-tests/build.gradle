@@ -23,7 +23,6 @@ dependencies {
   implementation testFixtures(project(':storage'))
 
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
   jmh 'org.openjdk.jmh:jmh-core'
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'

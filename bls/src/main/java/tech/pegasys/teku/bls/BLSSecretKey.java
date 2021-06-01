@@ -56,9 +56,9 @@ public final class BLSSecretKey {
   private SecretKey secretKey;
 
   /**
-   * Construct from a Mikuli SecretKey object.
+   * Construct from an implementation-specific SecretKey object.
    *
-   * @param secretKey A Mikuli SecretKey
+   * @param secretKey An implementation-specific SecretKey
    */
   public BLSSecretKey(SecretKey secretKey) {
     this.secretKey = secretKey;

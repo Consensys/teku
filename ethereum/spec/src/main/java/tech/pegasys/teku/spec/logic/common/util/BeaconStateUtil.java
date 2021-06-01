@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
@@ -21,16 +20,12 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -38,11 +33,8 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 @SuppressWarnings("unused")
@@ -52,7 +44,6 @@ public class BeaconStateUtil {
 
   private final SpecConfig specConfig;
   private final SchemaDefinitions schemaDefinitions;
-  private final CommitteeUtil committeeUtil;
 
   private final Predicates predicates;
   private final MiscHelpers miscHelpers;
@@ -61,13 +52,11 @@ public class BeaconStateUtil {
   public BeaconStateUtil(
       final SpecConfig specConfig,
       final SchemaDefinitions schemaDefinitions,
-      final CommitteeUtil committeeUtil,
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
-    this.committeeUtil = committeeUtil;
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -93,20 +82,12 @@ public class BeaconStateUtil {
         : currentEpoch.plus(1);
   }
 
-  public Bytes32 computeDomain(Bytes4 domainType) {
-    return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
-  }
-
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getPreviousEpoch(state));
   }
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getCurrentEpoch(state));
-  }
-
-  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
-    return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
   }
 
   public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
@@ -128,7 +109,7 @@ public class BeaconStateUtil {
         (epoch.compareTo(fork.getEpoch()) < 0)
             ? fork.getPrevious_version()
             : fork.getCurrent_version();
-    return computeDomain(domainType, forkVersion, genesisValidatorsRoot);
+    return miscHelpers.computeDomain(domainType, forkVersion, genesisValidatorsRoot);
   }
 
   public List<UInt64> getEffectiveBalances(final BeaconState state) {
@@ -146,15 +127,6 @@ public class BeaconStateUtil {
                     .collect(toUnmodifiableList()));
   }
 
-  public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
-    return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
-  }
-
-  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
-    SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
-    return domainWrappedObject.hashTreeRoot();
-  }
-
   public boolean all(SszBitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
       if (!bitvector.getBit(i)) {
@@ -164,32 +136,8 @@ public class BeaconStateUtil {
     return true;
   }
 
-  public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices =
-        beaconStateAccessors.getActiveValidatorIndices(state, epoch);
-    return UInt64.valueOf(
-        Math.max(
-            1,
-            Math.min(
-                specConfig.getMaxCommitteesPerSlot(),
-                Math.floorDiv(
-                    Math.floorDiv(active_validator_indices.size(), specConfig.getSlotsPerEpoch()),
-                    specConfig.getTargetCommitteeSize()))));
-  }
-
-  public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
-    return UInt64.valueOf(
-        Math.max(
-            1,
-            Math.min(
-                specConfig.getMaxCommitteesPerSlot(),
-                Math.floorDiv(
-                    Math.floorDiv(activeValidatorCount, specConfig.getSlotsPerEpoch()),
-                    specConfig.getTargetCommitteeSize()))));
-  }
-
   public UInt64 getAttestersTotalEffectiveBalance(final BeaconState state, final UInt64 slot) {
-    validateStateForCommitteeQuery(state, slot);
+    beaconStateAccessors.validateStateForCommitteeQuery(state, slot);
     return BeaconStateCache.getTransitionCaches(state)
         .getAttestersTotalBalance()
         .get(
@@ -197,7 +145,8 @@ public class BeaconStateUtil {
             p -> {
               final SszList<Validator> validators = state.getValidators();
               final UInt64 committeeCount =
-                  getCommitteeCountPerSlot(state, miscHelpers.computeEpochAtSlot(slot));
+                  beaconStateAccessors.getCommitteeCountPerSlot(
+                      state, miscHelpers.computeEpochAtSlot(slot));
               return UInt64.range(UInt64.ZERO, committeeCount)
                   .flatMap(committee -> streamEffectiveBalancesForCommittee(state, slot, committee))
                   .reduce(UInt64.ZERO, UInt64::plus);
@@ -206,67 +155,8 @@ public class BeaconStateUtil {
 
   private Stream<UInt64> streamEffectiveBalancesForCommittee(
       final BeaconState state, final UInt64 slot, final UInt64 committeeIndex) {
-    return getBeaconCommittee(state, slot, committeeIndex).stream()
+    return beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex).stream()
         .map(validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
-  }
-
-  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
-    // Make sure state is within range of the slot being queried
-    validateStateForCommitteeQuery(state, slot);
-
-    return BeaconStateCache.getTransitionCaches(state)
-        .getBeaconCommittee()
-        .get(
-            TekuPair.of(slot, index),
-            p -> {
-              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-              UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
-              int committeeIndex =
-                  slot.mod(specConfig.getSlotsPerEpoch())
-                      .times(committees_per_slot)
-                      .plus(index)
-                      .intValue();
-              int count = committees_per_slot.times(specConfig.getSlotsPerEpoch()).intValue();
-              return committeeUtil.computeCommittee(
-                  state,
-                  beaconStateAccessors.getActiveValidatorIndices(state, epoch),
-                  beaconStateAccessors.getSeed(state, epoch, specConfig.getDomainBeaconAttester()),
-                  committeeIndex,
-                  count);
-            });
-  }
-
-  public UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
-    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
-    return miscHelpers.computeStartSlotAtEpoch(previousEpoch);
-  }
-
-  private void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
-    final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
-    checkArgument(
-        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
-        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
-        state.getSlot(),
-        oldestQueryableSlot);
-  }
-
-  private UInt64 getEarliestQueryableSlotForTargetSlot(final UInt64 slot) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-    return getEarliestQueryableSlotForTargetEpoch(epoch);
-  }
-
-  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
-    SigningData domainWrappedObject =
-        new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
-    return domainWrappedObject.hashTreeRoot();
-  }
-
-  public boolean isSlotAtNthEpochBoundary(
-      final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
-    checkArgument(n > 0, "Parameter n must be greater than 0");
-    final UInt64 blockEpoch = miscHelpers.computeEpochAtSlot(blockSlot);
-    final UInt64 parentEpoch = miscHelpers.computeEpochAtSlot(parentSlot);
-    return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
@@ -287,21 +177,8 @@ public class BeaconStateUtil {
     return computeSubnetForCommittee(
         attestationSlot,
         committeeIndex,
-        getCommitteeCountPerSlot(state, miscHelpers.computeEpochAtSlot(attestationSlot)));
-  }
-
-  private Bytes32 computeDomain(
-      Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
-    final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
-    return computeDomain(domainType, forkDataRoot);
-  }
-
-  private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
-    return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
-  }
-
-  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
-    return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
+        beaconStateAccessors.getCommitteeCountPerSlot(
+            state, miscHelpers.computeEpochAtSlot(attestationSlot)));
   }
 
   private Bytes32 getDutyDependentRoot(final BeaconState state, final UInt64 epoch) {

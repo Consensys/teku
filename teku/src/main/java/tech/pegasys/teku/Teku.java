@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
 
@@ -40,6 +41,10 @@ public final class Teku {
       node = new ValidatorNode(config);
     } else {
       node = new BeaconNode(config);
+    }
+    // Check that BLS is available before starting to ensure we get a nice error message if it's not
+    if (BlstLoader.INSTANCE.isEmpty()) {
+      throw new UnsupportedOperationException("BLS native library unavailable for this platform");
     }
 
     node.start();

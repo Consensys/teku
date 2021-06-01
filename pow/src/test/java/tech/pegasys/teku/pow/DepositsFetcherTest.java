@@ -36,11 +36,11 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
 
@@ -168,7 +168,7 @@ public class DepositsFetcherTest {
 
     // But there are too many results
     final Eth1RequestException err = new Eth1RequestException();
-    err.addSuppressed(new RejectedRequestException("Nah mate"));
+    err.addSuppressed(new RejectedRequestException(-32005, "Nah mate"));
     request1Response.completeExceptionally(err);
 
     // So it halves the batch size and retries

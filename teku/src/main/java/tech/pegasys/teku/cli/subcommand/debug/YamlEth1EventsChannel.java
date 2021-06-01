@@ -26,11 +26,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.data.yaml.YamlProvider;
+import tech.pegasys.teku.ethereum.pow.api.Deposit;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.pow.event.Deposit;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
 

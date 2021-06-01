@@ -31,7 +31,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -107,7 +106,7 @@ public class ValidatorApiHandlerIntegrationTest {
   }
 
   @Test
-  public void createUnsignedAttestation_withRecentBlockAvailable() {
+  public void createAttestationData_withRecentBlockAvailable() {
     final UInt64 targetEpoch = UInt64.valueOf(3);
     final UInt64 targetEpochStartSlot = spec.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
@@ -129,10 +128,10 @@ public class ValidatorApiHandlerIntegrationTest {
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, epochBoundaryBlock.getRoot());
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        handler.createUnsignedAttestation(targetSlot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().get().getData();
+    final AttestationData attestation = result.join().orElseThrow();
     assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
@@ -158,10 +157,10 @@ public class ValidatorApiHandlerIntegrationTest {
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, latestBlock.getRoot());
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        handler.createUnsignedAttestation(targetSlot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().get().getData();
+    final AttestationData attestation = result.join().orElseThrow();
     assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
@@ -302,7 +301,8 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    final int expectedSubnetId =
+        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
@@ -317,7 +317,8 @@ class AttestationValidatorTest {
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
-    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    final int expectedSubnetId =
+        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(
@@ -340,7 +341,8 @@ class AttestationValidatorTest {
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AttestationData data = attestation.getData();
-    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    final int expectedSubnetId =
+        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(
@@ -364,7 +366,8 @@ class AttestationValidatorTest {
     final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    final int expectedSubnetId =
+        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
@@ -379,7 +382,8 @@ class AttestationValidatorTest {
     when(spec.getAncestor(any(), any(), any()))
         .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
         .thenReturn(Optional.of(Bytes32.ZERO));
-    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    final int expectedSubnetId =
+        spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
@@ -390,7 +394,7 @@ class AttestationValidatorTest {
     return validator
         .validate(
             ValidateableAttestation.fromNetwork(
-                attestation, computeSubnetForAttestation(state, attestation)))
+                attestation, spec.computeSubnetForAttestation(state, attestation)))
         .join();
   }
 

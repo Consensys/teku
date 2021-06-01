@@ -29,12 +29,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProcessingControllerTest {
@@ -43,7 +43,7 @@ public class DepositProcessingControllerTest {
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositFetcher depositFetcher = mock(DepositFetcher.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
-  private final Eth1HeadTracker headTracker = Mockito.mock(Eth1HeadTracker.class);
+  private final Eth1HeadTracker headTracker = Mockito.mock(BlockBasedEth1HeadTracker.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DepositProcessingController depositProcessingController =

@@ -33,7 +33,7 @@ import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
-class BlstBLS12381 implements BLS12381 {
+public class BlstBLS12381 implements BLS12381 {
 
   private static final int BATCH_RANDOM_BYTES = 8;
 

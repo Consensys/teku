@@ -56,8 +56,6 @@ public interface ValidatorRestApiClient {
 
   SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
-  Optional<Attestation> createUnsignedAttestation(UInt64 slot, int committeeIndex);
-
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
   void sendSignedAttestation(Attestation attestation);
