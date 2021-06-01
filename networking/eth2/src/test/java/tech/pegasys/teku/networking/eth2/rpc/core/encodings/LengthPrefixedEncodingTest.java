@@ -34,17 +34,20 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBounds
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 class LengthPrefixedEncodingTest {
-
-  private final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
   private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
   private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
       ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
+
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
@@ -155,7 +158,7 @@ class LengthPrefixedEncodingTest {
 
   @Test
   public void decodePayload_shouldReadPayloadWhenExtraDataIsAppended() throws RpcException {
-    final StatusMessage originalMessage = StatusMessage.createPreGenesisStatus();
+    final StatusMessage originalMessage = StatusMessage.createPreGenesisStatus(spec);
     final Bytes encoded = encoding.encodePayload(originalMessage);
     final Bytes extraData = Bytes.of(1, 2, 3, 4);
     List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(encoded, extraData);

@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForRandaoReveal;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregateAndProof;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregationSlot;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 
@@ -46,6 +40,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.SigningRootUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -71,6 +66,7 @@ public class ExternalSigner implements Signer {
   private final Spec spec;
   private final HttpClient httpClient;
   private final ThrottlingTaskQueue taskQueue;
+  private final SigningRootUtil signingRootUtil;
 
   private final Counter successCounter;
   private final Counter failedCounter;
@@ -90,6 +86,7 @@ public class ExternalSigner implements Signer {
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
+    this.signingRootUtil = new SigningRootUtil(spec);
 
     final LabelledMetric<Counter> labelledCounter =
         metricsSystem.createLabelledCounter(
@@ -105,7 +102,7 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return sign(
-        signingRootForRandaoReveal(epoch, forkInfo),
+        signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo),
         SignType.RANDAO_REVEAL,
         Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)),
         slashableGenericMessage("randao reveal"));
@@ -114,7 +111,7 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignBlock(block, forkInfo),
+        signingRootUtil.signingRootForSignBlock(block, forkInfo),
         SignType.BLOCK,
         Map.of(
             "block",
@@ -128,7 +125,7 @@ public class ExternalSigner implements Signer {
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignAttestationData(attestationData, forkInfo),
+        signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo),
         SignType.ATTESTATION,
         Map.of(
             "attestation",
@@ -155,7 +152,7 @@ public class ExternalSigner implements Signer {
     return taskQueue.queueTask(
         () ->
             sign(
-                signingRootForSignAggregationSlot(slot, forkInfo),
+                signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
                 SignType.AGGREGATION_SLOT,
                 Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
                 slashableGenericMessage("aggregation slot")));
@@ -165,7 +162,7 @@ public class ExternalSigner implements Signer {
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
+        signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
         SignType.AGGREGATE_AND_PROOF,
         Map.of(
             "aggregate_and_proof",
@@ -179,7 +176,7 @@ public class ExternalSigner implements Signer {
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
+        signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
         SignType.VOLUNTARY_EXIT,
         Map.of(
             "voluntary_exit",
