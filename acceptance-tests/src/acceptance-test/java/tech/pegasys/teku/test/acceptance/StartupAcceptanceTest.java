@@ -50,7 +50,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final TekuNode node1 =
         createTekuNode(
             config -> {
-              config.withAltairSlot(UInt64.ZERO);
+              config.withAltairEpoch(UInt64.ZERO);
               config.withNetwork("minimal");
             });
     node1.start();

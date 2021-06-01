@@ -506,7 +506,7 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withAltairSlot(final UInt64 altairSlot) {
+    public Config withAltairEpoch(final UInt64 altairSlot) {
       configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
     }
