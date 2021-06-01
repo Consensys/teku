@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.exception;
+package tech.pegasys.teku.infrastructure.time;
 
-public class RejectedRequestException extends RuntimeException {
+import java.util.concurrent.TimeUnit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-  public RejectedRequestException(final int code, final String message) {
-    super(code + ": " + message);
+public class TimeUtilities {
+  public static UInt64 secondsToMillis(final UInt64 timeInSeconds) {
+    return secondsToMillis(timeInSeconds.longValue());
+  }
+
+  public static UInt64 secondsToMillis(final long timeInSeconds) {
+    return UInt64.valueOf(TimeUnit.SECONDS.toMillis(timeInSeconds));
   }
 }

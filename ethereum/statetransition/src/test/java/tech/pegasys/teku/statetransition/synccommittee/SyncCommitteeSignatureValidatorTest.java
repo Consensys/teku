@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class SyncCommitteeSignatureValidatorTest {
+  private StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private final Spec spec =
       TestSpecFactory.createAltair(
@@ -58,7 +61,7 @@ class SyncCommitteeSignatureValidatorTest {
 
   private final SyncCommitteeSignatureValidator validator =
       new SyncCommitteeSignatureValidator(
-          spec, recentChainData, new SyncCommitteeStateUtils(spec, recentChainData));
+          spec, recentChainData, new SyncCommitteeStateUtils(spec, recentChainData), timeProvider);
 
   @BeforeEach
   void setUp() {
@@ -110,6 +113,10 @@ class SyncCommitteeSignatureValidatorTest {
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
     final ValidateableSyncCommitteeSignature validateableSignature =
         ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
+    timeProvider.advanceTimeByMillis(
+        spec.getSlotStartTime(lastSlotOfPeriod, recentChainData.getGenesisTime())
+            .times(1000)
+            .longValue());
 
     assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
@@ -121,7 +128,10 @@ class SyncCommitteeSignatureValidatorTest {
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
     final SyncCommitteeSignatureValidator validator =
         new SyncCommitteeSignatureValidator(
-            phase0Spec, recentChainData, new SyncCommitteeStateUtils(phase0Spec, recentChainData));
+            phase0Spec,
+            recentChainData,
+            new SyncCommitteeStateUtils(phase0Spec, recentChainData),
+            timeProvider);
     final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
 
     assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
@@ -217,5 +227,50 @@ class SyncCommitteeSignatureValidatorTest {
                 dataStructureUtil.randomSignature());
     assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
         .isCompletedWithValue(REJECT);
+  }
+
+  @Test
+  void isSignatureForCurrentSlot_shouldNotUnderflow() {
+    assertThat(validator.isSignatureForCurrentSlot(UInt64.ZERO)).isTrue();
+  }
+
+  @Test
+  void isSignatureForCurrentSlot_shouldRejectOutsideLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis =
+        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).decrement().longValue());
+    assertThat(validator.isSignatureForCurrentSlot(slot)).isFalse();
+  }
+
+  @Test
+  void isSignatureForCurrentSlot_shouldAcceptLowerBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 slotStartTimeMillis =
+        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
+    assertThat(validator.isSignatureForCurrentSlot(slot)).isTrue();
+  }
+
+  @Test
+  void isSignatureForCurrentSlot_shouldAcceptUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
+    assertThat(validator.isSignatureForCurrentSlot(slot)).isTrue();
+  }
+
+  @Test
+  void isSignatureForCurrentSlot_shouldRecjectOutsideUpperBound() {
+    final UInt64 slot = UInt64.valueOf(1000);
+    final UInt64 nextSlotStartTimeMillis =
+        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+    timeProvider.advanceTimeByMillis(
+        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).increment().longValue());
+    assertThat(validator.isSignatureForCurrentSlot(slot)).isFalse();
   }
 }

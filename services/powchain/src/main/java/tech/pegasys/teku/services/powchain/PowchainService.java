@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.pow.BlockBasedEth1HeadTracker;
 import tech.pegasys.teku.pow.DepositEventsAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.pow.Eth1ProviderSelector;
 import tech.pegasys.teku.pow.FallbackAwareEth1Provider;
 import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -76,6 +78,7 @@ public class PowchainService extends Service {
                 .mapToObj(
                     idx ->
                         new Web3jEth1Provider(
+                            serviceConfig.getMetricsSystem(),
                             Eth1Provider.generateEth1ProviderId(
                                 idx + 1, powConfig.getEth1Endpoints().get(idx)),
                             web3js.get(idx),
@@ -117,7 +120,13 @@ public class PowchainService extends Service {
             asyncRunner,
             powConfig.getEth1LogsMaxBlockRange());
 
-    headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
+    if (powConfig.useTimeBasedHeadTracking()) {
+      headTracker =
+          new TimeBasedEth1HeadTracker(
+              powConfig.getSpec(), serviceConfig.getTimeProvider(), asyncRunner, eth1Provider);
+    } else {
+      headTracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider);
+    }
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             eth1Provider,
