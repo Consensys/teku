@@ -287,6 +287,16 @@ public class Spec {
     return atState(state).beaconStateAccessors().getBlockRootAtSlot(state, slot);
   }
 
+  public Bytes32 getDomain(
+      final Bytes4 domainType,
+      final UInt64 epoch,
+      final Fork fork,
+      final Bytes32 genesisValidatorsRoot) {
+    return atEpoch(epoch)
+        .beaconStateAccessors()
+        .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
+  }
+
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     return atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
   }

@@ -143,8 +143,9 @@ public class BeaconStateUtilTest {
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
     Bytes32 domain =
-        beaconStateUtil.getDomain(
-            createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
+        genesisSpec
+            .beaconStateAccessors()
+            .getDomain(createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
     Bytes signing_root = genesisSpec.miscHelpers().computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));

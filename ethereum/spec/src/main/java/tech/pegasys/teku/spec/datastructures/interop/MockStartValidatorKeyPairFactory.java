@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.interop;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class MockStartValidatorKeyPairFactory {
   private static final BigInteger CURVE_ORDER =
@@ -38,7 +39,7 @@ public class MockStartValidatorKeyPairFactory {
   }
 
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {
-    final Bytes hash = sha256(BeaconStateUtil.uint_to_bytes32(validatorIndex));
+    final Bytes hash = sha256(uintToBytes32(validatorIndex));
     final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
     final Bytes32 privKeyBytes = Bytes32.leftPad(Bytes.of(privKey.toByteArray()));
 
