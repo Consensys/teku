@@ -121,7 +121,7 @@ public class FallbackAwareEth1ProviderSelectorTest {
         .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
     when(node2.ethGetLogs(ethLogFilter))
         .thenReturn(
-            failingProviderGetLogsWithError(new RejectedRequestException("socket timeout error")));
+            failingProviderGetLogsWithError(new RejectedRequestException(-32005, "too many")));
     when(node3.ethGetLogs(ethLogFilter))
         .thenReturn(failingProviderGetLogsWithError(new RuntimeException("error")));
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.time;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -38,6 +39,10 @@ public class StubTimeProvider implements TimeProvider {
 
   public static StubTimeProvider withTimeInMillis(final UInt64 timeInMillis) {
     return new StubTimeProvider(timeInMillis);
+  }
+
+  public void advanceTimeBy(final Duration duration) {
+    advanceTimeByMillis(duration.toMillis());
   }
 
   public void advanceTimeBySeconds(final long seconds) {

@@ -17,22 +17,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthChainId;
+import org.web3j.protocol.core.methods.response.EthLog;
+import org.web3j.protocol.core.methods.response.EthLog.LogResult;
 import org.web3j.protocol.core.methods.response.EthSyncing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class Web3jEth1MonitorableProviderTest {
+public class Web3jEth1ProviderTest {
   final Web3j web3 = mock(Web3j.class);
   final Request request1 = mock(Request.class);
   final Request request2 = mock(Request.class);
@@ -49,6 +56,7 @@ public class Web3jEth1MonitorableProviderTest {
     timeProvider = StubTimeProvider.withTimeInSeconds(1000);
     provider =
         new Web3jEth1Provider(
+            new StubMetricsSystem(),
             Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
             web3,
             asyncRunner,
@@ -197,6 +205,19 @@ public class Web3jEth1MonitorableProviderTest {
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
+  }
+
+  @Test
+  void shouldThrowRejectedRequestExceptionWhenInfuraRejectsRequestWithTooManyLogs() {
+    final EthFilter filter = new EthFilter();
+    final EthLog response = new EthLog();
+    response.setError(new Response.Error(-32005, "query returned more than 10000 results"));
+    when(web3.ethGetLogs(filter)).thenReturn(request1);
+    when(request1.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
+
+    final SafeFuture<List<LogResult<?>>> result = provider.ethGetLogs(filter);
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(RejectedRequestException.class);
   }
 
   private void prepareRequestWithSyncingResponse(Request request, boolean isSyncing) {
