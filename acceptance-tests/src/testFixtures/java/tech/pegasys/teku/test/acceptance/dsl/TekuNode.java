@@ -18,7 +18,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -50,7 +49,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
@@ -168,15 +166,17 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  public void waitForSyncCommitteeAggregate() {
+  public void waitForFullSyncCommitteeAggregate() {
     LOG.debug("Wait for full sync committee aggregates");
     waitFor(
         () -> {
           final Optional<SignedBlock> block = fetchHeadBlock();
-          if (block.isPresent()) {
-            final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
-            assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits).isEqualTo(Bytes.fromHexString("0xffffffff"));
-          }
+          assertThat(block).isPresent();
+          assertThat(block.get()).isInstanceOf(SignedBeaconBlockAltair.class);
+
+          final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
+          assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits)
+              .isEqualTo(Bytes.fromHexString("0xffffffff"));
         },
         2,
         MINUTES);

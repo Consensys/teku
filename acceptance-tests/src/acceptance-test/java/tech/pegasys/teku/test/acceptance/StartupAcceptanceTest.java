@@ -47,12 +47,14 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldContainSyncCommitteeAggregatesOnAltair() throws Exception {
-    final TekuNode node1 = createTekuNode(config -> {
-      config.withAltairSlot(UInt64.ZERO);
-      config.withNetwork("minimal");
-    });
+    final TekuNode node1 =
+        createTekuNode(
+            config -> {
+              config.withAltairSlot(UInt64.ZERO);
+              config.withNetwork("minimal");
+            });
     node1.start();
-    node1.waitForSyncCommitteeAggregate();
+    node1.waitForFullSyncCommitteeAggregate();
   }
 
   @Test
