@@ -675,7 +675,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final UInt64 amount = deposit.getData().getAmount();
     final DepositMessage deposit_message =
         new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-    final Bytes32 domain = miscHelpers.computeDomain(specConfig.getDomainDeposit());
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
     final Bytes signing_root = miscHelpers.computeSigningRoot(deposit_message, domain);
     // Note that this can't use batch signature verification as invalid deposits can be included
     // in blocks and processing differs based on whether the signature is valid or not.
