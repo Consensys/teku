@@ -266,11 +266,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainSelectionProof() {
-    return specConfig.getDomainSelectionProof();
-  }
-
-  @Override
   public Bytes4 getDomainAggregateAndProof() {
     return specConfig.getDomainAggregateAndProof();
   }
