@@ -19,8 +19,7 @@ public class SszResponse {
   public final ByteArrayInputStream byteStream;
   public final String stateAbbreviatedHash;
 
-  public SszResponse(
-      final ByteArrayInputStream byteStream, final String abbreviatedHash) {
+  public SszResponse(final ByteArrayInputStream byteStream, final String abbreviatedHash) {
     this.byteStream = byteStream;
     this.stateAbbreviatedHash = abbreviatedHash;
   }
