@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -182,9 +183,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            state,
-            specConfigAltair.getDomainSyncCommittee(),
-            miscHelpers.computeEpochAtSlot(previousSlot));
+            state, Domain.SYNC_COMMITTEE, miscHelpers.computeEpochAtSlot(previousSlot));
     final Bytes32 signingRoot =
         miscHelpersAltair.computeSigningRoot(
             beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);

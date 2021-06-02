@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
@@ -201,10 +202,7 @@ public class SyncCommitteeUtil {
       final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            specConfig.getDomainSyncCommittee(),
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+            Domain.SYNC_COMMITTEE, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return miscHelpers.computeSigningRoot(blockRoot, domain);
   }
 

@@ -71,8 +71,7 @@ public class ConfigProvider {
         .toVersionAltair()
         .ifPresent(
             altairConfig -> {
-              configAttributes.put(
-                  "DOMAIN_SYNC_COMMITTEE", altairConfig.getDomainSyncCommittee().toHexString());
+              configAttributes.put("DOMAIN_SYNC_COMMITTEE", Domain.SYNC_COMMITTEE.toHexString());
               configAttributes.put(
                   "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
                   altairConfig.getDomainSyncCommitteeSelectionProof().toHexString());
