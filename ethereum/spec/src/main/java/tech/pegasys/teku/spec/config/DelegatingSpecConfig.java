@@ -271,11 +271,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getRandomSubnetsPerValidator() {
-    return specConfig.getRandomSubnetsPerValidator();
-  }
-
-  @Override
   public int getEpochsPerRandomSubnetSubscription() {
     return specConfig.getEpochsPerRandomSubnetSubscription();
   }

@@ -23,7 +23,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
   // Validator constants
-  private final int randomSubnetsPerValidator = 1;
   private final int epochsPerRandomSubnetSubscription = 256;
 
   // Other constants
@@ -447,11 +446,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getRandomSubnetsPerValidator() {
-    return randomSubnetsPerValidator;
-  }
-
-  @Override
   public int getEpochsPerRandomSubnetSubscription() {
     return epochsPerRandomSubnetSubscription;
   }
@@ -511,7 +505,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
-        && randomSubnetsPerValidator == that.randomSubnetsPerValidator
         && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && depositChainId == that.depositChainId
@@ -588,7 +581,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxDeposits,
         maxVoluntaryExits,
         secondsPerEth1Block,
-        randomSubnetsPerValidator,
         epochsPerRandomSubnetSubscription,
         safeSlotsToUpdateJustified,
         depositChainId,

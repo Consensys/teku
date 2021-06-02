@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscriber {
@@ -87,8 +88,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
       UInt64 currentSlot, int validatorCount) {
 
-    final int randomSubnetsPerValidator =
-        spec.atSlot(currentSlot).getConfig().getRandomSubnetsPerValidator();
+    final int randomSubnetsPerValidator = ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR;
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
 

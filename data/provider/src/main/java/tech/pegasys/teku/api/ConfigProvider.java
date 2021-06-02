@@ -56,7 +56,7 @@ public class ConfigProvider {
         Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE, 10));
     configAttributes.put(
         "RANDOM_SUBNETS_PER_VALIDATOR",
-        Integer.toString(config.getRandomSubnetsPerValidator(), 10));
+        Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR, 10));
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
         Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
