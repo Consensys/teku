@@ -155,6 +155,11 @@ allprojects {
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
+      // Enabling this check results in large number of parameter changes in ssz submodule. Fix in future PR
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
       // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
       if (JavaVersion.current() == JavaVersion.VERSION_12) {
         check('Finally', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
