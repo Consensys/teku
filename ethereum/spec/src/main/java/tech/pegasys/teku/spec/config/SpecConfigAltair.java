@@ -20,9 +20,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigAltair extends DelegatingSpecConfig {
 
-  // Domain constants
-  private final Bytes4 domainContributionAndProof = Bytes4.fromHexString("0x09000000");
-
   // Validator constants
   private final int targetAggregatorsPerSyncSubcommittee = 4;
 
@@ -117,10 +114,6 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return epochsPerSyncCommitteePeriod;
   }
 
-  public Bytes4 getDomainContributionAndProof() {
-    return domainContributionAndProof;
-  }
-
   public int getTargetAggregatorsPerSyncSubcommittee() {
     return targetAggregatorsPerSyncSubcommittee;
   }
@@ -148,7 +141,6 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
         && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
-        && Objects.equals(domainContributionAndProof, that.domainContributionAndProof)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
         && Objects.equals(
@@ -166,7 +158,6 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         inactivityScoreBias,
         inactivityScoreRecoveryRate,
         epochsPerSyncCommitteePeriod,
-        domainContributionAndProof,
         altairForkVersion,
         altairForkEpoch,
         minSyncCommitteeParticipants,

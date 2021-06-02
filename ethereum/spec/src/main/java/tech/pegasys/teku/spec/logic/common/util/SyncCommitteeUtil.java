@@ -216,7 +216,7 @@ public class SyncCommitteeUtil {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            specConfig.getDomainContributionAndProof(),
+            Domain.CONTRIBUTION_AND_PROOF,
             miscHelpers.computeEpochAtSlot(contribution.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());

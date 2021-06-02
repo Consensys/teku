@@ -76,8 +76,7 @@ public class ConfigProvider {
                   "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
                   Domain.SYNC_COMMITTEE_SELECTION_PROOF.toHexString());
               configAttributes.put(
-                  "DOMAIN_CONTRIBUTION_AND_PROOF",
-                  altairConfig.getDomainContributionAndProof().toHexString());
+                  "DOMAIN_CONTRIBUTION_AND_PROOF", Domain.CONTRIBUTION_AND_PROOF.toHexString());
               configAttributes.put(
                   "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
                   Integer.toString(altairConfig.getTargetAggregatorsPerSyncSubcommittee(), 10));
