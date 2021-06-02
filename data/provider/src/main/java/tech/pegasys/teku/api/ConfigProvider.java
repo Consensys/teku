@@ -74,7 +74,7 @@ public class ConfigProvider {
               configAttributes.put("DOMAIN_SYNC_COMMITTEE", Domain.SYNC_COMMITTEE.toHexString());
               configAttributes.put(
                   "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
-                  altairConfig.getDomainSyncCommitteeSelectionProof().toHexString());
+                  Domain.SYNC_COMMITTEE_SELECTION_PROOF.toHexString());
               configAttributes.put(
                   "DOMAIN_CONTRIBUTION_AND_PROOF",
                   altairConfig.getDomainContributionAndProof().toHexString());

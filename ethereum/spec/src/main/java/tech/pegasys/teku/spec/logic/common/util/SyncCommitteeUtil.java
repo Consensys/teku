@@ -54,7 +54,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszVector;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
@@ -226,11 +225,9 @@ public class SyncCommitteeUtil {
 
   public Bytes getSyncAggregatorSelectionDataSigningRoot(
       final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
-    final Bytes4 domainSyncCommitteeSelectionProof =
-        specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            domainSyncCommitteeSelectionProof,
+            Domain.SYNC_COMMITTEE_SELECTION_PROOF,
             miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
