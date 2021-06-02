@@ -47,6 +47,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -471,7 +472,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
             spec);
-    syncCommitteeSubscriptionManager = new SyncCommitteeSubscriptionManager(p2pNetwork);
+    syncCommitteeSubscriptionManager =
+        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
+            ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
+            : new SyncCommitteeSubscriptionManager(p2pNetwork);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
@@ -496,10 +500,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
     eventChannels
-        .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
-        .subscribe(SlotEventsChannel.class, syncCommitteeSubscriptionManager)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
+
+    // if subscribeAllSubnets is set, the slot events in these handlers are empty,
+    // so don't subscribe.
+    if (!beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()) {
+      eventChannels
+          .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
+          .subscribe(SlotEventsChannel.class, syncCommitteeSubscriptionManager);
+    }
   }
 
   private void initGenesisHandler() {

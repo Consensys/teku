@@ -181,7 +181,7 @@ public class TekuNode extends Node {
           assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits)
               .isEqualTo(Bytes.fromHexString("0xffffffff"));
         },
-        2,
+        5,
         MINUTES);
   }
 
