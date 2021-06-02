@@ -282,7 +282,7 @@ public abstract class BeaconStateAccessors {
               return miscHelpers.computeCommittee(
                   state,
                   getActiveValidatorIndices(state, epoch),
-                  getSeed(state, epoch, config.getDomainBeaconAttester()),
+                  getSeed(state, epoch, Domain.BEACON_ATTESTER),
                   committeeIndex,
                   count);
             });

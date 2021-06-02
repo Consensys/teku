@@ -125,8 +125,6 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  Bytes4 getDomainBeaconAttester();
-
   Bytes4 getDomainRandao();
 
   Bytes4 getDomainDeposit();

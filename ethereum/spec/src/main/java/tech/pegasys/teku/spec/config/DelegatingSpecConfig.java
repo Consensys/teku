@@ -266,11 +266,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainBeaconAttester() {
-    return specConfig.getDomainBeaconAttester();
-  }
-
-  @Override
   public Bytes4 getDomainRandao() {
     return specConfig.getDomainRandao();
   }
