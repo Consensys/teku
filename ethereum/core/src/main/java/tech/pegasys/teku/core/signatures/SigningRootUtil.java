@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -46,7 +47,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(block.getSlot());
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainBeaconProposer(),
+            Domain.BEACON_PROPOSER,
             spec.computeEpochAtSlot(block.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());

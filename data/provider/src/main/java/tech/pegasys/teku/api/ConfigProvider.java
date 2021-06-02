@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 
 public class ConfigProvider {
   final Spec spec;
@@ -58,7 +59,7 @@ public class ConfigProvider {
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
         Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
-    configAttributes.put("DOMAIN_BEACON_PROPOSER", config.getDomainBeaconProposer().toHexString());
+    configAttributes.put("DOMAIN_BEACON_PROPOSER", Domain.BEACON_PROPOSER.toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", config.getDomainBeaconAttester().toHexString());
     configAttributes.put("DOMAIN_RANDAO", config.getDomainRandao().toHexString());
     configAttributes.put("DOMAIN_DEPOSIT", config.getDomainDeposit().toHexString());

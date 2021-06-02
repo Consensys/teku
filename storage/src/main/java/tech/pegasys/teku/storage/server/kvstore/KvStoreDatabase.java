@@ -16,9 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
@@ -55,6 +52,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -278,12 +276,12 @@ public class KvStoreDatabase implements Database {
     blocks.forEach(
         signedBlock -> {
           final BeaconBlock block = signedBlock.getMessage();
-          final UInt64 epoch = compute_epoch_at_slot(block.getSlot());
+          final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
           final Fork fork = spec.fork(epoch);
           final Bytes32 domain =
-              get_domain(spec.domainBeaconProposer(epoch), epoch, fork, genesisValidatorsRoot);
+              spec.getDomain(Domain.BEACON_PROPOSER, epoch, fork, genesisValidatorsRoot);
           signatures.add(signedBlock.getSignature());
-          signingRoots.add(compute_signing_root(block, domain));
+          signingRoots.add(spec.computeSigningRoot(block, domain));
           BLSPublicKey proposerPublicKey =
               spec.getValidatorPubKey(finalizedState, block.getProposerIndex())
                   .orElseThrow(

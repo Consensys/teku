@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -223,8 +224,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
     final Bytes signing_root =
         miscHelpers.computeSigningRoot(
-            block.getMessage(),
-            beaconStateAccessors.getDomain(state, specConfig.getDomainBeaconProposer()));
+            block.getMessage(), beaconStateAccessors.getDomain(state, Domain.BEACON_PROPOSER));
     if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
       return BlockValidationResult.failed("Invalid block signature: " + block);
     }
