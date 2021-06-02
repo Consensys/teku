@@ -1,4 +1,6 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
+import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
+
 import java.text.SimpleDateFormat
 
 buildscript {
@@ -6,7 +8,7 @@ buildscript {
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
   }
   dependencies {
-    classpath 'tech.pegasys.internal.license.reporter:license-reporter:develop'
+    classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.0.0'
   }
 }
 
@@ -90,6 +92,7 @@ allprojects {
 
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
+    errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
   }
 
   apply plugin: 'com.diffplug.spotless'
@@ -106,12 +109,14 @@ allprojects {
         exclude '**/resources'
         exclude '**/src/*/generated'
         exclude '**/src/*/generated_tests'
+        exclude '**/build/**'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
+      // See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
       googleJavaFormat('1.10.0')
     }
   }
@@ -267,11 +272,10 @@ task deploy() {}
 licenseReport {
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
-  projects = [project] + project.subprojects.findAll {it.name != "errorprone-checks" }
   excludes = ['org.junit:junit-bom']
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
   filters = [new LicenseBundleNormalizer()]
-  renderers = [new tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer()]
+  renderers = [new GroupedLicenseHtmlRenderer()]
 }
 
 task checkMavenCoordinateCollisions {
@@ -589,7 +593,7 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
-  if (project.name != 'unsigned' && project.name != 'errorprone-checks') {
+  if (project.name != 'unsigned') {
     dependencies.implementation(project(':infrastructure:unsigned'))
   }
 
@@ -649,6 +653,7 @@ run {
 dependencies {
   implementation project(':teku')
   errorprone 'com.google.errorprone:error_prone_core'
+  errorprone 'tech.pegasys.tools.epchecks:errorprone-checks'
 }
 
 distributions {
@@ -719,18 +724,6 @@ task printVersion() {
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
   grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
-}
-
-configurations { annotationProcessor }
-
-// Prevent errorprone-checks being dependent upon errorprone-checks!
-// However, ensure all subprojects comply with the custom rules.
-configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
-  dependencies { annotationProcessor project(":errorprone-checks") }
-
-  tasks.withType(JavaCompile) {
-    options.annotationProcessorPath = configurations.annotationProcessor
-  }
 }
 
 task cloudsmithUpload {
