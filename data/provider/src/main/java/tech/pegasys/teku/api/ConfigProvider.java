@@ -63,7 +63,7 @@ public class ConfigProvider {
     configAttributes.put("DOMAIN_BEACON_ATTESTER", Domain.BEACON_ATTESTER.toHexString());
     configAttributes.put("DOMAIN_RANDAO", Domain.RANDAO.toHexString());
     configAttributes.put("DOMAIN_DEPOSIT", Domain.DEPOSIT.toHexString());
-    configAttributes.put("DOMAIN_VOLUNTARY_EXIT", config.getDomainVoluntaryExit().toHexString());
+    configAttributes.put("DOMAIN_VOLUNTARY_EXIT", Domain.VOLUNTARY_EXIT.toHexString());
     configAttributes.put("DOMAIN_SELECTION_PROOF", config.getDomainSelectionProof().toHexString());
     configAttributes.put(
         "DOMAIN_AGGREGATE_AND_PROOF", config.getDomainAggregateAndProof().toHexString());

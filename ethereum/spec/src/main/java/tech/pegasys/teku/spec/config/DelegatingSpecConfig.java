@@ -266,11 +266,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return specConfig.getDomainVoluntaryExit();
-  }
-
-  @Override
   public Bytes4 getDomainSelectionProof() {
     return specConfig.getDomainSelectionProof();
   }

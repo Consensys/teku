@@ -23,7 +23,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
   // Domain constants
-  private final Bytes4 domainVoluntaryExit = Bytes4.fromHexString("0x04000000");
   private final Bytes4 domainSelectionProof = Bytes4.fromHexString("0x05000000");
   private final Bytes4 domainAggregateAndProof = Bytes4.fromHexString("0x06000000");
 
@@ -448,11 +447,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return domainVoluntaryExit;
-  }
-
-  @Override
   public Bytes4 getDomainSelectionProof() {
     return domainSelectionProof;
   }
@@ -560,7 +554,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(domainVoluntaryExit, that.domainVoluntaryExit)
         && Objects.equals(domainSelectionProof, that.domainSelectionProof)
         && Objects.equals(domainAggregateAndProof, that.domainAggregateAndProof)
         && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
@@ -617,7 +610,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        domainVoluntaryExit,
         domainSelectionProof,
         domainAggregateAndProof,
         targetAggregatorsPerCommittee,

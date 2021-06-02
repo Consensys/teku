@@ -92,7 +92,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainVoluntaryExit(),
+            Domain.VOLUNTARY_EXIT,
             voluntaryExit.getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
