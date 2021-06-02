@@ -125,8 +125,6 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  Bytes4 getDomainAggregateAndProof();
-
   int getTargetAggregatorsPerCommittee();
 
   UInt64 getSecondsPerEth1Block();

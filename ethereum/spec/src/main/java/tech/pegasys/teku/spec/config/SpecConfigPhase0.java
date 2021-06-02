@@ -22,9 +22,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
-  // Domain constants
-  private final Bytes4 domainAggregateAndProof = Bytes4.fromHexString("0x06000000");
-
   // Validator constants
   private final int targetAggregatorsPerCommittee = 16;
   private final int randomSubnetsPerValidator = 1;
@@ -446,11 +443,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return domainAggregateAndProof;
-  }
-
-  @Override
   public int getTargetAggregatorsPerCommittee() {
     return targetAggregatorsPerCommittee;
   }
@@ -548,7 +540,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(domainAggregateAndProof, that.domainAggregateAndProof)
         && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
         && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
@@ -603,7 +594,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        domainAggregateAndProof,
         targetAggregatorsPerCommittee,
         secondsPerEth1Block,
         randomSubnetsPerValidator,

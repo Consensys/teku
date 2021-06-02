@@ -266,11 +266,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return specConfig.getDomainAggregateAndProof();
-  }
-
-  @Override
   public int getTargetAggregatorsPerCommittee() {
     return specConfig.getTargetAggregatorsPerCommittee();
   }

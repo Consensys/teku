@@ -65,8 +65,7 @@ public class ConfigProvider {
     configAttributes.put("DOMAIN_DEPOSIT", Domain.DEPOSIT.toHexString());
     configAttributes.put("DOMAIN_VOLUNTARY_EXIT", Domain.VOLUNTARY_EXIT.toHexString());
     configAttributes.put("DOMAIN_SELECTION_PROOF", Domain.SELECTION_PROOF.toHexString());
-    configAttributes.put(
-        "DOMAIN_AGGREGATE_AND_PROOF", config.getDomainAggregateAndProof().toHexString());
+    configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", Domain.AGGREGATE_AND_PROOF.toHexString());
     // Manually add legacy altair constants
     config
         .toVersionAltair()

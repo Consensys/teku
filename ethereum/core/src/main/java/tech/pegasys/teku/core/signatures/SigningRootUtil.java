@@ -80,7 +80,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainAggregateAndProof(),
+            Domain.AGGREGATE_AND_PROOF,
             spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
