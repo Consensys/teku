@@ -94,8 +94,7 @@ public class GetStateByBlockRoot implements Handler {
               }
               final SszResponse sszResponse = result.get();
               ctx.header(
-                  "Content-Disposition",
-                  "filename=\"" + sszResponse.stateAbbreviatedHash + ".ssz\"");
+                  "Content-Disposition", "filename=\"" + sszResponse.abbreviatedHash + ".ssz\"");
               ctx.contentType("application/octet-stream");
               return sszResponse.byteStream;
             }));

@@ -105,7 +105,7 @@ public class GetState extends AbstractHandler implements Handler {
   }
 
   private String resultFilename(final SszResponse response) {
-    return response.stateAbbreviatedHash + ".ssz";
+    return response.abbreviatedHash + ".ssz";
   }
 
   private Optional<ByteArrayInputStream> handleSszResult(
