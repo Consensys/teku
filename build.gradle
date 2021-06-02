@@ -155,7 +155,7 @@ allprojects {
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
-      // Enabling this check results in large number of parameter changes in ssz submodule. Fix in future PR
+      // these checks are imported from errorprone-checks dependency but not required in Teku
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
