@@ -135,8 +135,8 @@ public class P2POptions {
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "",
-      arity = "1",
-      fallbackValue = "false")
+      arity = "0..1",
+      fallbackValue = "true")
   private boolean subscribeAllSubnetsEnabled = false;
 
   @Option(
