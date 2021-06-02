@@ -14,15 +14,9 @@
 package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -38,6 +32,33 @@ public class Constants {
   @Deprecated public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   @Deprecated public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   @Deprecated public static final int JUSTIFICATION_BITS_LENGTH = 4;
+
+  // Phase0 constants which may exist in legacy config files, but are no longer configurable
+  @Deprecated public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  @Deprecated public static final int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
+  @Deprecated public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
+  @Deprecated public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_SELECTION_PROOF = Bytes4.fromHexString("0x05000000");
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_AGGREGATE_AND_PROOF = Bytes4.fromHexString("0x06000000");
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
@@ -62,7 +83,6 @@ public class Constants {
 
   // Initial values
   @Deprecated public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-  @Deprecated public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
@@ -97,27 +117,8 @@ public class Constants {
   @Deprecated public static int MAX_DEPOSITS;
   @Deprecated public static int MAX_VOLUNTARY_EXITS = 16;
 
-  // Signature domains
-  @Deprecated
-  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-
-  @Deprecated
-  public static Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
-
-  @Deprecated public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
-  @Deprecated public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
-
-  @Deprecated
-  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-
-  @Deprecated public static Bytes4 DOMAIN_SELECTION_PROOF;
-  @Deprecated public static Bytes4 DOMAIN_AGGREGATE_AND_PROOF;
-
   // Validator
-  @Deprecated public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
-  @Deprecated public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
-  @Deprecated public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Fork Choice
   @Deprecated public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
@@ -191,27 +192,7 @@ public class Constants {
    */
   @Deprecated
   public static void setConstants(final String source) {
-    try (final InputStream input = createInputStream(source)) {
-      ConstantsReader.loadConstantsFrom(input);
-    } catch (IOException e) {
-      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
-    }
+    ConstantsReader.loadConstantsFrom(source);
     SpecDependent.resetAll();
-  }
-
-  private static InputStream createInputStream(final String source) throws IOException {
-    return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateNetworkResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
-        .load(source + ".yaml", source + "/phase0.yaml", source)
-        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
-  }
-
-  private static List<String> enumerateNetworkResources() {
-    return NETWORK_DEFINITIONS.stream()
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml"))
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
   }
 }

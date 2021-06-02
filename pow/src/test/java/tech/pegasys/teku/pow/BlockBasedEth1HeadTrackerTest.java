@@ -30,13 +30,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.util.config.Constants;
 
-class Eth1HeadTrackerTest {
+class BlockBasedEth1HeadTrackerTest {
   private static final long FOLLOW_DISTANCE = 1000;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final HeadUpdatedSubscriber subscriber = mock(HeadUpdatedSubscriber.class);
 
-  private final Eth1HeadTracker tracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
+  private final Eth1HeadTracker tracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider);
 
   @BeforeAll
   static void setConstants() {

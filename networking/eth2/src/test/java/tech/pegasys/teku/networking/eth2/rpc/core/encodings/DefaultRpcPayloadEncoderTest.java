@@ -19,15 +19,18 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 public class DefaultRpcPayloadEncoderTest {
-  final DefaultRpcPayloadEncoder<StatusMessage> statusMessageEncoder =
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DefaultRpcPayloadEncoder<StatusMessage> statusMessageEncoder =
       new DefaultRpcPayloadEncoder<>(StatusMessage.SSZ_SCHEMA);
 
   @Test
   public void decode_truncatedMessage() {
-    final StatusMessage statusMessage = StatusMessage.createPreGenesisStatus();
+    final StatusMessage statusMessage = StatusMessage.createPreGenesisStatus(spec);
     final Bytes encoded = statusMessageEncoder.encode(statusMessage);
 
     for (int i = 0; i < encoded.size(); i++) {

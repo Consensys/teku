@@ -33,15 +33,57 @@ public class ConfigProvider {
 
   public GetSpecResponse getConfig() {
     final Map<String, String> configAttributes = new HashMap<>();
-    spec
-        // Display genesis spec, for now
-        .atEpoch(UInt64.ZERO)
-        .getConfig()
+    final SpecConfig config =
+        spec
+            // Display genesis spec, for now
+            .atEpoch(UInt64.ZERO)
+            .getConfig();
+
+    config
         .getRawConfig()
         .forEach(
             (k, v) -> {
               configAttributes.put(k, "" + v);
             });
+
+    // For the time being, manually add legacy constants for compatibility reasons
+    // These constants are no longer defined in newer config files, but may be required by consumers
+    configAttributes.put("BLS_WITHDRAWAL_PREFIX", config.getBlsWithdrawalPrefix().toHexString());
+    configAttributes.put(
+        "TARGET_AGGREGATORS_PER_COMMITTEE",
+        Integer.toString(config.getTargetAggregatorsPerCommittee(), 10));
+    configAttributes.put(
+        "RANDOM_SUBNETS_PER_VALIDATOR",
+        Integer.toString(config.getRandomSubnetsPerValidator(), 10));
+    configAttributes.put(
+        "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+        Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
+    configAttributes.put("DOMAIN_BEACON_PROPOSER", config.getDomainBeaconProposer().toHexString());
+    configAttributes.put("DOMAIN_BEACON_ATTESTER", config.getDomainBeaconAttester().toHexString());
+    configAttributes.put("DOMAIN_RANDAO", config.getDomainRandao().toHexString());
+    configAttributes.put("DOMAIN_DEPOSIT", config.getDomainDeposit().toHexString());
+    configAttributes.put("DOMAIN_VOLUNTARY_EXIT", config.getDomainVoluntaryExit().toHexString());
+    configAttributes.put("DOMAIN_SELECTION_PROOF", config.getDomainSelectionProof().toHexString());
+    configAttributes.put(
+        "DOMAIN_AGGREGATE_AND_PROOF", config.getDomainAggregateAndProof().toHexString());
+    // Manually add legacy altair constants
+    config
+        .toVersionAltair()
+        .ifPresent(
+            altairConfig -> {
+              configAttributes.put(
+                  "DOMAIN_SYNC_COMMITTEE", altairConfig.getDomainSyncCommittee().toHexString());
+              configAttributes.put(
+                  "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
+                  altairConfig.getDomainSyncCommitteeSelectionProof().toHexString());
+              configAttributes.put(
+                  "DOMAIN_CONTRIBUTION_AND_PROOF",
+                  altairConfig.getDomainContributionAndProof().toHexString());
+              configAttributes.put(
+                  "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
+                  Integer.toString(altairConfig.getTargetAggregatorsPerSyncSubcommittee(), 10));
+            });
+
     return new GetSpecResponse(configAttributes);
   }
 

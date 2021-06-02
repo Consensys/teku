@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 @SuppressWarnings("unused")
 public class BeaconStateUtil {
@@ -88,28 +86,6 @@ public class BeaconStateUtil {
 
   public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getCurrentEpoch(state));
-  }
-
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
-    UInt64 epoch =
-        (messageEpoch == null) ? beaconStateAccessors.getCurrentEpoch(state) : messageEpoch;
-    return getDomain(domainType, epoch, state.getFork(), state.getGenesis_validators_root());
-  }
-
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType) {
-    return getDomain(state, domainType, null);
-  }
-
-  public Bytes32 getDomain(
-      final Bytes4 domainType,
-      final UInt64 epoch,
-      final Fork fork,
-      final Bytes32 genesisValidatorsRoot) {
-    Bytes4 forkVersion =
-        (epoch.compareTo(fork.getEpoch()) < 0)
-            ? fork.getPrevious_version()
-            : fork.getCurrent_version();
-    return miscHelpers.computeDomain(domainType, forkVersion, genesisValidatorsRoot);
   }
 
   public List<UInt64> getEffectiveBalances(final BeaconState state) {

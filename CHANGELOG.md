@@ -19,12 +19,15 @@ For information on changes in released versions of Teku, see the [releases page]
 - When handling blocksByRange requests that target blocks we haven't yet downloaded, return the standard "resource unavailable" response code (3) rather than a custom response code.
 - Remove legacy pure Java BLS cryptography implementation (Mikuli).
 - Added `beacon_eth1_requests_total` metric to report the number of requests sent to eth1 endpoints.
+- Rework network configuration parsing to accept the new config format.  For details on the new format, see the [eth2.0-specs repo](https://github.com/ethereum/eth2.0-specs/pull/2390).  With this change, we no longer support pointing to directories for the network configuration.  Now, the network config (supplied via `--network`) should always point to a single yaml file.
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
 - Use system default character set for console output rather than forcing UTF-8. Avoids corrupting characters on systems using charsets that are not ascii based.
 - Fixed a `NullPointerException` from validator clients for new networks, prior to genesis being known.
 - Fixed regression where eth_getLogs responses from Infura that rejected the request because they returned too many logs did not retry the request with a smaller request range.
+- Experimental: Fix for eth1 follow distance tracking revealed in Rayonism testnets. Teku incorrectly strictly follows 2048 blocks before the eth1 head but the follow distance should be based on timestamp, not block number.
+  An experimental fix for this can be enabled with `--Xeth1-time-based-head-tracking-enabled`. Further testing will be conducted before enabling this by default.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.

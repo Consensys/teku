@@ -88,7 +88,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
+        new AttestationUtil(config, beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
         OperationValidator.create(beaconStateAccessors, attestationUtil, validatorsUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =

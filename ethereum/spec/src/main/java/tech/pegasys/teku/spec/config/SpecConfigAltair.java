@@ -19,6 +19,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigAltair extends DelegatingSpecConfig {
+
+  // Domain constants
+  private final Bytes4 domainSyncCommittee = Bytes4.fromHexString("0x07000000");
+  private final Bytes4 domainSyncCommitteeSelectionProof = Bytes4.fromHexString("0x08000000");
+  private final Bytes4 domainContributionAndProof = Bytes4.fromHexString("0x09000000");
+
+  // Validator constants
+  private final int targetAggregatorsPerSyncSubcommittee = 4;
+
   // Updated penalties
   private final UInt64 inactivityPenaltyQuotientAltair;
   private final int minSlashingPenaltyQuotientAltair;
@@ -32,20 +41,12 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
   // Time
   private final int epochsPerSyncCommitteePeriod;
 
-  // Signature domains
-  private final Bytes4 domainSyncCommittee;
-  private final Bytes4 domainSyncCommitteeSelectionProof;
-  private final Bytes4 domainContributionAndProof;
-
   // Fork
   private final Bytes4 altairForkVersion;
   private final UInt64 altairForkEpoch;
 
   // Sync protocol
   private final int minSyncCommitteeParticipants;
-
-  // Validator
-  private final int targetAggregatorsPerSyncSubcommittee;
 
   public SpecConfigAltair(
       final SpecConfig specConfig,
@@ -56,13 +57,9 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
       final UInt64 inactivityScoreBias,
       final UInt64 inactivityScoreRecoveryRate,
       final int epochsPerSyncCommitteePeriod,
-      final Bytes4 domainSyncCommittee,
-      final Bytes4 domainSyncCommitteeSelectionProof,
-      final Bytes4 domainContributionAndProof,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
-      final int minSyncCommitteeParticipants,
-      final int targetAggregatorsPerSyncSubcommittee) {
+      final int minSyncCommitteeParticipants) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -71,13 +68,9 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     this.inactivityScoreBias = inactivityScoreBias;
     this.inactivityScoreRecoveryRate = inactivityScoreRecoveryRate;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
-    this.domainSyncCommittee = domainSyncCommittee;
-    this.domainSyncCommitteeSelectionProof = domainSyncCommitteeSelectionProof;
-    this.domainContributionAndProof = domainContributionAndProof;
     this.altairForkVersion = altairForkVersion;
     this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
-    this.targetAggregatorsPerSyncSubcommittee = targetAggregatorsPerSyncSubcommittee;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -140,6 +133,10 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
 
   public int getTargetAggregatorsPerSyncSubcommittee() {
     return targetAggregatorsPerSyncSubcommittee;
+  }
+
+  public int getMinSyncCommitteeParticipants() {
+    return minSyncCommitteeParticipants;
   }
 
   @Override

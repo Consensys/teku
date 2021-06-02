@@ -47,7 +47,7 @@ public class ForkScheduleTest {
               Eth2Network.MINIMAL.configName(),
               c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))));
 
-  // Set up config with no altair transition
+  // Set up default config
   private static final SpecConfig PHASE0_CONFIG =
       TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
 

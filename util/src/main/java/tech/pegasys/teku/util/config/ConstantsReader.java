@@ -15,18 +15,55 @@ package tech.pegasys.teku.util.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
+  private static ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
+  private static final String PRESET_PATH = "presets/";
+  private static final String CONFIG_PATH = "configs/";
+  private static final String PRESET_FIELD = "PRESET_BASE";
+  private static final ImmutableList<String> FIELDS_TO_IGNORE =
+      ImmutableList.of(
+          PRESET_FIELD,
+          // Altair fields
+          "ALTAIR_FORK_VERSION",
+          "ALTAIR_FORK_EPOCH",
+          "INACTIVITY_SCORE_BIAS",
+          "INACTIVITY_SCORE_RECOVERY_RATE",
+          // Unsupported, upcoming fork-related keys
+          "MERGE_FORK_VERSION",
+          "MERGE_FORK_EPOCH",
+          "SHARDING_FORK_VERSION",
+          "SHARDING_FORK_EPOCH",
+          "TRANSITION_TOTAL_DIFFICULTY",
+          // Phase0 constants which may exist in legacy config files, but should now be ignored
+          "BLS_WITHDRAWAL_PREFIX",
+          "TARGET_AGGREGATORS_PER_COMMITTEE",
+          "RANDOM_SUBNETS_PER_VALIDATOR",
+          "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+          "DOMAIN_BEACON_PROPOSER",
+          "DOMAIN_BEACON_ATTESTER",
+          "DOMAIN_RANDAO",
+          "DOMAIN_DEPOSIT",
+          "DOMAIN_VOLUNTARY_EXIT",
+          "DOMAIN_SELECTION_PROOF",
+          "DOMAIN_AGGREGATE_AND_PROOF");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
@@ -39,20 +76,73 @@ class ConstantsReader {
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
+  public static void loadConstantsFrom(final String source) {
+    try (final InputStream input = createConfigInputStream(source)) {
+      final Optional<String> maybePreset = loadConstants(input);
+      if (maybePreset.isEmpty()) {
+        // Legacy config files do not have a preset
+        return;
+      }
+      try (final InputStream preset = createPresetInputStream(source, maybePreset.get())) {
+        loadConstants(preset);
+      }
+    } catch (IOException | IllegalArgumentException e) {
+      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
+    }
+  }
+
+  @VisibleForTesting
   @SuppressWarnings("unchecked")
-  public static void loadConstantsFrom(final InputStream source) throws IOException {
+  static Optional<String> loadConstants(final InputStream input) throws IOException {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Map<String, Object> values =
         (Map<String, Object>)
             mapper
                 .readerFor(
                     mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class))
-                .readValues(source)
+                .readValues(input)
                 .next();
     values.forEach(ConstantsReader::setField);
+    return Optional.ofNullable(values.get(PRESET_FIELD)).map(ConstantsReader::castPresetField);
+  }
+
+  private static String castPresetField(final Object value) {
+    if (!(value instanceof String)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Unable to parse %s field (value = '%s') as a string", PRESET_FIELD, value));
+    }
+    return (String) value;
+  }
+
+  private static InputStream createConfigInputStream(final String source) throws IOException {
+    return ResourceLoader.classpathUrlOrFile(
+            Constants.class,
+            enumerateNetworkResources(),
+            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
+        .load(CONFIG_PATH + source + ".yaml", source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
+  }
+
+  private static InputStream createPresetInputStream(final String source, final String preset)
+      throws IOException {
+    return ResourceLoader.classpathUrlOrFile(
+            Constants.class,
+            enumerateAvailablePresetResources(),
+            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
+        .load(PRESET_PATH + preset + "/phase0.yaml", preset)
+        .orElseThrow(
+            () ->
+                new FileNotFoundException(
+                    String.format(
+                        "Could not load preset '%s' for config source '%s'", preset, source)));
   }
 
   private static void setField(final String key, final Object value) {
+    if (FIELDS_TO_IGNORE.contains(key)) {
+      return;
+    }
+
     try {
       final Field field = Constants.class.getField(key);
       if (!Modifier.isStatic(field.getModifiers())) {
@@ -96,5 +186,18 @@ class ConstantsReader {
 
   private static <T> Function<Object, T> toString(final Function<String, T> function) {
     return value -> function.apply(value.toString());
+  }
+
+  private static List<String> enumerateNetworkResources() {
+    return Constants.NETWORK_DEFINITIONS.stream()
+        .map(s -> CONFIG_PATH + s + ".yaml")
+        .collect(Collectors.toList());
+  }
+
+  private static List<String> enumerateAvailablePresetResources() {
+    return PRESETS.stream()
+        .map(s -> List.of(PRESET_PATH + s + "/phase0.yaml", PRESET_PATH + s + "/altair.yaml"))
+        .flatMap(List::stream)
+        .collect(Collectors.toList());
   }
 }
