@@ -45,7 +45,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class DiscoveryNetworkFactory {
 
-  protected static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
   protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
   private static final int MIN_PORT = 9000;
   private static final int MAX_PORT = 12000;
