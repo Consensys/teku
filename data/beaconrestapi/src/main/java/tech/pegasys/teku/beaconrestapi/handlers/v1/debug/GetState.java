@@ -42,7 +42,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.StateSszResponse;
+import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -91,7 +91,7 @@ public class GetState extends AbstractHandler implements Handler {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
     if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
-      final SafeFuture<Optional<StateSszResponse>> future =
+      final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
@@ -104,12 +104,12 @@ public class GetState extends AbstractHandler implements Handler {
     }
   }
 
-  private String resultFilename(final StateSszResponse response) {
+  private String resultFilename(final SszResponse response) {
     return response.stateAbbreviatedHash + ".ssz";
   }
 
   private Optional<ByteArrayInputStream> handleSszResult(
-      final Context context, final StateSszResponse response) {
+      final Context context, final SszResponse response) {
     return Optional.of(response.byteStream);
   }
 

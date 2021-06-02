@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -30,11 +32,13 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -73,15 +77,34 @@ public class GetBlock extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<SignedBeaconBlock>> future =
-        chainDataProvider.getBlockV2(pathParams.get(PARAM_BLOCK_ID));
-    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+    final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
+    final String blockIdentifier = pathParams.get(PARAM_BLOCK_ID);
+    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+      final SafeFuture<Optional<SszResponse>> future =
+          chainDataProvider.getBlockSsz(blockIdentifier);
+      handleOptionalSszResult(
+          ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
+
+    } else {
+      final SafeFuture<Optional<SignedBeaconBlock>> future =
+          chainDataProvider.getBlockV2(blockIdentifier);
+      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
+    }
   }
 
-  private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
+  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
     final SpecMilestone milestone =
         chainDataProvider.getMilestoneAtSlot(response.getMessage().slot);
     return Optional.of(jsonProvider.objectToJSON(new GetBlockResponseV2(milestone, response)));
+  }
+
+  private String resultFilename(final SszResponse response) {
+    return response.stateAbbreviatedHash + ".ssz";
+  }
+
+  private Optional<ByteArrayInputStream> handleSszResult(
+      final Context context, final SszResponse response) {
+    return Optional.of(response.byteStream);
   }
 }

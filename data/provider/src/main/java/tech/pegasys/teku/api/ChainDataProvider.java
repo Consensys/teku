@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.StateSszResponse;
+import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
@@ -124,6 +124,19 @@ public class ChainDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
+  public SafeFuture<Optional<SszResponse>> getBlockSsz(final String slotParameter) {
+    return defaultBlockSelectorFactory
+        .defaultBlockSelector(slotParameter)
+        .getSingleBlock()
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(
+                    block ->
+                        new SszResponse(
+                            new ByteArrayInputStream(block.sszSerialize().toArrayUnsafe()),
+                            block.hashTreeRoot().toUnprefixedHexString())));
+  }
+
   public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
@@ -170,7 +183,7 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(schemaObjectProvider::getBeaconState));
   }
 
-  public SafeFuture<Optional<StateSszResponse>> getBeaconStateSsz(final String stateIdParam) {
+  public SafeFuture<Optional<SszResponse>> getBeaconStateSsz(final String stateIdParam) {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
@@ -178,7 +191,7 @@ public class ChainDataProvider {
             maybeState ->
                 maybeState.map(
                     state ->
-                        new StateSszResponse(
+                        new SszResponse(
                             new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
                             state.hashTreeRoot().toUnprefixedHexString())));
   }
@@ -197,7 +210,7 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<StateSszResponse>> getBeaconStateSszByBlockRoot(
+  public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(
       final String blockRootParam) {
     return defaultStateSelectorFactory
         .byBlockRootStateSelector(blockRootParam)
@@ -206,7 +219,7 @@ public class ChainDataProvider {
             maybeState ->
                 maybeState.map(
                     state ->
-                        new StateSszResponse(
+                        new SszResponse(
                             new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
                             state.hashTreeRoot().toUnprefixedHexString())));
   }
