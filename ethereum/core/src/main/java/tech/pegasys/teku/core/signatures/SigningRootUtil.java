@@ -36,10 +36,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atEpoch(epoch);
     Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainRandao(),
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+            Domain.RANDAO, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(epoch, domain);
   }
 
