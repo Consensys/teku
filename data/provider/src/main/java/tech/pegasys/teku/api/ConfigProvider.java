@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
 public class ConfigProvider {
   final Spec spec;
@@ -52,7 +53,7 @@ public class ConfigProvider {
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", config.getBlsWithdrawalPrefix().toHexString());
     configAttributes.put(
         "TARGET_AGGREGATORS_PER_COMMITTEE",
-        Integer.toString(config.getTargetAggregatorsPerCommittee(), 10));
+        Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE, 10));
     configAttributes.put(
         "RANDOM_SUBNETS_PER_VALIDATOR",
         Integer.toString(config.getRandomSubnetsPerValidator(), 10));

@@ -23,7 +23,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
   // Validator constants
-  private final int targetAggregatorsPerCommittee = 16;
   private final int randomSubnetsPerValidator = 1;
   private final int epochsPerRandomSubnetSubscription = 256;
 
@@ -443,11 +442,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getTargetAggregatorsPerCommittee() {
-    return targetAggregatorsPerCommittee;
-  }
-
-  @Override
   public UInt64 getSecondsPerEth1Block() {
     return secondsPerEth1Block;
   }
@@ -517,7 +511,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
-        && targetAggregatorsPerCommittee == that.targetAggregatorsPerCommittee
         && randomSubnetsPerValidator == that.randomSubnetsPerValidator
         && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
@@ -594,7 +587,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        targetAggregatorsPerCommittee,
         secondsPerEth1Block,
         randomSubnetsPerValidator,
         epochsPerRandomSubnetSubscription,

@@ -125,8 +125,6 @@ class ValidatorsUtilTest {
   void getAggregatorModulo_samples() {
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final ValidatorsUtil validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
-    // check assumptions
-    assertThat(specConfig.getTargetAggregatorsPerCommittee()).isEqualTo(16);
 
     assertThat(validatorsUtil.getAggregatorModulo(-1)).isEqualTo(1);
     assertThat(validatorsUtil.getAggregatorModulo(0)).isEqualTo(1);
