@@ -59,7 +59,7 @@ public class ConfigProvider {
         Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR, 10));
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
-        Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
+        Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION, 10));
     configAttributes.put("DOMAIN_BEACON_PROPOSER", Domain.BEACON_PROPOSER.toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", Domain.BEACON_ATTESTER.toHexString());
     configAttributes.put("DOMAIN_RANDAO", Domain.RANDAO.toHexString());

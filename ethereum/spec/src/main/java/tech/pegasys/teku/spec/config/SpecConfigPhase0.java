@@ -22,10 +22,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
-  // Validator constants
-  private final int epochsPerRandomSubnetSubscription = 256;
-
-  // Other constants
+  // Constants
   private final Bytes blsWithdrawalPrefix = Bytes.fromHexString("0x00");
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
@@ -446,11 +443,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return epochsPerRandomSubnetSubscription;
-  }
-
-  @Override
   public int getSafeSlotsToUpdateJustified() {
     return safeSlotsToUpdateJustified;
   }
@@ -505,7 +497,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
-        && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
@@ -581,7 +572,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxDeposits,
         maxVoluntaryExits,
         secondsPerEth1Block,
-        epochsPerRandomSubnetSubscription,
         safeSlotsToUpdateJustified,
         depositChainId,
         depositNetworkId,

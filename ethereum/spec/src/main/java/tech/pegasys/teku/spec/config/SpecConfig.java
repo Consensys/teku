@@ -127,8 +127,6 @@ public interface SpecConfig {
 
   UInt64 getSecondsPerEth1Block();
 
-  int getEpochsPerRandomSubnetSubscription();
-
   int getSafeSlotsToUpdateJustified();
 
   int getDepositChainId();

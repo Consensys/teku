@@ -271,11 +271,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return specConfig.getEpochsPerRandomSubnetSubscription();
-  }
-
-  @Override
   public int getSafeSlotsToUpdateJustified() {
     return specConfig.getSafeSlotsToUpdateJustified();
   }

@@ -157,8 +157,9 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     final SpecConfig config = spec.atSlot(currentSlot).getConfig();
 
     return UInt64.valueOf(
-        (config.getEpochsPerRandomSubnetSubscription()
-                + random.nextInt(config.getEpochsPerRandomSubnetSubscription()))
+        (long)
+                (ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
+                    + random.nextInt(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
             * config.getSlotsPerEpoch());
   }
 }
