@@ -266,41 +266,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainBeaconProposer() {
-    return specConfig.getDomainBeaconProposer();
-  }
-
-  @Override
-  public Bytes4 getDomainBeaconAttester() {
-    return specConfig.getDomainBeaconAttester();
-  }
-
-  @Override
-  public Bytes4 getDomainRandao() {
-    return specConfig.getDomainRandao();
-  }
-
-  @Override
-  public Bytes4 getDomainDeposit() {
-    return specConfig.getDomainDeposit();
-  }
-
-  @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return specConfig.getDomainVoluntaryExit();
-  }
-
-  @Override
-  public Bytes4 getDomainSelectionProof() {
-    return specConfig.getDomainSelectionProof();
-  }
-
-  @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return specConfig.getDomainAggregateAndProof();
-  }
-
-  @Override
   public int getTargetAggregatorsPerCommittee() {
     return specConfig.getTargetAggregatorsPerCommittee();
   }

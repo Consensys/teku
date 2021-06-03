@@ -28,7 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -46,15 +46,11 @@ public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecConfig specConfig;
   private final BeaconStateAccessors beaconStateAccessors;
   private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
-      final SpecConfig specConfig,
-      final BeaconStateAccessors beaconStateAccessors,
-      final MiscHelpers miscHelpers) {
-    this.specConfig = specConfig;
+      final BeaconStateAccessors beaconStateAccessors, final MiscHelpers miscHelpers) {
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
   }
@@ -193,9 +189,7 @@ public class AttestationUtil {
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes32 domain =
         beaconStateAccessors.getDomain(
-            state,
-            specConfig.getDomainBeaconAttester(),
-            indexed_attestation.getData().getTarget().getEpoch());
+            state, Domain.BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
