@@ -66,7 +66,7 @@ class SyncCommitteeAggregationDutyTest {
   private final BLSSignature nonAggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
-              "0xae401f767ab1917f925fe299ad51a57d52f7cc80deb1cc20fa2b3aa983e4e4d23056d79f01f3c97e29c8905da17e70e30c2a3f6bdd83dbc4ddf530e02e8f4d7ba22260e12e5f5fe7875b48e79660615b275597e87b2d33e076664b3da1737852"));
+              "0xce401f767ab1917f925fe299ad51a57d52f7cc80deb1cc20fa2b3aa983e4e4d23056d79f01f3c97e29c8905da17e70e30c2a3f6bdd83dbc4ddf530e02e8f4d7ba22260e12e5f5fe7875b48e79660615b275597e87b2d33e076664b3da1737852"));
   private final BLSSignature aggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
