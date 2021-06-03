@@ -45,9 +45,11 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
   private static final String PRESET_KEY = "PRESET_BASE";
+  private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
   private static final ImmutableSet<String> KEYS_TO_IGNORE =
       ImmutableSet.of(
           PRESET_KEY,
+          CONFIG_NAME_KEY,
           // Unsupported, upcoming fork-related keys
           "MERGE_FORK_VERSION",
           "MERGE_FORK_EPOCH",
@@ -125,11 +127,18 @@ public class SpecConfigReader {
   public void loadFromMap(final Map<String, ?> rawValues) {
     processSeenValues(rawValues);
     final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
+    final Map<String, Object> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
-    KEYS_TO_IGNORE.forEach(unprocessedConfig::remove);
+    KEYS_TO_IGNORE.forEach(
+        key -> {
+          unprocessedConfig.remove(key);
+          if (!key.equals(PRESET_KEY) && !key.equals(CONFIG_NAME_KEY)) {
+            apiSpecConfig.remove(key);
+          }
+        });
 
     // Process phase0 config
-    configBuilder.rawConfig(unprocessedConfig);
+    configBuilder.rawConfig(apiSpecConfig);
     streamConfigSetters(configBuilder.getClass())
         .forEach(
             setter -> {

@@ -32,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -43,6 +44,21 @@ public class SpecConfigLoaderTest {
       throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfig(name);
     assertAllFieldsSet(config, configType);
+  }
+
+  /**
+   * For the three networks supported by Infura, go the extra mile and ensure the CONFIG_NAME key is
+   * still included in the raw config which is exposed by the config/spec REST API.
+   *
+   * <p>Prior to Altair, Lighthouse required this field to be a known testnet name, mainnet or
+   * minimal. Post-Altair we will be able to remove this as the new PRESET_BASE key will be
+   * sufficient.
+   */
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"prater", "pyrmont", "mainnet"})
+  public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
+    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
   }
 
   @Test

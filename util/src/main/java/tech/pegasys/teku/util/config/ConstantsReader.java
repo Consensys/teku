@@ -41,6 +41,7 @@ class ConstantsReader {
   private static final ImmutableList<String> FIELDS_TO_IGNORE =
       ImmutableList.of(
           PRESET_FIELD,
+          "CONFIG_NAME", // Legacy field
           // Altair fields
           "ALTAIR_FORK_VERSION",
           "ALTAIR_FORK_EPOCH",
