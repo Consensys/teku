@@ -3,6 +3,9 @@
 # Extends the mainnet preset
 PRESET_BASE: 'mainnet'
 
+# For backwards compatibility in the config/spec API
+CONFIG_NAME: "mainnet"
+
 # Genesis
 # ---------------------------------------------------------------
 # `2**14` (= 16,384)

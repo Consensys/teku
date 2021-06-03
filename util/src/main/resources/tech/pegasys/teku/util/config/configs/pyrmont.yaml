@@ -1,5 +1,8 @@
 # Pyrmont preset
 
+# For backwards compatibility in the config/spec API
+CONFIG_NAME: "pyrmont"
+
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
