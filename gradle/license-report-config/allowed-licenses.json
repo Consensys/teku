@@ -1,0 +1,142 @@
+{
+  "allowedLicenses": [
+    {
+      "moduleLicense": "Apache License, Version 2.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "BSD Zero Clause License",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Bouncy Castle Licence",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "CDDL/GPLv2+CE",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Creative Commons Legal Code",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Eclipse Distribution License - v 1.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 1.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 2.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "MIT License",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "Mozilla Public License, Version 2.0",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "The 2-Clause BSD License",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "The 3-Clause BSD License",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "The BSD License",
+      "moduleName": ".*"
+    },
+    {
+      "moduleLicense": "The JSON License",
+      "moduleName": "org.json:json"
+    },
+    {
+      "moduleName": "io.libp2p:jvm-libp2p-minimal"
+    }
+  ],
+  "overrideLicenses" : [
+    {
+      "moduleName": "com.github.fge",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "com.github.java-json-tools",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "com.github.jnr:jnr-posix",
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleName": "io.libp2p:jvm-libp2p-minimal",
+      "moduleLicense": "Apache License, Version 2.0",
+      "moduleLicenseUrl": "https://github.com/libp2p/jvm-libp2p/blob/develop/LICENSE-APACHE"
+    },
+    {
+      "moduleName": "io.vertx",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "jakarta.activation:jakarta.activation-api",
+      "moduleLicense": "Eclipse Distribution License - v 1.0"
+    },
+    {
+      "moduleName": "jakarta.validation:jakarta.validation-api",
+      "moduleLicense": "Eclipse Distribution License - v 1.0"
+    },
+    {
+      "moduleName": "jakarta.xml.bind:jakarta.xml.bind-api",
+      "moduleLicense": "Eclipse Distribution License - v 1.0"
+    },
+    {
+      "moduleName": "javax.persistence:javax.persistence-api",
+      "moduleLicense": "Eclipse Distribution License - v 1.0"
+    },
+    {
+      "moduleName": "javax.xml.bind:jaxb-api",
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1"
+    },
+    {
+      "moduleName": "org.codehaus.mojo:animal-sniffer-annotations",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.eclipse.jetty",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.eclipse.jetty.websocket",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.fusesource.leveldbjni:leveldbjni-all",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.hdrhistogram:HdrHistogram",
+      "moduleLicense": "The 2-Clause BSD License"
+    },
+    {
+      "moduleName": "org.ow2.asm",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.rocksdb:rocksdbjni",
+      "moduleLicense": "Apache License, Version 2.0"
+    }
+  ]
+}

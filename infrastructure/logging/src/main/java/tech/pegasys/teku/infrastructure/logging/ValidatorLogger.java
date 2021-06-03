@@ -29,6 +29,7 @@ public class ValidatorLogger {
   public static final int LONGEST_TYPE_LENGTH = "sync_contribution".length();
   private static final String PREFIX = "Validator   *** ";
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
   private ValidatorLogger(final String name) {

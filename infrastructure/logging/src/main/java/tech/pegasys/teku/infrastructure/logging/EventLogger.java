@@ -29,6 +29,7 @@ public class EventLogger {
   public static final EventLogger EVENT_LOG =
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
   private EventLogger(final String name) {
