@@ -36,9 +36,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.DelegatingSpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -68,7 +66,7 @@ class SyncCommitteeAggregationDutyTest {
   private final BLSSignature nonAggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
-              "0xae401f767ab1917f925fe299ad51a57d52f7cc80deb1cc20fa2b3aa983e4e4d23056d79f01f3c97e29c8905da17e70e30c2a3f6bdd83dbc4ddf530e02e8f4d7ba22260e12e5f5fe7875b48e79660615b275597e87b2d33e076664b3da1737852"));
+              "0xce401f767ab1917f925fe299ad51a57d52f7cc80deb1cc20fa2b3aa983e4e4d23056d79f01f3c97e29c8905da17e70e30c2a3f6bdd83dbc4ddf530e02e8f4d7ba22260e12e5f5fe7875b48e79660615b275597e87b2d33e076664b3da1737852"));
   private final BLSSignature aggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
@@ -97,21 +95,13 @@ class SyncCommitteeAggregationDutyTest {
   }
 
   private static SpecConfig createSpecConfig() {
-    final SpecConfigAltair baseConfig =
-        TestConfigLoader.loadConfig(
-                "minimal",
-                modifier ->
-                    modifier.altairBuilder(
-                        altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
-            .toVersionAltair()
-            .orElseThrow();
-
-    return new DelegatingSpecConfigAltair(baseConfig) {
-      @Override
-      public int getTargetAggregatorsPerSyncSubcommittee() {
-        return 1;
-      }
-    };
+    return TestConfigLoader.loadConfig(
+            "minimal",
+            modifier ->
+                modifier.altairBuilder(
+                    altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
+        .toVersionAltair()
+        .orElseThrow();
   }
 
   @Test

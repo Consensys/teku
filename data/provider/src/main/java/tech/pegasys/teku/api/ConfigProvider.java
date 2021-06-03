@@ -80,7 +80,8 @@ public class ConfigProvider {
                   "DOMAIN_CONTRIBUTION_AND_PROOF", Domain.CONTRIBUTION_AND_PROOF.toHexString());
               configAttributes.put(
                   "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
-                  Integer.toString(altairConfig.getTargetAggregatorsPerSyncSubcommittee(), 10));
+                  Integer.toString(
+                      ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE, 10));
             });
 
     return new GetSpecResponse(configAttributes);
