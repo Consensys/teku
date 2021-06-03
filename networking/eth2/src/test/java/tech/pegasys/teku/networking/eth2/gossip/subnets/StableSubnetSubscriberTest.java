@@ -30,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -165,13 +166,13 @@ public class StableSubnetSubscriberTest {
     UInt64 lowerBound =
         currentSlot.plus(
             UInt64.valueOf(
-                spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                (long) ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
                     * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     UInt64 upperBound =
         currentSlot.plus(
             UInt64.valueOf(
-                2
-                    * spec.getGenesisSpecConfig().getEpochsPerRandomSubnetSubscription()
+                2L
+                    * ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
                     * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     subnetSubscriptions.forEach(
         subnetSubscription -> {

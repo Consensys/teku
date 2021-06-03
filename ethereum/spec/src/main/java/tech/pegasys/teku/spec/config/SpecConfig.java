@@ -125,13 +125,7 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  int getTargetAggregatorsPerCommittee();
-
   UInt64 getSecondsPerEth1Block();
-
-  int getRandomSubnetsPerValidator();
-
-  int getEpochsPerRandomSubnetSubscription();
 
   int getSafeSlotsToUpdateJustified();
 

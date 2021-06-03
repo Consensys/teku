@@ -266,23 +266,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getTargetAggregatorsPerCommittee() {
-    return specConfig.getTargetAggregatorsPerCommittee();
-  }
-
-  @Override
   public UInt64 getSecondsPerEth1Block() {
     return specConfig.getSecondsPerEth1Block();
-  }
-
-  @Override
-  public int getRandomSubnetsPerValidator() {
-    return specConfig.getRandomSubnetsPerValidator();
-  }
-
-  @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return specConfig.getEpochsPerRandomSubnetSubscription();
   }
 
   @Override

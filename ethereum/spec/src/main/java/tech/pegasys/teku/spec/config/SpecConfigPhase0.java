@@ -22,12 +22,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
-  // Validator constants
-  private final int targetAggregatorsPerCommittee = 16;
-  private final int randomSubnetsPerValidator = 1;
-  private final int epochsPerRandomSubnetSubscription = 256;
-
-  // Other constants
+  // Constants
   private final Bytes blsWithdrawalPrefix = Bytes.fromHexString("0x00");
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
@@ -443,23 +438,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getTargetAggregatorsPerCommittee() {
-    return targetAggregatorsPerCommittee;
-  }
-
-  @Override
   public UInt64 getSecondsPerEth1Block() {
     return secondsPerEth1Block;
-  }
-
-  @Override
-  public int getRandomSubnetsPerValidator() {
-    return randomSubnetsPerValidator;
-  }
-
-  @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return epochsPerRandomSubnetSubscription;
   }
 
   @Override
@@ -517,9 +497,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
-        && targetAggregatorsPerCommittee == that.targetAggregatorsPerCommittee
-        && randomSubnetsPerValidator == that.randomSubnetsPerValidator
-        && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
@@ -594,10 +571,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        targetAggregatorsPerCommittee,
         secondsPerEth1Block,
-        randomSubnetsPerValidator,
-        epochsPerRandomSubnetSubscription,
         safeSlotsToUpdateJustified,
         depositChainId,
         depositNetworkId,
