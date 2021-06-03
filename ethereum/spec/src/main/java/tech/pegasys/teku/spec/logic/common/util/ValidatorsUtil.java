@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -140,8 +141,6 @@ public class ValidatorsUtil {
   }
 
   public int getAggregatorModulo(final int committeeSize) {
-    return specConfig.getTargetAggregatorsPerCommittee() == 0
-        ? 1
-        : Math.max(1, committeeSize / specConfig.getTargetAggregatorsPerCommittee());
+    return Math.max(1, committeeSize / ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE);
   }
 }

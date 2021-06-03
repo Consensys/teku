@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -214,7 +215,7 @@ public class BeaconStateUtilTest {
     final BeaconStateTestBuilder stateBuilder =
         new BeaconStateTestBuilder(dataStructureUtil).slot(5);
     for (int i = 0;
-        i < specConfig.getSlotsPerEpoch() * specConfig.getTargetAggregatorsPerCommittee() * 2;
+        i < specConfig.getSlotsPerEpoch() * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE * 2;
         i++) {
       stateBuilder.activeValidator(
           UInt64.valueOf(i).times(specConfig.getEffectiveBalanceIncrement()));

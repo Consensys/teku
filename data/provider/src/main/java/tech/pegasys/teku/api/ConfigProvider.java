@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
 public class ConfigProvider {
   final Spec spec;
@@ -52,13 +53,13 @@ public class ConfigProvider {
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", config.getBlsWithdrawalPrefix().toHexString());
     configAttributes.put(
         "TARGET_AGGREGATORS_PER_COMMITTEE",
-        Integer.toString(config.getTargetAggregatorsPerCommittee(), 10));
+        Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE, 10));
     configAttributes.put(
         "RANDOM_SUBNETS_PER_VALIDATOR",
-        Integer.toString(config.getRandomSubnetsPerValidator(), 10));
+        Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR, 10));
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
-        Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
+        Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION, 10));
     configAttributes.put("DOMAIN_BEACON_PROPOSER", Domain.BEACON_PROPOSER.toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", Domain.BEACON_ATTESTER.toHexString());
     configAttributes.put("DOMAIN_RANDAO", Domain.RANDAO.toHexString());
