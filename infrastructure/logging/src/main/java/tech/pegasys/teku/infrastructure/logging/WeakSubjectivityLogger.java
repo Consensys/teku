@@ -23,7 +23,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityLogger {
   private static final Logger FILE_LOGGER = LogManager.getLogger();
+
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
+
   private final boolean allowColor;
 
   private WeakSubjectivityLogger(final Logger log, final boolean allowColor) {

@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added `beacon_eth1_requests_total` metric to report the number of requests sent to eth1 endpoints.
 - Rework network configuration parsing to accept the new config format.  For details on the new format, see the [eth2.0-specs repo](https://github.com/ethereum/eth2.0-specs/pull/2390).  With this change, we no longer support pointing to directories for the network configuration.  Now, the network config (supplied via `--network`) should always point to a single yaml file.
 - For Altair networks, `--p2p-subscribe-all-subnets-enabled` will subscribe to all subcommittee subnets.
+- Gradle build enhancements. Upgraded gradle and various plugin versions. Introduced new license dependency report generator with custom renderer. Refactored custom errorprone checks to its own repo. The project can now be built against JDK 16.
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
@@ -38,3 +39,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - implement GET `/eth/v2/debug/beacon/states/:state_id` for Altair fork.
 - implement GET `/eth/v1/beacon/states/{state_id}/sync_committees` for Altair fork.
 - `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.
+- `/eth/v1/node/identity` will now include syncnets in metadata

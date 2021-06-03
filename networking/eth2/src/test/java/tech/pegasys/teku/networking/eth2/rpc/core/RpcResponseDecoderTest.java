@@ -327,6 +327,6 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
         schema = Optional.of(altairSchema);
       }
       return schema;
-    };
+    }
   }
 }
