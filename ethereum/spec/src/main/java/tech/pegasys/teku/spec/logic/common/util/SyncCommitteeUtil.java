@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
@@ -180,7 +181,7 @@ public class SyncCommitteeUtil {
             1,
             specConfig.getSyncCommitteeSize()
                 / SYNC_COMMITTEE_SUBNET_COUNT
-                / specConfig.getTargetAggregatorsPerSyncSubcommittee());
+                / ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
     return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 

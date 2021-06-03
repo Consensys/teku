@@ -36,9 +36,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.DelegatingSpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -97,21 +95,13 @@ class SyncCommitteeAggregationDutyTest {
   }
 
   private static SpecConfig createSpecConfig() {
-    final SpecConfigAltair baseConfig =
-        TestConfigLoader.loadConfig(
-                "minimal",
-                modifier ->
-                    modifier.altairBuilder(
-                        altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
-            .toVersionAltair()
-            .orElseThrow();
-
-    return new DelegatingSpecConfigAltair(baseConfig) {
-      @Override
-      public int getTargetAggregatorsPerSyncSubcommittee() {
-        return 1;
-      }
-    };
+    return TestConfigLoader.loadConfig(
+            "minimal",
+            modifier ->
+                modifier.altairBuilder(
+                    altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
+        .toVersionAltair()
+        .orElseThrow();
   }
 
   @Test
