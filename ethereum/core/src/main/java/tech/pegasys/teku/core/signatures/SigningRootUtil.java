@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -35,10 +36,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atEpoch(epoch);
     Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainRandao(),
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+            Domain.RANDAO, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(epoch, domain);
   }
 
@@ -46,7 +44,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(block.getSlot());
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainBeaconProposer(),
+            Domain.BEACON_PROPOSER,
             spec.computeEpochAtSlot(block.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
@@ -58,7 +56,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainBeaconAttester(),
+            Domain.BEACON_ATTESTER,
             attestationData.getTarget().getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
@@ -69,7 +67,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainSelectionProof(),
+            Domain.SELECTION_PROOF,
             spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
@@ -82,7 +80,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainAggregateAndProof(),
+            Domain.AGGREGATE_AND_PROOF,
             spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
@@ -94,7 +92,7 @@ public class SigningRootUtil {
     final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
     final Bytes32 domain =
         spec.getDomain(
-            specVersion.getConfig().getDomainVoluntaryExit(),
+            Domain.VOLUNTARY_EXIT,
             voluntaryExit.getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());

@@ -29,6 +29,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -194,8 +195,7 @@ public abstract class BeaconStateAccessors {
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
-                          getSeed(state, epoch, config.getDomainBeaconProposer()),
-                          uint64ToBytes(slot)));
+                          getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot)));
               List<Integer> indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });
@@ -282,7 +282,7 @@ public abstract class BeaconStateAccessors {
               return miscHelpers.computeCommittee(
                   state,
                   getActiveValidatorIndices(state, epoch),
-                  getSeed(state, epoch, config.getDomainBeaconAttester()),
+                  getSeed(state, epoch, Domain.BEACON_ATTESTER),
                   committeeIndex,
                   count);
             });
