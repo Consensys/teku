@@ -14,13 +14,10 @@
 package tech.pegasys.teku.networking.nat;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class NatService extends Service {
-  protected static final Logger LOG = LogManager.getLogger();
 
   private final Optional<NatManager> maybeNatManager;
   private final boolean isDiscoveryEnabled;

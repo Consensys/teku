@@ -34,6 +34,7 @@ public class StatusLogger {
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
 
   private StatusLogger(final String name) {
