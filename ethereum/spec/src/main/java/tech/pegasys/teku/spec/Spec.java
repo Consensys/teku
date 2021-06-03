@@ -185,10 +185,6 @@ public class Spec {
     return atEpoch(epoch).getConfig().getSlotsPerEpoch();
   }
 
-  public Bytes4 domainBeaconProposer(final UInt64 epoch) {
-    return atEpoch(epoch).getConfig().getDomainBeaconProposer();
-  }
-
   public long getSlotsPerHistoricalRoot(final UInt64 slot) {
     return atSlot(slot).getConfig().getSlotsPerHistoricalRoot();
   }
@@ -269,6 +265,10 @@ public class Spec {
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+  }
+
+  public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
+    return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {

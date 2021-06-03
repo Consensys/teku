@@ -125,20 +125,6 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  Bytes4 getDomainBeaconProposer();
-
-  Bytes4 getDomainBeaconAttester();
-
-  Bytes4 getDomainRandao();
-
-  Bytes4 getDomainDeposit();
-
-  Bytes4 getDomainVoluntaryExit();
-
-  Bytes4 getDomainSelectionProof();
-
-  Bytes4 getDomainAggregateAndProof();
-
   int getTargetAggregatorsPerCommittee();
 
   UInt64 getSecondsPerEth1Block();

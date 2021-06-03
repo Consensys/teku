@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -94,7 +95,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
-    final Bytes32 seed = getSeed(state, epoch, altairConfig.getDomainSyncCommittee());
+    final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
     int i = 0;
     final SszList<Validator> validators = state.getValidators();
     final List<Integer> syncCommitteeIndices = new ArrayList<>();

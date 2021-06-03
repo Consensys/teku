@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
@@ -53,7 +54,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszVector;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SyncCommitteeUtil {
 
@@ -201,10 +201,7 @@ public class SyncCommitteeUtil {
       final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            specConfig.getDomainSyncCommittee(),
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+            Domain.SYNC_COMMITTEE, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return miscHelpers.computeSigningRoot(blockRoot, domain);
   }
 
@@ -219,7 +216,7 @@ public class SyncCommitteeUtil {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            specConfig.getDomainContributionAndProof(),
+            Domain.CONTRIBUTION_AND_PROOF,
             miscHelpers.computeEpochAtSlot(contribution.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
@@ -228,11 +225,9 @@ public class SyncCommitteeUtil {
 
   public Bytes getSyncAggregatorSelectionDataSigningRoot(
       final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
-    final Bytes4 domainSyncCommitteeSelectionProof =
-        specConfig.getDomainSyncCommitteeSelectionProof();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            domainSyncCommitteeSelectionProof,
+            Domain.SYNC_COMMITTEE_SELECTION_PROOF,
             miscHelpers.computeEpochAtSlot(selectionData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());

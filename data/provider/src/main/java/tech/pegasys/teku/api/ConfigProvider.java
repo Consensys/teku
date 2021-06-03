@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 
 public class ConfigProvider {
   final Spec spec;
@@ -58,27 +59,24 @@ public class ConfigProvider {
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
         Integer.toString(config.getEpochsPerRandomSubnetSubscription(), 10));
-    configAttributes.put("DOMAIN_BEACON_PROPOSER", config.getDomainBeaconProposer().toHexString());
-    configAttributes.put("DOMAIN_BEACON_ATTESTER", config.getDomainBeaconAttester().toHexString());
-    configAttributes.put("DOMAIN_RANDAO", config.getDomainRandao().toHexString());
-    configAttributes.put("DOMAIN_DEPOSIT", config.getDomainDeposit().toHexString());
-    configAttributes.put("DOMAIN_VOLUNTARY_EXIT", config.getDomainVoluntaryExit().toHexString());
-    configAttributes.put("DOMAIN_SELECTION_PROOF", config.getDomainSelectionProof().toHexString());
-    configAttributes.put(
-        "DOMAIN_AGGREGATE_AND_PROOF", config.getDomainAggregateAndProof().toHexString());
+    configAttributes.put("DOMAIN_BEACON_PROPOSER", Domain.BEACON_PROPOSER.toHexString());
+    configAttributes.put("DOMAIN_BEACON_ATTESTER", Domain.BEACON_ATTESTER.toHexString());
+    configAttributes.put("DOMAIN_RANDAO", Domain.RANDAO.toHexString());
+    configAttributes.put("DOMAIN_DEPOSIT", Domain.DEPOSIT.toHexString());
+    configAttributes.put("DOMAIN_VOLUNTARY_EXIT", Domain.VOLUNTARY_EXIT.toHexString());
+    configAttributes.put("DOMAIN_SELECTION_PROOF", Domain.SELECTION_PROOF.toHexString());
+    configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", Domain.AGGREGATE_AND_PROOF.toHexString());
     // Manually add legacy altair constants
     config
         .toVersionAltair()
         .ifPresent(
             altairConfig -> {
-              configAttributes.put(
-                  "DOMAIN_SYNC_COMMITTEE", altairConfig.getDomainSyncCommittee().toHexString());
+              configAttributes.put("DOMAIN_SYNC_COMMITTEE", Domain.SYNC_COMMITTEE.toHexString());
               configAttributes.put(
                   "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
-                  altairConfig.getDomainSyncCommitteeSelectionProof().toHexString());
+                  Domain.SYNC_COMMITTEE_SELECTION_PROOF.toHexString());
               configAttributes.put(
-                  "DOMAIN_CONTRIBUTION_AND_PROOF",
-                  altairConfig.getDomainContributionAndProof().toHexString());
+                  "DOMAIN_CONTRIBUTION_AND_PROOF", Domain.CONTRIBUTION_AND_PROOF.toHexString());
               configAttributes.put(
                   "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
                   Integer.toString(altairConfig.getTargetAggregatorsPerSyncSubcommittee(), 10));
