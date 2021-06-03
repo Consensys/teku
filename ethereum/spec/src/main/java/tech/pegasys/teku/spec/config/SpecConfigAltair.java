@@ -20,9 +20,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigAltair extends DelegatingSpecConfig {
 
-  // Validator constants
-  private final int targetAggregatorsPerSyncSubcommittee = 4;
-
   // Updated penalties
   private final UInt64 inactivityPenaltyQuotientAltair;
   private final int minSlashingPenaltyQuotientAltair;
@@ -114,10 +111,6 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
     return epochsPerSyncCommitteePeriod;
   }
 
-  public int getTargetAggregatorsPerSyncSubcommittee() {
-    return targetAggregatorsPerSyncSubcommittee;
-  }
-
   public int getMinSyncCommitteeParticipants() {
     return minSyncCommitteeParticipants;
   }
@@ -142,8 +135,7 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
         && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
-        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
-        && targetAggregatorsPerSyncSubcommittee == that.targetAggregatorsPerSyncSubcommittee;
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch);
   }
 
   @Override
@@ -159,7 +151,6 @@ public class SpecConfigAltair extends DelegatingSpecConfig {
         epochsPerSyncCommitteePeriod,
         altairForkVersion,
         altairForkEpoch,
-        minSyncCommitteeParticipants,
-        targetAggregatorsPerSyncSubcommittee);
+        minSyncCommitteeParticipants);
   }
 }
