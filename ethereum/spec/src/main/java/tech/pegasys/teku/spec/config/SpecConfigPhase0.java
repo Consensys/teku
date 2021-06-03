@@ -22,15 +22,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
 
-  // Domain constants
-  private final Bytes4 domainBeaconProposer = Bytes4.fromHexString("0x00000000");
-  private final Bytes4 domainBeaconAttester = Bytes4.fromHexString("0x01000000");
-  private final Bytes4 domainRandao = Bytes4.fromHexString("0x02000000");
-  private final Bytes4 domainDeposit = Bytes4.fromHexString("0x03000000");
-  private final Bytes4 domainVoluntaryExit = Bytes4.fromHexString("0x04000000");
-  private final Bytes4 domainSelectionProof = Bytes4.fromHexString("0x05000000");
-  private final Bytes4 domainAggregateAndProof = Bytes4.fromHexString("0x06000000");
-
   // Validator constants
   private final int targetAggregatorsPerCommittee = 16;
   private final int randomSubnetsPerValidator = 1;
@@ -452,41 +443,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainBeaconProposer() {
-    return domainBeaconProposer;
-  }
-
-  @Override
-  public Bytes4 getDomainBeaconAttester() {
-    return domainBeaconAttester;
-  }
-
-  @Override
-  public Bytes4 getDomainRandao() {
-    return domainRandao;
-  }
-
-  @Override
-  public Bytes4 getDomainDeposit() {
-    return domainDeposit;
-  }
-
-  @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return domainVoluntaryExit;
-  }
-
-  @Override
-  public Bytes4 getDomainSelectionProof() {
-    return domainSelectionProof;
-  }
-
-  @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return domainAggregateAndProof;
-  }
-
-  @Override
   public int getTargetAggregatorsPerCommittee() {
     return targetAggregatorsPerCommittee;
   }
@@ -584,13 +540,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(domainBeaconProposer, that.domainBeaconProposer)
-        && Objects.equals(domainBeaconAttester, that.domainBeaconAttester)
-        && Objects.equals(domainRandao, that.domainRandao)
-        && Objects.equals(domainDeposit, that.domainDeposit)
-        && Objects.equals(domainVoluntaryExit, that.domainVoluntaryExit)
-        && Objects.equals(domainSelectionProof, that.domainSelectionProof)
-        && Objects.equals(domainAggregateAndProof, that.domainAggregateAndProof)
         && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
         && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
@@ -645,13 +594,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        domainBeaconProposer,
-        domainBeaconAttester,
-        domainRandao,
-        domainDeposit,
-        domainVoluntaryExit,
-        domainSelectionProof,
-        domainAggregateAndProof,
         targetAggregatorsPerCommittee,
         secondsPerEth1Block,
         randomSubnetsPerValidator,

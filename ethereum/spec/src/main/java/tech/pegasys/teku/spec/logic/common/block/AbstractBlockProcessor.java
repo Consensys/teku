@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -223,8 +224,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
     final Bytes signing_root =
         miscHelpers.computeSigningRoot(
-            block.getMessage(),
-            beaconStateAccessors.getDomain(state, specConfig.getDomainBeaconProposer()));
+            block.getMessage(), beaconStateAccessors.getDomain(state, Domain.BEACON_PROPOSER));
     if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
       return BlockValidationResult.failed("Invalid block signature: " + block);
     }
@@ -350,7 +350,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes32 domain = beaconStateAccessors.getDomain(state, specConfig.getDomainRandao());
+    final Bytes32 domain = beaconStateAccessors.getDomain(state, Domain.RANDAO);
     final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
     if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");
@@ -675,7 +675,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final UInt64 amount = deposit.getData().getAmount();
     final DepositMessage deposit_message =
         new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-    final Bytes32 domain = miscHelpers.computeDomain(specConfig.getDomainDeposit());
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
     final Bytes signing_root = miscHelpers.computeSigningRoot(deposit_message, domain);
     // Note that this can't use batch signature verification as invalid deposits can be included
     // in blocks and processing differs based on whether the signature is valid or not.

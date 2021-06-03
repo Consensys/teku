@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -145,7 +146,7 @@ public class BeaconStateUtilTest {
     Bytes32 domain =
         genesisSpec
             .beaconStateAccessors()
-            .getDomain(createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
+            .getDomain(createBeaconState(), Domain.DEPOSIT, GENESIS_EPOCH);
     Bytes signing_root = genesisSpec.miscHelpers().computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -932,7 +933,7 @@ public final class DataStructureUtil {
 
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
+    final Bytes4 domain = Domain.DEPOSIT;
     return genesisSpec.miscHelpers().computeDomain(domain);
   }
 
