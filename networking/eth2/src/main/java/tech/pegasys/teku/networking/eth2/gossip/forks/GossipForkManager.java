@@ -97,7 +97,8 @@ public class GossipForkManager {
                 false,
                 newEpoch.minusMinZero(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
                 true)
-            .keySet().stream()
+            .keySet()
+            .stream()
             // Deactivate the fork prior to the newly activated one if any
             .map(forksByActivationEpoch::lowerEntry)
             .filter(Objects::nonNull)
@@ -112,7 +113,8 @@ public class GossipForkManager {
             false,
             newEpoch.plus(EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE),
             true)
-        .values().stream()
+        .values()
+        .stream()
         // Don't bother starting subscriptions that will be immediately stopped
         .filter(subscription -> !subscriptionsToStop.contains(subscription))
         .forEach(this::startSubscriptions);

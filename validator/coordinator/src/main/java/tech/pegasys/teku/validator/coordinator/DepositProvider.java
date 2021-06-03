@@ -175,7 +175,9 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
       UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount, long maxDeposits) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
-    return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
+    return depositNavigableMap
+        .subMap(fromDepositIndex, true, toDepositIndex, false)
+        .values()
         .stream()
         .map(
             deposit -> {

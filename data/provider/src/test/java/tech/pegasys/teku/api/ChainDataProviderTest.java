@@ -324,7 +324,8 @@ public class ChainDataProviderTest {
     final String key = internalState.getValidators().get(12).getPubkeyBytes().toString();
     final String missingKey = data.randomPublicKey().toString();
     List<String> pubkeys =
-        provider.getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())
+        provider
+            .getFilteredValidatorList(internalState, List.of(key, missingKey), emptySet())
             .stream()
             .map(v -> v.validator.pubkey.toHexString())
             .collect(toList());
