@@ -1,5 +1,8 @@
 # Prater preset
 
+# For backwards compatibility in the config/spec API
+CONFIG_NAME: "prater"
+
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
