@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -36,6 +37,8 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
   protected final BeaconStateMutators beaconStateMutators;
+  // Operations
+  protected final OperationSignatureVerifier operationSignatureVerifier;
   // Utils
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
@@ -55,6 +58,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -69,6 +73,7 @@ public abstract class AbstractSpecLogic implements SpecLogic {
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
+    this.operationSignatureVerifier = operationSignatureVerifier;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
@@ -149,5 +154,10 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BeaconStateMutators beaconStateMutators() {
     return beaconStateMutators;
+  }
+
+  @Override
+  public OperationSignatureVerifier operationSignatureVerifier() {
+    return operationSignatureVerifier;
   }
 }
