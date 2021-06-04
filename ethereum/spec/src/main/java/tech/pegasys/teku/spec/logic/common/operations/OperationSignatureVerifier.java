@@ -41,7 +41,7 @@ public class OperationSignatureVerifier {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  public boolean verifySignature(
+  public boolean verifyProposerSlashingSignature(
       BeaconState state,
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
@@ -80,7 +80,7 @@ public class OperationSignatureVerifier {
     return true;
   }
 
-  public boolean verifySignature(
+  public boolean verifyVoluntaryExitSignature(
       BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
     final VoluntaryExit exit = signedExit.getMessage();
 

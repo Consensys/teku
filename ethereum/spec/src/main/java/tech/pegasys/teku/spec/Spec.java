@@ -305,14 +305,14 @@ public class Spec {
       BLSSignatureVerifier signatureVerifier) {
     return atState(state)
         .operationSignatureVerifier()
-        .verifySignature(state, proposerSlashing, signatureVerifier);
+        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
   }
 
   public boolean verifyVoluntaryExitSignature(
       BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
     return atState(state)
         .operationSignatureVerifier()
-        .verifySignature(state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {

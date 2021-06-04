@@ -454,7 +454,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
       boolean slashingSignatureValid =
-          operationSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
+          operationSignatureVerifier.verifyProposerSlashingSignature(
+              state, proposerSlashing, signatureVerifier);
       if (!slashingSignatureValid) {
         return BlockValidationResult.failed(
             "Proposer slashing signature is invalid " + proposerSlashing);
@@ -746,7 +747,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       BLSSignatureVerifier signatureVerifier) {
     for (SignedVoluntaryExit signedExit : exits) {
       boolean exitSignatureValid =
-          operationSignatureVerifier.verifySignature(state, signedExit, signatureVerifier);
+          operationSignatureVerifier.verifyVoluntaryExitSignature(
+              state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }
