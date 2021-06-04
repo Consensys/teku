@@ -68,21 +68,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Determines if a validator has a balance that can be slashed
-   *
-   * @param validator
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
-   */
-  public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
-    return !validator.isSlashed()
-        && (validator.getActivation_epoch().compareTo(epoch) <= 0
-            && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
-  }
-
-  /**
    * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
    * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
    * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``

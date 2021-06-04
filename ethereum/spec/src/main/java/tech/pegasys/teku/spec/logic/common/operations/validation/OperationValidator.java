@@ -17,9 +17,9 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.SlashedIndicesCaptor;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class OperationValidator {
   private final AttesterSlashingValidator attesterSlashingValidator;
@@ -29,11 +29,11 @@ public class OperationValidator {
   }
 
   public static OperationValidator create(
+      final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
-      final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final AttestationUtil attestationUtil) {
     final AttesterSlashingValidator attesterSlashingValidator =
-        new AttesterSlashingValidator(beaconStateAccessors, attestationUtil, validatorsUtil);
+        new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
     return new OperationValidator(attesterSlashingValidator);
   }
 
