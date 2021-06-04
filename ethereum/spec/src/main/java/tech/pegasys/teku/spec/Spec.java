@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -305,6 +306,13 @@ public class Spec {
     return atState(state)
         .operationSignatureVerifier()
         .verifySignature(state, proposerSlashing, signatureVerifier);
+  }
+
+  public boolean verifyVoluntaryExitSignature(
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifySignature(state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {

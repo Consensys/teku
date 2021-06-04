@@ -16,11 +16,15 @@ package tech.pegasys.teku.spec.logic.common.operations;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -74,5 +78,21 @@ public class OperationSignatureVerifier {
       return false;
     }
     return true;
+  }
+
+  public boolean verifySignature(
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+    final VoluntaryExit exit = signedExit.getMessage();
+
+    Optional<BLSPublicKey> maybePublicKey =
+        beaconStateAccessors.getValidatorPubKey(state, exit.getValidator_index());
+    if (maybePublicKey.isEmpty()) {
+      return false;
+    }
+
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(state, Domain.VOLUNTARY_EXIT, exit.getEpoch());
+    final Bytes signing_root = miscHelpers.computeSigningRoot(exit, domain);
+    return signatureVerifier.verify(maybePublicKey.get(), signing_root, signedExit.getSignature());
   }
 }

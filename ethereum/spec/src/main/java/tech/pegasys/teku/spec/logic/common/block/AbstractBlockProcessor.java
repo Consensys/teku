@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -745,9 +744,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       BeaconState state,
       SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
-    VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {
-      boolean exitSignatureValid = verifier.verifySignature(state, signedExit, signatureVerifier);
+      boolean exitSignatureValid =
+          operationSignatureVerifier.verifySignature(state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }
