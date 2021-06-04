@@ -71,7 +71,6 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
@@ -379,10 +378,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     VoluntaryExitValidator validator =
-        new VoluntaryExitValidator(
-            recentChainData,
-            new VoluntaryExitStateTransitionValidator(),
-            new VoluntaryExitSignatureVerifier());
+        new VoluntaryExitValidator(spec, recentChainData, new VoluntaryExitSignatureVerifier());
     voluntaryExitPool =
         new OperationPool<>(
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),

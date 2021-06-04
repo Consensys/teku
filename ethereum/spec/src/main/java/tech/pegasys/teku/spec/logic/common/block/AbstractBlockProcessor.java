@@ -68,7 +68,6 @@ import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSi
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -719,12 +718,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     safelyProcess(
         () -> {
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
-            Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
+            Optional<OperationInvalidReason> invalidReason =
+                operationValidator.validateVoluntaryExit(state, signedExit);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",

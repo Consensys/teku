@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -25,15 +27,19 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 public class OperationValidator {
   private final AttesterSlashingValidator attesterSlashingValidator;
   private final ProposerSlashingValidator proposerSlashingValidator;
+  private final VoluntaryExitValidator voluntaryExitValidator;
 
   private OperationValidator(
       final AttesterSlashingValidator attesterSlashingValidator,
-      final ProposerSlashingValidator proposerSlashingValidator) {
+      final ProposerSlashingValidator proposerSlashingValidator,
+      final VoluntaryExitValidator voluntaryExitValidator) {
     this.attesterSlashingValidator = attesterSlashingValidator;
     this.proposerSlashingValidator = proposerSlashingValidator;
+    this.voluntaryExitValidator = voluntaryExitValidator;
   }
 
   public static OperationValidator create(
+      final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationUtil attestationUtil) {
@@ -41,7 +47,10 @@ public class OperationValidator {
         new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
     final ProposerSlashingValidator proposerSlashingValidator =
         new ProposerSlashingValidator(predicates, beaconStateAccessors);
-    return new OperationValidator(attesterSlashingValidator, proposerSlashingValidator);
+    final VoluntaryExitValidator voluntaryExitValidator =
+        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
+    return new OperationValidator(
+        attesterSlashingValidator, proposerSlashingValidator, voluntaryExitValidator);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -59,5 +68,10 @@ public class OperationValidator {
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
     return proposerSlashingValidator.validate(state, proposerSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return voluntaryExitValidator.validate(state, signedExit);
   }
 }

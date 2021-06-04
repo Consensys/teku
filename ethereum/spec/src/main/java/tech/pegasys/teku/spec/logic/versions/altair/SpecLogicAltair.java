@@ -95,7 +95,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
-        OperationValidator.create(predicates, beaconStateAccessors, attestationUtil);
+        OperationValidator.create(config, predicates, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
