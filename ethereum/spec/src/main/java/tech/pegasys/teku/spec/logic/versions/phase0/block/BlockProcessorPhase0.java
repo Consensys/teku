@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -45,7 +44,6 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator,
       final OperationValidator operationValidator) {
     super(
         specConfig,
@@ -56,7 +54,6 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
-        attestationValidator,
         operationValidator);
   }
 

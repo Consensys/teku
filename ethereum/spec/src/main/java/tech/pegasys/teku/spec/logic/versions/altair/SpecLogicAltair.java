@@ -18,7 +18,6 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -83,10 +82,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     final BeaconStateMutatorsAltair beaconStateMutators =
         new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
-    // Operation validaton
-    final AttestationDataStateTransitionValidator attestationValidator =
-        new AttestationDataStateTransitionValidator(config, miscHelpers, beaconStateAccessors);
-
     // Util
     final ValidatorsUtil validatorsUtil =
         new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
@@ -95,7 +90,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
-        OperationValidator.create(config, predicates, beaconStateAccessors, attestationUtil);
+        OperationValidator.create(
+            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
@@ -123,7 +119,6 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator,
             operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(

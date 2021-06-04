@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
@@ -95,7 +94,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
-  private final AttestationDataStateTransitionValidator attestationValidator;
   private final OperationValidator operationValidator;
 
   protected AbstractBlockProcessor(
@@ -107,7 +105,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator,
       final OperationValidator operationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
@@ -117,7 +114,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.attestationValidator = attestationValidator;
     this.operationValidator = operationValidator;
   }
 
@@ -248,7 +244,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return attestationValidator.validate(state, data);
+    return operationValidator.validateAttestationData(state, data);
   }
 
   protected void assertAttestationValid(
