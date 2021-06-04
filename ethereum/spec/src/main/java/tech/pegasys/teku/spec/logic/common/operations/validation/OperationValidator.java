@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -23,9 +24,13 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 
 public class OperationValidator {
   private final AttesterSlashingValidator attesterSlashingValidator;
+  private final ProposerSlashingValidator proposerSlashingValidator;
 
-  private OperationValidator(final AttesterSlashingValidator attesterSlashingValidator) {
+  private OperationValidator(
+      final AttesterSlashingValidator attesterSlashingValidator,
+      final ProposerSlashingValidator proposerSlashingValidator) {
     this.attesterSlashingValidator = attesterSlashingValidator;
+    this.proposerSlashingValidator = proposerSlashingValidator;
   }
 
   public static OperationValidator create(
@@ -34,7 +39,9 @@ public class OperationValidator {
       final AttestationUtil attestationUtil) {
     final AttesterSlashingValidator attesterSlashingValidator =
         new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
-    return new OperationValidator(attesterSlashingValidator);
+    final ProposerSlashingValidator proposerSlashingValidator =
+        new ProposerSlashingValidator(predicates, beaconStateAccessors);
+    return new OperationValidator(attesterSlashingValidator, proposerSlashingValidator);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -47,5 +54,10 @@ public class OperationValidator {
       final AttesterSlashing attesterSlashing,
       SlashedIndicesCaptor slashedIndicesCaptor) {
     return attesterSlashingValidator.validate(state, attesterSlashing, slashedIndicesCaptor);
+  }
+
+  public Optional<OperationInvalidReason> validateProposerSlashing(
+      final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return proposerSlashingValidator.validate(state, proposerSlashing);
   }
 }

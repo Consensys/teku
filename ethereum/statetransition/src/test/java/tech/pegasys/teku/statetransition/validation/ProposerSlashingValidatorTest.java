@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -46,11 +46,11 @@ public class ProposerSlashingValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec mockSpec = mock(Spec.class);
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
   private ProposerSlashingValidator proposerSlashingValidator;
-  private ProposerSlashingStateTransitionValidator stateTransitionValidator;
   private ProposerSlashingSignatureVerifier signatureVerifier;
 
   @BeforeEach
@@ -58,10 +58,9 @@ public class ProposerSlashingValidatorTest {
     recentChainData =
         MemoryOnlyRecentChainData.builder().eventBus(new EventBus()).specProvider(spec).build();
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
-    stateTransitionValidator = mock(ProposerSlashingStateTransitionValidator.class);
     signatureVerifier = mock(ProposerSlashingSignatureVerifier.class);
     proposerSlashingValidator =
-        new ProposerSlashingValidator(recentChainData, stateTransitionValidator, signatureVerifier);
+        new ProposerSlashingValidator(mockSpec, recentChainData, signatureVerifier);
   }
 
   @Test
@@ -69,7 +68,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
+    when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
@@ -82,11 +81,8 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
-        .thenReturn(
-            Optional.of(
-                ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
-                    .PROPOSER_INDICES_DIFFERENT));
+    when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
+        .thenReturn(Optional.of(ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT));
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
@@ -98,7 +94,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
+    when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
@@ -113,7 +109,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
         new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
-    when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
+    when(mockSpec.validateProposerSlashing(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             eq(recentChainData.getBestState().orElseThrow()),
@@ -129,18 +125,13 @@ public class ProposerSlashingValidatorTest {
       throws Exception {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
-    stateTransitionValidator = new ProposerSlashingStateTransitionValidator();
     SignedBeaconBlockHeader header1 = dataStructureUtil.randomSignedBeaconBlockHeader();
     SignedBeaconBlockHeader header2 =
         new SignedBeaconBlockHeader(header1.getMessage(), BLSTestUtil.randomSignature(100));
     assertThat(header2).isNotEqualTo(header1);
     ProposerSlashing slashing = new ProposerSlashing(header1, header2);
     assertThat(
-            stateTransitionValidator.validate(
-                recentChainData.getBestState().orElseThrow(), slashing))
-        .isEqualTo(
-            Optional.of(
-                ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
-                    .SAME_HEADER));
+            spec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
+        .isEqualTo(Optional.of(ProposerSlashingInvalidReason.SAME_HEADER));
   }
 }

@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
 
@@ -25,9 +23,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 
-public class ProposerSlashingStateTransitionValidator
+public class ProposerSlashingValidator
     implements OperationStateTransitionValidator<ProposerSlashing> {
+
+  private final Predicates predicates;
+  private final BeaconStateAccessors beaconStateAccessors;
+
+  ProposerSlashingValidator(
+      final Predicates predicates, final BeaconStateAccessors beaconStateAccessors) {
+    this.predicates = predicates;
+    this.beaconStateAccessors = beaconStateAccessors;
+  }
 
   @Override
   public Optional<OperationInvalidReason> validate(
@@ -51,9 +60,9 @@ public class ProposerSlashingStateTransitionValidator
                 ProposerSlashingInvalidReason.INVALID_PROPOSER),
         () ->
             check(
-                is_slashable_validator(
+                predicates.isSlashableValidator(
                     state.getValidators().get(toIntExact(header1.getProposerIndex().longValue())),
-                    get_current_epoch(state)),
+                    beaconStateAccessors.getCurrentEpoch(state)),
                 ProposerSlashingInvalidReason.PROPOSER_NOT_SLASHABLE));
   }
 

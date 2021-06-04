@@ -68,7 +68,6 @@ import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSi
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
@@ -422,15 +421,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processProposerSlashingsNoValidation(
       MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    ProposerSlashingStateTransitionValidator validator =
-        new ProposerSlashingStateTransitionValidator();
-
     safelyProcess(
         () -> {
           // For each proposer_slashing in block.body.proposer_slashings:
           for (ProposerSlashing proposerSlashing : proposerSlashings) {
             Optional<OperationInvalidReason> invalidReason =
-                validator.validate(state, proposerSlashing);
+                operationValidator.validateProposerSlashing(state, proposerSlashing);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_proposer_slashings: %s",

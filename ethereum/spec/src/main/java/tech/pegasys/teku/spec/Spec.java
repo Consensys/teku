@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -384,6 +385,11 @@ public class Spec {
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
     return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateProposerSlashing(
+      final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
   }
 
   public BlockImportResult onBlock(
