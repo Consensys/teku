@@ -21,8 +21,9 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-public class MultiNodeAltairAcceptanceTest extends AcceptanceTestBase {
-  static final int NODE_VALIDATORS = 8;
+public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
+  private static final int NODE_VALIDATORS = 8;
+  private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private TekuNode primaryNode;
@@ -56,14 +57,14 @@ public class MultiNodeAltairAcceptanceTest extends AcceptanceTestBase {
     primaryNode.start();
     secondaryNode.start();
     validatorClient.start();
-    secondaryNode.waitForFullSyncCommitteeAggregate();
+    secondaryNode.waitForFullSyncCommitteeAggregate(.9);
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
     return node.withNetwork("minimal")
         .withAltairEpoch(UInt64.ZERO)
         .withGenesisTime(genesisTime)
-        .withInteropNumberOfValidators(NODE_VALIDATORS)
+        .withInteropNumberOfValidators(TOTAL_VALIDATORS)
         .withRealNetwork();
   }
 }

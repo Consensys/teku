@@ -54,7 +54,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
               config.withNetwork("minimal");
             });
     node1.start();
-    node1.waitForFullSyncCommitteeAggregate();
+    node1.waitForFullSyncCommitteeAggregate(1.0);
   }
 
   @Test

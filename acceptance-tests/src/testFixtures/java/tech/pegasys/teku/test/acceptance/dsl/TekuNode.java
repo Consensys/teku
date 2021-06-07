@@ -62,6 +62,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -166,7 +168,7 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  public void waitForFullSyncCommitteeAggregate() {
+  public void waitForFullSyncCommitteeAggregate(final double percentFullRequirement) {
     LOG.debug("Wait for full sync committee aggregates");
     waitFor(
         () -> {
@@ -175,11 +177,25 @@ public class TekuNode extends Node {
           assertThat(block.get()).isInstanceOf(SignedBeaconBlockAltair.class);
 
           final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
-          LOG.debug(
-              "Aggregate {}",
-              altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits.toHexString());
-          assertThat(altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits)
-              .isEqualTo(Bytes.fromHexString("0xffffffff"));
+          final int syncCommitteeSize = spec.getSyncCommitteeSize(altairBlock.getMessage().slot);
+          final SszBitvectorSchema<SszBitvector> syncCommitteeSchema =
+              SszBitvectorSchema.create(syncCommitteeSize);
+
+          final Bytes syncCommitteeBits =
+              altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits;
+          final int actualSyncBitCount =
+              syncCommitteeSchema.sszDeserialize(syncCommitteeBits).getBitCount();
+          final double percentageOfBitsSet =
+              actualSyncBitCount == syncCommitteeSize
+                  ? 1.0
+                  : actualSyncBitCount / (double) syncCommitteeSize;
+          if (percentageOfBitsSet < percentFullRequirement) {
+            LOG.debug(
+                String.format(
+                    "Sync committee bits are only %s%% full, expecting %s%%: %s",
+                    percentageOfBitsSet * 100, percentFullRequirement * 100, syncCommitteeBits));
+          }
+          assertThat(percentageOfBitsSet >= percentFullRequirement).isTrue();
         },
         5,
         MINUTES);

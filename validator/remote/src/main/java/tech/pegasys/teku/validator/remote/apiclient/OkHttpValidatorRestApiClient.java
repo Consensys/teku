@@ -35,6 +35,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_SIGNATURES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -271,7 +272,9 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {}
+      final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {
+    post(SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET, subnetSubscriptions, createHandler());
+  }
 
   @Override
   public void sendContributionAndProofs(
