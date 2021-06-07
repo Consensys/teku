@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -83,8 +82,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
     // Operation validaton
     final OperationSignatureVerifier operationSignatureVerifier =
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
-    final AttestationDataStateTransitionValidator attestationValidator =
-        new AttestationDataStateTransitionValidator(config, miscHelpers, beaconStateAccessors);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -94,7 +91,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
-        OperationValidator.create(beaconStateAccessors, attestationUtil, validatorsUtil);
+        OperationValidator.create(
+            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -118,7 +116,6 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator,
             operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(

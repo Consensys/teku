@@ -404,6 +404,16 @@ public class Spec {
     return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
   }
 
+  public Optional<OperationInvalidReason> validateProposerSlashing(
+      final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return atState(state).getOperationValidator().validateVoluntaryExit(state, signedExit);
+  }
+
   public BlockImportResult onBlock(
       final MutableStore store,
       final SignedBeaconBlock signedBlock,

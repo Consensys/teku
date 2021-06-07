@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
 
@@ -25,14 +24,14 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.util.config.Constants;
 
-public class AttestationDataStateTransitionValidator
+public class AttestationDataValidator
     implements OperationStateTransitionValidator<AttestationData> {
 
   private final SpecConfig specConfig;
   private final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  public AttestationDataStateTransitionValidator(
+  AttestationDataValidator(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
@@ -48,7 +47,9 @@ public class AttestationDataStateTransitionValidator
         () ->
             check(
                 data.getIndex()
-                        .compareTo(get_committee_count_per_slot(state, data.getTarget().getEpoch()))
+                        .compareTo(
+                            beaconStateAccessors.getCommitteeCountPerSlot(
+                                state, data.getTarget().getEpoch()))
                     < 0,
                 AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH),
         () ->

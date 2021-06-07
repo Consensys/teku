@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
@@ -37,15 +36,10 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidExitSet = LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
-  private final VoluntaryExitStateTransitionValidator stateTransitionValidator;
 
-  public VoluntaryExitValidator(
-      final Spec spec,
-      RecentChainData recentChainData,
-      VoluntaryExitStateTransitionValidator stateTransitionValidator) {
+  public VoluntaryExitValidator(final Spec spec, RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.stateTransitionValidator = stateTransitionValidator;
   }
 
   @Override
@@ -92,7 +86,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
 
   private Optional<String> getFailureReason(
       final BeaconState state, final SignedVoluntaryExit exit, final boolean verifySignature) {
-    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
+    Optional<OperationInvalidReason> invalidReason = spec.validateVoluntaryExit(state, exit);
     if (invalidReason.isPresent()) {
       final String message =
           String.format(
