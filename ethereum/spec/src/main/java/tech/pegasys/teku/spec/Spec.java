@@ -299,6 +299,22 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  public boolean verifyProposerSlashingSignature(
+      BeaconState state,
+      ProposerSlashing proposerSlashing,
+      BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
+  }
+
+  public boolean verifyVoluntaryExitSignature(
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
+  }
+
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     return atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
   }

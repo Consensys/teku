@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -60,4 +61,6 @@ public interface SpecLogic {
   BeaconStateAccessors beaconStateAccessors();
 
   BeaconStateMutators beaconStateMutators();
+
+  OperationSignatureVerifier operationSignatureVerifier();
 }

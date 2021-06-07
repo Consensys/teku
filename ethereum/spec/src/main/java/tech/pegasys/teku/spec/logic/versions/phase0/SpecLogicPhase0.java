@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -40,6 +41,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -54,6 +56,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -75,6 +78,10 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateAccessorsPhase0(config, predicates, miscHelpers);
     final BeaconStateMutators beaconStateMutators =
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
+
+    // Operation validaton
+    final OperationSignatureVerifier operationSignatureVerifier =
+        new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -105,6 +112,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             miscHelpers,
             beaconStateAccessors,
             beaconStateMutators,
+            operationSignatureVerifier,
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
@@ -120,6 +128,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

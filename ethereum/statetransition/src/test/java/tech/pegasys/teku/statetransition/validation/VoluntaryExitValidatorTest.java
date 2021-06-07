@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -51,16 +50,13 @@ public class VoluntaryExitValidatorTest {
   private BeaconChainUtil beaconChainUtil;
 
   private VoluntaryExitValidator voluntaryExitValidator;
-  private VoluntaryExitSignatureVerifier signatureVerifier;
 
   @BeforeEach
   void beforeEach() {
     recentChainData = MemoryOnlyRecentChainData.create(spec, new EventBus());
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
 
-    signatureVerifier = mock(VoluntaryExitSignatureVerifier.class);
-    voluntaryExitValidator =
-        new VoluntaryExitValidator(mockSpec, recentChainData, signatureVerifier);
+    voluntaryExitValidator = new VoluntaryExitValidator(mockSpec, recentChainData);
   }
 
   @Test
@@ -70,7 +66,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyVoluntaryExitSignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
     assertThat(voluntaryExitValidator.validateFully(exit).code()).isEqualTo(ACCEPT);
@@ -87,7 +83,7 @@ public class VoluntaryExitValidatorTest {
 
     when(mockSpec.validateVoluntaryExit(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyVoluntaryExitSignature(
             eq(recentChainData.getBestState().orElseThrow()),
             any(),
             eq(BLSSignatureVerifier.SIMPLE)))
@@ -110,7 +106,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(Optional.of(ExitInvalidReason.EXIT_INITIATED));
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyVoluntaryExitSignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
 
@@ -127,7 +123,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     when(mockSpec.validateVoluntaryExit(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyVoluntaryExitSignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
     final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);

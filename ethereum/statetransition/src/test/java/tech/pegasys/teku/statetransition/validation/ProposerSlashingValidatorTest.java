@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -51,16 +50,13 @@ public class ProposerSlashingValidatorTest {
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
   private ProposerSlashingValidator proposerSlashingValidator;
-  private ProposerSlashingSignatureVerifier signatureVerifier;
 
   @BeforeEach
   void beforeEach() {
     recentChainData =
         MemoryOnlyRecentChainData.builder().eventBus(new EventBus()).specProvider(spec).build();
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
-    signatureVerifier = mock(ProposerSlashingSignatureVerifier.class);
-    proposerSlashingValidator =
-        new ProposerSlashingValidator(mockSpec, recentChainData, signatureVerifier);
+    proposerSlashingValidator = new ProposerSlashingValidator(mockSpec, recentChainData);
   }
 
   @Test
@@ -70,7 +66,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(ACCEPT);
@@ -83,7 +79,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.of(ProposerSlashingInvalidReason.PROPOSER_INDICES_DIFFERENT));
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(REJECT);
@@ -96,7 +92,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(mockSpec.validateProposerSlashing(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyProposerSlashingSignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
         .thenReturn(false);
     assertThat(proposerSlashingValidator.validateFully(slashing).code()).isEqualTo(REJECT);
@@ -111,7 +107,7 @@ public class ProposerSlashingValidatorTest {
         new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
     when(mockSpec.validateProposerSlashing(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
-    when(signatureVerifier.verifySignature(
+    when(mockSpec.verifyProposerSlashingSignature(
             eq(recentChainData.getBestState().orElseThrow()),
             any(),
             eq(BLSSignatureVerifier.SIMPLE)))

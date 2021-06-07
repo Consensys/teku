@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -37,15 +36,10 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidExitSet = LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
-  private final VoluntaryExitSignatureVerifier signatureVerifier;
 
-  public VoluntaryExitValidator(
-      final Spec spec,
-      RecentChainData recentChainData,
-      VoluntaryExitSignatureVerifier signatureVerifier) {
+  public VoluntaryExitValidator(final Spec spec, RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.signatureVerifier = signatureVerifier;
   }
 
   @Override
@@ -103,7 +97,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     }
 
     if (verifySignature
-        && !signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
+        && !spec.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
       final String message =
           String.format(
               "Exit for validator %s fails signature verification.",
