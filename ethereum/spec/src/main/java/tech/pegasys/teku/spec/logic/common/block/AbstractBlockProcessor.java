@@ -63,13 +63,9 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -94,10 +90,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final BeaconStateAccessors beaconStateAccessors;
   protected final BeaconStateMutators beaconStateMutators;
 
+  protected final OperationSignatureVerifier operationSignatureVerifier;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
   protected final ValidatorsUtil validatorsUtil;
-  private final AttestationDataStateTransitionValidator attestationValidator;
   private final OperationValidator operationValidator;
 
   protected AbstractBlockProcessor(
@@ -106,20 +102,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator,
       final OperationValidator operationValidator) {
     this.specConfig = specConfig;
     this.predicates = predicates;
     this.beaconStateMutators = beaconStateMutators;
+    this.operationSignatureVerifier = operationSignatureVerifier;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorsUtil = validatorsUtil;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.attestationValidator = attestationValidator;
     this.operationValidator = operationValidator;
   }
 
@@ -250,7 +246,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return attestationValidator.validate(state, data);
+    return operationValidator.validateAttestationData(state, data);
   }
 
   protected void assertAttestationValid(
@@ -422,15 +418,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processProposerSlashingsNoValidation(
       MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    ProposerSlashingStateTransitionValidator validator =
-        new ProposerSlashingStateTransitionValidator();
-
     safelyProcess(
         () -> {
           // For each proposer_slashing in block.body.proposer_slashings:
           for (ProposerSlashing proposerSlashing : proposerSlashings) {
             Optional<OperationInvalidReason> invalidReason =
-                validator.validate(state, proposerSlashing);
+                operationValidator.validateProposerSlashing(state, proposerSlashing);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_proposer_slashings: %s",
@@ -448,14 +441,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       BeaconState state,
       SszList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
-    ProposerSlashingSignatureVerifier slashingSignatureVerifier =
-        new ProposerSlashingSignatureVerifier();
-
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
       boolean slashingSignatureValid =
-          slashingSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
+          operationSignatureVerifier.verifyProposerSlashingSignature(
+              state, proposerSlashing, signatureVerifier);
       if (!slashingSignatureValid) {
         return BlockValidationResult.failed(
             "Proposer slashing signature is invalid " + proposerSlashing);
@@ -723,12 +714,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     safelyProcess(
         () -> {
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
-            Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
+            Optional<OperationInvalidReason> invalidReason =
+                operationValidator.validateVoluntaryExit(state, signedExit);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",
@@ -745,9 +736,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       BeaconState state,
       SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
-    VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {
-      boolean exitSignatureValid = verifier.verifySignature(state, signedExit, signatureVerifier);
+      boolean exitSignatureValid =
+          operationSignatureVerifier.verifyVoluntaryExitSignature(
+              state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }

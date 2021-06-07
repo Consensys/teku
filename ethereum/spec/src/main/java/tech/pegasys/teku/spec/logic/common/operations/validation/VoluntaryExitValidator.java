@@ -14,22 +14,35 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_active_validator;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.check;
 import static tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason.firstOf;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.SHARD_COMMITTEE_PERIOD;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 
-public class VoluntaryExitStateTransitionValidator
+public class VoluntaryExitValidator
     implements OperationStateTransitionValidator<SignedVoluntaryExit> {
+
+  private final SpecConfig specConfig;
+  private final Predicates predicates;
+  private final BeaconStateAccessors beaconStateAccessors;
+
+  VoluntaryExitValidator(
+      final SpecConfig specConfig,
+      final Predicates predicates,
+      final BeaconStateAccessors beaconStateAccessors) {
+    this.specConfig = specConfig;
+    this.predicates = predicates;
+    this.beaconStateAccessors = beaconStateAccessors;
+  }
 
   @Override
   public Optional<OperationInvalidReason> validate(
@@ -43,7 +56,8 @@ public class VoluntaryExitStateTransitionValidator
                 ExitInvalidReason.INVALID_VALIDATOR_INDEX),
         () ->
             check(
-                is_active_validator(getValidator(state, exit), get_current_epoch(state)),
+                predicates.isActiveValidator(
+                    getValidator(state, exit), beaconStateAccessors.getCurrentEpoch(state)),
                 ExitInvalidReason.VALIDATOR_INACTIVE),
         () ->
             check(
@@ -51,15 +65,16 @@ public class VoluntaryExitStateTransitionValidator
                 ExitInvalidReason.EXIT_INITIATED),
         () ->
             check(
-                get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
+                beaconStateAccessors.getCurrentEpoch(state).compareTo(exit.getEpoch()) >= 0,
                 ExitInvalidReason.SUBMITTED_TOO_EARLY),
         () ->
             check(
-                get_current_epoch(state)
+                beaconStateAccessors
+                        .getCurrentEpoch(state)
                         .compareTo(
                             getValidator(state, exit)
                                 .getActivation_epoch()
-                                .plus(SHARD_COMMITTEE_PERIOD))
+                                .plus(specConfig.getShardCommitteePeriod()))
                     >= 0,
                 ExitInvalidReason.VALIDATOR_TOO_YOUNG));
   }

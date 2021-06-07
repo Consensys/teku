@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -44,6 +44,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
       final MiscHelpersAltair miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -60,6 +61,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
@@ -84,8 +86,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
-    final AttestationDataStateTransitionValidator attestationValidator =
-        new AttestationDataStateTransitionValidator(config, miscHelpers, beaconStateAccessors);
+    final OperationSignatureVerifier operationSignatureVerifier =
+        new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
     final ValidatorsUtil validatorsUtil =
@@ -95,7 +97,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
     final OperationValidator operationValidator =
-        OperationValidator.create(beaconStateAccessors, attestationUtil, validatorsUtil);
+        OperationValidator.create(
+            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
@@ -120,10 +123,10 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             miscHelpers,
             beaconStateAccessors,
             beaconStateMutators,
+            operationSignatureVerifier,
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator,
             operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
@@ -144,6 +147,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,

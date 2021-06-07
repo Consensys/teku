@@ -45,6 +45,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -305,6 +307,22 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  public boolean verifyProposerSlashingSignature(
+      BeaconState state,
+      ProposerSlashing proposerSlashing,
+      BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
+  }
+
+  public boolean verifyVoluntaryExitSignature(
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
+  }
+
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
     return atState(state).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
   }
@@ -392,6 +410,16 @@ public class Spec {
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
     return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateProposerSlashing(
+      final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return atState(state).getOperationValidator().validateVoluntaryExit(state, signedExit);
   }
 
   public BlockImportResult onBlock(

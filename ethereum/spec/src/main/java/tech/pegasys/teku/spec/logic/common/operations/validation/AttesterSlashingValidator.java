@@ -24,23 +24,23 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public class AttesterSlashingValidator
     implements OperationStateTransitionValidator<AttesterSlashing> {
 
+  private final Predicates predicates;
   private final BeaconStateAccessors beaconStateAccessors;
   private final AttestationUtil attestationUtil;
-  private final ValidatorsUtil validatorsUtil;
 
   AttesterSlashingValidator(
+      final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
-      final AttestationUtil attestationUtil,
-      final ValidatorsUtil validatorsUtil) {
+      final AttestationUtil attestationUtil) {
+    this.predicates = predicates;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationUtil = attestationUtil;
-    this.validatorsUtil = validatorsUtil;
   }
 
   @Override
@@ -75,7 +75,7 @@ public class AttesterSlashingValidator
           Set<UInt64> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
 
           for (UInt64 index : intersectingIndices) {
-            if (validatorsUtil.isSlashableValidator(
+            if (predicates.isSlashableValidator(
                 state.getValidators().get(toIntExact(index.longValue())),
                 beaconStateAccessors.getCurrentEpoch(state))) {
               slashedIndicesCaptor.captureSlashedValidatorIndex(index);
