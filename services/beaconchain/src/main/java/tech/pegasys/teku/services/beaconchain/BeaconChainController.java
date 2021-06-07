@@ -69,8 +69,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -369,9 +367,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
     ProposerSlashingValidator validator =
         new ProposerSlashingValidator(
-            recentChainData,
-            new ProposerSlashingStateTransitionValidator(),
-            new ProposerSlashingSignatureVerifier());
+            spec, recentChainData, new ProposerSlashingStateTransitionValidator());
     proposerSlashingPool =
         new OperationPool<>(
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
@@ -383,9 +379,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     VoluntaryExitValidator validator =
         new VoluntaryExitValidator(
-            recentChainData,
-            new VoluntaryExitStateTransitionValidator(),
-            new VoluntaryExitSignatureVerifier());
+            spec, recentChainData, new VoluntaryExitStateTransitionValidator());
     voluntaryExitPool =
         new OperationPool<>(
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
