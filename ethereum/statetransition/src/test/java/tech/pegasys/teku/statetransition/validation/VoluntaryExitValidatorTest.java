@@ -44,7 +44,7 @@ public class VoluntaryExitValidatorTest {
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Spec mockSpec = mock(Spec.class);
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
