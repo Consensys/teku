@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated
 public class ValidatorsUtil {
@@ -48,22 +47,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Check if validator is eligible for activation.
-   *
-   * @param state the beacon state
-   * @param validator the validator
-   * @return true if the validator is eligible for activation
-   */
-  @Deprecated
-  public static boolean is_eligible_for_activation(BeaconState state, Validator validator) {
-    return validator
-                .getActivation_eligibility_epoch()
-                .compareTo(state.getFinalized_checkpoint().getEpoch())
-            <= 0
-        && validator.getActivation_epoch().equals(Constants.FAR_FUTURE_EPOCH);
-  }
-
-  /**
    * Get active validator indices at ``epoch``.
    *
    * @param state - Current BeaconState
@@ -71,7 +54,7 @@ public class ValidatorsUtil {
    * @return A list of indices representing the active validators for the given epoch.
    */
   @Deprecated
-  public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
+  static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(

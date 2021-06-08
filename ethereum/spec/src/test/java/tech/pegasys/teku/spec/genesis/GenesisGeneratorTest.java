@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.genesis;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -105,7 +104,7 @@ class GenesisGeneratorTest {
 
     final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
-    assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
+    assertThat(spec.getActiveValidatorIndices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
     assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(VALIDATOR_KEYS.size());
   }
@@ -117,7 +116,7 @@ class GenesisGeneratorTest {
           Bytes32.ZERO, UInt64.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
       final BeaconState state = genesisGenerator.getGenesisState();
-      assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
+      assertThat(spec.getActiveValidatorIndices(state, GENESIS_EPOCH)).hasSize(i + 1);
       assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(i + 1);
     }
   }
@@ -150,7 +149,7 @@ class GenesisGeneratorTest {
     genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, INITIAL_DEPOSITS);
 
     final BeaconState state = genesisGenerator.getGenesisState();
-    assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(1);
+    assertThat(spec.getActiveValidatorIndices(state, GENESIS_EPOCH)).hasSize(1);
     assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(1);
   }
 
