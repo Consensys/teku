@@ -205,6 +205,40 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
+      throws Exception {
+
+    for (int i = 0; i < 20; i++) {
+      createStorage(StateStorageMode.PRUNE);
+      database.storeInitialAnchor(genesisAnchor);
+
+      try (final KvStoreHotDao.HotUpdater updater =
+          ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+        SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+
+        final Thread dbCloserThread =
+            new Thread(
+                () -> {
+                  try {
+                    database.close();
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+
+        dbCloserThread.start();
+        try {
+          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+        } catch (Exception e) {
+          assertThat(e).isInstanceOf(ShuttingDownException.class);
+        }
+
+        dbCloserThread.join(500);
+      }
+    }
+  }
+
+  @Test
   public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
       @TempDir final Path tempDir) {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
