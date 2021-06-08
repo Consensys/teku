@@ -29,6 +29,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -215,6 +216,13 @@ public class Spec {
     return atSlot(slot).getConfig().getSecondsPerEth1Block();
   }
 
+  public int getSyncCommitteeSize(final UInt64 slot) {
+    return atSlot(slot)
+        .getConfig()
+        .toVersionAltair()
+        .map(SpecConfigAltair::getSyncCommitteeSize)
+        .orElse(0);
+  }
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {

@@ -19,11 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -34,7 +37,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth2GossipTopicFilterTest {
-  protected Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final Fork nextFork = dataStructureUtil.randomFork();
@@ -71,11 +74,26 @@ class Eth2GossipTopicFilterTest {
   }
 
   @Test
+  void shouldConsiderTopicsForSignedContributionAndProofRelevant() {
+    assertThat(
+            filter.isRelevantTopic(
+                getNextForkTopicName(SignedContributionAndProofGossipManager.TOPIC_NAME)))
+        .isTrue();
+  }
+
+  @Test
   void shouldConsiderAllAttestationSubnetsRelevant() {
     for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getAttestationSubnetTopicName(i)))).isTrue();
       assertThat(filter.isRelevantTopic(getNextForkTopicName(getAttestationSubnetTopicName(i))))
           .isTrue();
+    }
+  }
+
+  @Test
+  void shouldConsiderAllSyncCommitteeSubnetsRelevant() {
+    for (int i = 0; i < SYNC_COMMITTEE_SUBNET_COUNT; i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getSyncCommitteeSubnetTopicName(i)))).isTrue();
     }
   }
 
