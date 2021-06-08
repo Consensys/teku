@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.ssz.SszList;
 
 @Deprecated
-public class ValidatorsUtil {
+class ValidatorsUtil {
 
   /**
    * Check if (this) validator is active in the given epoch.
@@ -81,7 +81,7 @@ public class ValidatorsUtil {
 
   @Deprecated
   @SuppressWarnings("DoNotReturnNullOptionals")
-  public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
+  static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()
         .getValidatorIndex(state, publicKey);
@@ -97,7 +97,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   @Deprecated
-  public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
+  static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
     state
         .getBalances()
         .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
@@ -113,23 +113,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
   @Deprecated
-  public static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
+  static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
     state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
-  }
-
-  /**
-   * Determines if a validator has a balance that can be slashed
-   *
-   * @param validator
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
-   */
-  @Deprecated
-  public static boolean is_slashable_validator(Validator validator, UInt64 epoch) {
-    return !validator.isSlashed()
-        && (validator.getActivation_epoch().compareTo(epoch) <= 0
-            && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
   }
 }
