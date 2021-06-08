@@ -168,7 +168,7 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
-  public void waitForFullSyncCommitteeAggregate(final double percentFullRequirement) {
+  public void waitForFullSyncCommitteeAggregate() {
     LOG.debug("Wait for full sync committee aggregates");
     waitFor(
         () -> {
@@ -189,13 +189,13 @@ public class TekuNode extends Node {
               actualSyncBitCount == syncCommitteeSize
                   ? 1.0
                   : actualSyncBitCount / (double) syncCommitteeSize;
-          if (percentageOfBitsSet < percentFullRequirement) {
+          if (percentageOfBitsSet < 1.0) {
             LOG.debug(
                 String.format(
                     "Sync committee bits are only %s%% full, expecting %s%%: %s",
-                    percentageOfBitsSet * 100, percentFullRequirement * 100, syncCommitteeBits));
+                    percentageOfBitsSet * 100, 100, syncCommitteeBits));
           }
-          assertThat(percentageOfBitsSet >= percentFullRequirement).isTrue();
+          assertThat(percentageOfBitsSet >= 1.0).isTrue();
         },
         5,
         MINUTES);

@@ -57,7 +57,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     primaryNode.start();
     secondaryNode.start();
     validatorClient.start();
-    secondaryNode.waitForFullSyncCommitteeAggregate(.9);
+    secondaryNode.waitForFullSyncCommitteeAggregate();
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
