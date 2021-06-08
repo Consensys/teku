@@ -50,7 +50,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
+public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
