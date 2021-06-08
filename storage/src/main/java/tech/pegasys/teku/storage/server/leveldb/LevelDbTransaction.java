@@ -87,7 +87,7 @@ public class LevelDbTransaction implements KvStoreTransaction {
 
   @Override
   public void rollback() {
-    applyUpdate(this::close);
+    close();
   }
 
   @Override
