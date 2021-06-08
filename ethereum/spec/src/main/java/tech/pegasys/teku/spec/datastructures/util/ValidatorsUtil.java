@@ -42,7 +42,7 @@ public class ValidatorsUtil {
    *     </a>
    */
   @Deprecated
-  public static boolean is_active_validator(Validator validator, UInt64 epoch) {
+  private static boolean is_active_validator(Validator validator, UInt64 epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
         && epoch.compareTo(validator.getExit_epoch()) < 0;
   }

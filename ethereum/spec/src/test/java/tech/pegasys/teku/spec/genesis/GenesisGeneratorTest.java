@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.is_active_validator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,6 +179,6 @@ class GenesisGeneratorTest {
     // first deposit was completely ignored
     final Validator validator = state.getValidators().get(expectedIndex);
     assertThat(validator.getPubkeyBytes()).isEqualTo(validData.getPubkey().toBytesCompressed());
-    assertThat(is_active_validator(validator, GENESIS_EPOCH)).isTrue();
+    assertThat(genesisSpec.predicates().isActiveValidator(validator, GENESIS_EPOCH)).isTrue();
   }
 }
