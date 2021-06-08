@@ -139,9 +139,9 @@ public class RocksDbTransaction implements KvStoreTransaction {
     applyUpdate(
         () -> {
           try {
-            this.rocksDbTx.commit();
+            this.rocksDbTx.rollback();
           } catch (RocksDBException e) {
-            throw RocksDbExceptionUtil.wrapException("Failed to commit transaction", e);
+            throw RocksDbExceptionUtil.wrapException("Failed to rollback transaction", e);
           } finally {
             close();
           }
