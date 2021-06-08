@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
@@ -124,9 +125,8 @@ public class Validator
    *
    * <p>{@link BLSPublicKey} instance can be created with {@link
    * BLSPublicKey#fromBytesCompressed(Bytes48)} method. However this method is pretty 'expensive'
-   * and the preferred way would be to use {@link
-   * tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil#getValidatorPubKey(BeaconState,
-   * UInt64)} if the {@link BeaconState} instance and validator index is available
+   * and the preferred way would be to use {@link Spec#getValidatorPubKey(BeaconState, UInt64)} if
+   * the {@link BeaconState} instance and validator index is available
    */
   public Bytes48 getPubkeyBytes() {
     return getField0().getBytes();
