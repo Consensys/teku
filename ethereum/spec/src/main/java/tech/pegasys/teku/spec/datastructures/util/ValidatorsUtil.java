@@ -75,11 +75,6 @@ public class ValidatorsUtil {
             });
   }
 
-  @Deprecated
-  public static UInt64 getMaxLookaheadEpoch(final BeaconState state) {
-    return getMaxLookaheadEpoch(BeaconStateUtil.get_current_epoch(state));
-  }
-
   private static UInt64 getMaxLookaheadEpoch(final UInt64 stateEpoch) {
     return stateEpoch.plus(MAX_SEED_LOOKAHEAD);
   }
