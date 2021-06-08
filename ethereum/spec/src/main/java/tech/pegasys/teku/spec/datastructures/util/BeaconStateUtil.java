@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.compute_proposer_index;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.increase_balance;
@@ -27,17 +26,20 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
 import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.teku.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
+import static tech.pegasys.teku.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.teku.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
+import com.google.common.primitives.UnsignedBytes;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
@@ -721,5 +723,80 @@ public class BeaconStateUtil {
     final UInt64 blockEpoch = compute_epoch_at_slot(blockSlot);
     final UInt64 parentEpoch = compute_epoch_at_slot(parentSlot);
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
+  }
+
+  /**
+   * Return the shuffled validator index corresponding to ``seed`` (and ``index_count``).
+   *
+   * @param index
+   * @param index_count
+   * @param seed
+   * @deprecated CommitteeUtil should be accessed via Spec.getCommitteeUtil().computeShuffledIndex()
+   * @return
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
+   */
+  @Deprecated
+  static int compute_shuffled_index(int index, int index_count, Bytes32 seed) {
+    checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
+
+    int indexRet = index;
+
+    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
+
+      Bytes roundAsByte = Bytes.of((byte) round);
+
+      // This needs to be unsigned modulo.
+      int pivot =
+          bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8))
+              .mod(index_count)
+              .intValue();
+      int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
+      int position = Math.max(indexRet, flip);
+
+      Bytes positionDiv256 = uint_to_bytes(Math.floorDiv(position, 256), 4);
+      Bytes hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+
+      int bitIndex = position & 0xff;
+      int theByte = hashBytes.get(bitIndex / 8);
+      int theBit = (theByte >> (bitIndex & 0x07)) & 1;
+      if (theBit != 0) {
+        indexRet = flip;
+      }
+    }
+
+    return indexRet;
+  }
+
+  /**
+   * Return from ``indices`` a random index sampled by effective balance.
+   *
+   * @param state
+   * @param indices
+   * @param seed
+   * @return
+   */
+  @Deprecated
+  private static int compute_proposer_index(
+      BeaconState state, List<Integer> indices, Bytes32 seed) {
+    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+    UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
+    int i = 0;
+    final int total = indices.size();
+    Bytes32 hash = null;
+    while (true) {
+      int candidate_index = indices.get(compute_shuffled_index(i % total, total, seed));
+      if (i % 32 == 0) {
+        hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
+      }
+      int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
+      UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
+      if (effective_balance
+          .times(MAX_RANDOM_BYTE)
+          .isGreaterThanOrEqualTo(MAX_EFFECTIVE_BALANCE.times(random_byte))) {
+        return candidate_index;
+      }
+      i++;
+    }
   }
 }
