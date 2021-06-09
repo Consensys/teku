@@ -237,7 +237,7 @@ public class Eth2P2PNetworkFactory {
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
                     peerHandlers,
-                    (__, msg) -> gossipEncoding.prepareUnknownMessage(msg),
+                    gossipEncoding::prepareUnknownMessage,
                     gossipTopicsFilter),
                 new Eth2PeerSelectionStrategy(
                     targetPeerRange,

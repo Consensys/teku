@@ -48,21 +48,22 @@ public interface GossipEncoding {
    * @param data Data received over gossip to be deserialized
    * @param valueType The concrete type to deserialize to
    */
-  <T extends SszData> PreparedGossipMessage prepareMessage(Bytes data, SszSchema<T> valueType);
+  <T extends SszData> PreparedGossipMessage prepareMessage(
+      final String topic, Bytes data, SszSchema<T> valueType);
 
   /**
-   * Fallback for {@link #prepareMessage(Bytes, SszSchema)} for the case when decoded {@code
+   * Fallback for {@link #prepareMessage(String, Bytes, SszSchema)} for the case when decoded {@code
    * valueType} is unknown
    *
    * @param data raw Gossip message data
    */
-  PreparedGossipMessage prepareUnknownMessage(Bytes data);
+  PreparedGossipMessage prepareUnknownMessage(final String topic, Bytes data);
 
   /**
    * Decodes preprocessed message
    *
-   * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
-   *     SszSchema)}
+   * @param message preprocessed raw bytes message returned earlier by {@link
+   *     #prepareMessage(String, Bytes, SszSchema)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails

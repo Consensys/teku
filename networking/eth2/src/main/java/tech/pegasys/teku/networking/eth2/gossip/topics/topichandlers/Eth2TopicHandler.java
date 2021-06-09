@@ -130,7 +130,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(payload, getMessageType());
+    return getGossipEncoding().prepareMessage(getTopic(), payload, getMessageType());
   }
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {

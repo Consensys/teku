@@ -34,6 +34,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   // 4-byte domain for gossip message-id isolation of *valid* snappy messages
   public static final Bytes MESSAGE_DOMAIN_VALID_SNAPPY = Bytes.fromHexString("0x01000000");
 
+  private final String topic;
   private final Bytes compressedData;
   private final SszSchema<?> valueType;
   private final SnappyBlockCompressor snappyCompressor;
@@ -41,17 +42,24 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       Suppliers.memoize(this::maybeUncompressPayload);
   private DecodingException uncompressException;
 
-  static SnappyPreparedGossipMessage createUnknown(Bytes compressedData) {
-    return new SnappyPreparedGossipMessage(compressedData, null, null);
+  static SnappyPreparedGossipMessage createUnknown(final String topic, final Bytes compressedData) {
+    return new SnappyPreparedGossipMessage(topic, compressedData, null, null);
   }
 
   static SnappyPreparedGossipMessage create(
-      Bytes compressedData, SszSchema<?> valueType, SnappyBlockCompressor snappyCompressor) {
-    return new SnappyPreparedGossipMessage(compressedData, valueType, snappyCompressor);
+      final String topic,
+      Bytes compressedData,
+      SszSchema<?> valueType,
+      SnappyBlockCompressor snappyCompressor) {
+    return new SnappyPreparedGossipMessage(topic, compressedData, valueType, snappyCompressor);
   }
 
   private SnappyPreparedGossipMessage(
-      Bytes compressedData, SszSchema<?> valueType, SnappyBlockCompressor snappyCompressor) {
+      final String topic,
+      Bytes compressedData,
+      SszSchema<?> valueType,
+      SnappyBlockCompressor snappyCompressor) {
+    this.topic = topic;
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
