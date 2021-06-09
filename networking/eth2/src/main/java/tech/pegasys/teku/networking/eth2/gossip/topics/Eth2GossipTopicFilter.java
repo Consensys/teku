@@ -13,12 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getAttestationSubnetTopic;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getSyncCommitteeSubnetTopic;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getAllTopics;
 
 import com.google.common.base.Suppliers;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -26,11 +23,9 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
@@ -57,8 +52,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Bytes4 forkDigest = forkInfo.getForkDigest();
-    final Set<String> topics = new HashSet<>();
-    addTopicsForForkDigest(gossipEncoding, forkDigest, topics);
+    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest);
     recentChainData
         .getNextFork(forkInfo.getFork())
         .map(
@@ -67,29 +61,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                     .miscHelpers()
                     .computeForkDigest(
                         nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot()))
-        .ifPresent(
-            nextForkDigest -> addTopicsForForkDigest(gossipEncoding, nextForkDigest, topics));
+        .ifPresent(nextForkDigest -> topics.addAll(getAllTopics(gossipEncoding, nextForkDigest)));
     return topics;
-  }
-
-  private void addTopicsForForkDigest(
-      final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Set<String> topics) {
-    for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
-      topics.add(getAttestationSubnetTopic(forkDigest, i, gossipEncoding));
-    }
-    for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
-      topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
-    }
-
-    for (String topicName :
-        List.of(
-            GossipTopicNames.BEACON_BLOCK,
-            GossipTopicNames.BEACON_AGGREGATE_AND_PROOF,
-            GossipTopicNames.ATTESTER_SLASHING,
-            GossipTopicNames.PROPOSER_SLASHING,
-            GossipTopicNames.VOLUNTARY_EXIT,
-            GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)) {
-      topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
-    }
   }
 }
