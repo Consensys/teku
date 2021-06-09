@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
+import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_shuffled_index;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.compute_shuffled_index;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
