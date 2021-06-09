@@ -38,9 +38,8 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   private final Bytes compressedData;
   private final SszSchema<?> valueType;
   private final SnappyBlockCompressor snappyCompressor;
-  private final Supplier<Optional<Bytes>> uncompressed =
-      Suppliers.memoize(this::maybeUncompressPayload);
-  private DecodingException uncompressException;
+  private final Supplier<DecodedMessageResult> decodedResult =
+      Suppliers.memoize(this::getDecodedMessage);
 
   static SnappyPreparedGossipMessage createUnknown(final String topic, final Bytes compressedData) {
     return new SnappyPreparedGossipMessage(topic, compressedData, null, null);
@@ -65,27 +64,22 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
     this.snappyCompressor = snappyCompressor;
   }
 
-  public Bytes getUncompressedOrThrow() throws DecodingException {
-    return getMaybeUncompressed()
-        .orElseThrow(
-            () -> new DecodingException("Couldn't uncompress the message", uncompressException));
-  }
-
-  public Optional<Bytes> getMaybeUncompressed() {
-    return uncompressed.get();
-  }
-
-  private Optional<Bytes> maybeUncompressPayload() {
+  @Override
+  public DecodedMessageResult getDecodedMessage() {
     try {
       if (valueType == null) {
-        return Optional.empty();
+        return DecodedMessageResult.failed();
       } else {
-        return Optional.of(uncompressPayload());
+        final Bytes decodedMessage = uncompressPayload();
+        return DecodedMessageResult.successful(decodedMessage);
       }
     } catch (DecodingException e) {
-      uncompressException = e;
-      return Optional.empty();
+      return DecodedMessageResult.failed(e);
     }
+  }
+
+  private Optional<Bytes> getUncompressed() {
+    return decodedResult.get().getDecodedMessage();
   }
 
   private Bytes uncompressPayload() throws DecodingException {
@@ -95,7 +89,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   @Override
   public Bytes getMessageId() {
     return Hash.sha2_256(
-            getMaybeUncompressed()
+            getUncompressed()
                 .map(
                     validSnappyUncompressed ->
                         Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, validSnappyUncompressed))

@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage.GossipDecodingException;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
@@ -40,11 +41,11 @@ class SszSnappyEncoding implements GossipEncoding {
   @Override
   public <T extends SszData> T decodeMessage(PreparedGossipMessage message, SszSchema<T> valueType)
       throws DecodingException {
-    if (!(message instanceof SnappyPreparedGossipMessage)) {
-      throw new DecodingException("Unexpected PreparedMessage subclass: " + message.getClass());
+    try {
+      return sszCodec.decode(message.getDecodedMessage().getDecodedMessageOrElseThrow(), valueType);
+    } catch (GossipDecodingException e) {
+      throw new DecodingException("Failed to decode gossip message", e);
     }
-    SnappyPreparedGossipMessage lazyMessage = (SnappyPreparedGossipMessage) message;
-    return sszCodec.decode(lazyMessage.getUncompressedOrThrow(), valueType);
   }
 
   @Override
