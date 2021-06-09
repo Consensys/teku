@@ -225,7 +225,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
                 beaconStateMutators.increaseBalance(state, participantIndex, participantReward);
                 activeParticipantIndices.add(participantIndex);
               } else {
-                beaconStateMutators.decreaseBalance(state,participantIndex, participantReward);
+                beaconStateMutators.decreaseBalance(state, participantIndex, participantReward);
               }
             });
     if (!activeParticipantIndices.isEmpty()) {
