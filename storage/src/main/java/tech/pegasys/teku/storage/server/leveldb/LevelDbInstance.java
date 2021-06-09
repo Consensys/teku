@@ -279,8 +279,9 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   synchronized void onTransactionClosed(final LevelDbTransaction transaction) {
-    closedTransactionsCounter.inc();
-    openTransactions.remove(transaction);
+    if (openTransactions.remove(transaction)) {
+      closedTransactionsCounter.inc();
+    }
   }
 
   private DBIterator createIterator() {
