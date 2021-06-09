@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -117,7 +116,7 @@ public class AggregateAttestationValidator {
                         final BeaconState state = maybeState.get();
 
                         final Optional<BLSPublicKey> aggregatorPublicKey =
-                            ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
+                            spec.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {
                           LOG.trace("Rejecting aggregate with invalid index");
                           return InternalValidationResult.REJECT;

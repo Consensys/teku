@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractRocksDbDatabaseTest {
+public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractKvStoreDatabaseTest {
 
   @Test
   public void shouldPersistHotStates_everyEpoch() {
