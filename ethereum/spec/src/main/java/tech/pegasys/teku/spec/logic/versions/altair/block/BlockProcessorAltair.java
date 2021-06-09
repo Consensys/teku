@@ -216,14 +216,23 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
 
     // Apply participant and proposer rewards
+    final List<Integer> activeParticipantIndices = List.of();
     participantPubkeys.stream()
         .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
         .forEach(
-            participantIndex ->
-                beaconStateMutators.increaseBalance(state, participantIndex, participantReward));
-    UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
-    beaconStateMutators.increaseBalance(
-        state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
+            participantIndex -> {
+              if (aggregate.getSyncCommitteeBits().getBit(participantIndex)) {
+                beaconStateMutators.increaseBalance(state, participantIndex, participantReward);
+                activeParticipantIndices.add(participantIndex);
+              } else {
+                beaconStateMutators.decreaseBalance(state,participantIndex, participantReward);
+              }
+            });
+    if (!activeParticipantIndices.isEmpty()) {
+      final UInt64 totalProposerReward = proposerReward.times(activeParticipantIndices.size());
+      beaconStateMutators.increaseBalance(
+          state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
+    }
   }
 
   private boolean eth2FastAggregateVerify(
