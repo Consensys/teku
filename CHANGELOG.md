@@ -30,6 +30,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fixed regression where eth_getLogs responses from Infura that rejected the request because they returned too many logs did not retry the request with a smaller request range.
 - Experimental: Fix for eth1 follow distance tracking revealed in Rayonism testnets. Teku incorrectly strictly follows 2048 blocks before the eth1 head but the follow distance should be based on timestamp, not block number.
   An experimental fix for this can be enabled with `--Xeth1-time-based-head-tracking-enabled`. Further testing will be conducted before enabling this by default.
+- Prevent LevelDB transactions from attempting to make any updates after the database is shut down
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
