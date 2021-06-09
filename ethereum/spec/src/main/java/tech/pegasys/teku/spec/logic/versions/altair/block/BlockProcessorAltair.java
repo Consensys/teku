@@ -20,6 +20,8 @@ import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAl
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -176,10 +178,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
-    aggregate
-        .getSyncCommitteeBits()
-        .streamAllSetBits()
-        .forEach(index -> participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey()));
+    final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
+
+    for (int i = 0; i < committeePubkeys.size(); i++) {
+      if (aggregate.getSyncCommitteeBits().getBit(i)) {
+        participantPubkeys.add(committeePubkeys.get(i).getBLSPublicKey());
+      } else {
+        idlePubkeys.add(committeePubkeys.get(i).getBLSPublicKey());
+      }
+    }
+
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
@@ -216,23 +224,22 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
 
     // Apply participant and proposer rewards
-    final List<Integer> activeParticipantIndices = List.of();
     participantPubkeys.stream()
         .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
         .forEach(
+            participantIndex ->
+                beaconStateMutators.increaseBalance(state, participantIndex, participantReward));
+    UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
+    beaconStateMutators.increaseBalance(
+        state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
+
+    // impose penalties for any idle validators
+    idlePubkeys.stream()
+        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
+        .forEach(
             participantIndex -> {
-              if (aggregate.getSyncCommitteeBits().getBit(participantIndex)) {
-                beaconStateMutators.increaseBalance(state, participantIndex, participantReward);
-                activeParticipantIndices.add(participantIndex);
-              } else {
-                beaconStateMutators.decreaseBalance(state, participantIndex, participantReward);
-              }
+              beaconStateMutators.decreaseBalance(state, participantIndex, participantReward);
             });
-    if (!activeParticipantIndices.isEmpty()) {
-      final UInt64 totalProposerReward = proposerReward.times(activeParticipantIndices.size());
-      beaconStateMutators.increaseBalance(
-          state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
-    }
   }
 
   private boolean eth2FastAggregateVerify(
