@@ -50,7 +50,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
+public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
@@ -202,6 +202,40 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     assertThatThrownBy(
             () -> database.getLatestAvailableFinalizedState(genesisCheckpoint.getEpochStartSlot()))
         .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosedFromAnotherThread()
+      throws Exception {
+
+    for (int i = 0; i < 20; i++) {
+      createStorage(StateStorageMode.PRUNE);
+      database.storeInitialAnchor(genesisAnchor);
+
+      try (final KvStoreHotDao.HotUpdater updater =
+          ((KvStoreDatabase) database).hotDao.hotUpdater()) {
+        SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+
+        final Thread dbCloserThread =
+            new Thread(
+                () -> {
+                  try {
+                    database.close();
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+
+        dbCloserThread.start();
+        try {
+          updater.addHotBlock(BlockAndCheckpointEpochs.fromBlockAndState(newBlock));
+        } catch (Exception e) {
+          assertThat(e).isInstanceOf(ShuttingDownException.class);
+        }
+
+        dbCloserThread.join(500);
+      }
+    }
   }
 
   @Test
