@@ -40,6 +40,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 configureNode(config, genesisTime)
+                    .withLogging("debug")
                     .withInteropValidators(0, 0)
                     .withPeers(primaryNode));
     validatorClient =
@@ -58,6 +59,9 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.start();
     validatorClient.start();
     secondaryNode.waitForFullSyncCommitteeAggregate();
+    validatorClient.stop();
+    secondaryNode.stop();
+    primaryNode.stop();
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {

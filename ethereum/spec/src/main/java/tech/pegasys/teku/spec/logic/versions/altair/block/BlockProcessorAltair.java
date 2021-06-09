@@ -176,10 +176,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
     final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
-    aggregate
-        .getSyncCommitteeBits()
-        .streamAllSetBits()
-        .forEach(index -> participantPubkeys.add(committeePubkeys.get(index).getBLSPublicKey()));
+    final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
+
+    for (int i = 0; i < committeePubkeys.size(); i++) {
+      final BLSPublicKey publicKey = committeePubkeys.get(i).getBLSPublicKey();
+      if (aggregate.getSyncCommitteeBits().getBit(i)) {
+        participantPubkeys.add(publicKey);
+      } else {
+        idlePubkeys.add(publicKey);
+      }
+    }
+
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
@@ -224,6 +231,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     UInt64 totalProposerReward = proposerReward.times(participantPubkeys.size());
     beaconStateMutators.increaseBalance(
         state, beaconStateAccessors.getBeaconProposerIndex(state), totalProposerReward);
+
+    // impose penalties for any idle validators
+    idlePubkeys.stream()
+        .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
+        .forEach(
+            participantIndex -> {
+              beaconStateMutators.decreaseBalance(state, participantIndex, participantReward);
+            });
   }
 
   private boolean eth2FastAggregateVerify(

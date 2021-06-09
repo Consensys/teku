@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Rework network configuration parsing to accept the new config format.  For details on the new format, see the [eth2.0-specs repo](https://github.com/ethereum/eth2.0-specs/pull/2390).  With this change, we no longer support pointing to directories for the network configuration.  Now, the network config (supplied via `--network`) should always point to a single yaml file.
 - For Altair networks, `--p2p-subscribe-all-subnets-enabled` will subscribe to all subcommittee subnets.
 - Gradle build enhancements. Upgraded gradle and various plugin versions. Introduced new license dependency report generator with custom renderer. Refactored custom errorprone checks to its own repo. The project can now be built against JDK 16.
+- Implement alpha.7 spec updates to sync committee logic and rewards
 
 ### Bug Fixes
 - Fixed failures in the `checkMavenCoordinateCollisions` task if it was run prior to running spotless.
@@ -30,6 +31,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fixed regression where eth_getLogs responses from Infura that rejected the request because they returned too many logs did not retry the request with a smaller request range.
 - Experimental: Fix for eth1 follow distance tracking revealed in Rayonism testnets. Teku incorrectly strictly follows 2048 blocks before the eth1 head but the follow distance should be based on timestamp, not block number.
   An experimental fix for this can be enabled with `--Xeth1-time-based-head-tracking-enabled`. Further testing will be conducted before enabling this by default.
+- Prevent LevelDB transactions from attempting to make any updates after the database is shut down
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.

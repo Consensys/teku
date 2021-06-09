@@ -491,6 +491,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withLogging(final String logging) {
+      configMap.put("logging", logging);
+      return this;
+    }
+
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
