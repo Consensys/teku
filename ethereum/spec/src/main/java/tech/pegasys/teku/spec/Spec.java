@@ -517,6 +517,10 @@ public class Spec {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
+  public UInt64 getTotalActiveBalance(BeaconState state) {
+    return atState(state).beaconStateAccessors().getTotalActiveBalance(state);
+  }
+
   public int getPreviousEpochAttestationCapacity(final BeaconState state) {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
