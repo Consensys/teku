@@ -179,10 +179,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
 
     for (int i = 0; i < committeePubkeys.size(); i++) {
+      final BLSPublicKey publicKey = committeePubkeys.get(i).getBLSPublicKey();
       if (aggregate.getSyncCommitteeBits().getBit(i)) {
-        participantPubkeys.add(committeePubkeys.get(i).getBLSPublicKey());
+        participantPubkeys.add(publicKey);
       } else {
-        idlePubkeys.add(committeePubkeys.get(i).getBLSPublicKey());
+        idlePubkeys.add(publicKey);
       }
     }
 
