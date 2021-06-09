@@ -40,6 +40,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(
             config ->
                 configureNode(config, genesisTime)
+                    .withLogging("debug")
                     .withInteropValidators(0, 0)
                     .withPeers(primaryNode));
     validatorClient =
