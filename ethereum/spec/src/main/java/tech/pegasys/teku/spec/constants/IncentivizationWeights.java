@@ -16,10 +16,10 @@ package tech.pegasys.teku.spec.constants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class IncentivizationWeights {
-  public static final UInt64 TIMELY_SOURCE_WEIGHT = UInt64.valueOf(12);
-  public static final UInt64 TIMELY_TARGET_WEIGHT = UInt64.valueOf(24);
-  public static final UInt64 TIMELY_HEAD_WEIGHT = UInt64.valueOf(12);
-  public static final UInt64 SYNC_REWARD_WEIGHT = UInt64.valueOf(8);
+  public static final UInt64 TIMELY_SOURCE_WEIGHT = UInt64.valueOf(14);
+  public static final UInt64 TIMELY_TARGET_WEIGHT = UInt64.valueOf(26);
+  public static final UInt64 TIMELY_HEAD_WEIGHT = UInt64.valueOf(14);
+  public static final UInt64 SYNC_REWARD_WEIGHT = UInt64.valueOf(2);
   public static final UInt64 PROPOSER_WEIGHT = UInt64.valueOf(8);
   public static final UInt64 WEIGHT_DENOMINATOR = UInt64.valueOf(64);
 }
