@@ -18,7 +18,6 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getVali
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.getValidatorIndex;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -260,7 +259,7 @@ public class ChainDataProvider {
     if (validatorParameter.toLowerCase().startsWith("0x")) {
       try {
         BLSPubKey publicKey = BLSPubKey.fromHexString(validatorParameter);
-        return getValidatorIndex(state, publicKey.asBLSPublicKey());
+        return spec.getValidatorIndex(state, publicKey.asBLSPublicKey());
       } catch (PublicKeyException ex) {
         throw new BadRequestException(String.format("Invalid public key: %s", validatorParameter));
       }
