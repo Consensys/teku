@@ -19,7 +19,7 @@ import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getVariableK
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -29,7 +29,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class LevelDbTransaction implements KvStoreTransaction {
 
-  private final AtomicBoolean closed = new AtomicBoolean(false);
+  private boolean closed = false;
+  private final ReentrantLock lock = new ReentrantLock();
 
   private final LevelDbInstance dbInstance;
   private final DB db;
@@ -44,67 +45,82 @@ public class LevelDbTransaction implements KvStoreTransaction {
 
   @Override
   public <T> void put(final KvStoreVariable<T> variable, final T value) {
-    assertOpen();
-    writeBatch.put(getVariableKey(variable), variable.getSerializer().serialize(value));
+    applyUpdate(
+        () -> writeBatch.put(getVariableKey(variable), variable.getSerializer().serialize(value)));
   }
 
   @Override
   public <K, V> void put(final KvStoreColumn<K, V> column, final K key, final V value) {
-    assertOpen();
-    writeBatch.put(getColumnKey(column, key), serializeValue(column, value));
+    applyUpdate(() -> writeBatch.put(getColumnKey(column, key), serializeValue(column, value)));
   }
 
   @Override
   public <K, V> void put(final KvStoreColumn<K, V> column, final Map<K, V> data) {
-    assertOpen();
-    data.forEach(
-        (key, value) -> writeBatch.put(getColumnKey(column, key), serializeValue(column, value)));
+    applyUpdate(
+        () ->
+            data.forEach(
+                (key, value) ->
+                    writeBatch.put(getColumnKey(column, key), serializeValue(column, value))));
   }
 
   @Override
   public <K, V> void delete(final KvStoreColumn<K, V> column, final K key) {
-    assertOpen();
-    writeBatch.delete(getColumnKey(column, key));
+    applyUpdate(() -> writeBatch.delete(getColumnKey(column, key)));
   }
 
   @Override
   public <T> void delete(final KvStoreVariable<T> variable) {
-    assertOpen();
-    writeBatch.delete(getVariableKey(variable));
+    applyUpdate(() -> writeBatch.delete(getVariableKey(variable)));
   }
 
   @Override
   public void commit() {
-    assertOpen();
-    try {
-      db.write(writeBatch);
-    } finally {
-      close();
-    }
+    applyUpdate(
+        () -> {
+          try {
+            db.write(writeBatch);
+          } finally {
+            close();
+          }
+        });
   }
 
   @Override
   public void rollback() {
-    assertOpen();
     close();
   }
 
   @Override
   public void close() {
-    if (!closed.compareAndSet(false, true)) {
-      return;
-    }
+    lock.lock();
     try {
+      if (closed) {
+        // Already closed
+        return;
+      }
+      closed = true;
       writeBatch.close();
+      dbInstance.onTransactionClosed(this);
     } catch (IOException e) {
+      dbInstance.onTransactionClosed(this);
       throw new UncheckedIOException(e);
     } finally {
-      dbInstance.onTransactionClosed(this);
+      lock.unlock();
+    }
+  }
+
+  private void applyUpdate(final Runnable operation) {
+    lock.lock();
+    try {
+      assertOpen();
+      operation.run();
+    } finally {
+      lock.unlock();
     }
   }
 
   private void assertOpen() {
-    if (closed.get()) {
+    if (closed) {
       throw new ShuttingDownException();
     }
     dbInstance.assertOpen();
