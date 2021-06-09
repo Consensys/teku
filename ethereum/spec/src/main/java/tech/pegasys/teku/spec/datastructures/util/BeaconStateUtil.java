@@ -738,7 +738,7 @@ public class BeaconStateUtil {
    */
   @Deprecated
   static int compute_shuffled_index(int index, int index_count, Bytes32 seed) {
-    checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
+    checkArgument(index < index_count, "index must be less than index_count");
 
     int indexRet = index;
 
