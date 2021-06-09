@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SszData;
@@ -127,7 +127,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   public String getTopic() {
-    return TopicNames.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
+    return GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
   }
 
   public GossipEncoding getGossipEncoding() {

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopic;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getSyncCommitteeSubnetTopic;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getAttestationSubnetTopic;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getSyncCommitteeSubnetTopic;
 
 import com.google.common.base.Suppliers;
 import java.util.HashSet;
@@ -23,12 +23,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
@@ -89,13 +83,13 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
 
     for (String topicName :
         List.of(
-            BlockGossipManager.TOPIC_NAME,
-            AggregateGossipManager.TOPIC_NAME,
-            AttesterSlashingGossipManager.TOPIC_NAME,
-            ProposerSlashingGossipManager.TOPIC_NAME,
-            VoluntaryExitGossipManager.TOPIC_NAME,
-            SignedContributionAndProofGossipManager.TOPIC_NAME)) {
-      topics.add(TopicNames.getTopic(forkDigest, topicName, gossipEncoding));
+            GossipTopicNames.BEACON_BLOCK,
+            GossipTopicNames.BEACON_AGGREGATE_AND_PROOF,
+            GossipTopicNames.ATTESTER_SLASHING,
+            GossipTopicNames.PROPOSER_SLASHING,
+            GossipTopicNames.VOLUNTARY_EXIT,
+            GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)) {
+      topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }
   }
 }

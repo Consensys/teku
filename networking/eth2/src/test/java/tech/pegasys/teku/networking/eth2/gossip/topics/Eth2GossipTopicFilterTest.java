@@ -18,15 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopicName;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames.getAttestationSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -64,12 +62,12 @@ class Eth2GossipTopicFilterTest {
   @Test
   void shouldNotRequireNextForkToBePresent() {
     when(recentChainData.getNextFork(any())).thenReturn(Optional.empty());
-    assertThat(filter.isRelevantTopic(getTopicName(BlockGossipManager.TOPIC_NAME))).isTrue();
+    assertThat(filter.isRelevantTopic(getTopicName(GossipTopicNames.BEACON_BLOCK))).isTrue();
   }
 
   @Test
   void shouldConsiderTopicsForNextForkRelevant() {
-    assertThat(filter.isRelevantTopic(getNextForkTopicName(BlockGossipManager.TOPIC_NAME)))
+    assertThat(filter.isRelevantTopic(getNextForkTopicName(GossipTopicNames.BEACON_BLOCK)))
         .isTrue();
   }
 
@@ -77,7 +75,7 @@ class Eth2GossipTopicFilterTest {
   void shouldConsiderTopicsForSignedContributionAndProofRelevant() {
     assertThat(
             filter.isRelevantTopic(
-                getNextForkTopicName(SignedContributionAndProofGossipManager.TOPIC_NAME)))
+                getNextForkTopicName(GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)))
         .isTrue();
   }
 
@@ -100,16 +98,16 @@ class Eth2GossipTopicFilterTest {
   @Test
   void shouldNotAllowTopicsWithUnknownForkDigest() {
     final String irrelevantTopic =
-        TopicNames.getTopic(
-            Bytes4.fromHexString("0x11223344"), BlockGossipManager.TOPIC_NAME, SSZ_SNAPPY);
+        GossipTopics.getTopic(
+            Bytes4.fromHexString("0x11223344"), GossipTopicNames.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(irrelevantTopic)).isFalse();
   }
 
   private String getTopicName(final String name) {
-    return TopicNames.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final String name) {
-    return TopicNames.getTopic(nextForkDigest, name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(nextForkDigest, name, SSZ_SNAPPY);
   }
 }

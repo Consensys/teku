@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,10 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class TopicNames {
+/**
+ * Helpers for getting the full topic strings formatted like: /eth2/ForkDigestValue/Name/Encoding
+ */
+public class GossipTopics {
 
   public static String getTopic(
       final Bytes4 forkDigest, final String topicName, final GossipEncoding gossipEncoding) {
@@ -30,19 +33,13 @@ public class TopicNames {
 
   public static String getAttestationSubnetTopic(
       final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
-    return getTopic(forkDigest, getAttestationSubnetTopicName(subnetId), gossipEncoding);
-  }
-
-  public static String getAttestationSubnetTopicName(final int subnetId) {
-    return "beacon_attestation_" + subnetId;
+    return getTopic(
+        forkDigest, GossipTopicNames.getAttestationSubnetTopicName(subnetId), gossipEncoding);
   }
 
   public static String getSyncCommitteeSubnetTopic(
       final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
-    return getTopic(forkDigest, getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
-  }
-
-  public static String getSyncCommitteeSubnetTopicName(final int subnetId) {
-    return "sync_committee_" + subnetId;
+    return getTopic(
+        forkDigest, GossipTopicNames.getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
   }
 }
