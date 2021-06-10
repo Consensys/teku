@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.HashSet;
 import java.util.Set;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.util.config.Constants;
  * Helpers for getting the full topic strings formatted like: /eth2/ForkDigestValue/Name/Encoding
  */
 public class GossipTopics {
+  private static final String DOMAIN_PREFIX = "eth2";
 
   public static String getTopic(
       final Bytes4 forkDigest,
@@ -34,7 +36,9 @@ public class GossipTopics {
 
   public static String getTopic(
       final Bytes4 forkDigest, final String topicName, final GossipEncoding gossipEncoding) {
-    return "/eth2/"
+    return "/"
+        + DOMAIN_PREFIX
+        + "/"
         + forkDigest.toUnprefixedHexString()
         + "/"
         + topicName
@@ -69,5 +73,18 @@ public class GossipTopics {
     }
 
     return topics;
+  }
+
+  public static Bytes4 extractForkDigest(final String topic) throws DecodingException {
+    // Fork digest starts after domain prefix + slash separators
+    final int beginIndex = DOMAIN_PREFIX.length() + 2;
+    final int endIndex = topic.indexOf("/", beginIndex);
+    final String forkDigest = topic.substring(beginIndex, endIndex);
+
+    try {
+      return Bytes4.fromHexString(forkDigest);
+    } catch (Exception e) {
+      throw new DecodingException("Failed to parse forkDigest from topic: " + topic, e);
+    }
   }
 }
