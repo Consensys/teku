@@ -47,7 +47,6 @@ import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
@@ -239,7 +238,7 @@ public class Eth2P2PNetworkFactory {
                     new ArrayList<>(rpcMethods),
                     peerHandlers,
                     gossipEncoding.createPreparedGossipMessageFactory(
-                        ForkDigestToMilestone.create(recentChainData::getMilestoneByForkDigest)),
+                        recentChainData::getMilestoneByForkDigest),
                     gossipTopicsFilter),
                 new Eth2PeerSelectionStrategy(
                     targetPeerRange,

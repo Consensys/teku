@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -51,7 +52,7 @@ public class SszSnappyGossipEncodingTest {
       throws DecodingException {
     return encoding.decodeMessage(
         encoding
-            .createPreparedGossipMessageFactory(__ -> SpecMilestone.PHASE0)
+            .createPreparedGossipMessageFactory(__ -> Optional.of(SpecMilestone.PHASE0))
             .create(topic, data, valueType),
         valueType);
   }

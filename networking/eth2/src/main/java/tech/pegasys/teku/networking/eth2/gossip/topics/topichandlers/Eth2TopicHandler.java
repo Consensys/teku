@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -64,7 +63,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
-            ForkDigestToMilestone.create(recentChainData::getMilestoneByForkDigest));
+            recentChainData::getMilestoneByForkDigest);
   }
 
   public Eth2TopicHandler(

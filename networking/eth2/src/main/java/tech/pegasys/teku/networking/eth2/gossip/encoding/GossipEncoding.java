@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -58,14 +57,6 @@ public interface GossipEncoding {
       throws DecodingException;
 
   interface ForkDigestToMilestone {
-    static ForkDigestToMilestone create(
-        Function<Bytes4, Optional<SpecMilestone>> forkDigestToMaybeMilestone) {
-      return forkDigest ->
-          forkDigestToMaybeMilestone
-              .apply(forkDigest)
-              .orElseThrow(() -> new DecodingException("Unknown forkDigest: " + forkDigest));
-    }
-
-    SpecMilestone getMilestone(final Bytes4 forkDigest) throws DecodingException;
+    Optional<SpecMilestone> getMilestone(final Bytes4 forkDigest) throws DecodingException;
   }
 }
