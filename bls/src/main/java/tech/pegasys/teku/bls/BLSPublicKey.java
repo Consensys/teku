@@ -40,7 +40,7 @@ public final class BLSPublicKey {
 
   /**
    * Aggregates list of PublicKeys, returns the public key that corresponds to G1 point at infinity
-   * if list is empty
+   * if list is empty, or if any of the public keys is infinity or not a G1 group member.
    *
    * @param publicKeys The list of public keys to aggregate
    * @return PublicKey The public key
