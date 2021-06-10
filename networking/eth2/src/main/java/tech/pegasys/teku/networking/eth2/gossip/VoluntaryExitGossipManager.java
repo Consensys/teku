@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -22,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
-  public static String TOPIC_NAME = "voluntary_exit";
 
   public VoluntaryExitGossipManager(
       final AsyncRunner asyncRunner,
@@ -31,7 +31,14 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor,
       final GossipPublisher<SignedVoluntaryExit> publisher) {
-    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
+    super(
+        GossipTopicNames.VOLUNTARY_EXIT,
+        asyncRunner,
+        gossipNetwork,
+        gossipEncoding,
+        forkInfo,
+        processor,
+        publisher);
   }
 
   @Override

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getSyncCommitteeSubnetTopic;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getSyncCommitteeSubnetTopic;
 
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.type.Bytes4;

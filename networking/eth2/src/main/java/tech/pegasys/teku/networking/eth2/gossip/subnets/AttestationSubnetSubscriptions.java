@@ -20,8 +20,9 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -65,7 +66,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
                         + " because the state was not available");
               }
               final String topic =
-                  TopicNames.getAttestationSubnetTopic(
+                  GossipTopics.getAttestationSubnetTopic(
                       forkInfo.getForkDigest(), subnetId.get(), gossipEncoding);
               return gossipNetwork.gossip(topic, gossipEncoding.encode(attestation));
             });
@@ -79,7 +80,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
 
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
-    final String topicName = TopicNames.getAttestationSubnetTopicName(subnetId);
+    final String topicName = GossipTopicNames.getAttestationSubnetTopicName(subnetId);
     return SingleAttestationTopicHandler.createHandler(
         asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
   }
