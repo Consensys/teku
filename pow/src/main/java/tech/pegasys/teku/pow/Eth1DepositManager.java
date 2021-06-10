@@ -144,7 +144,7 @@ public class Eth1DepositManager {
     }
 
     return minimumGenesisTimeBlockFinder
-        .findMinGenesisTimeBlockInHistory(headBlock.getNumber())
+        .findMinGenesisTimeBlockInHistory(headBlock.getNumber(), asyncRunner)
         .thenCompose(block -> sendDepositsUpToMinGenesis(block, replayDepositsResult))
         .thenAccept(
             minGenesisTimeBlock -> {
