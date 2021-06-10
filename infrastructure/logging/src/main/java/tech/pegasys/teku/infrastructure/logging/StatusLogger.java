@@ -326,9 +326,9 @@ public class StatusLogger {
 
   public void eth1MinGenesisNotFound(final Throwable error) {
     log.error(
-        "Failed to retrieve min genesis block. " +
-            "Check that your eth1 node is fully synced. " +
-            "Will retry in 1 minute.",
+        "Failed to retrieve min genesis block. "
+            + "Check that your eth1 node is fully synced. "
+            + "Will retry in 1 minute.",
         error);
   }
 
