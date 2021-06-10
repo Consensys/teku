@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public enum GossipTopicNames {
+public enum GossipTopicName {
   BEACON_BLOCK,
   BEACON_AGGREGATE_AND_PROOF,
   ATTESTER_SLASHING,

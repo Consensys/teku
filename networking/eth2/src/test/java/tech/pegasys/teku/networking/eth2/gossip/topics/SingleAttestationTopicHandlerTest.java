@@ -57,7 +57,7 @@ public class SingleAttestationTopicHandlerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().specProvider(spec).eventBus(mock(EventBus.class)).build();
-  final String topicName = GossipTopicNames.getAttestationSubnetTopicName(SUBNET_ID);
+  final String topicName = GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID);
   private final Eth2TopicHandler<?> topicHandler =
       SingleAttestationTopicHandler.createHandler(
           asyncRunner,
@@ -153,7 +153,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void returnProperTopicName() {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
-    final String topicName = GossipTopicNames.getAttestationSubnetTopicName(0);
+    final String topicName = GossipTopicName.getAttestationSubnetTopicName(0);
     Eth2TopicHandler<?> topicHandler =
         SingleAttestationTopicHandler.createHandler(
             asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);

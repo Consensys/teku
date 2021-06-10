@@ -20,7 +20,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
@@ -80,7 +80,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
 
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
-    final String topicName = GossipTopicNames.getAttestationSubnetTopicName(subnetId);
+    final String topicName = GossipTopicName.getAttestationSubnetTopicName(subnetId);
     return SingleAttestationTopicHandler.createHandler(
         asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
   }

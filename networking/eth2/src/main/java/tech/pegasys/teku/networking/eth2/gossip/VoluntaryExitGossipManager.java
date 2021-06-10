@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -32,7 +32,7 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
       final OperationProcessor<SignedVoluntaryExit> processor,
       final GossipPublisher<SignedVoluntaryExit> publisher) {
     super(
-        GossipTopicNames.VOLUNTARY_EXIT,
+        GossipTopicName.VOLUNTARY_EXIT,
         asyncRunner,
         gossipNetwork,
         gossipEncoding,

@@ -18,8 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames.getAttestationSubnetTopicName;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.Optional;
@@ -62,20 +62,19 @@ class Eth2GossipTopicFilterTest {
   @Test
   void shouldNotRequireNextForkToBePresent() {
     when(recentChainData.getNextFork(any())).thenReturn(Optional.empty());
-    assertThat(filter.isRelevantTopic(getTopicName(GossipTopicNames.BEACON_BLOCK))).isTrue();
+    assertThat(filter.isRelevantTopic(getTopicName(GossipTopicName.BEACON_BLOCK))).isTrue();
   }
 
   @Test
   void shouldConsiderTopicsForNextForkRelevant() {
-    assertThat(filter.isRelevantTopic(getNextForkTopicName(GossipTopicNames.BEACON_BLOCK)))
-        .isTrue();
+    assertThat(filter.isRelevantTopic(getNextForkTopicName(GossipTopicName.BEACON_BLOCK))).isTrue();
   }
 
   @Test
   void shouldConsiderTopicsForSignedContributionAndProofRelevant() {
     assertThat(
             filter.isRelevantTopic(
-                getNextForkTopicName(GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)))
+                getNextForkTopicName(GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)))
         .isTrue();
   }
 
@@ -99,11 +98,11 @@ class Eth2GossipTopicFilterTest {
   void shouldNotAllowTopicsWithUnknownForkDigest() {
     final String irrelevantTopic =
         GossipTopics.getTopic(
-            Bytes4.fromHexString("0x11223344"), GossipTopicNames.BEACON_BLOCK, SSZ_SNAPPY);
+            Bytes4.fromHexString("0x11223344"), GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(irrelevantTopic)).isFalse();
   }
 
-  private String getTopicName(final GossipTopicNames name) {
+  private String getTopicName(final GossipTopicName name) {
     return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
   }
 
@@ -111,7 +110,7 @@ class Eth2GossipTopicFilterTest {
     return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
   }
 
-  private String getNextForkTopicName(final GossipTopicNames name) {
+  private String getNextForkTopicName(final GossipTopicName name) {
     return GossipTopics.getTopic(nextForkDigest, name, SSZ_SNAPPY);
   }
 

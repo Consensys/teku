@@ -27,7 +27,7 @@ public class GossipTopics {
 
   public static String getTopic(
       final Bytes4 forkDigest,
-      final GossipTopicNames topicName,
+      final GossipTopicName topicName,
       final GossipEncoding gossipEncoding) {
     return getTopic(forkDigest, topicName.toString(), gossipEncoding);
   }
@@ -45,13 +45,13 @@ public class GossipTopics {
   public static String getAttestationSubnetTopic(
       final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
     return getTopic(
-        forkDigest, GossipTopicNames.getAttestationSubnetTopicName(subnetId), gossipEncoding);
+        forkDigest, GossipTopicName.getAttestationSubnetTopicName(subnetId), gossipEncoding);
   }
 
   public static String getSyncCommitteeSubnetTopic(
       final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
     return getTopic(
-        forkDigest, GossipTopicNames.getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
+        forkDigest, GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
   }
 
   public static Set<String> getAllTopics(
@@ -64,7 +64,7 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    for (GossipTopicNames topicName : GossipTopicNames.values()) {
+    for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }
 
