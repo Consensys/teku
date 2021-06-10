@@ -37,33 +37,14 @@ public interface GossipEncoding {
    */
   <T extends SszData> Bytes encode(T value);
 
-  /**
-   * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
-   * {@link #decodeMessage(PreparedGossipMessage, SszSchema)}
-   *
-   * <p>If there is a problem while preprocessing a message the error should be memorized and later
-   * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
-   * SszSchema)}
-   *
-   * @param data Data received over gossip to be deserialized
-   * @param valueType The concrete type to deserialize to
-   */
-  <T extends SszData> PreparedGossipMessage prepareMessage(
-      final String topic, Bytes data, SszSchema<T> valueType);
-
-  /**
-   * Fallback for {@link #prepareMessage(String, Bytes, SszSchema)} for the case when decoded {@code
-   * valueType} is unknown
-   *
-   * @param data raw Gossip message data
-   */
-  PreparedGossipMessage prepareUnknownMessage(final String topic, Bytes data);
+  /** @return A factory for creating PreparedGossipMessages */
+  Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory();
 
   /**
    * Decodes preprocessed message
    *
    * @param message preprocessed raw bytes message returned earlier by {@link
-   *     #prepareMessage(String, Bytes, SszSchema)}
+   *     Eth2PreparedGossipMessageFactory#create(String, Bytes, SszSchema)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails

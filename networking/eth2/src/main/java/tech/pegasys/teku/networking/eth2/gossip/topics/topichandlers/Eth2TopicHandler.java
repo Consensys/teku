@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -42,6 +43,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Bytes4 forkDigest;
   private final String topicName;
   private final SszSchema<MessageT> messageType;
+  private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
 
   public Eth2TopicHandler(
       AsyncRunner asyncRunner,
@@ -56,6 +58,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.forkDigest = forkDigest;
     this.topicName = topicName;
     this.messageType = messageType;
+
+    this.preparedGossipMessageFactory = gossipEncoding.createPreparedGossipMessageFactory();
   }
 
   public Eth2TopicHandler(
@@ -130,7 +134,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(getTopic(), payload, getMessageType());
+    return preparedGossipMessageFactory.create(getTopic(), payload, getMessageType());
   }
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {

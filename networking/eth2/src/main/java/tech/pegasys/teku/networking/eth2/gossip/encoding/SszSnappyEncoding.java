@@ -49,13 +49,7 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T extends SszData> PreparedGossipMessage prepareMessage(
-      final String topic, final Bytes data, final SszSchema<T> valueType) {
-    return SnappyPreparedGossipMessage.create(topic, data, valueType, snappyCompressor);
-  }
-
-  @Override
-  public PreparedGossipMessage prepareUnknownMessage(final String topic, final Bytes data) {
-    return SnappyPreparedGossipMessage.createUnknown(topic, data);
+  public Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory() {
+    return new SnappyPreparedGossipMessageFactory(snappyCompressor);
   }
 }

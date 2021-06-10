@@ -48,7 +48,8 @@ public class SszSnappyGossipEncodingTest {
   private <T extends SszData> T decode(
       final String topic, GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
       throws DecodingException {
-    return encoding.decodeMessage(encoding.prepareMessage(topic, data, valueType), valueType);
+    return encoding.decodeMessage(
+        encoding.createPreparedGossipMessageFactory().create(topic, data, valueType), valueType);
   }
 
   @Test
