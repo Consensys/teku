@@ -16,8 +16,9 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
@@ -48,7 +49,8 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
 
   public SafeFuture<?> gossip(final SyncCommitteeSignature signature, final int subnetId) {
     return gossipNetwork.gossip(
-        TopicNames.getSyncCommitteeSubnetTopic(forkInfo.getForkDigest(), subnetId, gossipEncoding),
+        GossipTopics.getSyncCommitteeSubnetTopic(
+            forkInfo.getForkDigest(), subnetId, gossipEncoding),
         gossipEncoding.encode(signature));
   }
 
@@ -62,7 +64,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         convertingProcessor,
         gossipEncoding,
         forkInfo.getForkDigest(),
-        TopicNames.getSyncCommitteeSubnetTopicName(subnetId),
+        GossipTopicNames.getSyncCommitteeSubnetTopicName(subnetId),
         schemaDefinitions.getSyncCommitteeSignatureSchema());
   }
 }

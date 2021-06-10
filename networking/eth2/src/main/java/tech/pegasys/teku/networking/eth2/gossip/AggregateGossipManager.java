@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 public class AggregateGossipManager implements GossipManager {
-  public static String TOPIC_NAME = AggregateAttestationTopicHandler.TOPIC_NAME;
 
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;

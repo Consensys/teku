@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.Spec;
@@ -56,7 +55,7 @@ public class BlockTopicHandlerTest {
           processor,
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
-          BlockGossipManager.TOPIC_NAME,
+          GossipTopicNames.BEACON_BLOCK,
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
 
   @BeforeEach
@@ -140,7 +139,7 @@ public class BlockTopicHandlerTest {
             processor,
             gossipEncoding,
             forkDigest,
-            BlockGossipManager.TOPIC_NAME,
+            GossipTopicNames.BEACON_BLOCK,
             spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }

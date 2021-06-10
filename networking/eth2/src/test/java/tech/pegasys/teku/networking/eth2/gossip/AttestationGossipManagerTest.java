@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -185,6 +185,7 @@ public class AttestationGossipManagerTest {
   }
 
   private String getSubnetTopic(final int subnetId) {
-    return TopicNames.getAttestationSubnetTopic(forkInfo.getForkDigest(), subnetId, gossipEncoding);
+    return GossipTopics.getAttestationSubnetTopic(
+        forkInfo.getForkDigest(), subnetId, gossipEncoding);
   }
 }
