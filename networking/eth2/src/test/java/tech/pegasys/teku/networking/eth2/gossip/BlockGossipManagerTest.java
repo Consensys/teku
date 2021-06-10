@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -50,7 +51,7 @@ public class BlockGossipManagerTest {
   public void setup() {
     doReturn(topicChannel)
         .when(gossipNetwork)
-        .subscribe(contains(BlockGossipManager.TOPIC_NAME), any());
+        .subscribe(contains(GossipTopicNames.BEACON_BLOCK), any());
     blockGossipManager =
         new BlockGossipManager(
             spec,
