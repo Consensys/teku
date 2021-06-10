@@ -219,7 +219,9 @@ class Eth1DepositManagerTest {
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Find min genesis block
-    inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
+    inOrder
+        .verify(minimumGenesisTimeBlockFinder)
+        .findMinGenesisTimeBlockInHistory(headBlockNumber, asyncRunner);
     // Process blocks from after the last stored block to min genesis
     inOrder
         .verify(depositProcessingController)
@@ -256,7 +258,9 @@ class Eth1DepositManagerTest {
 
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Find min genesis block
-    inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
+    inOrder
+        .verify(minimumGenesisTimeBlockFinder)
+        .findMinGenesisTimeBlockInHistory(headBlockNumber, asyncRunner);
     // Process blocks from genesis to min genesis block
     inOrder
         .verify(depositProcessingController)
@@ -391,7 +395,8 @@ class Eth1DepositManagerTest {
   private void withMinGenesisBlock(
       final BigInteger headBlockNumber, final BigInteger minGenesisBlockNumber) {
     final Block minGenesisBlock = block(minGenesisBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP);
-    when(minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(headBlockNumber))
+    when(minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(
+            headBlockNumber, asyncRunner))
         .thenReturn(SafeFuture.completedFuture(minGenesisBlock));
   }
 
