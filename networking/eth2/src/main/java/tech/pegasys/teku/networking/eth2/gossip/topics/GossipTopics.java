@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -25,6 +24,13 @@ import tech.pegasys.teku.util.config.Constants;
  * Helpers for getting the full topic strings formatted like: /eth2/ForkDigestValue/Name/Encoding
  */
 public class GossipTopics {
+
+  public static String getTopic(
+      final Bytes4 forkDigest,
+      final GossipTopicNames topicName,
+      final GossipEncoding gossipEncoding) {
+    return getTopic(forkDigest, topicName.toString(), gossipEncoding);
+  }
 
   public static String getTopic(
       final Bytes4 forkDigest, final String topicName, final GossipEncoding gossipEncoding) {
@@ -58,14 +64,7 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    for (String topicName :
-        List.of(
-            GossipTopicNames.BEACON_BLOCK,
-            GossipTopicNames.BEACON_AGGREGATE_AND_PROOF,
-            GossipTopicNames.ATTESTER_SLASHING,
-            GossipTopicNames.PROPOSER_SLASHING,
-            GossipTopicNames.VOLUNTARY_EXIT,
-            GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF)) {
+    for (GossipTopicNames topicName : GossipTopicNames.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }
 

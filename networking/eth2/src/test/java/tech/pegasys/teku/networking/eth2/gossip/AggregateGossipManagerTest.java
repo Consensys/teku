@@ -50,7 +50,7 @@ public class AggregateGossipManagerTest {
   public void setup() {
     doReturn(topicChannel)
         .when(gossipNetwork)
-        .subscribe(contains(GossipTopicNames.BEACON_AGGREGATE_AND_PROOF), any());
+        .subscribe(contains(GossipTopicNames.BEACON_AGGREGATE_AND_PROOF.toString()), any());
     gossipManager =
         new AggregateGossipManager(
             asyncRunner,

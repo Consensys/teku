@@ -51,7 +51,7 @@ public class BlockGossipManagerTest {
   public void setup() {
     doReturn(topicChannel)
         .when(gossipNetwork)
-        .subscribe(contains(GossipTopicNames.BEACON_BLOCK), any());
+        .subscribe(contains(GossipTopicNames.BEACON_BLOCK.toString()), any());
     blockGossipManager =
         new BlockGossipManager(
             spec,

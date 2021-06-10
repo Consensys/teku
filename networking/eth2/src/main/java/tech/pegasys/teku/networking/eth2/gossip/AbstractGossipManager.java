@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -55,6 +56,24 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
     this.publisher = publisher;
 
     this.subscriberId = publisher.subscribe(this::publishMessage);
+  }
+
+  protected AbstractGossipManager(
+      final GossipTopicNames topicName,
+      final AsyncRunner asyncRunner,
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final OperationProcessor<T> processor,
+      final GossipPublisher<T> publisher) {
+    this(
+        topicName.toString(),
+        asyncRunner,
+        gossipNetwork,
+        gossipEncoding,
+        forkInfo,
+        processor,
+        publisher);
   }
 
   protected abstract SszSchema<T> getGossipType();

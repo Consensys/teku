@@ -13,15 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public class GossipTopicNames {
+public enum GossipTopicNames {
+  BEACON_BLOCK,
+  BEACON_AGGREGATE_AND_PROOF,
+  ATTESTER_SLASHING,
+  PROPOSER_SLASHING,
+  VOLUNTARY_EXIT,
+  SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF;
 
-  public static String BEACON_BLOCK = "beacon_block";
-  public static String BEACON_AGGREGATE_AND_PROOF = "beacon_aggregate_and_proof";
-  public static String ATTESTER_SLASHING = "attester_slashing";
-  public static String PROPOSER_SLASHING = "proposer_slashing";
-  public static String VOLUNTARY_EXIT = "voluntary_exit";
-  public static String SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF =
-      "sync_committee_contribution_and_proof";
+  @Override
+  public String toString() {
+    return name().toLowerCase();
+  }
 
   public static String getAttestationSubnetTopicName(final int subnetId) {
     return "beacon_attestation_" + subnetId;
