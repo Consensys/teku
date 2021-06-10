@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -75,16 +75,16 @@ public class GossipTopics {
     return topics;
   }
 
-  public static Bytes4 extractForkDigest(final String topic) throws DecodingException {
+  public static Optional<Bytes4> extractForkDigest(final String topic) {
     // Fork digest starts after domain prefix + slash separators
     final int beginIndex = DOMAIN_PREFIX.length() + 2;
     final int endIndex = topic.indexOf("/", beginIndex);
     final String forkDigest = topic.substring(beginIndex, endIndex);
 
     try {
-      return Bytes4.fromHexString(forkDigest);
-    } catch (Exception e) {
-      throw new DecodingException("Failed to parse forkDigest from topic: " + topic, e);
+      return Optional.of(Bytes4.fromHexString(forkDigest));
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
     }
   }
 }
