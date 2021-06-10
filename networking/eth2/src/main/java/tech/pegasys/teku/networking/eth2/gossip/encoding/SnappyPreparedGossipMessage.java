@@ -18,6 +18,7 @@ import com.google.common.base.Suppliers;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
@@ -36,30 +37,40 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
   private final String topic;
   private final Bytes compressedData;
+  private final ForkDigestToMilestone forkDigestToMilestone;
   private final SszSchema<?> valueType;
   private final SnappyBlockCompressor snappyCompressor;
+
   private final Supplier<DecodedMessageResult> decodedResult =
       Suppliers.memoize(this::getDecodedMessage);
 
-  static SnappyPreparedGossipMessage createUnknown(final String topic, final Bytes compressedData) {
-    return new SnappyPreparedGossipMessage(topic, compressedData, null, null);
+  static SnappyPreparedGossipMessage createUnknown(
+      final String topic,
+      final Bytes compressedData,
+      final ForkDigestToMilestone forkDigestToMilestone) {
+    return new SnappyPreparedGossipMessage(
+        topic, compressedData, forkDigestToMilestone, null, null);
   }
 
   static SnappyPreparedGossipMessage create(
       final String topic,
-      Bytes compressedData,
-      SszSchema<?> valueType,
-      SnappyBlockCompressor snappyCompressor) {
-    return new SnappyPreparedGossipMessage(topic, compressedData, valueType, snappyCompressor);
+      final Bytes compressedData,
+      final ForkDigestToMilestone forkDigestToMilestone,
+      final SszSchema<?> valueType,
+      final SnappyBlockCompressor snappyCompressor) {
+    return new SnappyPreparedGossipMessage(
+        topic, compressedData, forkDigestToMilestone, valueType, snappyCompressor);
   }
 
   private SnappyPreparedGossipMessage(
       final String topic,
-      Bytes compressedData,
-      SszSchema<?> valueType,
-      SnappyBlockCompressor snappyCompressor) {
+      final Bytes compressedData,
+      final ForkDigestToMilestone forkDigestToMilestone,
+      final SszSchema<?> valueType,
+      final SnappyBlockCompressor snappyCompressor) {
     this.topic = topic;
     this.compressedData = compressedData;
+    this.forkDigestToMilestone = forkDigestToMilestone;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
   }

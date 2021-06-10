@@ -51,6 +51,7 @@ public class BlockTopicHandlerTest {
 
   private Eth2TopicHandler<SignedBeaconBlock> topicHandler =
       new Eth2TopicHandler<>(
+          recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
@@ -135,6 +136,7 @@ public class BlockTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,

@@ -48,6 +48,7 @@ public class ProposerSlashingTopicHandlerTest {
 
   private final Eth2TopicHandler<ProposerSlashing> topicHandler =
       new Eth2TopicHandler<>(
+          recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
@@ -111,6 +112,7 @@ public class ProposerSlashingTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<ProposerSlashing> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,

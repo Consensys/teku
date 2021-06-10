@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -49,7 +50,10 @@ public class SszSnappyGossipEncodingTest {
       final String topic, GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
       throws DecodingException {
     return encoding.decodeMessage(
-        encoding.createPreparedGossipMessageFactory().create(topic, data, valueType), valueType);
+        encoding
+            .createPreparedGossipMessageFactory(__ -> SpecMilestone.PHASE0)
+            .create(topic, data, valueType),
+        valueType);
   }
 
   @Test

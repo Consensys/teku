@@ -55,6 +55,7 @@ public class VoluntaryExitTopicHandlerTest {
 
   private final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
       new Eth2TopicHandler<>(
+          recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
@@ -107,6 +108,7 @@ public class VoluntaryExitTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     final Eth2TopicHandler<SignedVoluntaryExit> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,

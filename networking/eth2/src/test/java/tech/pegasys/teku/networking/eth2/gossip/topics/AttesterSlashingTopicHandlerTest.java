@@ -51,6 +51,7 @@ public class AttesterSlashingTopicHandlerTest {
 
   private Eth2TopicHandler<AttesterSlashing> topicHandler =
       new Eth2TopicHandler<>(
+          recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
@@ -114,6 +115,7 @@ public class AttesterSlashingTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<AttesterSlashing> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,

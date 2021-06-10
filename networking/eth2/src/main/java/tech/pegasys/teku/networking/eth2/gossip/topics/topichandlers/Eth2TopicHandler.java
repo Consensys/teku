@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,6 +48,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
 
   public Eth2TopicHandler(
+      final RecentChainData recentChainData,
       AsyncRunner asyncRunner,
       OperationProcessor<MessageT> processor,
       GossipEncoding gossipEncoding,
@@ -59,17 +62,27 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.topicName = topicName;
     this.messageType = messageType;
 
-    this.preparedGossipMessageFactory = gossipEncoding.createPreparedGossipMessageFactory();
+    this.preparedGossipMessageFactory =
+        gossipEncoding.createPreparedGossipMessageFactory(
+            ForkDigestToMilestone.create(recentChainData::getMilestoneByForkDigest));
   }
 
   public Eth2TopicHandler(
+      final RecentChainData recentChainData,
       AsyncRunner asyncRunner,
       OperationProcessor<MessageT> processor,
       GossipEncoding gossipEncoding,
       Bytes4 forkDigest,
       GossipTopicName topicName,
       SszSchema<MessageT> messageType) {
-    this(asyncRunner, processor, gossipEncoding, forkDigest, topicName.toString(), messageType);
+    this(
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkDigest,
+        topicName.toString(),
+        messageType);
   }
 
   @Override

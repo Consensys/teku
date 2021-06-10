@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -21,19 +22,24 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMessageFactory {
 
   private final SnappyBlockCompressor snappyCompressor;
+  private final ForkDigestToMilestone forkDigestToMilestone;
 
-  public SnappyPreparedGossipMessageFactory(final SnappyBlockCompressor snappyCompressor) {
+  public SnappyPreparedGossipMessageFactory(
+      final SnappyBlockCompressor snappyCompressor,
+      final ForkDigestToMilestone forkDigestToMilestone) {
     this.snappyCompressor = snappyCompressor;
+    this.forkDigestToMilestone = forkDigestToMilestone;
   }
 
   @Override
   public <T extends SszData> PreparedGossipMessage create(
       final String topic, final Bytes data, final SszSchema<T> valueType) {
-    return SnappyPreparedGossipMessage.create(topic, data, valueType, snappyCompressor);
+    return SnappyPreparedGossipMessage.create(
+        topic, data, forkDigestToMilestone, valueType, snappyCompressor);
   }
 
   @Override
   public PreparedGossipMessage create(final String topic, final Bytes data) {
-    return SnappyPreparedGossipMessage.createUnknown(topic, data);
+    return SnappyPreparedGossipMessage.createUnknown(topic, data, forkDigestToMilestone);
   }
 }

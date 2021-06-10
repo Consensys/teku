@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
@@ -232,7 +233,8 @@ public class Eth2P2PNetworkBuilder {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     PreparedGossipMessageFactory defaultMessageFactory =
-        gossipEncoding.createPreparedGossipMessageFactory();
+        gossipEncoding.createPreparedGossipMessageFactory(
+            ForkDigestToMilestone.create(recentChainData::getMilestoneByForkDigest));
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();

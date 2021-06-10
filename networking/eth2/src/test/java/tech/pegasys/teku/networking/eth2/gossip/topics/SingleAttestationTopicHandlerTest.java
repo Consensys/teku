@@ -60,6 +60,7 @@ public class SingleAttestationTopicHandlerTest {
   final String topicName = GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID);
   private final Eth2TopicHandler<?> topicHandler =
       SingleAttestationTopicHandler.createHandler(
+          recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
@@ -156,7 +157,7 @@ public class SingleAttestationTopicHandlerTest {
     final String topicName = GossipTopicName.getAttestationSubnetTopicName(0);
     Eth2TopicHandler<?> topicHandler =
         SingleAttestationTopicHandler.createHandler(
-            asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
+            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
   }
 }

@@ -49,7 +49,8 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory() {
-    return new SnappyPreparedGossipMessageFactory(snappyCompressor);
+  public Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
+      ForkDigestToMilestone forkDigestToMilestone) {
+    return new SnappyPreparedGossipMessageFactory(snappyCompressor, forkDigestToMilestone);
   }
 }

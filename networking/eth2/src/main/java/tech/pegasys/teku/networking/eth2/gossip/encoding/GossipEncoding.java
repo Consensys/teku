@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public interface GossipEncoding {
 
@@ -38,7 +42,8 @@ public interface GossipEncoding {
   <T extends SszData> Bytes encode(T value);
 
   /** @return A factory for creating PreparedGossipMessages */
-  Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory();
+  Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
+      ForkDigestToMilestone forkDigestToMilestone);
 
   /**
    * Decodes preprocessed message
@@ -51,4 +56,16 @@ public interface GossipEncoding {
    */
   <T extends SszData> T decodeMessage(PreparedGossipMessage message, SszSchema<T> valueType)
       throws DecodingException;
+
+  interface ForkDigestToMilestone {
+    static ForkDigestToMilestone create(
+        Function<Bytes4, Optional<SpecMilestone>> forkDigestToMaybeMilestone) {
+      return forkDigest ->
+          forkDigestToMaybeMilestone
+              .apply(forkDigest)
+              .orElseThrow(() -> new DecodingException("Unknown forkDigest: " + forkDigest));
+    }
+
+    SpecMilestone getMilestone(final Bytes4 forkDigest) throws DecodingException;
+  }
 }
