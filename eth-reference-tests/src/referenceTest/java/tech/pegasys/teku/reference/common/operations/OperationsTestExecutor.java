@@ -45,7 +45,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     DEPOSIT,
     VOLUNTARY_EXIT,
     ATTESTATION,
-    SYNC_COMMITTEE
+    SYNC_AGGREGATE
   }
 
   public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -71,8 +71,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/attestation",
               new OperationsTestExecutor<>("attestation.ssz_snappy", Operation.ATTESTATION))
           .put(
-              "operations/sync_committee",
-              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_COMMITTEE))
+              "operations/sync_aggregate",
+              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .build();
 
   private final String dataFileName;
@@ -168,7 +168,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
         processor.processAttestation(state, attestation);
         break;
-      case SYNC_COMMITTEE:
+      case SYNC_AGGREGATE:
         final SyncAggregate syncAggregate =
             loadSsz(
                 testDefinition,
