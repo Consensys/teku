@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -37,7 +37,7 @@ public class SignedContributionAndProofGossipManager
       final OperationProcessor<SignedContributionAndProof> processor,
       final GossipPublisher<SignedContributionAndProof> publisher) {
     super(
-        GossipTopicNames.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
+        GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
         asyncRunner,
         gossipNetwork,
         gossipEncoding,
