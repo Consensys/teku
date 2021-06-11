@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
@@ -57,6 +58,10 @@ public interface GossipEncoding {
       throws DecodingException;
 
   interface ForkDigestToMilestone {
+    static ForkDigestToMilestone fromMap(final Map<Bytes4, SpecMilestone> map) {
+      return (forkDigest) -> Optional.ofNullable(map.get(forkDigest));
+    }
+
     Optional<SpecMilestone> getMilestone(final Bytes4 forkDigest);
   }
 }

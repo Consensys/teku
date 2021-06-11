@@ -35,7 +35,7 @@ public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMes
   public <T extends SszData> PreparedGossipMessage create(
       final String topic, final Bytes data, final SszSchema<T> valueType) {
     return SnappyPreparedGossipMessage.create(
-        topic, data, forkDigestToMilestone, valueType, snappyCompressor);
+        topic, data, forkDigestToMilestone, valueType, snappyCompressor::uncompress);
   }
 
   @Override

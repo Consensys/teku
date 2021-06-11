@@ -16,11 +16,15 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to
@@ -30,16 +34,12 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
  * {@link tech.pegasys.teku.networking.p2p.gossip.TopicHandler#handleMessage(PreparedGossipMessage)}
  */
 class SnappyPreparedGossipMessage implements PreparedGossipMessage {
-  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
-  public static final Bytes MESSAGE_DOMAIN_INVALID_SNAPPY = Bytes.fromHexString("0x00000000");
-  // 4-byte domain for gossip message-id isolation of *valid* snappy messages
-  public static final Bytes MESSAGE_DOMAIN_VALID_SNAPPY = Bytes.fromHexString("0x01000000");
+  private static final Logger LOG = LogManager.getLogger();
 
-  private final String topic;
   private final Bytes compressedData;
-  private final ForkDigestToMilestone forkDigestToMilestone;
   private final SszSchema<?> valueType;
-  private final SnappyBlockCompressor snappyCompressor;
+  private final Uncompressor snappyCompressor;
+  private final MessageIdCalculator messageIdCalculator;
 
   private final Supplier<DecodedMessageResult> decodedResult =
       Suppliers.memoize(this::getDecodedMessage);
@@ -57,7 +57,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
-      final SnappyBlockCompressor snappyCompressor) {
+      final Uncompressor snappyCompressor) {
     return new SnappyPreparedGossipMessage(
         topic, compressedData, forkDigestToMilestone, valueType, snappyCompressor);
   }
@@ -67,12 +67,35 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
-      final SnappyBlockCompressor snappyCompressor) {
-    this.topic = topic;
+      final Uncompressor snappyCompressor) {
     this.compressedData = compressedData;
-    this.forkDigestToMilestone = forkDigestToMilestone;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
+
+    this.messageIdCalculator =
+        createMessageIdCalculator(topic, compressedData, forkDigestToMilestone);
+  }
+
+  private MessageIdCalculator createMessageIdCalculator(
+      final String topic,
+      final Bytes compressedData,
+      final ForkDigestToMilestone forkDigestToMilestone) {
+    final Optional<SpecMilestone> maybeMilestone =
+        GossipTopics.extractForkDigest(topic).flatMap(forkDigestToMilestone::getMilestone);
+    if (maybeMilestone.isEmpty()) {
+      LOG.warn("Failed to associate a milestone with the forkDigest in topic: " + topic);
+      // Default to latest standard
+      return new MesssageIdCalculatorAltair(compressedData, topic);
+    }
+
+    final SpecMilestone milestone = maybeMilestone.get();
+    switch (milestone) {
+      case PHASE0:
+        return new MesssageIdCalculatorPhase0(compressedData);
+      case ALTAIR:
+      default:
+        return new MesssageIdCalculatorAltair(compressedData, topic);
+    }
   }
 
   @Override
@@ -99,12 +122,14 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
   @Override
   public Bytes getMessageId() {
-    return Hash.sha2_256(
-            getUncompressed()
-                .map(
-                    validSnappyUncompressed ->
-                        Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, validSnappyUncompressed))
-                .orElse(Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, compressedData)))
-        .slice(0, 20);
+    return getUncompressed()
+        .map(messageIdCalculator::getValidMessageId)
+        .orElseGet(messageIdCalculator::getInvalidMessageId);
+  }
+
+  @FunctionalInterface
+  interface Uncompressor {
+    Bytes uncompress(final Bytes compressedData, final SszLengthBounds lengthBounds)
+        throws DecodingException;
   }
 }
