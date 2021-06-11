@@ -23,13 +23,9 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
@@ -272,42 +268,43 @@ public class GossipScoringConfiguratorTest {
   private GossipTopicScoringConfig getBlockTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics) {
     final String topic =
-        TopicNames.getTopic(forkDigest, BlockGossipManager.TOPIC_NAME, gossipEncoding);
+        GossipTopics.getTopic(forkDigest, GossipTopicNames.BEACON_BLOCK, gossipEncoding);
     return allTopics.get(topic);
   }
 
   private GossipTopicScoringConfig getVoluntaryExitTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics) {
     final String topic =
-        TopicNames.getTopic(forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, gossipEncoding);
+        GossipTopics.getTopic(forkDigest, GossipTopicNames.VOLUNTARY_EXIT, gossipEncoding);
     return allTopics.get(topic);
   }
 
   private GossipTopicScoringConfig getProposerSlashingTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics) {
     final String topic =
-        TopicNames.getTopic(forkDigest, ProposerSlashingGossipManager.TOPIC_NAME, gossipEncoding);
+        GossipTopics.getTopic(forkDigest, GossipTopicNames.PROPOSER_SLASHING, gossipEncoding);
     return allTopics.get(topic);
   }
 
   private GossipTopicScoringConfig getAttesterSlashingTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics) {
     final String topic =
-        TopicNames.getTopic(forkDigest, AttesterSlashingGossipManager.TOPIC_NAME, gossipEncoding);
+        GossipTopics.getTopic(forkDigest, GossipTopicNames.ATTESTER_SLASHING, gossipEncoding);
     return allTopics.get(topic);
   }
 
   private GossipTopicScoringConfig getAggregateTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics) {
     final String topic =
-        TopicNames.getTopic(forkDigest, AggregateGossipManager.TOPIC_NAME, gossipEncoding);
+        GossipTopics.getTopic(
+            forkDigest, GossipTopicNames.BEACON_AGGREGATE_AND_PROOF, gossipEncoding);
     return allTopics.get(topic);
   }
 
   private GossipTopicScoringConfig getAttestationSubnetTopicScoring(
       final Map<String, GossipTopicScoringConfig> allTopics, final int subnet) {
-    final String subnetName = TopicNames.getAttestationSubnetTopicName(subnet);
-    final String topic = TopicNames.getTopic(forkDigest, subnetName, gossipEncoding);
+    final String subnetName = GossipTopicNames.getAttestationSubnetTopicName(subnet);
+    final String topic = GossipTopics.getTopic(forkDigest, subnetName, gossipEncoding);
     return allTopics.get(topic);
   }
 

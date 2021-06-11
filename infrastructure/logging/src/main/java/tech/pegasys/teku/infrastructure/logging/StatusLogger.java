@@ -324,6 +324,14 @@ public class StatusLogger {
     log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
   }
 
+  public void eth1MinGenesisNotFound(final Throwable error) {
+    log.error(
+        "Failed to retrieve min genesis block. "
+            + "Check that your eth1 node is fully synced. "
+            + "Will retry in 1 minute.",
+        error);
+  }
+
   private void logWithColorIfLevelGreaterThanInfo(
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
