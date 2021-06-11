@@ -80,15 +80,14 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final String topic,
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone) {
-    final Optional<SpecMilestone> maybeMilestone =
-        GossipTopics.extractForkDigest(topic).flatMap(forkDigestToMilestone::getMilestone);
-    if (maybeMilestone.isEmpty()) {
-      LOG.warn("Failed to associate a milestone with the forkDigest in topic: " + topic);
-      // Default to latest standard
-      return new MesssageIdCalculatorAltair(compressedData, topic);
-    }
+    final SpecMilestone milestone =
+        GossipTopics.extractForkDigest(topic)
+            .flatMap(forkDigestToMilestone::getMilestone)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Failed to associate a milestone with the forkDigest in topic: " + topic));
 
-    final SpecMilestone milestone = maybeMilestone.get();
     switch (milestone) {
       case PHASE0:
         return new MesssageIdCalculatorPhase0(compressedData);

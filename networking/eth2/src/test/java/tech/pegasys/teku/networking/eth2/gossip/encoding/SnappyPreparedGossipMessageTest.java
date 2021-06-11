@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,15 @@ public class SnappyPreparedGossipMessageTest {
       (bytes, __) -> {
         throw new DecodingException("testing");
       };
+
+  @Test
+  public void create_forUnknownForkDigest() {
+    final String topic = GossipTopics.getTopic(otherForkDigest, "test", gossipEncoding);
+    assertThatThrownBy(() -> getAltairMessage(messageBytes, topic, validUncompressor))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            "Failed to associate a milestone with the forkDigest in topic: " + topic);
+  }
 
   @Test
   public void getMessageId_phase0Valid() {
@@ -100,34 +110,6 @@ public class SnappyPreparedGossipMessageTest {
   @Test
   public void getMessageId_altairInvalid() {
     final String topic = GossipTopics.getTopic(altairForkDigest, "test", gossipEncoding);
-    final SnappyPreparedGossipMessage message =
-        getAltairMessage(messageBytes, topic, invalidUncompressor);
-
-    final Bytes actual = message.getMessageId();
-    final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorAltair(messageBytes, topic);
-    final Bytes expected = expectedMessageIdCalculator.getInvalidMessageId();
-    assertThat(actual).isEqualTo(expected);
-    assertThat(actual.size()).isEqualTo(20);
-  }
-
-  @Test
-  public void getMessageId_unknownMilestoneValid() {
-    final String topic = GossipTopics.getTopic(otherForkDigest, "test", gossipEncoding);
-    final SnappyPreparedGossipMessage message =
-        getAltairMessage(messageBytes, topic, validUncompressor);
-
-    final Bytes actual = message.getMessageId();
-    final MessageIdCalculator expectedMessageIdCalculator =
-        new MesssageIdCalculatorAltair(messageBytes, topic);
-    final Bytes expected = expectedMessageIdCalculator.getValidMessageId(messageBytes);
-    assertThat(actual).isEqualTo(expected);
-    assertThat(actual.size()).isEqualTo(20);
-  }
-
-  @Test
-  public void getMessageId_unknownMilestoneInvalid() {
-    final String topic = GossipTopics.getTopic(otherForkDigest, "test", gossipEncoding);
     final SnappyPreparedGossipMessage message =
         getAltairMessage(messageBytes, topic, invalidUncompressor);
 
