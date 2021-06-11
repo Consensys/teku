@@ -15,6 +15,7 @@ package tech.pegasys.teku.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.FailedToFindMinGenesisBlockException;
 import tech.pegasys.teku.util.config.Constants;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class MinimumGenesisTimeBlockFinderTest {
 
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
       new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
@@ -288,6 +291,19 @@ public class MinimumGenesisTimeBlockFinderTest {
   }
 
   @Test
+  public void findMinGenesisBlock_shouldRetryIfEthClientNotReturningBlocks() {
+    minimumGenesisTimeBlockFinder =
+        new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
+
+    when(eth1Provider.getEth1BlockWithRetry(any(UInt64.class)))
+        .thenReturn(SafeFuture.failedFuture(new NoSuchElementException("No value present")));
+    final SafeFuture<Block> res =
+        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(BigInteger.TEN, asyncRunner);
+    assertThat(res).isNotDone();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+  }
+
+  @Test
   public void confirmOrFindMinGenesisBlock_withCandidateBlockTooRecent() {
     minimumGenesisTimeBlockFinder =
         new MinimumGenesisTimeBlockFinder(eth1Provider, Optional.empty());
@@ -315,7 +331,7 @@ public class MinimumGenesisTimeBlockFinderTest {
   private SafeFuture<Block> findMinGenesis(final Block[] blocks, final long minGenesisTime) {
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(minGenesisTime);
     return minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(
-        blocks[blocks.length - 1].getNumber());
+        blocks[blocks.length - 1].getNumber(), asyncRunner);
   }
 
   private Block[] withBlockTimestamps(final long... timestamps) {
