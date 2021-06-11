@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import java.util.Locale;
+
 public enum GossipTopicName {
   BEACON_BLOCK,
   BEACON_AGGREGATE_AND_PROOF,
@@ -23,7 +25,7 @@ public enum GossipTopicName {
 
   @Override
   public String toString() {
-    return name().toLowerCase();
+    return name().toLowerCase(Locale.US);
   }
 
   public static String getAttestationSubnetTopicName(final int subnetId) {
