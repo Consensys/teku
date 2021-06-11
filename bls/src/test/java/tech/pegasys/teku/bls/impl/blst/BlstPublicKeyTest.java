@@ -27,19 +27,18 @@ public class BlstPublicKeyTest {
     assertThat(BlstLoader.INSTANCE).isNotEmpty();
   }
 
-  // Blst library doesn't handle infinity pubkeys at the moment.
-  // Could enable the test when the issue https://github.com/supranational/blst/issues/11 is
-  // addressed
+  // The infinite public key is now considered to be invalid
   @Test
   void infinityPublicKey() {
-    BlstPublicKey inf1 =
-        BlstPublicKey.fromBytes(
-            Bytes48.fromHexString(
-                "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
-    Bytes48 bytes = inf1.toBytesCompressed();
-
-    BlstPublicKey publicKey = BlstPublicKey.fromBytes(bytes);
-    publicKey.forceValidation();
+    Bytes48 infinitePublicKeyBytes =
+        Bytes48.fromHexString(
+            "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+    assertThatThrownBy(
+            () -> {
+              BlstPublicKey publicKey = BlstPublicKey.fromBytes(infinitePublicKeyBytes);
+              publicKey.forceValidation();
+            })
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
