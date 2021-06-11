@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -34,8 +32,6 @@ import tech.pegasys.teku.ssz.sos.SszLengthBounds;
  * {@link tech.pegasys.teku.networking.p2p.gossip.TopicHandler#handleMessage(PreparedGossipMessage)}
  */
 class SnappyPreparedGossipMessage implements PreparedGossipMessage {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Bytes compressedData;
   private final SszSchema<?> valueType;
   private final Uncompressor snappyCompressor;
