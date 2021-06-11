@@ -34,6 +34,8 @@ class BlstPublicKey implements PublicKey {
               + "00000000000000000000000000000000"
               + "00000000000000000000000000000000");
 
+  private static final BlstPublicKey infinitePublicKey = fromBytes(INFINITY_COMPRESSED_BYTES);
+
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
     try {
       P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
@@ -54,25 +56,27 @@ class BlstPublicKey implements PublicKey {
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
-    Optional<BlstPublicKey> maybeInfinitePubkey =
-        publicKeys.stream().filter(BlstPublicKey::isInfinity).findAny();
-    if (maybeInfinitePubkey.isPresent()) {
-      // if the Infinity is not a valid public key then aggregating with any
-      // non-valid pubkey should result to a non-valid pubkey
-      return maybeInfinitePubkey.get();
+    Optional<BlstPublicKey> maybeInvalidPubkey =
+        publicKeys.stream().filter(pk -> !pk.isValid()).findAny();
+    if (maybeInvalidPubkey.isPresent()) {
+      // Points not in the group and the point at infinity are not valid public keys. Aggregating
+      // with other points should result in a non-valid pubkey, the point at infinity.
+      return infinitePublicKey;
     }
 
+    // At this point, we know that the public keys are in the G1 group, so we use `blst.P1.add()`
+    // rather than `blst.P1.aggregate()` as the latter always performs the (slow) group check.
     P1 sum = new P1();
     for (BlstPublicKey publicKey : publicKeys) {
-      sum.aggregate(publicKey.ecPoint);
+      sum.add(publicKey.ecPoint);
     }
 
     return new BlstPublicKey(sum.to_affine());
   }
 
   final P1_Affine ecPoint;
-  private final Supplier<Boolean> isInfinity =
-      Suppliers.memoize(() -> toBytesCompressed().equals(INFINITY_COMPRESSED_BYTES));
+  private final Supplier<Boolean> isInfinity = Suppliers.memoize(() -> checkForInfinity());
+  private final Supplier<Boolean> isInGroup = Suppliers.memoize(() -> checkGroupMembership());
 
   public BlstPublicKey(P1_Affine ecPoint) {
     this.ecPoint = ecPoint;
@@ -80,19 +84,30 @@ class BlstPublicKey implements PublicKey {
 
   @Override
   public void forceValidation() throws IllegalArgumentException {
-
-    if (!ecPoint.in_group()) {
+    if (!isValid()) {
       throw new IllegalArgumentException("Invalid PublicKey: " + toBytesCompressed());
     }
+  }
+
+  private boolean checkGroupMembership() {
+    return ecPoint.in_group();
+  }
+
+  private boolean checkForInfinity() {
+    return ecPoint.is_inf();
+  }
+
+  boolean isValid() {
+    return !isInfinity.get() && isInGroup.get();
+  }
+
+  boolean isInfinity() {
+    return isInfinity.get();
   }
 
   @Override
   public Bytes48 toBytesCompressed() {
     return Bytes48.wrap(ecPoint.compress());
-  }
-
-  boolean isInfinity() {
-    return isInfinity.get();
   }
 
   @Override
