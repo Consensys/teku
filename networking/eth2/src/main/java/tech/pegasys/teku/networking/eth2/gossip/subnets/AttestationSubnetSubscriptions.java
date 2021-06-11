@@ -35,7 +35,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
   private final AsyncRunner asyncRunner;
-  private final RecentChainData recentChainData;
   private final OperationProcessor<ValidateableAttestation> processor;
   private final ForkInfo forkInfo;
 
@@ -50,7 +49,6 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final ForkInfo forkInfo) {
     super(recentChainData, gossipNetwork, gossipEncoding);
     this.asyncRunner = asyncRunner;
-    this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
   }
