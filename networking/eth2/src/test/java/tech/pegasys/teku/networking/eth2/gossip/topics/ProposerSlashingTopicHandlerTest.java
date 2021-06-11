@@ -52,7 +52,7 @@ public class ProposerSlashingTopicHandlerTest {
           processor,
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
-          GossipTopicNames.PROPOSER_SLASHING,
+          GossipTopicName.PROPOSER_SLASHING,
           ProposerSlashing.SSZ_SCHEMA);
 
   @BeforeEach
@@ -115,7 +115,7 @@ public class ProposerSlashingTopicHandlerTest {
             processor,
             gossipEncoding,
             forkDigest,
-            GossipTopicNames.PROPOSER_SLASHING,
+            GossipTopicName.PROPOSER_SLASHING,
             ProposerSlashing.SSZ_SCHEMA);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }

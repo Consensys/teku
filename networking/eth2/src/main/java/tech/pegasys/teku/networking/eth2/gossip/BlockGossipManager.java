@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -54,7 +54,7 @@ public class BlockGossipManager implements GossipManager {
             processor,
             gossipEncoding,
             forkInfo.getForkDigest(),
-            GossipTopicNames.BEACON_BLOCK,
+            GossipTopicName.BEACON_BLOCK,
             signedBeaconBlockSchema);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
