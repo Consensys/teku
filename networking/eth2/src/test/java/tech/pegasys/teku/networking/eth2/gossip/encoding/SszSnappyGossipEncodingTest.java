@@ -45,7 +45,7 @@ public class SszSnappyGossipEncodingTest {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
   private final String topicName =
-      GossipTopics.getTopic(Bytes4.fromHexString("0x01"), "testing", encoding);
+      GossipTopics.getTopic(Bytes4.fromHexStringLenient("0x01"), "testing", encoding);
 
   private <T extends SszData> T decode(
       final String topic, GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
