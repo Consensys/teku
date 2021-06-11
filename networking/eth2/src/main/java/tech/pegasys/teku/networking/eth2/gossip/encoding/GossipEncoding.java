@@ -57,6 +57,6 @@ public interface GossipEncoding {
       throws DecodingException;
 
   interface ForkDigestToMilestone {
-    Optional<SpecMilestone> getMilestone(final Bytes4 forkDigest) throws DecodingException;
+    Optional<SpecMilestone> getMilestone(final Bytes4 forkDigest);
   }
 }
