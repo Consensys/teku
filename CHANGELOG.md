@@ -12,6 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
+- Fixed issues in discv5 `PING` and `PONG` message handling which resulted in not updating peer's ENR records correctly.
 - Implement alpha.7 spec updates to sync committee logic and rewards
 
 ### Bug Fixes
