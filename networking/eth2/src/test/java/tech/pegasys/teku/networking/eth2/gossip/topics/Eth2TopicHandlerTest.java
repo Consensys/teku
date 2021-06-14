@@ -19,6 +19,7 @@ import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,6 +47,13 @@ public class Eth2TopicHandlerTest {
   private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
   private final Bytes blockBytes = GossipEncoding.SSZ_SNAPPY.encode(block);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private Bytes4 forkDigest;
+
+  @BeforeEach
+  public void setup() {
+    storageSystem.chainUpdater().initializeGenesis();
+    forkDigest = recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
+  }
 
   @Test
   public void handleMessage_valid() {
@@ -240,23 +249,25 @@ public class Eth2TopicHandlerTest {
   }
 
   private static class MockEth2TopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
+    private final Bytes4 forkDigest;
     private Deserializer<SignedBeaconBlock> deserializer;
     private static final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    private static final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
 
     protected MockEth2TopicHandler(
         final RecentChainData recentChainData,
         final Spec spec,
         final AsyncRunner asyncRunner,
-        OperationProcessor<SignedBeaconBlock> processor) {
+        final OperationProcessor<SignedBeaconBlock> processor) {
       super(
           recentChainData,
           asyncRunner,
           processor,
           gossipEncoding,
-          forkDigest,
+          recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow(),
           "test",
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
+      this.forkDigest =
+          recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
       deserializer =
           (bytes) ->
               getGossipEncoding()
