@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class BalanceAttackMitigationForkChoiceTriggerTest {
+class ForkChoiceRatchetTest {
 
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final SafeFuture<Boolean> processHeadResult = new SafeFuture<>();
-  private final ForkChoiceTrigger trigger = ForkChoiceTrigger.create(forkChoice, true);
+  private final ForkChoiceRatchet ratchet = new ForkChoiceRatchet(forkChoice);
 
   @BeforeEach
   void setUp() {
@@ -37,68 +37,37 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
   }
 
   @Test
-  void shouldNotifyBlockDueWhenAttestationsDue() {
-    trigger.onAttestationsDueForSlot(UInt64.ONE);
-    verify(forkChoice).onBlocksDueForSlot(UInt64.ONE);
-    verifyNoMoreInteractions(forkChoice);
-  }
-
-  @Test
-  void shouldProcessHeadForEndingSlotOnSlotStart() {
-    trigger.onSlotStarted(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ZERO);
-  }
-
-  @Test
-  void shouldProcessHeadForEndingSlotOnSlotStartAvoidingUnderflow() {
-    trigger.onSlotStarted(UInt64.ZERO);
-    verify(forkChoice).processHead(UInt64.ZERO);
-  }
-
-  @Test
-  void shouldProcessHeadOnSlotWhileSyncing() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ZERO);
-  }
-
-  @Test
-  void shouldProcessHeadOnSlotWhileSyncingAvoidingUnderflow() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ZERO);
-    verify(forkChoice).processHead(UInt64.ZERO);
-  }
-
-  @Test
   void shouldNotRunForkChoiceAgainForTheSameSlot() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
-    verify(forkChoice).processHead(UInt64.ZERO);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
 
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
     verifyNoMoreInteractions(forkChoice);
   }
 
   @Test
   void shouldNotRunForkChoiceWhenSlotIsLessThanPreviousRun() {
-    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(3));
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(2));
     verify(forkChoice).processHead(UInt64.valueOf(2));
 
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
     verifyNoMoreInteractions(forkChoice);
   }
 
   @Test
-  void prepareForBlockProduction_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
-    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(3));
+  void ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3));
 
-    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
     assertThat(result).isCompleted();
   }
 
   @Test
-  void prepareForBlockProduction_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSame() {
-    trigger.onSlotStartedWhileSyncing(UInt64.valueOf(2));
+  void ensureForkChoiceCompleteForSlot_shouldCompleteWhenCurrentRunCompletesIfSlotIsTheSame() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
 
-    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
     verifyNoMoreInteractions(forkChoice);
     assertThat(result).isNotDone();
 
@@ -107,15 +76,26 @@ class BalanceAttackMitigationForkChoiceTriggerTest {
   }
 
   @Test
-  void prepareForBlockProduction_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
-    trigger.onSlotStartedWhileSyncing(UInt64.ONE);
+  void ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
+    ratchet.scheduleForkChoiceForSlot(UInt64.ZERO);
     verify(forkChoice).processHead(UInt64.ZERO);
 
-    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 
     processHeadResult.complete(true);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void ensureForkChoiceCompleteForSlot_shouldNotFailWhenForkChoiceFails() {
+    // Don't make block or attestation fail if fork choice fails, just go with the fork we're on
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.completeExceptionally(new RuntimeException("Ka-boom!"));
     assertThat(result).isCompleted();
   }
 }
