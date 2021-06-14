@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -103,6 +104,7 @@ public class ValidatorApiHandlerIntegrationTest {
   @BeforeEach
   public void setup() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(forkChoiceTrigger.prepareForAttestationProduction(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -153,6 +155,7 @@ public class ValidatorApiHandlerIntegrationTest {
       latestBlock = chainUpdater.advanceChain();
       chainUpdater.updateBestBlock(latestBlock);
     }
+    chainUpdater.setCurrentSlot(targetSlot);
     assertThat(latestBlock).isNotNull();
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, latestBlock.getRoot());
 

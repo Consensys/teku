@@ -307,34 +307,57 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
+    final UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
+    if (slot.isGreaterThan(currentSlot)) {
+      // Avoid creating attestations in the future as that may cause fork choice to run too soon
+      // and then not re-run when it is actually due.  It's also dangerous for validators to create
+      // attestations in the future.  Since attestations are due either when the block is imported
+      // or 4 seconds into the slot, there's some tolerance for clock skew already built in.
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              "Cannot create attestation for future slot. Requested "
+                  + slot
+                  + " but current slot is "
+                  + currentSlot));
+    }
+
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-    return combinedChainDataClient
-        .getSignedBlockAndStateInEffectAtSlot(slot)
+    return forkChoiceTrigger
+        .prepareForAttestationProduction(slot)
         .thenCompose(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-              final BeaconBlock block = blockAndState.getBlock().getMessage();
-              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                // The current effective block is too far in the past - so roll the state
-                // forward to the current epoch. Ensures we have the latest justified checkpoint
-                return combinedChainDataClient
-                    .getCheckpointState(epoch, blockAndState)
-                    .thenApply(
-                        checkpointState ->
-                            Optional.of(
+            __ ->
+                combinedChainDataClient
+                    .getSignedBlockAndStateInEffectAtSlot(slot)
+                    .thenCompose(
+                        maybeBlockAndState -> {
+                          if (maybeBlockAndState.isEmpty()) {
+                            return SafeFuture.completedFuture(Optional.empty());
+                          }
+                          final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+                          final BeaconBlock block = blockAndState.getBlock().getMessage();
+                          if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                            // The current effective block is too far in the past - so roll the
+                            // state forward to the current epoch. Ensures we have the latest
+                            // justified checkpoint
+                            return combinedChainDataClient
+                                .getCheckpointState(epoch, blockAndState)
+                                .thenApply(
+                                    checkpointState ->
+                                        Optional.of(
+                                            createAttestationData(
+                                                block,
+                                                checkpointState.getState(),
+                                                slot,
+                                                committeeIndex)));
+                          } else {
+                            final AttestationData attestationData =
                                 createAttestationData(
-                                    block, checkpointState.getState(), slot, committeeIndex)));
-              } else {
-                final AttestationData attestationData =
-                    createAttestationData(block, blockAndState.getState(), slot, committeeIndex);
-                return SafeFuture.completedFuture(Optional.of(attestationData));
-              }
-            });
+                                    block, blockAndState.getState(), slot, committeeIndex);
+                            return SafeFuture.completedFuture(Optional.of(attestationData));
+                          }
+                        }));
   }
 
   private AttestationData createAttestationData(
