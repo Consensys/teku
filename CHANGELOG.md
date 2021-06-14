@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Prevent LevelDB transactions from attempting to make any updates after the database is shut down
+- Fixed issue which cause a small reduction in attestation rewards when using `--Xvalidators-dependent-root-enabled`.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
