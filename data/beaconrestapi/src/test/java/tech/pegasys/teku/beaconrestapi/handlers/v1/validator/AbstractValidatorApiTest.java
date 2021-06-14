@@ -23,6 +23,7 @@ import io.javalin.http.Handler;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.sync.events.SyncState;
 
 public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest {
   protected Handler handler;
@@ -30,7 +31,7 @@ public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest
   @Test
   public void shouldReturnBadRequestIfEpochDoesNotParse() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "epoch"));
     handler.handle(context);
     verifyStatusCode(SC_BAD_REQUEST);
@@ -39,8 +40,15 @@ public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest
   @Test
   public void shouldReturnNotReadyWhenSyncing() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    handler.handle(context);
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+  }
 
+  @Test
+  public void shouldReturnNotReadyWhenStartingUp() throws Exception {
+    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
     handler.handle(context);
     verifyStatusCode(SC_SERVICE_UNAVAILABLE);
   }
