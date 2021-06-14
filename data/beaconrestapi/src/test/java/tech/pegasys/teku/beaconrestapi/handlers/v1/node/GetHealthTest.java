@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
+import tech.pegasys.teku.sync.events.SyncState;
 
 public class GetHealthTest extends AbstractBeaconHandlerTest {
 
@@ -31,7 +32,18 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+
+    handler.handle(context);
+    verifyCacheStatus(CACHE_NONE);
+    verifyStatusCode(SC_PARTIAL_CONTENT);
+  }
+
+  @Test
+  public void shouldReturnSyncingStatusWhenStartingUp() throws Exception {
+    final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
     handler.handle(context);
     verifyCacheStatus(CACHE_NONE);
@@ -42,7 +54,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnCustomSyncingStatusWhenSyncing() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("100")));
 
     handler.handle(context);
@@ -54,7 +66,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnDefaultSyncingStatusWhenSyncingWrongParam() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("a")));
 
     handler.handle(context);
@@ -66,7 +78,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnDefaultSyncingStatusWhenSyncingMultipleParams() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     when(context.queryParamMap()).thenReturn(Map.of(SYNCING_STATUS, List.of("1", "2")));
 
     handler.handle(context);
@@ -78,7 +90,7 @@ public class GetHealthTest extends AbstractBeaconHandlerTest {
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     handler.handle(context);
     verifyCacheStatus(CACHE_NONE);

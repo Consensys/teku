@@ -40,8 +40,11 @@ public class SyncDataProvider {
     return syncService.unsubscribeFromSyncStateChanges(subscriberId);
   }
 
+  // Sync state can be influenced by needing to sync from nodes, but also from
+  // starting up and having a lack of peers. Consider both 'syncing' and 'startup'
+  // as 'isSyncing', as both of these states will mean that you can't perform duties
   public boolean isSyncing() {
-    return syncService.isSyncActive();
+    return !syncService.getCurrentSyncState().isInSync();
   }
 
   private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.events.SyncingStatus syncingStatus) {
