@@ -87,4 +87,15 @@ class ForkChoiceRatchetTest {
     processHeadResult.complete(true);
     assertThat(result).isCompleted();
   }
+
+  @Test
+  void ensureForkChoiceCompleteForSlot_shouldNotFailWhenForkChoiceFails() {
+    // Don't make block or attestation fail if fork choice fails, just go with the fork we're on
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    verify(forkChoice).processHead(UInt64.ONE);
+    assertThat(result).isNotDone();
+
+    processHeadResult.completeExceptionally(new RuntimeException("Ka-boom!"));
+    assertThat(result).isCompleted();
+  }
 }
