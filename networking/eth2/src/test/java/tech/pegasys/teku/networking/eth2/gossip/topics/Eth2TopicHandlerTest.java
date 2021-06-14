@@ -47,12 +47,10 @@ public class Eth2TopicHandlerTest {
   private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
   private final Bytes blockBytes = GossipEncoding.SSZ_SNAPPY.encode(block);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private Bytes4 forkDigest;
 
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
-    forkDigest = recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
   }
 
   @Test
