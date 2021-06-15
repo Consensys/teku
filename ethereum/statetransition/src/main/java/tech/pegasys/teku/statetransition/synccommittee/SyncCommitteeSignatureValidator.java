@@ -86,9 +86,16 @@ public class SyncCommitteeSignatureValidator {
 
     // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
     // validator referenced by sync_committee_signature.validator_index.
-    final UniquenessKey uniquenessKey = getUniquenessKey(signature);
-    if (seenIndices.contains(uniquenessKey)) {
-      return SafeFuture.completedFuture(IGNORE);
+    final Optional<UniquenessKey> uniquenessKey;
+    if (validateableSignature.getReceivedSubnetId().isPresent()) {
+      final UniquenessKey key =
+          getUniquenessKey(signature, validateableSignature.getReceivedSubnetId().getAsInt());
+      if (seenIndices.contains(key)) {
+        return SafeFuture.completedFuture(IGNORE);
+      }
+      uniquenessKey = Optional.of(key);
+    } else {
+      uniquenessKey = Optional.empty();
     }
 
     // [IGNORE] The block being signed over (sync_committee_signature.beacon_block_root) has been
@@ -134,7 +141,7 @@ public class SyncCommitteeSignatureValidator {
       final SyncCommitteeSignature signature,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAltair state,
-      final UniquenessKey uniquenessKey) {
+      final Optional<UniquenessKey> maybeUniquenessKey) {
     final UInt64 signatureEpoch = spec.computeEpochAtSlot(signature.getSlot());
 
     // Always calculate the applicable subcommittees to ensure they are cached and can be used to
@@ -149,6 +156,21 @@ public class SyncCommitteeSignatureValidator {
       LOG.trace(
           "Rejecting sync committee signature because validator is not in the sync committee");
       return REJECT;
+    }
+
+    // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
+    // validator referenced by sync_committee_signature.validator_index.
+    final UniquenessKey uniquenessKey =
+        maybeUniquenessKey.orElseGet(
+            () -> {
+              final int subnetId =
+                  assignedSubcommittees.getAssignedSubcommittees().stream()
+                      .min(Integer::compare)
+                      .orElseThrow();
+              return getUniquenessKey(signature, subnetId);
+            });
+    if (seenIndices.contains(uniquenessKey)) {
+      return IGNORE;
     }
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
@@ -185,17 +207,20 @@ public class SyncCommitteeSignatureValidator {
     return ACCEPT;
   }
 
-  private UniquenessKey getUniquenessKey(final SyncCommitteeSignature signature) {
-    return new UniquenessKey(signature.getValidatorIndex(), signature.getSlot());
+  private UniquenessKey getUniquenessKey(
+      final SyncCommitteeSignature signature, final int subnetId) {
+    return new UniquenessKey(signature.getValidatorIndex(), signature.getSlot(), subnetId);
   }
 
   private static class UniquenessKey {
     private final UInt64 validatorIndex;
     private final UInt64 slot;
+    private final int subnetId;
 
-    private UniquenessKey(final UInt64 validatorIndex, final UInt64 slot) {
+    private UniquenessKey(final UInt64 validatorIndex, final UInt64 slot, final int subnetId) {
       this.validatorIndex = validatorIndex;
       this.slot = slot;
+      this.subnetId = subnetId;
     }
 
     @Override
@@ -207,12 +232,14 @@ public class SyncCommitteeSignatureValidator {
         return false;
       }
       final UniquenessKey that = (UniquenessKey) o;
-      return Objects.equals(validatorIndex, that.validatorIndex) && Objects.equals(slot, that.slot);
+      return subnetId == that.subnetId
+          && Objects.equals(validatorIndex, that.validatorIndex)
+          && Objects.equals(slot, that.slot);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(validatorIndex, slot);
+      return Objects.hash(validatorIndex, slot, subnetId);
     }
   }
 }

@@ -14,12 +14,17 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -160,6 +165,36 @@ class SyncCommitteeSignatureValidatorTest {
   }
 
   @Test
+  void shouldAllowDuplicateSignaturesForDistinctSubnets() {
+    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+
+    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(fromNetworkSpy(signature, 2, Set.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  void shouldIgnoreDuplicateSignaturesForSameSubnet() {
+    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+
+    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+        .isCompletedWithValue(IGNORE);
+  }
+
+  @Test
+  void shouldIgnoreDuplicateSignaturesForLocalValidatorsInMultipleSubnets() {
+    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+
+    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(2, 1))))
+        .isCompletedWithValue(IGNORE);
+  }
+
+  @Test
   void shouldIgnoreWhenBeaconBlockIsNotKnown() {
     final SyncCommitteeSignature signature =
         chainBuilder.createSyncCommitteeSignature(
@@ -272,5 +307,42 @@ class SyncCommitteeSignatureValidatorTest {
     timeProvider.advanceTimeByMillis(
         nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).increment().longValue());
     assertThat(validator.isSignatureForCurrentSlot(slot)).isFalse();
+  }
+
+  private ValidateableSyncCommitteeSignature fromValidatorSpy(
+      SyncCommitteeSignature signature, final Set<Integer> subcommitteeIds) {
+    final ValidateableSyncCommitteeSignature validateableSignature =
+        ValidateableSyncCommitteeSignature.fromValidator(signature);
+    return createSpy(validateableSignature, subcommitteeIds);
+  }
+
+  private ValidateableSyncCommitteeSignature fromNetworkSpy(
+      SyncCommitteeSignature signature,
+      final int receivedSubnetId,
+      final Set<Integer> subcommitteeIds) {
+    final ValidateableSyncCommitteeSignature validateableSignature =
+        ValidateableSyncCommitteeSignature.fromNetwork(signature, receivedSubnetId);
+    return createSpy(validateableSignature, subcommitteeIds);
+  }
+
+  private ValidateableSyncCommitteeSignature createSpy(
+      ValidateableSyncCommitteeSignature validateableSignature,
+      final Set<Integer> subcommitteeIds) {
+    // Create spies
+    final ValidateableSyncCommitteeSignature validateableSignatureSpy = spy(validateableSignature);
+    validateableSignature.calculateAssignments(
+        spec, chainBuilder.getLatestBlockAndState().getState());
+    SyncSubcommitteeAssignments assignments =
+        validateableSignature.getSubcommitteeAssignments().orElseThrow();
+    SyncSubcommitteeAssignments assignmentsSpy = spy(assignments);
+
+    // Overwrite some functionality
+    doReturn(assignmentsSpy).when(validateableSignatureSpy).calculateAssignments(any(), any());
+    doReturn(Optional.of(assignmentsSpy))
+        .when(validateableSignatureSpy)
+        .getSubcommitteeAssignments();
+    doReturn(subcommitteeIds).when(assignmentsSpy).getAssignedSubcommittees();
+
+    return validateableSignatureSpy;
   }
 }
