@@ -19,8 +19,8 @@ For information on changes in released versions of Teku, see the [releases page]
   - `beacon_eth1_current_period_votes_max` - Maximum number of votes possible in the current voting period.
   - `beacon_eth1_current_period_votes_total` - Number of votes cast so far in the current voting period.
   - `beacon_eth1_current_period_votes_best` - Number of votes for the leading candidate in the current voting period.
-  - `beacon_eth1_current_period_votes_invalid` - Number of votes for blocks this node considers invalid (e.g. unknown blocks).
-  - `beacon_eth1_current_period_votes_default` - Number of votes for the value in the current state (the default vote per the spec).
+  - `beacon_eth1_current_period_votes_unknown` - Number of votes for blocks this node considers invalid (e.g. unknown blocks).
+  - `beacon_eth1_current_period_votes_current` - Number of votes for the value in the current state (the default vote per the spec).
 
 ### Bug Fixes
 - Prevent LevelDB transactions from attempting to make any updates after the database is shut down.
