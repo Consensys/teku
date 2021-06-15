@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 class MesssageIdCalculatorAltair extends MessageIdCalculator {
@@ -41,7 +41,7 @@ class MesssageIdCalculatorAltair extends MessageIdCalculator {
   }
 
   private Bytes getTopicBytes() {
-    return topic.length() > 0 ? ProtobufEncoder.encodeString(topic) : Bytes.EMPTY;
+    return Bytes.of(topic.getBytes(StandardCharsets.UTF_8));
   }
 
   private Bytes encodeTopicLength(final Bytes topicBytes) {

@@ -37,16 +37,4 @@ public abstract class ProtobufEncoder {
       throw new RuntimeException(e);
     }
   }
-
-  public static Bytes encodeString(final String value) {
-    try {
-      final ByteArrayOutputStream output = new ByteArrayOutputStream();
-      final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(output);
-      codedOutputStream.writeStringNoTag(value);
-      codedOutputStream.flush();
-      return Bytes.wrap(output.toByteArray());
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }
