@@ -21,10 +21,12 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
 
   public ProposerSlashingGossipManager(
+      final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -32,6 +34,7 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
       final OperationProcessor<ProposerSlashing> processor,
       final GossipPublisher<ProposerSlashing> publisher) {
     super(
+        recentChainData,
         GossipTopicName.PROPOSER_SLASHING,
         asyncRunner,
         gossipNetwork,

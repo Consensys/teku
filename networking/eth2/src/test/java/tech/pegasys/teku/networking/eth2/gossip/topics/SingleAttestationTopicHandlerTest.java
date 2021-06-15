@@ -14,62 +14,39 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class SingleAttestationTopicHandlerTest {
+public class SingleAttestationTopicHandlerTest
+    extends AbstractTopicHandlerTest<ValidateableAttestation> {
 
   private static final int SUBNET_ID = 1;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
 
-  @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
-      mock(OperationProcessor.class);
-
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder().specProvider(spec).eventBus(mock(EventBus.class)).build();
-  final String topicName = GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID);
-  private final Eth2TopicHandler<?> topicHandler =
-      SingleAttestationTopicHandler.createHandler(
-          asyncRunner,
-          processor,
-          gossipEncoding,
-          dataStructureUtil.randomForkInfo().getForkDigest(),
-          topicName,
-          SUBNET_ID);
-
-  @BeforeEach
-  public void setup() {
-    BeaconChainUtil.initializeStorage(spec, recentChainData, validatorKeys);
+  @Override
+  protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
+    return SingleAttestationTopicHandler.createHandler(
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkDigest,
+        GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
+        SUBNET_ID);
   }
 
   @Test
@@ -156,7 +133,7 @@ public class SingleAttestationTopicHandlerTest {
     final String topicName = GossipTopicName.getAttestationSubnetTopicName(0);
     Eth2TopicHandler<?> topicHandler =
         SingleAttestationTopicHandler.createHandler(
-            asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
+            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, topicName, 0);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
   }
 }

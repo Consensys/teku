@@ -32,10 +32,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BlockGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -49,11 +52,13 @@ public class BlockGossipManagerTest {
 
   @BeforeEach
   public void setup() {
+    storageSystem.chainUpdater().initializeGenesis();
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(GossipTopicName.BEACON_BLOCK.toString()), any());
     blockGossipManager =
         new BlockGossipManager(
+            storageSystem.recentChainData(),
             spec,
             asyncRunner,
             gossipNetwork,

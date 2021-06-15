@@ -20,16 +20,21 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 abstract class CommitteeSubnetSubscriptions implements AutoCloseable {
 
+  protected final RecentChainData recentChainData;
   protected final GossipNetwork gossipNetwork;
   protected final GossipEncoding gossipEncoding;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
   protected CommitteeSubnetSubscriptions(
-      final GossipNetwork gossipNetwork, final GossipEncoding gossipEncoding) {
+      final RecentChainData recentChainData,
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding) {
+    this.recentChainData = recentChainData;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
   }
