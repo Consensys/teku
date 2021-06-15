@@ -232,7 +232,8 @@ public class Eth2P2PNetworkBuilder {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     PreparedGossipMessageFactory defaultMessageFactory =
-        (__, msg) -> gossipEncoding.prepareUnknownMessage(msg);
+        gossipEncoding.createPreparedGossipMessageFactory(
+            recentChainData::getMilestoneByForkDigest);
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();

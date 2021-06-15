@@ -16,10 +16,13 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -31,23 +34,27 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SszSnappyGossipEncodingTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final GossipEncoding encoding = createEncoding();
+  private final GossipEncoding encoding = GossipEncoding.SSZ_SNAPPY;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BeaconStateSchema<?, ?> beaconStateSchema =
       spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema();
+  private final String topicName =
+      GossipTopics.getTopic(Bytes4.fromHexStringLenient("0x01"), "testing", encoding);
 
-  private GossipEncoding createEncoding() {
-    return GossipEncoding.SSZ_SNAPPY;
-  }
-
-  private <T extends SszData> T decode(GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
+  private <T extends SszData> T decode(
+      final String topic, GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
       throws DecodingException {
-    return encoding.decodeMessage(encoding.prepareMessage(data, valueType), valueType);
+    return encoding.decodeMessage(
+        encoding
+            .createPreparedGossipMessageFactory(__ -> Optional.of(SpecMilestone.PHASE0))
+            .create(topic, data, valueType),
+        valueType);
   }
 
   @Test
@@ -56,7 +63,7 @@ public class SszSnappyGossipEncodingTest {
     final Bytes data =
         Bytes.concatenate(hugeLength, Bytes.fromHexString("000000000000000000000000"));
 
-    assertThatThrownBy(() -> decode(encoding, data, signedBeaconBlockSchema))
+    assertThatThrownBy(() -> decode(topicName, encoding, data, signedBeaconBlockSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -66,7 +73,7 @@ public class SszSnappyGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(original);
     final SignedAggregateAndProof decoded =
-        decode(encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
+        decode(topicName, encoding, encoded, SignedAggregateAndProof.SSZ_SCHEMA);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -76,7 +83,7 @@ public class SszSnappyGossipEncodingTest {
     final Attestation original = dataStructureUtil.randomAttestation();
 
     final Bytes encoded = encoding.encode(original);
-    final Attestation decoded = decode(encoding, encoded, Attestation.SSZ_SCHEMA);
+    final Attestation decoded = decode(topicName, encoding, encoded, Attestation.SSZ_SCHEMA);
 
     assertThat(decoded).isEqualTo(original);
   }
@@ -86,21 +93,21 @@ public class SszSnappyGossipEncodingTest {
     final SignedBeaconBlock original = dataStructureUtil.randomSignedBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(original);
-    final SignedBeaconBlock decoded = decode(encoding, encoded, signedBeaconBlockSchema);
+    final SignedBeaconBlock decoded = decode(topicName, encoding, encoded, signedBeaconBlockSchema);
 
     assertThat(decoded).isEqualTo(original);
   }
 
   @Test
   public void decode_emptyValue() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.EMPTY, beaconStateSchema))
+    assertThatThrownBy(() -> decode(topicName, encoding, Bytes.EMPTY, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_invalidData() {
     final Bytes data = Bytes.fromHexString("0xB1AB1A");
-    assertThatThrownBy(() -> decode(encoding, data, beaconStateSchema))
+    assertThatThrownBy(() -> decode(topicName, encoding, data, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -109,7 +116,7 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = encoding.encode(block);
-    assertThatThrownBy(() -> decode(encoding, encoded, beaconStateSchema))
+    assertThatThrownBy(() -> decode(topicName, encoding, encoded, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -118,19 +125,21 @@ public class SszSnappyGossipEncodingTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
 
     final Bytes encoded = Bytes.concatenate(encoding.encode(block), Bytes.fromHexString("0x01"));
-    assertThatThrownBy(() -> decode(encoding, encoded, beaconStateSchema))
+    assertThatThrownBy(() -> decode(topicName, encoding, encoded, beaconStateSchema))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_rejectMessageShorterThanValidLength() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.of(1, 2, 3), signedBeaconBlockSchema))
+    assertThatThrownBy(
+            () -> decode(topicName, encoding, Bytes.of(1, 2, 3), signedBeaconBlockSchema))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
   public void decode_rejectMessageLongerThanValidLength() {
-    assertThatThrownBy(() -> decode(encoding, Bytes.wrap(new byte[512]), StatusMessage.SSZ_SCHEMA))
+    assertThatThrownBy(
+            () -> decode(topicName, encoding, Bytes.wrap(new byte[512]), StatusMessage.SSZ_SCHEMA))
         .isInstanceOf(DecodingException.class);
   }
 }

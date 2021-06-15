@@ -25,6 +25,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractGossipManager<T extends SszData> implements GossipManager {
 
@@ -36,6 +37,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   private final long subscriberId;
 
   protected AbstractGossipManager(
+      final RecentChainData recentChainData,
       final String topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
@@ -45,6 +47,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final GossipPublisher<T> publisher) {
     final Eth2TopicHandler<?> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,
@@ -59,6 +62,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   }
 
   protected AbstractGossipManager(
+      final RecentChainData recentChainData,
       final GossipTopicName topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
@@ -67,6 +71,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final OperationProcessor<T> processor,
       final GossipPublisher<T> publisher) {
     this(
+        recentChainData,
         topicName.toString(),
         asyncRunner,
         gossipNetwork,
