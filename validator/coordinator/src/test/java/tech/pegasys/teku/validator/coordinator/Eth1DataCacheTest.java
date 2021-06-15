@@ -22,6 +22,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -52,6 +54,7 @@ public class Eth1DataCacheTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Eth1Data stateEth1Data = createEth1Data(STATE_DEPOSIT_COUNT);
   private final Eth1VotingPeriod eth1VotingPeriod = mock(Eth1VotingPeriod.class);
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private Eth1DataCache eth1DataCache;
 
@@ -61,7 +64,7 @@ public class Eth1DataCacheTest {
     when(eth1VotingPeriod.getSpecRangeLowerBound(SLOT, GENESIS_TIME))
         .thenReturn(VOTING_PERIOD_START);
     when(eth1VotingPeriod.getSpecRangeUpperBound(SLOT, GENESIS_TIME)).thenReturn(VOTING_PERIOD_END);
-    eth1DataCache = new Eth1DataCache(eth1VotingPeriod);
+    eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
   }
 
   // Add tests for eth1 block with no votes
@@ -100,7 +103,7 @@ public class Eth1DataCacheTest {
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
     eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
 
-    assertThat(eth1DataCache.size()).isZero();
+    assertThat(getCacheSize()).isZero();
   }
 
   @Test
@@ -112,7 +115,7 @@ public class Eth1DataCacheTest {
 
     // New block would normally prune the first one, but doesn't because we preserve one item
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
-    assertThat(eth1DataCache.size()).isEqualTo(2);
+    assertThat(getCacheSize()).isEqualTo(2);
 
     // Then register an empty block within the voting period but prior to the latest deposit
     eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
@@ -213,18 +216,69 @@ public class Eth1DataCacheTest {
 
     eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
-    assertThat(eth1DataCache.size()).isEqualTo(2);
+    assertThat(getCacheSize()).isEqualTo(2);
 
     // Push both old blocks out of the cache period
     eth1DataCache.onBlockWithDeposit(newBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     // But only the oldest block gets pruned because we need at least one event prior to the cache
     // period so empty blocks right at the start of the period can lookup the
-    assertThat(eth1DataCache.size()).isEqualTo(2);
+    assertThat(getCacheSize()).isEqualTo(2);
 
     // Third block is close enough to the second that they are both kept.
     // newBlockTimestamp is now exactly at the start of the cache period so we can remove oldBlock
     eth1DataCache.onBlockWithDeposit(newerBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
-    assertThat(eth1DataCache.size()).isEqualTo(2);
+    assertThat(getCacheSize()).isEqualTo(2);
+  }
+
+  @Test
+  void shouldUpdateMetrics() {
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data unknownVote1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data unknownVote2 = createEth1Data(STATE_DEPOSIT_COUNT);
+
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, stateEth1Data);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
+    // Still unknown because it's out of range
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), unknownVote1);
+
+    BeaconState beaconState =
+        createBeaconStateWithVotes(
+            eth1Data1,
+            eth1Data2,
+            eth1Data2,
+            eth1Data2,
+            eth1Data2,
+            unknownVote1,
+            unknownVote2,
+            stateEth1Data,
+            stateEth1Data,
+            stateEth1Data);
+    when(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot())).thenReturn(50L);
+
+    eth1DataCache.updateMetrics(beaconState);
+
+    assertGaugeValue(Eth1DataCache.VOTES_TOTAL_METRIC_NAME, 10);
+    assertGaugeValue(Eth1DataCache.VOTES_MAX_METRIC_NAME, 50);
+    assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 2);
+    assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 3);
+    assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 4);
+  }
+
+  @Test
+  void shouldIncludeUnknownBlocksWhenCalculatingVoteBestMetric() {
+    // Metric needs to indicate when a block will be voted in which happens even when unknown
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data unknownVote = createEth1Data(STATE_DEPOSIT_COUNT);
+
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data1);
+
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, unknownVote, unknownVote);
+    when(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot())).thenReturn(50L);
+
+    eth1DataCache.updateMetrics(beaconState);
+    assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 2);
   }
 
   private BeaconState createBeaconStateWithVotes(final Eth1Data... votes) {
@@ -245,5 +299,17 @@ public class Eth1DataCacheTest {
   private Eth1Data createEth1Data(final UInt64 depositCount) {
     return new Eth1Data(
         dataStructureUtil.randomBytes32(), depositCount, dataStructureUtil.randomBytes32());
+  }
+
+  private int getCacheSize() {
+    return (int)
+        metricsSystem
+            .getGauge(TekuMetricCategory.BEACON, Eth1DataCache.CACHE_SIZE_METRIC_NAME)
+            .getValue();
+  }
+
+  private void assertGaugeValue(final String metricName, final int expected) {
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, metricName).getValue())
+        .isEqualTo(expected);
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 class BeaconChainMetricsTest {
   private static final UInt64 NODE_SLOT_VALUE = UInt64.valueOf(100L);
@@ -72,13 +74,15 @@ class BeaconChainMetricsTest {
   private final RecentChainData preGenesisChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
+  private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
   private final Checkpoint currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
   private final Checkpoint previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
-      new BeaconChainMetrics(spec, recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork);
+      new BeaconChainMetrics(
+          spec, recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork, eth1DataCache);
 
   @BeforeEach
   void setUp() {
@@ -269,6 +273,12 @@ class BeaconChainMetricsTest {
     final UInt64 epochAtSlot = spec.computeEpochAtSlot(nodeSlot.getValue());
     assertThat(metricsSystem.getGauge(BEACON, "epoch").getValue())
         .isEqualTo(epochAtSlot.longValue());
+  }
+
+  @Test
+  void onSlot_shouldUpdateEth1DataMetrics() {
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    verify(eth1DataCache).updateMetrics(state);
   }
 
   @Test
