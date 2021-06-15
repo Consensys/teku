@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -33,16 +33,15 @@ public class GossipTopicsTest {
   }
 
   @Test
-  public void extractForkDigest_valid() throws Exception {
-    final Optional<Bytes4> result =
-        GossipTopics.extractForkDigest("/eth2/01020304/test/ssz_snappy");
-    assertThat(result).contains(Bytes4.fromHexString("01020304"));
+  public void extractForkDigest_valid() {
+    final Bytes4 result = GossipTopics.extractForkDigest("/eth2/01020304/test/ssz_snappy");
+    assertThat(result).isEqualTo(Bytes4.fromHexString("01020304"));
   }
 
   @Test
   public void extractForkDigest_invalid() {
     final String topic = "/eth2/wrong/test/ssz_snappy";
-    final Optional<Bytes4> result = GossipTopics.extractForkDigest(topic);
-    assertThat(result).isEmpty();
+    assertThatThrownBy(() -> GossipTopics.extractForkDigest(topic))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

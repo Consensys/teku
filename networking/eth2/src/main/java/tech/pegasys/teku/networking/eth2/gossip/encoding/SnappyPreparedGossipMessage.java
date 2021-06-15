@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to
@@ -76,9 +77,10 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final String topic,
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone) {
+    final Bytes4 forkDigest = GossipTopics.extractForkDigest(topic);
     final SpecMilestone milestone =
-        GossipTopics.extractForkDigest(topic)
-            .flatMap(forkDigestToMilestone::getMilestone)
+        forkDigestToMilestone
+            .getMilestone(forkDigest)
             .orElseThrow(
                 () ->
                     new IllegalStateException(
