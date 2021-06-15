@@ -14,50 +14,29 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposerSlashingTopicHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final EventBus eventBus = mock(EventBus.class);
+public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<ProposerSlashing> {
 
-  @SuppressWarnings("unchecked")
-  private final OperationProcessor<ProposerSlashing> processor = mock(OperationProcessor.class);
-
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
-
-  private final Eth2TopicHandler<ProposerSlashing> topicHandler =
-      new Eth2TopicHandler<>(
-          asyncRunner,
-          processor,
-          gossipEncoding,
-          dataStructureUtil.randomForkInfo().getForkDigest(),
-          GossipTopicName.PROPOSER_SLASHING,
-          ProposerSlashing.SSZ_SCHEMA);
-
-  @BeforeEach
-  public void setup() {
-    beaconChainUtil.initializeStorage();
+  @Override
+  protected Eth2TopicHandler<ProposerSlashing> createHandler(final Bytes4 forkDigest) {
+    return new Eth2TopicHandler<>(
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkDigest,
+        GossipTopicName.PROPOSER_SLASHING,
+        ProposerSlashing.SSZ_SCHEMA);
   }
 
   @Test
@@ -111,6 +90,7 @@ public class ProposerSlashingTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<ProposerSlashing> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,

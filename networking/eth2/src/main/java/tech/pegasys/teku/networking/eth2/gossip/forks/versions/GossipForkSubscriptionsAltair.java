@@ -103,6 +103,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     addGossipManager(
         new SignedContributionAndProofGossipManager(
+            recentChainData,
             schemaDefinitions,
             asyncRunner,
             discoveryNetwork,
@@ -113,6 +114,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
 
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
+            recentChainData,
             discoveryNetwork,
             gossipEncoding,
             schemaDefinitions,
