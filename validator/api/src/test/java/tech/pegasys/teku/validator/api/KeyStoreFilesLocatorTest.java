@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -94,6 +95,26 @@ public class KeyStoreFilesLocatorTest {
       createFiles(tempDir, Path.of("key", ".asdf.json"), Path.of("key", ".hidden2"));
     }
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
+    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
+    locator.parse();
+
+    assertThat(locator.getFilePairs())
+        .containsExactly(
+            tuple(
+                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
+  }
+
+  @Test
+  public void shouldIgnoreDepositDataJsonFile(@TempDir final Path tempDir) throws IOException {
+    createFolders(tempDir, "key", "pass");
+    createFiles(
+        tempDir,
+        Path.of("key", "deposit_data-1620858087.json"),
+        Path.of("key", "a.json"),
+        Path.of("pass", "a.txt"));
+    final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
+    writeDepositDataFile(tempDir.resolve(Path.of("key", "deposit_data-1620858087.json")));
+
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
     locator.parse();
 
@@ -226,6 +247,14 @@ public class KeyStoreFilesLocatorTest {
       File file = tempDir.resolve(path).toFile();
       assertThat(file.createNewFile()).isTrue();
     }
+  }
+
+  private void writeDepositDataFile(final Path depositDataFilePath) throws IOException {
+    String jsonData =
+        "[{\"pubkey\": \"b93de474b36c68f1323b80d529220cbe868d876bf6be45259a2005159585f5154f8b24209dbbbf049ddadb9947a5e490\", \"withdrawal_credentials\": \"002c7560879a767d9d4447fda04b7a497af19cc80994d614557f7836fad6867b\", \"amount\": 32000000000, \"signature\": \"b552c4e2982d49cc626f284172ebf500478392980a0aa96b11e6a5c9f081cbd31bbf6cba503d1a3564dc5be9243311b203262f2863390eb483fb58b474527d91bbe5193e3c6e0d9f863c53c8ad0331e70f1180d1e730d4f46bbbfdaede0aa6a5\", \"deposit_message_root\": \"09b32e44c341c2977d8528af610e1adbbb249ce293133ae4a8b7c2a7d7afcfa0\", \"deposit_data_root\": \"9f88c0dedc95efa6be9048effa9a4376873078227f1ef9292f28683adc650b49\", \"fork_version\": \"00000121\", \"eth2_network_name\": \"altona\", \"deposit_cli_version\": \"1.1.0\"}]\n";
+
+    byte[] data = jsonData.getBytes(UTF_8);
+    Files.write(depositDataFilePath, data);
   }
 
   private String generatePath(

@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.api;
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import java.io.File;
 import java.io.IOException;
@@ -65,6 +67,9 @@ class KeyStoreFilesLocator {
       throw new InvalidConfigurationException(
           String.format("Invalid configuration. Could not find the key file (%s).", keyFileName));
     }
+    if (isDepositDataFile(keyFile)) {
+      return;
+    }
     if (!passwordFile.exists()) {
       throw new InvalidConfigurationException(
           String.format(
@@ -86,6 +91,31 @@ class KeyStoreFilesLocator {
     }
   }
 
+  private boolean isDepositDataFile(final File keyFile) {
+    String keyFileName = keyFile.toPath().getFileName().toString();
+    if (keyFileName.startsWith("deposit_data-") && hasDepositDataFileContents(keyFile)) {
+      LOG.debug("Ignoring deposit data file: " + keyFileName);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean hasDepositDataFileContents(final File keyFile) {
+    try {
+      byte[] fileData = Files.readAllBytes(keyFile.toPath());
+      ObjectMapper objectMapper = new ObjectMapper();
+      List<Map<String, String>> listData =
+          objectMapper.readValue(fileData, new TypeReference<>() {});
+
+      return !listData.isEmpty()
+          && listData.get(0).containsKey("deposit_message_root")
+          && listData.get(0).containsKey("deposit_data_root");
+    } catch (final Exception e) {
+      LOG.debug("Unable to determine if {} is a deposit_data file", keyFile, e);
+      return false;
+    }
+  }
+
   void parseDirectory(final File keyDirectory, final File passwordDirectory) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
@@ -96,6 +126,9 @@ class KeyStoreFilesLocator {
               path -> {
                 final Path relativeDirectoryPath =
                     keyDirectory.toPath().relativize(path.getParent());
+                if (isDepositDataFile(path.toFile())) {
+                  return;
+                }
                 final String keystoreName = path.getFileName().toString();
                 final File passwordFile =
                     passwordDirectory
