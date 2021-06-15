@@ -105,18 +105,15 @@ class KeyStoreFilesLocator {
       byte[] fileData = Files.readAllBytes(keyFile.toPath());
       ObjectMapper objectMapper = new ObjectMapper();
       List<Map<String, String>> listData =
-          objectMapper.readValue(fileData, new TypeReference<List<Map<String, String>>>() {});
+          objectMapper.readValue(fileData, new TypeReference<>() {});
 
-      if (!listData.isEmpty()
-          && listData.size() > 0
+      return !listData.isEmpty()
           && listData.get(0).containsKey("deposit_message_root")
-          && listData.get(0).containsKey("deposit_data_root")) {
-        return true;
-      }
+          && listData.get(0).containsKey("deposit_data_root");
     } catch (final Exception e) {
+      LOG.debug("Unable to determine if {} is a deposit_data file", keyFile, e);
       return false;
     }
-    return false;
   }
 
   void parseDirectory(final File keyDirectory, final File passwordDirectory) {
