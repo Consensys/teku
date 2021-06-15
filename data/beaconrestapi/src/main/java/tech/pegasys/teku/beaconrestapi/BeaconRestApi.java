@@ -38,6 +38,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -284,6 +285,7 @@ public class BeaconRestApi {
     app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     app.get(Liveness.ROUTE, new Liveness());
+    app.get(Readiness.ROUTE, new Readiness(provider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
   }
