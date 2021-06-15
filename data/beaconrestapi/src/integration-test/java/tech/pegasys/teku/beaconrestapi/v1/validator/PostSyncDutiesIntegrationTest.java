@@ -31,6 +31,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
@@ -48,7 +49,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
                     List.of(
                         new SyncCommitteeDuty(
                             VALIDATOR_KEYS.get(1).getPublicKey(), 1, Set.of(11))))));
-
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(validatorApiChannel.getSyncCommitteeDuties(ONE, validators)).thenReturn(out);
 
     Response response =

@@ -12,10 +12,13 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
+- Fixed issues in discv5 `PING` and `PONG` message handling which resulted in not updating peer's ENR records correctly.
 - Implement alpha.7 spec updates to sync committee logic and rewards
 
 ### Bug Fixes
-- Prevent LevelDB transactions from attempting to make any updates after the database is shut down
+- Prevent LevelDB transactions from attempting to make any updates after the database is shut down.
+- Update `/eth/v1/node/health` to return 206 while node is starting up rather than a 200.
+- Fixed issue which cause a small reduction in attestation rewards when using `--Xvalidators-dependent-root-enabled`.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
