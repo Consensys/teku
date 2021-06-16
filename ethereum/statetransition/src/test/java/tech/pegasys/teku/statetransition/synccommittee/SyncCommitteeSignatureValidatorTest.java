@@ -48,7 +48,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class SyncCommitteeSignatureValidatorTest {
-  private StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private final Spec spec =
       TestSpecFactory.createAltair(
@@ -191,6 +191,18 @@ class SyncCommitteeSignatureValidatorTest {
     assertThat(validator.validate(fromValidatorSpy(signature, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
     assertThat(validator.validate(fromValidatorSpy(signature, Set.of(2, 1))))
+        .isCompletedWithValue(IGNORE);
+  }
+
+  @Test
+  void shouldIgnoreDuplicateSignaturesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
+    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+
+    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(2, 1))))
+        .isCompletedWithValue(IGNORE);
+    assertThat(validator.validate(fromNetworkSpy(signature, 2, Set.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
@@ -20,6 +21,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -158,18 +160,20 @@ public class SyncCommitteeSignatureValidator {
       return REJECT;
     }
 
+    // For signatures received via gossip, it has to be unique based on the subnet it was on
+    // For locally produced signatures we should accept it if it hasn't been seen on any subnet
+    final List<UniquenessKey> uniquenessKeys =
+        maybeUniquenessKey
+            .map(List::of)
+            .orElseGet(
+                () ->
+                    assignedSubcommittees.getAssignedSubcommittees().stream()
+                        .map(subnetId -> getUniquenessKey(signature, subnetId))
+                        .collect(toList()));
+
     // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
     // validator referenced by sync_committee_signature.validator_index.
-    final UniquenessKey uniquenessKey =
-        maybeUniquenessKey.orElseGet(
-            () -> {
-              final int subnetId =
-                  assignedSubcommittees.getAssignedSubcommittees().stream()
-                      .min(Integer::compare)
-                      .orElseThrow();
-              return getUniquenessKey(signature, subnetId);
-            });
-    if (seenIndices.contains(uniquenessKey)) {
+    if (seenIndices.containsAll(uniquenessKeys)) {
       return IGNORE;
     }
 
@@ -200,7 +204,7 @@ public class SyncCommitteeSignatureValidator {
       return REJECT;
     }
 
-    if (!seenIndices.add(uniquenessKey)) {
+    if (!seenIndices.addAll(uniquenessKeys)) {
       LOG.trace("Ignoring sync committee signature as a duplicate was processed during validation");
       return IGNORE;
     }
