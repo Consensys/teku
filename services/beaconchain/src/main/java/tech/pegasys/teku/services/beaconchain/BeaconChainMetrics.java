@@ -33,11 +33,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
+  private final Eth1DataCache eth1DataCache;
 
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
@@ -66,10 +68,12 @@ public class BeaconChainMetrics implements SlotEventsChannel {
       final RecentChainData recentChainData,
       final NodeSlot nodeSlot,
       final MetricsSystem metricsSystem,
-      final Eth2P2PNetwork p2pNetwork) {
+      final Eth2P2PNetwork p2pNetwork,
+      final Eth1DataCache eth1DataCache) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
+    this.eth1DataCache = eth1DataCache;
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -240,6 +244,8 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     final Checkpoint previousJustifiedCheckpoint = state.getPrevious_justified_checkpoint();
     previousJustifiedEpoch.set(previousJustifiedCheckpoint.getEpoch().longValue());
     previousJustifiedRoot.set(getLongFromRoot(previousJustifiedCheckpoint.getRoot()));
+
+    eth1DataCache.updateMetrics(state);
   }
 
   private Bytes32 getCorrectTargetRoot(

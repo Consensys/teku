@@ -416,7 +416,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(
         SlotEventsChannel.class,
         new BeaconChainMetrics(
-            spec, recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
+            spec,
+            recentChainData,
+            slotProcessor.getNodeSlot(),
+            metricsSystem,
+            p2pNetwork,
+            eth1DataCache));
   }
 
   public void initDepositProvider() {
@@ -429,7 +434,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod(spec));
+    eth1DataCache = new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   private void initAttestationTopicSubscriber() {

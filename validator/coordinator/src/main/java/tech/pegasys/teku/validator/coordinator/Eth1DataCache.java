@@ -14,14 +14,20 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.collect.Maps;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -29,14 +35,61 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class Eth1DataCache {
   private static final Logger LOG = LogManager.getLogger();
 
+  static final String CACHE_SIZE_METRIC_NAME = "eth1_block_cache_size";
+  static final String VOTES_MAX_METRIC_NAME = "eth1_current_period_votes_max";
+  static final String VOTES_TOTAL_METRIC_NAME = "eth1_current_period_votes_total";
+  static final String VOTES_UNKNOWN_METRIC_NAME = "eth1_current_period_votes_unknown";
+  static final String VOTES_CURRENT_METRIC_NAME = "eth1_current_period_votes_current";
+  static final String VOTES_BEST_METRIC_NAME = "eth1_current_period_votes_best";
+
   private final UInt64 cacheDuration;
   private final Eth1VotingPeriod eth1VotingPeriod;
 
   private final NavigableMap<UInt64, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
+  private final SettableGauge currentPeriodVotesTotal;
+  private final SettableGauge currentPeriodVotesUnknown;
+  private final SettableGauge currentPeriodVotesCurrent;
+  private final SettableGauge currentPeriodVotesBest;
+  private final SettableGauge currentPeriodVotesMax;
 
-  public Eth1DataCache(final Eth1VotingPeriod eth1VotingPeriod) {
+  public Eth1DataCache(final MetricsSystem metricsSystem, final Eth1VotingPeriod eth1VotingPeriod) {
     this.eth1VotingPeriod = eth1VotingPeriod;
     cacheDuration = eth1VotingPeriod.getCacheDurationInSeconds();
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        CACHE_SIZE_METRIC_NAME,
+        "Total number of blocks stored in the Eth1 block cache",
+        this::size);
+    currentPeriodVotesMax =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            VOTES_MAX_METRIC_NAME,
+            "Maximum number of votes that can possibly be cast in the current Eth1 voting period");
+    currentPeriodVotesTotal =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            VOTES_TOTAL_METRIC_NAME,
+            "Total number of votes cast in the current Eth1 voting period");
+    currentPeriodVotesUnknown =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            VOTES_UNKNOWN_METRIC_NAME,
+            "Number of votes for locally unknown Eth1 blocks in the current Eth1 voting period");
+    currentPeriodVotesCurrent =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            VOTES_CURRENT_METRIC_NAME,
+            "Number of votes for the current Eth1 data in the current Eth1 voting period");
+    currentPeriodVotesBest =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            VOTES_BEST_METRIC_NAME,
+            "Number of votes for the leading block in the current Eth1 voting period");
   }
 
   public void onBlockWithDeposit(final UInt64 blockTimestamp, final Eth1Data eth1Data) {
@@ -63,27 +116,53 @@ public class Eth1DataCache {
   public Eth1Data getEth1Vote(BeaconState state) {
     NavigableMap<UInt64, Eth1Data> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesis_time(), state.getEth1_data());
-    Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
-
-    int i = 0;
-    for (Eth1Data eth1Data : state.getEth1_data_votes()) {
-      if (!votesToConsider.containsValue(eth1Data)) {
-        continue;
-      }
-
-      final int currentIndex = i;
-      Eth1Vote vote = validVotes.computeIfAbsent(eth1Data, key -> new Eth1Vote(currentIndex));
-      vote.incrementVotes();
-      i++;
-    }
+    // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
+    final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
+    final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
     Eth1Data defaultVote =
         votesToConsider.isEmpty() ? state.getEth1_data() : votesToConsider.lastEntry().getValue();
 
     Optional<Eth1Data> vote =
-        validVotes.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
+        votes.entrySet().stream()
+            .filter(entry -> validBlocks.contains(entry.getKey()))
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey);
 
     return vote.orElse(defaultVote);
+  }
+
+  public void updateMetrics(final BeaconState state) {
+    final Eth1Data currentEth1Data = state.getEth1_data();
+    // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
+    final Set<Eth1Data> knownBlocks =
+        new HashSet<>(
+            getVotesToConsider(state.getSlot(), state.getGenesis_time(), currentEth1Data).values());
+    Map<Eth1Data, Eth1Vote> votes = countVotes(state);
+
+    currentPeriodVotesMax.set(eth1VotingPeriod.getTotalSlotsInVotingPeriod(state.getSlot()));
+    currentPeriodVotesTotal.set(state.getEth1_data_votes().size());
+    currentPeriodVotesUnknown.set(
+        votes.keySet().stream().filter(votedBlock -> !knownBlocks.contains(votedBlock)).count());
+    currentPeriodVotesCurrent.set(
+        votes.getOrDefault(currentEth1Data, new Eth1Vote(0)).getVoteCount());
+
+    currentPeriodVotesBest.set(
+        votes.values().stream()
+            .max(Comparator.naturalOrder())
+            .map(Eth1Vote::getVoteCount)
+            .orElse(0));
+  }
+
+  private Map<Eth1Data, Eth1Vote> countVotes(final BeaconState state) {
+    Map<Eth1Data, Eth1Vote> votes = new HashMap<>();
+    int i = 0;
+    for (Eth1Data eth1Data : state.getEth1_data_votes()) {
+      final int currentIndex = i;
+      votes.computeIfAbsent(eth1Data, key -> new Eth1Vote(currentIndex)).incrementVotes();
+      i++;
+    }
+    return votes;
   }
 
   private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
@@ -112,7 +191,7 @@ public class Eth1DataCache {
     eth1ChainCache.headMap(earliestKeyToKeep, false).clear();
   }
 
-  int size() {
+  private int size() {
     return eth1ChainCache.size();
   }
 }
